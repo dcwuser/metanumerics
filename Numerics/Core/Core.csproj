@@ -1,0 +1,96 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{1CAF1461-33A0-4792-BF02-9B837E06E76A}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Meta.Numerics</RootNamespace>
+    <AssemblyName>Meta.Numerics</AssemblyName>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <SignAssembly>true</SignAssembly>
+    <DelaySign>false</DelaySign>
+    <AssemblyOriginatorKeyFile>keypair.snk</AssemblyOriginatorKeyFile>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\Meta.Numerics.xml</DocumentationFile>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CodeAnalysisRules>-Microsoft.Design#CA1023;-Microsoft.Naming#CA1709;-Microsoft.Naming#CA1704;-Microsoft.Performance#CA1814;-Microsoft.Usage#CA2225</CodeAnalysisRules>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\Meta.Numerics.xml</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Core\Complex.cs" />
+    <Compile Include="Core\Exceptions.cs" />
+    <Compile Include="Core\Functions.cs" />
+    <Compile Include="Functions\AdvancedMath_Harmonic.cs" />
+    <Compile Include="Functions\FunctionMath_Extrema.cs" />
+    <Compile Include="Functions\AdvancedIntegerMath.cs" />
+    <Compile Include="Functions\AdvancedMath.cs" />
+    <Compile Include="Functions\AdvancedMath_Bessel.cs" />
+    <Compile Include="Functions\AdvancedMath_Error.cs" />
+    <Compile Include="Functions\AdvancedMath_Exponential.cs" />
+    <Compile Include="Functions\AdvancedMath_Gamma.cs" />
+    <Compile Include="Functions\AdvancedMath_Riemann.cs" />
+    <Compile Include="Core\Global.cs" />
+    <Compile Include="Functions\FunctionMath.cs" />
+    <Compile Include="Functions\OrthogonalPolynomials.cs" />
+    <Compile Include="Core\Interval.cs" />
+    <Compile Include="Functions\FunctionMath_Roots.cs" />
+    <Compile Include="Matrices\ComplexVector.cs" />
+    <Compile Include="Matrices\Interfaces.cs" />
+    <Compile Include="Matrices\Matrix.cs" />
+    <Compile Include="Matrices\MatrixBase.cs" />
+    <Compile Include="Matrices\SquareMatrix.cs" />
+    <Compile Include="Matrices\SymmetricMatrix.cs" />
+    <Compile Include="Matrices\Vectors.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Statistics\ContingencyTable.cs" />
+    <Compile Include="Statistics\DataSet.cs" />
+    <Compile Include="Statistics\Distributions.cs" />
+    <Compile Include="Statistics\FitResult.cs" />
+    <Compile Include="Statistics\Sample.cs" />
+    <Compile Include="Statistics\TestResult.cs" />
+    <Compile Include="Statistics\UncertainValue.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="keypair.snk" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

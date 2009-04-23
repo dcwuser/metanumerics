@@ -330,6 +330,42 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void SquareMatrixStochasticEigensystemTest () {
+
+            // this is a simplifed form of a Markov matrix that arose in the Monopoly problem
+            // and failed to converge
+
+            int n = 12;
+            // originally failed for n=12 due to lack of 2x2 detection at top
+            // now tested for n up to 40, but n=14 appears to still be a problem,
+            // probably due to a quadruplly degenerate eigenvalue
+
+            SquareMatrix R = new SquareMatrix(n);
+            for (int c = 0; c < n; c++) {
+                double rn = 0.0;
+                R[(c + 2) % n, c] = 1.0 / 36.0;
+                R[(c + 3) % n, c] = 2.0 / 36.0;
+                R[(c + 4) % n, c] = 3.0 / 36.0;
+                R[(c + 5) % n, c] = 4.0 / 36.0;
+                R[(c + 6) % n, c] = 5.0 / 36.0;
+                R[(c + 7) % n, c] = 6.0 / 36.0;
+                R[(c + 8) % n, c] = 5.0 / 36.0;
+                R[(c + 9) % n, c] = 4.0 / 36.0;
+                R[(c + 10) % n, c] = 3.0 / 36.0;
+                R[(c + 11) % n, c] = 2.0 / 36.0;
+                R[(c + 12) % n, c] = 1.0 / 36.0;
+            }
+
+            ComplexEigensystem E = R.Eigensystem();
+
+            for (int i = 0; i < E.Dimension; i++) {
+                Console.WriteLine(E.Eigenvalue(i));
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(R, E.Eigenvector(i), E.Eigenvalue(i)));
+            }
+
+        }
+
 
     }
 

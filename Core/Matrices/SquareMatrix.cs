@@ -468,7 +468,7 @@ namespace Meta.Numerics.Matrices {
 
             // balance the matrix
             /*
-            Balance(A, Q);
+            Balance(A);
             Debug.WriteLine("Balanced A=");
             PrintMatrix(A);
             Debug.WriteLine("Transform Q=");
@@ -706,6 +706,9 @@ namespace Meta.Numerics.Matrices {
             int n = dim - 1; // the lower-right index of the active area of the matrix
             // the effective dimension de = n - a
 
+            // maximum number of iterations
+            int countMax = dim * 30;
+
 			// keep track of iterations
 			int count = 0;
 
@@ -714,6 +717,7 @@ namespace Meta.Numerics.Matrices {
                 // check whether we have all the eigenvalues
                 if (c >= dim) break;
 
+                Debug.WriteLine(String.Format("iteration count = {0}", count));
                 //Debug.WriteLine("A = ");
                 //PrintMatrix(A);
 
@@ -728,7 +732,17 @@ namespace Meta.Numerics.Matrices {
                             c++; // one more eigenvalue
                             Debug.WriteLine(String.Format("Got eigenvalue {0} from top: {1}", c, values[a]));
                             a++; // active area shrinks by one from the top
-                            count = 0; // reset the iteration count
+                            //count = 0; // reset the iteration count
+                        } else if (a == (r - 2)) {
+                            // we have isolated a 2x2 matrix at the top
+                            // compute its eigenvalues (move this to a subroutine)
+                            double tr = A[a, a] + A[a + 1, a + 1];
+                            double det = A[a, a] * A[a + 1, a + 1] - A[a, a + 1] * A[a + 1, a];
+                            ExtractTwoByTwoEigenvalues(tr, det, out values[a], out values[a + 1]);
+                            c += 2; // eigenvalue count increases by two
+                            Debug.WriteLine(String.Format("Got eigenvalues up to {0} from the top: {1}, {2}", c, values[a], values[a+1]));
+                            a += 2; // active area shrinks by two from the top
+                            //count = 0; // reset the iteration count
                         }
                     }
                 }
@@ -743,7 +757,7 @@ namespace Meta.Numerics.Matrices {
                     c++; // one more eigenvalue
                     Debug.WriteLine(String.Format("Got eigenvalue {0} from bottom: {1}", c, values[n]));
                     n--; // active area decreases by one from bottom
-                    count = 0; // reset the iteration count
+                    //count = 0; // reset the iteration count
                 } else {
                     // look at the lower 2X2 matrix
                     int m = n - 1;
@@ -754,41 +768,36 @@ namespace Meta.Numerics.Matrices {
                         // we have isolated a 2 X 2 matrix
 
                         // compute its eigenvalues
-                        double p = tr / 2.0;
-                        double q2 = p * p - det;
-                        if (q2 < 0.0) {
-                            // if the descriminant is negative, the eigenvalues are complex
-                            double q = Math.Sqrt(-q2);
-                            values[m] = new Complex(p, q);
-                            values[n] = new Complex(p, -q);
-                        } else {
-                            // otherwise they are real
-                            double q = Math.Sqrt(q2);
-                            values[m] = p + q;
-                            values[n] = p - q;
-                        }
+                        ExtractTwoByTwoEigenvalues(tr, det, out values[m], out values[n]);
                         c += 2; // two more eigenvalues
                         Debug.WriteLine(String.Format("Got eigenvalues up to {0} from bottom: {1}, {2}", c, values[m], values[n]));
                         n -= 2; // the active area decreases by two from the bottom
-                        count = 0; // reset the iteration count
+                        //count = 0; // reset the iteration count
 
                     } else {
 
                         // an ad hoc shift if we are not converging
                         // i see no evidence that this acomplishes anything!
-                        if ((count % 7) == 6) {
+                        /*
+                        if ((count % 8) == 7) {
                             //Console.WriteLine("was tr={0} det={1}", tr, det);
                             tr = A[m, m-1] + A[n, n-1];
                             det = 0.0;
                             //Console.WriteLine("now tr={0} det={1}", tr, det);
                         }
+                        */
 
                         // do a Francis implicit QR step to reduce sub-diagonal elements
                         FrancisTwoStep(A, Q, a, n, tr, det);
 
                         // up the iteration count
                         count++;
-                        if (count > 30) throw new NonconvergenceException();
+                        if (count > (countMax-5)) {
+                            PrintMatrix(A);
+                        }
+                        if (count > countMax) {
+                            throw new NonconvergenceException();
+                        }
 
                     }
 
@@ -798,6 +807,24 @@ namespace Meta.Numerics.Matrices {
             // we have reduced the dimension to zero, so we have all the eigenvalues
 
             return (values);
+        }
+
+        // get the eigenvalues of a real 2x2 matrix
+
+        private static void ExtractTwoByTwoEigenvalues (double tr, double det, out Complex e1, out Complex e2) {
+            double p = tr / 2.0;
+            double q2 = p * p - det;
+            if (q2 < 0.0) {
+                // if the descriminant is negative, the eigenvalues are complex
+                double q = Math.Sqrt(-q2);
+                e1 = new Complex(p, q);
+                e2 = new Complex(p, -q);
+            } else {
+                // otherwise they are real
+                double q = Math.Sqrt(q2);
+                e1 = p + q;
+                e2 = p - q;
+            }
         }
 
         // do a Francis implicit QR step on A
@@ -1165,6 +1192,7 @@ namespace Meta.Numerics.Matrices {
             return (Math.Pow(2.0, y));
         }
 
+        [Conditional("DEBUG")]
         private static void PrintMatrix (IMatrix M) {
             for (int r = 0; r < M.RowCount; r++) {
                 for (int c = 0; c < M.ColumnCount; c++) {

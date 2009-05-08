@@ -84,5 +84,46 @@ namespace Test
 
         }
 
+        [TestMethod]
+        public void UncertainValueZeroUncertaintiesTest () {
+
+            UncertainValue p = new UncertainValue(3.141592653, 0.0);
+            UncertainValue q = new UncertainValue(2.718281828, 0.0);
+
+            UncertainValue sum = p + q;
+            Assert.IsTrue(sum.Value == p.Value + q.Value);
+            Assert.IsTrue(sum.Uncertainty == 0.0);
+
+            UncertainValue difference = p - q;
+            Assert.IsTrue(difference.Value == p.Value - q.Value);
+            Assert.IsTrue(difference.Uncertainty == 0.0);
+
+            UncertainValue product = p * q;
+            Assert.IsTrue(product.Value == p.Value * q.Value);
+            Assert.IsTrue(product.Uncertainty == 0.0);
+
+            UncertainValue quotient = p / q;
+            Assert.IsTrue(quotient.Value == p.Value / q.Value);
+            Assert.IsTrue(quotient.Uncertainty == 0.0);
+
+            UncertainValue exp = UncertainMath.Exp(p);
+            Assert.IsTrue(exp.Value == Math.Exp(p.Value));
+            Assert.IsTrue(exp.Uncertainty == 0.0);
+
+            UncertainValue log = UncertainMath.Log(q);
+            Assert.IsTrue(log.Value == Math.Log(q.Value));
+            Assert.IsTrue(log.Uncertainty == 0.0);
+
+            UncertainValue tan = UncertainMath.Tan(p);
+            Assert.IsTrue(tan.Value == Math.Tan(p.Value));
+            Assert.IsTrue(tan.Uncertainty == 0.0);
+
+            UncertainValue atan = UncertainMath.Atan(q);
+            Assert.IsTrue(atan.Value == Math.Atan(q.Value));
+            Assert.IsTrue(atan.Uncertainty == 0.0);
+
+
+        }
+
     }
 }

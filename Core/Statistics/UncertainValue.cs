@@ -164,9 +164,12 @@ namespace Meta.Numerics.Statistics {
 			v.Value = v1.Value + v2.Value;
 			if (v1.Uncertainty > v2.Uncertainty) {
 				v.Uncertainty = v1.Uncertainty * Math.Sqrt( 1.0 + Math.Pow(v2.Uncertainty/v1.Uncertainty,2) );
-			} else {
-				v.Uncertainty = v2.Uncertainty * Math.Sqrt( 1.0 + Math.Pow(v1.Uncertainty/v2.Uncertainty,2) );
-			}
+            } else if (v2.Uncertainty > v1.Uncertainty) {
+                v.Uncertainty = v2.Uncertainty * Math.Sqrt(1.0 + Math.Pow(v1.Uncertainty / v2.Uncertainty, 2));
+            } else {
+                // must handle this as a seperate case to avoid division by zero when v1.Uncertainty == v2.Uncertainty == 0
+                v.Uncertainty = Math.Sqrt(2.0) * v1.Uncertainty;
+            }
 			return(v);
 		}
 
@@ -181,9 +184,12 @@ namespace Meta.Numerics.Statistics {
 			v.Value = v1.Value - v2.Value;
 			if (v1.Uncertainty > v2.Uncertainty) {
 				v.Uncertainty = v1.Uncertainty * Math.Sqrt( 1.0 + Math.Pow(v2.Uncertainty/v1.Uncertainty,2) );
-			} else {
-				v.Uncertainty = v2.Uncertainty * Math.Sqrt( 1.0 + Math.Pow(v1.Uncertainty/v2.Uncertainty,2) );
-			}
+            } else if (v2.Uncertainty > v1.Uncertainty) {
+                v.Uncertainty = v2.Uncertainty * Math.Sqrt(1.0 + Math.Pow(v1.Uncertainty / v2.Uncertainty, 2));
+            } else {
+                // must handle this as a seperate case to avoid division by zero when v1.Uncertainty == v2.Uncertainty == 0
+                v.Uncertainty = Math.Sqrt(2.0) * v1.Uncertainty;
+            }
 			return(v);
 		}
 

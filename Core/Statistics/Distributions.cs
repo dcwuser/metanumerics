@@ -99,6 +99,15 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <summary>
+        /// Gets the interval over which the distribution is nonvanishing.
+        /// </summary>
+        public virtual Interval Support {
+            get {
+                return (Interval.FromEndpoints(Double.NegativeInfinity, Double.PositiveInfinity));
+            }
+        }
+
 	}
 
 
@@ -223,6 +232,13 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <usebase/>
+        public override Interval Support {
+            get {
+                return (range);
+            }
+        }
+
 	}
 
     /// <summary>
@@ -246,7 +262,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="mu">The mean.</param>
         /// <param name="sigma">The standard deviation, which must be positive.</param>
 		public NormalDistribution (double mu, double sigma) {
-            if (sigma <= 0.0) throw new ArgumentOutOfRangeException("sigma", sigma, "The standard deviation must be positive.");
+            if (sigma <= 0.0) throw new ArgumentOutOfRangeException("sigma");
             this.mu = mu;
 			this.sigma = sigma;
 		}
@@ -306,7 +322,7 @@ namespace Meta.Numerics.Statistics {
 
         /// <usebase/>
         public override double MomentAboutMean (int n) {
-			if (n < 0) throw new ArgumentOutOfRangeException("n", n, "Moment orders must be non-negative.");
+			if (n < 0) throw new ArgumentOutOfRangeException("n");
 			if ((n % 2) == 0) {
                 // compute (n-1)!! sigma^n
                 double sigma2 = sigma * sigma;
@@ -470,6 +486,13 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <usebase />
+        public override Interval Support {
+            get {
+                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+            }
+        }
+
 	}
 
     /// <summary>
@@ -605,6 +628,13 @@ namespace Meta.Numerics.Statistics {
                     if (Math.Abs(dx) <= Global.Accuracy * xm) break;
                 }
                 return (xm);
+            }
+        }
+
+        /// <usebase />
+        public override Interval Support {
+            get {
+                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
             }
         }
 
@@ -943,6 +973,16 @@ namespace Meta.Numerics.Statistics {
 
         private static double p_SmallX (double x) {
             double p = 0.0;
+            for (int k = 1; k < Global.SeriesMax; k += 2) {
+                double p_old = p;
+                double z = k * Math.PI / x / 2.0;
+                double dp = Math.Exp(-z * z / 2.0) * (z * z - 1.0);
+                p += dp;
+                //Console.WriteLine("{0} {1} {2} {3} {4}", k, z, Math.Exp(-z * z / 2.0), dp, p);
+                if (p == p_old) return (Math.Sqrt(2.0 * Math.PI) / (x * x) * p);
+            }
+            
+            /*
             for (int k = 0; k < Global.SeriesMax; k++) {
                 double p_old = p;
                 double kp = Math.PI * (2 * k + 1);
@@ -953,10 +993,24 @@ namespace Meta.Numerics.Statistics {
                     return (Math.Sqrt(2.0 * Math.PI) / x * p);
                 }
             }
+            */
+
             throw new NonconvergenceException();
         }
 
         private static double p_LargeX (double x) {
+
+            double p = 0.0;
+            for (int k = 1; k < Global.SeriesMax; k++) {
+                double p_old = p;
+                double kx = k * x;
+                double dp = k * k * Math.Exp(-2.0 * kx * kx);
+                if (k % 2 == 0) dp = -dp;
+                p += dp;
+                if (p == p_old) return (8.0 * p * x);
+            }
+
+            /*
             double xx = 2.0 * x * x;
             double f = 0.0;
             int sign = 1;
@@ -968,6 +1022,8 @@ namespace Meta.Numerics.Statistics {
                 if (f == f_old) return (8.0 * f);
                 sign = -sign;
             }
+            */
+
             throw new NonconvergenceException();
         }
 
@@ -1094,17 +1150,146 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <usebase />
+        public override Interval Support {
+            get {
+                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+            }
+        }
+
+    }
+
+    /// <summary>
+    /// Represents a log-normal distribution.
+    /// </summary>
+    /// <remarks>
+    /// <para>A logrithm of a log-normal distributed variable is distributed normally.</para>
+    /// </remarks>
+    /// <seealso cref="NormalDistribution"/>
+    public class LogNormalDistribution : Distribution {
+
+        public LogNormalDistribution (double mu, double sigma) {
+            if (sigma <= 0.0) throw new ArgumentOutOfRangeException("sigma");
+            this.mu = mu;
+            this.sigma = sigma;
+        }
+
+        private double mu = 0.0;
+        private double sigma = 1.0;
+
+        /// <usebase />
+        public override double ProbabilityDensity (double y) {
+            if (y <= 0.0) return(0.0);
+            double z = (Math.Log(y) - mu) / sigma;
+            return( Math.Exp(-z*z / 2.0) / y / (Math.Sqrt(2.0 * Math.PI) * sigma));
+        }
+
+        /// <usebase />
+        public override double Mean {
+            get {
+                return (Math.Exp(mu + sigma * sigma / 2.0));
+            }
+        }
+
+        /// <usebase />
+        public override double Median {
+            get {
+                return (Math.Exp(mu));
+            }
+        }
+
+        /// <usebase />
+        public override double StandardDeviation {
+            get {
+                return (Math.Sqrt(Es2m1) * Mean);
+            }
+        }
+
+        // compute e^(sigma^2) - 1, accounting for cancelation with sigma is small
+        // this expression appears in several contexts for this distribution
+        private double Es2m1 {
+            get {
+                double sigma2 = sigma * sigma;
+                if (sigma2 < 1.0E-4) {
+                    return(sigma2 * (1.0 + sigma2 / 2.0 + sigma2 * sigma2 / 6.0 + sigma2 * sigma2 * sigma2 / 24.0));
+                } else {
+                    return(Math.Exp(sigma2) - 1.0);
+                }
+            }
+        }
+
+        /// <usebase />
+        public override Interval Support {
+            get {
+                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+            }
+        }
+
+        public override double LeftProbability (double y) {
+            if (y <= 0.0) return (0.0);
+            double z = (Math.Log(y) - mu) / sigma;
+            if (z < 0.0) {
+                return (0.5 * AdvancedMath.Erfc(-z / Math.Sqrt(2.0)));
+            } else {
+                return (0.5 * (1.0 + AdvancedMath.Erf(z / Math.Sqrt(2.0))));
+            }
+        }
+
+        public override double RightProbability (double y) {
+            if (y <= 0.0) return (1.0);
+            double z = (Math.Log(y) - mu) / sigma;
+            if (z < 0.0) {
+                return (0.5 * (1.0 + AdvancedMath.Erf(-z / Math.Sqrt(2.0))));
+            } else {
+                return (0.5 * AdvancedMath.Erfc(z / Math.Sqrt(2.0)));
+            }
+        }
+
+        public override double InverseLeftProbability (double P) {
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            double z = Math.Sqrt(2.0) * AdvancedMath.InverseErf(2.0 * P - 1.0);
+            return (Math.Exp(mu + sigma * z));
+        }
+
+        public override double Moment (int n) {
+            if (n < 0) throw new ArgumentOutOfRangeException("n");
+            return (Math.Exp(n * mu + n * n * sigma * sigma / 2.0));
+        }
+
+        public override double MomentAboutMean (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (1.0);
+            } else if (n == 1) {
+                return (0.0);
+            } else if (n == 2) {
+                return (Es2m1 * Mean * Mean);
+            } else {
+                // this isn't great, but it does the job
+                // expand in terms of moments about the origin
+                // there is likely to be some cancelation, but the distribution is wide enough that it may not matter
+                double m = -Mean;
+                double C = 0.0;
+                for (int k = 0; k <= n; k++) {
+                    C += AdvancedIntegerMath.BinomialCoefficient(n, k) * Moment(k) * Math.Pow(m, n - k);
+                }
+                return (C);
+            }
+
+        }
+
     }
 
     // Deviates
     // Maximum likelyhood estimation
 
 	// Weibull Distribution
-	// LogNormal Distribution
 	// Gamma Distribution
 	// Beta Distribution
 	// Kuiper Distribution
     // Logistic Distribution
+    // Wald (inverse guassian) distribution
 
 }
 

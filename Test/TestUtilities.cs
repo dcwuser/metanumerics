@@ -14,6 +14,10 @@ namespace Test {
         // allow last three digits to deviate
         public static readonly double TargetPrecision = Math.Pow(2.0,-42);
 
+        public static bool IsNearlyEqual (double x, double y) {
+            return (IsNearlyEqual(x, y, TargetPrecision));
+        }
+
         public static bool IsNearlyEqual (double x, double y, double e) {
 
             if (2.0 * Math.Abs(x - y) <= e * (Math.Abs(x) + Math.Abs(y))) {
@@ -22,10 +26,6 @@ namespace Test {
                 return (false);
             }
 
-        }
-
-        public static bool IsNearlyEqual (double x, double y) {
-            return (IsNearlyEqual(x, y, TargetPrecision));
         }
 
         public static bool IsSumNearlyEqual (double x1, double x2, double y) {
@@ -44,7 +44,7 @@ namespace Test {
             UncertainValue w = new UncertainValue(y, e * Math.Abs(y));
             Console.WriteLine("  w = {0}", w);
             */
-            Console.WriteLine("  {0:g16} ?= {1:g16} ({2:g16})", x, y, u + v);
+            //Console.WriteLine("  {0:g16} ?= {1:g16} ({2:g16})", x, y, u + v);
             if (Math.Abs(x - y) <=(u + v)) {
                 return (true);
             } else {
@@ -271,10 +271,14 @@ namespace Test {
 
         // returns n positive reals numbers distributed logarithmicly between 10^a and 10^b
         public static double[] GenerateRealValues (double a, double b, int n) {
+            if ((a <= 0.0) || (b <= 0.0)) throw new ArgumentException();
+            double la = Math.Log(a);
+            double lb = Math.Log(b);
             double[] result = new double[n];
             Random rng = new Random(1);
             for (int i = 0; i < n; i++) {
-                result[i] = Math.Pow(10.0, a + (b - a) * rng.NextDouble());
+                result[i] = Math.Exp(la + (lb - la) * rng.NextDouble()); 
+                //result[i] = Math.Pow(10.0, a + (b - a) * rng.NextDouble());
             }
             return (result);
         }

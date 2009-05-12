@@ -64,6 +64,7 @@
     <Compile Include="Functions\AdvancedMath_Riemann.cs" />
     <Compile Include="Core\Global.cs" />
     <Compile Include="Functions\FunctionMath.cs" />
+    <Compile Include="Functions\FunctionMath_Integrate.cs" />
     <Compile Include="Functions\OrthogonalPolynomials.cs" />
     <Compile Include="Core\Interval.cs" />
     <Compile Include="Functions\FunctionMath_Roots.cs" />

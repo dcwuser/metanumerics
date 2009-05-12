@@ -53,6 +53,7 @@
     <Compile Include="DataSetTest.cs" />
     <Compile Include="DistributionTest.cs" />
     <Compile Include="ExtremaTest.cs" />
+    <Compile Include="IntegrateTest.cs" />
     <Compile Include="IntervalTest.cs" />
     <Compile Include="LanczosTest.cs" />
     <Compile Include="MatrixTest.cs" />

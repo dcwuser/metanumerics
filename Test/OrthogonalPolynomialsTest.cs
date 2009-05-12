@@ -157,15 +157,15 @@ namespace Test {
             foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 5)) {
                 Assert.IsTrue(OrthogonalPolynomials.LaguerreL(n, 0.0) == 1.0);
             }
-            foreach (double x in TestUtilities.GenerateRealValues(-4, 4, 5)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 5)) {
                 Assert.IsTrue(OrthogonalPolynomials.LaguerreL(0, x) == 1.0);
             }
         }
 
         [TestMethod]
         public void LaguerreRecurrenceTest () {
-            foreach (int n in TestUtilities.GenerateRealValues(0, 2, 5)) {
-                foreach (double x in TestUtilities.GenerateRealValues(-4,4,10)) {
+            foreach (int n in TestUtilities.GenerateRealValues(1.0, 1.0E2, 5)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,10)) {
                     double LP = OrthogonalPolynomials.LaguerreL(n + 1, x);
                     double L = OrthogonalPolynomials.LaguerreL(n, x);
                     double LM = OrthogonalPolynomials.LaguerreL(n - 1, x);
@@ -176,8 +176,8 @@ namespace Test {
 
         [TestMethod]
         public void LaguerreInequalityTest () {
-            foreach (int n in TestUtilities.GenerateRealValues(0, 2, 5)) {
-                foreach (double x in TestUtilities.GenerateRealValues(-2, 2, 5)) {
+            foreach (int n in TestUtilities.GenerateRealValues(1.0, 1.0E2, 5)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
                     Assert.IsTrue(OrthogonalPolynomials.LaguerreL(n,x) <= Math.Exp(x/2.0));
                 }
             }

@@ -70,7 +70,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexFaddeevaDawsonTest () {
-            foreach (double x in TestUtilities.GenerateRealValues(-4,4,10)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,10)) {
                 Complex w = AdvancedComplexMath.Faddeeva(x);
                 double F = AdvancedMath.Dawson(x);
                 Console.WriteLine("x={0} F={1} w={2}", x, F, w);
@@ -123,7 +123,7 @@ namespace Test {
         [TestMethod]
         public void ComplexGammaKnownLinesTest () {
             // to avoid problems with trig functions of large arguments, don't let x get too big
-            foreach (double x in TestUtilities.GenerateRealValues(-4, 2, 15)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 100.0, 15)) {
                 Console.WriteLine(x);
                 double px = Math.PI * x;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.Gamma(new Complex(0.0, x)) * AdvancedComplexMath.Gamma(new Complex(0.0, -x)), Math.PI / x / Math.Sinh(px)));
@@ -145,7 +145,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexLogGammaAgreementTest () {
-            foreach (double x in TestUtilities.GenerateRealValues(-4, 4, 20)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 20)) {
                 //Console.WriteLine("{0} {1}", AdvancedComplexMath.LogGamma(x), AdvancedMath.LogGamma(x));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.LogGamma(x), AdvancedMath.LogGamma(x)));
             }

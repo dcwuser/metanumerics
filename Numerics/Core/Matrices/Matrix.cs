@@ -289,6 +289,22 @@ namespace Meta.Numerics.Matrices {
             return (Multiply(M1, M2));
         }
 
+        public static Matrix operator * (Matrix M1, SquareMatrix M2) {
+            return (Multiply(M1, M2));
+        }
+
+        public static Matrix operator * (SquareMatrix M1, Matrix M2) {
+            return (Multiply(M1, M2));
+        }
+
+        public static Matrix operator * (Matrix M1, SymmetricMatrix M2) {
+            return (Multiply(M1, M2));
+        }
+
+        public static Matrix operator * (SymmetricMatrix M1, Matrix M2) {
+            return (Multiply(M1, M2));
+        }
+
         // arithmetic with doubles
 
         internal static Matrix Multiply (double x, IMatrix M) {

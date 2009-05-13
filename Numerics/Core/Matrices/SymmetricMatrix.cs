@@ -111,6 +111,34 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
+        /// Computes the inverse of the matrix.
+        /// </summary>
+        /// <returns>The matrix inverse M<sup>-1</sup>.</returns>
+        public SymmetricMatrix Inverse () {
+
+            // this implementation re-uses the generic square matrix algorithm
+            // replace it with one based on LDL decomposition, which exploits the symmetry
+
+            SquareMatrix M = new SquareMatrix(dimension);
+            for (int r = 0; r < dimension; r++) {
+                for (int c = 0; c < dimension; c++) {
+                    M[r, c] = this[r, c];
+                }
+            }
+
+            SquareMatrix MI = M.Inverse();
+
+            SymmetricMatrix I = new SymmetricMatrix(dimension);
+            for (int r = 0; r < dimension; r++) {
+                for (int c = 0; c <= r; c++) {
+                    I[r, c] = MI[r, c];
+                }
+            }
+
+            return (I);
+        }
+
+        /// <summary>
         /// Returns the Cholesky decomposition of the matrix.
         /// </summary>
         /// <returns>The Cholesky decomposition of the matrix, or null is the matrix is not positive definite.</returns>
@@ -118,7 +146,7 @@ namespace Meta.Numerics.Matrices {
         /// <para>A Cholesky decomposition is a special decomposition that is possible only for positive definite matrices.
         /// (A positive definite matrix has x<sup>T</sup>Mx > 0 for any vector x. Equivilently, M is positive definite if
         /// all its eigenvalues are positive.)</para>
-        /// <para>THe Cholesky decomposition represents M = C C<sup>T</sup>, where C is lower-left triangular (and thus C<sup>T</sup>
+        /// <para>The Cholesky decomposition represents M = C C<sup>T</sup>, where C is lower-left triangular (and thus C<sup>T</sup>
         /// is upper-right triangular. It is basically an LU decomposition where the L and U factors are related by transposition.
         /// Since the M is produced by multiplying C "by itself", the matrix C is sometimes call the "square root" of M.</para>
         /// <para>Cholesky decomposition is an O(N<sup>3</sup>) operation. It is about a factor of two faster than LU decomposition,

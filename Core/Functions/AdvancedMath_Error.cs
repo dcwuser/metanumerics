@@ -173,7 +173,7 @@ namespace Meta.Numerics.Functions {
         // his result derives essentially from doing the integral numerically with a step size h
         // it converges in the limit h->0 and the error for non-zero h goes like e^{-(pi/2h)^2}; since the error
         // goes down exponentially with h, even quite moderate value of h give good results: we use h~0.25 to get full precision
-        // the series is infinite, but since the terms die off exponentially you don't need many to get full precision: we need ~25
+        // the series is infinite, but since the terms die off exponentially you don't need many to get full precision: we need ~12 x 2
 
         private static double Dawson_Rybicki (double x) {
 
@@ -185,18 +185,23 @@ namespace Meta.Numerics.Functions {
             double b = Math.Exp(2.0 * Dawson_Rybicki_h * y);
             double bb = b * b;
             for (int k = 0; k < Dawson_Rybicki_coefficients.Length; k++) {
+                double f_old = f;
                 int m = 2 * k + 1;
-                double df = Dawson_Rybicki_coefficients[k] * (b / (n0 - m) + 1.0 / b / (n0 + m));
+                double df = Dawson_Rybicki_coefficients[k] * (b / (n0 + m) + 1.0 / b / (n0 - m));
                 f += df;
+                if (f == f_old) {
+                    Console.WriteLine(k);
+                    return (Math.Exp(-y * y) / Global.SqrtPI * f);
+                }
                 b = b * bb;
             }
 
-            return (Math.Exp(-y * y) / Global.SqrtPI * f);
+            throw new NonconvergenceException();
 
         }
 
         private static double Dawson_Rybicki_h = 0.25;
-        private static double[] Dawson_Rybicki_coefficients = Compute_Dawson_Rybicki_Coefficients(0.25, 12);
+        private static double[] Dawson_Rybicki_coefficients = Compute_Dawson_Rybicki_Coefficients(0.25, 16);
 
         // pre-computes e^{-(h m)^2} for Rybicki algorithm
 

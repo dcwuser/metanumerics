@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
@@ -363,6 +364,19 @@ namespace Test {
                 Console.WriteLine(E.Eigenvalue(i));
                 Assert.IsTrue(TestUtilities.IsNearlyEigenpair(R, E.Eigenvector(i), E.Eigenvalue(i)));
             }
+
+        }
+
+        [TestMethod]
+        public void TimeMatrixMultiply () {
+
+            SquareMatrix M1 = CreateSquareRandomMatrix(100, 1);
+            SquareMatrix M2 = CreateSquareRandomMatrix(100, 2);
+
+            Stopwatch s = Stopwatch.StartNew();
+            SquareMatrix M12 = M1 * M2;
+            s.Stop();
+            Console.WriteLine(s.ElapsedMilliseconds);
 
         }
 

@@ -119,6 +119,30 @@ namespace Test {
         }
 
         [TestMethod]
+        public void SymmetricHilbertMatrixInverseTest () {
+            for (int d = 1; d <= 4; d++) {
+                Console.WriteLine("d={0}", d);
+                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
+                SymmetricMatrix H = TestUtilities.CreateSymmetricHilbertMatrix(d);
+                SymmetricMatrix HI = H.Inverse();
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(H * HI, I));
+            }
+            // fails for d > 4! look into this
+        }
+
+        [TestMethod]
+        public void SymmetricRandomMatrixInverseTest () {
+            for (int d = 1; d <= 100; d = d + 11) {
+                Console.WriteLine("d={0}", d);
+                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
+                SymmetricMatrix M = TestUtilities.CreateSymmetricRandomMatrix(d, 1);
+                SymmetricMatrix MI = M.Inverse();
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(M * MI, I));
+            }
+
+        }
+
+        [TestMethod]
         public void SymmetricRandomMatrixEigenvalueTest () {
             for (int d = 1; d <= 100; d = d + 11) {
                 Console.WriteLine("d={0}", d);

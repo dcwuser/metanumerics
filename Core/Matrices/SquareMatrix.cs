@@ -85,7 +85,7 @@ namespace Meta.Numerics.Matrices {
             if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
             RowVector row = new RowVector(dimension);
             for (int c = 0; c < dimension; c++) {
-                row[c] = values[r, c];
+                row[c] = this[r, c];
             }
             return (row);
         }
@@ -102,7 +102,7 @@ namespace Meta.Numerics.Matrices {
             if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
             ColumnVector column = new ColumnVector(dimension);
             for (int r = 0; r < dimension; r++) {
-                column[r] = values[r, c];
+                column[r] = this[r, c];
             }
             return (column);
         }
@@ -115,7 +115,7 @@ namespace Meta.Numerics.Matrices {
             SquareMatrix clone = new SquareMatrix(dimension);
             for (int r = 0; r < dimension; r++) {
                 for (int c = 0; c < dimension; c++) {
-                    clone[r, c] = values[r, c];
+                    clone[r, c] = this[r, c];
                 }
             }
             return (clone);
@@ -133,7 +133,7 @@ namespace Meta.Numerics.Matrices {
             SquareMatrix transpose = new SquareMatrix(dimension);
             for (int r = 0; r < dimension; r++) {
                 for (int c = 0; c < dimension; c++) {
-                    transpose[c, r] = values[r, c];
+                    transpose[c, r] = this[r, c];
                 }
             }
             return (transpose);
@@ -183,6 +183,8 @@ namespace Meta.Numerics.Matrices {
         // routines for algorithms
 
         private static SquareMatrix GaussJordanInvert (SquareMatrix M) {
+
+            // change to an invert-in-place version
 
             // the dimension of the problem
             int d = M.Dimension;
@@ -1276,20 +1278,20 @@ namespace Meta.Numerics.Matrices {
                 // determine column norm
                 double x = 0.0;
                 for (int r = c; r < dimension; r++) {
-                    x += values[r, c] * values[r, c];
+                    x += this[r, c] * this[r, c];
                 }
                 x = Math.Sqrt(x);
 
                 // choose the first component of Householder vector in a way that minimizes roundoff error
                 double s, d;
-                if (values[c, c] < 0) {
-                    values[c, c] -= x;
+                if (this[c, c] < 0) {
+                    this[c, c] -= x;
                     d = x;
-                    s = -x * values[c, c];
+                    s = -x * this[c, c];
                 } else {
-                    values[c, c] += x;
+                    this[c, c] += x;
                     d = -x;
-                    s = x * values[c, c];
+                    s = x * this[c, c];
                 }
 
                 // check for singulatity
@@ -1299,22 +1301,22 @@ namespace Meta.Numerics.Matrices {
                 for (int j = c + 1; j < dimension; j++) {
                     double sum = 0.0;
                     for (int k = c; k < dimension; k++) {
-                        sum += values[k, c] * values[k, j];
+                        sum += this[k, c] * this[k, j];
                     }
                     sum = sum / s;
                     for (int i = c; i < dimension; i++) {
-                        values[i, j] -= values[i, c] * sum;
+                        this[i, j] -= this[i, c] * sum;
                     }
                 }
 
                 // renormalize the Householder vector so that leading component is 1;
                 // this is always possible if s=0 exception wasn't triggered above
                 for (int r = c + 1; r < dimension; r++) {
-                    values[r, c] = values[r, c] / values[c, c];
+                    this[r, c] = this[r, c] / this[c, c];
                 }
 
                 // insert the diagonal entry where the leading component was stored
-                values[c, c] = d;
+                this[c, c] = d;
 
             }
         }
@@ -1380,6 +1382,13 @@ namespace Meta.Numerics.Matrices {
             return (Add(M1, M2));
         }
 
+        public static SquareMatrix operator + (SquareMatrix M1, SymmetricMatrix M2) {
+            return (Add(M1, M2));
+        }
+        public static SquareMatrix operator + (SymmetricMatrix M1, SquareMatrix M2) {
+            return (Add(M1, M2));
+        }
+
         internal static SquareMatrix Subtract (ISquareMatrix M1, ISquareMatrix M2) {
             if (M1.Dimension != M2.Dimension) throw new DimensionMismatchException();
             SquareMatrix N = new SquareMatrix(M1.Dimension);
@@ -1401,6 +1410,13 @@ namespace Meta.Numerics.Matrices {
         /// <para>Matrix subtraction is an O(N<sup>2</sup>) process.</para>
         /// </remarks>
         public static SquareMatrix operator - (SquareMatrix M1, SquareMatrix M2) {
+            return (Subtract(M1, M2));
+        }
+
+        public static SquareMatrix operator - (SquareMatrix M1, SymmetricMatrix M2) {
+            return (Subtract(M1, M2));
+        }
+        public static SquareMatrix operator - (SymmetricMatrix M1, SquareMatrix M2) {
             return (Subtract(M1, M2));
         }
 
@@ -1431,6 +1447,15 @@ namespace Meta.Numerics.Matrices {
         public static SquareMatrix operator * (SquareMatrix M1, SquareMatrix M2) {
             return (Multiply(M1, M2));
         }
+
+        public static SquareMatrix operator * (SquareMatrix M1, SymmetricMatrix M2) {
+            return (Multiply(M1, M2));
+        }
+
+        public static SquareMatrix operator * (SymmetricMatrix M1, SquareMatrix M2) {
+            return (Multiply(M1, M2));
+        }
+
 
         // mixed arithmetic
 

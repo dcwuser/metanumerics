@@ -195,6 +195,26 @@ namespace Test {
             OrthogonalPolynomials.LaguerreL(1, -0.1);
         }
 
+        [TestMethod]
+        public void LaguerreOrthonormalityTest () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 3)) {
+                foreach (int m in TestUtilities.GenerateIntegerValues(0, 2, 3)) {
+                    Function<double, double> f = delegate(double x) {
+                        return (Math.Exp(-x) * OrthogonalPolynomials.LaguerreL(n, x) * OrthogonalPolynomials.LaguerreL(m, x));
+                    };
+                    Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
+                    double I = FunctionMath.Integrate(f, r);
+                    Console.WriteLine("{0} {1} {2}", n, m, I);
+                    if (n == m) {
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(I, 1.0));
+                    } else {
+                        Assert.IsTrue(Math.Abs(I) < TestUtilities.TargetPrecision);
+                    }
+                }
+            }
+        }
+
+
 
         // Chebyshev
 
@@ -304,6 +324,9 @@ namespace Test {
             OrthogonalPolynomials.ChebyshevT(2, -1.1);
         }
 
+        // orthonormality test for chebyshev fails because endpoint singularity of weight causes
+        // the numerical integral not to converge
+
 
         // Legendre
 
@@ -363,6 +386,25 @@ namespace Test {
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
         public void LegendreInvalidArgumentTest () {
             OrthogonalPolynomials.LegendreP(2, -1.1);
+        }
+
+        [TestMethod]
+        public void LegendreOrthonormalityTest () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 3)) {
+                foreach (int m in TestUtilities.GenerateIntegerValues(0, 2, 3)) {
+                    Function<double, double> f = delegate(double x) {
+                        return (OrthogonalPolynomials.LegendreP(n, x) * OrthogonalPolynomials.LegendreP(m, x));
+                    };
+                    Interval r = Interval.FromEndpoints(-1.0, 1.0);
+                    double I = FunctionMath.Integrate(f, r);
+                    Console.WriteLine("{0} {1} {2}", n, m, I);
+                    if (n == m) {
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(I, 2.0 / (2 * n + 1)));
+                    } else {
+                        Assert.IsTrue(Math.Abs(I) < TestUtilities.TargetPrecision);
+                    }
+                }
+            }
         }
 
         // spherical harmonics

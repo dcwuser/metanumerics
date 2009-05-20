@@ -250,6 +250,7 @@ namespace Meta.Numerics.Statistics {
     /// <para>A normal distribution with mean zero and standard deviation one is called a standard normal distribution.</para>
     /// <para>The normal distribution is sometimes called a Gaussian distribtuion, after the mathematician Friedrich Gauss.</para>
     /// </remarks>
+    /// <seealso cref="http://en.wikipedia.org/wiki/Normal_distribution"/>
 	public class NormalDistribution : Distribution {
 
 		private double mu, sigma;
@@ -371,8 +372,11 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents an exponential distribution.
     /// </summary>
-    /// <remarks>An exponential distribution falls off exponentially in the range from zero to infinity. It is a one-parameter
-    /// distribution, determined entirely by its rate of fall-off.</remarks>
+    /// <remarks>
+    /// <para>An exponential distribution falls off exponentially in the range from zero to infinity. It is a one-parameter
+    /// distribution, determined entirely by its rate of fall-off. The exponential distribution describes the distribution
+    /// of decay times of radioactive particles.</para></remarks>
+    /// <seealso cref="http://en.wikipedia.org/wiki/Exponential_distribution"/>
 	public class ExponentialDistribution : Distribution {
 
 		private double mu;
@@ -504,6 +508,7 @@ namespace Meta.Numerics.Statistics {
     /// standard-normally distributed variables. In practice it is most often encountered in data fitting or contingency testing.</para>
     /// </remarks>
     /// <seealso cref="ContingencyTable.PearsonChiSquaredTest"/>
+    /// <seealso cref="http://en.wikipedia.org/wiki/Chi-square_distribution" />
 	public class ChiSquaredDistribution : Distribution {
 
 		private int nu;
@@ -593,12 +598,32 @@ namespace Meta.Numerics.Statistics {
                 return (0.0);
             } else if (n == 2) {
                 return (2.0 * nu);
+            } else if (n == 3) {
+                return (8.0 * nu);
             } else {
-                if (n == 3) {
-                    return (8.0 * nu);
-                }
+
                 // uses confluent hypergeometric function
-                throw new NotImplementedException();
+                // 2^n U(-n, 1-n-mu/2,-mu/2)
+                // this is a temporary fix until be get a better one
+
+                double C;
+                switch (n) {
+                    case 4:
+                        C = 12.0 * nu * (4.0 + nu);
+                        break;
+                    case 5:
+                        C = 32.0 * nu * (12.0 + 5.0 * nu);
+                        break;
+                    case 6:
+                        C = 40.0 * nu * (96.0 + 52.0 * nu + 3.0 * nu * nu);
+                        break;
+                    case 7:
+                        C = 96.0 * nu * (480.0 + 308.0 * nu + 35.0 * nu * nu);
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+                return(C);
             }
 		}
 
@@ -1125,7 +1150,7 @@ namespace Meta.Numerics.Statistics {
             } else if (n == 2) {
                 return (Math.PI * Math.PI / 12.0 * scale * scale);
             } else {
-                return (AdvancedMath.Gamma(1.0 + n / 2.0) * AdvancedMath.DirichletEta(n) / Math.Pow(2.0, n / 2.0) * Math.Pow(scale,n));
+                return (AdvancedMath.Gamma(n / 2.0 + 1.0) * AdvancedMath.DirichletEta(n) / Math.Pow(2.0, n / 2.0 - 1.0) * Math.Pow(scale,n));
             }
         }
 

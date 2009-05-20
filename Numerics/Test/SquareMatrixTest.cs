@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -204,7 +205,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SquareVandermondeMatrixDecompositionTest () {
+        public void SquareVandermondeMatrixLUDecompositionTest () {
             for (int d = 1; d <= 8; d++) {
 
                 double[] x = new double[d];
@@ -219,8 +220,16 @@ namespace Test {
                 }
 
                 SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
+
+                // LU decompose the matrix
                 SquareMatrix V = CreateVandermondeMatrix(d);
                 SquareLUDecomposition LU = V.LUDecomposition();
+
+                // test that the decomposition works
+                SquareMatrix P = LU.PMatrix();
+                SquareMatrix L = LU.LMatrix();
+                SquareMatrix U = LU.UMatrix();
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(P * V, L * U));
 
                 // check that the determinant agrees with the analytic expression
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(LU.Determinant(), det));
@@ -228,9 +237,17 @@ namespace Test {
                 // check that the inverse works
                 SquareMatrix VI = LU.Inverse();
                 Console.WriteLine("d={0}", d);
-                PrintMatrix(VI);
-                PrintMatrix(V * VI);
+                //PrintMatrix(VI);
+                //PrintMatrix(V * VI);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(V * VI, I));
+
+                /*
+                // test that a solution works
+                ColumnVector t = new ColumnVector(d);
+                for (int i = 0; i < d; i++) t[i] = i;
+                ColumnVector s = LU.Solve(t);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(V * t, s));
+                */
             }
         }
 
@@ -285,7 +302,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SquareUnitMatrixDecompositionTest () {
+        public void SquareUnitMatrixLUDecompositionTest () {
             for (int d = 1; d <= 10; d++) {
                 SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
                 Assert.IsTrue(I.Trace() == d);
@@ -344,7 +361,6 @@ namespace Test {
 
             SquareMatrix R = new SquareMatrix(n);
             for (int c = 0; c < n; c++) {
-                double rn = 0.0;
                 R[(c + 2) % n, c] = 1.0 / 36.0;
                 R[(c + 3) % n, c] = 2.0 / 36.0;
                 R[(c + 4) % n, c] = 3.0 / 36.0;
@@ -367,16 +383,55 @@ namespace Test {
 
         }
 
-        [TestMethod]
+        //[TestMethod]
         public void TimeMatrixMultiply () {
 
-            SquareMatrix M1 = CreateSquareRandomMatrix(100, 1);
-            SquareMatrix M2 = CreateSquareRandomMatrix(100, 2);
+            SquareMatrix M = new SquareMatrix(3);
+            M[0, 0] = -2;
+            M[0, 1] = -6;
+            M[0, 2] = 4;
+            M[1, 0] = -6;
+            M[1, 1] = -21;
+            M[1, 2] = 15;
+            M[2, 0] = 4;
+            M[2, 1] = 15;
+            M[2, 2] = -13;
+
+            SquareMatrix M1 = CreateSquareRandomMatrix(316, 1);
+            SquareMatrix M2 = CreateSquareRandomMatrix(1000, 2);
+
+            M = M1;
+
+            //M = CreateVandermondeMatrix(8);
 
             Stopwatch s = Stopwatch.StartNew();
-            SquareMatrix M12 = M1 * M2;
+            //SquareMatrix M12 = M1 * M2;
+            //SquareMatrix MI = M.Inverse();
+            SquareLUDecomposition LU = M.LUDecomposition();
             s.Stop();
             Console.WriteLine(s.ElapsedMilliseconds);
+
+            //double[] b = { 1, 2, 3 };
+            //IList<double> x = LU.Solve2(b);
+            //Console.WriteLine("{0} {1} {2}", x[0], x[1], x[2]);
+
+            Stopwatch s1 = Stopwatch.StartNew();
+            SquareMatrix MI = LU.Inverse();
+            s1.Stop();
+            Console.WriteLine(s1.ElapsedMilliseconds);
+
+            Stopwatch s2 = Stopwatch.StartNew();
+            SquareMatrix MI2 = M.Inverse();
+            s2.Stop();
+            Console.WriteLine(s2.ElapsedMilliseconds);
+
+
+            //PrintMatrix(M);
+            //PrintMatrix(MI);
+            //PrintMatrix(M * MI);
+            //PrintMatrix(MI * M);
+            SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(M.Dimension);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(M * MI, I));
 
         }
 

@@ -11,7 +11,8 @@ namespace Meta.Numerics.Matrices {
     public sealed class SquareMatrix : ISquareMatrix {
 
         private int dimension;
-        private double[,] values;
+        //private double[,] values;
+        private double[] values;
 
         /// <summary>
         /// Initializes a new square matrix.
@@ -21,7 +22,8 @@ namespace Meta.Numerics.Matrices {
         public SquareMatrix (int dimension) {
             if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
             this.dimension = dimension;
-            this.values = new double[dimension, dimension];
+            //this.values = new double[dimension, dimension];
+            this.values = new double[dimension * dimension];
         }
 
         /*
@@ -63,13 +65,24 @@ namespace Meta.Numerics.Matrices {
             get {
                 if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
                 if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
-                return (values[r, c]);
+                return (GetEntry(r, c));
             }
             set {
                 if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
                 if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
-                values[r, c] = value;
+                SetEntry(r, c, value);
             }
+        }
+
+        // use for fast access
+        // this bypasses bounds checks, so make sure the bounds are right!
+
+        internal double GetEntry (int r, int c) {
+            return (values[r * dimension + c]);
+        }
+
+        internal void SetEntry (int r, int c, double e) {
+            values[r * dimension + c] = e;
         }
 
 
@@ -112,10 +125,11 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>An independent clone of the matrix.</returns>
         public SquareMatrix Clone () {
+            // replace with direct array copy for even more speed?
             SquareMatrix clone = new SquareMatrix(dimension);
             for (int r = 0; r < dimension; r++) {
                 for (int c = 0; c < dimension; c++) {
-                    clone[r, c] = this[r, c];
+                    clone.SetEntry(r, c, this.GetEntry(r, c));
                 }
             }
             return (clone);
@@ -152,8 +166,9 @@ namespace Meta.Numerics.Matrices {
         /// <para>The inversion of a matrix is an O(N<sup>3</sup>) operation.</para>
         /// </remarks>
         public SquareMatrix Inverse () {
-            SquareMatrix inverse = GaussJordanInvert(this.Clone());
-            return (inverse);
+            SquareMatrix M = this.Clone();
+            GaussJordanInvert(M);
+            return (M);
         }
 
         /*
@@ -175,149 +190,63 @@ namespace Meta.Numerics.Matrices {
         public double Trace () {
 				double trace = 0.0;
 				for (int i=0; i<dimension; i++) {
-					trace+= values[i,i];
+					trace+= this[i,i];
 				}
 				return(trace);
         }
 
-        // routines for algorithms
+        
 
-        private static SquareMatrix GaussJordanInvert (SquareMatrix M) {
+        private static void GaussJordanInvert (SquareMatrix M) {
 
-            // change to an invert-in-place version
 
-            // the dimension of the problem
-            int d = M.Dimension;
+            int n = M.Dimension;
 
-            // initialize a unit matrix
-            SquareMatrix N = new SquareMatrix(d);
-            for (int r = 0; r < d; r++) {
-                for (int c = 0; c < d; c++) {
-                    N[r, c] = 0.0;
-                }
-                N[r, r] = 1.0;
-            }
+            // do n interations
+            for (int d = 0; d < n; d++) {
 
-            // keep track of the pivots
-            int[] pivots = new int[d];
-            for (int i = 0; i < d; i++) {
-                pivots[i] = -1;
-            }
+                // start with the diagonal pivot
+                //double q = M[d, d];
+                double q = M.GetEntry(d, d);
 
-            // interate over columns
-            for (int c = 0; c < d; c++) {
-
-                //Console.WriteLine("c = {0}", c);
-                //PrintMatrix(M);
-                //PrintMatrix(N);
-
-                // choose a pivot in the current column
-                int p = 0;
-                double pe = 0.0;
-                for (int r = c; r < d; r++) {
-                    if ((pivots[r] < 0) && (Math.Abs(M[r, c]) > Math.Abs(pe))) {
-                        p = r;
-                        pe = M[r, c];
+                // search for a better pivot in a lower row
+                int pr = d;
+                for (int r = d + 1; r < n; r++) {
+                    if (Math.Abs(M.GetEntry(r, d)) > Math.Abs(q)) {
+                        pr = d;
+                        q = M.GetEntry(pr, d);
                     }
                 }
 
-                //Console.WriteLine("p = {0}, pe = {1}", p, pe);
+                // if all pivot candidates are zero, the matrix is singular
+                if (q == 0.0) throw new DivideByZeroException();
 
-                // if no non-zero pivot element was found, matrix is singular
-                if (pe == 0.0) throw new DivideByZeroException();
-
-                // record the pivot
-                //pivots[p] = c;
-
-                // swap rows to move the pivot to the diagonal
-                //Console.WriteLine("swap");
-                if (p != c) {
-                    for (int cp = 0; cp < d; cp++) {
-                        double t = M[p, cp];
-                        M[p, cp] = M[c, cp];
-                        M[c, cp] = t;
-
-                        double u = N[p, cp];
-                        N[p, cp] = N[c, cp];
-                        N[c, cp] = u;
+                // if we found a better pivot on a lower row, swap rows to bring the pivot element to the diagonal
+                if (pr != d) {
+                    for (int c = 0; c < n; c++) {
+                        double t = M.GetEntry(d, c);
+                        M.SetEntry(d, c, M.GetEntry(pr, c));
+                        M.SetEntry(pr, c, t);
                     }
                 }
-                //PrintMatrix(M);
-                //PrintMatrix(N);
 
-                // normalize the pivot row
-                //Console.WriteLine("normalize");
-                for (int cp = 0; cp < d; cp++) {
-                    M[c, cp] /= pe;
-
-                    N[c, cp] /= pe;
+                // divide the pivot row by the pivot element to make the diagonal element unity
+                M.SetEntry(d, d, 1.0);
+                for (int c = 0; c < n; c++) {
+                    M.SetEntry(d, c, M.GetEntry(d, c) / q);
                 }
-                //PrintMatrix(M);
-                //PrintMatrix(N);
-
-                // for each non-pivot row, add a multiple of the pivot to zero
-                // the entries in the pivot's column
-                //Console.WriteLine("zero");
-                for (int r = 0; r < d; r++) {
-                    if (r != c) {
-                        double t = -M[r, c];
-                        for (int cp = 0; cp < d; cp++) {
-                            M[r, cp] += t * M[c, cp];
-                            N[r, cp] += t * N[c, cp];
-                        }
+                // add factors of the pivot row to other rows to zero off-diagonal elements
+                for (int r = 0; r < n; r++) {
+                    if (r == d) continue;
+                    double p = M.GetEntry(r, d);
+                    M.SetEntry(r, d, 0.0);
+                    for (int c = 0; c < n; c++) {
+                        M.SetEntry(r, c, M.GetEntry(r, c) - p * M.GetEntry(d, c));
                     }
                 }
-                //PrintMatrix(M);
-                //PrintMatrix(N);
-
             }
-
-            // return the inverse
-            return (N);
 
         }
-
-        /*
-        // in-place inversion using the Gauss-Jordon alrogithm
-        private void GaussJordanInvert () {
-
-            // array to track pivots
-            bool[] pv = new bool[dimension];
-            for (int i = 0; i < dimension; i++) {
-                pv[i] = false;
-            }
-
-            // iterate over columns
-            for (int i = 0; i < dimension; i++) {
-
-                // choose a pivot
-                int p = 0;
-                double pe = 0.0;
-                for (int j = 0; j < dimension; j++) {
-                    if ((!pv[j]) && (Math.Abs(values[j, j]) > Math.Abs(pe))) {
-                        p = j;
-                        pe = values[p, p];
-                    }
-                }
-                if (pe == 0.0) throw new DivideByZeroException("Singular matrix");
-
-                // normalize the pivot
-                values[p, p] = 1.0;
-                for (int j = 0; j < dimension; j++) values[p, j] = values[p, j] / pe;
-
-                // zero the other entries in that column
-                for (int j = 0; j < dimension; j++) {
-                    if (j == p) continue;
-                    double t = -values[j, p];
-                    values[j, p] = 0;
-                    for (int k = 0; k < dimension; k++) values[j, k] += t * values[p, k];
-                }
-
-                // done with that pivot
-                pv[p] = true;
-            }
-        }
-        */
 
         /// <summary>
         /// Computes the LU decomposition of the matrix.
@@ -330,74 +259,99 @@ namespace Meta.Numerics.Matrices {
         /// <para>The LU decomposition of a square matrix is an O(N<sup>3</sup>) operation.</para>
         /// </remarks>
         public SquareLUDecomposition LUDecomposition () {
-            SquareMatrix clone = this.Clone();
+            SquareMatrix M = this.Clone();
 
             int[] perm;
             int parity;
-            clone.LUDecompose(out perm, out parity);
+            LUDecompose(M, out perm, out parity);
 
-            return (new SquareLUDecomposition(clone.values, perm, parity));
+            return (new SquareLUDecomposition(M, perm, parity));
         }
 
 
-        // On return, the lower left part of the matrix is the L matrix (whoose diagonal elements are one),
-        // and the upper left part of the matrix (including the diagonal) is the U matrix. The perm vector
-        // records the row-wise permutations that were undertaken.
-        private void LUDecompose (out int[] perm, out int parity) {
+        private static void LUDecompose (SquareMatrix M, out int[] permutations, out int parity) {
 
-        	// Keep track of permutations and parity
-			perm = new int[dimension];
-			for (int i=0; i<dimension; i++) {
-				perm[i] = i;
-			}
+            int n = M.Dimension;
+
+            // keep track of row permutations and their parity
+            permutations = new int[n];
+            for (int i = 0; i < n; i++) {
+                permutations[i] = i;
+            }
             parity = 1;
 
-            // Loop over columns
-			for (int j=0; j<dimension; j++) {
+            // go on a diagonal march
+            for (int d = 0; d < n; d++) {
 
-                // storage for pivot row and pivot element value
-                int p = 0;
-                double pe = 0.0;
+                // compute the linear combination of elements that will appear in the numerator of
+                // each element of L in the column below the diagonal, but don't yet divide by the
+                // pivot, because we don't yet know what it will be
 
-				// do sums over rows
-				for (int i=0; i<j; i++) {
-					for (int k=0; k<i; k++) {
-						values[i,j] -= values[i,k] * values[k,j];
-					}
-				}
+                // while we are doing this, consider each result as a possible pivot element,
+                // choosing the one with the largest magnitude
 
-				for (int i=j; i<dimension; i++) {
-					for (int k=0; k<j; k++) {
-					    values[i,j] -= values[i,k] * values[k,j];
-					}
+                int p = -1;
+                double q = 0.0;
 
-					// decide on a pivot
-					if (Math.Abs(values[i,j]) > pe) {
-						p = i;
-						pe = Math.Abs(values[i,j]);
-					}
+                for (int r = d; r < n; r++) {
+                    double t = M.GetEntry(r, d);
+                    //double t = M[r, d];
+                    for (int i = 0; i < d; i++) {
+                        t -= M.GetEntry(r, i) * M.GetEntry(i, d);
+                        //t -= M[r, i] * M[i, d];
+                    }
+                    M.SetEntry(r, d, t);
+                    //M[r, d] = t;
 
-				}
+                    if (Math.Abs(t) > Math.Abs(q)) {
+                        p = r;
+                        q = t;
+                    }
+                }
 
-				// if necessary, interchange rows to obtain the desired pivot
-				if (p != j) {
-					for (int k=0; k<dimension; k++) {
-						double t = values[p,k];
-						values[p,k] = values[j,k];
-						values[j,k] = t;
-					}
-					int tp = perm[p];
-					perm[p] = perm[j];
-					perm[j] = tp;
+                // don't get confused by the fact that the pivot is not an entry of the original matrix
+                // what makes it the pivot is that we divide by it; this is simply a difference
+                // between Crout's algorithm and classical Gaussian elimination
+
+                // check for a zero pivot
+                if (q == 0.0) throw new DivideByZeroException();
+
+                // permute rows to put the pivot element on the diagonal
+                if (p != d) {
+                    for (int c = 0; c < n; c++) {
+                        //double t = M[d, c];
+                        double t = M.GetEntry(d, c);
+                        //M[d, c] = M[p, c];
+                        M.SetEntry(d, c, M.GetEntry(p, c));
+                        //M[p, c] = t;
+                        M.SetEntry(p, c, t);
+                    }
+                    int t_permutation = permutations[d];
+                    permutations[d] = permutations[p];
+                    permutations[p] = t_permutation;
                     parity = -parity;
-				}
+                }
 
-				// divide the appropriate elements by the pivot
-				if (values[j,j] == 0.0) throw new DivideByZeroException("Singular matrix");
-				for (int i=j+1; i<dimension; i++) {
-					values[i,j] = values[i,j] / values[j,j];
-				}
-			}
+                // now divide the subdiagonal elements by the chosen pivot element
+                for (int r = d + 1; r < n; r++) {
+                    M.SetEntry(r, d, M.GetEntry(r, d) / q);
+                    //M[r, d] = M[r, d] / q;
+                }
+
+                // compute the elements of U in the row to the right of the diagonal element
+                for (int c = d + 1; c < n; c++) {
+                    //double t = M[d, c];
+                    double t = M.GetEntry(d, c);
+                    for (int i = 0; i < d; i++) {
+                        t -= M.GetEntry(d, i) * M.GetEntry(i, c);
+                        //t -= M[d, i] * M[i, c];
+                    }
+                    //M[d, c] = t;
+                    M.SetEntry(d, c, t);
+                }
+
+            }
+
 
         }
 
@@ -794,9 +748,9 @@ namespace Meta.Numerics.Matrices {
 
                         // up the iteration count
                         count++;
-                        if (count > (countMax-5)) {
-                            PrintMatrix(A);
-                        }
+                        //if (count > (countMax-5)) {
+                        //    PrintMatrix(A);
+                        //}
                         if (count > countMax) {
                             throw new NonconvergenceException();
                         }
@@ -1195,7 +1149,7 @@ namespace Meta.Numerics.Matrices {
         }
 
         [Conditional("DEBUG")]
-        private static void PrintMatrix (IMatrix M) {
+        internal static void PrintMatrix (IMatrix M) {
             for (int r = 0; r < M.RowCount; r++) {
                 for (int c = 0; c < M.ColumnCount; c++) {
                     Debug.Write(String.Format("{0,12:g8} ", M[r, c]));
@@ -1206,6 +1160,7 @@ namespace Meta.Numerics.Matrices {
         }
         
 
+        [Conditional("DEBUG")]
         private static void PrintVector (IList<double> v) {
             for (int i = 0; i < v.Count; i++) {
                 Debug.Write(String.Format("{0} ", v[i]));
@@ -1425,10 +1380,12 @@ namespace Meta.Numerics.Matrices {
             SquareMatrix N = new SquareMatrix(M1.Dimension);
             for (int r = 0; r < N.Dimension; r++) {
                 for (int c = 0; c < N.Dimension; c++) {
-                    N[r, c] = 0.0;
+                    // using a temp register, instead of accessing N[r,c] inside loop, buys nearly a factor of 2 in performance
+                    double t = 0.0; 
                     for (int i = 0; i < N.Dimension; i++) {
-                        N[r, c] += M1[r, i] * M2[i, c];
+                        t += M1[r, i] * M2[i, c];
                     }
+                    N[r, c] = t;
                 }
             }
             return (N);
@@ -1445,6 +1402,20 @@ namespace Meta.Numerics.Matrices {
         /// <para>Matrix multiplication is an O(N<sup>3</sup>) process.</para>
         /// </remarks>
         public static SquareMatrix operator * (SquareMatrix M1, SquareMatrix M2) {
+            if (M1.Dimension != M2.Dimension) throw new DimensionMismatchException();
+            SquareMatrix N = new SquareMatrix(M1.Dimension);
+            for (int r = 0; r < N.Dimension; r++) {
+                for (int c = 0; c < N.Dimension; c++) {
+                    // using a temp register, instead of accessing N[r,c] inside loop, buys nearly a factor of 2 in performance!
+                    double t = 0.0;
+                    for (int i = 0; i < N.Dimension; i++) {
+                        t += M1.GetEntry(r, i) * M2.GetEntry(i, c);
+                    }
+                    N.SetEntry(r, c, t);
+                }
+            }
+            return (N);
+
             return (Multiply(M1, M2));
         }
 
@@ -1503,16 +1474,16 @@ namespace Meta.Numerics.Matrices {
     /// <seealso cref="SquareMatrix"/>
     public class SquareLUDecomposition : ISquareDecomposition {
 
-        private double[,] lu;
+        private SquareMatrix lu;
         private int[] perm;
-        private int pi;
+        private int parity;
 
         /// <summary>
         /// Gets the dimension of the system.
         /// </summary>
         public int Dimension {
             get {
-                return (lu.GetLength(0));
+                return (lu.Dimension);
             }
         }
 
@@ -1522,7 +1493,7 @@ namespace Meta.Numerics.Matrices {
         /// <returns></returns>
         public double Determinant () {
             double lnDet = 0.0;
-            int sign = pi;
+            int sign = parity;
             for (int i = 0; i < Dimension; i++) {
                 if (lu[i, i] < 0.0) {
                     sign = -sign;
@@ -1546,25 +1517,30 @@ namespace Meta.Numerics.Matrices {
         public ColumnVector Solve (IList<double> rhs) {
             if (rhs.Count != Dimension) throw new DimensionMismatchException();
 
-            // solve Ly = x
-            double[] y = new double[Dimension];
-            for (int i = 0; i < Dimension; i++) {
-                y[i] = rhs[perm[i]]; // unscramble rows
+            int n = Dimension;
+
+            ColumnVector x = new ColumnVector(n);
+
+            // unscramble and solve Ly=z
+            for (int i = 0; i < n; i++) {
+                double t = rhs[perm[i]];
                 for (int j = 0; j < i; j++) {
-                    y[i] -= lu[i, j] * y[j];
+                    t -= lu.GetEntry(i, j) * x[j];
                 }
+                x[i] = t;
             }
 
-            // solve Uz = y
-            double[] z = new double[Dimension];
-            for (int i = (Dimension - 1); i >= 0; i--) {
-                z[i] = y[i];
-                for (int j = (Dimension - 1); j > i; j--) {
-                    z[i] -= lu[i, j] * z[j];
+            // solve Ux = y
+            for (int i = n - 1; i >= 0; i--) {
+                double t = x[i];
+                for (int j = n - 1; j > i; j--) {
+                    t -= lu.GetEntry(i, j) * x[j];
                 }
-                z[i] = z[i] / lu[i, i];
+                x[i] = t / lu.GetEntry(i, i);
             }
-            return (new ColumnVector(z));
+
+            return (x);
+
         }
 
         /// <summary>
@@ -1572,18 +1548,55 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns></returns>
         public SquareMatrix Inverse () {
-            SquareMatrix MI = new SquareMatrix(Dimension);
 
-            // back-substitute to determine each column
-            for (int c = 0; c < Dimension; c++) {
-                ColumnVector rhs = new ColumnVector(Dimension);
-                for (int r=0; r<Dimension; r++) rhs[r] = 0.0;
-                rhs[c] = 1.0;
-                ColumnVector lhs = Solve(rhs);
-                for (int r=0; r<Dimension; r++) MI[r,c] = lhs[r];
+            // this is basically just inserting unit vectors into Solve,
+            // but we reproduce that logic so as to take some advantage
+            // of the fact that most of the components are zero
+
+            int n = Dimension;
+
+            SquareMatrix MI = new SquareMatrix(n);
+
+            // iterate over the columns
+            for (int c = 0; c < n; c++) {
+
+                // we are dealing with the k'th unit vector
+                // the c'th unit vector gets mapped to the k'th unit vector, where perm[k] = c
+
+                // solve L y = e_k
+                // components below the k'th are zero; this loop determines k as it zeros lower components
+                int k = 0;
+                while (perm[k] != c) {
+                    MI.SetEntry(k, c, 0.0);
+                    k++;
+                }
+                // the k'th component is one
+                MI[k, c] = 1.0;
+                // higher components are non-zero...
+                for (int i = k+1; i < n; i++) {
+                    double t = 0.0;
+                    // ...but loop to compute them need only go over j for which MI[j, c] != 0, i.e. j >= k
+                    for (int j = k; j < i; j++) {
+                        t -= lu.GetEntry(i, j) * MI.GetEntry(j, c);
+                    }
+                    MI.SetEntry(i, c, t);
+                }
+
+                // solve U x = y
+                // at this stage, the first few components of y are zero and component k is one
+                // but this doesn't let us limit the loop any further, since we already only loop over j > i 
+                for (int i = n - 1; i >= 0; i--) {
+                    double t = MI.GetEntry(i, c);
+                    for (int j = n - 1; j > i; j--) {
+                        t -= lu.GetEntry(i, j) * MI.GetEntry(j, c);
+                    }
+                    MI.SetEntry(i, c, t / lu.GetEntry(i, i));
+                }
+
             }
 
             return (MI);
+
         }
 
         ISquareMatrix ISquareDecomposition.Inverse () {
@@ -1631,10 +1644,10 @@ namespace Meta.Numerics.Matrices {
             return (P);
         }
 
-        internal SquareLUDecomposition (double[,] lu, int[] perm, int pi) {
+        internal SquareLUDecomposition (SquareMatrix lu, int[] perm, int pi) {
             this.lu = lu;
             this.perm = perm;
-            this.pi = pi;
+            this.parity = pi;
         }
 
     }

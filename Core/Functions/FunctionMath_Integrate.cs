@@ -100,10 +100,20 @@ namespace Meta.Numerics.Functions {
                 // -infinity to finite
 
                 // remap to interval (-1,1)
+                double b0 = range.RightEndpoint;
+                Function<double, double> f0 = integrand;
+                Function<double, double> f1 = delegate (double t) {
+                    double q = t + 1.0;
+                    double x = b0 + (t - 1.0) / q;
+                    return(f0(x) * (2.0 / q / q));
+                };
+                Interval r1 = Interval.FromEndpoints(-1.0, 1.0);
 
-                throw new NotImplementedException();
+                return(Integrate(f1, r1));
 
             }
+
+            // normal integral over a finitite range
 
             IAdaptiveIntegrator integrator = new GaussKronrodIntegrator(integrand, range);
             IntegrationResult result = Integrate_Adaptive(integrator, new EvaluationSettings());

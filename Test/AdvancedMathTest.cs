@@ -115,7 +115,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void BesselIntegralTest () {
+        public void BesselJ0IntegralTest () {
             Interval r = Interval.FromEndpoints(0.0, Math.PI);
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
                 Function<double, double> f = delegate(double t) {
@@ -124,6 +124,54 @@ namespace Test
                 double J0 = FunctionMath.Integrate(f, r) / Math.PI;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselJ(0, x), J0));
             }
+        }
+
+        [TestMethod]
+        public void BesselY0IntegralTest () {
+            Interval r = Interval.FromEndpoints(0.0, Math.PI / 2.0);
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
+                Function<double, double> f = delegate(double t) {
+                    double s = Math.Sin(t);
+                    return (Math.Cos(x * Math.Cos(t)) * (AdvancedMath.EulerGamma + Math.Log(2.0 * x * s * s)));
+                };
+                double Y0 = 4.0 / (Math.PI * Math.PI) * FunctionMath.Integrate(f, r);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselY(0, x), Y0));
+            }
+        }
+
+        [TestMethod]
+        public void BesselJIntegralTest () {
+            Interval r = Interval.FromEndpoints(0.0, Math.PI);
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 5)) {
+                foreach (int n in TestUtilities.GenerateIntegerValues(0, 1, 3)) {
+                    Function<double, double> f = delegate(double t) {
+                        return (Math.Cos(x * Math.Sin(t) - n * t));
+                    };
+                    double J = FunctionMath.Integrate(f, r) / Math.PI;
+                    Console.WriteLine("{0} {1} {2} {3}", n, x, AdvancedMath.BesselJ(n, x), J);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselJ(n, x), J));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void BesselKapteynIntegralTest () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
+                Function<double, double> f = delegate(double t) {
+                    return (Math.Cos(x - t) * AdvancedMath.BesselJ(0, t));
+                };
+                Interval r = Interval.FromEndpoints(0.0, x);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(x * AdvancedMath.BesselJ(0, x), FunctionMath.Integrate(f, r)));
+            }
+        }
+
+        [TestMethod]
+        public void BesselLipshitzIntegralTest () {
+            Function<double, double> f = delegate(double t) {
+                return (Math.Exp(-t) * AdvancedMath.BesselJ(0, t));
+            };
+            Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(FunctionMath.Integrate(f, r), 1.0 / Math.Sqrt(2.0)));
         }
 
         [TestMethod]
@@ -228,6 +276,21 @@ namespace Test
 
             }
 
+        }
+
+        [TestMethod]
+        public void RealBesselJIntegralTest () {
+            foreach (double nu in TestUtilities.GenerateRealValues(0.1, 10.0, 3)) {
+                foreach (double x in TestUtilities.GenerateRealValues(0.01, 100.0, 3)) {
+                    Function<double, double> f = delegate(double t) {
+                        return (Math.Cos(x * Math.Cos(t)) * Math.Pow(Math.Sin(t), 2.0 * nu));
+                    };
+                    Interval r = Interval.FromEndpoints(0.0, Math.PI);
+                    double I = FunctionMath.Integrate(f, r);
+                    I = I * Math.Pow(x / 2.0, nu) / AdvancedMath.Gamma(nu + 0.5) / AdvancedMath.Gamma(0.5);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselJ(nu, x), I));
+                }
+            }
         }
 
         [TestMethod]
@@ -471,6 +534,33 @@ namespace Test
         public void IncompleteGammaExpTest () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 20)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(1.0, x), Math.Exp(-x)));
+            }
+        }
+
+        [TestMethod]
+        public void BetaIntegralTest () {
+            // a and b values less than one correspond to singular integrals
+            foreach (double a in TestUtilities.GenerateRealValues(1.0, 10.0, 3)) {
+                foreach (double b in TestUtilities.GenerateRealValues(1.0, 10.0, 3)) {
+                    double B = AdvancedMath.Beta(a, b);
+                    Function<double, double> f = delegate(double t) {
+                        return (Math.Pow(t, a - 1.0) * Math.Pow(1.0 - t, b - 1.0));
+                    };
+                    Interval r = Interval.FromEndpoints(0.0, 1.0);
+                    double I = FunctionMath.Integrate(f, r);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(B, I));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void BetaTransformationTest () {
+            foreach (double a in TestUtilities.GenerateRealValues(0.1, 10.0, 3)) {
+                foreach (double b in TestUtilities.GenerateUniformRealValues(0.0, 1.0, 3)) {
+                    double B1 = AdvancedMath.Beta(a, b);
+                    double B2 = AdvancedMath.Beta(a + b, 1.0 - b);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(B1 * B2, Math.PI / a / Math.Sin(Math.PI * b)));
+                }
             }
         }
 

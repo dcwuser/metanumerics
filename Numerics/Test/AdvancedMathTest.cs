@@ -175,6 +175,15 @@ namespace Test
         }
 
         [TestMethod]
+        public void BesselWeberIntegralTest () {
+            Function<double, double> f = delegate(double t) {
+                return (Math.Exp(-t*t) * AdvancedMath.BesselJ(0, t) * t);
+            };
+            Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(FunctionMath.Integrate(f, r), Math.Exp(-1.0/4.0) / 2.0));
+        }
+
+        [TestMethod]
         public void BesselAgreementTest () {
             foreach (int n in TestUtilities.GenerateIntegerValues(0,2,5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,15)) {
@@ -196,7 +205,21 @@ namespace Test
                 }
             }
         }
-        
+
+        [TestMethod]
+        public void RealBesselInequalityTest () {
+            foreach (double nu in TestUtilities.GenerateRealValues(0.5, 50.0, 3)) {
+                foreach (double x in TestUtilities.GenerateRealValues(nu, 100.0, 3)) {
+                    if (!BesselYInRange(nu, x)) continue;
+                    double J = AdvancedMath.BesselJ(nu, x);
+                    double Y = AdvancedMath.BesselY(nu, x);
+                    double S = J * J + Y * Y;
+                    Assert.IsTrue(2.0 / Math.PI / x <= S);
+                    Assert.IsTrue(S <= 2.0 / Math.PI / Math.Sqrt(x * x - nu * nu));
+                }
+            }
+        }
+
         [TestMethod]
         public void RealBesselFresnelTest () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2,1.0E2,5)) {
@@ -846,6 +869,114 @@ namespace Test
             }
         }
         */
+
+#if FUTURE
+
+        [TestMethod]
+        public void ModifiedBesselSpecialCaseTest () {
+            Assert.IsTrue(AdvancedMath.BesselI(0, 0.0) == 1.0);
+            Assert.IsTrue(AdvancedMath.BesselI(1, 0.0) == 0.0);
+            Assert.IsTrue(AdvancedMath.BesselI(10, 0.0) == 0.0);
+        }
+
+        [TestMethod]
+        public void ModifiedBesselRecurrenceTest () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 4)) {
+                foreach (double x in TestUtilities.GenerateRealValues(0.03, 300.0, 4)) {
+                    // don't let x get too big or I(x) will explode
+
+                    double IM = AdvancedMath.BesselI(n - 1, x);
+                    double I0 = AdvancedMath.BesselI(n, x);
+                    double IP = AdvancedMath.BesselI(n + 1, x);
+
+                    Console.WriteLine("{0} {1} IM={2} I0={3} IP={4}", n, x, IM, I0, IP);
+                    Console.WriteLine("  {0} ?= {1}", IM, (2.0 * n / x) * I0 + IP);
+
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(IM, (2.0 * n / x) * I0 + IP));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void ModifiedBesselTowerTest () {
+
+            // x shouldn't be too big or we will need too many terms before the series converges
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 10)) {
+
+                // S1 = I0 + 2 I1 + 2 I2 + 2 I3 + ... = e^x
+                // S2 = I0 + 2 I2 + 2 I4 + 2 I8 + ... = cosh x
+                // S3 = 2 I1 + 2 I3 + 2 I5 + 2 I7 + ... = sinh x 
+
+                double I0 = AdvancedMath.BesselI(0, x);
+
+                double s1 = I0;
+                double s2 = I0;
+                double s3 = 0.0;
+
+                int n = 1;
+                while (true) {
+
+                    double s1_old = s1;
+                    double s2_old = s2;
+                    double s3_old = s3;
+
+                    double I1 = AdvancedMath.BesselI(2 * n - 1, x);
+                    double I2 = AdvancedMath.BesselI(2 * n, x);
+
+                    s1 += 2.0 * (I1 + I2);
+                    s2 += 2.0 * I2;
+                    s3 += 2.0 * I1;
+
+                    if ((s1 == s1_old) && (s2 == s2_old) && (s3 == s3_old)) break;
+
+                    n++;
+                    if (n > 100) throw new NonconvergenceException();
+
+                }
+                Console.WriteLine("x={0}, n={1}", x, n);
+
+                Console.WriteLine("{0} {1}", s1, Math.Exp(x));
+                Console.WriteLine("{0} {1}", s2, Math.Cosh(x));
+                Console.WriteLine("{0} {1}", s3, Math.Sinh(x));
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(s1, Math.Exp(x)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(s2, Math.Cosh(x)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(s3, Math.Sinh(x)));
+
+            }
+
+        }
+
+        [TestMethod]
+        public void ModifiedBesselI0IntegralTest () {
+            foreach (double x in TestUtilities.GenerateRealValues(0.003, 300.0, 6)) {
+                // don't let x get too big or I(x) will explode
+                Function<double,double> f = delegate (double t) {
+                    return( Math.Cosh(x * Math.Cos(t) ) );
+                };
+                Interval r = Interval.FromEndpoints(0.0, Math.PI);
+                double I = FunctionMath.Integrate(f, r) / Math.PI;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselI(0, x), I));
+            }
+        }
+
+        [TestMethod]
+        public void ModifiedBesselInIntegralTest () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 4)) {
+                foreach (double x in TestUtilities.GenerateRealValues(0.03, 300.0, 4)) {
+                    // don't let x get too big or I(x) will explode
+                    Function<double, double> f = delegate(double t) {
+                        return (Math.Exp(x * Math.Cos(t)) * Math.Cos(n * t));
+                    };
+                    Interval r = Interval.FromEndpoints(0.0, Math.PI);
+                    double I = FunctionMath.Integrate(f, r) / Math.PI;
+                    Console.WriteLine("{0} {1} {2} {3}", n, x, I, AdvancedMath.BesselI(n, x));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselI(n, x), I));
+                }
+            }
+        }
+
+#endif
 
     }
 }

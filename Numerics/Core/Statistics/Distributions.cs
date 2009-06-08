@@ -135,7 +135,7 @@ namespace Meta.Numerics.Statistics {
 			this.range = range;
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
 		public override double ProbabilityDensity (double x) {
 			if (range.ClosedContains(x)) {
 				return( 1.0 / (range.Width) );
@@ -144,7 +144,7 @@ namespace Meta.Numerics.Statistics {
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double LeftProbability (double x) {
 			if (x < range.LeftEndpoint) {
 				return(0.0);
@@ -155,13 +155,13 @@ namespace Meta.Numerics.Statistics {
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
 			if ((P<0.0) || (P>1.0)) throw new ArgumentOutOfRangeException("P");
 			return( range.LeftEndpoint * (1.0-P) + range.RightEndpoint * P );
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Moment (int n) {
             if (n < 0) throw new ArgumentOutOfRangeException("n");
             if (n == 0) {
@@ -201,7 +201,7 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double MomentAboutMean (int n) {
             if (n < 0) throw new ArgumentOutOfRangeException("n");
             if ((n % 2) != 0) {
@@ -211,28 +211,28 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Mean {
 			get {
 				return(range.Midpoint);
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double StandardDeviation {
 			get {
 				return( range.Width / Math.Sqrt(12.0) );
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Median {
             get {
                 return (Mean);
             }
         }
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override Interval Support {
             get {
                 return (range);
@@ -246,11 +246,18 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     /// <remarks>A normal distribution is a bell-shaped curve centered at its mean and falling off symmetrically on each side. It is
     /// a two-parameter distribution determined by giving its mean and standard deviation, i.e. its center and width. Its range is the
-    /// entire real number line, but in the tails, i.e. far from the center, it falls off extremely rapidly.
-    /// <para>A normal distribution with mean zero and standard deviation one is called a standard normal distribution.</para>
+    /// entire real number line, but the tails, i.e. points more than a few standard deviations from the means, fall off extremely rapidly.
+    /// <para>A normal distribution with mean zero and standard deviation one is called a standard normal distribution. Any normal distribution
+    /// can be converted to a standard normal distribution by reparameterzing the data in terms of "standard deviations from the mean",
+    /// i.e. z = (x - &#x3BC;) / &#x3C3;.</para>
+    /// <para>Normal distribution appear in many contexts. In practical work, the normal distribution is often used as a crude
+    /// model for the distribution of any continuous parameter that tends to cluster near its average, for example human height
+    /// and weight. In more refined theoretical work, the normal distribution often emerges as a limiting distribution. For example,
+    /// it can be shown that, if a large number of errors affect a measurement, then for nearly any underlying distribution
+    /// of error terms, the distribution of total error tends to a normal distribution.</para>
     /// <para>The normal distribution is sometimes called a Gaussian distribtuion, after the mathematician Friedrich Gauss.</para>
     /// </remarks>
-    /// <seealso cref="http://en.wikipedia.org/wiki/Normal_distribution"/>
+    /// <seealso href="http://en.wikipedia.org/wiki/Normal_distribution"/>
 	public class NormalDistribution : Distribution {
 
 		private double mu, sigma;
@@ -274,7 +281,7 @@ namespace Meta.Numerics.Statistics {
         /// <remarks>The standard normal distribution has mean zero and standard deviation one.</remarks>
 		public NormalDistribution () : this(0.0,1.0) {}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
 			double z = (x - mu)/sigma;
 			return( (c/sigma) * Math.Exp(-z*z/2.0) );
@@ -282,7 +289,7 @@ namespace Meta.Numerics.Statistics {
 
 		private static readonly double Sqrt2 = Math.Sqrt(2.0);
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double LeftProbability (double x) {
 			double z = (x - mu)/sigma;
 			if (z<0.0) {
@@ -292,7 +299,7 @@ namespace Meta.Numerics.Statistics {
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double RightProbability (double x) {
 			double z = (x - mu)/sigma;
 			if (z<0.0) {
@@ -302,7 +309,7 @@ namespace Meta.Numerics.Statistics {
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Moment (int n) {
             if (n < 0) throw new ArgumentOutOfRangeException("n");
             if (n == 0) {
@@ -321,7 +328,7 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double MomentAboutMean (int n) {
 			if (n < 0) throw new ArgumentOutOfRangeException("n");
 			if ((n % 2) == 0) {
@@ -337,28 +344,28 @@ namespace Meta.Numerics.Statistics {
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Mean {
 			get {
 				return(mu);
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double StandardDeviation {
 			get {
 				return(sigma);
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Median {
             get {
                 return (mu);
             }
         }
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
 
@@ -374,9 +381,11 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     /// <remarks>
     /// <para>An exponential distribution falls off exponentially in the range from zero to infinity. It is a one-parameter
-    /// distribution, determined entirely by its rate of fall-off. The exponential distribution describes the distribution
-    /// of decay times of radioactive particles.</para></remarks>
-    /// <seealso cref="http://en.wikipedia.org/wiki/Exponential_distribution"/>
+    /// distribution, determined entirely by its rate of fall-off.</para>
+    /// <para>The exponential distribution describes the distribution of decay times of radioactive particles.</para>
+    /// </remarks>
+    /// <seealso href="WeibullDistribution"/>
+    /// <seealso href="http://en.wikipedia.org/wiki/Exponential_distribution"/>
 	public class ExponentialDistribution : Distribution {
 
 		private double mu;
@@ -390,7 +399,7 @@ namespace Meta.Numerics.Statistics {
 			this.mu = mu;
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             if (x < 0.0) {
                 return (0.0);
@@ -399,7 +408,7 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double LeftProbability (double x) {
             if (x < 0.0) {
                 return (0.0);
@@ -423,7 +432,7 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double RightProbability (double x) {
             if (x < 0.0) {
                 return (1.0);
@@ -432,14 +441,14 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
 			if ((P<0.0) || (P>1.0)) throw new ArgumentOutOfRangeException("P");
             // if P is very small, use the inverted series
 			return(-mu * Math.Log(1.0-P));
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Moment (int n) {
             if (n < 0) throw new ArgumentOutOfRangeException("n");
             if (n == 0) {
@@ -451,7 +460,7 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double MomentAboutMean (int n) {
             if (n < 0) throw new ArgumentOutOfRangeException("n");
             if (n == 0) {
@@ -469,28 +478,28 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Mean {
 			get {
 				return(mu);
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double StandardDeviation {
 			get {
 				return(mu);
 			}
 		}
 
-        /// <usebase />
+        /// <inheritdoc />
         public override double Median {
             get {
                 return (mu * Math.Log(2.0));
             }
         }
 
-        /// <usebase />
+        /// <inheritdoc />
         public override Interval Support {
             get {
                 return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
@@ -502,13 +511,14 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents a &#x3C7;<sup>2</sup> distribution.
     /// </summary>
-    /// <remarks>A chi squared distribution is an asymmetrical distribution ranging from zero to infinity with a peak near its
-    /// number of degrees of freedom &#x3BD; (nu). It is a one-parameter distribution determined entirely by the parameter nu.
+    /// <remarks>
+    /// <para>A chi squared distribution is an asymmetrical distribution ranging from zero to infinity with a peak near its
+    /// number of degrees of freedom &#x3BD; (nu). It is a one-parameter distribution determined entirely by the parameter nu.</para>
     /// <para>Technically, the &#x3C7;<sup>2</sup> distribution is the distribution of a sum of the squares of &#x3BD; independent
     /// standard-normally distributed variables. In practice it is most often encountered in data fitting or contingency testing.</para>
     /// </remarks>
     /// <seealso cref="ContingencyTable.PearsonChiSquaredTest"/>
-    /// <seealso cref="http://en.wikipedia.org/wiki/Chi-square_distribution" />
+    /// <seealso href="http://en.wikipedia.org/wiki/Chi-square_distribution" />
 	public class ChiSquaredDistribution : Distribution {
 
 		private int nu;
@@ -531,7 +541,7 @@ namespace Meta.Numerics.Statistics {
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             if (x < 0.0) {
                 return (0.0);
@@ -542,7 +552,7 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double LeftProbability (double x) {
             if (x < 0.0) {
                 return (0.0);
@@ -551,7 +561,7 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double RightProbability (double x) {
             if (x < 0.0) {
                 return (1.0);
@@ -560,7 +570,7 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
 			if ((P<0.0) || (P>1.0)) throw new ArgumentOutOfRangeException("P");
             return (base.InverseLeftProbability(P));
@@ -568,7 +578,7 @@ namespace Meta.Numerics.Statistics {
 		}
 
 		// improve this
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Moment (int n) {
             if (n < 0) throw new ArgumentOutOfRangeException("n");
             if (n == 0) {
@@ -588,7 +598,7 @@ namespace Meta.Numerics.Statistics {
 		}
 
         // implement this
-        /// <usebase/>
+        /// <inheritdoc />
         public override double MomentAboutMean (int n) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
@@ -627,21 +637,21 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Mean {
 			get {
 				return(nu);
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double StandardDeviation {
 			get {
 				return(Math.Sqrt(2.0*nu));
 			}
 		}
 
-        /// <usebase />
+        /// <inheritdoc />
         public override double Median {
             get {
                 // start with an approximation
@@ -656,7 +666,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        /// <usebase />
+        /// <inheritdoc />
         public override Interval Support {
             get {
                 return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
@@ -673,6 +683,7 @@ namespace Meta.Numerics.Statistics {
     /// for the mean of a sample divided by its standard deviation, the Student distribution expresses the distribution of
     /// sample means arround the population mean, for a normally distributed population.</para></remarks>
     /// <seealso cref="Sample.StudentTTest(Double)"/>
+    /// <seealso href="http://en.wikipedia.org/wiki/Student_t_distribution" />
 	public class StudentDistribution : Distribution {
 
 		private double nu;
@@ -695,12 +706,12 @@ namespace Meta.Numerics.Statistics {
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double ProbabilityDensity (double t) {
 			return( Math.Pow(1.0+t*t/nu, -0.5*(nu+1.0)) / AdvancedMath.Beta(0.5,0.5*nu) / Math.Sqrt(nu) );
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double LeftProbability (double t) {
 			double t2 = t*t;
 			if (t<0.0) {
@@ -710,7 +721,7 @@ namespace Meta.Numerics.Statistics {
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double RightProbability (double t) {
 			double t2 = t*t;
 			if (t<0.0) {
@@ -720,7 +731,7 @@ namespace Meta.Numerics.Statistics {
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Moment (int n) {
 			if (n < 0) throw new ArgumentOutOfRangeException("n");
  
@@ -740,19 +751,19 @@ namespace Meta.Numerics.Statistics {
  
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double MomentAboutMean (int n) {
 			return( Moment(n) );
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Mean {
 			get {
 				return(0.0);
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double StandardDeviation {
 			get {
                 if (nu <= 2.0) {
@@ -763,7 +774,7 @@ namespace Meta.Numerics.Statistics {
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Median {
             get {
                 return (0.0);
@@ -813,7 +824,7 @@ namespace Meta.Numerics.Statistics {
 			this.nu2 = nu2;
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double ProbabilityDensity (double F) {
             if (F < 0.0) {
                 return (0.0);
@@ -824,7 +835,7 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double LeftProbability (double F) {
             if (F < 0.0) {
                 return (0.0);
@@ -833,7 +844,7 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double RightProbability (double F) {
             if (F < 0.0) {
                 return (1.0);
@@ -842,7 +853,7 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Mean {
 			get {
                 if (nu2 < 2.0) {
@@ -853,7 +864,7 @@ namespace Meta.Numerics.Statistics {
 			}
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double StandardDeviation {
 			get {
 				if (nu2 < 4.0) {
@@ -865,7 +876,7 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Moment (int n) {
             if (n < 0) throw new ArgumentOutOfRangeException("n");
             if (n == 0) {
@@ -885,7 +896,7 @@ namespace Meta.Numerics.Statistics {
             }
 		}
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double MomentAboutMean (int n) {
 			throw new NotImplementedException();
 		}
@@ -985,7 +996,7 @@ namespace Meta.Numerics.Statistics {
 
         private double scale = 1.0;
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             if (x <= 0.0) {
                 return (0.0);
@@ -997,6 +1008,25 @@ namespace Meta.Numerics.Statistics {
         }
 
         private static double p_SmallX (double x) {
+
+            /*
+            double x1 = Math.PI / x / 2.0;
+            double x2 = x1 * x1;
+            double r = Math.Exp(- x2 / 2.0);
+            double rr = r * r;
+            double f = 0.0;
+            for (int k = 1; k < Global.SeriesMax; k += 2) {
+                double f_old = f;
+                double df = r * (k * x2 - 1.0);
+                f += df;
+                if (f == f_old) {
+                    return (Math.Sqrt(2.0 * Math.PI) / x / x * f);
+                }
+                r = r * rr;
+            }
+            */
+
+            
             double p = 0.0;
             for (int k = 1; k < Global.SeriesMax; k += 2) {
                 double p_old = p;
@@ -1006,6 +1036,7 @@ namespace Meta.Numerics.Statistics {
                 //Console.WriteLine("{0} {1} {2} {3} {4}", k, z, Math.Exp(-z * z / 2.0), dp, p);
                 if (p == p_old) return (Math.Sqrt(2.0 * Math.PI) / (x * x) * p);
             }
+            
             
             /*
             for (int k = 0; k < Global.SeriesMax; k++) {
@@ -1053,7 +1084,7 @@ namespace Meta.Numerics.Statistics {
         }
 
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double LeftProbability (double x) {
             if (x <= 0.0) {
                 return (0.0);
@@ -1064,7 +1095,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double RightProbability (double x) {
             if (x <= 0.0) {
                 return (1.0);
@@ -1083,6 +1114,33 @@ namespace Meta.Numerics.Statistics {
             if (x == 0) {
                 return (0.0);
             } else {
+
+                double p = 0.0;
+                for (int k = 1; k < Global.SeriesMax; k += 2) {
+                    double p_old = p;
+                    double z = k * Math.PI / x / 2.0;
+                    double dp = Math.Exp(-z * z / 2.0);
+                    p += dp;
+                    //Console.WriteLine("{0} {1} {2} {3} {4}", k, z, Math.Exp(-z * z / 2.0), dp, p);
+                    if (p == p_old) return (Math.Sqrt(2.0 * Math.PI) / x * p);
+                }
+
+                /*
+                double xx = Math.PI / x;
+                double df = Math.Exp(-xx * xx / 8.0);
+                double ff = df * df;
+                double f = df;
+                for (int k = 1; k < Global.SeriesMax; k++) {
+                    double f_old = f;
+                    df = df * ff;
+                    f += df;
+                    if (f == f_old) {
+                        return (Math.Sqrt(2.0 * Math.PI) / x * f);
+                    }
+                }
+                */
+
+                /*
                 double xi = Math.PI / x;
                 double xx = xi * xi / 8.0;
                 double f = 0.0;
@@ -1095,6 +1153,8 @@ namespace Meta.Numerics.Statistics {
                         return (Math.Sqrt(2.0 * Math.PI) / x * f);
                     }
                 }
+                */
+
                 throw new NonconvergenceException();
             }
         }
@@ -1118,14 +1178,14 @@ namespace Meta.Numerics.Statistics {
             throw new NonconvergenceException();
         }
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Mean {
             get {
                 return (Math.Sqrt(Math.PI / 2.0) * Math.Log(2.0) * scale);
             }
         }
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double StandardDeviation {
             get {
                 double ln2 = Math.Log(2.0);
@@ -1133,14 +1193,14 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        /// <usebase />
+        /// <inheritdoc />
         public override double Median {
             get {
                 return (0.82757355518991 * scale);
             }
         }
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double Moment (int n) {
             if (n < 0) throw new ArgumentOutOfRangeException("n");
             if (n == 0) {
@@ -1154,7 +1214,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        /// <usebase/>
+        /// <inheritdoc />
         public override double MomentAboutMean (int n) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
@@ -1175,7 +1235,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        /// <usebase />
+        /// <inheritdoc />
         public override Interval Support {
             get {
                 return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
@@ -1189,11 +1249,24 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     /// <remarks>
     /// <para>A logrithm of a log-normal distributed variable is distributed normally.</para>
+    /// <para>The log-normal distribution is commonly used in financial engineering as a model of stock prices.
+    /// If the rate of return on an asset is distributed normally, then the price will be distribution log-normally.</para>
     /// </remarks>
     /// <seealso cref="NormalDistribution"/>
-    public class LogNormalDistribution : Distribution {
+    /// <seealso href="http://en.wikipedia.org/wiki/Log-normal_distribution" />
+    public class LognormalDistribution : Distribution {
 
-        public LogNormalDistribution (double mu, double sigma) {
+        /// <summary>
+        /// Initializes a log normal distribution.
+        /// </summary>
+        /// <param name="mu">The mean of the underlying normal distribution.</param>
+        /// <param name="sigma">The standard deviation of the underlying normal distribution.</param>
+        /// <remarks>
+        /// <para>Note that the <paramref name="mu"/> and <paramref name="sigma"/> parameters are
+        /// <em>not</em> the mean and standard deviation of the log-normal deviates; they are the
+        /// mean and standard deviation of their logrithms z = ln x.</para>
+        /// </remarks>
+        public LognormalDistribution (double mu, double sigma) {
             if (sigma <= 0.0) throw new ArgumentOutOfRangeException("sigma");
             this.mu = mu;
             this.sigma = sigma;
@@ -1202,28 +1275,28 @@ namespace Meta.Numerics.Statistics {
         private double mu = 0.0;
         private double sigma = 1.0;
 
-        /// <usebase />
+        /// <inheritdoc />
         public override double ProbabilityDensity (double y) {
             if (y <= 0.0) return(0.0);
             double z = (Math.Log(y) - mu) / sigma;
             return( Math.Exp(-z*z / 2.0) / y / (Math.Sqrt(2.0 * Math.PI) * sigma));
         }
 
-        /// <usebase />
+        /// <inheritdoc />
         public override double Mean {
             get {
                 return (Math.Exp(mu + sigma * sigma / 2.0));
             }
         }
 
-        /// <usebase />
+        /// <inheritdoc />
         public override double Median {
             get {
                 return (Math.Exp(mu));
             }
         }
 
-        /// <usebase />
+        /// <inheritdoc />
         public override double StandardDeviation {
             get {
                 return (Math.Sqrt(Es2m1) * Mean);
@@ -1243,13 +1316,14 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        /// <usebase />
+        /// <inheritdoc />
         public override Interval Support {
             get {
                 return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
             }
         }
 
+        /// <inheritdoc />
         public override double LeftProbability (double y) {
             if (y <= 0.0) return (0.0);
             double z = (Math.Log(y) - mu) / sigma;
@@ -1260,6 +1334,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <inheritdoc />
         public override double RightProbability (double y) {
             if (y <= 0.0) return (1.0);
             double z = (Math.Log(y) - mu) / sigma;
@@ -1270,17 +1345,20 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
             double z = Math.Sqrt(2.0) * AdvancedMath.InverseErf(2.0 * P - 1.0);
             return (Math.Exp(mu + sigma * z));
         }
 
+        /// <inheritdoc />
         public override double Moment (int n) {
             if (n < 0) throw new ArgumentOutOfRangeException("n");
             return (Math.Exp(n * mu + n * n * sigma * sigma / 2.0));
         }
 
+        /// <inheritdoc />
         public override double MomentAboutMean (int n) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
@@ -1302,6 +1380,141 @@ namespace Meta.Numerics.Statistics {
                 return (C);
             }
 
+        }
+
+    }
+
+    /// <summary>
+    /// Represents a Weibull distribution.
+    /// </summary>
+    /// <remarks>
+    /// <para>The Weibull distribution is a generalized form of the exponential distriubtion
+    /// for which the decay probability is not constant, but instead increases with time
+    /// (for shape parameters greater than one) or, less commonly, decreases with time (for
+    /// shape parameters less than one). When the shape parameter is one, the Weibull
+    /// distribution reduced to the exponential distribution.</para>
+    /// <para>The Weibull distribution is commonly used in engineering applications to
+    /// model the time-to-failure of industrial componets.</para>
+    /// </remarks>
+    public class WeibullDistribution : Distribution {
+
+        /// <summary>
+        /// Initializes a new Weibull distribution.
+        /// </summary>
+        /// <param name="scale">The scale parameter, which must be positive.</param>
+        /// <param name="shape">The shape parameter, which must be positive.</param>
+        public WeibullDistribution (double scale, double shape) {
+            if (scale <= 0.0) throw new ArgumentOutOfRangeException("scale");
+            if (shape <= 0.0) throw new ArgumentOutOfRangeException("shape");
+            this.scale = scale;
+            this.shape = shape;
+        }
+
+        private double scale;
+
+        private double shape;
+
+        /// <inheritdoc />
+        public override Interval Support {
+            get {
+                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double ProbabilityDensity (double x) {
+            double z = x / scale;
+            double zz = Math.Pow(z, shape);
+            return (Math.Exp(-zz) * zz * shape / x);
+        }
+
+        /// <inheritdoc />
+        public override double LeftProbability (double x) {
+            if (x <= 0.0) {
+                return (0.0);
+            } else {
+                double z = x / scale;
+                double zz = Math.Pow(z, shape);
+                if (zz < 0.5) {
+                    // for small zz, use a series to avoid cancelation (and avoid doing exponentiation)
+                    double dP = zz;
+                    double P = dP;
+                    for (int k = 2; k < Global.SeriesMax; k++) {
+                        double P_old = P;
+                        dP = - dP * zz / k;
+                        P += dP;
+                        if (P == P_old) return (P);
+                    }
+                    throw new NonconvergenceException();
+                } else {
+                    return (1.0 - Math.Exp(-zz));
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public override double RightProbability (double x) {
+            if (x <= 0.0) {
+                return (1.0);
+            } else {
+                double z = x / scale;
+                double zz = Math.Pow(z, shape);
+                return (Math.Exp(-zz));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double InverseLeftProbability (double P) {
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            return (scale * Math.Pow(-Math.Log(1.0 - P), 1.0 / shape));
+        }
+
+        /// <inheritdoc />
+        public override double Mean {
+            get {
+                return (scale * AdvancedMath.Gamma(1.0 + 1.0 / shape));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Median {
+            get {
+                return (scale * Math.Pow(Math.Log(2.0), 1.0 / shape));
+            }
+        }
+
+        // standard deviation inherits from base; nothing special to say about it
+
+        /// <inheritdoc />
+        public override double Moment (int n) {
+            if (n < 0.0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (1.0);
+            } else {
+                return (Math.Pow(scale, n) * AdvancedMath.Gamma(1.0 + n / shape));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double MomentAboutMean (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (1.0);
+            } else if (n == 1) {
+                return (0.0);
+            } else {
+                // this isn't great, but it does the job
+                // expand in terms of moments about the origin
+                // there is likely to be some cancelation, but the distribution is wide enough that it may not matter
+                double mm = -Mean;
+                double C = 0.0;
+                for (int k = 0; k <= n; k++) {
+                    C += AdvancedIntegerMath.BinomialCoefficient(n, k) * Moment(k) * Math.Pow(mm, n - k);
+                }
+                return (C);
+            }
         }
 
     }

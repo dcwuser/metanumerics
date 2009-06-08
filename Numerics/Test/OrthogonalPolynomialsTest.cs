@@ -79,7 +79,6 @@ namespace Test {
                 } else {
                     Assert.IsTrue(OrthogonalPolynomials.HermiteH(n, 0.0) == 0.0);
                 }
-                //Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.HermiteH(n, 0.0), ));
             }
         }
 
@@ -143,6 +142,28 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(sum, Math.Pow(2, n) * AdvancedIntegerMath.Factorial(n)));
             }
         }
+
+        [TestMethod]
+        public void HermiteOrthonormalityTest () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(0.0, 1.5, 3)) {
+                foreach (int m in TestUtilities.GenerateIntegerValues(0.0, 1.5, 3)) {
+                    Function<double, double> f = delegate(double x) {
+                        return (Math.Exp(-x * x) * OrthogonalPolynomials.HermiteH(n, x) * OrthogonalPolynomials.HermiteH(m, x));
+                    };
+                    Interval r = Interval.FromEndpoints(Double.NegativeInfinity, Double.PositiveInfinity);
+                    double I = FunctionMath.Integrate(f, r);
+                    double N = Math.Sqrt(Math.PI) * Math.Pow(2.0, n) * AdvancedIntegerMath.Factorial(n);
+                    Console.WriteLine("{0} {1} {2} {3}", n, m, I, N);
+                    if (n == m) {
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(I, N));
+                    } else {
+                        Assert.IsTrue(Math.Abs(I) <= TestUtilities.TargetPrecision);
+                    }
+                }
+            }
+        }
+
+        // test HermiteHe orthonormality, too
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]

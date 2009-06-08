@@ -75,6 +75,7 @@
     <Compile Include="Matrices\MatrixBase.cs" />
     <Compile Include="Matrices\SquareMatrix.cs" />
     <Compile Include="Matrices\SymmetricMatrix.cs" />
+    <Compile Include="Matrices\TridiagonalMatrix.cs" />
     <Compile Include="Matrices\Vectors.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Statistics\ContingencyTable.cs" />

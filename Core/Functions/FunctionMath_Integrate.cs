@@ -27,7 +27,7 @@ namespace Meta.Numerics.Functions {
         // the public API
 
         /// <summary>
-        /// Performs a definite integral.
+        /// Evaluates a definite integral.
         /// </summary>
         /// <param name="integrand">The function to be integrated.</param>
         /// <param name="range">The range of integration.</param>

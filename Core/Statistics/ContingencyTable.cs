@@ -204,7 +204,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Initializes a new binary contingency table with the given entries.
         /// </summary>
-        /// <param name="data"></param>
+        /// <param name="data">A two-dimensional matrix of table entries.</param>
         public BinaryContingencyTable (int[,] data) : base(data) {
             if ((data.GetLength(0) != 2) || (data.GetLength(1) != 2)) throw new DimensionMismatchException();
         }

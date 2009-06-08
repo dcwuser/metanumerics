@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Matrices {
 
@@ -10,6 +11,8 @@ namespace Meta.Numerics.Matrices {
 
         private int dimension;
         private double[][] values;
+
+        // storage is in lower triangular form, i.e. values[r][c] with c <= r
 
         /// <summary>
         /// Instantiates a new symmetric matrix.
@@ -74,6 +77,16 @@ namespace Meta.Numerics.Matrices {
                     values[c][r] = value;
                 }
             }
+        }
+
+        private double GetEntry (int r, int c) {
+            Debug.Assert(c <= r);
+            return (values[r][c]);
+        }
+
+        private void SetEntry (int r, int c, double value) {
+            Debug.Assert(c <= r);
+            values[r][c] = value;
         }
 
         /// <summary>
@@ -178,6 +191,207 @@ namespace Meta.Numerics.Matrices {
             CholeskyDecomposition CD = new CholeskyDecomposition(LU);
             return (CD);
         }
+
+
+#if FUTURE
+
+        public static AasenDecomposition LTLDecompose3 (SymmetricMatrix M) {
+
+            // Aasen's method, now with pivoting
+
+            int n = M.Dimension;
+
+            double[] a = new double[n];
+            double[] b = new double[n - 1];
+            SquareMatrix L = new SquareMatrix(n);
+            for (int i = 0; i < n; i++) L[i, i] = 1.0;
+
+            // working space for d'th column of H = T L^T
+            double[] h = new double[n];
+
+            // first row
+            a[0] = M[0, 0];
+            if (n > 1) b[0] = M[1, 0];
+            for (int i = 2; i < n; i++) L[i, 1] = M[i, 0] / b[0];
+
+            PrintLTLMatrices(h, a, b, L);
+
+            // second row
+            if (n > 1) {
+                a[1] = M[1, 1];
+                if (n > 2) b[1] = M[2, 1] - L[2, 1] * a[1];
+                for (int i = 3; i < n; i++) L[i, 2] = (M[i, 1] - L[i, 1] * a[1]) / b[1];
+            }
+
+            PrintLTLMatrices(h, a, b, L);
+
+            for (int d = 0; d < n; d++) {
+
+                Console.WriteLine("d = {0}", d);
+
+                // compute h (d'th row of T L^T)
+                if (d == 0) {
+                    h[0] = M[0, 0];
+                } else if (d == 1) {
+                    h[0] = b[0];
+                    h[1] = M[1, 1];
+                } else {
+                    h[0] = b[0] * L[d, 1];
+                    h[1] = b[1] * L[d, 2] + a[1] * L[d, 1];
+                    h[d] = M[d, d] - L[d, 1] * h[1];
+                    for (int i = 2; i < d; i++) {
+                        h[i] = b[i] * L[d, i + 1] + a[i] * L[d, i] + b[i - 1] * L[d, i - 1];
+                        h[d] -= L[d, i] * h[i];
+                    }
+                }
+
+                // compute alpha (d'th diagonal element of T)
+                if ((d == 0) || (d == 1)) {
+                    a[d] = h[d];
+                } else {
+                    a[d] = h[d] - b[d - 1] * L[d, d - 1];
+                }
+
+                Console.WriteLine("before pivot");
+                PrintMatrix(M);
+                PrintMatrix(L);
+
+                // find the pivot
+                if (d < (n - 1)) {
+                    int p = d + 1;
+                    double q = M[p, d];
+                    for (int i = d + 2; i < n; i++) {
+                        if (Math.Abs(M[i, d]) > Math.Abs(q)) {
+                            p = i;
+                            q = M[i, d];
+                        }
+                    }
+
+                    Console.WriteLine("pivot = {0}", p);
+
+                    // symmetricly permute the pivot element to M[d+1,d]
+                    if (p != d + 1) {
+
+                        // symmetricly permute the pivot element to M[d+1, d]
+                        // we have to be a bit careful here, because some permutations will be done
+                        // automatically by our SymmetricMatrix class due to symmetry
+                        for (int i = 0; i < n; i++) {
+                            if ((i == p) || (i == d + 1)) continue;
+                            double t = M[d + 1, i];
+                            M[d + 1, i] = M[p, i];
+                            M[p, i] = t;
+                        }
+                        double tt = M[d + 1, d + 1];
+                        M[d + 1, d + 1] = M[p, p];
+                        M[p, p] = tt;
+
+                        // also reorder the affected previously computed elements of L 
+                        for (int i = 1; i <= d; i++) {
+                            double t = L[d + 1, i];
+                            L[d + 1, i] = L[p, i];
+                            L[p, i] = t;
+                        }
+
+                        Console.WriteLine("after pivot");
+                        PrintMatrix(M);
+                        PrintMatrix(L);
+
+                    }
+
+                }
+
+                // compute beta (d'th subdiagonal element of T)
+                if (d < (n - 1)) {
+                    b[d] = M[d + 1, d];
+                    for (int i = 0; i <= d; i++) {
+                        Console.WriteLine("n={0} d={1} i={2}", n, d, i);
+                        b[d] -= L[d + 1, i] * h[i];
+                    }
+                }
+
+                // compute (d+1)'th column of L
+                for (int i = d + 2; i < n; i++) {
+                    L[i, d + 1] = M[i, d];
+                    for (int j = 0; j <= d; j++) L[i, d + 1] -= L[i, j] * h[j];
+                    L[i, d + 1] = L[i, d + 1] / b[d];
+                }
+
+                PrintLTLMatrices(h, a, b, L);
+
+            }
+
+
+            Console.WriteLine("Reconstruct");
+            SymmetricMatrix T = new SymmetricMatrix(n);
+            for (int i = 0; i < n; i++) {
+                T[i, i] = a[i];
+            }
+            for (int i = 0; i < (n - 1); i++) {
+                T[i + 1, i] = b[i];
+            }
+            SquareMatrix A = L * T * L.Transpose();
+            PrintMatrix(A);
+
+
+            SymmetricMatrix D = new SymmetricMatrix(n);
+            for (int i = 0; i < n; i++) {
+                D[i, i] = a[i];
+            }
+            for (int i = 0; i < (n - 1); i++) {
+                D[i + 1, i] = b[i];
+            }
+            for (int c = 1; c < (n - 1); c++) {
+                for (int r = c + 1; r < n; r++) {
+                    D[r, c - 1] = L[r, c];
+                }
+            }
+            AasenDecomposition LTL = new AasenDecomposition(D);
+            return (LTL);
+
+        }
+
+        private static void PrintMatrix (IMatrix M) {
+            for (int i = 0; i < M.RowCount; i++) {
+                for (int j = 0; j < M.ColumnCount; j++) {
+                    Console.Write(" {0}", M[i, j]);
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine();
+        }
+
+        private static void PrintLTLMatrices (double[] h, double[] a, double[] b, IMatrix L) {
+
+            Console.WriteLine("h=");
+            for (int i = 0; i < h.Length; i++) {
+                Console.Write("  {0}", h[i]);
+            }
+            Console.WriteLine();
+
+            Console.WriteLine("alpha=");
+            for (int i = 0; i < a.Length; i++) {
+                Console.Write("  {0}", a[i]);
+            }
+            Console.WriteLine();
+
+            Console.WriteLine("beta=");
+            for (int i = 0; i < b.Length; i++) {
+                Console.Write("  {0}", b[i]);
+            }
+            Console.WriteLine();
+
+            Console.WriteLine("L=");
+            for (int i = 0; i < L.RowCount; i++) {
+                for (int j = 0 ; j <L.ColumnCount; j++) {
+                    Console.Write(" {0}", L[i, j]);
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine();
+        }
+
+#endif
+
 
         /// <summary>
         /// Computes the eigenvalues and eigenvectors of the matrix.
@@ -284,9 +498,13 @@ namespace Meta.Numerics.Matrices {
 						values[q][q] += t * M_pq;
 						for (int r=0; r<q; r++) {
 							double M_pr = values[p][r];
-							double M_qr = values[q][r];
-							values[p][r] = M_pr - s * ( M_qr + t2 * M_pr );
+                            //double M_pr = GetEntry(p, r);
+                            double M_qr = values[q][r];
+                            //double M_qr = GetEntry(q, r);
+                            values[p][r] = M_pr - s * (M_qr + t2 * M_pr);
+                            //SetEntry(p, r, M_pr - s * (M_qr + t2 * M_pr));
 							values[q][r] = M_qr + s * ( M_pr - t2 * M_qr );
+                            //SetEntry(q, r, M_qr + s * (M_pr - t2 * M_qr));
 						}
 						for (int r=q+1; r<p; r++) {
 							double M_pr = values[p][r];
@@ -640,7 +858,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Computes the inverse of the original matrix.
         /// </summary>
-        /// <returns>The inverse of the original matrix.</returns>
+        /// <returns>M<sup>-1</sup></returns>
         public virtual SymmetricMatrix Inverse() {
                 SymmetricMatrix MI = new SymmetricMatrix(Dimension);
 
@@ -675,8 +893,9 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Gets the determinant of the original matrix.
+        /// Computes the determinant of the original matrix.
         /// </summary>
+        /// <returns>det M</returns>
         public virtual double Determinant () {
                 double lnDet = 0.0;
                 for (int i = 0; i < Dimension; i++) {
@@ -691,5 +910,147 @@ namespace Meta.Numerics.Matrices {
 
     }
 
+#if FUTURE
+
+    public class AasenDecomposition : ISquareDecomposition {
+
+        // D is a packed representation of L and T. Since L and T have the form
+        //     ( 1       )          ( A B     )
+        //     ( 0 1     )          ( B A B   )
+        // L = ( 0 X 1   )      T = (   B A B )
+        //     ( 0 X X 1 )          (     B A )
+        // we can fit all entries in
+        //     ( A       )
+        //     ( B A     )
+        // D = ( X B A   )
+        //     ( X X B A )
+
+        private SymmetricMatrix D;
+
+        internal AasenDecomposition (SymmetricMatrix D) {
+            this.D = D;
+        }
+
+        /// <summary>
+        /// Get the dimension of the original matrix.
+        /// </summary>
+        public int Dimension {
+            get {
+                return (D.Dimension);
+            }
+        }
+
+        /// <summary>
+        /// Computes the determinant of the original matrix.
+        /// </summary>
+        /// <returns>det M</returns>
+        public double Determinant () {
+
+            // the determinant is just the determinant of T, which can be computed by the recursion
+            // det A_{n,n} = a_{n, n} det A_{n-1,n-1} - a_{n, n-1} a_{n-1, n} det A_{n-2,n-2}
+
+            int n = Dimension;
+
+            double a0 = D[0, 0];
+
+            if (n == 1) return (a0);
+
+            double a1 = D[0, 0] * D[1, 1] - D[0, 1] * D[1, 0];
+
+            for (int i = 2; i < n; i++) {
+                double a2 = D[i, i] * a1 - D[i - 1, i] * D[i, i - 1] * a0;
+                a0 = a1;
+                a1 = a2;
+            }
+
+            return (a1);
+        }
+
+        public ColumnVector Solve (IList<double> rhs) {
+
+
+            int n = Dimension;
+
+            double[] DD = new double[n];
+            for (int i = 0; i < n; i++) {
+                DD[i] = D[i, i];
+            }
+
+            double[] DL = new double[n - 1];
+            double[] DU = new double[n - 1];
+            for (int i = 0; i < (n - 1); i++) {
+                DL[i] = D[i + 1, i];
+                DU[i] = D[i + 1, i];
+            }
+
+            double[] UU = new double[n - 2];
+
+            int[] permutation = new int[n];
+            for (int i = 0; i < n; i++) {
+                permutation[i] = i;
+            }
+            /*
+            for (int i = 0; i < (n-1); i++) {
+
+                // the diagonal is the pivot candidate
+                double q = D[i];
+
+                if (q == 0.0) throw new DivideByZeroException();
+
+                // superdiagonal stays the same
+                // subdiagonal gets divided by the pivot
+                DL[i] = DL[i] / q;
+                // product gets subtracted from the diagonal
+                DD[i + 1] = DD[i + 1] - DU[i] * DL[i];
+
+                // decide whether to pivot
+                if (Math.Abs(DD[i]) >= Math.Abs(DL[i])) {
+
+                    // diagonal is larger than subdiagonal; do not pivot
+
+                    if (D[i] == 0.0) throw new DivideByZeroException();
+
+                    double t = DL[i] / D[i];
+                    DL[i] = t;
+                    DD[i+1] = DD[i+1] - t * DU[i];
+
+                } else {
+                    // diagonal is smaller than subdiagonal; pivot
+
+                    // switch row d and row d+1
+                    double t1 = DD[i]; DD[i] = DL[i]; DL[i] = t1;
+                    double t2 = DU[i]; DU[i] = DD[i + 1]; DD[i + 1] = t2;
+                    UU[i] = DU[i + 1]; DU[i + 1] = 0.0;
+
+                    double q = D[i];
+
+                    DL[i] = DL[i] / q;
+                    DU[i] = DU[i] - UU[i - 1] * DL[i - 1];
+                    DD[i
+
+
+                }
+
+            }
+            */
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Compute the inverse of the original matrix.
+        /// </summary>
+        /// <returns>M<sup>-1</sup></returns>
+        public SymmetricMatrix Inverse () {
+            throw new NotImplementedException();
+        }
+
+        ISquareMatrix ISquareDecomposition.Inverse () {
+            return(Inverse());
+        }
+
+    }
+
+#endif
 
 }

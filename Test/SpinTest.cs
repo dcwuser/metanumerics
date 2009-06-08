@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
 
+
 namespace Test {
+
+#if FUTURE
+
     /// <summary>
     /// Summary description for SpinTest
     /// </summary>
@@ -31,7 +36,7 @@ namespace Test {
             }
         }
 
-        #region Additional test attributes
+    #region Additional test attributes
         //
         // You can use the following additional attributes as you write your tests:
         //
@@ -297,11 +302,18 @@ namespace Test {
         [TestMethod]
         public void ThreeJDebug () {
 
-            double c = SpinMath.ThreeJ(new SpinState(8.0, -2.0), new SpinState(12.0, 1.0), new SpinState(15.0, 1.0));
+            Console.WriteLine(Stopwatch.IsHighResolution);
+            Stopwatch watch = Stopwatch.StartNew();
+            double c = SpinMath.ThreeJ(new SpinState(400.0, 0.0), new SpinState(600.0, 0.0), new SpinState(800.0, 0.0));
+            watch.Stop();
             Console.WriteLine(c);
+            Console.WriteLine(watch.ElapsedMilliseconds);
 
         }
 
 
     }
+
+#endif
+
 }

@@ -58,7 +58,7 @@ namespace Test {
         #endregion
 
 
-        private static void PrintMatrix (IMatrix M) {
+        public static void PrintMatrix (IMatrix M) {
             for (int r = 0; r < M.RowCount; r++) {
                 for (int c = 0; c < M.ColumnCount; c++) {
                     Console.Write("{0,12:g8} ", M[r, c]);
@@ -204,9 +204,43 @@ namespace Test {
             }
         }
 
+
+        [TestMethod]
+        public void SquareRandomMatrixLUDecompositionTest () {
+            for (int d = 1; d <= 100; d=d+11) {
+
+                Console.WriteLine("d={0}", d);
+
+                SquareMatrix M = CreateSquareRandomMatrix(d);
+
+                // LU decompose the matrix
+                SquareLUDecomposition LU = M.LUDecomposition();
+
+                // test that the decomposition works
+                SquareMatrix P = LU.PMatrix();
+                SquareMatrix L = LU.LMatrix();
+                SquareMatrix U = LU.UMatrix();
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(P * M, L * U));
+
+                // check that the inverse works
+                SquareMatrix MI = LU.Inverse();
+                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(M * MI, I));
+
+                // test that a solution works
+                ColumnVector t = new ColumnVector(d);
+                for (int i = 0; i < d; i++) t[i] = i;
+                ColumnVector s = LU.Solve(t);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(M * s, t));
+
+            }
+        }
+
         [TestMethod]
         public void SquareVandermondeMatrixLUDecompositionTest () {
             for (int d = 1; d <= 8; d++) {
+
+                Console.WriteLine("d={0}", d);
 
                 double[] x = new double[d];
                 for (int i = 0; i < d; i++) {
@@ -218,8 +252,6 @@ namespace Test {
                         det = det * (x[i] - x[j]);
                     }
                 }
-
-                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
 
                 // LU decompose the matrix
                 SquareMatrix V = CreateVandermondeMatrix(d);
@@ -236,18 +268,17 @@ namespace Test {
 
                 // check that the inverse works
                 SquareMatrix VI = LU.Inverse();
-                Console.WriteLine("d={0}", d);
                 //PrintMatrix(VI);
                 //PrintMatrix(V * VI);
+                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(V * VI, I));
 
-                /*
                 // test that a solution works
                 ColumnVector t = new ColumnVector(d);
-                for (int i = 0; i < d; i++) t[i] = i;
+                for (int i = 0; i < d; i++) t[i] = 1.0;
                 ColumnVector s = LU.Solve(t);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(V * t, s));
-                */
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(V * s, t));
+                
             }
         }
 

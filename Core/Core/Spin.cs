@@ -5,6 +5,8 @@ using Meta.Numerics.Functions;
 
 namespace Meta.Numerics {
 
+#if FUTURE
+
     public struct Spin {
 
         // construction
@@ -206,7 +208,7 @@ namespace Meta.Numerics {
                 // arbitrary Js
                 if ((s1.TwoM == 0) && (s2.TwoM == 0) && (s3.TwoM == 0)) {
                     // special case of all M's zero
-                    return (s * ThreeJ_ZeroM(s1, s2, s3));
+                    return (s * ThreeJ_ZeroM_Int(s1, s2, s3));
                     // also for other low Ms, because there are many terms to compute these cases
                 } else {
                     // general case
@@ -413,6 +415,72 @@ namespace Meta.Numerics {
 
         // ( J1  J2  J3 )
         // ( 0   0   0  )
+        private static double ThreeJ_ZeroM_Int (SpinState s1, SpinState s2, SpinState s3) {
+
+            Debug.Assert(s1.TwoM == 0);
+            Debug.Assert(s2.TwoM == 0);
+            Debug.Assert(s3.TwoM == 0);
+
+            // this method depends on the ordering j1 <= j2 <= j3
+            Debug.Assert(s1.TwoJ <= s2.TwoJ);
+            Debug.Assert(s2.TwoJ <= s3.TwoJ);
+
+            int j = (s1.TwoJ + s2.TwoJ + s3.TwoJ) / 2;
+
+            if (j % 2 != 0) {
+                return (0.0);
+            } else {
+
+                // use the method formula derived in 
+
+                int A = j - s1.TwoJ;
+                int B = j - s2.TwoJ;
+                int C = j - s3.TwoJ;
+
+                Console.WriteLine("A={0} B={1} C={2}", A, B, C);
+
+                // note that A >= B >= C, because of the ordering of js; therefore we eliminate factors involving C, which are largest
+                // note also that A, B, and C are even, because j is even and we subtract even numbers from j to get them
+
+                int hA = A / 2;
+                int hB = B / 2;
+                int hC = C / 2;
+
+                // calculate first factor
+                double f = 1.0 / (j + 1);
+                int fp1 = B / 2;
+                int fp2 = A / 2;
+                int fq1 = A;
+                int fq2 = A + B / 2;
+                for (int i = 1; i <= hB; i++) {
+                    //fp1++; fp2++; fq1++; fq2++;
+                    //f = f * fp1 * fp2 * fp2 / fq1 / fq2 / i;
+                    f = f * (hB + i) * (hA + i) * (hA + i) / (A + i) / (A + hB + i) / i;
+                }
+                f = Math.Sqrt(f);
+
+                // calculate second factor
+                double g = 1.0;
+                //int gp1 = C / 2;
+                //int gp2 = (A + B) / 2;
+                //int gq1 = A + B;
+                //int gq2 = A + B + C / 2;
+                for (int i = 1; i <= hC; i++) {
+                    g = g * (hC + i) * (hA + hB + i) * (hA + hB + i) / (A + B + i) / (A + B + hC + i) / i;
+                }
+                Console.WriteLine("g={0}", g);
+                g = Math.Sqrt(g);
+
+                if ((j/2) % 2 != 0) f = -f;
+
+                return (f * g);
+            }
+
+
+        }
+
+        // ( J1  J2  J3 )
+        // ( 0   0   0  )
         private static double ThreeJ_ZeroM (SpinState s1, SpinState s2, SpinState s3) {
 
             Debug.Assert(s1.TwoM == 0);
@@ -479,5 +547,7 @@ namespace Meta.Numerics {
         }
 
     }
+
+#endif
 
 }

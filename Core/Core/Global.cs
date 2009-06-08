@@ -19,6 +19,12 @@ namespace Meta.Numerics {
         // the appears in lots of algorithms and we don't want to compute it each time
         public static readonly double SqrtPI = Math.Sqrt(Math.PI);
 
+        public static void Swap<T> (ref T a, ref T b) {
+            T t = a;
+            a = b;
+            b = t;
+        }
+
     }
 
 }

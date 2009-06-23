@@ -82,6 +82,7 @@
     <Compile Include="Statistics\DataSet.cs" />
     <Compile Include="Statistics\Distributions.cs" />
     <Compile Include="Statistics\FitResult.cs" />
+    <Compile Include="Statistics\MultivariateSample.cs" />
     <Compile Include="Statistics\Sample.cs" />
     <Compile Include="Statistics\TestResult.cs" />
     <Compile Include="Statistics\UncertainValue.cs" />

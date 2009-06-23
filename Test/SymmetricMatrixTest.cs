@@ -196,6 +196,19 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void Timer () {
+
+            SymmetricMatrix A = CreateSymmetricRandomMatrix(100, 1);
+
+            Stopwatch s = Stopwatch.StartNew();
+            double[] e = A.Eigenvalues();
+            s.Stop();
+            Console.WriteLine(s.ElapsedMilliseconds);
+
+
+        }
+
     }
 }
 

@@ -145,8 +145,8 @@ namespace Test {
 
         [TestMethod]
         public void HermiteOrthonormalityTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0.0, 1.5, 3)) {
-                foreach (int m in TestUtilities.GenerateIntegerValues(0.0, 1.5, 3)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 30, 3)) {
+                foreach (int m in TestUtilities.GenerateIntegerValues(1, 30, 3)) {
                     Function<double, double> f = delegate(double x) {
                         return (Math.Exp(-x * x) * OrthogonalPolynomials.HermiteH(n, x) * OrthogonalPolynomials.HermiteH(m, x));
                     };
@@ -175,7 +175,7 @@ namespace Test {
 
         [TestMethod]
         public void LaguerreSpecialCaseTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 Assert.IsTrue(OrthogonalPolynomials.LaguerreL(n, 0.0) == 1.0);
             }
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 5)) {
@@ -218,8 +218,8 @@ namespace Test {
 
         [TestMethod]
         public void LaguerreOrthonormalityTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 3)) {
-                foreach (int m in TestUtilities.GenerateIntegerValues(0, 2, 3)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 3)) {
+                foreach (int m in TestUtilities.GenerateIntegerValues(1, 100, 3)) {
                     Function<double, double> f = delegate(double x) {
                         return (Math.Exp(-x) * OrthogonalPolynomials.LaguerreL(n, x) * OrthogonalPolynomials.LaguerreL(m, x));
                     };
@@ -294,7 +294,7 @@ namespace Test {
 
         [TestMethod]
         public void ChebyshevDoublingTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0,2,5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1,100,5)) {
                 foreach (double x in cArguments) {
                     Console.WriteLine("n={0}, x={1}, T2={2}, T1={3}", n, x, OrthogonalPolynomials.ChebyshevT(2 * n, x), OrthogonalPolynomials.ChebyshevT(n, 1.0 - 2 * x * x));
                     if (n % 2 == 0) {
@@ -331,7 +331,7 @@ namespace Test {
         [TestMethod]
         public void ChebyshevCosineTest () {
             // test T_n(cos t) = cos(n t)
-            foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double t in GenerateRandomAngles(-Math.PI, Math.PI, 5)) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ChebyshevT(n, Math.Cos(t)), Math.Cos(n * t)));
                 }
@@ -411,8 +411,8 @@ namespace Test {
 
         [TestMethod]
         public void LegendreOrthonormalityTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 3)) {
-                foreach (int m in TestUtilities.GenerateIntegerValues(0, 2, 3)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 3)) {
+                foreach (int m in TestUtilities.GenerateIntegerValues(1, 100, 3)) {
                     Function<double, double> f = delegate(double x) {
                         return (OrthogonalPolynomials.LegendreP(n, x) * OrthogonalPolynomials.LegendreP(m, x));
                     };
@@ -448,7 +448,7 @@ namespace Test {
                 }
             }
             // theta=0, m=0
-            foreach (int ell in TestUtilities.GenerateIntegerValues(0, 2, 5)) {
+            foreach (int ell in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double phi in GenerateRandomAngles(0.0, 2.0 * Math.PI, 5)) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.SphericalHarmonic(ell, 0, 0.0, phi), Math.Sqrt((2 * ell + 1) / (4.0 * Math.PI))));
                 }
@@ -458,7 +458,7 @@ namespace Test {
 
         [TestMethod]
         public void SphericalHarmonicLegendreTest () {
-            foreach (int ell in TestUtilities.GenerateIntegerValues(0, 2, 6)) {
+            foreach (int ell in TestUtilities.GenerateIntegerValues(1, 100, 6)) {
                 foreach (double theta in GenerateRandomAngles(-Math.PI, Math.PI, 5)) {
                     // this loop shouldn't matter since the answer is phi-independent
                     foreach (double phi in GenerateRandomAngles(0.0, 2.0 * Math.PI, 3)) {
@@ -473,7 +473,7 @@ namespace Test {
 
         [TestMethod]
         public void SphericalHarmonicConjugationTest () {
-            foreach (int ell in TestUtilities.GenerateIntegerValues(0, 2, 5)) {
+            foreach (int ell in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double theta in GenerateRandomAngles(-Math.PI, Math.PI, 5)) {
                     foreach (double phi in GenerateRandomAngles(0.0, 2.0 * Math.PI, 5)) {
                         for (int m = 0; m <= ell; m++) {
@@ -490,7 +490,7 @@ namespace Test {
 
         [TestMethod]
         public void SphericalHarmonicNormalizationTest () {
-            foreach (int ell in TestUtilities.GenerateIntegerValues(0, 2, 5)) {
+            foreach (int ell in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double theta in GenerateRandomAngles(-Math.PI, Math.PI, 5)) {
                     foreach (double phi in GenerateRandomAngles(0.0, 2.0 * Math.PI, 5)) {
                         double sum = 0.0;
@@ -507,7 +507,7 @@ namespace Test {
 
         [TestMethod]
         public void SphericalHarmonicAdditionTest () {
-            foreach (int ell in TestUtilities.GenerateIntegerValues(0, 2, 6)) {
+            foreach (int ell in TestUtilities.GenerateIntegerValues(1, 100, 6)) {
                 foreach (double theta in GenerateRandomAngles(-Math.PI, Math.PI, 4)) {
                     foreach (double phi in GenerateRandomAngles(0, 2.0 * Math.PI, 3)) {
                         Complex sum = 0.0;

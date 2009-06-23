@@ -1415,8 +1415,7 @@ namespace Meta.Numerics.Matrices {
                 }
             }
             return (N);
-
-            return (Multiply(M1, M2));
+            // return(Multiply(M1, M2));
         }
 
         public static SquareMatrix operator * (SquareMatrix M1, SymmetricMatrix M2) {
@@ -1424,6 +1423,14 @@ namespace Meta.Numerics.Matrices {
         }
 
         public static SquareMatrix operator * (SymmetricMatrix M1, SquareMatrix M2) {
+            return (Multiply(M1, M2));
+        }
+
+        public static SquareMatrix operator * (SquareMatrix M1, TridiagonalMatrix M2) {
+            return (Multiply(M1, M2));
+        }
+
+        public static SquareMatrix operator * (TridiagonalMatrix M1, SquareMatrix M2) {
             return (Multiply(M1, M2));
         }
 

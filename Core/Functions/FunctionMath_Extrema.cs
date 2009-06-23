@@ -519,23 +519,6 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        // compute the Hessian matrix from the conjugate directions and associated curvatures
-        // the Hessian matrix is the inverse of the matrix of second derivaties
-
-        private static SymmetricMatrix ComputeHessian (double[][] Q, double[] r) {
-            int d = r.Length;
-            SymmetricMatrix H = new SymmetricMatrix(d);
-            for (int i = 0; i < d; i++) {
-                for (int j = 0; j <= i; j++) {
-                    H[i, j] = 0.0;
-                    for (int k = 0; k < d; k++) {
-                        H[i, j] += Q[i][k] * Q[j][k] / r[k];
-                    }
-                }
-            }
-            return (H);
-        }
-
         // numerical approximation of Hessian
         // requires 3 evaluations for diagonals, there are d of those
         // requires 4 evaluations for off-diagonals; there are d(d-1)/2 of those

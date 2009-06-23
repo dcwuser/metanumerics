@@ -1,12 +1,9 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-
 using Meta.Numerics.Matrices;
-namespace Test
-{
 
-#if FUTURE
+namespace Test {
 
     [TestClass()]
     public class TridiagonalMatrixTest {
@@ -73,52 +70,111 @@ namespace Test
 
             TridiagonalMatrix T = CreateRandomTridiagonalMatrix(4);
 
+            // check dimension
             Assert.IsTrue(T.Dimension == 4);
 
-            TridiagonalMatrix TC = T.Clone();
+            // check off-diagonal element
+            Assert.IsTrue(T[0, 3] == 0.0);
 
-            Assert.IsTrue(T[0, 0] == TC[0, 0]);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void TridiagonalMatrixInvalidSetTest () {
+            TridiagonalMatrix T = new TridiagonalMatrix(4);
+            T[0, 3] = 1.0;
+        }
+
+        [TestMethod]
+        public void TridiagonalMatrixArithmeticTest () {
+
+            TridiagonalMatrix T = CreateRandomTridiagonalMatrix(4);
+
+            //SquareMatrixTest.PrintMatrix(T);
+            TridiagonalMatrix TA = T + T;
+            //SquareMatrixTest.PrintMatrix(TA);
+            TridiagonalMatrix T2 = 2.0 * T;
+            //SquareMatrixTest.PrintMatrix(T2);
+            Assert.IsTrue(TA == T2);
+
+            TridiagonalMatrix TM = T - T;
+            TridiagonalMatrix T0 = 0.0 * T;
+            Assert.IsTrue(TM == T0);
+
+        }
+
+        [TestMethod]
+        public void TridiagonalMatrixDuplicationTest () {
+
+            TridiagonalMatrix T = CreateRandomTridiagonalMatrix(4);
+
+            // check that clone is clone
+            TridiagonalMatrix TC = T.Clone();
+            Assert.IsTrue(TC == T);
+
+            // check that clone is independend
+            TC[0, 0] += 1.0;
+            Assert.IsTrue(TC != T);
+
+            // check that transpose of transpose is original
+            TridiagonalMatrix TT = T.Transpose();
+            Assert.IsTrue(TT != T);
+            TridiagonalMatrix TTT = TT.Transpose();
+            Assert.IsTrue(TTT == T);
+
+            // check that transpose is independent
+            TTT[0, 0] += 1.0;
+            Assert.IsTrue(TTT != T);
 
         }
 
         [TestMethod]
         public void TridiagonalMatrixLUDecompositionTest () {
 
-            int d = 4;
+            for (int d = 3; d < 100; d = 2 * d) {
 
-            TridiagonalMatrix T = CreateRandomTridiagonalMatrix(d);
-            TridiagonalLUDecomposition LU = T.LUDecompose();
+                Console.WriteLine("d={0}", d);
 
-            Assert.IsTrue(LU.Dimension == T.Dimension);
-
-            //Assert.IsTrue(TestUtilities.IsNearlyEqual(LU.Determinant(), T.Determinant()));
-
-            SquareMatrix P = LU.PMatrix();
-            SquareMatrix L = LU.LMatrix();
-            SquareMatrix U = LU.UMatrix();
-
-            SquareMatrixTest.PrintMatrix(T);
-            SquareMatrixTest.PrintMatrix(L);
-            SquareMatrixTest.PrintMatrix(U);
-            SquareMatrixTest.PrintMatrix(L * U);
+                TridiagonalMatrix T = CreateRandomTridiagonalMatrix(d);
+                Assert.IsTrue(T.Dimension == d);
 
 
-            //ColumnVector b = new ColumnVector(TestUtilities.GenerateRealValues(0.1, 10.0, d));
-            ColumnVector b = new ColumnVector( new double[] { 1.0, 2.0, 3.0, 4.0 } );
-            ColumnVector x = LU.Solve(b);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(T * x, b));
+                TridiagonalLUDecomposition LU = T.LUDecompose();
+                Assert.IsTrue(LU.Dimension == d);
 
-            ColumnVector e0 = new ColumnVector( new double[] { 1.0, 0.0, 0.0, 0.0 } );
-            ColumnVector v0 = LU.Solve(e0);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(T * v0, e0));
+                // check determinant
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(LU.Determinant(), T.Determinant()));
 
-            //LU.Inverse();
+                //SquareMatrix P = LU.PMatrix();
+                //SquareMatrix L = LU.LMatrix();
+                //SquareMatrix U = LU.UMatrix();
+
+                //SquareMatrixTest.PrintMatrix(T);
+                //SquareMatrixTest.PrintMatrix(L);
+                //SquareMatrixTest.PrintMatrix(U);
+                //SquareMatrixTest.PrintMatrix(L * U);
+
+
+                // check solution to decomposition
+                ColumnVector b = new ColumnVector(d);
+                for (int i = 0; i < d; i++) {
+                    b[i] = i;
+                }
+                ColumnVector x = LU.Solve(b);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(T * x, b));
+
+                // test inverse
+                SquareMatrix TI = LU.Inverse();
+                SquareMatrix I = new SquareMatrix(d);
+                for (int i = 0; i < d; i++) I[i,i] = 1.0;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(TI * T, I));
+
+            }
 
 
         }
 
     }
 
-#endif
 
 }

@@ -115,6 +115,9 @@ namespace Test {
             double[] x = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             SquareMatrix V = CreateVandermondeMatrix(x);
 
+            // check nullity
+            Assert.IsTrue(V != null);
+
             // check dimension
             Assert.IsTrue(V.Dimension == x.Length);
 

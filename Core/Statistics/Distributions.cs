@@ -1,5 +1,6 @@
-
 using System;
+using System.Collections.Generic;
+
 using Meta.Numerics;
 using Meta.Numerics.Functions;
 
@@ -258,7 +259,7 @@ namespace Meta.Numerics.Statistics {
     /// <para>The normal distribution is sometimes called a Gaussian distribtuion, after the mathematician Friedrich Gauss.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Normal_distribution"/>
-	public class NormalDistribution : Distribution {
+	public class NormalDistribution : Distribution, IParameterizedDistribution {
 
 		private double mu, sigma;
 
@@ -374,6 +375,18 @@ namespace Meta.Numerics.Statistics {
             return (mu + sigma * z);
         }
 
+        double[] IParameterizedDistribution.GetParameters () {
+            return (new double[] { mu, sigma });
+        }
+
+        void IParameterizedDistribution.SetParameters (IList<double> parameters) {
+            if (parameters == null) throw new ArgumentNullException("parameters");
+            if (parameters.Count != 2) throw new DimensionMismatchException();
+            if (parameters[1] <= 0.0) throw new ArgumentOutOfRangeException();
+            mu = parameters[0];
+            sigma = parameters[1];
+        }
+
 	}
 
     /// <summary>
@@ -386,7 +399,7 @@ namespace Meta.Numerics.Statistics {
     /// </remarks>
     /// <seealso href="WeibullDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Exponential_distribution"/>
-	public class ExponentialDistribution : Distribution {
+	public class ExponentialDistribution : Distribution, IParameterizedDistribution {
 
 		private double mu;
 
@@ -504,6 +517,17 @@ namespace Meta.Numerics.Statistics {
             get {
                 return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
             }
+        }
+
+        double[] IParameterizedDistribution.GetParameters () {
+            return (new double[] { mu });
+        }
+
+        void IParameterizedDistribution.SetParameters (IList<double> parameters) {
+            if (parameters == null) throw new ArgumentNullException("parameters");
+            if (parameters.Count != 1) throw new DimensionMismatchException();
+            if (parameters[0] <= 0.0) throw new ArgumentOutOfRangeException();
+            mu = parameters[0];
         }
 
 	}
@@ -1254,7 +1278,7 @@ namespace Meta.Numerics.Statistics {
     /// </remarks>
     /// <seealso cref="NormalDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Log-normal_distribution" />
-    public class LognormalDistribution : Distribution {
+    public class LognormalDistribution : Distribution, IParameterizedDistribution {
 
         /// <summary>
         /// Initializes a log normal distribution.
@@ -1382,6 +1406,19 @@ namespace Meta.Numerics.Statistics {
 
         }
 
+        double[] IParameterizedDistribution.GetParameters () {
+            return (new double[] { mu, sigma });
+        }
+
+        void IParameterizedDistribution.SetParameters (IList<double> parameters) {
+            if (parameters == null) throw new ArgumentNullException();
+            if (parameters.Count != 2) throw new DimensionMismatchException();
+            if (parameters[1] <= 0.0) throw new ArgumentOutOfRangeException();
+            mu = parameters[0];
+            sigma = parameters[1];
+        }
+
+
     }
 
     /// <summary>
@@ -1396,7 +1433,7 @@ namespace Meta.Numerics.Statistics {
     /// <para>The Weibull distribution is commonly used in engineering applications to
     /// model the time-to-failure of industrial componets.</para>
     /// </remarks>
-    public class WeibullDistribution : Distribution {
+    public class WeibullDistribution : Distribution, IParameterizedDistribution {
 
         /// <summary>
         /// Initializes a new Weibull distribution.
@@ -1516,6 +1553,45 @@ namespace Meta.Numerics.Statistics {
                 return (C);
             }
         }
+
+        double[] IParameterizedDistribution.GetParameters () {
+            return (new double[] { scale, shape });
+        }
+
+        void IParameterizedDistribution.SetParameters (IList<double> parameters) {
+            if (parameters == null) throw new ArgumentNullException();
+            if (parameters.Count != 2) throw new DimensionMismatchException();
+            if (parameters[0] <= 0.0) throw new ArgumentOutOfRangeException();
+            if (parameters[1] <= 0.0) throw new ArgumentOutOfRangeException();
+            scale = parameters[0];
+            shape = parameters[1];
+        }
+
+    }
+
+    /// <summary>
+    /// Represents an parameterized likelihood distribution.
+    /// </summary>
+    public interface IParameterizedDistribution {
+
+        /// <summary>
+        /// Gets the parameter values of the distribution.
+        /// </summary>
+        /// <returns></returns>
+        double[] GetParameters ();
+
+        /// <summary>
+        /// Sets the parameter values of the distribution.
+        /// </summary>
+        /// <param name="parameters">A list of parameter values.</param>
+        void SetParameters (IList<double> parameters);
+
+        /// <summary>
+        /// Gets the likelihood of a value, given the current parameters.
+        /// </summary>
+        /// <param name="x">The value.</param>
+        /// <returns>The likelihood of the value.</returns>
+        double ProbabilityDensity (double x);
 
     }
 

@@ -4,12 +4,11 @@ using System.Diagnostics;
 
 namespace Meta.Numerics.Matrices {
 
-#if FUTURE
 
     /// <summary>
     /// Represents a tridiagonal matrix.
     /// </summary>
-    public sealed class TridiagonalMatrix : IMatrix {
+    public sealed class TridiagonalMatrix : IMatrix, ISquareMatrix {
 
         /// <summary>
         /// Initializes a new tridiagonal matrix of the given dimension.
@@ -96,13 +95,13 @@ namespace Meta.Numerics.Matrices {
                 switch (BoundsCheck(r, c)) {
                     case -1:
                         return (GetSubdiagonalElement(c));
-                        break;
+                        //break;
                     case 0:
                         return (GetDiagonalElement(r));
-                        break;
+                        //break;
                     case +1:
                         return (GetSuperdiagonalElement(r));
-                        break;
+                        //break;
                     default:
                         return (0.0);
                 }
@@ -125,6 +124,10 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
+        /// <summary>
+        /// Clones the matrix.
+        /// </summary>
+        /// <returns>An independent clone of the matrix.</returns>
         public TridiagonalMatrix Clone () {
             TridiagonalMatrix C = new TridiagonalMatrix(dimension);
             for (int i = 0; i < (dimension-1); i++) {
@@ -140,6 +143,10 @@ namespace Meta.Numerics.Matrices {
             return (Clone());
         }
 
+        /// <summary>
+        /// Creates a transpose of the matrix.
+        /// </summary>
+        /// <returns>The matrix transpose M<sup>T</sup>.</returns>
         public TridiagonalMatrix Transpose () {
             TridiagonalMatrix T = new TridiagonalMatrix(dimension);
             for (int i = 0; i < (dimension - 1); i++) {
@@ -155,6 +162,25 @@ namespace Meta.Numerics.Matrices {
             return (Transpose());
         }
 
+        /// <summary>
+        /// Computes the trace of the matrix.
+        /// </summary>
+        /// <returns>The trace tr M.</returns>
+        public double Trace () {
+            double tr = 0.0;
+            for (int i = 0; i < Dimension; i++) {
+                tr += GetDiagonalElement(i);
+            }
+            return (tr);
+        }
+
+        /// <summary>
+        /// Computes the determinant of the matrxi.
+        /// </summary>
+        /// <returns>The determinant det M.</returns>
+        /// <remarks>
+        /// <para>Computing the determinant of a tridiagonal matrix is an O(N) operation.</para>
+        /// </remarks>
         public double Determinant () {
 
             // the determinant is just the determinant of T, which can be computed by the recursion
@@ -178,6 +204,13 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+        /// <summary>
+        /// Computes the LU decomposition of the matrix.
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// <para>Computiong the LU decomposition of a tridiagonal matrix is an O(N) operation.</para>
+        /// </remarks>
         public TridiagonalLUDecomposition LUDecompose () {
 
             double[] LC = (double[]) L.Clone();
@@ -234,6 +267,7 @@ namespace Meta.Numerics.Matrices {
                     //tp = P[i];
                     //P[i] = P[i + 1];
                     //P[i + 1] = tp;
+                    pi = -pi;
 
                 }
 
@@ -293,18 +327,170 @@ namespace Meta.Numerics.Matrices {
         // (     X X X ) (     Y Y Y )
         // (       X X ) (       Y Y )
 
+        /// <summary>
+        /// Adds two tridiagonal matrices.
+        /// </summary>
+        /// <param name="T1">The first matrix M<sub>1</sub>.</param>
+        /// <param name="T2">The first matrix M<sub>2</sub>.</param>
+        /// <returns>The sum M<sub>1</sub> + M<sub>2</sub>.</returns>
         public static TridiagonalMatrix operator + (TridiagonalMatrix T1, TridiagonalMatrix T2) {
 
             int n = T1.Dimension;
             if (T2.Dimension != n) throw new DimensionMismatchException();
 
             TridiagonalMatrix T = new TridiagonalMatrix(n);
-            for (int i = 0; i < n; i++) {
-                T[i,i] = T1[i,i-1] * T2[i-1,i] + T1[i,i] * T2[i,i] + T1[i,i+1] * T2[i+1,i];
+
+            // add the elements
+            // this is a glorified for-next loop structured so as to minimize the
+            // integer arithmetic required to keep track of two numbers one unit apart
+            // and avoid if-tests inside the loop
+            T.SetDiagonalElement(0, T1.GetDiagonalElement(0) + T2.GetDiagonalElement(0));
+            int i0 = 0;
+            int i1 = 1;
+            while (i1 < n) {
+                T.SetDiagonalElement(i1, T1.GetDiagonalElement(i1) + T2.GetDiagonalElement(i1));
+                T.SetSubdiagonalElement(i0, T1.GetSubdiagonalElement(i0) + T2.GetSubdiagonalElement(i0));
+                T.SetSuperdiagonalElement(i0, T1.GetSuperdiagonalElement(i0) + T2.GetSuperdiagonalElement(i0));
+                i0 = i1;
+                i1++;
             }
 
             return (T);
 
+        }
+
+        /// <summary>
+        /// Subtracts two tridiagonal matrices.
+        /// </summary>
+        /// <param name="T1">The first matrix M<sub>1</sub>.</param>
+        /// <param name="T2">The first matrix M<sub>2</sub>.</param>
+        /// <returns>The difference M<sub>1</sub> - M<sub>2</sub>.</returns>
+        public static TridiagonalMatrix operator - (TridiagonalMatrix T1, TridiagonalMatrix T2) {
+
+            int n = T1.Dimension;
+            if (T2.Dimension != n) throw new DimensionMismatchException();
+
+            TridiagonalMatrix T = new TridiagonalMatrix(n);
+
+            // add the elements
+            // this is a glorified for-next loop structured so as to minimize the
+            // integer arithmetic required to keep track of two numbers one unit apart
+            // and avoid if-tests inside the loop
+            T.SetDiagonalElement(0, T1.GetDiagonalElement(0) - T2.GetDiagonalElement(0));
+            int i0 = 0;
+            int i1 = 1;
+            while (i1 < n) {
+                T.SetDiagonalElement(i1, T1.GetDiagonalElement(i1) - T2.GetDiagonalElement(i1));
+                T.SetSubdiagonalElement(i0, T1.GetSubdiagonalElement(i0) - T2.GetSubdiagonalElement(i0));
+                T.SetSuperdiagonalElement(i0, T1.GetSuperdiagonalElement(i0) - T2.GetSuperdiagonalElement(i0));
+                i0 = i1;
+                i1++;
+            }
+
+            return (T);
+
+        }
+
+        /// <summary>
+        /// Multiplies two tridiagonal matrices.
+        /// </summary>
+        /// <param name="T1">The first matrix.</param>
+        /// <param name="T2">The second matrix.</param>
+        /// <returns>The product <paramref name="T1"/> <paramref name="T2"/>.</returns>
+        public static SquareMatrix operator * (TridiagonalMatrix T1, TridiagonalMatrix T2) {
+
+            if (T1 == null) throw new ArgumentNullException("T1");
+            if (T2 == null) throw new ArgumentNullException("T1");
+
+            int n = T1.Dimension;
+            if (T2.Dimension != n) throw new DimensionMismatchException();
+
+            return (SquareMatrix.Multiply(T1, T2));
+            // improve this
+
+        }
+
+        public static TridiagonalMatrix operator * (double f, TridiagonalMatrix T) {
+
+            int n = T.Dimension;
+            TridiagonalMatrix fT = new TridiagonalMatrix(n);
+
+            fT.SetDiagonalElement(0, f * T.GetDiagonalElement(0));
+
+            int i0 = 0;
+            int i1 = 1;
+            while (i1 < n) {
+                fT.SetDiagonalElement(i1, f * T.GetDiagonalElement(i1));
+                fT.SetSubdiagonalElement(i0, f * T.GetSubdiagonalElement(i0));
+                fT.SetSuperdiagonalElement(i0, f * T.GetSuperdiagonalElement(i0));
+                i0 = i1;
+                i1++;
+            }
+
+            return (fT);
+
+        }
+
+        // equality testing
+
+        private static bool Equals (TridiagonalMatrix T1, TridiagonalMatrix T2) {
+            if (((object) T1) == null) {
+                if (((object) T2) == null) {
+                    return (true);
+                } else {
+                    return (false);
+                }
+            } else {
+                if (((object) T2) == null) {
+                    return (false);
+                } else {
+                    int n = T1.Dimension;
+                    if (T2.Dimension != n) throw new DimensionMismatchException();
+
+                    if (T1.GetDiagonalElement(0) != T2.GetDiagonalElement(0)) return (false);
+                    // this is a glorified for-next loop structured so as to minimize the
+                    // integer arithmetic required to keep track of two numbers one unit apart
+                    int i0 = 0;
+                    int i1 = 1;
+                    while (i1 < n) {
+                        if (T1.GetDiagonalElement(i1) != T2.GetDiagonalElement(i1)) return (false);
+                        if (T1.GetSubdiagonalElement(i0) != T2.GetSubdiagonalElement(i0)) return (false);
+                        if (T1.GetSuperdiagonalElement(i0) != T2.GetSuperdiagonalElement(i0)) return (false);
+                        i0 = i1;
+                        i1++;
+                    }
+                    return (true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Determines whether two tridiagonal matrices are equal.
+        /// </summary>
+        /// <param name="T1">The first matrix.</param>
+        /// <param name="T2">The second matrix.</param>
+        /// <returns>True if <paramref name="M1"/> and <paramref name="M2"/> are equal, otherwise false.</returns>
+        public static bool operator == (TridiagonalMatrix T1, TridiagonalMatrix T2) {
+            return (TridiagonalMatrix.Equals(T1, T2));
+        }
+
+        /// <summary>
+        /// Determines whether two tridiagonal matrices are not equal.
+        /// </summary>
+        /// <param name="T1">The first matrix.</param>
+        /// <param name="T2">The second matrix.</param>
+        /// <returns>False if <paramref name="M1"/> and <paramref name="M2"/> are equal, otherwise true.</returns>
+        public static bool operator != (TridiagonalMatrix T1, TridiagonalMatrix T2) {
+            return (!TridiagonalMatrix.Equals(T1, T2));
+        }
+
+        /// <summary>
+        /// Determines whether the given object is an equal matrix.
+        /// </summary>
+        /// <param name="obj">The object to compare.</param>
+        /// <returns>True if <paramref name="obj"/> is an equal matrix, otherwise false.</returns>
+        public override bool Equals (object obj) {
+            return (Matrix.Equals(this, obj as IMatrix));
         }
 
 
@@ -313,7 +499,7 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents the LU decomposition of a tridiagonal matrix.
     /// </summary>
-    public class TridiagonalLUDecomposition {
+    public class TridiagonalLUDecomposition : ISquareDecomposition {
 
         private int n;
 
@@ -343,12 +529,19 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+        /// <summary>
+        /// Gets the dimension of the original matrix.
+        /// </summary>
         public int Dimension {
             get {
                 return (P.Length);
             }
         }
 
+        /// <summary>
+        /// Computes the determinant of the original matrix.
+        /// </summary>
+        /// <returns>The determinant det M.</returns>
         public double Determinant () {
             double det = parity;
             for (int i = 0; i < n; i++) {
@@ -357,6 +550,11 @@ namespace Meta.Numerics.Matrices {
             return (det);
         }
 
+        /// <summary>
+        /// Solves a tridiagonal system of linear equations.
+        /// </summary>
+        /// <param name="rhs">The right-hand side vector b.</param>
+        /// <returns>A vector x which satisties Ax = b.</returns>
         public ColumnVector Solve (IList<double> rhs) {
 
             if (rhs.Count != n) throw new DimensionMismatchException();
@@ -411,6 +609,10 @@ namespace Meta.Numerics.Matrices {
             Console.WriteLine();
         }
 
+        /// <summary>
+        /// Computes the inverse of the original matrix.
+        /// </summary>
+        /// <returns>The matrix M<sup>-1</sup>.</returns>
         public SquareMatrix Inverse () {
 
             SquareMatrix TI = new SquareMatrix(n);
@@ -431,6 +633,10 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+        ISquareMatrix ISquareDecomposition.Inverse () {
+            return (Inverse());
+        }
+
         public SquareMatrix PMatrix () {
             SquareMatrix PM = new SquareMatrix(n);
             for (int r = 0; r < n; r++) {
@@ -449,6 +655,11 @@ namespace Meta.Numerics.Matrices {
             return (LM);
         }
 
+
+        /// <summary>
+        /// The matrix U in the decomposition PA = LU.
+        /// </summary>
+        /// <returns></returns>
         public SquareMatrix UMatrix () {
             SquareMatrix UM = new SquareMatrix(n);
             for (int i = 0; i < n; i++) {
@@ -460,7 +671,5 @@ namespace Meta.Numerics.Matrices {
         }
 
     }
-
-#endif
 
 }

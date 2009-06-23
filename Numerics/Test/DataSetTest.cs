@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
+using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics;
 
 // add tests of fit parameter uncertainties: are they really distributed as claimed?
@@ -70,6 +71,8 @@ namespace Test {
             DataPoint d1 = new DataPoint(3.0, new UncertainValue(2.0, 1.0));
             DataPoint d2 = new DataPoint(-3.0, new UncertainValue(2.0,1.0));
             DataPoint d3 = new DataPoint(3.0, new UncertainValue(-2.0,1.0));
+
+            Assert.IsTrue(d1 != null);
 
             DataPoint[] data = new DataPoint[] { d1, d2};
             DataSet set = new DataSet();
@@ -338,11 +341,14 @@ namespace Test {
                 return (0.5);
             };
 
+            // keep track of best-fit parameters and claimed parameter covariances
+            MultivariateSample sample = new MultivariateSample(3);
+
             // generate 50 small data sets and fit each
-            FitResult[] fits = new FitResult[100];
+            FitResult[] fits = new FitResult[50];
             for (int i = 0; i < fits.Length; i++) {
                 //DataSet set = CreateDataSet(Interval.FromEndpoints(-1.0,2.0), fv, fu, 10, i);
-                DataSet set = CreateDataSet(xs, fv, fu, i);
+                DataSet set = CreateDataSet(xs, fv, fu, 314159+i);
                 /*
                 foreach (DataPoint point in set) {
                     Console.WriteLine("  i={0} x={1} y={2}", i, point.X, point.Y);
@@ -354,7 +360,33 @@ namespace Test {
                     Console.WriteLine("p[{0}] = {1}", j, fits[i].Parameter(j));
                 }
                 */
+
+                for (int j = 0; j < fits[i].Dimension; j++) {
+                    sample.Add(fits[i].Parameters());
+                }
+
+
             }
+
+            // check that parameters agree
+            for (int i = 0; i < 3; i++) {
+                Console.WriteLine(sample.PopulationMean(i));
+            }
+            //Assert.IsTrue(sample.PopulationMean(0).ConfidenceInterval(0.95).ClosedContains(0.0));
+            //Assert.IsTrue(sample.PopulationMean(1).ConfidenceInterval(0.95).ClosedContains(1.0));
+            //Assert.IsTrue(sample.PopulationMean(2).ConfidenceInterval(0.95).ClosedContains(2.0));
+
+            /*
+            // check that the claimed covariances agree with the measured covariances
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+
+                    Console.WriteLine("{0},{1} {2} {3}", i, j, sample.PopulationCovariance(i, j), C[i, j]);
+
+                    Assert.IsTrue(sample.PopulationCovariance(i, j).ConfidenceInterval(0.95).ClosedContains(C[i, j]));
+                }
+            }
+            */
 
             // for each parameter, verify that the standard devition of the reported values agrees with the (average) reported uncertainty
             double[] pMeans = new double[3];
@@ -567,7 +599,7 @@ namespace Test {
         [TestMethod]
         public void FitDataToLineUncertaintyTest () {
 
-            Interval r = Interval.FromEndpoints(0.0, 10.0);
+            double[] xs = TestUtilities.GenerateUniformRealValues(0.0, 10.0, 10);
             Function<double,double> fv = delegate (double x) {
                 return(2.0*x - 1.0);
             };
@@ -575,25 +607,26 @@ namespace Test {
                 return (1.0+x);
             };
 
+            MultivariateSample sample = new MultivariateSample(2);
+            SymmetricMatrix covariance = new SymmetricMatrix(2);
 
             // create a bunch of small data sets
-            FitResult[] fits = new FitResult[50];
-            for (int i = 0; i < fits.Length; i++) {
-                DataSet data = CreateDataSet(r, fv, fu, 10, i);
-                fits[i] = data.FitToLine();
+            for (int i = 0; i < 100; i++) {
+                DataSet data = CreateDataSet(xs, fv, fu, i);
+                FitResult fit = data.FitToLine();
+
+                sample.Add(fit.Parameters());
+                covariance = fit.CovarianceMatrix();
+                // because it depends only on the x's and sigmas, the covariance is always the same
+
+                Console.WriteLine("cov_00 = {0}", covariance[0, 0]);
             }
 
-            // the variation in the intercept should agree with the reported uncertainty
-            UncertainValue parameter = fits[1].Parameter(0);
-            Console.WriteLine("p0 = {0}", parameter);
-            Sample values = new Sample();
-            foreach (FitResult fit in fits) {
-                values.Add(fit.Parameter(0).Value);
-            }
-            Console.WriteLine("mu = {0}", values.PopulationMean);
-            Console.WriteLine("sigma = {0}", values.PopulationStandardDeviation);
-            //Assert.IsTrue(values.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(parameter.Uncertainty));
-
+            // the measured covariances should agree with the claimed covariances
+            Assert.IsTrue(sample.PopulationCovariance(0,0).ConfidenceInterval(0.95).ClosedContains(covariance[0,0]));
+            Assert.IsTrue(sample.PopulationCovariance(0,1).ConfidenceInterval(0.95).ClosedContains(covariance[0,1]));
+            Assert.IsTrue(sample.PopulationCovariance(1,0).ConfidenceInterval(0.95).ClosedContains(covariance[1,0]));
+            Assert.IsTrue(sample.PopulationCovariance(1,1).ConfidenceInterval(0.95).ClosedContains(covariance[1,1]));
 
         }
 

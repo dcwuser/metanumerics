@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
@@ -8,15 +9,20 @@ using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Statistics {
 
+    // There is a bit of ugliness here due to the fact that we origially published with the
+    // non-generic DataPoint and DataSet. The generic versions were added later, and their
+    // introducion is mostly smooth, but in order to be non-breaking DataSet<T> can't be
+    // IEnumerable<DataPoint<T>>, because that would make DataSet IEnumerable<DataPoint<double>>,
+    // but it's already IEnumerable<DataPoint> and it can't be both. In the future, we should
+    // eliminate DataPoint and just use DataPoint<double> and re-jigger enumerablity
 
     /// <summary>
-    /// Represents an experimental data point. 
+    /// Represents an experimental data point that is a function of an arbitrary variable.
     /// </summary>
-    /// <remarks><para></para></remarks>
-    /// <seealso cref="DataSet" />
-    public class DataPoint {
+    /// <typeparam name="T">The type of the ordinate (independent variable) characterizing the data point.</typeparam>
+    public class DataPoint<T> {
 
-        private double x;
+        private T x;
         private UncertainValue y;
 
         /// <summary>
@@ -24,7 +30,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="x">The ordinate.</param>
         /// <param name="y">The abcissa.</param>
-        public DataPoint (double x, UncertainValue y) {
+        public DataPoint (T x, UncertainValue y) {
             this.x = x;
             this.y = y;
         }
@@ -35,7 +41,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="x">The ordinate.</param>
         /// <param name="y">The best estimate of the abcissa.</param>
         /// <param name="dy">The uncertainty in the abcissa.</param>
-        public DataPoint (double x, double y, double dy) {
+        public DataPoint (T x, double y, double dy) {
             this.x = x;
             this.y = new UncertainValue(y, dy);
         }
@@ -43,7 +49,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets or sets the value of the ordinate (independent variable).
         /// </summary>
-        public double X {
+        public T X {
             get {
                 return (x);
             }
@@ -58,13 +64,9 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        /// <summary>
-        /// Determines whether two data points are equal.
-        /// </summary>
-        /// <param name="d1">The first data point.</param>
-        /// <param name="d2">The second data point.</param>
-        /// <returns>True if the data points are equal, otherwise false.</returns>
-        public static bool operator == (DataPoint d1, DataPoint d2) {
+        // equality
+
+        private static bool Equals (DataPoint<T> d1, DataPoint<T> d2) {
             if (Object.ReferenceEquals(d1, null)) {
                 if (Object.ReferenceEquals(d2, null)) {
                     return (true);
@@ -75,9 +77,19 @@ namespace Meta.Numerics.Statistics {
                 if (Object.ReferenceEquals(d2, null)) {
                     return (false);
                 } else {
-                    return ((d1.X == d2.X) && (d1.Y == d2.Y));
+                    return ((d1.X.Equals(d2.X)) && (d1.Y == d2.Y));
                 }
             }
+        }
+
+        /// <summary>
+        /// Determines whether two data points are equal.
+        /// </summary>
+        /// <param name="d1">The first data point.</param>
+        /// <param name="d2">The second data point.</param>
+        /// <returns>True if the data points are equal, otherwise false.</returns>
+        public static bool operator == (DataPoint<T> d1, DataPoint<T> d2) {
+            return (Equals(d1, d2));
         }
 
         /// <summary>
@@ -86,8 +98,8 @@ namespace Meta.Numerics.Statistics {
         /// <param name="d1">The first data point.</param>
         /// <param name="d2">The second data point.</param>
         /// <returns>True if the data points are not equal, otherwise false.</returns>
-        public static bool operator != (DataPoint d1, DataPoint d2) {
-            return (!(d1 == d2));
+        public static bool operator != (DataPoint<T> d1, DataPoint<T> d2) {
+            return (!Equals(d1, d2));
         }
 
         /// <summary>
@@ -96,11 +108,11 @@ namespace Meta.Numerics.Statistics {
         /// <param name="obj">The object.</param>
         /// <returns>True if the object represents the same data point, otherwise false.</returns>
         public override bool Equals (object obj) {
-            DataPoint d = obj as DataPoint;
+            DataPoint<T> d = obj as DataPoint<T>;
             if (Object.ReferenceEquals(d, null)) {
                 return (false);
             } else {
-                return (this == d);
+                return (Equals(this, d));
             }
         }
 
@@ -115,9 +127,43 @@ namespace Meta.Numerics.Statistics {
     }
 
     /// <summary>
-    /// Represents a set of <see cref="DataPoint"/> measurements.
+    /// Represents an experimental data point that is a function of a single real variable.
     /// </summary>
-    public sealed class DataSet : ICollection<DataPoint> {
+    /// <remarks><para></para></remarks>
+    /// <seealso cref="DataSet" />
+    public class DataPoint : DataPoint<double> {
+
+        //private double x;
+        //private UncertainValue y;
+
+        /// <summary>
+        /// Initializes a new data point with the given values for the ordinate and uncertain abcissa.
+        /// </summary>
+        /// <param name="x">The ordinate.</param>
+        /// <param name="y">The abcissa.</param>
+        public DataPoint (double x, UncertainValue y) : base(x,y) {
+            //this.x = x;
+            //this.y = y;
+        }
+
+        /// <summary>
+        /// Initializes a new data point with the given values for the ordinate, abcissa, and uncertainty.
+        /// </summary>
+        /// <param name="x">The ordinate.</param>
+        /// <param name="y">The best estimate of the abcissa.</param>
+        /// <param name="dy">The uncertainty in the abcissa.</param>
+        public DataPoint (double x, double y, double dy) : base (x, y, dy) {
+            //this.x = x;
+            //this.y = new UncertainValue(y, dy);
+        }
+
+    }
+
+    /// <summary>
+    /// Represents a set of measurements.
+    /// </summary>
+    /// <typeparam name="T">The type of independent variable associated with each measurement.</typeparam>
+    public class DataSet<T> {
 
         /// <summary>
         /// Initializes a new, empty data set.
@@ -125,22 +171,13 @@ namespace Meta.Numerics.Statistics {
         public DataSet () {
         }
 
-        /// <summary>
-        /// Initializes a new data set with the specified data.
-        /// </summary>
-        /// <param name="data">An enumerator over the <see cref="DataPoint" />s to place in the set.</param>
-        public DataSet (IEnumerable<DataPoint> data) {
-            if (data == null) throw new ArgumentNullException("data");
-            Add(data);
-        }
-
-        private List<DataPoint> data = new List<DataPoint>();
+        private List<DataPoint<T>> data = new List<DataPoint<T>>();
 
         /// <summary>
         /// Adds a new data point to the set.
         /// </summary>
         /// <param name="datum">The data point.</param>
-        public void Add (DataPoint datum) {
+        public void Add (DataPoint<T> datum) {
             if (datum == null) throw new ArgumentNullException("datum");
             data.Add(datum);
         }
@@ -149,19 +186,20 @@ namespace Meta.Numerics.Statistics {
         /// Adds a series of data points to the set.
         /// </summary>
         /// <param name="data">The data points.</param>
-        public void Add (IEnumerable<DataPoint> data) {
+        public void Add (IEnumerable<DataPoint<T>> data) {
             if (data == null) throw new ArgumentNullException("data");
-            foreach (DataPoint datum in data) {
+            foreach (DataPoint<T> datum in data) {
                 this.data.Add(datum);
             }
         }
 
+        
         /// <summary>
         /// Removes a data point from the set.
         /// </summary>
         /// <param name="datum">The data point to remove.</param>
         /// <returns>True if the data point was found and removed; otherwise false.</returns>
-        public bool Remove (DataPoint datum) {
+        public bool Remove (DataPoint<T> datum) {
             return (data.Remove(datum));
         }
 
@@ -170,7 +208,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="datum">The data point.</param>
         /// <returns>True if the set contains the given data point, otherwise false.</returns>
-        public bool Contains (DataPoint datum) {
+        public bool Contains (DataPoint<T> datum) {
             return (data.Contains(datum));
         }
 
@@ -190,6 +228,197 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+
+        /// <summary>
+        /// Fits the data to a linear combination of fit functions.
+        /// </summary>
+        /// <param name="functions">The component functions.</param>
+        /// <returns>A fit result containing the best-fit coefficients of the component functions and a &#x3C7;<sup>2</sup> test
+        /// of the quality of the fit.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="functions"/> is null.</exception>
+        public FitResult FitToLinearFunction (Function<T, double>[] functions) {
+
+            if (functions == null) throw new ArgumentNullException("functions");
+            if (functions.Length > data.Count) throw new InvalidOperationException();
+
+            // construct the data matrix
+            SymmetricMatrix A = new SymmetricMatrix(functions.Length);
+            for (int i = 0; i < A.Dimension; i++) {
+                //Debug.WriteLine(String.Format("F_{0}(2.0) = {1}", i, functions[i](2.0)));
+                for (int j = 0; j <= i; j++) {
+                    double Aij = 0.0;
+                    for (int k = 0; k < data.Count; k++) {
+                        Aij += functions[i](data[k].X) * functions[j](data[k].X) / Math.Pow(data[k].Y.Uncertainty, 2);
+                    }
+                    A[i, j] = Aij;
+                    //Debug.WriteLine(String.Format("A[{0},{1}] = {2}", i, j, A[i, j]));
+                }
+            }
+
+            // construct the rhs
+            double[] b = new double[functions.Length];
+            for (int i = 0; i < b.Length; i++) {
+                b[i] = 0.0;
+                for (int j = 0; j < data.Count; j++) {
+                    b[i] += data[j].Y.Value * functions[i](data[j].X) / Math.Pow(data[j].Y.Uncertainty, 2);
+                }
+            }
+
+            // solve the system
+            CholeskyDecomposition CD = A.CholeskyDecomposition();
+            if (CD == null) throw new InvalidOperationException();
+            Debug.Assert(CD != null);
+            SymmetricMatrix C = CD.Inverse();
+            ColumnVector a = CD.Solve(b);
+
+            // do a chi^2 test
+            double chi2 = 0.0;
+            for (int i = 0; i < data.Count; i++) {
+                double f = 0.0;
+                for (int j = 0; j < functions.Length; j++) {
+                    f += functions[j](data[i].X) * a[j];
+                }
+                chi2 += Math.Pow((data[i].Y.Value - f) / data[i].Y.Uncertainty, 2);
+            }
+            TestResult test = new TestResult(chi2, new ChiSquaredDistribution(data.Count - functions.Length));
+
+            // return the results
+            FitResult fit = new FitResult(a, C, test);
+            return (fit);
+
+        }
+
+        /// <summary>
+        /// Fits the data to an arbitrary parameterized function.
+        /// </summary>
+        /// <param name="function">The fit function.</param>
+        /// <param name="start">An initial guess at the parameters.</param>
+        /// <returns>A fit result containing the best-fitting function parameters
+        /// and a &#x3C7;<sup>2</sup> test of the quality of the fit.</returns>
+        /// <exception cref="InvalidOperationException">There are more fit function parameters than data points.</exception>
+        public FitResult FitToFunction (Function<double[], T, double> function, double[] start) {
+            if (function == null) throw new ArgumentNullException("function");
+            if (start == null) throw new ArgumentNullException("start");
+
+            // you can't do a fit with less data than parameters
+            if (this.Count < start.Length) throw new InvalidOperationException();
+
+            // create a chi^2 fit metric and minimize it 
+            FitMetric<T> metric = new FitMetric<T>(this, function);
+            SpaceExtremum minimum = FunctionMath.FindMinimum(new Function<double[], double>(metric.Evaluate), start);
+
+            // compute the covariance (Hessian) matrix by inverting the curvature matrix
+            SymmetricMatrix A = minimum.Curvature() / 2.0;
+            CholeskyDecomposition CD = A.CholeskyDecomposition(); // should not return null if we were at a minimum
+            SymmetricMatrix C = CD.Inverse();
+
+            // package up the results and return them
+            TestResult test = new TestResult(minimum.Value, new ChiSquaredDistribution(this.Count - minimum.Dimension));
+            FitResult fit = new FitResult(minimum.Location(), C, test);
+            return (fit);
+
+        }
+
+        // can't expose this yet, because IEnumerable<DataPoint<double>> would conflict
+        // with IEnumerable<DataPoint>; eliminating non-generic DataPoint would fix this
+
+        internal IEnumerator<DataPoint<T>> GetEnumerator () {
+            return (data.GetEnumerator());
+        }
+
+    }
+
+
+    /// <summary>
+    /// Represents a set of <see cref="DataPoint"/> measurements.
+    /// </summary>
+    public sealed class DataSet : DataSet<double>, ICollection<DataPoint> {
+
+        /// <summary>
+        /// Initializes a new, empty data set.
+        /// </summary>
+        public DataSet () : base() {
+        }
+
+        /// <summary>
+        /// Initializes a new data set with the specified data.
+        /// </summary>
+        /// <param name="data">An enumerator over the <see cref="DataPoint" />s to place in the set.</param>
+        public DataSet (IEnumerable<DataPoint> data) : base() {
+            if (data == null) throw new ArgumentNullException("data");
+            foreach (DataPoint datum in data) {
+                Add(datum);
+            }
+        }
+
+        //private List<DataPoint> data = new List<DataPoint>();
+
+        ///// <summary>
+        ///// Adds a new data point to the set.
+        ///// </summary>
+        ///// <param name="datum">The data point.</param>
+        //public void Add (DataPoint datum) {
+        //    if (datum == null) throw new ArgumentNullException("datum");
+        //    data.Add(datum);
+        //}
+
+        ///// <summary>
+        ///// Adds a series of data points to the set.
+        ///// </summary>
+        ///// <param name="data">The data points.</param>
+        //public void Add (IEnumerable<DataPoint> data) {
+        //    if (data == null) throw new ArgumentNullException("data");
+        //    foreach (DataPoint datum in data) {
+        //        this.data.Add(datum);
+        //    }
+        //}
+
+        ///// <summary>
+        ///// Removes a data point from the set.
+        ///// </summary>
+        ///// <param name="datum">The data point to remove.</param>
+        ///// <returns>True if the data point was found and removed; otherwise false.</returns>
+        //public bool Remove (DataPoint datum) {
+        //    return (data.Remove(datum));
+        //}
+
+        ///// <summary>
+        ///// Determines whether the set contains the given data point.
+        ///// </summary>
+        ///// <param name="datum">The data point.</param>
+        ///// <returns>True if the set contains the given data point, otherwise false.</returns>
+        //public bool Contains (DataPoint datum) {
+        //    return (data.Contains(datum));
+        //}
+
+        ///// <summary>
+        ///// Removes all data points from the set.
+        ///// </summary>
+        //public void Clear () {
+        //    data.Clear();
+        //}
+
+        ///// <summary>
+        ///// Gets the size of the data set.
+        ///// </summary>
+        //public int Count {
+        //    get {
+        //        return (data.Count);
+        //    }
+        //}
+
+        void ICollection<DataPoint>.Add (DataPoint datum) {
+            Add(datum);
+        }
+
+        bool ICollection<DataPoint>.Contains (DataPoint datum) {
+            return (Contains(datum));
+        }
+
+        bool ICollection<DataPoint>.Remove (DataPoint datum) {
+            return (Remove(datum));
+        }
+
         int ICollection<DataPoint>.Count {
             get {
                 return (Count);
@@ -203,15 +432,20 @@ namespace Meta.Numerics.Statistics {
         }
 
         void ICollection<DataPoint>.CopyTo (DataPoint[] array, int offset) {
-            data.CopyTo(array, offset);
+            int i = offset;
+            DataPointEnumerator e = new DataPointEnumerator(GetEnumerator());
+            while (e.MoveNext()) {
+                array[i] = e.Current;
+                i++;
+            }
         }
 
         IEnumerator<DataPoint> IEnumerable<DataPoint>.GetEnumerator () {
-            return (data.GetEnumerator());
+            return (new DataPointEnumerator(GetEnumerator()));
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator () {
-            return (data.GetEnumerator());
+            return (new DataPointEnumerator(GetEnumerator()));
         }
 
         /*
@@ -220,6 +454,7 @@ namespace Meta.Numerics.Statistics {
         }
         */
 
+        /*
         /// <summary>
         /// Fits the data to a linear combination of fit functions.
         /// </summary>
@@ -279,6 +514,8 @@ namespace Meta.Numerics.Statistics {
 
         }
 
+        */
+ 
         /// <summary>
         /// Fits the data to a constant value.
         /// </summary>
@@ -289,8 +526,9 @@ namespace Meta.Numerics.Statistics {
             // do required sums
             double S = 0.0;
             double Sy = 0.0;
-            for (int i = 0; i < data.Count; i++) {
-                DataPoint datum = data[i];
+            foreach (DataPoint datum in this) {
+            //for (int i = 0; i < data.Count; i++) {
+                //DataPoint datum = data[i];
                 double y = datum.Y.Value;
                 double dy = datum.Y.Uncertainty;
                 double w = 1.0/(dy*dy);
@@ -304,15 +542,16 @@ namespace Meta.Numerics.Statistics {
 
             // compute chi^2
             double chi2 = 0.0;
-            for (int i = 0; i < data.Count; i++) {
-                DataPoint datum = data[i];
+            foreach (DataPoint datum in this) {
+            //for (int i = 0; i < data.Count; i++) {
+                //DataPoint datum = data[i];
                 double x = datum.X;
                 double y = datum.Y.Value;
                 double dy = datum.Y.Uncertainty;
                 double z = (y - m) / dy;
                 chi2 += z * z;
             }
-            TestResult test = new TestResult(chi2, new ChiSquaredDistribution(data.Count - 1));
+            TestResult test = new TestResult(chi2, new ChiSquaredDistribution(Count - 1));
 
             return (new FitResult(m, dm, test));
         }
@@ -327,8 +566,9 @@ namespace Meta.Numerics.Statistics {
             // do required sums
             double Sxx = 0.0;
             double Sxy = 0.0;
-            for (int i = 0; i < data.Count; i++) {
-                DataPoint datum = data[i];
+            foreach (DataPoint datum in this) {
+            //for (int i = 0; i < data.Count; i++) {
+                //DataPoint datum = data[i];
                 double x = datum.X;
                 double y = datum.Y.Value;
                 double dy = datum.Y.Uncertainty;
@@ -343,15 +583,16 @@ namespace Meta.Numerics.Statistics {
 
             // compute chi^2
             double chi2 = 0.0;
-            for (int i = 0; i < data.Count; i++) {
-                DataPoint datum = data[i];
+            foreach (DataPoint datum in this) {
+            //for (int i = 0; i < data.Count; i++) {
+                //DataPoint datum = data[i];
                 double x = datum.X;
                 double y = datum.Y.Value;
                 double dy = datum.Y.Uncertainty;
                 double z = (y - a * x) / dy;
                 chi2 += z * z;
             }
-            TestResult test = new TestResult(chi2, new ChiSquaredDistribution(data.Count - 1));
+            TestResult test = new TestResult(chi2, new ChiSquaredDistribution(Count - 1));
 
             // return results
             return (new FitResult(a, da, test));
@@ -364,14 +605,17 @@ namespace Meta.Numerics.Statistics {
         /// the quality of the fit.</returns>
         public FitResult FitToLine () {
 
+            if (Count < 2) throw new InvalidOperationException();
+
             // do required sums
             double S = 0.0;
             double Sx = 0.0;
             double Sy = 0.0;
             double Sxx = 0.0;
             double Sxy = 0.0;
-            for (int i = 0; i < data.Count; i++) {
-                DataPoint datum = data[i];
+            foreach (DataPoint datum in this) {
+            //for (int i = 0; i < data.Count; i++) {
+                //DataPoint datum = data[i];
                 double x = datum.X;
                 double y = datum.Y.Value;
                 double dy = datum.Y.Uncertainty;
@@ -393,15 +637,16 @@ namespace Meta.Numerics.Statistics {
 
             // compute chi^2
             double chi2 = 0.0;
-            for (int i = 0; i < data.Count; i++) {
-                DataPoint datum = data[i];
+            foreach (DataPoint datum in this) {
+            //for (int i = 0; i < data.Count; i++) {
+                //DataPoint datum = data[i];
                 double x = datum.X;
                 double y = datum.Y.Value;
                 double dy = datum.Y.Uncertainty;
                 double z = (y - (m * x + b)) / dy;
                 chi2 += z * z;
             }
-            TestResult test = new TestResult(chi2, new ChiSquaredDistribution(data.Count-2));
+            TestResult test = new TestResult(chi2, new ChiSquaredDistribution(Count-2));
 
             return (new FitResult(b, db, m, dm, cov, test));
         }
@@ -416,6 +661,7 @@ namespace Meta.Numerics.Statistics {
         public FitResult FitToPolynomial (int order) {
 
             if (order < 0) throw new ArgumentOutOfRangeException("order");
+            if (Count < order) throw new InvalidOperationException();
 
             // create the functions
             Function<double,double>[] functions = new Function<double,double>[order + 1];
@@ -432,6 +678,7 @@ namespace Meta.Numerics.Statistics {
 
         }
 
+        /*
         /// <summary>
         /// Fits the data to an arbitrary parameterized function.
         /// </summary>
@@ -462,10 +709,78 @@ namespace Meta.Numerics.Statistics {
             return (fit);
 
         }
+        */
 
     }
 
 
+    internal class FitMetric<T> {
+
+        public FitMetric (DataSet<T> set, Function<double[], T, double> f) {
+            this.set = set;
+            this.f = f;
+        }
+
+        private DataSet<T> set;
+
+        private Function<double[], T, double> f;
+
+        public double Evaluate (double[] p) {
+            //Console.WriteLine("Computing chi^2 with p[0]={0}", p[0]);
+            double chi2 = 0.0;
+            IEnumerator<DataPoint<T>> e = set.GetEnumerator();
+            while (e.MoveNext()) {
+                DataPoint<T> point = e.Current;
+            //foreach (DataPoint<T> point in set) {
+                T x = point.X;
+                double fx = f(p, x);
+                double y = point.Y.Value;
+                double dy = point.Y.Uncertainty;
+                double z = (y - fx) / dy;
+                //Console.WriteLine("  x={0} f(x)={1} y={2} dy={3} z={4}", x, fx, y, dy, z);
+                chi2 += z * z;
+            }
+            //Console.WriteLine("chi^2={0}", chi2);
+            return (chi2);
+        }
+
+    }
+
+    internal class DataPointEnumerator : IEnumerator<DataPoint>, IEnumerator {
+
+        internal DataPointEnumerator (IEnumerator<DataPoint<double>> e) {
+            this.e = e;
+        }
+
+        private IEnumerator<DataPoint<double>> e;
+
+        public DataPoint Current {
+            get {
+                return (new DataPoint(e.Current.X, e.Current.Y));
+            }
+        }
+
+        object IEnumerator.Current {
+            get {
+                return (new DataPoint(e.Current.X, e.Current.Y));
+            }
+        }
+
+        public bool MoveNext () {
+            return(e.MoveNext());
+        }
+
+        public void Reset () {
+            e.Reset();
+        }
+
+        void IDisposable.Dispose () {
+            e.Dispose();
+        }
+
+    }
+
+    /*
     internal class FitMetric {
 
         public FitMetric (DataSet set, Function<double[], double, double> f) {
@@ -494,5 +809,6 @@ namespace Meta.Numerics.Statistics {
         }
 
     }
+    */
 
 }

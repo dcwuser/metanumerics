@@ -82,7 +82,7 @@ namespace Test
 
         [TestMethod]
         public void BesselNegativeOrderTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 15)) {
                     int s = 1 - 2*(n % 2);
                     Assert.IsTrue(AdvancedMath.BesselJ(-n, x) == s * AdvancedMath.BesselJ(n, x));
@@ -93,7 +93,7 @@ namespace Test
 
         [TestMethod]
         public void BesselRecurrenceTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0,2,5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1,100,5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,15)) {
                     Console.WriteLine("n = {0}, x={1}", n, x);
                     Assert.IsTrue(TestUtilities.IsSumNearlyEqual(AdvancedMath.BesselJ(n - 1, x), AdvancedMath.BesselJ(n + 1, x), 2 * n / x * AdvancedMath.BesselJ(n, x)));
@@ -143,7 +143,7 @@ namespace Test
         public void BesselJIntegralTest () {
             Interval r = Interval.FromEndpoints(0.0, Math.PI);
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 5)) {
-                foreach (int n in TestUtilities.GenerateIntegerValues(0, 1, 3)) {
+                foreach (int n in TestUtilities.GenerateIntegerValues(1, 10, 3)) {
                     Function<double, double> f = delegate(double t) {
                         return (Math.Cos(x * Math.Sin(t) - n * t));
                     };
@@ -185,7 +185,7 @@ namespace Test
 
         [TestMethod]
         public void BesselAgreementTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0,2,5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1,100,5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,15)) {
                     Console.WriteLine("n={0},x={1}", n, x);
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselJ(n, x), AdvancedMath.BesselJ((double) n, x)));
@@ -326,7 +326,7 @@ namespace Test
 
         [TestMethod]
         public void SphericalBesselRecurrenceTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0,2,5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1,100,5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,15)) {
                     Console.WriteLine("n={0} x={1}", n, x);
                     double jm1 = AdvancedMath.SphericalBesselJ(n - 1, x);
@@ -348,7 +348,7 @@ namespace Test
 
         [TestMethod]
         public void SphericalBesselNegativeOrderTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 15)) {
                     int s = 2 * (n % 2) - 1;
                     Assert.IsTrue(AdvancedMath.SphericalBesselY(n, x) == s * AdvancedMath.SphericalBesselJ(-n - 1, x));
@@ -359,7 +359,7 @@ namespace Test
 
         [TestMethod]
         public void SphericalBesselWronskianTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 15)) {
                     if (BesselYInRange(n, x)) {
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.SphericalBesselJ(n, x) * AdvancedMath.SphericalBesselY(n - 1, x) - AdvancedMath.SphericalBesselJ(n - 1, x) * AdvancedMath.SphericalBesselY(n, x), 1.0 / (x * x)));
@@ -370,7 +370,7 @@ namespace Test
 
         [TestMethod]
         public void SphericalBesselAgreementTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 15)) {
                     Console.WriteLine("n={0} x={1}", n, x);
                     Console.WriteLine("Sp = {0}", AdvancedMath.SphericalBesselJ(n, x));
@@ -675,7 +675,7 @@ namespace Test
 
         [TestMethod]
         public void IntegralEInequalityTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0,2,5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1,100,5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E3,15)) {
                     if (x >= Math.Log(Double.MaxValue / 10.0)) continue; // keep Exp(x) from overflowing
                     double lower = 1.0 / (x + n);
@@ -690,7 +690,7 @@ namespace Test
 
         [TestMethod]
         public void IntegralERecurrenceTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0, 2, 5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E3, 15)) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(n * AdvancedMath.IntegralE(n + 1, x) + x * AdvancedMath.IntegralE(n, x), Math.Exp(-x)));
                 }
@@ -699,7 +699,7 @@ namespace Test
 
         [TestMethod]
         public void IntegralEIntegralTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(0, 1, 2)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 10, 2)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 10.0, 3)) {
                     Function<double, double> f = delegate(double t) {
                         return (Math.Exp(-x * t) / Math.Pow(t, n));

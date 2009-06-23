@@ -189,18 +189,22 @@ namespace Test
         public void DistributionRawMomentIntegralTest () {
             foreach (Distribution distribution in distributions) {
                 // range of moments is about 3 to 20
-                foreach (int n in TestUtilities.GenerateIntegerValues(0.3, 1.3, 3)) {
+                foreach (int n in TestUtilities.GenerateIntegerValues(3, 20, 3)) {
                     double M = distribution.Moment(n);
                     if (Double.IsInfinity(M)) continue; // don't try to integrate to infinity
                     Function<double, double> f = delegate(double x) {
                         return (distribution.ProbabilityDensity(x) * Math.Pow(x, n));
                     };
-                    double MI = FunctionMath.Integrate(f, distribution.Support);
-                    Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, n, M, MI);
-                    if (M == 0.0) {
-                        Assert.IsTrue(Math.Abs(MI) < TestUtilities.TargetPrecision);
-                    } else {
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(M, MI));
+                    try {
+                        double MI = FunctionMath.Integrate(f, distribution.Support);
+                        Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, n, M, MI);
+                        if (M == 0.0) {
+                            Assert.IsTrue(Math.Abs(MI) < TestUtilities.TargetPrecision);
+                        } else {
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(M, MI));
+                        }
+                    } catch (NonconvergenceException) {
+                        Console.WriteLine("{0} {1} {2} NC", distribution.GetType().Name, n, M);
                     }
                 }
             }
@@ -211,7 +215,7 @@ namespace Test
         public void DistributionCentralMomentIntegralTest () {
             foreach (Distribution distribution in distributions) {
                 // range of moments is about 3 to 20
-                foreach (int n in TestUtilities.GenerateIntegerValues(0.3, 1.3, 3)) {
+                foreach (int n in TestUtilities.GenerateIntegerValues(3, 20, 3)) {
                     double C = distribution.MomentAboutMean(n);
                     if (Double.IsInfinity(C)) continue; // don't try to integrate to infinity
                     double m = distribution.Mean;
@@ -228,7 +232,7 @@ namespace Test
                             // have no analytic expressions for central moments, which must therefore be
                             // determined via raw moments and are thus subject to cancelation error
                             // can we revisit this later?
-                            Assert.IsTrue(TestUtilities.IsNearlyEqual(C, CI, TestUtilities.TargetPrecision * 64.0));
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(C, CI, TestUtilities.TargetPrecision * 1000.0));
                         }
                     } catch (NonconvergenceException) {
                         Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, n, C, "NC");
@@ -269,14 +273,6 @@ namespace Test
                 }
 
             }
-        }
-
-        [TestMethod]
-        public void KolmogorovDebug () {
-
-            Distribution D = new KolmogorovDistribution();
-            double x = 1.2;
-
         }
 
     }

@@ -662,6 +662,12 @@ namespace Meta.Numerics.Matrices {
             return (Add(M1, M2));
         }
 
+        /// <summary>
+        /// Subtracts two symmetric matrices.
+        /// </summary>
+        /// <param name="M1">The first matrix.</param>
+        /// <param name="M2">The second matrix.</param>
+        /// <returns>The difference <paramref name="M1"/> + <paramref name="M2"/>.</returns>
         internal static SymmetricMatrix Subtract (SymmetricMatrix M1, SymmetricMatrix M2) {
             if (M1.Dimension != M2.Dimension) throw new DimensionMismatchException();
             SymmetricMatrix N = new SymmetricMatrix(M1.Dimension);
@@ -796,6 +802,20 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
+        /// <summary>
+        /// Returns the Cholesky square root matrix.
+        /// </summary>
+        /// <returns>A lower-left triangular matrix A, such that A A<sup>T</sup> = M.</returns>
+        public virtual SquareMatrix SquareRootMatrix () {
+            SquareMatrix A = new SquareMatrix(Dimension);
+            for (int r = 0; r < Dimension; r++) {
+                for (int c = 0; c <= r; c++) {
+                    A[r, c] = sqrtM[r, c];
+                }
+            }
+            return (A);
+        }
+
         /*
         public virtual LowerTriangularMatrix LeftFactor {
             get {
@@ -821,7 +841,7 @@ namespace Meta.Numerics.Matrices {
             }
         }
         */
- 
+
         /// <summary>
         /// Computes the solution vector that, when multiplied by the original matrix, produces the given left-hand side vector.
         /// </summary>

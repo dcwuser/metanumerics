@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using Meta.Numerics;
+using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Statistics {
@@ -630,6 +631,37 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <summary>
+        /// Performs a maximum likelihood fit.
+        /// </summary>
+        /// <param name="distribution">The distribution to fit to the data.</param>
+        /// <returns>The result of the fit, containg the parameters that result in the best fit,
+        /// covariance matrix among those parameters, and a test of the goodness of fit.</returns>
+        /// <seealso href="http://en.wikipedia.org/wiki/Maximum_likelihood"/>
+        public FitResult MaximumLikelihoodFit (IParameterizedDistribution distribution) {
+
+            // define a log likeyhood function
+            Function<double[],double> L = delegate (double[] parameters) {
+                distribution.SetParameters(parameters);
+                double lnP = 0.0;
+                foreach (double value in data) {
+                    double P = distribution.ProbabilityDensity(value);
+                    if (P == 0.0) throw new InvalidOperationException();
+                    lnP += Math.Log(P);
+                }
+                return(-lnP);
+            };
+
+            // maximize it
+            double[] v0 = distribution.GetParameters();
+            SpaceExtremum min = FunctionMath.FindMinimum(L, v0);
+
+            // turn this into a fit result
+            FitResult result = new FitResult(min.Location(), min.Curvature().CholeskyDecomposition().Inverse(), null);
+
+            return (result);
+
+        }
 
 
     }

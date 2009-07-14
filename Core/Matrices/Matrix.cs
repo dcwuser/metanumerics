@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.IO;
+//using System.Text;
 
 namespace Meta.Numerics.Matrices {
 
@@ -342,6 +343,27 @@ namespace Meta.Numerics.Matrices {
             return (Multiply(x, M));
         }
         */
+
+        internal static void WriteMatrix (IMatrix matrix, TextWriter writer) {
+
+            for (int r = 0; r < matrix.RowCount; r++) {
+                writer.Write("{ ");
+                for (int c = 0; c < matrix.ColumnCount; c++) {
+                    writer.Write("{0,15:g12} ", matrix[r, c]);
+                }
+                writer.WriteLine("}");
+            }
+
+        }
+
+#if SHO
+        [Obsolete]
+        public string __repr__ () {
+            StringWriter writer = new StringWriter();
+            Matrix.WriteMatrix(this, writer);
+            return (writer.ToString());
+        }
+#endif
 
     }
 

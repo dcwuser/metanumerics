@@ -183,6 +183,16 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
+        /// Adds a new data point to the set.
+        /// </summary>
+        /// <param name="x">The value of the ordinate (independent variable).</param>
+        /// <param name="y">The value of the abcissa (dependent variable).</param>
+        /// <param name="dy">The uncertainty of the abcissa (dependent variable).</param>
+        public void Add (T x, double y, double dy) {
+            data.Add(new DataPoint<T>(x, y, dy));
+        }
+
+        /// <summary>
         /// Adds a series of data points to the set.
         /// </summary>
         /// <param name="data">The data points.</param>

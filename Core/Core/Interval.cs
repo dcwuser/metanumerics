@@ -1,10 +1,15 @@
 using System;
+using System.Globalization;
 
 namespace Meta.Numerics {
 
     /// <summary>
     /// Represents an interval on the real number line.
     /// </summary>
+    /// <remarks>
+    /// <para>Use the static methods <see cref="FromEndpoints"/>, <see cref="FromMidpointAndWidth"/>,
+    /// and <see cref="FromEndpointAndWidth"/> to instantiate intervals.</para>
+    /// </remarks>
     [Serializable]
     public struct Interval {
 
@@ -154,6 +159,18 @@ namespace Meta.Numerics {
         public override int GetHashCode () {
             return (a.GetHashCode() ^ w.GetHashCode());
         }
+
+        // text representation
+        public override string ToString () {
+            return (String.Format(CultureInfo.CurrentCulture, "[{0},{1}]", a, b));
+        }
+
+#if SHO
+        [Obsolete]
+        public string __repr__ () {
+            return(ToString());
+        }
+#endif
 
     }
 

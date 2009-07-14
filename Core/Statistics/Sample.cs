@@ -645,7 +645,7 @@ namespace Meta.Numerics.Statistics {
                 distribution.SetParameters(parameters);
                 double lnP = 0.0;
                 foreach (double value in data) {
-                    double P = distribution.ProbabilityDensity(value);
+                    double P = distribution.Likelihood(value);
                     if (P == 0.0) throw new InvalidOperationException();
                     lnP += Math.Log(P);
                 }

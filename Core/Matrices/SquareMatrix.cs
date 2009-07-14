@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+
 using Meta.Numerics;
 
 namespace Meta.Numerics.Matrices {
@@ -1466,6 +1468,15 @@ namespace Meta.Numerics.Matrices {
         public static SquareMatrix operator / (SquareMatrix M, double x) {
             return (Multiply(1.0 / x, M));
         }
+
+#if SHO
+        [Obsolete]
+        public string __repr__ () {
+            StringWriter writer = new StringWriter();
+            Matrix.WriteMatrix(this, writer);
+            return (writer.ToString());
+        }
+#endif
 
     }
 

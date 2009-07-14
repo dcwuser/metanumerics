@@ -81,7 +81,13 @@ namespace Meta.Numerics.Statistics {
         /// <returns>A string of the format <paramref name="value"/> &#x00B1; <paramref name="uncertainty"/>.</returns>
 		public override string ToString() {
 			return String.Format(CultureInfo.CurrentCulture, "{0} \u00B1 {1}", Value, Uncertainty);
-		}
+        }
+
+#if SHO
+        public string __repr__ () {
+            return(ToString());
+        }
+#endif
 
         // equality testing
 

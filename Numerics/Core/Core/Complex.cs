@@ -92,6 +92,14 @@ namespace Meta.Numerics {
             return (String.Format(CultureInfo.CurrentCulture, "({0},{1})", re, im));
 		}
 
+
+#if SHO
+        [Obsolete]
+        public string __repr__ () {
+            return(ToString());
+        }
+#endif
+
 		// equality operations are right by default
 
 		// static unary operators

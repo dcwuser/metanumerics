@@ -304,9 +304,9 @@ namespace Meta.Numerics.Statistics {
         /// <para>The Pearson test cannot reliably detect or rule out non-linear correlations.</para>
         /// <para>The Pearson correlation test requires O(N) operations.</para>
         /// </remarks>
-        /// <seealso cref="SpearmanRho"/>
-        /// <seealso cref="KendallTau"/>
-        public TestResult PearsonR (int d1, int d2) {
+        /// <seealso cref="SpearmanRhoTest"/>
+        /// <seealso cref="KendallTauTest"/>
+        public TestResult PearsonRTest (int d1, int d2) {
             double r = Covariance(d1, d2) / StandardDeviation(d1) / StandardDeviation(d2);
             Distribution p = new NormalDistribution(0.0, 1.0 / Math.Sqrt(Count));
             return (new TestResult(r, p));
@@ -326,10 +326,10 @@ namespace Meta.Numerics.Statistics {
         /// association.</para>
         /// <para>The Spearman rank-order test requires O(N log N) operations.</para>
         /// </remarks>
-        /// <seealso cref="PearsonR"/>
-        /// <seealso cref="KendallTau"/>
+        /// <seealso cref="PearsonRTest"/>
+        /// <seealso cref="KendallTauTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient"/>
-        public TestResult SpearmanRho (int d1, int d2) {
+        public TestResult SpearmanRhoTest (int d1, int d2) {
 
             if ((d1 < 0) || (d1 >= n)) throw new ArgumentOutOfRangeException("d1");
             if ((d2 < 0) || (d2 >= n)) throw new ArgumentOutOfRangeException("d2");
@@ -390,9 +390,9 @@ namespace Meta.Numerics.Statistics {
         /// O(N<sup>2</sup>) operations. It is thus impractical for very large data sets. While
         /// not quite as robust as the Kendall test, the Spearman test is a good fall-back in such cases.</para>
         /// </remarks>
-        /// <seealso cref="PearsonR"/>
-        /// <seealso cref="SpearmanRho"/>
-        public TestResult KendallTau (int d1, int d2) {
+        /// <seealso cref="PearsonRTest"/>
+        /// <seealso cref="SpearmanRhoTest"/>
+        public TestResult KendallTauTest (int d1, int d2) {
 
             if ((d1 < 0) || (d1 >= n)) throw new ArgumentOutOfRangeException("d1");
             if ((d2 < 0) || (d2 >= n)) throw new ArgumentOutOfRangeException("d2");

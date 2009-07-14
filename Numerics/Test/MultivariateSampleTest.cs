@@ -179,13 +179,13 @@ namespace Test
                     S.Add(x, y);
                 }
 
-                TestResult PR = S.PearsonR(0, 1);
+                TestResult PR = S.PearsonRTest(0, 1);
                 PS.Add(PR.Statistic);
                 PD = PR.Distribution;
-                TestResult SR = S.SpearmanRho(0, 1);
+                TestResult SR = S.SpearmanRhoTest(0, 1);
                 SS.Add(SR.Statistic);
                 SD = SR.Distribution;
-                TestResult KR = S.KendallTau(0, 1);
+                TestResult KR = S.KendallTauTest(0, 1);
                 KS.Add(KR.Statistic);
                 KD = KR.Distribution;
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace Meta.Numerics.Matrices {
 
@@ -732,6 +733,15 @@ namespace Meta.Numerics.Matrices {
         public static SymmetricMatrix operator / (SymmetricMatrix M, double x) {
             return (Multiply(1.0 / x, M));
         }
+
+#if SHO
+        [Obsolete]
+        public string __repr__ () {
+            StringWriter writer = new StringWriter();
+            Matrix.WriteMatrix(this, writer);
+            return (writer.ToString());
+        }
+#endif
 
     }
 

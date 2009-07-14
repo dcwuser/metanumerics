@@ -70,6 +70,9 @@ namespace Test {
 
             TridiagonalMatrix T = CreateRandomTridiagonalMatrix(4);
 
+            // check nullity
+            Assert.IsTrue(T != null);
+
             // check dimension
             Assert.IsTrue(T.Dimension == 4);
 

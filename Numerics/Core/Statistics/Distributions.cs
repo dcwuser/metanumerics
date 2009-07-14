@@ -387,6 +387,10 @@ namespace Meta.Numerics.Statistics {
             sigma = parameters[1];
         }
 
+        double IParameterizedDistribution.Likelihood (double x) {
+            return (ProbabilityDensity(x));
+        }
+
 	}
 
     /// <summary>
@@ -528,6 +532,10 @@ namespace Meta.Numerics.Statistics {
             if (parameters.Count != 1) throw new DimensionMismatchException();
             if (parameters[0] <= 0.0) throw new ArgumentOutOfRangeException();
             mu = parameters[0];
+        }
+
+        double IParameterizedDistribution.Likelihood (double x) {
+            return (ProbabilityDensity(x));
         }
 
 	}
@@ -1418,6 +1426,10 @@ namespace Meta.Numerics.Statistics {
             sigma = parameters[1];
         }
 
+        double IParameterizedDistribution.Likelihood (double x) {
+            return (ProbabilityDensity(x));
+        }
+
 
     }
 
@@ -1567,6 +1579,10 @@ namespace Meta.Numerics.Statistics {
             shape = parameters[1];
         }
 
+        double IParameterizedDistribution.Likelihood (double x) {
+            return (ProbabilityDensity(x));
+        }
+
     }
 
     /// <summary>
@@ -1591,7 +1607,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="x">The value.</param>
         /// <returns>The likelihood of the value.</returns>
-        double ProbabilityDensity (double x);
+        double Likelihood (double x);
 
     }
 

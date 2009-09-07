@@ -54,6 +54,7 @@
     <Compile Include="Core\Functions.cs" />
     <Compile Include="Core\Spin.cs" />
     <Compile Include="Functions\AdvancedMath_Harmonic.cs" />
+    <Compile Include="Functions\AdvancedMath_Lambert.cs" />
     <Compile Include="Functions\AdvancedMath_ModifiedBessel.cs" />
     <Compile Include="Functions\FunctionMath_Extrema.cs" />
     <Compile Include="Functions\AdvancedIntegerMath.cs" />

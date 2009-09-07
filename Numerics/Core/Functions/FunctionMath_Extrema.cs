@@ -563,6 +563,7 @@ namespace Meta.Numerics.Functions {
             return (H);
         }
 
+        /*
         private static void WriteVector (double[] x) {
             for (int i = 0; i < x.Length; i++) {
                 Console.WriteLine("  {0}", x[i]);
@@ -579,6 +580,7 @@ namespace Meta.Numerics.Functions {
                 Console.WriteLine();
             }
         }
+        */
 
     }
 

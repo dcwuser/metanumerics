@@ -155,12 +155,13 @@ namespace Meta.Numerics {
             }
         }
 
-        /// <usebase />
+        /// <inheritdoc />
         public override int GetHashCode () {
             return (a.GetHashCode() ^ w.GetHashCode());
         }
 
         // text representation
+        /// <inheritdoc />
         public override string ToString () {
             return (String.Format(CultureInfo.CurrentCulture, "[{0},{1}]", a, b));
         }

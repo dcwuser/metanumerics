@@ -222,6 +222,29 @@ namespace Meta.Numerics.Functions {
 
 		// Bernoulli and Euler polynomials
 
+        // this doesn't work due to integer overflow; we need an arbitrary-precision integer
+        // structure to make it work
+
+        /*
+        public static uint PowMod (uint b, uint e, uint m) {
+
+            uint r = 1;
+
+            while (e > 0) {
+                if ((e & 1) == 1) {
+                    r = checked((r * b) % m);
+                }
+                e = e >> 1;
+                b = checked((b * b) % m);
+            }
+
+            return (r);
+
+        }
+        */
+
+        // see http://en.wikipedia.org/wiki/Modular_exponentiation
+
 	}
 	
 }

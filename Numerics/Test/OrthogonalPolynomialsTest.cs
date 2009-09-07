@@ -522,5 +522,92 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void ZernikeSpecialCaseTest () {
+
+            foreach (double x in TestUtilities.GenerateUniformRealValues(0.0, 1.0, 4)) {
+                Console.WriteLine(x);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(0, 0, x), 1.0));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(1, 1, x), x));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(2, 0, x), 2.0 * x * x - 1.0));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(2, 2, x), x * x));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(3, 1, x), 3.0 * x * x * x - 2.0 * x));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(3, 3, x), x * x * x));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(4, 0, x), 6.0 * x * x * x * x - 6.0 * x * x + 1.0));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(4, 2, x), 4.0 * x * x * x * x - 3.0 * x * x));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(4, 4, x), x * x * x * x));
+            }
+
+        }
+
+        [TestMethod]
+        public void ZernikeOrthonormalityTest () {
+
+            foreach (int na in TestUtilities.GenerateIntegerValues(1, 30, 8)) {
+                foreach (int nb in TestUtilities.GenerateIntegerValues(1, 30, 6)) {
+                    foreach (int m in TestUtilities.GenerateIntegerValues(1, 30, 4)) {
+                        // skip trivial cases
+                        if ((m > na) || (m > nb)) continue;
+                        if ((m % 2) != (na % 2)) continue;
+                        if ((m % 2) != (nb % 2)) continue;
+
+                        Function<double,double> f = delegate (double x) {
+                            return (OrthogonalPolynomials.ZernikeR(na, m, x) * OrthogonalPolynomials.ZernikeR(nb, m, x) * x);
+                        };
+
+                        double I = FunctionMath.Integrate(f, Interval.FromEndpoints(0.0, 1.0));
+
+                        Console.WriteLine("({0},{1}) ({2},{3}) {4}", na, m, nb, m, I);
+
+                        if (na == nb) {
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(I, 0.5 / (na + 1)));
+                        } else {
+                            Assert.IsTrue(Math.Abs(I) < TestUtilities.TargetPrecision);
+                        }
+
+                    }
+
+                }
+            }
+
+        }
+
+        
+        [TestMethod]
+        public void ZernikeBesselTest () {
+
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 30, 6)) {
+                foreach (int m in TestUtilities.GenerateUniformIntegerValues(0, n, 6)) {
+                    //int m = n;
+                    if ((m % 2) != (n % 2)) continue; // skip trivial cases
+                    foreach (double x in TestUtilities.GenerateRealValues(1.0, 10.0, 4)) {
+
+                        Console.WriteLine("{0} {1} {2}", n, m, x);
+
+                        Function<double, double> f = delegate(double rho) {
+                            return (
+                                OrthogonalPolynomials.ZernikeR(n, m, rho) *
+                                AdvancedMath.BesselJ(m, x * rho) * rho
+                             );
+                        };
+
+                        double I = FunctionMath.Integrate(f, Interval.FromEndpoints(0.0, 1.0));
+
+                        double J = AdvancedMath.BesselJ(n + 1, x) / x;
+                        if ((n - m) / 2 % 2 != 0) J = -J;
+
+                        Console.WriteLine("  {0} {1}", I, J);
+
+                        // near-zero integrals result from delicate cancelations, and thus
+                        // cannot be expected to achieve the relative target precision;
+                        // the can achieve the absolute target precisions, so translate
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(I, J, Math.Abs(TestUtilities.TargetPrecision / J)));
+
+                    }
+                }
+            }
+
+        }
+
     }
 }

@@ -331,6 +331,116 @@ namespace Meta.Numerics.Functions {
 
         // associated Legendre, Laguerre
 
-	}
+        //  R00
+        //      R11
+        //  R20     R22
+        //      R31     R33
+        //  R40     R42     R44
+        //      R51     R53     R55
+
+        // 
+
+        /// <summary>
+        /// Computes the value of a Zernike polynomial.
+        /// </summary>
+        /// <param name="n">The order paramter, which must be non-negative.</param>
+        /// <param name="m">The index parameter, which must lie between 0 and n.</param>
+        /// <param name="rho">The argument, which must lie between 0 and 1.</param>
+        /// <returns>The value of R<sub>n</sub><sup>m</sup>(&#x3C1;).</returns>
+        /// <remarks>
+        /// <para>Zernike polynomials are orthononal on the interval [0,1] with the weight &#x3C1;.</para>
+        /// <para>They are often used in optics to characterize the imperfections in a lens. In
+        /// this context, the amplitude of each is associated with a name given in the following table.</para>
+        /// <table>
+        ///     <tr><th>n</th><th>m</th><th>name</th></tr>
+        ///     <tr><td>1</td><td>1</td><td>tilt</td></tr>
+        ///     <tr><td>2</td><td>0</td><td>defocus</td></tr>
+        ///     <tr><td>2</td><td>2</td><td>astigmatism</td></tr>
+        ///     <tr><td>3</td><td>1</td><td>coma</td></tr>
+        ///     <tr><td>3</td><td>3</td><td>trefoil</td></tr>
+        /// </table>
+        /// </remarks>
+        public static double ZernikeR (int n, int m, double rho) {
+
+            if (n < 0) throw new ArgumentOutOfRangeException("n");
+            if ((m < 0) || (m > n)) throw new ArgumentOutOfRangeException("m");
+            if ((rho < 0.0) || (rho > 1.0)) throw new ArgumentOutOfRangeException("rho");
+
+            // n and m have the same parity
+            if ((n - m) % 2 != 0) return (0.0);
+
+            // R00
+            if (n == 0) return (1.0); 
+
+            // R^{m}_m
+            double r2 = Math.Pow(rho, m);
+            if (n == m) return (r2);
+
+            // R^{m+1}_{m+1}
+            int k = m;
+            double r1 = r2 * rho;
+
+            while (true) {
+
+                k += 2;
+
+                // *
+                //  \
+                //   * recurrence involving two lesser m's
+                //  /
+                // *
+                // 2n R^{m+1}_{n-1} = (n+m) R^{m}_{n-2} + (n-m) R^{m}_{n}
+
+                double r0 = ((2 * k) * rho * r1 - (k + m) * r2) / (k - m);
+
+                if (k == n) return (r0);
+
+                //   *
+                //  /
+                // * recurrence involving two greater m's
+                //  \
+                //   *
+                // 
+
+                double rp = (2 * (k + 1) * rho * r0 - (k - m) * r1) / (k + m + 2);
+
+                r2 = r0;
+                r1 = rp;
+
+            }
+
+            /*
+            int m0 = m;
+            for (int n0 = m; n0 < n; n0++) {
+
+                double rp = (2.0 * (n0 + 1) * rho * r0 - (n0 - m0) * rm) / (n0 + m0 + 2);
+
+                rm = r0;
+                r0 = rp;
+
+                Console.WriteLine("{0} {1}", n0, r0);
+
+            }
+
+            rm = 0.0;
+            r0 = 1.0;
+
+            for (int n0 = 1; n0 < n; n0++) {
+
+                double rp = (2.0 * (n0 + 1) * rho * r0 - (n0 - m0) * rm) / (n0 + m0 + 2);
+
+                rm = r0;
+                r0 = rp;
+
+                Console.WriteLine("{0} {1}", n0, r0);
+
+            }
+
+            return (r0);
+            */
+
+        }
+
+    }
 
 }

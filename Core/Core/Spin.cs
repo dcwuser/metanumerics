@@ -127,10 +127,22 @@ namespace Meta.Numerics {
             return(a.TwoJ == b.TwoJ);
         }
 
+        /// <summary>
+        /// Determines whether two spins are equal.
+        /// </summary>
+        /// <param name="a">The first spin.</param>
+        /// <param name="b">The second spin.</param>
+        /// <returns>True if <paramref name="a"/> and <paramref name="b"/> are equal, otherwise false.</returns>
         public static bool operator == (Spin a, Spin b) {
             return (Equals(a, b));
         }
 
+        /// <summary>
+        /// Determines whether two spins are unequal.
+        /// </summary>
+        /// <param name="a">The first spin.</param>
+        /// <param name="b">The second spin.</param>
+        /// <returns>False if <paramref name="a"/> and <paramref name="b"/> are equal, otherwise true.</returns>
         public static bool operator != (Spin a, Spin b) {
             return (!Equals(a, b));
         }
@@ -142,8 +154,18 @@ namespace Meta.Numerics {
     /// </summary>
     public struct SpinState {
 
+        /// <summary>
+        /// Instantiates a new SpinState with the given spin and magnetic quantum numbers.
+        /// </summary>
+        /// <param name="j">The spin number.</param>
+        /// <param name="m">The magnetic number.</param>
         public SpinState (double j, double m) : this(new Spin(j), m)  { }
 
+        /// <summary>
+        /// Instantiates a new SpinState with the given spin and magnetic quantum number.
+        /// </summary>
+        /// <param name="s">The spin.</param>
+        /// <param name="m">The magnetic quantum number.</param>
         public SpinState (Spin s, double m) {
 
             spin = s;
@@ -821,9 +843,11 @@ namespace Meta.Numerics {
 
         // SixJ
 
+        /*
         public static double SixJ (Spin j1, Spin j2, Spin j3, Spin j4, Spin J5, Spin J6) {
             throw new NotImplementedException();
         }
+        */
 
     }
 

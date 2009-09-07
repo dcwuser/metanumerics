@@ -870,6 +870,31 @@ namespace Test
         }
         */
 
+        [TestMethod]
+        public void LambertTest () {
+
+            foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0 / Math.E, 1.0, 6)) {
+                double W = AdvancedMath.LambertW(x);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(W * Math.Exp(W), x));
+            }
+
+            foreach (double x in TestUtilities.GenerateRealValues(1.0, 1.0E3, 3)) {
+                double W = AdvancedMath.LambertW(x);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(W * Math.Exp(W), x));
+            }
+
+        }
+
+        [TestMethod]
+        public void LambertSpecialCaseTest () {
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.LambertW(-1.0 / Math.E), -1.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.LambertW(-Math.Log(2.0) / 2.0), -Math.Log(2.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.LambertW(0.0), 0.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.LambertW(Math.E), 1.0));
+
+        }
+
 #if FUTURE
 
         [TestMethod]

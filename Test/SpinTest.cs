@@ -4,11 +4,20 @@ using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
+using Meta.Numerics.Functions;
 
 
 namespace Test {
 
-#if FUTURE
+    public struct ThreeJSymbol {
+
+        public SpinState Column1;
+
+        public SpinState Column2;
+
+        public SpinState Column3;
+
+    }
 
     /// <summary>
     /// Summary description for SpinTest
@@ -58,22 +67,138 @@ namespace Test {
         //
         #endregion
 
+        private static ThreeJSymbol[] GenerateRandomThreeJSymbols (double j_max, int n) {
+
+            int tj_max = (int) Math.Truncate(2.0 * j_max);
+
+            ThreeJSymbol[] symbols = new ThreeJSymbol[n];
+            Random rng = new Random(1);
+            for (int i = 0; i < n; i++) {
+
+                int tj1 = rng.Next(tj_max + 1);
+                int tj2 = rng.Next(tj_max + 1);
+
+                int tm1 = -tj1 + 2 * rng.Next(tj1);
+                int tm2 = -tj2 + 2 * rng.Next(tj2);
+
+                int tm3 = -(tm1 + tm2);
+
+                int tj3_min = Math.Abs(tj1 - tj2);
+                int tj3_max = tj1 + tj2;
+                if (Math.Abs(tm3) > tj3_min) tj3_min = Math.Abs(tm3);
+                int tj3 = tj3_min + 2 * rng.Next((tj3_max - tj3_min) / 2);
+
+                ThreeJSymbol symbol = new ThreeJSymbol();
+                symbol.Column1 = new SpinState(tj1 / 2.0, tm1 / 2.0);
+                symbol.Column2 = new SpinState(tj2 / 2.0, tm2 / 2.0);
+                symbol.Column3 = new SpinState(tj3 / 2.0, tm3 / 2.0);
+                symbols[i] = symbol;
+
+            }
+
+            return (symbols);
+
+        }
+
+        private static Spin[] GenerateRandomSpins (double j_min, double j_max, int n) {
+
+            int tj_min = (int) Math.Truncate(2.0 * j_min);
+            int tj_max = (int) Math.Truncate(2.0 * j_max);
+
+            Spin[] spins = new Spin[n];
+            Random rng = new Random(1);
+            for (int i = 0; i < n; i++) {
+                spins[i] = new Spin(rng.Next(tj_min, tj_max) / 2.0);
+            }
+
+            return (spins);
+        }
+
+        private static Spin[] GenerateRandomCombinedSpins (Spin j1, Spin j2, int n) {
+
+            int tj_min = (int) (2.0 * Math.Abs(j1.J - j2.J));
+            int tj_max = (int) (2.0 * (j1.J + j2.J));
+
+            Spin[] spins = new Spin[n];
+            Random rng = new Random(1);
+            for (int i = 0; i < n; i++) {
+                int tj = tj_min + 2 * rng.Next((tj_max - tj_min) / 2);
+                spins[i] = new Spin(tj / 2.0);
+            }
+
+            return (spins);
+
+        }
+
+        private static SpinState[] GenerateRandomSpinStates (Spin j, int n) {
+
+            int tj = (int) (2.0 * j.J);
+
+            SpinState[] result = new SpinState[n];
+            Random rng = new Random(1);
+            for (int i = 0; i < n; i++) {
+
+                int tm = -tj + 2 * rng.Next(tj + 1);
+                result[i] = new SpinState(j, tm / 2.0);
+
+            }
+
+            return (result);
+
+        }
+
+        // generates only spinors of the same parity as j_min
+
+        private static SpinState[] GenerateRandomSpinStates (double j_min, double j_max, int n) {
+
+            int tj_min = (int) Math.Truncate(2.0 * j_min);
+            int tj_max = (int) Math.Truncate(2.0 * j_max);
+
+            SpinState[] states = new SpinState[n];
+            Random rng = new Random(1);
+            for (int i = 0; i < n; i++) {
+                int tj = tj_min + 2 * rng.Next((tj_max - tj_min) / 2);
+                int tm = -tj + 2 * rng.Next(tj);
+                states[i] = new SpinState(tj / 2.0, tm / 2.0);
+            }
+
+            return (states);
+
+        }
+
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
         public void SpinInvalid1 () {
+            // spin indices are non-negative
             Spin s = new Spin(-1.0);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
         public void SpinInvalid2 () {
+            // spin indicates are integer or half-integer
             Spin s = new Spin(1.25);
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentOutOfRangeException))]
+        public void SpinStateInvalid1 () {
+            // spin state indices are smaller than spin indices
+            SpinState s = new SpinState(1.0, -2.0);
+        }
 
         [TestMethod]
-        public void SpinCast () {
-            Spin s = 0.5;
+        [ExpectedException(typeof(ArgumentOutOfRangeException))]
+        public void SpinStateInvalid2 () {
+            // spin states indices match the parity of spin indices
+            SpinState s = new SpinState(1.0, 0.5);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentOutOfRangeException))]
+        public void SpinStateInvalid3 () {
+            // spin state values are integer or half-integer
+            SpinState s = new SpinState(3.0, 0.75);
         }
 
         [TestMethod]
@@ -83,9 +208,7 @@ namespace Test {
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(0, 0), new SpinState(0, 0), new SpinState(0, 0)), 1.0));
 
-            // 1/2 x 1/2
-
-            // => 1
+            // 1/2 x 1/2 => 1
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(0.5, 0.5), new SpinState(0.5, 0.5), new SpinState(1.0, 1.0)), 1.0));
 
@@ -94,14 +217,12 @@ namespace Test {
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(0.5, -0.5), new SpinState(0.5, -0.5), new SpinState(1.0, -1.0)), 1.0));
 
-            // => 0
-
-            // 1 x 1/2
+            // 1/2 x 1/2 => 0
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(0.5, 0.5), new SpinState(0.5, -0.5), new SpinState(0.0, 0.0)), Math.Sqrt(1.0 / 2.0)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(0.5, -0.5), new SpinState(0.5, 0.5), new SpinState(0.0, 0.0)), -Math.Sqrt(1.0 / 2.0)));
 
-            // => 3/2
+            // 1 x 1/2 => 3/2
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, 1.0), new SpinState(0.5, 0.5), new SpinState(1.5, 1.5)), 1.0));
 
@@ -113,7 +234,7 @@ namespace Test {
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, -1.0), new SpinState(0.5, -0.5), new SpinState(1.5, -1.5)), 1.0));
 
-            // => 1/2
+            // 1 x 1/2 => 1/2
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, 1.0), new SpinState(0.5, -0.5), new SpinState(0.5, 0.5)), Math.Sqrt(2.0 / 3.0)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, 0.0), new SpinState(0.5, 0.5), new SpinState(0.5, 0.5)), -Math.Sqrt(1.0 / 3.0)));
@@ -121,9 +242,7 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, 0.0), new SpinState(0.5, -0.5), new SpinState(0.5, -0.5)), Math.Sqrt(1.0 / 3.0)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, -1.0), new SpinState(0.5, 0.5), new SpinState(0.5, -0.5)), -Math.Sqrt(2.0 / 3.0)));
 
-            // 1 x 1
-
-            // => 2
+            // 1 x 1 => 2
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, 1.0), new SpinState(1.0, 1.0), new SpinState(2.0, 2.0)), 1.0));
 
@@ -140,7 +259,7 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0,-1.0), new SpinState(1.0,-1.0), new SpinState(2.0, -2.0)), 1.0));
 
 
-            // => 1
+            // 1 x 1=> 1
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, 1.0), new SpinState(1.0, 0.0), new SpinState(1.0, 1.0)), Math.Sqrt(1.0 / 2.0)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, 0.0), new SpinState(1.0, 1.0), new SpinState(1.0, 1.0)), -Math.Sqrt(1.0 / 2.0)));
@@ -152,7 +271,7 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, 0.0), new SpinState(1.0, -1.0), new SpinState(1.0, -1.0)), Math.Sqrt(1.0 / 2.0)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, -1.0), new SpinState(1.0, 0.0), new SpinState(1.0, -1.0)), -Math.Sqrt(1.0 / 2.0)));
 
-            // => 0
+            // 1 x 1=> 0
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, 1.0), new SpinState(1.0, -1.0), new SpinState(0.0, 0.0)), Math.Sqrt(1.0 / 3.0)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, 0.0), new SpinState(1.0, 0.0), new SpinState(0.0, 0.0)), -Math.Sqrt(1.0 / 3.0)));
@@ -161,159 +280,301 @@ namespace Test {
         }
 
         [TestMethod]
-        public void DebugTest () {
-            Console.WriteLine(SpinMath.ThreeJ(new SpinState(12, 0), new SpinState(8, 0), new SpinState(14, 0)));
-            Console.WriteLine(SpinMath.ThreeJ(new SpinState(11, 1), new SpinState(13, -5), new SpinState(10, 4)));
-            //Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.ClebschGodron(new SpinState(1.0, 1.0), new SpinState(1.0, 1.0), new SpinState(2.0, 2.0)), 1.0));
-        }
+        public void ClebschGordonOrthonormalityJM () {
 
-        public void ThreeJExchangeSymmetry () {
+            int t00 = 0;
+            int t01 = 0;
+            int t1 = 0;
 
-        }
+            foreach (Spin j1 in GenerateRandomSpins(0.0, 50.0, 4)) {
+                foreach (Spin j2 in GenerateRandomSpins(0.0, 50.0, 4)) {
 
-        [TestMethod]
-        public void ThreeJOrthonormalityJM () {
+                    foreach (Spin j3a in GenerateRandomCombinedSpins(j1, j2, 4)) {
+                        foreach (Spin j3b in GenerateRandomCombinedSpins(j1, j2, 4)) {
+                            foreach (SpinState s3a in GenerateRandomSpinStates(j3a, 4)) {
+                                foreach (SpinState s3b in GenerateRandomSpinStates(j3b, 4)) {
 
-            // pick two random spins to combine
-            int tj1 = 4;
-            int tj2 = 3;
+                                    // skip the trivial zeros; if the sums of the Ms for each coefficient
+                                    // are not the same, no term can be non-zero
+                                    if (s3a.M != s3b.M) continue;
 
-            // loop over all possible values of j and j' and m and m'
-            for (int tja = Math.Abs(tj1-tj2); tja <= (tj1+tj2); tja=tja+2) {
-                for (int tjb = Math.Abs(tj1-tj2); tjb <= tja; tjb=tjb+2) {
-                    for (int tma = -tja; tma <= tja; tma += 2) {
-                        for (int tmb = -tjb; tmb <= tjb; tmb += 2) {
 
-                            SpinState sa = new SpinState(tja / 2.0, tma / 2.0);
-                            SpinState sb = new SpinState(tjb / 2.0, tmb / 2.0);
+                                    // sum over m1 and m2
+                                    double s = 0.0;
+                                    bool nonZero = false;
 
-                            Console.WriteLine("tja = {0} tjb = {1} tma = {2} tmb = {3}:", tja, tjb, tma, tmb); 
+                                    foreach (SpinState s1 in j1.States()) {
+                                        foreach (SpinState s2 in j2.States()) {
 
-                            // in each case, sum over all possible values of m1 and m2
-                            List<double> t = new List<double>();
-                            for (int tm1 = -tj1; tm1 <= tj1; tm1 = tm1 + 2) {
-                                for (int tm2 = -tj2; tm2 <= tj2; tm2 = tm2 + 2) {
-                                    SpinState s1 = new SpinState(tj1 / 2.0, tm1 / 2.0);
-                                    SpinState s2 = new SpinState(tj2 / 2.0, tm2 / 2.0);
+                                            double ds = SpinMath.ClebschGodron(s1, s2, s3a) * SpinMath.ClebschGodron(s1, s2, s3b);
+                                            if (ds != 0.0) nonZero = true;
+                                            s += ds;
 
-                                    double tt = SpinMath.ThreeJ(s1, s2, sa) * SpinMath.ThreeJ(s1, s2, sb);
-                                    t.Add(tt);
+                                        }
+                                    }
 
-                                    Console.WriteLine("tm1 = {0} tm2 = {1} tt = {2}", tm1, tm2, tt);
+                                    // check orthonormality
+                                    if ((s3a.J == s3b.J) && (s3a.M == s3b.M)) {
+                                        Assert.IsTrue(TestUtilities.IsNearlyEqual(s, 1.0));
+                                        t1++;
+                                    } else {
+                                        Assert.IsTrue(Math.Abs(s) <= TestUtilities.TargetPrecision);
+                                        if (nonZero) {
+                                            t01++;
+                                        } else {
+                                            t00++;
+                                        }
+                                    }
+
+
 
                                 }
-                            }
 
-                            if ((tja == tjb) && (tma == tmb)) {
-                                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(t, 1.0/(tja+1)));
-                            } else {
-                                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(t, 0.0));
                             }
-
 
                         }
-                    }
 
+                    }
 
                 }
             }
 
+            Console.WriteLine("Trivial zeros: {0}", t00);
+            Console.WriteLine("Non-trivial zerios: {0}", t01);
+            Console.WriteLine("Ones: {0}", t1);
+
+
         }
 
-        public void ThreeJOrthonormalityMM () {
+        [TestMethod]
+        public void ClebschGordonOrthonormalityMM () {
+
+            int t00 = 0;
+            int t01 = 0;
+            int t1 = 1;
+
+            foreach (Spin j1 in GenerateRandomSpins(0.0, 50.0, 4)) {
+                foreach (Spin j2 in GenerateRandomSpins(0.0, 50.0, 4)) {
+                    foreach (SpinState s1a in GenerateRandomSpinStates(j1, 4)) {
+                        foreach (SpinState s1b in GenerateRandomSpinStates(j1, 4)) {
+                            foreach (SpinState s2a in GenerateRandomSpinStates(j2, 4)) {
+                                foreach (SpinState s2b in GenerateRandomSpinStates(j2, 4)) {
+
+                                    // if the sum of M's are equal, all terms will be trivially zero
+                                    if ((s1a.M + s2a.M) != (s1b.M + s2b.M)) continue;
+
+                                    // sum over j and m
+                                    double s = 0.0;
+                                    bool nonZero = false;
+
+                                    double j_min = Math.Abs(j1.J - j2.J);
+                                    double j_max = j1.J + j2.J;
+                                    for (double j = j_min; j <= j_max; j = j + 1.0) {
+                                        Spin j3 = new Spin(j);
+                                        foreach (SpinState s3 in j3.States()) {
+                                            double ds = SpinMath.ClebschGodron(s1a, s2a, s3) * SpinMath.ClebschGodron(s1b, s2b, s3);
+                                            if (ds != 0.0) nonZero = true;
+                                            s += ds;
+                                        }
+                                    }
+
+                                    if ((s1a.M == s1b.M) && (s2a.M == s2b.M)) {
+                                        Assert.IsTrue(TestUtilities.IsNearlyEqual(s, 1.0));
+                                        t1++;
+                                    } else {
+                                        Assert.IsTrue(Math.Abs(s) < TestUtilities.TargetPrecision);
+                                        if (nonZero) {
+                                            t01++;
+                                        } else {
+                                            t00++;
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Console.WriteLine("Trivial zeros: {0}", t00);
+            Console.WriteLine("Non-trivial zerios: {0}", t01);
+            Console.WriteLine("Ones: {0}", t1);
+
+        }
+
+        [TestMethod]
+        public void ThreeJExchangeSymmetry () {
+
+            foreach (ThreeJSymbol symbol in GenerateRandomThreeJSymbols(50.0, 10)) {
+
+                SpinState s1 = symbol.Column1;
+                SpinState s2 = symbol.Column2;
+                SpinState s3 = symbol.Column3;
+
+                Console.WriteLine("( {0} {1} {2} )", s1.J, s2.J, s3.J);
+                Console.WriteLine("( {0} {1} {2} )", s1.M, s2.M, s3.M);
+
+                double s123 = SpinMath.ThreeJ(s1, s2, s3);
+                double s231 = SpinMath.ThreeJ(s2, s3, s1);
+                double s312 = SpinMath.ThreeJ(s3, s1, s2);
+
+                Console.WriteLine("{0},{1},{2}", s123, s231, s312);
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(s123, s231));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(s123, s312));
+
+                int P;
+                if (((int) (s1.J + s2.J + s3.J)) % 2 == 0) {
+                    P = 1;
+                } else {
+                    P = -1;
+                }
+
+                double s132 = SpinMath.ThreeJ(s1, s3, s2);
+                double s213 = SpinMath.ThreeJ(s2, s1, s3);
+                double s321 = SpinMath.ThreeJ(s3, s2, s1);
+
+                Console.WriteLine("{0},{1},{2}", s132, s213, s321);
+
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(s123, P * s132));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(s123, P * s213));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(s123, P * s321));
+
+            }
+
         }
 
         [TestMethod]
         public void ThreeJRacahSymmetry () {
-            
-            int tj1, tj2, tj3, tm1, tm2, tm3;
 
-            tj1 = 8*2;
-            tj2 = 10*2;
-            tj3 = 12*2;
-            tm1 = -3*2;
-            tm2 = 2*2;
-            tm3 = 1*2;
+            foreach (ThreeJSymbol symbol in GenerateRandomThreeJSymbols(50.0, 10)) {
 
-            //for (int i = 0; i < 5; i++) {
-
-                SpinState s1 = new SpinState(tj1 / 2.0, tm1 / 2.0);
-                SpinState s2 = new SpinState(tj2 / 2.0, tm2 / 2.0);
-                SpinState s3 = new SpinState(tj3 / 2.0, tm3 / 2.0);
+                // compute the 3j symbol
+                SpinState s1 = symbol.Column1;
+                SpinState s2 = symbol.Column2;
+                SpinState s3 = symbol.Column3;
                 double C = SpinMath.ThreeJ(s1, s2, s3);
 
-                int tk1, tk2, tk3, tn1, tn2, tn3;
-                SpinState t1, t2, t3;
+                // form other 3j symbols related by Racah symmetry
 
-                // rows 2<->3
+                double k1, k2, k3, n1, n2, n3;
+                SpinState t1, t2, t3;
 
                 // rows 1->2->3
 
-                tk1 = (tj2 + tm2 + tj3 + tm3) / 2;
-                tk2 = (tj1 + tm1 + tj3 + tm3) / 2;
-                tk3 = (tj1 + tm1 + tj2 + tm2) / 2;
-                tn1 = tj1 - tm1 - tk1;
-                tn2 = tj2 - tm2 - tk2;
-                tn3 = tj3 - tm3 - tk3;
+                k1 = (s2.J + s2.M + s3.J + s3.M) / 2.0;
+                k2 = (s1.J + s1.M + s3.J + s3.M) / 2.0;
+                k3 = (s1.J + s1.M + s2.J + s2.M) / 2.0;
+                n1 = s1.J - s1.M - k1;
+                n2 = s2.J - s2.M - k2;
+                n3 = s3.J - s3.M - k3;
 
-                t1 = new SpinState(tj1 / 2.0, tm1 / 2.0);
-                t2 = new SpinState(tj2 / 2.0, tm2 / 2.0);
-                t3 = new SpinState(tj3 / 2.0, tm3 / 2.0);
+                t1 = new SpinState(k1, n1);
+                t2 = new SpinState(k2, n2);
+                t3 = new SpinState(k3, n3);
                 double CC = SpinMath.ThreeJ(t1, t2, t3);
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(C, CC));
 
                 // transpose rows and columns
 
-                tk1 = tj1;
-                tk2 = (tj2 + tj3 + tm1) / 2;
-                tk3 = (tj2 + tj3 - tm1) / 2;
-                tn1 = tj2 - tj3;
-                tn2 = tj3 - tm3 - tk2;
-                tn3 = tj3 + tm3 - tk2;
+                /*
+                k1 = s1.J;
+                k2 = (s2.J + s3.J + s1.M) / 2.0;
+                k3 = (s2.J + s3.J - s1.M) / 2.0;
+                n1 = s2.J - s3.J;
+                n2 = s3.J - s3.M - k2;
+                n3 = s3.J + s3.M - k2;
 
-                t1 = new SpinState(tj1 / 2.0, tm1 / 2.0);
-                t2 = new SpinState(tj2 / 2.0, tm2 / 2.0);
-                t3 = new SpinState(tj3 / 2.0, tm3 / 2.0);
+                t1 = new SpinState(k1, n1);
+                t2 = new SpinState(k2, n2);
+                t3 = new SpinState(k3, n3);
                 double CT = SpinMath.ThreeJ(t1, t2, t3);
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(C, CT));
+                */
 
-            //}
 
-        }
 
-        public void ThreeJRecursion () {
-
-            /*
-            SpinState jm1;
-            SpinState jm2;
-            SpinState jm3;
-
-            SpinState jm1m1;
-            SpinState jm2m1;
-            SpinState jm3p1;
-
-            SpinMath.ThreeJ(jm1, jm2, jm3) + SpinMath.ThreeJ(jm1m1, jm2, jm3p1) + SpinMath.ThreeJ(jm1, jm2m1, jm3p1) == 0;
-            */
+            }
 
         }
 
         [TestMethod]
-        public void ThreeJDebug () {
+        public void ThreeJRecursion () {
 
-            Console.WriteLine(Stopwatch.IsHighResolution);
-            Stopwatch watch = Stopwatch.StartNew();
-            double c = SpinMath.ThreeJ(new SpinState(400.0, 0.0), new SpinState(600.0, 0.0), new SpinState(800.0, 0.0));
-            watch.Stop();
-            Console.WriteLine(c);
-            Console.WriteLine(watch.ElapsedMilliseconds);
+            foreach (ThreeJSymbol symbol in GenerateRandomThreeJSymbols(50.0, 10)) {
+
+                double j1 = symbol.Column1.J;
+                double m1 = symbol.Column1.M;
+                double j2 = symbol.Column2.J;
+                double m2 = symbol.Column2.M;
+                double j3 = symbol.Column3.J;
+                double m3 = symbol.Column3.M;
+
+                double s1 = SpinMath.ThreeJ(new SpinState(j1, m1), new SpinState(j2, m2), new SpinState(j3, m3));
+
+                double s2 = 0.0;
+                if ((Math.Abs(m2-1.0) <= j2) && (Math.Abs(m3+1.0) <= j3))
+                    s2 = SpinMath.ThreeJ(new SpinState(j1, m1), new SpinState(j2, m2 - 1.0), new SpinState(j3, m3 + 1.0));
+                double s3 = 0.0;
+                if ((Math.Abs(m1-1.0) <= j1) && (Math.Abs(m3+1.0) <= j3))
+                    s3 = SpinMath.ThreeJ(new SpinState(j1, m1 - 1.0), new SpinState(j2, m2), new SpinState(j3, m3 + 1.0));
+
+                double c1 = Math.Sqrt((j3 + m3 + 1.0) * (j3 - m3));
+                double c2 = Math.Sqrt((j2 - m2 + 1.0) * (j2 + m2));
+                double c3 = Math.Sqrt((j1 - m1 + 1.0) * (j1 + m1));
+
+                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(c1 * s1, c2 * s2, -c3 * s3));
+
+            }
 
         }
 
+        [TestMethod]
+        public void ThreeJLegendreIntegral () {
+
+            // pick three legendre polynomials
+
+            foreach (int l1 in TestUtilities.GenerateUniformIntegerValues(0, 16, 8)) {
+                foreach (int l2 in TestUtilities.GenerateUniformIntegerValues(0, 16, 4)) {
+                    foreach (int l3 in TestUtilities.GenerateUniformIntegerValues(0, 16, 2)) {
+
+                        Console.WriteLine("{0} {1} {2}", l1, l2, l3);
+
+                        // do the integral over their product
+
+                        Function<double, double> f = delegate(double x) {
+                            return (
+                                OrthogonalPolynomials.LegendreP(l1, x) *
+                                OrthogonalPolynomials.LegendreP(l2, x) *
+                                OrthogonalPolynomials.LegendreP(l3, x)
+                            );
+                        };
+                        double I = FunctionMath.Integrate(f, Interval.FromEndpoints(-1.0, 1.0));
+
+                        // it should be the same as 2 ( l1 l2 l3 )^2
+                        //                            ( 0  0  0  )
+
+                        double S = SpinMath.ThreeJ(new SpinState(l1, 0), new SpinState(l2, 0), new SpinState(l3, 0));
+
+                        Console.WriteLine("  {0} {1}", I, 2.0 * S * S);
+
+                        if (Math.Abs(S) < TestUtilities.TargetPrecision) {
+                            Assert.IsTrue(I < TestUtilities.TargetPrecision);
+                        } else {
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(I, 2.0 * S * S));
+                        }
+
+
+                    }
+                }
+            }
+
+        }
 
     }
-
-#endif
 
 }

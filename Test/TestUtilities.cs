@@ -311,6 +311,15 @@ namespace Test {
             return (result);
         }
 
+        public static int[] GenerateUniformIntegerValues (int a, int b, int n) {
+            int[] result = new int[n];
+            Random rng = new Random(1);
+            for (int i = 0; i < n; i++) {
+                result[i] = rng.Next(a, b + 1);
+            }
+            return (result);
+        }
+
     }
 
 }

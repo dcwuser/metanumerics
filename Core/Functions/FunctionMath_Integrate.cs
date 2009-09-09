@@ -144,7 +144,7 @@ namespace Meta.Numerics.Functions {
             // normal integral over a finitite range
 
             IAdaptiveIntegrator integrator = new GaussKronrodIntegrator(integrand, range);
-            IntegrationResult result = Integrate_Adaptive(integrator, new EvaluationSettings());
+            IntegrationResult result = Integrate_Adaptive(integrator, settings);
             return (result.Result);
 
         }

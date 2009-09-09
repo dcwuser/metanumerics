@@ -190,7 +190,7 @@ namespace Meta.Numerics.Functions {
                 double df = Dawson_Rybicki_coefficients[k] * (b / (n0 + m) + 1.0 / b / (n0 - m));
                 f += df;
                 if (f == f_old) {
-                    Console.WriteLine(k);
+                    //Console.WriteLine(k);
                     return (Math.Exp(-y * y) / Global.SqrtPI * f);
                 }
                 b = b * bb;

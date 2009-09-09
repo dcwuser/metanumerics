@@ -201,11 +201,21 @@ namespace Meta.Numerics.Statistics {
             return (C);
         }
 
+        /// <summary>
+        /// Computes the given sample raw moment.
+        /// </summary>
+        /// <param name="powers">The power to which each component should be raised.</param>
+        /// <returns>The specified moment.</returns>
         public double Moment (params int[] powers) {
             return (Moment((IList<int>) powers));
 
         }
 
+        /// <summary>
+        /// Computes the given sample raw moment.
+        /// </summary>
+        /// <param name="powers">The power to which each component should be raised.</param>
+        /// <returns>The specified moment.</returns>
         public double Moment (IList<int> powers) {
             if (powers == null) throw new ArgumentNullException("powers");
             if (powers.Count != Dimension) throw new DimensionMismatchException();
@@ -224,11 +234,21 @@ namespace Meta.Numerics.Statistics {
 
         }
 
+        /// <summary>
+        /// Computes the given sample central moment.
+        /// </summary>
+        /// <param name="powers">The power to which each component should be raised.</param>
+        /// <returns>The specified moment.</returns>
         public double MomentAboutMean (params int[] powers) {
             return (MomentAboutMean((IList<int>) powers));
 
         }
 
+        /// <summary>
+        /// Computes the given sample central moment.
+        /// </summary>
+        /// <param name="powers">The power to which each component should be raised.</param>
+        /// <returns>The specified moment.</returns>
         public double MomentAboutMean (IList<int> powers) {
             if (powers == null) throw new ArgumentNullException("powers");
             if (powers.Count != Dimension) throw new DimensionMismatchException();

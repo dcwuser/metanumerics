@@ -409,36 +409,6 @@ namespace Meta.Numerics.Functions {
 
             }
 
-            /*
-            int m0 = m;
-            for (int n0 = m; n0 < n; n0++) {
-
-                double rp = (2.0 * (n0 + 1) * rho * r0 - (n0 - m0) * rm) / (n0 + m0 + 2);
-
-                rm = r0;
-                r0 = rp;
-
-                Console.WriteLine("{0} {1}", n0, r0);
-
-            }
-
-            rm = 0.0;
-            r0 = 1.0;
-
-            for (int n0 = 1; n0 < n; n0++) {
-
-                double rp = (2.0 * (n0 + 1) * rho * r0 - (n0 - m0) * rm) / (n0 + m0 + 2);
-
-                rm = r0;
-                r0 = rp;
-
-                Console.WriteLine("{0} {1}", n0, r0);
-
-            }
-
-            return (r0);
-            */
-
         }
 
     }

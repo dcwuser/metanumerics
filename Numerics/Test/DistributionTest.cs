@@ -1,8 +1,10 @@
 ﻿using Meta.Numerics;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics;
+using Meta.Numerics.Matrices;
 
 using System;
+using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Test
 {
@@ -69,6 +71,9 @@ namespace Test
             new StudentDistribution(5),
             new LognormalDistribution(0.2,0.4),
             new WeibullDistribution(2.0, 3.0),
+            new LogisticDistribution(-4.0,5.0),
+            new FisherDistribution(4.0, 7.0),
+            new KuiperDistribution(),
             new KolmogorovDistribution()
         };
 
@@ -134,12 +139,16 @@ namespace Test
         }
 
         private void DistributionProbabilityTestHelper (Distribution distribution, double x) {
+            Console.WriteLine("{0} {1}", distribution.GetType().Name, x);
             double P = distribution.LeftProbability(x);
             double Q = distribution.RightProbability(x);
             Assert.IsTrue((0.0 <= P) && (P <= 1.0));
             Assert.IsTrue((0.0 <= Q) && (Q <= 1.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(P + Q, 1.0));
             // this is a rather poor test; we can do much more when we get integration
+            // update: we have integration now, and tests like DistributionUnitarityIntegralTest,
+            // DistributionMeanIntegralTest, DistributionVarianceIntegralTest, DistributionRawMomentIntegralTest,
+            // and DistributionCentralMomentIntegralTest use it
             double p = distribution.ProbabilityDensity(x);
             Assert.IsTrue(p >= 0.0);
         }
@@ -191,7 +200,7 @@ namespace Test
                 // range of moments is about 3 to 20
                 foreach (int n in TestUtilities.GenerateIntegerValues(3, 20, 3)) {
                     double M = distribution.Moment(n);
-                    if (Double.IsInfinity(M)) continue; // don't try to integrate to infinity
+                    if (Double.IsInfinity(M)) continue; // don't try to do a non-convergent integral
                     Function<double, double> f = delegate(double x) {
                         return (distribution.ProbabilityDensity(x) * Math.Pow(x, n));
                     };
@@ -274,6 +283,173 @@ namespace Test
 
             }
         }
+
+        [TestMethod]
+        public void DistributionInvalidProbabilityInputTest () {
+
+            foreach (Distribution distribution in distributions) {
+
+                try {
+                    distribution.InverseLeftProbability(1.1);
+                    Assert.IsTrue(false);
+                } catch (ArgumentOutOfRangeException) {
+                    Assert.IsTrue(true);
+                }
+
+                try {
+                    distribution.InverseLeftProbability(-0.1);
+                    Assert.IsTrue(false);
+                } catch (ArgumentOutOfRangeException) {
+                    Assert.IsTrue(true);
+                }
+
+            }
+
+        }
+
+        // this test seems to indicate a problem as the tSample size gets bigger (few thousand)
+        // the fit gets too good to be true; is this a problem with KS? the the RNG? somehting else?
+
+        [TestMethod]
+        public void StudentTest2 () {
+
+            // make sure Student t is consistent with its definition
+
+            // we are going to take a sample that we expect to be t-distributed
+            Sample tSample = new Sample();
+
+            // begin with an underlying normal distribution
+            Distribution xDistribution = new NormalDistribution();
+
+            // compute a bunch of t satistics from the distribution
+            for (int i = 0; i < 100000; i++) {
+
+                // take a small sample from the underlying distribution
+                // (as the sample gets large, the t distribution becomes normal)
+                Random rng = new Random(314159+i);
+
+                double p = xDistribution.InverseLeftProbability(rng.NextDouble());
+                double q = 0.0;
+                for (int j = 0; j < 5; j++) {
+                    double x = xDistribution.InverseLeftProbability(rng.NextDouble());
+                    q += x * x;
+                }
+                q = q / 5;
+
+                double t = p / Math.Sqrt(q);
+                tSample.Add(t);
+
+            }
+
+            Distribution tDistribution = new StudentDistribution(5);
+            TestResult result = tSample.KolmogorovSmirnovTest(tDistribution);
+            Console.WriteLine(result.LeftProbability);
+
+        }
+
+        [TestMethod]
+        public void StudentTest () {
+
+            // make sure Student t is consistent with its definition
+
+            // we are going to take a sample that we expect to be t-distributed
+            Sample tSample = new Sample();
+
+            // begin with an underlying normal distribution
+            Distribution xDistribution = new NormalDistribution(1.0, 2.0);
+
+            // compute a bunch of t satistics from the distribution
+            for (int i = 0; i < 200000; i++) {
+
+                // take a small sample from the underlying distribution
+                // (as the sample gets large, the t distribution becomes normal)
+                Random rng = new Random(i);
+                Sample xSample = new Sample();
+                for (int j = 0; j < 5; j++) {
+                    double x = xDistribution.InverseLeftProbability(rng.NextDouble());
+                    xSample.Add(x);
+                }
+
+                // compute t for the sample
+                double t = (xSample.Mean - xDistribution.Mean) / (xSample.PopulationStandardDeviation.Value / Math.Sqrt(xSample.Count));
+                tSample.Add(t);
+                //Console.WriteLine(t);
+
+            }
+
+            // t's should be t-distrubuted; use a KS test to check this
+            Distribution tDistribution = new StudentDistribution(4);
+            TestResult result = tSample.KolmogorovSmirnovTest(tDistribution);
+            Console.WriteLine(result.LeftProbability);
+            //Assert.IsTrue(result.LeftProbability < 0.95);
+
+            // t's should be demonstrably not normally distributed
+            Console.WriteLine(tSample.KolmogorovSmirnovTest(new NormalDistribution()).LeftProbability);
+            //Assert.IsTrue(tSample.KolmogorovSmirnovTest(new NormalDistribution()).LeftProbability > 0.95);
+
+        }
+
+
+        [TestMethod]
+        public void FisherTest () {
+
+            // we will need a RNG
+            Random rng = new Random(314159);
+
+            int n1 = 1;
+            int n2 = 2;
+
+            // define chi squared distributions
+            Distribution d1 = new ChiSquaredDistribution(n1);
+            Distribution d2 = new ChiSquaredDistribution(n2);
+
+            // create a sample of chi-squared variates
+            Sample s = new Sample();
+            for (int i = 0; i < 250; i++) {
+                double x1 = d1.InverseLeftProbability(rng.NextDouble());
+                double x2 = d2.InverseLeftProbability(rng.NextDouble());
+                double x = (x1/n1) / (x2/n2);
+                s.Add(x);
+            }
+
+            // it should match a Fisher distribution with the appropriate parameters
+            Distribution f0 = new FisherDistribution(n1, n2);
+            TestResult t0 = s.KuiperTest(f0);
+            Console.WriteLine(t0.LeftProbability);
+            Assert.IsTrue(t0.LeftProbability < 0.95);
+
+            // it should be distinguished from a Fisher distribution with different parameters
+            Distribution f1 = new FisherDistribution(n1 + 1, n2);
+            TestResult t1 = s.KuiperTest(f1);
+            Console.WriteLine(t1.LeftProbability);
+            Assert.IsTrue(t1.LeftProbability > 0.95);
+
+        }
+
+        /*
+        [TestMethod]
+        public void FiniteKSDebug () {
+
+            int n = 200;
+
+            FiniteKolmogorovDistribution d = new FiniteKolmogorovDistribution(n);
+
+            double x = 99.0/200.0;
+
+            Stopwatch s = new Stopwatch();
+            s.Start();
+            double P = d.LeftProbability(x);
+            s.Stop();
+            Console.WriteLine("{0} ({1})", P, s.ElapsedMilliseconds);
+
+            s.Reset();
+            s.Start();
+            double Q = d.RightProbability(x);
+            s.Stop();
+            Console.WriteLine("{0} ({1})", Q, s.ElapsedMilliseconds);
+
+        }
+        */
 
     }
 }

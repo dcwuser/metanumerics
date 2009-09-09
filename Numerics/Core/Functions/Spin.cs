@@ -2,10 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
-
-using Meta.Numerics.Functions;
-
-namespace Meta.Numerics {
+namespace Meta.Numerics.Functions {
 
     /// <summary>
     /// Represents a spinor.

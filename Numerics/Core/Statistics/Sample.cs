@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 using Meta.Numerics;
@@ -415,6 +416,7 @@ namespace Meta.Numerics.Statistics {
 
             return (new TestResult(F, new ChiSquaredDistribution(this.Count)));
         }
+        */
 
         /// <summary>
         /// Tests whether the sample variance is compatible with the variance of another sample.
@@ -434,7 +436,94 @@ namespace Meta.Numerics.Statistics {
             return (new TestResult(F, new FisherDistribution(this.Count - 1, sample.Count - 1)));
 
         }
-        */
+
+        /// <summary>
+        /// Tests whether the sample median is compatible with the mean of another sample.
+        /// </summary>
+        /// <param name="sample">The other sample.</param>
+        /// <returns></returns>
+        /// <remarks>
+        /// <para>The Mann-Whitney test is a non-parametric alternative to Student's t-test.
+        /// Essentially, it supposes that the medians of the two samples are equal and tests
+        /// the likelihood of this null hypothesis.</para>
+        /// </remarks>
+        public TestResult MannWhitneyTest (Sample sample) {
+
+            if (sample == null) throw new ArgumentNullException("sample");
+
+            // essentially, we want to order the entries from the two samples and find out how
+            // many times "a's beat b's". In the ordering ababb, a beats b 5 times.
+
+            // implementing this naively would be O(N^2), so instead we use a formula that
+            // relates this quantity to the sum of ranks of a's and b's; to get those ranks
+            // we do seperate sorts O(N ln N) and a merge sort O(N).
+
+            // sort the two samples
+            this.EnsureSorted();
+            sample.EnsureSorted();
+
+            // now we essentially do a merge sort, but instead of actually forming the merged list,
+            // we just keep track of the ranks that elements from each sample would have in the merged list
+
+            // variables to track the sum of ranks for each sample
+            int r1 = 0;
+            int r2 = 0;
+
+            // pointers to the current position in each list
+            int p1 = 0;
+            int p2 = 0;
+
+            // the current rank
+            int r = 1;
+
+            while (true) {
+
+                //Console.WriteLine("a[{0}] = {1} <? b[{2}] = {3}", p1, this.data[p1], p2, sample.data[p2]);
+                if (this.data[p1] < sample.data[p2]) {
+                    //Console.WriteLine("{0} a", r);
+                    r1 += r;
+                    p1++;
+                    r++;
+                    if (p1 >= this.Count) {
+                        while (p2 < sample.Count) {
+                            //Console.WriteLine("{0} b", r);
+                            r2 += r;
+                            p2++;
+                            r++;
+                        }
+                        break;
+                    }
+
+                } else {
+                    //Console.WriteLine("{0} b", r);
+                    r2 += r;
+                    p2++;
+                    r++;
+                    if (p2 >= sample.Count) {
+                        while (p1 < this.Count) {
+                            //Console.WriteLine("{0} a", r);
+                            r1 += r;
+                            p1++;
+                            r++;
+                        }
+                        break;
+                    }
+
+                }
+            }
+
+            // relate u's to r's
+            int u1 = r1 - this.Count * (this.Count + 1) / 2;
+            int u2 = r2 - sample.Count * (sample.Count + 1) / 2;
+            Debug.Assert(u1 + u2 == this.Count * sample.Count);
+
+            // return the result
+
+            return (new TestResult(u1, new MannWhitneyDistribution(this.Count, sample.Count)));
+
+            //return (new TestResult(u1, new DistributionAdapter(new MannWhitneyDistribution2(this.Count, sample.Count))));
+
+        }
  
         /// <summary>
         /// Tests whether the sample is compatible with the given distribution.
@@ -460,11 +549,48 @@ namespace Meta.Numerics.Statistics {
 
         private TestResult KolmogorovSmirnovTest (Distribution distribution, int count) {
 
+            // compute the D statistic, which is the maximum of the D+ and D- statistics
+            double D, DP, DM;
+            ComputeDStatistics(distribution, out DP, out DM);
+            if (DP > DM) {
+                D = DP;
+            } else {
+                D = DM;
+            }
+
+            // reduce n by the number of fit parameters, if any
+            // this is heuristic and needs to be changed to deal with specific fits
+            int n = data.Count - count;
+
+            //return (new TestResult(D, new FiniteKolmogorovDistribution(n)));
+            return (new TestResult(D, new KolmogorovDistribution(1.0 / Math.Sqrt(n))));
+        }
+
+        /// <summary>
+        /// Tests whether the sample is compatible with the given distribution.
+        /// </summary>
+        /// <param name="distribution">The test distribution.</param>
+        /// <returns>The test result. The test statistic is the V statistic and the likelyhood is the right probability
+        /// to obtain a value of V as large or larger than the one obtained.</returns>
+        public TestResult KuiperTest (Distribution distribution) {
+
+            // compute the V statistic, which is the sum of the D+ and D- statistics
+            double DP, DM;
+            ComputeDStatistics(distribution, out DP, out DM);
+            double V = DP + DM;
+
+            return (new TestResult(V, new KuiperDistribution(1.0 / Math.Sqrt(data.Count))));
+
+        }
+
+
+        private void ComputeDStatistics (Distribution distribution, out double D1, out double D2) {
+
             EnsureSorted();
 
-            // compute the D statistic
+            D1 = 0.0;
+            D2 = 0.0;
 
-            double D = 0.0;
             double P1 = 0.0;
             for (int i = 0; i < data.Count; i++) {
 
@@ -477,10 +603,16 @@ namespace Meta.Numerics.Statistics {
 
                 // compare the the theoretical and experimental CDF values at x-dx and x+dx
                 // update D if this is the largest seperation yet observed
-                double D1 = Math.Abs(P - P1);
-                if (D1 > D) D = D1;
-                double D2 = Math.Abs(P - P2);
-                if (D2 > D) D = D2;
+
+                double DU = P2 - P;
+                if (DU > D1) D1 = DU;
+                double DL = P - P1;
+                if (DL > D2) D2 = DL;
+
+                //double D1 = Math.Abs(P - P1);
+                //if (D1 > D) D = D1;
+                //double D2 = Math.Abs(P - P2);
+                //if (D2 > D) D = D2;
 
                 // remember the experimental CDF value at x+dx;
                 // this will be the experimental CDF value at x-dx for the next step
@@ -488,10 +620,6 @@ namespace Meta.Numerics.Statistics {
 
             }
 
-            // reduce n by the number of fit parameters, if any
-            int n = data.Count - count;
-
-            return (new TestResult(D, new KolmogorovDistribution(1.0 / Math.Sqrt(n))));
         }
 
         /// <summary>

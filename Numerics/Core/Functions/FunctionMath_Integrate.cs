@@ -6,18 +6,33 @@ namespace Meta.Numerics.Functions {
 
     // used to pass evaulation parameters; we may want to make this public
 
-    internal class EvaluationSettings {
+    /// <summary>
+    /// Contains settings controling the evaluation of a function.
+    /// </summary>
+    public class EvaluationSettings {
 
+        /// <summary>
+        /// Instantiates a new set of default evaulation settings.
+        /// </summary>
         public EvaluationSettings () {
             EvaluationBudget = 5000;
             RelativePrecision = Global.Accuracy;
             AbsolutePrecision = Global.Accuracy;
         }
 
+        /// <summary>
+        /// Gets or sets the total number of evaluations allowed.
+        /// </summary>
         public int EvaluationBudget { get; set; }
 
+        /// <summary>
+        /// Gets or sets targeted relative precision.
+        /// </summary>
         public double RelativePrecision { get; set; }
 
+        /// <summary>
+        /// Gets or sets the targeted absolute precision.
+        /// </summary>
         public double AbsolutePrecision { get; set; }
 
     }
@@ -59,7 +74,20 @@ namespace Meta.Numerics.Functions {
         /// to evaluate I = &#x222B;<sub>0</sub><sup>b</sup> f(x) x<sup>-1/2</sup> dx, substitute y = x<sup>1/2</sup>
         /// to obtain I = 2 &#x222B;<sub>0</sub><sup>&#x221A;b</sup> f(y<sup>2</sup>) dy.</para>
         /// </remarks>
-        public static double Integrate (Function<double,double> integrand, Interval range) {
+        public static double Integrate (Function<double, double> integrand, Interval range) {
+            EvaluationSettings settings = new EvaluationSettings();
+            return (Integrate(integrand, range, settings));
+        }
+
+
+        /// <summary>
+        /// Evaluates a definite integral with the given evaluation settings.
+        /// </summary>
+        /// <param name="integrand">The function to be integrated.</param>
+        /// <param name="range">The range of integration.</param>
+        /// <param name="settings">The settings which control the evaulation of the integal.</param>
+        /// <returns>A numerical estimate of the given integral.</returns>
+        public static double Integrate (Function<double,double> integrand, Interval range, EvaluationSettings settings) {
 
             if (integrand == null) throw new ArgumentNullException("integrand");
 

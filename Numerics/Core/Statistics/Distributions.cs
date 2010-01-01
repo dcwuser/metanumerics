@@ -102,6 +102,19 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
+        /// Ges the skewness of the distribution.
+        /// </summary>
+        /// <remarks>
+        /// <para>The skewness of a distribution is a measurement of its asymmetry about its mean.
+        /// It is the third moment about the mean, measured in units of the cubed standard deviation.</para>
+        /// </remarks>
+        public virtual double Skewness {
+            get {
+                return (MomentAboutMean(3) / Math.Pow(MomentAboutMean(2), 3.0 / 2.0));
+            }
+        }
+
+        /// <summary>
         /// Gets the median of the distribution.
         /// </summary>
         /// <remarks>The median is the point with equal integrated probability above and below, i.e. with P(x1) = 0.5.</remarks>
@@ -211,8 +224,9 @@ namespace Meta.Numerics.Statistics {
 
         /// <inheritdoc />
         public override double Moment (int n) {
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
-            if (n == 0) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
                 return (1.0);
             } else if (n == 1) {
                 return (Mean);
@@ -272,6 +286,13 @@ namespace Meta.Numerics.Statistics {
 				return( range.Width / Math.Sqrt(12.0) );
 			}
 		}
+
+        /// <inheritdoc />
+        public override double Skewness {
+            get {
+                return (0.0);
+            }
+        }
 
         /// <inheritdoc />
         public override double Median {
@@ -405,6 +426,13 @@ namespace Meta.Numerics.Statistics {
 				return(sigma);
 			}
 		}
+
+        /// <inheritdoc />
+        public override double Skewness {
+            get {
+                return (0.0);
+            }
+        }
 
         /// <inheritdoc />
         public override double Median {
@@ -564,6 +592,13 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <inheritdoc />
+        public override double Skewness {
+            get {
+                return (2.0);
+            }
+        }
+
+        /// <inheritdoc />
         public override Interval Support {
             get {
                 return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
@@ -627,7 +662,8 @@ namespace Meta.Numerics.Statistics {
             } else {
                 double x2 = x / 2.0;
                 double nu2 = nu / 2.0;
-                return (0.5 * Math.Pow(x2, nu2 - 1.0) * Math.Exp(-x2) / AdvancedMath.Gamma(nu2));
+                return (Math.Exp((nu2 - 1.0) * Math.Log(x2) - x2 - AdvancedMath.LogGamma(nu2)) / 2.0);
+                //return (0.5 * Math.Pow(x2, nu2 - 1.0) * Math.Exp(-x2) / AdvancedMath.Gamma(nu2));
             }
 		}
 
@@ -651,8 +687,55 @@ namespace Meta.Numerics.Statistics {
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
+
 			if ((P<0.0) || (P>1.0)) throw new ArgumentOutOfRangeException("P");
-            return (base.InverseLeftProbability(P));
+
+            // limit cases
+            if (P == 0.0) {
+                return (0.0);
+            } else if (P == 1.0) {
+                return (Double.PositiveInfinity);
+            }
+
+            if (nu == 1) {
+                // analytic formula for nu=1
+                double e = AdvancedMath.InverseErf(P);
+                return (2.0 * e * e);
+            } else if (nu == 2) {
+                // analytic formula for nu=2
+                return (-2.0 * Math.Log(1.0 - P));
+            } else {
+                // try a normal approximation
+                double z = Math.Sqrt(2.0) * AdvancedMath.InverseErf(2.0 * P - 1.0);
+                double x = Mean + StandardDeviation * z;
+                // if we have run off end due to small P, use inverted small-x expansion instead
+                if (x <= 0.0) {
+                    double nu2 = nu / 2.0;
+                    x = 2.0 * Math.Exp((Math.Log(P) + AdvancedMath.LogGamma(nu2 + 1.0)) / nu2);
+                }
+                // start a search from our initial guess
+                Function<double,double> f = delegate(double y) {
+                    return(LeftProbability(y) - P);
+                };
+                x = FunctionMath.FindZero(f, x);
+                return (x);
+                // use newton's method; this failed to converge -- look into this
+                /*
+                for (int k = 0; k < 10; k++ ) {
+                    Console.WriteLine("x={0}", x);
+                    double x_old = x;
+                    Console.WriteLine("P={0}", LeftProbability(x));
+                    Console.WriteLine("p={0}", ProbabilityDensity(x));
+                    double dx = (P - LeftProbability(x)) / ProbabilityDensity(x);
+                    Console.WriteLine("dx={0}", dx);
+                    x += dx;
+                    if (x == x_old) return (x);
+                }
+                throw new NonconvergenceException();
+                */
+                // we need to be careful; what happens if we get x <= 0 in this loop?
+            }
+            //return (base.InverseLeftProbability(P));
             // change to deal with Inverse so we can't run off the end
 		}
 
@@ -742,6 +825,13 @@ namespace Meta.Numerics.Statistics {
                     if (Math.Abs(dx) <= Global.Accuracy * xm) break;
                 }
                 return (xm);
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Skewness {
+            get {
+                return (Math.Sqrt(8.0 / nu));
             }
         }
 
@@ -852,6 +942,13 @@ namespace Meta.Numerics.Statistics {
                 }
 			}
 		}
+
+        /// <inheritdoc />
+        public override double Skewness {
+            get {
+                return(0.0);
+            }
+        }
 
         /// <inheritdoc />
         public override double Median {
@@ -2418,6 +2515,13 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <inheritdoc />
+        public override double Skewness {
+            get {
+                return (0.0);
+            }
+        }
+
         // add moments
 
     }
@@ -2482,6 +2586,13 @@ namespace Meta.Numerics.Statistics {
         public override double Variance {
             get {
                 return (Math.PI * Math.PI * s * s / 3.0);
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Skewness {
+            get {
+                return (0.0);
             }
         }
 
@@ -2582,6 +2693,336 @@ namespace Meta.Numerics.Statistics {
 
     }
 
+    /// <summary>
+    /// Represents a triangular distribution.
+    /// </summary>
+    /// <remarks>
+    /// <para>Like a uniform distribution, a triangular distribution is confined to a finite interval. Unlike a
+    /// uniform distribution, a triangular distribution is not uniform across the interval.</para>
+    /// <para>Triangular distributions are often used in project planning, where a maximum, minimum, and most
+    /// likely value for some quantity is known or supposed.</para>
+    /// </remarks>
+    public class TriangularDistribution : Distribution {
+
+        /*
+        public TriangularDistribution (Interval range) {
+            r = range;
+            c = range.Midpoint;
+        }
+
+        private TriangularDistribution (Interval range, double peak) {
+            if (!range.ClosedContains(peak)) throw new ArgumentOutOfRangeException("peak");
+            r = range;
+            c = peak;
+        }
+        */
+
+        /// <summary>
+        /// Initializes a new triangular distribution.
+        /// </summary>
+        /// <param name="a">One point of the distribution.</param>
+        /// <param name="b">One point of the distribution.</param>
+        /// <param name="c">One point of the distribution.</param>
+        public TriangularDistribution (double a, double b, double c) {
+
+            // check for validity
+            if ((a == b) && (b == c)) throw new ArgumentException();
+
+            // order points
+
+            // record values
+            this.a = a;
+            this.b = b;
+            this.c = c;
+
+            this.ab = b - a;
+            this.bc = c - b;
+            this.ac = c - a;
+
+            this.h = 2.0 / ac;
+
+        }
+
+        private double a, b, c;
+        private double ab, bc, ac;
+        double h;
+
+        /// <inheritdoc />
+        public override double ProbabilityDensity (double x) {
+            if ((x <= a) || (x >= c)) {
+                return (0.0);
+            } else {
+                if (x < b) {
+                    return (h * (x - a) / ab);
+                } else {
+                    return (h * (c - x) / bc);
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public override double LeftProbability (double x) {
+            if (x <= a) {
+                return (0.0);
+            } else if (x >= c) {
+                return (1.0);
+            } else {
+                if (x < b) {
+                    return(LeftTriangleArea(x));
+                } else {
+                    return(1.0 - RightTrigangleArea(x));
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public override double RightProbability (double x) {
+            if (x <= a) {
+                return (1.0);
+            } else if (x >= c) {
+                return (0.0);
+            } else {
+                if (x < b) {
+                    return (1.0 - LeftTriangleArea(x));
+                } else {
+                    return (RightTrigangleArea(x));
+                }
+            }
+        }
+
+        private double LeftTriangleArea (double x) {
+            Debug.Assert(x >= a); Debug.Assert(x <= b);
+            double ax = x - a;
+            return (ax * ax / ab / ac);
+        }
+
+        private double RightTrigangleArea (double x) {
+            Debug.Assert(x >= b); Debug.Assert(x <= c);
+            double xc = c - x;
+            return (xc * xc / bc / ac);
+        }
+
+        /// <inheritdoc />
+        public override double InverseLeftProbability (double P) {
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            double Pb = ab / ac;
+            if (P < Pb) {
+                return (a + Math.Sqrt(ab * ac * P));
+            } else {
+                return(c - Math.Sqrt(bc * ac * (1.0 - P)));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Mean {
+            get {
+                return ((a + b + c) / 3.0);
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Variance {
+            get {
+                return ((ab * ab + bc * bc + ac * ac) / 36.0);
+            }
+        }
+
+        /// <inheritdoc />
+        public override Interval Support {
+            get {
+                return (Interval.FromEndpoints(a, c));
+                //return (r);
+            }
+        }
+
+        private double MomentAboutMode (int n) {
+            if (n == 0) {
+                return (1.0);
+            } else if (n == 1) {
+                return ((bc - ab) / 3.0);
+            } else {
+                // ac = ab + bc is always a factor of the numerator; find a way to divide it out analytically
+                if (n % 2 == 0) {
+                    return (2.0 * (Math.Pow(bc, n + 1) + Math.Pow(ab, n + 1)) / (n + 1) / (n + 2) / ac);
+                } else {
+                    return (2.0 * (Math.Pow(bc, n + 1) - Math.Pow(ab, n + 1)) / (n + 1) / (n + 2) / ac);
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Moment (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (1.0);
+            } else if (n == 1) {
+                return (Mean);
+            } else {
+                double M = MomentAboutMode(n);
+                double t = 1.0;
+                for (int k = n - 1; k >= 0; k--) {
+                    t *= b;
+                    M += AdvancedIntegerMath.BinomialCoefficient(n, k) * MomentAboutMode(k) * t;
+                }
+                return (M);
+            }
+        }
+
+        /// <inheritdoc />
+        public override double MomentAboutMean (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (1.0);
+            } else if (n == 1) {
+                return (0.0);
+            } else {
+                double M = MomentAboutMode(n);
+                double s = -MomentAboutMode(1);
+                double t = 1.0;
+                for (int k = n - 1; k >= 0; k--) {
+                    t *= s;
+                    M += AdvancedIntegerMath.BinomialCoefficient(n, k) * MomentAboutMode(k) * t;
+                }
+                //Console.WriteLine("n={0}, M={1}", n, M);
+                return (M);
+            }
+        }
+    }
+
+    public class BetaDistribution : Distribution {
+
+        /// <summary>
+        /// Instantiates a new &#x3B2; distribution.
+        /// </summary>
+        /// <param name="alpha">The left shape parameter, which controls the form of the distribution near x=0.</param>
+        /// <param name="beta">The right shape parameter, which controls the form of the distribution near x=1.</param>
+        public BetaDistribution (double alpha, double beta) {
+            if (alpha <= 0.0) throw new ArgumentOutOfRangeException("alpha");
+            if (beta <= 0.0) throw new ArgumentOutOfRangeException("beta");
+            this.alpha = alpha;
+            this.beta = beta;
+        }
+
+        double alpha, beta;
+
+        public double Alpha {
+            get {
+                return (alpha);
+            }
+        }
+
+        public double Beta {
+            get {
+                return (beta);
+            }
+        }
+
+        public override Interval Support {
+            get {
+                return (Interval.FromEndpoints(0.0, 1.0));
+            }
+        }
+
+        public override double ProbabilityDensity (double x) {
+            if ((x < 0.0) || (x > 1.0)) {
+                return (0.0);
+            } else {
+                return (Math.Pow(x, alpha - 1.0) * Math.Pow(1.0 - x, beta - 1.0) / AdvancedMath.Beta(alpha, beta));
+            }
+        }
+
+        public override double LeftProbability (double x) {
+            if (x <= 0.0) {
+                return (0.0);
+            } else if (x >= 1.0) {
+                return (1.0);
+            } else {
+                return (AdvancedMath.Beta(alpha, beta, x));
+            }
+        }
+
+        public override double Mean {
+            get {
+                return (alpha / (alpha + beta));
+            }
+        }
+
+        public override double Variance {
+            get {
+                double ab = alpha + beta;
+                return (alpha * beta / (ab + 1.0) / (ab * ab));
+            }
+        }
+
+        public override double Moment (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (1.0);
+            } else {
+                return (AdvancedMath.Beta(alpha + n, beta) / AdvancedMath.Beta(alpha, beta));
+            }
+        }
+
+    }
+
+    /*
+    public class WaldDistribution : Distribution {
+
+
+        public WaldDistribution (double mu, double lambda) {
+            if (mu <= 0.0) throw new ArgumentOutOfRangeException("mu");
+            if (lambda <= 0.0) throw new ArgumentOutOfRangeException("lambda");
+            this.mu = mu;
+            this.lambda = lambda;
+        }
+
+        double mu;
+        double lambda;
+
+        public override Interval Support {
+            get {
+                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+            }
+        }
+
+        public override double ProbabilityDensity (double x) {
+            return (Math.Sqrt(lambda / (2.0 * Math.PI * x * x * x)) * Math.Exp(-lambda * (x - mu) / (2.0 * x * mu * mu)));
+        }
+
+        public override double Mean {
+            get {
+                return (mu);
+            }
+        }
+
+
+        public override double Moment (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (1.0);
+            } else {
+                // use recursion relation M_{n+1} = ((2n-1) (M_n / lambda) + M_{n-1}) mu^2
+                double MM = mu;
+                if (n == 1) return (MM);
+                double mu2 = mu * mu;
+                double M0 = m2 * (lambda + mu) / lambda;
+                if (n == 2) return (M0);
+                for (int k = 2; k < n; k++) {
+                    double MP = ((2 * k - 1) * (M0 / lambda) + MM) * mu2;
+                    MM = M0;
+                    M0 = MP;
+                }
+                return (M0);
+            }
+        }
+
+    }
+    */
+
     // Deviates
     // Maximum likelyhood estimation
     // Skewness
@@ -2590,7 +3031,6 @@ namespace Meta.Numerics.Statistics {
 	// Gamma Distribution
 	// Beta Distribution
     // Wald (inverse guassian) Distribution
-    // Triangular Distribution
 
 }
 

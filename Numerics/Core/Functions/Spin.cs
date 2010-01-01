@@ -355,6 +355,12 @@ namespace Meta.Numerics.Functions {
             s2 = t;
         }
 
+        private static void Swap<T> (ref T a, ref T b) where T : struct {
+            T t = a;
+            a = b;
+            b = t;
+        }
+
         // ( 0  J   J )
         // ( 0  M  -M )
         private static double ThreeJ_ZeroJ (SpinState s) {
@@ -840,14 +846,299 @@ namespace Meta.Numerics.Functions {
 
         // SixJ
 
-        /*
-        public static double SixJ (Spin j1, Spin j2, Spin j3, Spin j4, Spin J5, Spin J6) {
-            throw new NotImplementedException();
+        /// <summary>
+        /// Computes the value of the 6j symbol for the six given spins.
+        /// </summary>
+        /// <param name="j1">Upper left spin.</param>
+        /// <param name="j2">Upper middle spin.</param>
+        /// <param name="j3">Upper right spin.</param>
+        /// <param name="j4">Lower left spin.</param>
+        /// <param name="j5">Lower middle spin.</param>
+        /// <param name="j6">Lower right spin.</param>
+        /// <returns>The value of {{j1,j2,j3},{j4,j5,j6}}.</returns>
+        public static double SixJ (Spin j1, Spin j2, Spin j3, Spin j4, Spin j5, Spin j6) {
+
+            // check for required triangle relations
+            bool t = (Triangle(j1, j2, j3) && Triangle(j1, j5, j6) && Triangle(j4, j2, j6) && Triangle(j4, j5, j3));
+            if (!t) return (0.0);
+
+
+            // move the smallest entry to the lower-right corner
+            // move lowest entry in first column to bottom
+            if (j1.TwoJ < j4.TwoJ) { Swap(ref j1, ref j4); Swap(ref j2, ref j5); }
+            // move lowest entry in second column to bottom
+            if (j2.TwoJ < j5.TwoJ) { Swap(ref j2, ref j5); Swap(ref j3, ref j6); }
+            // move lowest of first two entries in lower row to right
+            if (j4.TwoJ < j5.TwoJ) { Swap(ref j1, ref j2); Swap(ref j4, ref j5); }
+            // move lowest entry in third column to bottom
+            if (j3.TwoJ < j6.TwoJ) { Swap(ref j3, ref j6); Swap(ref j1, ref j4); }
+            // move lowest of last two entries in lower row to right
+            if (j5.TwoJ < j6.TwoJ) { Swap(ref j2, ref j3); Swap(ref j5, ref j6); }
+
+
+            if (j6.TwoJ == 0) {
+                // special case for 0 entry
+                return (SixJ_Zero(j1, j2, j3));
+            } else if (j6.TwoJ == 1) {
+                // special case for 1/2 entry
+                return (SixJ_OneHalf(j1, j2, j3, j4, j5));
+            } else {
+                // general case
+                return (SixJ_ShultenGorton_Recurse(j1.TwoJ, j2.TwoJ, j3.TwoJ, j4.TwoJ, j5.TwoJ, j6.TwoJ));
+            }
+
         }
-        */
+
+        private static bool Triangle (Spin a, Spin b, Spin c) {
+
+            // check integer relationships
+            int s = (a.TwoJ + b.TwoJ + c.TwoJ);
+            if (s % 2 != 0) return (false);
+
+            // check triangle inequality
+            return ((Math.Abs(a.TwoJ - b.TwoJ) <= c.TwoJ) && (c.TwoJ <= (a.TwoJ + b.TwoJ)));
+
+        }
+
+        // j1 j2 j3
+        // j2 j1 0
+
+        private static double SixJ_Zero (Spin j1, Spin j2, Spin j3) {
+            double f = 1.0 / Math.Sqrt((j1.TwoJ + 1) * (j2.TwoJ + 1));
+            if ((j1.TwoJ + j2.TwoJ + j3.TwoJ) / 2 % 2 != 0) f = -f;
+            return (f);
+        }
+
+        // j1 j2 j3
+        // j4 j5 1/2
+
+        private static double SixJ_OneHalf (Spin j1, Spin j2, Spin j3, Spin j4, Spin j5) {
+
+            Debug.Assert(Math.Abs(j1.TwoJ - j5.TwoJ) == 1); Debug.Assert(Math.Abs(j2.TwoJ - j4.TwoJ) == 1);
+
+            // make j5 = j1-1/2, reducing the number of formulae required
+            if (j5.TwoJ > j1.TwoJ) { Swap(ref j1, ref j5); Swap(ref j2, ref j4); }
+
+            double f;
+            if (j4.TwoJ < j2.TwoJ) {
+                //   a     b    c
+                // b-1/2 a-1/2 1/2 
+                f = (j1.TwoJ + j2.TwoJ - j3.TwoJ) * (j1.TwoJ + j2.TwoJ + j3.TwoJ + 2) / 4.0 / (j1.TwoJ * (j1.TwoJ + 1)) / (j2.TwoJ * (j2.TwoJ + 1));
+
+            } else {
+                //   a     b    c
+                // b+1/2 a-1/2 1/2
+                f = (j1.TwoJ - j2.TwoJ + j3.TwoJ) * (j2.TwoJ + j3.TwoJ - j1.TwoJ + 2) / 4.0 / (j1.TwoJ * (j1.TwoJ + 1)) / ((j2.TwoJ + 1) * (j2.TwoJ + 2));
+
+            }
+            f = Math.Sqrt(f);
+            if ((j1.TwoJ + j2.TwoJ + j3.TwoJ) % 4 != 0) f = -f;
+            return (f);
+
+            /*
+            // ensure that J1, J2 are integer-spins; J3, J4 are half-spins
+            if (j1.TwoJ % 2 != 0) { Swap(ref j1, ref j4); Swap(ref j2, ref j5); }
+
+            // apply relation to 3j symbols
+            // re-write to call directly into specialized 3j routines
+            if ((j1.TwoJ + j2.TwoJ + j3.TwoJ) % 4 == 0) {
+                double p = ThreeJ(new SpinState(j4, 0.5), new SpinState(j5, -0.5), new SpinState(j3, 0.0));
+                double q = ThreeJ(new SpinState(j1, 0.0), new SpinState(j2, 0.0), new SpinState(j3, 0.0));
+                double r = Math.Sqrt((j1.TwoJ + 1) * (j2.TwoJ + 1));
+                return (- p / q / r);
+            } else {
+                return (0.0);
+            }
+            */
+        }
+
+        private static double SixJ_ShultenGorton_Recurse (int tj1, int tj2, int tj3, int tj4, int tj5, int tj6) {
+
+            // determine minimum
+            int tk_min;
+            int tk_min_23 = Math.Abs(tj2 - tj3);
+            int tk_min_56 = Math.Abs(tj5 - tj6);
+            if (tk_min_23 > tk_min_56) {
+                tk_min = tk_min_23;
+            } else {
+                tk_min = tk_min_56;
+            }
+
+            // determine maximum
+            int tk_max;
+            int tk_max_23 = tj2 + tj3;
+            int tk_max_56 = tj5 + tj6;
+            if (tk_max_23 < tk_max_56) {
+                tk_max = tk_max_23;
+            } else {
+                tk_max = tk_max_56;
+            }
+
+            // find the midpoint of the range
+            int tk_mid = (tk_min + tk_max) / 2;
+            if ((tk_mid % 2) != (tk_max % 2)) tk_mid++;
+
+            //Console.WriteLine("{0} <= {1} <= {2}", tk_min, tk_mid, tk_max);
+
+            // variables to store recurrence coefficients and (unscaled) 6j values
+            double ap, a0, b0;
+            double cm, c0, cp;
+            int tj;
+
+            // a variable to store the sought value
+            double c = 0.0;
+
+            // iterate in from the right
+            double NR = 0.0;
+            cp = 0.0;
+            ap = 0.0;
+            c0 = 0.5 / tk_max / tk_max;
+
+            // fix sign
+            if ((tj2 + tj3 + tj5 + tj6) % 4 != 0) { c0 = -c0; }
+
+            tj = tk_max;
+            while (true) {
+
+                // keep track of the normalization constant
+                NR += (tj + 1) * c0 * c0;
+
+                // remember the (unscaled) value of the desired 3j symbol
+                if (tj == tj1) {
+                    c = c0;
+                }
+
+                // check whether we have reached the center
+                if (tj <= tk_mid) {
+                    if (Math.Abs(c0) <= Math.Pow(2.0, -40.0) * Math.Abs(cp)) {
+                        // if the middle value is zero, the left and right values cannot be matached
+                        // (acutally, the numbers will be two random tiny numbers, and their ratio will
+                        // be a random number of order one); in this case, go down one more step
+                        tk_mid -= 2;
+                    } else {
+                        break;
+                    }
+                }
+
+
+                // compute required coefficients
+                b0 = ShultenGordon_F(tj, tj2, tj3, tj4, tj5, tj6);
+                a0 = ShultenGordon_E(tj, tj2, tj3, tj4, tj5, tj6);
+
+                // use recursion to compute the tj-2 symbol
+                cm = - (b0 * c0 + (tj / 2.0) * ap * cp) / ((tj + 2) / 2.0) / a0;
+
+                //Console.WriteLine("{0}: {1} {2} + {3} {4} + {5} {6}", tj, a0, cm, b0, c0, ap, cp);
+
+                // prepare for the next cycle
+                cp = c0;
+                c0 = cm;
+                ap = a0;
+                tj -= 2;
+
+            }
+
+            // remember the (unscaled) middle value
+            double c1 = c0;
+
+            // iterate in from the left
+            double NL = 0.0;
+            cm = 0.0;
+            a0 = 0.0;
+            c0 = 0.5 / tk_max / tk_max;
+            tj = tk_min;
+
+            // j_min = 0 iff j2 == j3 && j5 == j6
+            // in this case all three coefficients vanish, so the recursion is indeterminate,
+            // so we do the first recursion step "by hand" using explicit expressions
+            if (tj == 0) {
+                Debug.Assert(tj2 == tj3); Debug.Assert(tj5 == tj6);
+                NL += c0 * c0;
+                cm = c0;
+                c0 = (tj4 * (tj4 + 2) - tj3 * (tj3 + 2) - tj6 * (tj6 + 2)) / Math.Sqrt(tj3 * (tj3 + 2)) / Math.Sqrt(tj6 * (tj6 + 2)) / 2.0 * cm;
+                a0 = ShultenGordon_E(2, tj2, tj3, tj4, tj5, tj6);
+                tj = 2;
+            }
+
+            while (true) {
+
+                // check whether we have reached the center
+                if (tj >= tk_mid) {
+                    break;
+                }
+
+                // notice that we terminate before checking whether we are at the desired value,
+                // or adding to the normalization constant; this is different from the previous loop
+                // we do this so that the middle element does not double contribute to the normalization
+                // and because if the middle element is desired, it has already been stored from the previous loop
+
+                // remember the desired (unscaled) value
+                if (tj == tj1) {
+                    c = c0;
+                    //Console.WriteLine("{0}: {1}", tj1, c);
+                }
+
+                // add current value to normalization
+                NL += (tj + 1) * c0 * c0;
+
+                // check for end
+                // this should never happen, no? we just checked before.
+                if (tj >= tk_max) break;
+
+                // compute required coeficients
+                b0 = ShultenGordon_F(tj, tj2, tj3, tj4, tj5, tj6);
+                ap = ShultenGordon_E(tj + 2, tj2, tj3, tj4, tj5, tj6);
+                //b0 = ShultenGodron_B(s1.TwoJ, s2.TwoJ, tj, s1.TwoM, s2.TwoM, s3.TwoM);
+                //ap = ShultenGordon_A(s1.TwoJ, s2.TwoJ, tj + 2, s3.TwoM);
+
+                // use recursion relation to compute tj+2
+                //cp = (-b0 * c0 - ((tj + 2) / 2.0) * a0 * cm) / (tj / 2.0) / ap;
+                cp = - (b0 * c0 + ((tj + 2) / 2.0) * a0 * cm) / (tj / 2.0) / ap;
+
+                //Console.WriteLine("{0}: {1} {2} + {3} {4} + {5} {6}", tj, a0, cm, b0, c0, ap, cp);
+
+                // prepare for next iteration
+                cm = c0;
+                c0 = cp;
+                a0 = ap;
+                tj += 2;
+
+            }
+
+            // match in the middle
+            double r = c0 / c1;
+            NL = NL / (r * r);
+            if (tj1 < tk_mid) c = c / r;
+
+            // normalize
+            double N = NL + NR;
+            //Console.WriteLine("{0} + {1} = {2}", NL, NR, N);
+            c = c / Math.Sqrt(N * (tj4+1));
+
+            return (c);
+
+        }
+
+        private static double ShultenGordon_E (int tj1, int tj2, int tj3, int tl1, int tl2, int tl3) {
+            double f1 = (tj1 + tj2 - tj3) * (tj1 - tj2 + tj3) / 4.0;
+            double f2 = (tj2 + tj3 + 2 + tj1) * (tj2 + tj3 + 2 - tj1) / 4.0;
+            double f3 = (tj1 - tl2 + tl3) * (tj1 + tl2 - tl3) / 4.0;
+            double f4 = (tl2 + tl3 + 2 + tj1) * (tl2 + tl3 + 2 - tj1) / 4.0;
+            return (Math.Sqrt(f1 * f2 * f3 * f4));
+        }
+
+        private static double ShultenGordon_F (int tj1, int tj2, int tj3, int tj4, int tj5, int tj6) {
+            double pj1 = tj1 * (tj1 + 2);
+            double pj2 = tj2 * (tj2 + 2);
+            double pj3 = tj3 * (tj3 + 2);
+            double pj4 = tj4 * (tj4 + 2);
+            double pj5 = tj5 * (tj5 + 2);
+            double pj6 = tj6 * (tj6 + 2);
+            double s = pj1 * (-pj1 + pj2 + pj3) + pj5 * (pj1 + pj2 - pj3) + pj6 * (pj1 - pj2 + pj3) - 2 * pj1 * pj4;
+            return ((tj1 + 1) * s / 16.0);
+            // don't to this all in integer math, or you will silently overflow!
+        }
 
     }
-
-//#endif
 
 }

@@ -1228,7 +1228,7 @@ namespace Meta.Numerics.Matrices {
         //   A P = A - (A u) u^T = A - v u^T where v = A u
         // This is a O(N^2) operation.
 
-        private void QRDecompose () {
+        public void QRDecompose () {
 			// loop over columns, doing a Householder transform for each
             for (int c = 0; c < dimension; c++) {
 
@@ -1251,7 +1251,7 @@ namespace Meta.Numerics.Matrices {
                     s = x * this[c, c];
                 }
 
-                // check for singulatity
+                // check for singularity
                 if (s == 0.0) throw new DivideByZeroException();
 
                 // update lower right submatrix
@@ -1274,6 +1274,8 @@ namespace Meta.Numerics.Matrices {
 
                 // insert the diagonal entry where the leading component was stored
                 this[c, c] = d;
+
+                PrintMatrix(this);
 
             }
         }

@@ -467,12 +467,12 @@ namespace Meta.Numerics.Functions {
                 return(BesselJ_Series(nu, x));
             } else if (x > 30.0 + 0.5 * nu * nu) {
                 // we are far enough from origin to use the asymptotic expansion
-                BesselResult result = Bessel_Asymptotic(nu, x);
+                SolutionPair result = Bessel_Asymptotic(nu, x);
                 return (result.Regular);
             } else {
                 if (x > nu) {
                     // we are far enough from origin to evaluate CF2, so use Steed's method
-                    BesselResult result = Bessel_Steed(nu, x);
+                    SolutionPair result = Bessel_Steed(nu, x);
                     return (result.Regular);
                 } else {
                     // we have x < nu, but x is still not small enough to use series; this only occurs for nu >~ 6
@@ -499,7 +499,7 @@ namespace Meta.Numerics.Functions {
                     //Console.WriteLine("derived J = {0} at mu={1}", J, mu);
 
                     Complex z = Bessel_CF2(mu, x);
-                    BesselResult result = Bessel_Steed(mu / x - Jp1 / J, z, 2.0 / Math.PI / x , Math.Sign(J));
+                    SolutionPair result = Bessel_Steed(mu / x - Jp1 / J, z, 2.0 / Math.PI / x , Math.Sign(J));
                     //Console.WriteLine("actual J = {0} at mu={1}", result.Regular, mu);
                     //Console.WriteLine("scale factor {0}", result.Regular / J);
 
@@ -531,7 +531,7 @@ namespace Meta.Numerics.Functions {
 
                 // far from the origin, use the asymptotic expansion
 
-                BesselResult result = Bessel_Asymptotic(nu, x);
+                SolutionPair result = Bessel_Asymptotic(nu, x);
                 return (result.Irregular);
             } else if (x < 3.0) {
 
@@ -565,7 +565,7 @@ namespace Meta.Numerics.Functions {
                 }
 
             } else if (x > nu) {
-                BesselResult result = Bessel_Steed(nu, x);
+                SolutionPair result = Bessel_Steed(nu, x);
                 return (result.Irregular);
             } else {
 
@@ -576,7 +576,7 @@ namespace Meta.Numerics.Functions {
                 double mu = nu - n;
 
                 // evaluate at mu
-                BesselResult result = Bessel_Steed(mu, x);
+                SolutionPair result = Bessel_Steed(mu, x);
                 double Y = result.Irregular;
                 double YP = result.IrregularPrime;
 
@@ -598,7 +598,7 @@ namespace Meta.Numerics.Functions {
         }
 
         // CF1, CF2, and Wronskian to determine Bessel function values
-        private static BesselResult Bessel_Steed (double nu, double x) {
+        private static SolutionPair Bessel_Steed (double nu, double x) {
 
             // CF2 only converges for x > nu
             Debug.Assert(x > nu);
@@ -627,13 +627,13 @@ namespace Meta.Numerics.Functions {
 
             double YP = Y * (z.Re + z.Im / g);
 
-            return new BesselResult(nu, x, J, JP, Y, YP);
+            return new SolutionPair(nu, x, J, JP, Y, YP);
 
         }
 
         // Evaluate J, J', Y, Y' via Steed's method
         // r = J'/J, z = ()/(), W = J Y' - Y J', and sign is the sign of J
-        private static BesselResult Bessel_Steed (double r, Complex z, double W, int sign) {
+        private static SolutionPair Bessel_Steed (double r, Complex z, double W, int sign) {
 
             double g = (z.Re - r) / z.Im;
 
@@ -646,7 +646,7 @@ namespace Meta.Numerics.Functions {
 
             double YP = Y * (z.Re + z.Im / g);
 
-            return new BesselResult(0, 0.0, J, JP, Y, YP);
+            return new SolutionPair(0, 0.0, J, JP, Y, YP);
 
         }
 
@@ -654,7 +654,7 @@ namespace Meta.Numerics.Functions {
         // for nu=0, converges in about 10 terms at x~100, and in about 25 terms even as low as x~25 at full precision,
         // but fails to converge at all for lower x; minimum x should grow about like 1/2 * nu^2
 
-        private static BesselResult Bessel_Asymptotic (double nu, double x) {
+        private static SolutionPair Bessel_Asymptotic (double nu, double x) {
 
             double n2 = 4.0 * nu * nu;
             double xx = 8.0 * x;
@@ -699,7 +699,7 @@ namespace Meta.Numerics.Functions {
             double N = Math.Sqrt(2.0 / Math.PI / x);
 
             //Debug.WriteLine(String.Format("x={0} nu={1} ca={2} sb={3}", x, nu, c * a, s * b));
-            BesselResult result = new BesselResult(nu, x, N * (c * a - s * b), 0.0, N * (s * a + c * b), 0.0);
+            SolutionPair result = new SolutionPair(nu, x, N * (c * a - s * b), 0.0, N * (s * a + c * b), 0.0);
             //BesselResult result = new BesselResult(nu, x, N * Math.Sin(t - p), 0.0, N * Math.Sin(t + p), 0.0);
 
             return (result);
@@ -990,7 +990,7 @@ namespace Meta.Numerics.Functions {
     }
 
 
-    internal struct BesselResult {
+    internal struct SolutionPair {
 
         private double nu, x, j, jPrime, y, yPrime;
 
@@ -1010,11 +1010,17 @@ namespace Meta.Numerics.Functions {
             get {
                 return (j);
             }
+            set {
+                j = value;
+            }
         }
 
         public double RegularPrime {
             get {
                 return (jPrime);
+            }
+            set {
+                jPrime = value;
             }
         }
 
@@ -1022,21 +1028,29 @@ namespace Meta.Numerics.Functions {
             get {
                 return (y);
             }
+            set {
+                y = value;
+            }
         }
 
         public double IrregularPrime {
             get {
                 return (yPrime);
             }
+            set {
+                yPrime = value;
+            }
         }
 
+        /*
         public double Wronskian {
             get {
                 return (j * yPrime - y * jPrime);
             }
         }
+        */
 
-        internal BesselResult (double nu, double x, double j, double jPrime, double y, double yPrime) {
+        internal SolutionPair (double nu, double x, double j, double jPrime, double y, double yPrime) {
             this.nu = nu;
             this.x = x;
             this.j = j;

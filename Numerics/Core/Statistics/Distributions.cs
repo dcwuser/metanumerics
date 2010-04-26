@@ -2215,7 +2215,7 @@ namespace Meta.Numerics.Statistics {
 
                 // for a total small enough to fit into a decimal, compute the exact count of partitions
                 // contributing to each u; this operation is m^2 n, but it's integer math and we are
-                // only doing it up to m~n~50, so its still pretty fast
+                // only doing it up to m~n~50, so it's still pretty fast
 
                 counts = GaussianBinomialCoefficients(m + n, m);
 
@@ -2919,12 +2919,14 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <inheritdoc />
         public override Interval Support {
             get {
                 return (Interval.FromEndpoints(0.0, 1.0));
             }
         }
 
+        /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             if ((x < 0.0) || (x > 1.0)) {
                 return (0.0);
@@ -2933,6 +2935,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <inheritdoc />
         public override double LeftProbability (double x) {
             if (x <= 0.0) {
                 return (0.0);
@@ -2943,12 +2946,14 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <inheritdoc />
         public override double Mean {
             get {
                 return (alpha / (alpha + beta));
             }
         }
 
+        /// <inheritdoc />
         public override double Variance {
             get {
                 double ab = alpha + beta;
@@ -2956,6 +2961,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <inheritdoc />
         public override double Moment (int n) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");

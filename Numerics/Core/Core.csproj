@@ -33,6 +33,7 @@
     <DocumentationFile>bin\Debug\Meta.Numerics.xml</DocumentationFile>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <CodeAnalysisRules>-Microsoft.Design#CA1023;-Microsoft.Naming#CA1709;-Microsoft.Naming#CA1704;-Microsoft.Performance#CA1814;-Microsoft.Usage#CA2225</CodeAnalysisRules>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -52,6 +53,9 @@
     <Compile Include="Core\Complex.cs" />
     <Compile Include="Core\Exceptions.cs" />
     <Compile Include="Core\Functions.cs" />
+    <Compile Include="Functions\AdvancedMath_Constants.cs" />
+    <Compile Include="Functions\AdvancedMath_Coulomb.cs" />
+    <Compile Include="Functions\AdvancedMath_Polylog.cs" />
     <Compile Include="Functions\Spin.cs" />
     <Compile Include="Functions\AdvancedMath_Harmonic.cs" />
     <Compile Include="Functions\AdvancedMath_Lambert.cs" />

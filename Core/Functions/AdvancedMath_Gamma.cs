@@ -450,6 +450,30 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        internal static Complex Psi (Complex z) {
+            return (LanczosPsi(z));
+        }
+
+        private static Complex LanczosPsi (Complex z) {
+
+            // compute the Lanczos series
+            Complex s0 = AdvancedMath.LanczosD[0];
+            Complex s1 = 0.0;
+            for (int i = 1; i < AdvancedMath.LanczosD.Length; i++) {
+                Complex zi = z + i;
+                Complex st = AdvancedMath.LanczosD[i] / zi;
+                s0 += st;
+                s1 += st / zi;
+            }
+
+            // compute the leading terms
+            Complex zz = z + AdvancedMath.LanczosR + 0.5;
+            Complex t = ComplexMath.Log(zz) - AdvancedMath.LanczosR / zz - 1.0 / z;
+
+            return (t - s1 / s0);
+
+        }
+
         /*
         private static Complex LanczosLogGamma (double[] f, double g, double c, Complex z) {
             Complex p = z + 0.5;

@@ -6,12 +6,6 @@ namespace Meta.Numerics.Functions {
 
     public static partial class AdvancedMath {
 
-        /// <summary>
-        /// The Euler constant.
-        /// </summary>
-        /// <remarks><para>The Euler constant &#x3B3; = 0.5772...</para></remarks>
-        public const double EulerGamma = 0.577215664901532860606512;
-
         // this series is technically convergent everywhere, but it won't start converging until k ~ x, so it's best to use with small x
         // takes about 100 terms at x~40; it would be nice to move to the asymptotic expansion for lower x, but it fails to converge in that region
         private static double IntegralEi_Series (double x) {

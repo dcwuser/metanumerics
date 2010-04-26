@@ -18,7 +18,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://www.apmaths.uwo.ca/~djeffrey/Offprints/W-adv-cm.pdf"/>
         public static double LambertW (double x) {
 
-            if (x < -EI) throw new ArgumentOutOfRangeException();
+            if (x < -EI) throw new ArgumentOutOfRangeException("x");
 
             // use an initial approximation
             double W;

@@ -240,7 +240,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="u1">The uncertain value.</param>
         /// <param name="v2">The certain value.</param>
-        /// <returns></returns>
+        /// <returns>The sum of the two values.</returns>
         public static UncertainValue operator + (UncertainValue u1, double v2) {
 			return( v2+u1 );
 		}

@@ -153,5 +153,90 @@ namespace Test {
 
         // periodicity in imaginary part of ln z means that LogGamma recurrence and LogGamma duplication tests fail
 
+        [TestMethod]
+        public void ComplexDiLogSymmetryTest () {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 2, 12)) {
+
+                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                    AdvancedComplexMath.DiLog(z), AdvancedComplexMath.DiLog(-z),
+                    AdvancedComplexMath.DiLog(z * z) / 2.0
+                ));
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    - AdvancedComplexMath.DiLog(1.0 / z),
+                    AdvancedComplexMath.DiLog(z) + ComplexMath.Log(-z) * ComplexMath.Log(-z) / 2.0 + Math.PI * Math.PI / 6.0
+                ));
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    - AdvancedComplexMath.DiLog(1.0 - z),
+                    AdvancedComplexMath.DiLog(z) + ComplexMath.Log(z) * ComplexMath.Log(1.0 - z) - Math.PI * Math.PI / 6.0
+                ));
+
+
+            }
+        }
+
+        [TestMethod]
+        public void ComplexDiLogUnitCircleTest () {
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                AdvancedComplexMath.DiLog(1.0),
+                Math.PI * Math.PI / 6.0
+            ));
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                AdvancedComplexMath.DiLog(ComplexMath.I),
+                new Complex(-Math.PI * Math.PI / 48.0, AdvancedMath.Catalan)
+             ));
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                AdvancedComplexMath.DiLog(-1.0),
+                -Math.PI * Math.PI / 12.0
+            ));
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                AdvancedComplexMath.DiLog(-ComplexMath.I),
+                new Complex(-Math.PI * Math.PI / 48.0, -AdvancedMath.Catalan)
+             ));
+
+        }
+
+        [TestMethod]
+        public void ComplexDiLogAgreementTest () {
+            // use negative arguments b/c positive real DiLog function complex for x > 1
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 10)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.DiLog(-x), AdvancedComplexMath.DiLog(-x)
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void ComplexDiLogConjugationTest () {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(-1, 1, 10)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.DiLog(z.Conjugate), AdvancedComplexMath.DiLog(z).Conjugate
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void ComplexDiLogBranchCutTest () {
+            foreach (double z in TestUtilities.GenerateRealValues(1.0, 8.0, 10)) {
+
+                // Imaginary part should be positive just above the cut, negative just below the cut
+
+                Complex Dp = AdvancedComplexMath.DiLog(z + ComplexMath.I * TestUtilities.TargetPrecision / 8.0);
+                Complex Dm = AdvancedComplexMath.DiLog(z - ComplexMath.I * TestUtilities.TargetPrecision / 8.0);
+
+                Assert.IsTrue(Dp.Im > 0.0);
+                Assert.IsTrue(Dm.Im < 0.0);
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(Dp.Re, Dm.Re));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(Dp.Im, -Dm.Im));
+
+            }
+        }
+
     }
 }

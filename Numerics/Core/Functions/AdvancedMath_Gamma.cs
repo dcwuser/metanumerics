@@ -13,7 +13,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument, which must be positive.</param>
         /// <returns>The log Gamma function ln(&#x393;(x)).</returns>
         /// <remarks>
-        /// <para>Because the Gamma function grows rapidly for increasing real, positive arguments, it is often necessary to
+        /// <para>Because &#x393;(x) grows rapidly for increasing positive x, it is often necessary to
         /// work with its logrithm in order to avoid overflow.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
@@ -34,11 +34,11 @@ namespace Meta.Numerics.Functions {
         /// Computes the Gamma function.
         /// </summary>
         /// <param name="x">The argument.</param>
-        /// <returns>The Gamma function &#x393;(x).</returns>
+        /// <returns>The value of &#x393;(x).</returns>
         /// <remarks>
-        /// <para>The Gamma function is a generalization of the factorial (see <see cref="AdvancedIntegerMath.Factorial"/>) to arbitrary real values. If we define &#x393;(x) =
-        /// <sub>0</sub>&#x222B;<sup>&#x221E;</sup>dt t<sup>x-1</sup> e<sup>-t</sup>, then for integer values &#x393;(n+1)=n!, but the
-        /// the integral can also be evaluated for non-integer x.</para>
+        /// <para>The Gamma function is a generalization of the factorial (see <see cref="AdvancedIntegerMath.Factorial"/>) to arbitrary real values.</para>
+        /// <img src="../images/GammaIntegral.png" />
+        /// <para>For positive integer arguments, this integral evaluates to &#x393;(n+1)=n!, but it can also be evaluated for non-integer z.</para>
         /// <para>Because &#x393;(x) grows beyond the largest value that can be represented by a <see cref="System.Double" /> at quite
         /// moderate values of x, you may find it useful to work with the <see cref="LogGamma" /> method, which returns ln(&#x393;(x)).</para>
         /// </remarks>
@@ -59,8 +59,13 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="x">The argument.</param>
         /// <returns>The value of &#x3C8;(x).</returns>
-        /// <remarks>The Psi function is the derivative of the LogGamma function.</remarks>
+        /// <remarks>
+        /// <para>The Psi function, also called the digamma function, is the logrithmic derivative of the &#x393; function.</para>
+        /// <img src="../images/DiGamma.png" />
+        /// </remarks>
         /// <seealso cref="LogGamma"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Digamma_function" />
+        /// <seealso href="http://mathworld.wolfram.com/DigammaFunction.html" />
 		public static double Psi (double x) {
             if (x < 0.0) {
                 return (Psi(1.0 - x) - Math.PI / Math.Tan(Math.PI * x));
@@ -154,10 +159,10 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Computes the incomplete Beta function.
         /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="x"></param>
-        /// <returns></returns>
+        /// <param name="a">The left shape parameter, which must be non-negative.</param>
+        /// <param name="b">The right shape paraemter, which must be non-negative.</param>
+        /// <param name="x">The integral endpoint, which must lie in [0,1].</param>
+        /// <returns>The incomplete beta function, integrated up to <paramref name="x"/>.</returns>
 		public static double Beta (double a, double b, double x) {
 			if (a<0.0) throw new ArgumentOutOfRangeException("a");
 			if (b<0.0) throw new ArgumentOutOfRangeException("b");

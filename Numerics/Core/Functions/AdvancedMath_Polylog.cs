@@ -12,10 +12,15 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument, which must be less than or equal to unity.</param>
         /// <returns>The value Li<sub>2</sub>(x).</returns>
         /// <remarks>
+        /// <para>The dilogarithm can be defined by an infinite sum.</para>
+        /// <img src="../images/DilogSum.png" />
+        /// <para>The function gets is name from the similiarity of this series to the expansion of ln(1-x), the
+        /// difference being that the integer in the denominator is raised to the second power.</para>
         /// <para>Li<sub>2</sub>(x) is real for -&#x221E; &lt; x &#x2264; 1; for values outside this range,
-        /// use the complex verion <see cref="AdvancedComplexMath.DiLog"/>.</para>
+        /// use the complex version <see cref="AdvancedComplexMath.DiLog"/>.</para>
         /// </remarks>
-        /// <seealso cref="AdvancedComplexMath.DiLog"/>
+        /// <seealso cref="AdvancedComplexMath.DiLog" />
+        /// <seealso href="http://en.wikipedia.org/wiki/Dilogarithm" />
         public static double DiLog (double x) {
             if (x > 1.0) {
                 throw new ArgumentOutOfRangeException("x");
@@ -74,11 +79,12 @@ namespace Meta.Numerics.Functions {
     public static partial class AdvancedComplexMath {
 
         /// <summary>
-        /// Computes the dilogarathm function, also called Spence's function.
+        /// Computes the complex dilogarathm function, also called Spence's function.
         /// </summary>
         /// <param name="z">The complex argument.</param>
         /// <returns>The value Li<sub>2</sub>(z).</returns>
         /// <seealso cref="AdvancedMath.DiLog"/>
+        /// <seealso href="http://mathworld.wolfram.com/Dilogarithm.html" />
         public static Complex DiLog (Complex z) {
 
             Complex f;

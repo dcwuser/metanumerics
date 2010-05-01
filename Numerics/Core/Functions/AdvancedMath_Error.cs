@@ -13,11 +13,16 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value of erf(<paramref name="x"/>).</returns>
         /// <remarks>
-        /// <para>The error can be defined via an integral as erf(x) = (2/&#x221A;&#x3C0;) <sub>0</sub>&#x222B;<sup>x</sup>dt e<sup>-t<sup>2</sup></sup>.</para>
-        /// <para>The area under a Bell curve (<see cref="Meta.Numerics.Statistics.NormalDistribution"/>) within &#x2213;z  standard deviations of the mean is given by erf(z/&#x221A;2).</para>
+        /// <para>The error can be defined via a Gaussian integral.</para>
+        /// <img src="../images/ErfIntegral.png" />
+        /// <para>The area under a bell curve (<see cref="Meta.Numerics.Statistics.NormalDistribution"/>) within &#x2213;z  standard deviations of the mean is given by erf(z/&#x221A;2).</para>
         /// <para>For large values of x, erf(x) &#x2248; 1 to within floating-point accuracy. To obtain accurate values of erfc(x) = 1 - erf(x)
-        /// in this range, use the <see cref="Erfc" /> function.</para></remarks>
+        /// in this range, use the <see cref="Erfc" /> function.</para>
+        /// <para>The error function for complex arguments can be computed using <see cref="AdvancedComplexMath.Faddeeva"/>.</para>
+        /// </remarks>
         /// <seealso cref="Erfc"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Error_function" />
+        /// <seealso href="http://mathworld.wolfram.com/Erf.html" />
         public static double Erf (double x) {
             if (x < 0.0) {
                 return (-LeftGamma(0.5, x * x));
@@ -112,12 +117,15 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Computes the Dawson integral.
         /// </summary>
-        /// <param name="x">The argument.</param>
+        /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The value of F(x).</returns>
         /// <remarks>
-        /// <para>The Dawson integral F(x) = e<sup>-x<sup>2</sup></sup> <sub>0</sub>&#x222B;<sup>x</sup>dt e<sup>t<sup>2</sup></sup>.</para>
+        /// <para>The Dawson function is defined by the integral:</para>
+        /// <img src="../images/DawsonIntegral.png" />
         /// <para>It is related to the error function for purely imaginary arguments.</para>
+        /// <img src="../images/DawsonErfRelation.png" />
         /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Dawson_function"/>
         public static double Dawson (double x) {
             if (x < 0.0) throw new ArgumentOutOfRangeException("x");
             if (x < 1.0) {
@@ -276,6 +284,7 @@ namespace Meta.Numerics.Functions {
         /// <para>A plot of all values of this function in the complex plane as x ranges from
         /// negative infinity to positive infinity is called a Cornu spiral.</para>
         /// <para>The Fresnel function can be related to the complex error function along the line (1-I).</para>
+        /// <img src="../images/FresnelErfRelation.png" />
         /// </remarks>
         /// <seealso cref="FresnelS"/>
         /// <seealso cref="FresnelC"/>
@@ -436,14 +445,17 @@ namespace Meta.Numerics.Functions {
         /// <param name="z">The complex argument.</param>
         /// <returns>The complex value of w(z).</returns>
         /// <remarks>
-        /// <para>The Faddeeva function w(z) is related to the error function of a complex argument w(z) = e<sup>-z<sup>2</sup></sup> erfc(-I z).</para>
-        /// <para>It has the integral representation w(z) = (I/&#x3C0;) <sub>-&#x221E;</sub>&#x222B;<sup>&#x221E;</sup>dt e<sup>-t<sup>2</sup></sup>/(z-t).</para>
+        /// <para>The Faddeeva function w(z) is related to the error function with a complex argument.</para>
+        /// <img src="../images/FaddeevaErfcRelation.png" />
+        /// <para>It also has an integral representation.</para>
+        /// <img src="../images/FaddeevaIntegral.png" />
         /// <para>For purely imaginary values, it can be reduced to the error function. For purely real values, it can be reduced to Dawson's integral.</para>
         /// <para>It appears in the computation of the Voigt line profile function V(x;&#x3C3;,&#x3B3;).</para>
         /// </remarks>
         /// <seealso cref="AdvancedMath.Erf" />
         /// <seealso cref="AdvancedMath.Erfc" />
         /// <seealso cref="AdvancedMath.Dawson"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Voigt_profile" />
         public static Complex Faddeeva (Complex z) {
 
             // use reflection formulae to ensure that we are in the first quadrant

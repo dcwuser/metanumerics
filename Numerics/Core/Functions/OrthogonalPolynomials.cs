@@ -6,6 +6,11 @@ namespace Meta.Numerics.Functions {
     /// <summary>
     /// Contains methods that compute the values of orthogonal polynomials.
     /// </summary>
+    /// <remarks>
+    /// <para>Orthogonal polynomials are families of polynomials that are orthogonal on a given interval with
+    /// a given integration weight. Because of this property, any function on the interval can be expanded
+    /// in the polynomials in a unique way.</para>
+    /// </remarks>
 	public static class OrthogonalPolynomials {
 
 		// orthogonal on [-Infinity,Infinity] with weight e^{-x^2}
@@ -20,13 +25,15 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>Hermite polynomials are orthogonal on the interval (-&#8734;,+&#8734;) with the
         /// weight e<sup>-x<sup>2</sup></sup>.</para>
-        /// <para>They appear in the solution of the one-dimensional, quantum mehanical, harmoic oscilator.</para>
+        /// <img src="../images/HermiteHOrthonormality.png" />
+        /// <para>They appear in the solution of the one-dimensional, quantum mehanical, harmonic oscilator.</para>
         /// <para>Statisticans' Hermite polynomials (see <see cref="HermiteHe"/>) are related to physicists' Hermite
         /// polynomials via H<sub>n</sub>(x) = 2<sup>n</sup>H<sub>n</sub>(x &#x221A;2). Staticians' Hermite polynomials
         /// do not grow as quickly as physicists', and may therefore be preferable for large values of <paramref name="n"/>
         /// and <paramref name="x"/> which could overflow <see cref="System.Double"/>.</para>
         /// </remarks>
         /// <seealso cref="HermiteHe"/>
+        /// <seealso href="http://mathworld.wolfram.com/HermitePolynomial.html" />
 		public static double HermiteH (int n, double x) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
@@ -52,14 +59,16 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value He<sub>n</sub>(x).</returns>
         /// <remarks>
-        /// <para>Hermite polynomials are orthogonal on the interval (-&#8734;,+&#8734;) with the
-        /// weight e<sup>-x<sup>2</sup>/2</sup>.</para>
+        /// <para>Hermite polynomials are orthogonal on the interval (-&#8734;,+&#8734;) with a
+        /// weight function equal to the standard normal probability distribution.</para>
+        /// <img src="../images/HermiteHOrthonormality.png" />
         /// <para>Their orthonormality relation makes them a useful basis for expressing pertubations
         /// arround a normal distribution.</para>
         /// <para>Physicists' Hermite polynomials (see <see cref="HermiteHe"/>) are related to statisticians' Hermite
         /// polynomials via H<sub>n</sub>(x) = 2<sup>n</sup>H<sub>n</sub>(x &#x221A;2).</para>
         /// </remarks>
         /// <seealso cref="HermiteH"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Hermite_polynomial" />
         public static double HermiteHe (int n, double x) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
@@ -88,6 +97,8 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>Laguerre functions are orthogonal on the interval [0,+&#8734;) with the weight e<sup>-x</sup>.</para>
         /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Laguerre_polynomial" />
+        /// <seealso href="http://mathworld.wolfram.com/LaguerrePolynomial.html" />
 		public static double LaguerreL (int n, double x) {
 			if (n<0) throw new ArgumentOutOfRangeException("n");
 			if (x<0.0) throw new ArgumentOutOfRangeException("x");
@@ -130,8 +141,11 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value of P<sub>l</sub>(x).</returns>
         /// <remarks>
         /// <para>Legendre polynomials are orthogonal on the interval [-1,1].</para>
+        /// <img src="../images/LegendrePOrthonormality.png" />
         /// </remarks>
-		public static double LegendreP (int l, double x) {
+        /// <seealso href="http://en.wikipedia.org/wiki/Legendre_polynomial"/>
+        /// <seealso href="http://mathworld.wolfram.com/LegendrePolynomial.html"/>
+        public static double LegendreP (int l, double x) {
 			if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException("x");
 
             if (l < 0) {
@@ -232,6 +246,8 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>Chebyshev polynomials are orthogonal on the interval [-1,1] with the weight (1-x<sup>2</sup>)<sup>1/2</sup>.</para>
         /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Chebyshev_polynomials"/>
+        /// <seealso href="http://mathworld.wolfram.com/ChebyshevPolynomialoftheFirstKind.html"/>
         public static double ChebyshevT (int n, double x) {
 			if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException("x");
 			if (n<0) throw new ArgumentOutOfRangeException("n");

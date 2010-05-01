@@ -732,6 +732,7 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Gets the location of the extremum.
         /// </summary>
+        /// <returns>The coordinates of the extremum.</returns>
         public double[] Location () {
             return ((double[]) x.Clone());
         }

@@ -42,7 +42,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="P">The left cumulative probability P, which must lie between 0 and 1.</param>
         /// <returns>The point x1 at which the left cumulative probability attains the value P.</returns>
 		public virtual double InverseLeftProbability (double P) {
-            // a quick little implementation using Newton's method 
+            // find x where LeftProbability(x) = P 
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
             Function<double,double> f = delegate(double x) {
                 return(LeftProbability(x) - P);
@@ -313,9 +313,11 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents a normal (Gaussian) distribution.
     /// </summary>
-    /// <remarks>A normal distribution is a bell-shaped curve centered at its mean and falling off symmetrically on each side. It is
+    /// <remarks>
+    /// <para>A normal distribution is a bell-shaped curve centered at its mean and falling off symmetrically on each side. It is
     /// a two-parameter distribution determined by giving its mean and standard deviation, i.e. its center and width. Its range is the
-    /// entire real number line, but the tails, i.e. points more than a few standard deviations from the means, fall off extremely rapidly.
+    /// entire real number line, but the tails, i.e. points more than a few standard deviations from the means, fall off extremely rapidly.</para>
+    /// <img src="../images/NormalPlot.png" />
     /// <para>A normal distribution with mean zero and standard deviation one is called a standard normal distribution. Any normal distribution
     /// can be converted to a standard normal distribution by reparameterzing the data in terms of "standard deviations from the mean",
     /// i.e. z = (x - &#x3BC;) / &#x3C3;.</para>
@@ -2050,10 +2052,11 @@ namespace Meta.Numerics.Statistics {
     /// for which the decay probability is not constant, but instead increases with time
     /// (for shape parameters greater than one) or, less commonly, decreases with time (for
     /// shape parameters less than one). When the shape parameter is one, the Weibull
-    /// distribution reduced to the exponential distribution.</para>
+    /// distribution reduces to the exponential distribution.</para>
     /// <para>The Weibull distribution is commonly used in engineering applications to
     /// model the time-to-failure of industrial componets.</para>
     /// </remarks>
+    /// <seealso href="http://en.wikipedia.org/wiki/Weibull_distribution" />
     public class WeibullDistribution : Distribution, IParameterizedDistribution {
 
         /// <summary>
@@ -2533,6 +2536,7 @@ namespace Meta.Numerics.Statistics {
     /// <para>Like the normal distribution, the logistic distribution is a symmetric, unimodal distribution
     /// distribution with exponentially supressed tails.</para>
     /// </remarks>
+    /// <seealso href="http://en.wikipedia.org/wiki/Logistic_distribution" />
     public class LogisticDistribution : Distribution, IParameterizedDistribution {
 
         /// <summary>
@@ -2702,6 +2706,7 @@ namespace Meta.Numerics.Statistics {
     /// <para>Triangular distributions are often used in project planning, where a maximum, minimum, and most
     /// likely value for some quantity is known or supposed.</para>
     /// </remarks>
+    /// <seealso href="http://en.wikipedia.org/wiki/Triangular_distribution" />
     public class TriangularDistribution : Distribution {
 
         /*
@@ -2729,6 +2734,9 @@ namespace Meta.Numerics.Statistics {
             if ((a == b) && (b == c)) throw new ArgumentException();
 
             // order points
+            if (a > c) Global.Swap(ref a, ref c);
+            if (a > b) Global.Swap(ref a, ref b);
+            if (b > c) Global.Swap(ref b, ref c);
 
             // record values
             this.a = a;
@@ -2891,6 +2899,15 @@ namespace Meta.Numerics.Statistics {
         }
     }
 
+    /// <summary>
+    /// Represents a &#x3B2; distribution.
+    /// </summary>
+    /// <remarks>
+    /// <para>The &#x3B2; distribution is defined on the interval [0,1]. Depending on its two shape parameters, it can take on a wide
+    /// variety of forms on this interval.</para>
+    /// <para>The &#x3B2; distribution appears in a few statistical applications. Because of its versatility, it is also sometimes
+    /// used as an ad hoc model for a distribution on a finite interval.</para>
+    /// </remarks>
     public class BetaDistribution : Distribution {
 
         /// <summary>
@@ -2898,6 +2915,14 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="alpha">The left shape parameter, which controls the form of the distribution near x=0.</param>
         /// <param name="beta">The right shape parameter, which controls the form of the distribution near x=1.</param>
+        /// <remarks>
+        /// <para>The <paramref name="alpha"/> shape parameter controls the form of the distribution near x=0. The
+        /// <paramref name="beta"/> shape parameter controls the form of the distribution near z=1. If a shape parameter
+        /// is less than one, the PDF diverges on the side of the distribution it controls. If a shape parameter
+        /// is greater than one, the PDF goes to zero on the side of the distribution it controls. If the left and right
+        /// shapre parameters are equal, the distribution is symmetric about x=1/2.</para>
+        /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Beta_distribution" />
         public BetaDistribution (double alpha, double beta) {
             if (alpha <= 0.0) throw new ArgumentOutOfRangeException("alpha");
             if (beta <= 0.0) throw new ArgumentOutOfRangeException("beta");
@@ -2907,12 +2932,18 @@ namespace Meta.Numerics.Statistics {
 
         double alpha, beta;
 
+        /// <summary>
+        /// Gets the left shape parameter.
+        /// </summary>
         public double Alpha {
             get {
                 return (alpha);
             }
         }
 
+        /// <summary>
+        /// Gets the right shape parameter.
+        /// </summary>
         public double Beta {
             get {
                 return (beta);
@@ -2942,7 +2973,7 @@ namespace Meta.Numerics.Statistics {
             } else if (x >= 1.0) {
                 return (1.0);
             } else {
-                return (AdvancedMath.Beta(alpha, beta, x));
+                return (AdvancedMath.Beta(alpha, beta, x) / AdvancedMath.Beta(alpha, beta));
             }
         }
 
@@ -2962,13 +2993,36 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <inheritdoc />
+        public override double  Skewness {
+	        get { 
+                double ab = alpha + beta;
+                return ( 2.0 * (beta-alpha) / (ab + 2.0) * Math.Sqrt((ab + 1.0) / (alpha * beta)) ); 
+	        }
+        }
+
+        /// <inheritdoc />
         public override double Moment (int n) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
             } else if (n == 0) {
                 return (1.0);
+            } else if (n == 1) {
+                return (Mean);
             } else {
                 return (AdvancedMath.Beta(alpha + n, beta) / AdvancedMath.Beta(alpha, beta));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double MomentAboutMean (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return(1.0);
+            } else if (n == 1) {
+                return(0.0);
+            } else {
+                return(CentralMomentFromRawMoment(n));
             }
         }
 

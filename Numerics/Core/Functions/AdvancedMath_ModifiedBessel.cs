@@ -13,13 +13,14 @@ namespace Meta.Numerics.Functions {
         /// Computes the regular modified cynlindrical Bessel function.
         /// </summary>
         /// <param name="nu">The order parameter.</param>
-        /// <param name="x">The argument.</param>
+        /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The value of I<sub>&#x3BD;</sub>(x).</returns>
         /// <remarks>
         /// <para>The modified Bessel functions appear as the solutions of hyperbolic differential equations with
         /// cylindrical or circular symmetry, for example the conduction of heat through a cylindrical pipe.</para>
-        /// <para>The modified Bessel functions are related to the Bessel fuctions with pure imaginary arguments.</para>
-        /// <para>The regular modified Bessel function increases monotonically and exponentially from the origin.</para>
+        /// <para>The regular modified Bessel functions are related to the Bessel fuctions with pure imaginary arguments.</para>
+        /// <img src="../images/BesselIBesselJRelation.png" />
+        /// <para>The regular modified Bessel functions increase monotonically and exponentially from the origin.</para>
         /// </remarks>
         /// <seealso cref="ModifiedBesselK"/>
         public static double ModifiedBesselI (double nu, double x) {
@@ -284,10 +285,10 @@ namespace Meta.Numerics.Functions {
 
         // use Wronskian I' K - I K' = 1/x, plus values of I'/I, K'/K, and K, to compute I, I', K, and K'
 
+        /*
         private static SolutionPair ModifiedBessel_Steed (double nu, double x) {
 
             double f = ModifiedBessel_CF1(nu, x);
-            Console.WriteLine("f={0}", f);
 
             double K, g;
             ModifiedBessel_CF_K(nu, x, out K, out g);
@@ -301,6 +302,7 @@ namespace Meta.Numerics.Functions {
             return (new SolutionPair(nu, x, I, IP, K, KP));
 
         }
+        */
 
         // Temme's series for K0 and K1 for small nu and small x
         // applies only for -1/2 <= nu <= 1/2
@@ -527,6 +529,7 @@ namespace Meta.Numerics.Functions {
         /// <para>For negative arguments, Ai(x) is oscilatory. For positive arguments, it decreases exponentially with increasing x.</para>
         /// </remarks>
         /// <seealso cref="AiryBi"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Airy_functions" />
         public static double AiryAi (double x) {
 
             if (Math.Abs(x) < 2.0) {
@@ -577,8 +580,11 @@ namespace Meta.Numerics.Functions {
         /// this function, which is now often called the "Bairy function".</para>
         /// </remarks>        
         /// <seealso cref="AiryAi"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Airy_functions" />
         public static double AiryBi (double x) {
-            if (x > 0.0) {
+            if (Math.Abs(x) < 2.0) {
+                return (AiryBi_Series(x));
+            } else if (x > 0.0) {
                 // change to use a function that returns I and K together
                 double y = 2.0 / 3.0 * Math.Pow(x, 3.0 / 2.0);
                 double I = ModifiedBesselI(1.0 / 3.0, y);
@@ -591,6 +597,24 @@ namespace Meta.Numerics.Functions {
                 double Y = BesselY(1.0 / 3.0, y);
                 return (-Math.Sqrt(-x) / 2.0 * (J / Math.Sqrt(3.0) + Y));
             }
+        }
+
+        private static double AiryBi_Series (double x) {
+
+            double p = 1.0 / (Math.Pow(3.0, 1.0 / 6.0) * AdvancedMath.Gamma(2.0 / 3.0));
+            double q = x * (Math.Pow(3.0, 1.0 / 6.0) / AdvancedMath.Gamma(1.0 / 3.0));
+            double f = p + q;
+
+            double x3 = x * x * x;
+            for (int k = 0; k < Global.SeriesMax; k += 3) {
+                double f_old = f;
+                p *= x3 / ((k + 2) * (k + 3));
+                q *= x3 / ((k + 3) * (k + 4));
+                f += p + q;
+                if (f == f_old) return (f);
+            }
+            throw new NonconvergenceException();
+
         }
 
     }

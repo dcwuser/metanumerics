@@ -75,7 +75,8 @@ namespace Test
             new FisherDistribution(4.0, 7.0),
             new KuiperDistribution(),
             new KolmogorovDistribution(),
-            new TriangularDistribution(1.0,2.0,4.0)
+            new TriangularDistribution(1.0,2.0,4.0),
+            new BetaDistribution(0.5, 2.0)
         };
 
         private double[] probabilities = new double[] {
@@ -279,7 +280,7 @@ namespace Test
                         // the numerical integral for the triangular distribution can be innacurate, because
                         // its locally low-polynomial behavior fools the integration routine into thinking it need
                         // not integrate as much near the inflection point as it must; this is a problem
-                        // of the integration routne (or arguably the integral), not the triangular distribution,
+                        // of the integration routine (or arguably the integral), not the triangular distribution,
                         // so skip it here
                         Console.WriteLine("skip (P={0}, Q={1})", P, Q);
                         continue;

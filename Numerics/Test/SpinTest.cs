@@ -364,7 +364,7 @@ namespace Test {
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
         public void SpinInvalid2 () {
-            // spin indicates are integer or half-integer
+            // spin indices are integer or half-integer
             Spin s = new Spin(1.25);
         }
 
@@ -1074,6 +1074,7 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SpinMath.SixJ(s2, s2, s2, s3, s2, s2), 4.0 / 35.0));
 
         }
+
 
         /*
         [TestMethod]

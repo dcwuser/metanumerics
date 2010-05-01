@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.Text;
 
 namespace Meta.Numerics.Functions {
 
@@ -75,7 +77,7 @@ namespace Meta.Numerics.Functions {
         }
 
         /// <summary>
-        /// Gets is spin-1/2 spinor.
+        /// Gets a spin-1/2 spinor.
         /// </summary>
         public static Spin SpinOneHalf {
             get {
@@ -125,7 +127,7 @@ namespace Meta.Numerics.Functions {
         }
 
         /// <summary>
-        /// Determines whether two spins are equal.
+        /// Determines whether two spinors are equal.
         /// </summary>
         /// <param name="a">The first spin.</param>
         /// <param name="b">The second spin.</param>
@@ -135,13 +137,34 @@ namespace Meta.Numerics.Functions {
         }
 
         /// <summary>
-        /// Determines whether two spins are unequal.
+        /// Determines whether two spinors are unequal.
         /// </summary>
         /// <param name="a">The first spin.</param>
         /// <param name="b">The second spin.</param>
         /// <returns>False if <paramref name="a"/> and <paramref name="b"/> are equal, otherwise true.</returns>
         public static bool operator != (Spin a, Spin b) {
             return (!Equals(a, b));
+        }
+
+        /// <summary>
+        /// Determines whether the given object represents the same spinor.
+        /// </summary>
+        /// <param name="obj">The object to compare.</param>
+        /// <returns>True if <paramref name="obj"/> is an equal spin, otherwise false.</returns>
+        public override bool Equals (object obj) {
+            return ((obj is Spin) && Equals(this, (Spin)obj));
+        }
+
+        /// <summary>
+        /// Produces a string representation of the spinor.
+        /// </summary>
+        /// <returns>A string representation of the spinor.</returns>
+        public override string ToString () {
+            if (twoJ % 2 == 0) {
+                return ((twoJ / 2).ToString(CultureInfo.CurrentCulture));
+            } else {
+                return (twoJ.ToString(CultureInfo.CurrentCulture) + "/2");
+            }
         }
 
     }
@@ -243,6 +266,65 @@ namespace Meta.Numerics.Functions {
             }
         }
 
+        // equality
+
+        private static bool Equals (SpinState s1, SpinState s2) {
+            return ((s1.spin == s2.spin) && (s1.twoM == s2.twoM));
+        }
+
+        /// <summary>
+        /// Determines whether two spin states are equal.
+        /// </summary>
+        /// <param name="s1">The first spin state.</param>
+        /// <param name="s2">The second spin state.</param>
+        /// <returns>True if <paramref name="s1"/> and <paramref name="s2"/> are equal, otherwise false.</returns>
+        public static bool operator == (SpinState s1, SpinState s2) {
+            return (Equals(s1, s2));
+        }
+
+        /// <summary>
+        /// Determines whether two spin states are unequal.
+        /// </summary>
+        /// <param name="s1">The first spin state.</param>
+        /// <param name="s2">The second spin state.</param>
+        /// <returns>False if <paramref name="s1"/> and <paramref name="s2"/> are equal, otherwise true.</returns>
+        public static bool operator != (SpinState s1, SpinState s2) {
+            return (!Equals(s1, s2));
+        }
+
+        /// <summary>
+        /// Determines whether the given object represents the same spin state.
+        /// </summary>
+        /// <param name="obj">The object to compare.</param>
+        /// <returns>True if <paramref name="obj"/> is an equal spin state, otherwise false.</returns>
+        public override bool Equals (object obj) {
+            return ((obj is SpinState) && Equals(this, (SpinState)obj));
+        }
+
+        /// <summary>
+        /// Produces a string representation of the spin state.
+        /// </summary>
+        /// <returns>A string representation of the spin state.</returns>
+        public override string ToString () {
+            StringBuilder text = new StringBuilder(spin.ToString());
+            text.AppendFormat(CultureInfo.CurrentCulture, ",");
+            if (twoM > 0) {
+                text.Append(CultureInfo.CurrentCulture.NumberFormat.PositiveSign);
+            } else if (twoM < 0) {
+                text.Append(CultureInfo.CurrentCulture.NumberFormat.NegativeSign);
+            }
+            text.Append(SpinString(Math.Abs(twoM)));
+            return (text.ToString());
+        }
+
+        private static string SpinString (int twoJ) {
+            if (twoJ % 2 == 0) {
+                return ((twoJ / 2).ToString(CultureInfo.CurrentCulture));
+            } else {
+                return (twoJ.ToString(CultureInfo.CurrentCulture) + "/2");
+            }
+        }
+
     }
 
 
@@ -250,6 +332,47 @@ namespace Meta.Numerics.Functions {
     /// Contains methods for computing functions of spin and spin states.
     /// </summary>
     public static class SpinMath {
+
+        /// <summary>
+        /// Enumerates all the spins that can be obtained by combining two spins.
+        /// </summary>
+        /// <param name="j1">The first spin.</param>
+        /// <param name="j2">The second spin.</param>
+        /// <returns>A list of spins which may be obtained.</returns>
+        public static Spin[] Combine (Spin j1, Spin j2) {
+
+            int tj_min = Math.Abs(j1.TwoJ - j2.TwoJ);
+            int tj_max = j1.TwoJ + j2.TwoJ;
+
+            Spin[] spins = new Spin[(tj_max - tj_min) / 2 + 1];
+            for (int i = 0; i < spins.Length; i++) {
+                spins[i] = new Spin((tj_min + 2 * i) / 2.0);
+            }
+
+            return (spins);
+        }
+
+        /// <summary>
+        /// Enumerates all spin states that may be obtained by combining two spin states.
+        /// </summary>
+        /// <param name="s1">The first spin state.</param>
+        /// <param name="s2">The second spin state.</param>
+        /// <returns>A list of spin states which may  be obtained.</returns>
+        public static SpinState[] Combine (SpinState s1, SpinState s2) {
+
+            int tj_max = s1.TwoJ + s2.TwoJ;
+            int tj_min = Math.Abs(s1.TwoJ - s2.TwoJ);
+            int tm = s1.TwoM + s2.TwoM;
+            if (Math.Abs(tm) > tj_min) tj_min = Math.Abs(tm);
+
+            SpinState[] states = new SpinState[(tj_max - tj_min) / 2 + 1];
+            for (int i = 0; i < states.Length; i++) {
+                states[i] = new SpinState((tj_min + 2 * i) / 2.0, tm / 2.0);
+            }
+
+            return (states);
+
+        }
 
         // ( J1 J2 M1 M2 | J M ) =
         // (-1)^{J1-J2+M} * Sqrt(2J+1) *

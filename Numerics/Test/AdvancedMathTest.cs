@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Meta.Numerics;
 using Meta.Numerics.Functions;
@@ -894,6 +895,289 @@ namespace Test
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.LambertW(Math.E), 1.0));
 
         }
+
+
+        [TestMethod]
+        public void CoulombEtaZeroTest () {
+
+            // can't go too far out because Math.Sin becomes unreliable (before our functions do)
+            foreach (double rho in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 10)) {
+
+                double F = AdvancedMath.CoulombF(0, 0.0, rho);
+                Console.WriteLine("{0} {1} {2}", rho, F, Math.Sin(rho));
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(F, Math.Sin(rho)));
+
+                double G = AdvancedMath.CoulombG(0, 0.0, rho);
+                Console.WriteLine("{0} {1} {2}", rho, G, Math.Cos(rho));
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(G, Math.Cos(rho)));
+
+            }
+
+        }
+
+        [TestMethod]
+        public void CoulombWronskianTest () {
+
+            foreach (int L in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
+                foreach (double eta in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 10)) {
+                    foreach (double rho in TestUtilities.GenerateRealValues(1.0E-3, 1.0E3, 20)) {
+
+                        Console.WriteLine("L={0} eta={1} rho={2}", L, eta, rho);
+
+                        CoulombWronskianHelper(L, eta, rho);
+                        CoulombWronskianHelper(L, -eta, rho);
+
+                    }
+                }
+            }
+        }
+
+        private static void CoulombWronskianHelper (int L, double eta, double rho) {
+
+            double FM = AdvancedMath.CoulombF(L - 1, eta, rho);
+            double GM = AdvancedMath.CoulombG(L - 1, eta, rho);
+
+            double F = AdvancedMath.CoulombF(L, eta, rho);
+            double G = AdvancedMath.CoulombG(L, eta, rho);
+
+            //Console.WriteLine("FM={0} GM={1} F={2} G={3}", FM, GM, F, G);
+            //Console.WriteLine("FM * G - F * GM = {0}", FM * G - F * GM);
+            //Console.WriteLine("W = {0}", L / Math.Sqrt(L * L + eta * eta));
+
+            Assert.IsTrue(TestUtilities.IsSumNearlyEqual(FM * G, -F * GM, L / Math.Sqrt(L * L + eta * eta), 8.0 * TestUtilities.TargetPrecision));
+
+        }
+
+        [TestMethod]
+        public void CoulombRecursionTest () {
+            
+            foreach (int L in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
+                foreach (double eta in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 10)) {
+                    foreach (double rho in TestUtilities.GenerateRealValues(1.0E-3, 1.0E3, 20)) {
+
+                        Console.WriteLine("L={0} eta={1} rho={2}", L, eta, rho);
+
+                        CoulombRecursionTestHelper(L, eta, rho,
+                            AdvancedMath.CoulombF(L - 1, eta, rho), AdvancedMath.CoulombF(L, eta, rho), AdvancedMath.CoulombF(L + 1, eta, rho)
+                        );
+
+                        CoulombRecursionTestHelper(L, -eta, rho,
+                            AdvancedMath.CoulombF(L - 1, -eta, rho), AdvancedMath.CoulombF(L, -eta, rho), AdvancedMath.CoulombF(L + 1, -eta, rho)
+                        );
+
+                        CoulombRecursionTestHelper(L, eta, rho,
+                            AdvancedMath.CoulombG(L - 1, eta, rho), AdvancedMath.CoulombG(L, eta, rho), AdvancedMath.CoulombG(L + 1, eta, rho)
+                        );
+
+                        CoulombRecursionTestHelper(L, -eta, rho,
+                            AdvancedMath.CoulombG(L - 1, -eta, rho), AdvancedMath.CoulombG(L, -eta, rho), AdvancedMath.CoulombG(L + 1, -eta, rho)
+                        );
+
+                    }
+                }
+            }
+            
+
+        }
+
+        private static void CoulombRecursionTestHelper (double L, double eta, double rho, double UM, double U, double UP) {
+
+            double am = (L + 1) * Math.Sqrt(L * L + eta * eta);
+            double a = (2 * L + 1) * (eta + L * (L + 1) / rho);
+            double ap = L * Math.Sqrt((L + 1) * (L + 1) + eta * eta);
+
+            Assert.IsTrue(TestUtilities.IsSumNearlyEqual(am * UM, ap * UP, a * U, 4.0 * TestUtilities.TargetPrecision));
+
+        }
+
+        [TestMethod]
+        public void ModifiedBesselArgumentZeroTest () {
+
+            Assert.IsTrue(AdvancedMath.ModifiedBesselI(0.0, 0.0) == 1.0);
+            Assert.IsTrue(AdvancedMath.ModifiedBesselI(1.0, 0.0) == 0.0);
+            Assert.IsTrue(AdvancedMath.ModifiedBesselK(0.0, 0.0) == Double.PositiveInfinity);
+            //Assert.IsTrue(AdvancedMath.ModifiedBesselK(1.0, 0.0) == Double.PositiveInfinity);
+
+        }
+
+        [TestMethod]
+        public void ModifiedBesselWronskianTest () {
+
+            foreach (double nu in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 8)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 8)) {
+
+                    Console.WriteLine("nu={0} x={1}", nu, x);
+
+                    double I = AdvancedMath.ModifiedBesselI(nu, x);
+                    double Ip1 = AdvancedMath.ModifiedBesselI(nu + 1.0, x);
+                    double K = AdvancedMath.ModifiedBesselK(nu, x);
+                    double Kp1 = AdvancedMath.ModifiedBesselK(nu + 1.0, x);
+
+                    Console.WriteLine("{0} ?= {1}", I * Kp1 + Ip1 * K, 1.0 / x);
+
+                    // no need to use IsSumNearlyEqual; both terms are positive so no cancelation is possible
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(I * Kp1 + Ip1 * K, 1.0 / x));
+
+                }
+            }
+
+        }
+
+        [TestMethod]
+        public void ModifiedBesselHalfIntegerOrderTest () {
+
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 8)) {
+                //Console.WriteLine("x={0}", x);
+
+                double F = Math.Sqrt(Math.PI / 2.0 / x);
+
+                //Console.WriteLine("{0} ?= {1}", F * AdvancedMath.ModifiedBesselI(0.5, x), Math.Sinh(x) / x);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(F * AdvancedMath.ModifiedBesselI(0.5, x), Math.Sinh(x) / x));
+
+                //Console.WriteLine("{0} ?= {1}", F * AdvancedMath.ModifiedBesselI(-0.5, x), Math.Cosh(x) / x);
+                //Assert.IsTrue(TestUtilities.IsNearlyEqual(F * AdvancedMath.ModifiedBesselI(-0.5, x), Math.Cosh(x) / x));
+
+                //Console.WriteLine("{0} ?= {1}", AdvancedMath.ModifiedBesselK(0.5, x), F * Math.Exp(-x));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.ModifiedBesselK(0.5, x), F * Math.Exp(-x)));
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.ModifiedBesselK(1.5, x), F * Math.Exp(-x) * (1.0 + 1.0 / x)));
+
+            }
+
+        }
+
+        [TestMethod]
+        public void ModifiedBesselIntegralTest () {
+
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
+                //Console.WriteLine("x={0}", x);
+
+                Function<double, double> f = delegate (double t) {
+                    return (Math.Exp(x * Math.Cos(t)));
+                };
+                Interval r = Interval.FromEndpoints(0.0, Math.PI);
+                double I = FunctionMath.Integrate(f, r);
+
+                //Console.WriteLine("{0} ?= {1}", I / Math.PI, AdvancedMath.ModifiedBesselI(0.0, x));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(I / Math.PI, AdvancedMath.ModifiedBesselI(0.0, x)));
+
+            }
+
+        }
+
+        [TestMethod]
+        public void AiryIntegralTest () {
+
+            Function<double, double> f = delegate(double t) {
+                return (AdvancedMath.AiryAi(t));
+            };
+            Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
+            double I = FunctionMath.Integrate(f, r);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(I, 1.0 / 3.0));
+
+        }
+
+        [TestMethod]
+        public void AiryZeroArgumentTest () {
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                AdvancedMath.AiryAi(0.0), 1.0 / Math.Pow(3.0, 2.0 / 3.0) / AdvancedMath.Gamma(2.0 / 3.0)
+            ));
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                AdvancedMath.AiryBi(0.0), 1.0 / Math.Pow(3.0, 1.0 / 6.0) / AdvancedMath.Gamma(2.0 / 3.0)
+            ));
+        }
+
+        [TestMethod]
+        public void GoldenRatioTest () {
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual((1.0 + AdvancedMath.GoldenRatio) / AdvancedMath.GoldenRatio, AdvancedMath.GoldenRatio));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(1.0 / AdvancedMath.GoldenRatio, AdvancedMath.GoldenRatio - 1.0));
+        }
+
+        [TestMethod]
+        public void CatalanIntegralTest () {
+
+            Function<double, double> f1 = delegate(double t) {
+                return (t / Math.Sin(t) / Math.Cos(t));
+            };
+            Interval r1 = Interval.FromEndpoints(0.0, Math.PI / 4.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(FunctionMath.Integrate(f1, r1), AdvancedMath.Catalan));
+
+            Function<double, double> f2 = delegate(double t) {
+                return (-Math.Log(t) / (1 + t * t));
+            };
+            Interval r2 = Interval.FromEndpoints(0.0, 1.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(FunctionMath.Integrate(f2, r2), AdvancedMath.Catalan));
+
+        }
+
+        [TestMethod]
+        public void DiLogSpecialCaseTest () {
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.DiLog(-1.0), -Math.PI * Math.PI / 12.0));
+            Assert.IsTrue(AdvancedMath.DiLog(0.0) == 0.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.DiLog(0.5), Math.PI * Math.PI / 12.0 - Math.Log(2.0) * Math.Log(2.0) / 2.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.DiLog(1.0 / AdvancedMath.GoldenRatio), Math.PI * Math.PI / 10.0 - Math.Log(AdvancedMath.GoldenRatio) * Math.Log(AdvancedMath.GoldenRatio)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.DiLog(1.0), Math.PI * Math.PI / 6.0));
+
+        }
+
+        [TestMethod]
+        public void DiLogDuplicationTest () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0, 10)) {
+                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                    AdvancedMath.DiLog(x), AdvancedMath.DiLog(-x), AdvancedMath.DiLog(x * x) / 2.0
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void DiLogBailyIdentityTest () {
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                36.0 * AdvancedMath.DiLog(1.0 / 2.0) - 36.0 * AdvancedMath.DiLog(1.0 / 4.0) -
+                12.0 * AdvancedMath.DiLog(1.0 / 8.0) + 6.0 * AdvancedMath.DiLog(1.0 / 64.0),
+                Math.PI * Math.PI
+            ));
+
+        }
+
+        [TestMethod]
+        public void DiLogExpIntegralTest () {
+
+            foreach (double x in TestUtilities.GenerateRealValues(0.1,10.0,5)) {
+
+                Function<double, double> f = delegate (double t) {
+                    return (t / (Math.Exp(t) + x));
+                };
+                Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
+                double I = FunctionMath.Integrate(f, r);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.DiLog(-x), -x * I));
+
+            }
+
+        }
+
+        [TestMethod]
+        public void DiLogLogIntegralTest () {
+
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 5)) {
+
+                Function<double, double> f = delegate(double t) {
+                    return (Math.Log(t) / t / (t - x));
+                };
+                Interval r = Interval.FromEndpoints(1.0, Double.PositiveInfinity);
+                double I = FunctionMath.Integrate(f, r);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.DiLog(x), x * I));
+
+            }
+
+        }
+
 
 #if FUTURE
 

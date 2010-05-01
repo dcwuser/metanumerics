@@ -418,6 +418,25 @@ namespace Test {
         }
 
         //[TestMethod]
+        public void QRTest () {
+
+
+            SquareMatrix M = new SquareMatrix(3);
+
+            M[0,0] = 12.0;
+            M[0,1] = -51.0;
+            M[0,2] = 4.0;
+            M[1,0] = 6.0;
+            M[1,1] = 167.0;
+            M[1,2] = -68.0;
+            M[2,0] = -4.0;
+            M[2,1] = 24.0;
+            M[2,2] = -41.0;
+            //M.QRDecompose();
+
+        }
+
+        //[TestMethod]
         public void TimeMatrixMultiply () {
 
             SquareMatrix M = new SquareMatrix(3);

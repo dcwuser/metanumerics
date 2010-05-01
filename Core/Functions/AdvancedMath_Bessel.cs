@@ -22,6 +22,7 @@ namespace Meta.Numerics.Functions {
         /// <para>The Bessel functions of integral order occur in solutions to the wave equations with cylindrical symmetry. The
         /// regular Bessel functions are finite at the origin, and thus occur in situations where the wave equation is satisfied
         /// at the origin.</para></remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
         public static double BesselJ (int n, double x) {
 
             // relate negative n to positive n
@@ -86,6 +87,7 @@ namespace Meta.Numerics.Functions {
         /// <para>The Bessel functions of integral order occur in solutions to the wave equations with cylindrical symmetry. The
         /// irregular Bessel functions diverge at the origin, and thus occur in situations where the region in which the wave
         /// equation is satisfied not not include the origin.</para></remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
         public static double BesselY (int n, double x) {
 
             // relate negative n to positive n
@@ -454,6 +456,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="nu">The order parameter.</param>
         /// <param name="x">The argument.</param>
         /// <returns>The value of J<sub>&#x3BD;</sub>(x).</returns>
+        /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
         public static double BesselJ (double nu, double x) {
             if (x < 0.0) throw new ArgumentOutOfRangeException("x");
 
@@ -516,6 +519,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="nu">The order parameter.</param>
         /// <param name="x">The argument.</param>
         /// <returns>The value of Y<sub>&#x3BD;</sub>(x).</returns>
+        /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
         public static double BesselY (double nu, double x) {
             if (nu < 0.0) throw new ArgumentOutOfRangeException("nu");
             if (x < 0.0) throw new ArgumentOutOfRangeException("x");
@@ -720,7 +724,9 @@ namespace Meta.Numerics.Functions {
         /// at the origin.</para>
         /// <para>The regular spherical Bessel functions are related to the regular Bessel functions of half-integer order by
         /// j<sub>n</sub>(x) = Sqrt(&#x3C0;/2x) J<sub>n+1/2</sub>(x).</para></remarks>
+        /// <seealso cref="SphericalBesselY" />
         /// <seealso cref="BesselJ(double,double)"/>
+        /// <seealso href="http://mathworld.wolfram.com/SphericalBesselFunctionoftheFirstKind.html" />
         public static double SphericalBesselJ (int n, double x) {
 
             if (n < 0) {
@@ -754,6 +760,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="n">The order parameter.</param>
         /// <param name="x">The argument.</param>
         /// <returns>The value of y<sub>n</sub>(x).</returns>
+        /// <seealso cref="SphericalBesselJ"/>
+        /// <seealso href="http://mathworld.wolfram.com/SphericalBesselFunctionoftheSecondKind.html" />
         public static double SphericalBesselY (int n, double x) {
 
             if (n < 0) {

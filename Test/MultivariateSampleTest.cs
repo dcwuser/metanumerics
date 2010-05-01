@@ -252,5 +252,51 @@ namespace Test
 
         }
 
+        [TestMethod]
+        public void RegressionTest () {
+
+            MultivariateSample sample = new MultivariateSample(3);
+            
+            sample.Add(98322, 81449, 269465);
+            sample.Add(65060, 31749, 121900);
+            sample.Add(36052, 14631, 37004);
+            sample.Add(31829, 27732, 91400);
+            sample.Add(7101, 9693, 54900);
+            sample.Add(41294, 4268, 16160);
+            sample.Add(16614, 4697, 21500);
+            sample.Add(3449, 4233, 9306);
+            sample.Add(3386, 5293, 38300);
+            sample.Add(6242, 2039, 13369);
+            sample.Add(14036, 7893, 29901);
+            sample.Add(2636, 3345, 10930);
+            sample.Add(869, 1135, 5100);
+            sample.Add(452, 727, 7653);
+            
+            /*
+            sample.Add(41.9, 29.1, 251.3);
+            sample.Add(43.4, 29.3, 251.3);
+            sample.Add(43.9, 29.5, 248.3);
+            sample.Add(44.5, 29.7, 267.5);
+            sample.Add(47.3, 29.9, 273.0);
+            sample.Add(47.5, 30.3, 276.5);
+            sample.Add(47.9, 30.5, 270.3);
+            sample.Add(50.2, 30.7, 274.9);
+            sample.Add(52.8, 30.8, 285.0);
+            sample.Add(53.2, 30.9, 290.0);
+            sample.Add(56.7, 31.5, 297.0);
+            sample.Add(57.0, 31.7, 302.5);
+            sample.Add(63.5, 31.9, 304.5);
+            sample.Add(65.3, 32.0, 309.3);
+            sample.Add(71.1, 32.1, 321.7);
+            sample.Add(77.0, 32.5, 330.7);
+            sample.Add(77.8, 32.9, 349.0);
+            */
+
+            Console.WriteLine(sample.Count);
+
+            sample.LinearRegression(0);
+
+        }
+
     }
 }

@@ -384,11 +384,24 @@ namespace Meta.Numerics.Functions {
         /// <param name="L">The angular momentum number, which must be non-negative.</param>
         /// <param name="eta">The charge parameter, which can be postive or negative.</param>
         /// <param name="rho">The radial distance parameter, which must be non-negative.</param>
-        /// <returns>The value of F<sub>L</sub>(eta,rho).</returns>
+        /// <returns>The value of F<sub>L</sub>(&#x3B7;,&#x3C1;).</returns>
         /// <remarks>
-        /// <para>For eta &gt; 0 (repulsive potential), rho &lt; rho_0 (quantum tunneling region).</para>
+        /// <para>The Coulomb wave functions are the radial wave functions of a non-relativistic particle in a Coulomb
+        /// potential.</para>
+        /// <para>They satisfy the differential equation:</para>
+        /// <img src="../images/CoulombODE.png" />
+        /// <para>A repulsive potential is represented by &#x3B7; &gt; 0, an attractive potential by &#x3B7; &lt; 0.</para>
+        /// <para>F is oscilatory in the region beyond the classical turning point. In the quantum tunneling region inside
+        /// the classical turning point, F is exponentially supressed.</para>
+        /// <para>Many numerical libraries compute Coulomb wave functions in the quantum tunneling region using a WKB approximation,
+        /// which accurately determine only the first handfull of digits; our library computes Coulomb wave functions even in this
+        /// computationaly difficult region to nearly full precision -- all but the last 3-4 digits can be trusted.</para>
+        /// <para>The irregular Coulomb wave functions G<sub>L</sub>(&#x3B7;,&#x3C1;) are the complementary independent solutions
+        /// of the same differential equation.</para>
         /// </remarks>
         /// <seealso cref="CoulombG"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Coulomb_wave_function" />
+        /// <seealso href="http://mathworld.wolfram.com/CoulombWaveFunction.html" />
         public static double CoulombF (int L, double eta, double rho) {
 
             if (L < 0) throw new ArgumentOutOfRangeException("L");
@@ -425,8 +438,13 @@ namespace Meta.Numerics.Functions {
         /// <param name="L">The angular momentum number, which must be non-negative.</param>
         /// <param name="eta">The charge parameter, which can be postive or negative.</param>
         /// <param name="rho">The radial distance parameter, which must be non-negative.</param>
-        /// <returns>The value of G<sub>L</sub>(eta,rho).</returns>
+        /// <returns>The value of G<sub>L</sub>(&#x3B7;,&#x3C1;).</returns>
+        /// <remarks>
+        /// <para>For information on the Coulomb wave functions, see the remarks on <see cref="CoulombF" />.</para>
+        /// </remarks>
         /// <seealso cref="CoulombF"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Coulomb_wave_function" />
+        /// <seealso href="http://mathworld.wolfram.com/CoulombWaveFunction.html" />
         public static double CoulombG (int L, double eta, double rho) {
 
             if (L < 0) throw new ArgumentOutOfRangeException("L");
@@ -664,6 +682,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        /*
         private static void Coulomb_Recurse_Downward (int L1, int L2, double eta, double rho, ref double U, ref double UP) {
 
             Debug.Assert(L2 <= L1);
@@ -685,6 +704,7 @@ namespace Meta.Numerics.Functions {
             }
 
         }
+        */
 
         private static double CoulombF_Integrate (int L, double eta, double rho) {
 

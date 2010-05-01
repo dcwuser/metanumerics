@@ -11,6 +11,7 @@ namespace Meta.Numerics.Statistics {
     /// measurement of a driver's car and his nationality, or a person's sex and employment status. Such experiments are
     /// typically undertaken to determine what correlation exists between the categories.</para></remarks>
     /// <seealso cref="BinaryContingencyTable"/>
+    /// <seealso href="http://en.wikipedia.org/wiki/Contingency_table" />
     public class ContingencyTable {
 
         private int[,] data;
@@ -18,8 +19,8 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Instantiates a new contingency table.
         /// </summary>
-        /// <param name="rows"></param>
-        /// <param name="columns"></param>
+        /// <param name="rows">The number of rows, which must be positive.</param>
+        /// <param name="columns">The number of columns, which must be positive.</param>
         public ContingencyTable (int rows, int columns) {
             if (rows < 1) throw new ArgumentOutOfRangeException("rows");
             if (columns < 1) throw new ArgumentOutOfRangeException("columns");
@@ -193,6 +194,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents a 2 X 2 contingency table.
     /// </summary>
+    /// <seealso href="http://en.wikipedia.org/wiki/Contingency_table" />
     public class BinaryContingencyTable : ContingencyTable {
 
         /// <summary>
@@ -266,7 +268,9 @@ namespace Meta.Numerics.Statistics {
         /// the given table. In this way it determines the total probability of obtaining a 2 X 2 table which is at least as improbable
         /// as the given one.</para>
         /// <para>The test is two-sided, i.e. when considering less probable tables it does not distinguish between tables exhibiting
-        /// the same and the opposite correlation as the given one.</para></remarks>
+        /// the same and the opposite correlation as the given one.</para>
+        /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Fisher_exact_test"/>
         public TestResult FisherExactTest () {
             // store row and column totals
             int[] R = this.RowTotals;

@@ -45,8 +45,8 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The function Ei(x) appears in the evaluation of some indefinite integrals involving exponents and in
         /// number theory in the approximation li(x) = Ei(ln x) to the cumulative distribution of primes.</para>
-        /// <para>It is related to the Cauchy principal value of the exponential integral via
-        /// E<sub>1</sub>(-x &#177; i&#x3B5;) = -Ei(x) &#x2213; i#x3B5;. </para>
+        /// <para>It is related to the real part of the exponential integral for negative arguments by
+        /// E<sub>1</sub>(-x &#177; i&#x3B5;) = -Ei(x) &#x2213; i&#x3C0;. </para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         public static double IntegralEi (double x) {

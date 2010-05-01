@@ -20,7 +20,8 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Catalan's constant.
         /// </summary>
-        public static readonly double Catalan = 0.915965594177219015054604;
+        /// <remarks><para>Catalan's constant 0.9159...</para></remarks>
+        public const double Catalan = 0.915965594177219015054604;
 
     }
 }

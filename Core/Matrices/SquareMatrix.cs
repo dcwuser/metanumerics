@@ -1228,7 +1228,7 @@ namespace Meta.Numerics.Matrices {
         //   A P = A - (A u) u^T = A - v u^T where v = A u
         // This is a O(N^2) operation.
 
-        public void QRDecompose () {
+        private void QRDecompose () {
 			// loop over columns, doing a Householder transform for each
             for (int c = 0; c < dimension; c++) {
 

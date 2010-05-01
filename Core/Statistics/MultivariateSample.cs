@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 
+using Meta.Numerics.Matrices;
+
 namespace Meta.Numerics.Statistics {
 
     /// <summary>
@@ -326,6 +328,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <seealso cref="SpearmanRhoTest"/>
         /// <seealso cref="KendallTauTest"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Pearson_correlation_coefficient" />
         public TestResult PearsonRTest (int d1, int d2) {
             double r = Covariance(d1, d2) / StandardDeviation(d1) / StandardDeviation(d2);
             Distribution p = new NormalDistribution(0.0, 1.0 / Math.Sqrt(Count));
@@ -389,7 +392,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="d1">The (zero-based) index of the first variable.</param>
         /// <param name="d2">The (zero-based) index of the first variable.</param>
-        /// <returns></returns>
+        /// <returns>The result of the test.</returns>
         /// <remarks>
         /// <para>Kendall's &#x3C4; is a non-parameteric and robust test of association
         /// between two variables. It simply measures the number of cases where an increase
@@ -406,12 +409,13 @@ namespace Meta.Numerics.Statistics {
         /// the second variable along the falling arc. No test that looks for single-signed correlation
         /// will catch this association.
         /// </para>
-        /// <para>Because it examine all pairs of data points, the Kendall test requirest
+        /// <para>Because it examine all pairs of data points, the Kendall test requires
         /// O(N<sup>2</sup>) operations. It is thus impractical for very large data sets. While
         /// not quite as robust as the Kendall test, the Spearman test is a good fall-back in such cases.</para>
         /// </remarks>
         /// <seealso cref="PearsonRTest"/>
         /// <seealso cref="SpearmanRhoTest"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Kendall_tau_test" />
         public TestResult KendallTauTest (int d1, int d2) {
 
             if ((d1 < 0) || (d1 >= n)) throw new ArgumentOutOfRangeException("d1");
@@ -445,6 +449,130 @@ namespace Meta.Numerics.Statistics {
             double dt = Math.Sqrt( (4 * Count + 10) / 9.0 / Count / (Count - 1));
 
             return (new TestResult(t, new NormalDistribution(0.0, dt)));
+
+        }
+
+        /// <summary>
+        /// Performs a linear regression analysis.
+        /// </summary>
+        /// <param name="p">The parameter to be predicted.</param>
+        /// <returns>The result of the analysis.</returns>
+        /// <remarks>
+        /// <para>
+        /// A linear regression analysis find the linear combination of the given variables
+        /// that best predicts the prediction variable.
+        /// </para>
+        /// </remarks>
+        public FitResult LinearRegression (int p) {
+
+            // to do a fit, we need more data than parameters
+            if (data.Count <= n) throw new InvalidOperationException();
+
+            // design matrix
+            SymmetricMatrix D = new SymmetricMatrix(n);
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j <= i; j++) {
+                    double Dij = 0.0;
+                    for (int k = 0; k < data.Count; k++) {
+                        double fi = 1.0;
+                        if (i != p) fi = data[k][i];
+                        double fj = 1.0;
+                        if (j != p) fj = data[k][j];
+                        Dij += fi * fj;
+                    }
+                    D[i, j] = Dij;
+                }
+            }
+
+
+            // decompose design matrix in preperation
+            CholeskyDecomposition CD = D.CholeskyDecomposition();
+
+            // right hand side
+            ColumnVector y = new ColumnVector(n);
+            for (int i = 0; i < n; i++) {
+                double yi = 0.0;
+                for (int k = 0; k < data.Count; k++) {
+                    if (i == p) {
+                        yi += data[k][p];
+                    } else {
+                        yi += data[k][p] * data[k][i];
+                    }
+                }
+                y[i] = yi;
+            }
+
+            // solve
+            ColumnVector x = CD.Solve(y);
+            Console.WriteLine("Parameters:");
+            foreach (double xi in x) {
+                Console.WriteLine(xi);
+            }
+
+            // F test
+
+            // determine total variance (variance before fit)
+            double m = means[p];
+            double v0 = 0.0;
+            for (int k = 0; k < data.Count; k++) {
+                double z = (data[k][p] - m);
+                v0 += z * z;
+            }
+            // associated dof = # points - 1 (the one is for the variance-minimizing mean)
+
+            // determine remaining variance (variance after fit)
+            double v1 = 0.0;
+            for (int k = 0; k < data.Count; k++) {
+                double yp = 0.0;
+                for (int i = 0; i < n; i++) {
+                    if (i == p) {
+                        yp += x[p];
+                    } else {
+                        yp += x[i] * data[k][i];
+                    }
+                }
+                double z = data[k][p] - yp;
+                Console.WriteLine("{0}: yp={1} y={2} z={3}", k, yp, data[k][p], z);
+                v1 += z * z;
+            }
+            Console.WriteLine("v1={0}", v1);
+
+            // associated dof = # points - # paramaters
+            double s2 = v1 / (data.Count - n);
+
+            // unexplained variance = total variance - remaining variance
+
+            // associated dof = (# points - 1) - (# points - # parameters) = # parameters - 1
+
+            double mse = v1 / (data.Count - n);
+            Console.WriteLine("MSE = {0}", mse);
+            //double m = 0.0;
+            //for (int k = 0; k < data.Count; k++) {
+            //    m += data[k][p];
+            //}
+            //m = m / data.Count;
+            //Console.WriteLine("m={0}", m);
+            //double v0 = 0.0;
+            //for (int k = 0; k < data.Count; k++) {
+            //    double z = data[k][p] - m;
+            //    v0 += z * z;
+            //}
+            Console.WriteLine("v0={0}", v0);
+            double msr = (v0 - v1) / (n - 1);
+            Console.WriteLine("msr={0}", msr);
+            double F = msr / mse;
+            Console.WriteLine("F = {0}", F);
+
+            Distribution FD = new FisherDistribution(n - 1, data.Count - n);
+            Console.WriteLine("P={0} Q={1}", FD.LeftProbability(F), FD.RightProbability(F));
+
+            Console.WriteLine("Errors:");
+            SymmetricMatrix CI = s2 * CD.Inverse();
+            for (int i = 0; i < CI.Dimension; i++) {
+                Console.WriteLine(Math.Sqrt(CI[i, i]));
+            }
+
+            return (null);
 
         }
 

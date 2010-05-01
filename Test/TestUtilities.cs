@@ -29,21 +29,17 @@ namespace Test {
         }
 
         public static bool IsSumNearlyEqual (double x1, double x2, double y) {
+            return (IsSumNearlyEqual(x1, x2, y, TargetPrecision));
+        }
+
+
+        public static bool IsSumNearlyEqual (double x1, double x2, double y, double e) {
             double x = x1 + x2;
-            double u1 = Math.Abs(x1) * TargetPrecision;
-            double u2 = Math.Abs(x2) * TargetPrecision;
+            double u1 = Math.Abs(x1) * e;
+            double u2 = Math.Abs(x2) * e;
             double u = u1 + u2;
-            double v = Math.Abs(y) * TargetPrecision;
-            /*
-            UncertainValue v1 = new UncertainValue(x1, e * Math.Abs(x1));
-            Console.WriteLine("  v1 = {0}", v1);
-            UncertainValue v2 = new UncertainValue(x2, e * Math.Abs(x2));
-            Console.WriteLine("  v2 = {0}", v2);
-            UncertainValue v = v1 + v2;
-            Console.WriteLine("  v = {0}", v);
-            UncertainValue w = new UncertainValue(y, e * Math.Abs(y));
-            Console.WriteLine("  w = {0}", w);
-            */
+            double v = Math.Abs(y) * e;
+
             //Console.WriteLine("  {0:g16} ?= {1:g16} ({2:g16})", x, y, u + v);
             if (Math.Abs(x - y) <=(u + v)) {
                 return (true);

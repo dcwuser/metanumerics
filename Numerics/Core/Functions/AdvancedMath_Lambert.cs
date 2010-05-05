@@ -15,6 +15,7 @@ namespace Meta.Numerics.Functions {
         /// The function appears in a number of contexts, including the solution of differential
         /// equations and the enumeration of trees.</para>
         /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Lambert_W_function" />
         /// <seealso href="http://www.apmaths.uwo.ca/~djeffrey/Offprints/W-adv-cm.pdf"/>
         public static double LambertW (double x) {
 

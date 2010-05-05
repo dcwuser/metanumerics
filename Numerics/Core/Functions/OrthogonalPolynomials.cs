@@ -61,10 +61,10 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>Hermite polynomials are orthogonal on the interval (-&#8734;,+&#8734;) with a
         /// weight function equal to the standard normal probability distribution.</para>
-        /// <img src="../images/HermiteHOrthonormality.png" />
+        /// <img src="../images/HermiteHeOrthonormality.png" />
         /// <para>Their orthonormality relation makes them a useful basis for expressing pertubations
         /// arround a normal distribution.</para>
-        /// <para>Physicists' Hermite polynomials (see <see cref="HermiteHe"/>) are related to statisticians' Hermite
+        /// <para>Physicists' Hermite polynomials (see <see cref="HermiteH"/>) are related to statisticians' Hermite
         /// polynomials via H<sub>n</sub>(x) = 2<sup>n</sup>H<sub>n</sub>(x &#x221A;2).</para>
         /// </remarks>
         /// <seealso cref="HermiteH"/>

@@ -154,6 +154,64 @@ namespace Test {
         // periodicity in imaginary part of ln z means that LogGamma recurrence and LogGamma duplication tests fail
 
         [TestMethod]
+        public void ComplexPsiRecurrenceTest () {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 2, 12)) {
+                //Complex z = new Complex(0.398612, 888.865);
+                //double t = Math.Exp(900.0);
+                //Console.WriteLine("{0} {1}", t, 1.0 / t);
+                Console.WriteLine("z={0}", z);
+                //Console.WriteLine("Psi(1-z)={0}", AdvancedComplexMath.Psi(1.0 - z));
+                //Console.WriteLine("Tan(pi z)={0}", ComplexMath.Tan(Math.PI * z));
+                //Console.WriteLine("{0} {1}", z, AdvancedComplexMath.Psi(z));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.Psi(z + 1.0),
+                    AdvancedComplexMath.Psi(z) + 1.0 / z
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void ComplexPsiDuplicationTest () {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 3, 12)) {
+                Console.WriteLine(z);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.Psi(2.0 * z),
+                    AdvancedComplexMath.Psi(z) / 2.0 + AdvancedComplexMath.Psi(z + 0.5) / 2.0 + Math.Log(2.0)
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void ComplexPsiConjugationTest () {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 3, 12)) {
+                Console.WriteLine(z);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.Psi(z.Conjugate),
+                    AdvancedComplexMath.Psi(z).Conjugate
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void ComplexPsiImaginaryPartsTest () {
+            // don't get these values get too big, because we loose trig function accuracy
+            foreach (double y in TestUtilities.GenerateRealValues(0.01, 100.0, 10)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.Psi(new Complex(0.0, y)).Im,
+                    (Math.PI / Math.Tanh(Math.PI * y) + 1.0 / y) / 2.0
+                ));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.Psi(new Complex(0.5, y)).Im,
+                    Math.PI * Math.Tanh(Math.PI * y) / 2.0
+                ));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.Psi(new Complex(1.0, y)).Im,
+                    (Math.PI / Math.Tanh(Math.PI * y) - 1.0 / y) / 2.0
+                ));
+            }
+        }
+
+        [TestMethod]
         public void ComplexDiLogSymmetryTest () {
             foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 2, 12)) {
 

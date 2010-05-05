@@ -317,7 +317,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="d1">The (zero-based) index of the first variable.</param>
         /// <param name="d2">The (zero-based) index of the second variable.</param>
-        /// <returns></returns>
+        /// <returns>The result of the test.</returns>
         /// <remarks>
         /// <para>This test measures the strength of the linear correlation between two variables. The
         /// test statistic r is simply the covariance of the two variables, scaled by their respective
@@ -340,7 +340,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="d1">The (zero-based) index of the first variable.</param>
         /// <param name="d2">The (zero-based) index of the second variable.</param>
-        /// <returns></returns>
+        /// <returns>The result of the test.</returns>
         /// <remarks>
         /// <para>The Spearman rank-order test of association is a non-parametric test for association between
         /// two variables. The test statistic rho is the correlation coefficient of the <em>rank</em> of
@@ -452,127 +452,207 @@ namespace Meta.Numerics.Statistics {
 
         }
 
+
         /// <summary>
-        /// Performs a linear regression analysis.
+        /// Performs a linear regression analysis using the input variables to predict the output variable.
         /// </summary>
-        /// <param name="p">The parameter to be predicted.</param>
-        /// <returns>The result of the analysis.</returns>
+        /// <param name="inputIndices">The indices of the input variables to use.</param>
+        /// <param name="outputIndex">The index of the variable to predict.</param>
+        /// <returns>The result of the regression.</returns>
         /// <remarks>
-        /// <para>
-        /// A linear regression analysis find the linear combination of the given variables
-        /// that best predicts the prediction variable.
-        /// </para>
+        /// <para>Linear regression finds the linear combination of the given input variables
+        /// that best predicts the given output variable.</para>
+        /// <img src="../images/LinearRegressionEquation.png" />
+        /// <para>The noise term epsilon is assumed to be drawn from the same normal distribution
+        /// for each data point. Note that the model makes no assumptions about the distribution
+        /// of the x's; it merely asserts a particular underlying relationship between the x's and
+        /// the y.</para>
+        /// <h4>Inputs and Outputs</h4>
+        /// <para>The <paramref name="inputIndices"/> array specifies the input variables
+        /// as particular columns of the multivariate sample. The <paramref name="outputIndex" />
+        /// specifies column containing the output variable to predict as a linear combination
+        /// of input variables. The <paramref name="outputIndex" /> may not appear in the
+        /// <paramref name="inputIndices"/> array. By leaving other indices out of the
+        /// <paramref name="inputIndices"/> array, you can perform a regression fit using a
+        /// reduced set of input variables. Of course, all indices must correspond to an
+        /// existing column and indices may not be repeated in the <paramref name="inputIndices"/>
+        /// array.</para>
+        /// <para>The parameters of the returned fit result are the liklihood-maximizing values of
+        /// the coefficients, in the order specified by the <paramref name="inputIndices"/> array,
+        /// followed by the intercept parameter. For example, given
+        /// <paramref name="inputIndices"/> = (1, 4, 3), the fit result parameter list would
+        /// be (&#x3B2;<sub>1</sub>, &#x3B2;<sub>4</sub>, &#x3B2;<sub>3</sub>, &#x3B1;).</para>
+        /// <para>The correlation matrix among fit parameters is also returned with the fit
+        /// result, as is an F-test for the goodness of the fit. If the result of the F-test
+        /// is not significant, no conclusions should be drawn from the regression
+        /// coefficients.</para>
+        /// <h4>Regression vs. Correlation</h4>
+        /// <para>If a given coefficient is significantly positive, then a change in the value
+        /// of the corresponding input variable, <i>holding all other input variables constant</i>,
+        /// will tend to increase the output variable. Note that italicized condition means
+        /// that a linear regression coefficient measures something different than a linear
+        /// correlation coefficient.</para>
+        /// <para>Suppose, for example, we take a large number of measurements
+        /// of water temperature, plankton concentration, and fish density in a large number of
+        /// different locations. A correlation analysis might indicate that fish density is
+        /// positively correlated with both water temperature and plankton concentration. But
+        /// a regression analysis might reveal that increasing water temperature actually
+        /// decreases the fish density. This seeming paradoxical situation might occur
+        /// because fish do much better with more plankton, and plankton do much better at higher
+        /// temperatures, and this positive knock-on effect of temperature on fish is larger than the
+        /// negative direct effect.</para>
+        /// <para>If we are in a situation where we can control the input
+        /// variables independently -- for example we are running an aquarium -- we would ceratainly
+        /// want to know the specific effect of one variable -- that our fishes would actually prefer us to turn
+        /// down the temperature while maintaining a high plankton level -- rather than the observed
+        /// effect as a variable changes along with all the others that tend to change with it.
+        /// This does not mean that the correlation analysis is wrong -- higher temperatures
+        /// are indeed associated with higher fish densitites in our hypothetical data set. It
+        /// simply means that you need to be careful to ask the right question for your purpose.</para>
+        /// <para>In most cases, it is indeed the specific effect of one variable when others are
+        /// held constant that we seek. In a controlled experiment, the confounding effects of
+        /// other variables are removed by the experimental design, either by random
+        /// assignment or specific controls. In an observational experiment, though,
+        /// confounding effects can be, and often are, large, and correlation analysis is
+        /// not sufficient. It is worthwhile keeping this in find in politically charged
+        /// debates in which easily observed correlations are likely to be bandied about as
+        /// evidence, while a more difficult regression analysis that would actually be required
+        /// to support an assertion is left undone.</para>
+        /// <h4>Cavets</h4>
+        /// <para>It can occur that two theoretically independent variables are so closely
+        /// correlated in the observational data that a regression analsysis cannot reliably
+        /// tease out the independent effect of each. In the case, a fit using only one
+        /// of the variables will be as good or nearly as good as a fit using both, and
+        /// the covariance between their corresponding linear regression coefficients will
+        /// be large. In a situation like this, you should be wary of drawing any conclusions
+        /// about their seperate effects.</para>
+        /// <para>It can also occur that an input variable or a set of input variables is indeed good
+        /// predictor of an output variable, but via a complex and non-linear relationship that
+        /// a linear regression analysis will completely miss.</para>
         /// </remarks>
-        public FitResult LinearRegression (int p) {
+        /// <seealso cref="LinearRegression(int)"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Linear_regression"/>
+        public FitResult LinearRegression (IList<int> inputIndices, int outputIndex) {
+            // check inputs
+            if (inputIndices == null) throw new ArgumentNullException("inputIndices");
+            for (int i = 0; i < inputIndices.Count; i++) {
+                if ((inputIndices[i] < 0) || (inputIndices[i] >= n)) throw new ArgumentOutOfRangeException("inputIndices");
+                if (inputIndices[i] == outputIndex) throw new ArgumentException("inputIndices");
+                for (int j = 0; j < i; j++) {
+                    if (inputIndices[j] == inputIndices[i]) throw new ArgumentException("inputIndices");
+                }
+            }
+            if ((outputIndex < 0) || (outputIndex >= n)) throw new ArgumentOutOfRangeException("outputIndex");
+            // do the fit
+            return (LinearRegression_Internal(inputIndices, outputIndex));
+        }
+
+        // the internal linear regression routine, which assumes inputs are entirely valid
+
+        private FitResult LinearRegression_Internal (IList<int> inputIndices, int outputIndex) {
 
             // to do a fit, we need more data than parameters
-            if (data.Count <= n) throw new InvalidOperationException();
+            if (data.Count <= (inputIndices.Count + 1)) throw new InvalidOperationException();
 
-            // design matrix
-            SymmetricMatrix D = new SymmetricMatrix(n);
-            for (int i = 0; i < n; i++) {
+            // construct the design matrix
+            SymmetricMatrix D = new SymmetricMatrix(inputIndices.Count + 1);
+            for (int i = 0; i < inputIndices.Count; i++) {
                 for (int j = 0; j <= i; j++) {
                     double Dij = 0.0;
                     for (int k = 0; k < data.Count; k++) {
-                        double fi = 1.0;
-                        if (i != p) fi = data[k][i];
-                        double fj = 1.0;
-                        if (j != p) fj = data[k][j];
-                        Dij += fi * fj;
+                        Dij += data[k][inputIndices[i]] * data[k][inputIndices[j]];
                     }
-                    D[i, j] = Dij;
+                    D[i,j] = Dij;
                 }
+                D[inputIndices.Count, i] = means[inputIndices[i]] * data.Count;
             }
+            D[inputIndices.Count, inputIndices.Count] = data.Count;
 
-
-            // decompose design matrix in preperation
-            CholeskyDecomposition CD = D.CholeskyDecomposition();
-
-            // right hand side
-            ColumnVector y = new ColumnVector(n);
-            for (int i = 0; i < n; i++) {
-                double yi = 0.0;
+            // construct the right hand side
+            ColumnVector b = new ColumnVector(n);
+            for (int i = 0; i < inputIndices.Count; i++) {
+                double bi = 0.0;
                 for (int k = 0; k < data.Count; k++) {
-                    if (i == p) {
-                        yi += data[k][p];
-                    } else {
-                        yi += data[k][p] * data[k][i];
-                    }
+                    bi += data[k][outputIndex] * data[k][inputIndices[i]];
                 }
-                y[i] = yi;
+                b[i] = bi;
             }
+            b[inputIndices.Count] = means[outputIndex] * data.Count;
 
-            // solve
-            ColumnVector x = CD.Solve(y);
-            Console.WriteLine("Parameters:");
-            foreach (double xi in x) {
-                Console.WriteLine(xi);
-            }
-
-            // F test
+            // solve the system for the linear model parameters
+            CholeskyDecomposition CD = D.CholeskyDecomposition();
+            ColumnVector parameters = CD.Solve(b);
 
             // determine total variance (variance before fit)
-            double m = means[p];
-            double v0 = 0.0;
+            double m = means[outputIndex];
+            double totalVarianceSum = 0.0;
             for (int k = 0; k < data.Count; k++) {
-                double z = (data[k][p] - m);
-                v0 += z * z;
+                double z = (data[k][outputIndex] - means[outputIndex]);
+                totalVarianceSum += z * z;
             }
             // associated dof = # points - 1 (the one is for the variance-minimizing mean)
 
-            // determine remaining variance (variance after fit)
-            double v1 = 0.0;
+            // determine unexmplained remaining variance (variance after fit)
+            double unexplainedVarianceSum = 0.0;
             for (int k = 0; k < data.Count; k++) {
-                double yp = 0.0;
-                for (int i = 0; i < n; i++) {
-                    if (i == p) {
-                        yp += x[p];
-                    } else {
-                        yp += x[i] * data[k][i];
-                    }
+                double y = parameters[inputIndices.Count];
+                for (int i = 0; i < inputIndices.Count; i++) {
+                    y += parameters[i] * data[k][inputIndices[i]];
                 }
-                double z = data[k][p] - yp;
-                Console.WriteLine("{0}: yp={1} y={2} z={3}", k, yp, data[k][p], z);
-                v1 += z * z;
+                double z = data[k][outputIndex] - y;
+                unexplainedVarianceSum += z * z;
             }
-            Console.WriteLine("v1={0}", v1);
-
             // associated dof = # points - # paramaters
-            double s2 = v1 / (data.Count - n);
+            int unexplainedVarianceDof = data.Count - (inputIndices.Count + 1);
+            // sigma-squared for the model error term is given by the unexplained variance
+            double unexplainedVariance = unexplainedVarianceSum / unexplainedVarianceDof;
 
-            // unexplained variance = total variance - remaining variance
 
+            // explained variance = total variance - unexplained variance
+            double explainedVarianceSum = totalVarianceSum - unexplainedVarianceSum;
             // associated dof = (# points - 1) - (# points - # parameters) = # parameters - 1
+            int explainedVarianceDof = inputIndices.Count;
+            double explainedVariance = explainedVarianceSum / explainedVarianceDof;
 
-            double mse = v1 / (data.Count - n);
-            Console.WriteLine("MSE = {0}", mse);
-            //double m = 0.0;
-            //for (int k = 0; k < data.Count; k++) {
-            //    m += data[k][p];
-            //}
-            //m = m / data.Count;
-            //Console.WriteLine("m={0}", m);
-            //double v0 = 0.0;
-            //for (int k = 0; k < data.Count; k++) {
-            //    double z = data[k][p] - m;
-            //    v0 += z * z;
-            //}
-            Console.WriteLine("v0={0}", v0);
-            double msr = (v0 - v1) / (n - 1);
-            Console.WriteLine("msr={0}", msr);
-            double F = msr / mse;
-            Console.WriteLine("F = {0}", F);
+            // F statistic = explainedVariance / unexplainedVariance
+            double F = explainedVariance / unexplainedVariance;
+            Distribution FDistribution = new FisherDistribution(explainedVarianceDof, unexplainedVarianceDof);
+            TestResult test = new TestResult(F, FDistribution);
 
-            Distribution FD = new FisherDistribution(n - 1, data.Count - n);
-            Console.WriteLine("P={0} Q={1}", FD.LeftProbability(F), FD.RightProbability(F));
+            // covariance matrix is proportional to inverse of design matrix
+            SymmetricMatrix covariance = unexplainedVariance * CD.Inverse();
 
-            Console.WriteLine("Errors:");
-            SymmetricMatrix CI = s2 * CD.Inverse();
-            for (int i = 0; i < CI.Dimension; i++) {
-                Console.WriteLine(Math.Sqrt(CI[i, i]));
+            return (new FitResult(parameters, covariance, test));
+
+        }
+
+        /// <summary>
+        /// Performs a linear regression analysis.
+        /// </summary>
+        /// <param name="outputIndex">The index of the variable to be predicted.</param>
+        /// <returns>The result of the analysis.</returns>
+        /// <remarks>
+        /// <para>This method returns the parameter of a linear model which uses the values
+        /// of all other columns to predict the output column.</para>
+        /// <para>In the returned fit result, the best-fit linear regression coefficients
+        /// are returned in the order of the columns, followed by the intercept parameter.
+        /// For example, if <paramref name="outputIndex"/>=2 in a 4-column multivariate
+        /// sample, the returned parameters are (&#x3B2;<sub>0</sub>, &#x3B2;<sub>1</sub>,
+        /// &#x3B2;<sub>3</sub>, &#x3B1;).</para>
+        /// <para>To limit the set of columns used for input variables, and for moreextensive
+        /// information on linear regression analysis, see <see cref="LinearRegression(IList&lt;int&gt;,int)" />.</para>
+        /// </remarks>
+        /// <seealso cref="LinearRegression(IList&lt;int&gt;,int)" />
+        public FitResult LinearRegression (int outputIndex) {
+
+            if ((outputIndex < 0) || (outputIndex >= n)) throw new ArgumentOutOfRangeException("outputIndex");
+
+            List<int> inputIndices = new List<int>(n - 1);
+            for (int i = 0; i < n; i++) {
+                if (i != outputIndex) inputIndices.Add(i);
             }
 
-            return (null);
+            return (LinearRegression_Internal(inputIndices, outputIndex));
 
         }
 

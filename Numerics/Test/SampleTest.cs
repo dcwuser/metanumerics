@@ -546,6 +546,23 @@ namespace Test {
             Assert.IsTrue(logistic_result.Parameter(1).ConfidenceInterval(0.95).ClosedContains(logistic_s));
 
 
+            // beta distribution
+            // not yet!
+            /*
+            double beta_alpha = 0.5;
+            double beta_beta = 2.0;
+            Distribution beta_distribution = new BetaDistribution(beta_alpha, beta_beta);
+            Sample beta_sample = CreateSample(beta_distribution, 100);
+            FitResult beta_result = beta_sample.MaximumLikelihoodFit(new BetaDistribution(1.0, 1.0));
+
+            Console.WriteLine("Beta:");
+            Console.WriteLine(beta_result.Parameter(0));
+            Console.WriteLine(beta_result.Parameter(1));
+
+            Assert.IsTrue(beta_result.Dimension == 2);
+            Assert.IsTrue(beta_result.Parameter(0).ConfidenceInterval(0.95).ClosedContains(beta_alpha));
+            Assert.IsTrue(beta_result.Parameter(1).ConfidenceInterval(0.95).ClosedContains(beta_beta));
+            */
         }
 
         [TestMethod]

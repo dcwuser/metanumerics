@@ -175,6 +175,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents a uniform distribution over an interval.
     /// </summary>
+    /// <seealso href="http://en.wikipedia.org/wiki/Uniform_distribution_(continuous)"/>
 	public class UniformDistribution : Distribution {
 
 		private Interval range;
@@ -477,6 +478,9 @@ namespace Meta.Numerics.Statistics {
     /// <para>An exponential distribution falls off exponentially in the range from zero to infinity. It is a one-parameter
     /// distribution, determined entirely by its rate of fall-off.</para>
     /// <para>The exponential distribution describes the distribution of decay times of radioactive particles.</para>
+    /// <para>An exponential distribution with mean one is called a standard exponential distribution. Any exponential distribution
+    /// can be converted to a standard exponential by reparameterizing the data into "fractions of the mean,"
+    /// i.e. z = x / &#x3BC;.</para>
     /// </remarks>
     /// <seealso href="WeibullDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Exponential_distribution"/>
@@ -492,6 +496,13 @@ namespace Meta.Numerics.Statistics {
 			if (mu <= 0.0) throw new ArgumentOutOfRangeException("mu");
 			this.mu = mu;
 		}
+
+        /// <summary>
+        /// Initializes a new standard exponential distribution.
+        /// </summary>
+        public ExponentialDistribution () {
+            this.mu = 1.0;
+        }
 
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
@@ -2535,6 +2546,8 @@ namespace Meta.Numerics.Statistics {
     /// <remarks>
     /// <para>Like the normal distribution, the logistic distribution is a symmetric, unimodal distribution
     /// distribution with exponentially supressed tails.</para>
+    /// <para>A logistic distribution with mean zero and standard deviation one is called a standard logistic distribution. Any logistic distribution
+    /// can be converted to a standard logistic distribution by reparameterzing into z = (x-m)/s.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Logistic_distribution" />
     public class LogisticDistribution : Distribution, IParameterizedDistribution {
@@ -2908,6 +2921,7 @@ namespace Meta.Numerics.Statistics {
     /// <para>The &#x3B2; distribution appears in a few statistical applications. Because of its versatility, it is also sometimes
     /// used as an ad hoc model for a distribution on a finite interval.</para>
     /// </remarks>
+    /// <seealso href="http://en.wikipedia.org/wiki/Beta_distribution"/>
     public class BetaDistribution : Distribution {
 
         /// <summary>
@@ -3025,6 +3039,27 @@ namespace Meta.Numerics.Statistics {
                 return(CentralMomentFromRawMoment(n));
             }
         }
+
+        // IParameterizedDistribution implementation
+        // can't make this IParameterized yet, because fitting routine doesn't respect limits
+        /*
+
+        double[] IParameterizedDistribution.GetParameters () {
+            return (new double[] { alpha, beta });
+        }
+
+        void IParameterizedDistribution.SetParameters(IList<double> parameters) {
+            if (parameters == null) throw new ArgumentNullException("parameters");
+            if (parameters.Count != 2) throw new InvalidOperationException();
+            //if ((parameters[0] <= 0.0) || (parameters[1] <= 0.0)) throw new InvalidOperationException();
+            alpha = parameters[0];
+            beta = parameters[1];
+        }
+
+        double IParameterizedDistribution.Likelihood (double x) {
+            return (ProbabilityDensity(x));
+        }
+        */
 
     }
 

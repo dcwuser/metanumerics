@@ -391,7 +391,22 @@ namespace Meta.Numerics {
         /// <param name="z">The argument.</param>
         /// <returns>The value of tan(z).</returns>
 		public static Complex Tan (Complex z) {
-			return( Sin(z) / Cos(z) );
+            // tan z = [sin(2x) + I sinh(2y)]/[cos(2x) + I cosh(2y)]
+            double x2 = 2.0 * z.Re;
+            double y2 = 2.0 * z.Im;
+            double p = Math.Exp(y2);
+            double q = 1 / p;
+            double cosh = (p + q) / 2.0;
+            if (Math.Abs(z.Im) < 4.0) {
+                double sinh = (p - q) / 2.0;
+                double D = Math.Cos(x2) + cosh;
+                return (new Complex(Math.Sin(x2) / D, sinh / D));
+            } else {
+                // when Im(z) gets too large, sinh and cosh individually blow up
+                // but ratio is still ~1, so rearrage to use tanh instead
+                double F = ( 1.0 + Math.Cos(x2) / cosh);
+                return (new Complex(Math.Sin(x2) / cosh / F, Math.Tanh(y2) / F)); 
+            }
 		}
 
         /// <summary>

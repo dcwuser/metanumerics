@@ -17,7 +17,7 @@ namespace Meta.Numerics.Functions {
         /// work with its logrithm in order to avoid overflow.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
-        /// <seealso cref="Gamma(Double)" />
+        /// <seealso cref="Gamma(double)" />
 		public static double LogGamma (double x) {
 			if (x <= 0.0) throw new ArgumentOutOfRangeException("x");
             if (x > 15.0) {
@@ -41,15 +41,16 @@ namespace Meta.Numerics.Functions {
         /// <para>For positive integer arguments, this integral evaluates to &#x393;(n+1)=n!, but it can also be evaluated for non-integer z.</para>
         /// <para>Because &#x393;(x) grows beyond the largest value that can be represented by a <see cref="System.Double" /> at quite
         /// moderate values of x, you may find it useful to work with the <see cref="LogGamma" /> method, which returns ln(&#x393;(x)).</para>
+        /// <para>To evaluate the Gamma function for a complex argument, use <see cref="AdvancedComplexMath.Gamma" />.</para>
         /// </remarks>
         /// <seealso cref="AdvancedIntegerMath.Factorial" />
         /// <seealso cref="LogGamma" />
-		public static double Gamma (double x) {
+        /// <seealso cref="AdvancedComplexMath.Gamma" />
+        /// <seealso href="http://en.wikipedia.org/wiki/Gamma_function" />
+        /// <seealso href="http://mathworld.wolfram.com/GammaFunction.html" />
+        public static double Gamma (double x) {
 			if (x < 0.0) {
                 return(Math.PI / Gamma(-x) / (-x) / AdvancedMath.Sin(0.0, x/2.0));
-                //double y = 1.0 - x;
-                //double py = Math.PI * y;
-                //return( py / Math.Sin(py) / Gamma(1.0+y) );
 			}
 			return( Math.Exp(LogGamma(x)) );
 		}
@@ -62,8 +63,10 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The Psi function, also called the digamma function, is the logrithmic derivative of the &#x393; function.</para>
         /// <img src="../images/DiGamma.png" />
+        /// <para>To evaluate the Psi function for complex arguments, use <see cref="AdvancedComplexMath.Psi" />.</para>
         /// </remarks>
-        /// <seealso cref="LogGamma"/>
+        /// <seealso cref="Gamma(double)"/>
+        /// <seealso cref="AdvancedComplexMath.Psi"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Digamma_function" />
         /// <seealso href="http://mathworld.wolfram.com/DigammaFunction.html" />
 		public static double Psi (double x) {
@@ -89,6 +92,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="a">The first parameter.</param>
         /// <param name="b">The second parameter.</param>
         /// <returns>The beta function B(a,b).</returns>
+        /// <seealso href="http://en.wikipedia.org/wiki/Beta_function"/>
         public static double Beta (double a, double b) {
 			return( Math.Exp( LogGamma(a) + LogGamma(b) - LogGamma(a+b) ) );
 		}
@@ -367,7 +371,10 @@ namespace Meta.Numerics.Functions {
         /// Computes the complex Gamma function.
         /// </summary>
         /// <param name="z">The complex argument.</param>
-        /// <returns>The complex value &#x393;(z).</returns>
+        /// <returns>The complex value of &#x393;(z).</returns>
+        /// <seealso cref="AdvancedMath.Gamma(double)"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Gamma_function" />
+        /// <seealso href="http://mathworld.wolfram.com/GammaFunction.html" />
         public static Complex Gamma (Complex z) {
             if (z.Re < 0.5) {
                 // 1-z form
@@ -381,9 +388,10 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Compute the complex log Gamma function.
         /// </summary>
-        /// <param name="z">The complex argument.</param>
+        /// <param name="z">The complex argument, which must have non-negative z.Re.</param>
         /// <returns>The complex value ln(&#x393;(z)).</returns>
         /// <exception cref="ArgumentOutOfRangeException">The real part of <paramref name="z"/> is negative.</exception>
+        /// <seealso cref="AdvancedMath.LogGamma" />
         public static Complex LogGamma (Complex z) {
             if (z.Re < 0.0) throw new ArgumentOutOfRangeException("z");
             if (ComplexMath.Abs(z) > 15.0) {
@@ -455,8 +463,19 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        internal static Complex Psi (Complex z) {
-            return (LanczosPsi(z));
+        /// <summary>
+        /// Computes the complex digamma function.
+        /// </summary>
+        /// <param name="z">The complex argument.</param>
+        /// <returns>The value of &#x3C8;(z).</returns>
+        /// <seealso cref="AdvancedMath.Psi"/>
+        public static Complex Psi (Complex z) {
+            if (z.Re < 0.5) {
+                // reduce z.Re in order to handle large real values!
+                return (LanczosPsi(1.0 - z) - Math.PI / ComplexMath.Tan(Math.PI * z));
+            } else {
+                return (LanczosPsi(z));
+            }
         }
 
         private static Complex LanczosPsi (Complex z) {

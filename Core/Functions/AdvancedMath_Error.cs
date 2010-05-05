@@ -238,6 +238,7 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <seealso cref="FresnelS"/>
         /// <seealso cref="Fresnel"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Fresnel_integral"/>
         public static double FresnelC (double x) {
             if (x < 0.0) return (-FresnelC(-x));
             if (x < 2.0) {
@@ -262,6 +263,7 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <seealso cref="FresnelC"/>
         /// <seealso cref="Fresnel"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Fresnel_integral"/>
         public static double FresnelS (double x) {
             if (x < 0.0) return (-FresnelS(-x));
             if (x < 2.0) {
@@ -288,6 +290,7 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <seealso cref="FresnelS"/>
         /// <seealso cref="FresnelC"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Fresnel_integral"/>
         public static Complex Fresnel (double x) {
             if (x < 0.0) return (-Fresnel(-x));
             if (x < 2.0) {

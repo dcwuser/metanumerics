@@ -253,7 +253,106 @@ namespace Test
         }
 
         [TestMethod]
-        public void RegressionTest () {
+        public void MultivariateLinearRegressionTest () {
+
+            // define model y = a + b0 * x0 + b1 * x1 + noise
+            double a = 1.0;
+            double b0 = -2.0;
+            double b1 = 3.0;
+            Distribution noise = new NormalDistribution(0.0, 10.0);
+
+            // draw a sample from the model
+            Random rng = new Random(1);
+            MultivariateSample sample = new MultivariateSample(3);
+            for (int i = 0; i < 100; i++) {
+                double x0 = -10.0 + 20.0 * rng.NextDouble();
+                double x1 = -10.0 + 20.0 * rng.NextDouble();
+                double eps = noise.InverseLeftProbability(rng.NextDouble());
+                double y = a + b0 * x0 + b1 * x1 + eps;
+                sample.Add(x0, x1, y);
+            }
+
+            // do a linear regression fit on the model
+            FitResult result = sample.LinearRegression(2);
+
+            // the result should have the appropriate dimension
+            Assert.IsTrue(result.Dimension == 3);
+
+            // the result should be significant
+            Assert.IsTrue(result.GoodnessOfFit.LeftProbability > 0.95);
+
+            // the parameters should match the model
+            Console.WriteLine(result.Parameter(0));
+            Assert.IsTrue(result.Parameter(0).ConfidenceInterval(0.90).ClosedContains(b0));
+            Console.WriteLine(result.Parameter(1));
+            Assert.IsTrue(result.Parameter(1).ConfidenceInterval(0.90).ClosedContains(b1));
+            Console.WriteLine(result.Parameter(2));
+            Assert.IsTrue(result.Parameter(2).ConfidenceInterval(0.90).ClosedContains(a));
+
+        }
+
+        [TestMethod]
+        public void MultivariateLinearRegressionBadInputTest () {
+
+            // create a sample
+            MultivariateSample sample = new MultivariateSample(3);
+            sample.Add(1, 2, 3);
+            sample.Add(2, 3, 4);
+            
+            // try to predict with too little data
+            try {
+                sample.LinearRegression(2);
+                Assert.IsTrue(false);
+            } catch (InvalidOperationException) {
+                Assert.IsTrue(true);
+            }
+
+            // add enouh data
+            sample.Add(3, 4, 5);
+            sample.Add(4, 5, 6);
+
+            // try to predict a non-existent variable
+            try {
+                sample.LinearRegression(-1);
+                Assert.IsTrue(false);
+            } catch (ArgumentOutOfRangeException) {
+                Assert.IsTrue(true);
+            }
+
+            try {
+                sample.LinearRegression(3);
+                Assert.IsTrue(false);
+            } catch (ArgumentOutOfRangeException) {
+                Assert.IsTrue(true);
+            }
+
+            // pick non-existant inputs
+            try {
+                sample.LinearRegression(new int[] { -1, 2 }, 3);
+                Assert.IsTrue(false);
+            } catch (ArgumentException) {
+                Assert.IsTrue(true);
+            }
+
+            // pick repeated inputs
+            try {
+                sample.LinearRegression(new int[] { 1, 1 }, 3);
+                Assert.IsTrue(false);
+            } catch (ArgumentException) {
+                Assert.IsTrue(true);
+            }
+
+            // pick outputs as inputs
+            try {
+                sample.LinearRegression(new int[] { 1, 3 }, 3);
+                Assert.IsTrue(false);
+            } catch (ArgumentException) {
+                Assert.IsTrue(true);
+            }
+
+        }
+
+        public void OldMultivariateLinearRegressionTest () {
 
             MultivariateSample sample = new MultivariateSample(3);
             
@@ -294,7 +393,8 @@ namespace Test
 
             Console.WriteLine(sample.Count);
 
-            sample.LinearRegression(0);
+            //sample.LinearRegression(0);
+            sample.LinearRegression(new int[] { 1, 2 }, 0);
 
         }
 

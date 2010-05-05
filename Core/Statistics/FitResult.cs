@@ -77,6 +77,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the covariance matrix containing the variances and covariances for all fit parameters.
         /// </summary>
+        /// <returns>The covariance matrix.</returns>
         public SymmetricMatrix CovarianceMatrix () {
             return (covarianceMatrix.Clone());
         }

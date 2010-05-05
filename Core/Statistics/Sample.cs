@@ -13,7 +13,13 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents a set of independent draws of real numbers.
     /// </summary>
-    /// <remarks><para>This class </para></remarks>
+    /// <remarks>
+    /// <para>A univariate sample is a data set which records one number for each independent
+    /// observation. For example, data from a study which measured the weight of each subject could be
+    /// stored in the Sample class. The class offers descriptive statistics for the sample, estimates
+    /// of descriptive statistics of the underlying population distribution, and statistical
+    /// tests to comare the sample distribution to other sample distributions or theoretical models.</para>
+    /// </remarks>
     public sealed class Sample : ICollection<double>, IEnumerable<double>, IEnumerable {
 
         /// <summary>
@@ -93,6 +99,10 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the sample variance.
         /// </summary>
+        /// <remarks>
+        /// <para>Note this is the actual variance of the sample values, not the infered variance
+        /// of the underlying population; to obtain the latter use <see cref="PopulationVariance" />.</para>
+        /// </remarks>
         public double Variance {
             get {
                 if (!HaveDistribution) ComputeDistribution();
@@ -103,7 +113,11 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the sample standard deviation.
         /// </summary>
-        /// <seealso cref="PopulationStandardDeviation"/>
+        /// <remarks>
+        /// <para>Note this is the actual standard deviation of the sample values, not the infered standard
+        /// deviation of the underlying population; to obtain the latter use
+        /// <see cref="PopulationStandardDeviation" />.</para>
+        /// </remarks>        
         public double StandardDeviation {
             get {
                 return(Math.Sqrt(Variance));
@@ -244,7 +258,8 @@ namespace Meta.Numerics.Statistics {
         /// Estimates the given population moment about the mean using the sample.
         /// </summary>
         /// <param name="n">The order of the moment.</param>
-        /// <returns></returns>
+        /// <returns>An estimate, with uncertainty, of the <paramref name="n"/>th moment about the mean
+        /// of the underlying population.</returns>
         public UncertainValue PopulationMomentAboutMean (int n) {
             if (n < 0) {
                 // we don't do negative moments
@@ -447,6 +462,7 @@ namespace Meta.Numerics.Statistics {
         /// Essentially, it supposes that the medians of the two samples are equal and tests
         /// the likelihood of this null hypothesis.</para>
         /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Mann-Whitney_U_test"/>
         public TestResult MannWhitneyTest (Sample sample) {
 
             if (sample == null) throw new ArgumentNullException("sample");
@@ -540,6 +556,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="distrubution"/> is null.</exception>
         /// <seealso cref="KolmogorovDistribution"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
         public TestResult KolmogorovSmirnovTest (Distribution distribution) {
             if (distribution == null) throw new ArgumentNullException("distribution");
             if (this.Count < 1) throw new InvalidOperationException();
@@ -572,6 +589,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="distribution">The test distribution.</param>
         /// <returns>The test result. The test statistic is the V statistic and the likelyhood is the right probability
         /// to obtain a value of V as large or larger than the one obtained.</returns>
+        /// <seealso href="http://en.wikipedia.org/wiki/Kuiper%27s_test"/>
         public TestResult KuiperTest (Distribution distribution) {
 
             // compute the V statistic, which is the sum of the D+ and D- statistics
@@ -629,6 +647,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The test result. The test statistic is the D statistic and the likelyhood is the right probability
         /// to obtain a value of D as large or larger than the one obtained.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
+        /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
         public TestResult KolmogorovSmirnovTest (Sample sample) {
             if (sample == null) throw new ArgumentNullException("sample");
 

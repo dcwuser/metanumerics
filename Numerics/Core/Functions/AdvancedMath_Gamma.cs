@@ -49,8 +49,13 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Gamma_function" />
         /// <seealso href="http://mathworld.wolfram.com/GammaFunction.html" />
         public static double Gamma (double x) {
-			if (x < 0.0) {
-                return(Math.PI / Gamma(-x) / (-x) / AdvancedMath.Sin(0.0, x/2.0));
+			if (x <= 0.0) {
+                if (x == Math.Truncate(x)) {
+                    // poles at zero and negative integers
+                    return (Double.NaN);
+                } else {
+                    return (Math.PI / Gamma(-x) / (-x) / AdvancedMath.Sin(0.0, x / 2.0));
+                }
 			}
 			return( Math.Exp(LogGamma(x)) );
 		}
@@ -206,7 +211,7 @@ namespace Meta.Numerics.Functions {
 
         private static double StirlingLogGamma (double x) {
 
-            double f = (x - 0.5) * Math.Log(x) - x + 0.5 * Math.Log(2.0 * Math.PI);
+            double f = (x - 0.5) * Math.Log(x) - x + 0.5 * Math.Log(Global.TwoPI);
 
             double xx = x*x;
             double fx = 1.0/x;
@@ -252,7 +257,7 @@ namespace Meta.Numerics.Functions {
             for (int i = 1; i < LanczosD.Length; i++) {
                 s += LanczosD[i] / (x + i);
             }
-            s = 2.0 / Math.Sqrt(Math.PI) * s / x;
+            s = 2.0 / Global.SqrtPI * s / x;
 
             // compute the leading terms
             double xx = x + 0.5;
@@ -412,7 +417,7 @@ namespace Meta.Numerics.Functions {
             // work in the upper complex plane
             if (z.Im < 0.0) return (StirlingLogGamma(z.Conjugate).Conjugate);
 
-            Complex f = (z - 0.5) * ComplexMath.Log(z) - z + 0.5 * Math.Log(2.0 * Math.PI);
+            Complex f = (z - 0.5) * ComplexMath.Log(z) - z + 0.5 * Math.Log(Global.TwoPI);
             //Console.WriteLine("f={0}", f);
 
             // reduce f.Im modulo 2*PI
@@ -453,7 +458,7 @@ namespace Meta.Numerics.Functions {
             for (int i = 1; i < AdvancedMath.LanczosD.Length; i++) {
                 s += AdvancedMath.LanczosD[i] / (z + i);
             }
-            s = (2.0 / Math.Sqrt(Math.PI)) * (s / z);
+            s = (2.0 / Global.SqrtPI) * (s / z);
 
             // compute the leading terms
             Complex zz = z + 0.5;

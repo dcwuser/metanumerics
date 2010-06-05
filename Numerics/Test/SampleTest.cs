@@ -640,6 +640,49 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void AnovaTest () {
+
+            Sample A = new Sample();
+            A.Add(new double[] { 25, 30, 20, 32 });
+
+            Sample B = new Sample();
+            B.Add(new double[] { 30, 33, 29, 40, 36 });
+
+            Sample C = new Sample();
+            C.Add(new double[] { 32, 39, 35, 41, 44 });
+
+            Sample.OneWayAnovaTest(A, B, C);
+
+            // note F = t^2 for two groups
+
+        }
+
+        [TestMethod]
+        public void AnovaStudentRelationTest () {
+
+            // create two random samples
+            Sample A = new Sample(new double[] { 10, 20, 30 });
+            Sample B = new Sample(new double[] { 15, 25, 35, 45 });
+            Console.WriteLine("A m={0} v={1}", A.Mean, A.Variance);
+            Console.WriteLine("B m={0} v={1}", B.Mean, B.Variance);
+
+            // do a Student t-test and a one-way ANOVA
+            //TestResult ts = Sample.StudentTTest(A, B);
+            TestResult ts = A.StudentTTest(B);
+            TestResult ta = Sample.OneWayAnovaTest(A, B);
+
+            // the results should agree, with F = t^2 and same probability
+            Console.WriteLine("{0} {1}", MoreMath.Pow(ts.Statistic, 2), ta.Statistic);
+            Console.WriteLine("{0} {1}", ts.LeftProbability, ta.LeftProbability);
+
+            StudentDistribution ds = (StudentDistribution)ts.Distribution;
+            FisherDistribution da = (FisherDistribution)ta.Distribution;
+            Console.WriteLine(ds.DegreesOfFreedom);
+            Console.WriteLine("{0} {1}", da.NumeratorDegreesOfFreedom, da.DenominatorDegreesOfFreedom);
+
+        }
+
 
     }
 }

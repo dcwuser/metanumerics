@@ -23,7 +23,7 @@ namespace Meta.Numerics.Functions {
 
         internal static double Reduce (double x, double y) {
 
-            double t = x + 2.0 * Math.PI * y;
+            double t = x + Global.TwoPI * y;
             if ((Math.Abs(t) < 64.0) || (Math.Abs(t) > dmax)) {
                 // if the argument is small we don't need the high accurary reduction
                 // if the argument is too big, we can't do the high accuracy reduction because it would overflow a decimal vairable

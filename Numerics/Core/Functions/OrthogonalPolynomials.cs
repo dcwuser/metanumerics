@@ -114,7 +114,7 @@ namespace Meta.Numerics.Functions {
 		}
 
 
-        /*
+        
         /// <summary>
         /// Computes the value of an associated Laguerre polynomial.
         /// </summary>
@@ -122,17 +122,32 @@ namespace Meta.Numerics.Functions {
         /// <param name="a">The associated order, which must be greater than -1.</param>
         /// <param name="x">The argument.</param>
         /// <returns>The value L<sub>n</sub><sup>a</sup>(x).</returns>
+        /// <remarks>
+        /// <para>The associated Laguerre polynomials are orthonogal on the interval [0,+&#8734;) with the weight
+        /// x<sup>a</sup> e<sup>-x</sup>.</para>
+        /// </remarks>
 		public static double LaguerreL (int n, double a, double x) {
 			if (n<0) throw new ArgumentOutOfRangeException("n");
 			if (a<=-1) throw new ArgumentOutOfRangeException("a"); 
 			if (x<0.0) throw new ArgumentOutOfRangeException("x");
-			throw new NotImplementedException();
-		}
-		// Radial hydrogenic wave functions in QM
-        */
 
-		// orthogonal on [-1,1] with weight 1
-		// use recurrence (n+1)P_{n+1} = (2n+1)xP_{n} - nP_{n-1}
+            // standard recurrence on n is claimed stable
+
+            double L0 = 0.0; // L_{-1}
+            double L1 = 1.0; // L_{0}
+            for (int k = 0; k < n; k++) {
+                double L2 = ((2 * k + 1 + a - x) * L1 - (k + a) * L0) / (k + 1);
+                L0 = L1;
+                L1 = L2;
+            }
+            return (L1);
+
+		}
+        // Radial hydrogenic wave functions in QM
+
+
+        // orthogonal on [-1,1] with weight 1
+        // use recurrence (n+1)P_{n+1} = (2n+1)xP_{n} - nP_{n-1}
         /// <summary>
         /// Computes the value of a Legendre polynomial.
         /// </summary>

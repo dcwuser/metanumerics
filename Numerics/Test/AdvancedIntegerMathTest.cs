@@ -173,5 +173,29 @@ namespace Test {
             Assert.AreEqual<long>(AdvancedIntegerMath.GCF(a, b) * AdvancedIntegerMath.LCM(a, b), a * b);
         }
 
+        [TestMethod]
+        public void IntegerParticianTest () {
+
+            IntegerPartitionEnumerator e = new IntegerPartitionEnumerator(120);
+            int P = 0;
+            while (e.MoveNext()) {
+                P++;
+                /*
+                int[] p = e.Current;
+                for (int i = 0; i < p.Length; i++) {
+                    Console.Write("{0} ", p[i]);
+                }
+                Console.WriteLine();
+                */
+            }
+            Console.WriteLine(P);
+
+        }
+
+        [TestMethod]
+        public void PowModTest () {
+            Console.WriteLine(AdvancedIntegerMath.PowMod(130000000, 670, 59));
+        }
+
     }
 }

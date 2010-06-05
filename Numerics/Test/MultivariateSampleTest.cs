@@ -253,6 +253,27 @@ namespace Test
         }
 
         [TestMethod]
+        public void PairedStudentTTest () {
+
+            MultivariateSample s = new MultivariateSample(2);
+            s.Add(3, 5);
+            s.Add(0, 1);
+            s.Add(6, 5);
+            s.Add(7, 7);
+            s.Add(4, 10);
+            s.Add(3, 9);
+            s.Add(2, 7);
+            s.Add(1, 11);
+            s.Add(4, 8);
+            Console.WriteLine(s.Count);
+            Console.WriteLine(s.PopulationMean(0));
+            Console.WriteLine(s.PopulationMean(1));
+            TestResult r = s.PairedStudentTTest(0, 1);
+            Console.WriteLine(r.Statistic);
+            Console.WriteLine(r.LeftProbability);
+        }
+
+        [TestMethod]
         public void MultivariateLinearRegressionTest () {
 
             // define model y = a + b0 * x0 + b1 * x1 + noise
@@ -307,7 +328,7 @@ namespace Test
                 Assert.IsTrue(true);
             }
 
-            // add enouh data
+            // add enough data
             sample.Add(3, 4, 5);
             sample.Add(4, 5, 6);
 

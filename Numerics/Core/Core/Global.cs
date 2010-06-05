@@ -16,14 +16,29 @@ namespace Meta.Numerics {
         // it can detect; in order to avoid any funny effects at the margin, we only try for 2^-50
         public static double Accuracy = Math.Pow(2.0, -50);
 
-        // the appears in lots of algorithms and we don't want to compute it each time
-        public static readonly double SqrtPI = Math.Sqrt(Math.PI);
-
         public static void Swap<T> (ref T a, ref T b) {
             T t = a;
             a = b;
             b = t;
         }
+
+        // pre-calculate some often-used factors
+
+        public const double TwoPI = 2.0 * Math.PI;
+
+        // pre-calculate some often-used square roots
+
+        public static readonly double SqrtTwo = Math.Sqrt(2.0);
+
+        public static readonly double SqrtThree = Math.Sqrt(3.0);
+
+        public static readonly double SqrtPI = Math.Sqrt(Math.PI);
+
+        public static readonly double SqrtTwoPI = Math.Sqrt(2.0 * Math.PI);
+
+        // pre-calculate some often-used logs
+
+        public static readonly double LogTwo = Math.Log(2.0);
 
     }
 

@@ -11,7 +11,7 @@ namespace Meta.Numerics.Functions {
 
         private static double CoulombFactorZero (double eta) {
 
-            double x = 2.0 * Math.PI * eta;
+            double x = Global.TwoPI * eta;
 
             if (Math.Abs(x) < 0.1) {
 

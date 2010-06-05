@@ -279,6 +279,8 @@ namespace Meta.Numerics {
         /// </remarks>
         /// <seealso cref="Math.Abs(Double)"/>
 		public static double Abs (Complex z) {
+            return (MoreMath.Hypot(z.Re, z.Im));
+            /*
 			if (z.Im == 0.0) {
 				return(Math.Abs(z.Re));
 			} else if (Math.Abs(z.Re) > Math.Abs(z.Im)) {
@@ -288,6 +290,7 @@ namespace Meta.Numerics {
                 double r = z.Re / z.Im;
 				return(Math.Abs(z.Im)*Math.Sqrt(1.0+r*r));
 			}
+            */
 		}
 
         /// <summary>
@@ -431,6 +434,88 @@ namespace Meta.Numerics {
 			double t = Arg(z) * p;
 			return( new Complex(m*Math.Cos(t), m*Math.Sin(t)) );
 		}
+
+        /// <summary>
+        /// Raises a real number to an arbitrary complex power.
+        /// </summary>
+        /// <param name="x">The real base, which must be non-negative.</param>
+        /// <param name="z">The complex exponent.</param>
+        /// <returns>The value of x<sup>z</sup>.</returns>
+        public static Complex Pow (double x, Complex z) {
+            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
+            if (z == 0.0) return (1.0);
+            if (x == 0.0) return (0.0);
+            double m = Math.Pow(x, z.Re);
+            double t = Math.Log(x) * z.Im;
+            return( new Complex(m * Math.Cos(t), m * Math.Sin(t)) );
+        }
+
+        /// <summary>
+        /// Raises a complex number to an integer power.
+        /// </summary>
+        /// <param name="z">The argument.</param>
+        /// <param name="p">The power.</param>
+        /// <returns>The value of z<sup>p</sup>.</returns>
+        public static Complex Pow (Complex z, int n) {
+
+            // this is a straight-up copy of MoreMath.Pow with x -> z, double -> Complex
+
+            if (n < 0) return (1.0 / Pow(z, -n));
+
+            switch(n) {
+                case 0:
+                    // we follow convention that 0^0 = 1
+                    return (1.0);
+                case 1:
+                    return (z);
+                case 2:
+                    // 1 multiply
+                    return (z * z);
+                case 3:
+                    // 2 multiplies
+                    return (z * z * z);
+                case 4: {
+                        // 2 multiplies
+                        Complex z2 = z * z;
+                        return (z2 * z2);
+                    }
+                case 5: {
+                        // 3 multiplies
+                        Complex z2 = z * z;
+                        return (z2 * z2 * z);
+                    }
+                case 6: {
+                        // 3 multiplies
+                        Complex z2 = z * z;
+                        return (z2 * z2 * z2);
+                    }
+                case 7: {
+                        // 4 multiplies
+                        Complex z3 = z * z * z;
+                        return (z3 * z3 * z);
+                    }
+                case 8: {
+                        // 3 multiplies
+                        Complex z2 = z * z;
+                        Complex z4 = z2 * z2;
+                        return (z4 * z4);
+                    }
+                case 9: {
+                        // 4 multiplies
+                        Complex z3 = z * z * z;
+                        return (z3 * z3 * z3);
+                    }
+                case 10: {
+                        // 4 multiplies
+                        Complex z2 = z * z;
+                        Complex z4 = z2 * z2;
+                        return (z4 * z4 * z2);
+                    }
+                default:
+                    return (ComplexMath.Pow(z, (double) n));
+            }
+
+        }
 
 
 	}

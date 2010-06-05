@@ -192,7 +192,7 @@ namespace Meta.Numerics.Functions {
         }
 
         private static double BesselJ_Series (int n, double x) {
-            double dJ = Math.Pow(x / 2.0, n) / AdvancedIntegerMath.Factorial(n);
+            double dJ = MoreMath.Pow(x / 2.0, n) / AdvancedIntegerMath.Factorial(n);
             double J = dJ;
             double zz = - x * x / 4.0;
             for (int k = 1; k < Global.SeriesMax; k++) {
@@ -859,7 +859,7 @@ namespace Meta.Numerics.Functions {
 
         private static double SphericalBesselY_Series (int n, double x) {
             double xx = x * x / 2.0;
-            double df = - AdvancedIntegerMath.DoubleFactorial(2 * n - 1) / Math.Pow(x, n + 1);
+            double df = - AdvancedIntegerMath.DoubleFactorial(2 * n - 1) / MoreMath.Pow(x, n + 1);
             double f = df;
             for (int k = 1; k < Global.SeriesMax; k++) {
                 double f_old = f;
@@ -979,19 +979,6 @@ namespace Meta.Numerics.Functions {
                 double c = Math.Cos(x) / x;
                 return (new BesselResult(0, x, s, s / x - c, -c, -c / x - s));
             }
-        }
-        */
-
-        /*
-        // an asymptotic series good for the phase angle when x >> nu^2, say x > 20 + nu^2
-        private static double Bessel_AsymptoticPhase (double nu, double x) {
-            double mu = 4.0 * nu * nu;
-            double x2 = 16.0 * x * x;
-            double theta = x - (0.5 * nu + 0.25) * Math.PI;
-            theta += (mu - 1.0) / 2.0 / (4.0 * x);
-            theta += (mu - 1.0) * (mu - 25.0) / 6.0 / Math.Pow(4.0 * x, 3.0);
-            theta += (mu - 1.0) * (mu * mu - 114.0 * mu + 1073.0) / 5.0 / Math.Pow(4.0 * x, 5.0);
-            return (theta);
         }
         */
 

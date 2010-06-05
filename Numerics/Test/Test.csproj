@@ -54,11 +54,13 @@
     <Compile Include="DataSetTest.cs" />
     <Compile Include="DistributionTest.cs" />
     <Compile Include="ExtremaTest.cs" />
+    <Compile Include="DifferentiateTest.cs" />
     <Compile Include="IntegrateTest.cs" />
     <Compile Include="IntervalTest.cs" />
     <Compile Include="MixedMatrixTest.cs" />
     <Compile Include="LanczosTest.cs" />
     <Compile Include="MatrixTest.cs" />
+    <Compile Include="MoreMathTest.cs" />
     <Compile Include="MultivariateSampleTest.cs" />
     <Compile Include="OrthogonalPolynomialsTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

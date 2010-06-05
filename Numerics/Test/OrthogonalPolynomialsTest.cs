@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
@@ -235,6 +236,108 @@ namespace Test {
             }
         }
 
+        // associated Laguerre
+
+        [TestMethod]
+        public void AssociatedLaguerreSpecialCaseTest () {
+            foreach (double a in TestUtilities.GenerateRealValues(0.01, 100.0, 5)) {
+                foreach (double x in TestUtilities.GenerateRealValues(0.01, 100.0, 5)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        OrthogonalPolynomials.LaguerreL(0, a, x), 1.0
+                    ));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        OrthogonalPolynomials.LaguerreL(1, a, x), 1.0 + a - x
+                    ));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedLaguerreAlphaRecurrenceTest () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
+                foreach (double a in TestUtilities.GenerateRealValues(0.01, 100.0, 5)) {
+                    foreach (double x in TestUtilities.GenerateRealValues(0.01, 100.0, 5)) {
+                        Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                            OrthogonalPolynomials.LaguerreL(n, a - 1.0, x), OrthogonalPolynomials.LaguerreL(n - 1, a, x),
+                            OrthogonalPolynomials.LaguerreL(n, a, x)
+                        ));
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedLaguerreSumTest () {
+            foreach (int n in TestUtilities.GenerateRealValues(1, 100, 5)) {
+                foreach (double a in TestUtilities.GenerateRealValues(0.1, 100.0, 5)) {
+                    foreach (double x in TestUtilities.GenerateRealValues(0.01, 1000.0, 5)) {
+
+                        Console.WriteLine("n={0}, a={1}, x={2}", n, a, x);
+
+                        List<double> L = new List<double>(n + 1);
+                        for (int k = 0; k <= n; k++) {
+                            L.Add(OrthogonalPolynomials.LaguerreL(k, a, x));
+                        }
+
+                        Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                            L, OrthogonalPolynomials.LaguerreL(n, a + 1.0, x)
+                        ));
+
+                    }
+
+                }
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedLaguerreEvaluationTest () {
+            Console.WriteLine(OrthogonalPolynomials.LaguerreL(100, 7.0/3.0, 2.0));
+        }
+
+        [TestMethod]
+        public void AssociatedLaguerreOrthonormalityTest () {
+            // don't let orders get too big, or (1) the Gamma function will overflow and (2) our integral will become highly oscilatory
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 10, 3)) {
+                foreach (int m in TestUtilities.GenerateIntegerValues(1, 10, 3)) {
+                    foreach (double a in TestUtilities.GenerateRealValues(0.1, 10.0, 5)) {
+
+                        //int n = 2;
+                        //int m = 4;
+                        //double a = 3.5;
+
+                        Console.WriteLine("n={0} m={1} a={2}", n, m, a);
+
+                        // evaluate the orthonormal integral
+                        Function<double, double> f = delegate(double x) {
+                            return (Math.Pow(x, a) * Math.Exp(-x) *
+                                OrthogonalPolynomials.LaguerreL(m, a, x) *
+                                OrthogonalPolynomials.LaguerreL(n, a, x)
+                            );
+                        };
+                        Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
+
+                        // need to loosen default evaluation settings in order to get convergence in some of these cases
+                        // seems to have most convergence problems for large a
+                        EvaluationSettings e = new EvaluationSettings();
+                        e.AbsolutePrecision = TestUtilities.TargetPrecision;
+                        e.RelativePrecision = TestUtilities.TargetPrecision;
+
+                        double I = FunctionMath.Integrate(f, r, e);
+                        Console.WriteLine(I);
+
+                        // test for orthonormality
+                        if (n == m) {
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                                I, AdvancedMath.Gamma(n + a + 1) / AdvancedIntegerMath.Factorial(n)
+                            ));
+                        } else {
+                            Assert.IsTrue(Math.Abs(I) < TestUtilities.TargetPrecision);
+                        }
+
+                    }
+                }
+            }
+        }
 
 
         // Chebyshev

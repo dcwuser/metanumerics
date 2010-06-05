@@ -72,10 +72,10 @@ namespace Test
 
         [TestMethod]
         public void ComplexSqrtTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-4, 4, 10)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
                 Complex sz = ComplexMath.Sqrt(z);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(sz * sz,z));
-                Assert.AreEqual<double>(ComplexMath.Arg(z) / 2.0, ComplexMath.Arg(sz));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Arg(z) / 2.0, ComplexMath.Arg(sz)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Sqrt(ComplexMath.Abs(z)), ComplexMath.Abs(sz)));
             }
         }
@@ -84,7 +84,7 @@ namespace Test
 
         [TestMethod()]
         public void ComplexSinCosTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-4, 4, 10)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
                 if (Math.Abs(z.Im) > Math.Log(Double.MaxValue / 10.0)) continue; // sin and cos blow up in imaginary part of argument gets too big 
                 Complex sin = ComplexMath.Sin(z);
                 Complex cos = ComplexMath.Cos(z);
@@ -95,7 +95,7 @@ namespace Test
 
         [TestMethod]
         public void ComplexSecTanTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-4, 4, 10)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
                 if (Math.Abs(z.Im) > Math.Log(Double.MaxValue / 10.0)) continue; // sin and cos blow up in imaginary part of argument gets too big 
                 Complex sec = 1.0 / ComplexMath.Cos(z);
                 Complex tan = ComplexMath.Tan(z);
@@ -105,7 +105,7 @@ namespace Test
 
         [TestMethod]
         public void ComplexNegativeAnglesTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-4, 4, 10)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
                 if (Math.Abs(z.Im) > Math.Log(Double.MaxValue / 10.0)) continue; // sin and cos blow up in imaginary part of argument gets too big 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sin(-z), -ComplexMath.Sin(z)), String.Format("remainder {0}", ComplexMath.Sin(-a) + ComplexMath.Sin(a)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Cos(-z), ComplexMath.Cos(z)), String.Format("{0} vs. {1}", ComplexMath.Cos(-a), ComplexMath.Cos(a)));
@@ -123,7 +123,7 @@ namespace Test
 
         [TestMethod]
         public void ComplexSinSinhTest () {
-            foreach (Complex x in TestUtilities.GenerateComplexValues(-2,2,10)) {
+            foreach (Complex x in TestUtilities.GenerateComplexValues(1.0E-2,1.0E2,10)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sinh(x), -ComplexMath.I * ComplexMath.Sin(ComplexMath.I * x)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.I * ComplexMath.Sinh(-ComplexMath.I * x), ComplexMath.Sin(x)));
             }
@@ -131,7 +131,7 @@ namespace Test
 
         [TestMethod]
         public void ComplexCosCoshTest () {
-            foreach (Complex x in TestUtilities.GenerateComplexValues(-2, 2, 10)) {
+            foreach (Complex x in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 10)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Cosh(x), ComplexMath.Cos(ComplexMath.I * x)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Cosh(-ComplexMath.I * x), ComplexMath.Cos(x)));
             }
@@ -139,7 +139,7 @@ namespace Test
 
         [TestMethod]
         public void ComplexTanTanhTest () {
-            foreach (Complex x in TestUtilities.GenerateComplexValues(-2, 2, 10)) {
+            foreach (Complex x in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 10)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Tanh(x), -ComplexMath.I * ComplexMath.Tan(ComplexMath.I * x)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Tanh(-ComplexMath.I * x), -ComplexMath.I * ComplexMath.Tan(x)));
             }
@@ -148,7 +148,7 @@ namespace Test
 
         [TestMethod]
         public void ComplexSinhCoshTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 2, 10)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 10)) {
                 Complex sinh = ComplexMath.Sinh(z);
                 Complex cosh = ComplexMath.Cosh(z);
                 Assert.IsTrue(TestUtilities.IsSumNearlyEqual(cosh * cosh, - sinh * sinh, 1));
@@ -164,7 +164,7 @@ namespace Test
 
         [TestMethod]
         public void ComplexPowSpecialCaseTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-4, 4, 10)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
                 Assert.IsTrue(ComplexMath.Pow(z, 0) == 1, "0");
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 1), z), String.Format("z={0} z^1={1}", z, ComplexMath.Pow(z,1)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, -1), 1.0 / z), "-1");
@@ -190,14 +190,14 @@ namespace Test
 
         [TestMethod]
         public void ComplexLogExpTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-4, 4, 10)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Exp(ComplexMath.Log(z)), z));
             }
         }
 
         [TestMethod]
         public void ComplexLogSumTest () {
-            Complex[] z = TestUtilities.GenerateComplexValues(-4, 4, 10);
+            Complex[] z = TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10);
             for (int i = 0; i < z.Length; i++) {
                 for (int j = 0; j < i; j++) {
                     if (Math.Abs(ComplexMath.Arg(z[i]) + ComplexMath.Arg(z[j])) >= Math.PI) continue;
@@ -217,15 +217,15 @@ namespace Test
 
         [TestMethod]
         public void ComplexExpReflectionTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 2, 10)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 10)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Exp(-z), 1.0 / ComplexMath.Exp(z)));
             }
         }
 
         [TestMethod]
         public void ComplexExpSumTest () {
-            foreach (Complex x in TestUtilities.GenerateComplexValues(-4, 4, 10)) {
-                foreach (Complex y in TestUtilities.GenerateComplexValues(-4, 4, 10)) {
+            foreach (Complex x in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
+                foreach (Complex y in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
                     // don't overflow exp
                     if ((Math.Abs(x.Re) + Math.Abs(y.Re)) > Math.Log(Double.MaxValue / 10.0)) continue;
                     Console.WriteLine("x,y = {0},{1}", x, y);
@@ -254,11 +254,13 @@ namespace Test
 
         [TestMethod]
         public void ComplexAbsTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-4, 4, 10)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
                 double abs = ComplexMath.Abs(z);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(abs * abs, z * z.Conjugate));
             }
         }
+
+
 
     }
 }

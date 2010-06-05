@@ -16,7 +16,7 @@ namespace Meta.Numerics.Functions {
             if (s < 0.0) {
                 // for negative numbers, use the reflection formula
                 double t = 1.0 - s;
-                double z = 2.0 * Math.Pow(2.0 * Math.PI, -t) * Math.Cos(t * Math.PI / 2.0) * AdvancedMath.Gamma(t) * RiemannZeta(t);
+                double z = 2.0 * Math.Pow(Global.TwoPI, -t) * Math.Cos(t * Math.PI / 2.0) * AdvancedMath.Gamma(t) * RiemannZeta(t);
                 return (z);
             } else {
                 if (Math.Abs(s - 1.0) < 0.25) {
@@ -105,6 +105,27 @@ namespace Meta.Numerics.Functions {
             0.000270184439543903527,
             0.000167272912105140193,
            -0.000027463806603760159
+        };
+
+    }
+
+    public static partial class AdvancedComplexMath {
+
+        public static Complex Riemann_Euler (Complex z) {
+            Complex f = 1.0;
+            for (int k = 0; k < primes.Length; k++) {
+                Complex f_old = f;
+                Complex fk = 1.0 - ComplexMath.Pow(primes[k], -z);
+                f = f * fk;
+                if (f == f_old) return (1.0 / f);
+            }
+            throw new NonconvergenceException();
+        }
+
+        private static readonly int[] primes = new int[] {
+            2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53,
+            59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131,
+            137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223
         };
 
     }

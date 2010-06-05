@@ -506,10 +506,30 @@ namespace Test
         }
 
         [TestMethod]
+        public void GammaRatioInequalityTest () {
+
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 15)) {
+
+                double LB = Math.Log(Math.Sqrt(x + 0.25));
+                double UB = Math.Log((x + 0.5) / Math.Sqrt(x + 0.75));
+                double R = AdvancedMath.LogGamma(x + 1.0) - AdvancedMath.LogGamma(x + 0.5);
+
+                Assert.IsTrue(LB <= R);
+                Assert.IsTrue(R <= UB);
+
+            }
+
+        }
+
+        [TestMethod]
         public void PsiSpecialCaseTest () {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(0.5), -AdvancedMath.EulerGamma - 2.0 * Math.Log(2.0)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0), -AdvancedMath.EulerGamma));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(2.0), -AdvancedMath.EulerGamma + 1.0));
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 3.0), -AdvancedMath.EulerGamma - 3.0 * Math.Log(3.0) / 2.0 - Math.PI / 2.0 / Math.Sqrt(3.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 4.0), -AdvancedMath.EulerGamma - 3.0 * Math.Log(2.0) - Math.PI / 2.0));
+
         }
 
         [TestMethod]
@@ -609,6 +629,16 @@ namespace Test
             foreach (double P in TestUtilities.GenerateRealValues(1.0E-5,1,10)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Erf(AdvancedMath.InverseErf(P)), P));
             }
+        }
+
+        [TestMethod]
+        public void InverseErfIntegralTest () {
+            Function<double, double> f = delegate(double t) {
+                return (AdvancedMath.InverseErf(t));
+            };
+            Interval r = Interval.FromEndpoints(0.0, 1.0);
+            double I = FunctionMath.Integrate(f, r);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(I, 1.0 / Math.Sqrt(Math.PI)));
         }
 
         [TestMethod]
@@ -1175,6 +1205,31 @@ namespace Test
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.DiLog(x), x * I));
 
             }
+
+        }
+
+        [TestMethod]
+        public void Timing () {
+
+            System.Diagnostics.Stopwatch timer = System.Diagnostics.Stopwatch.StartNew();
+
+            double e;
+            for (double x = -10.0; x < 10.0; x += 0.0001) {
+		        e = AdvancedMath.Erf(x);
+	        };
+
+            /*
+            double J;
+            for (int n = 0; n < 100; n++) {
+                for (int x = 0; x < 1000; x++) {
+                    J = AdvancedMath.BesselJ(n, (double)x);
+                }
+            }
+            */
+
+            timer.Stop();
+
+            Console.WriteLine(timer.ElapsedMilliseconds);
 
         }
 

@@ -117,7 +117,7 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Computes the Dawson integral.
         /// </summary>
-        /// <param name="x">The argument, which must be non-negative.</param>
+        /// <param name="x">The argument.</param>
         /// <returns>The value of F(x).</returns>
         /// <remarks>
         /// <para>The Dawson function is defined by the integral:</para>
@@ -127,8 +127,10 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Dawson_function"/>
         public static double Dawson (double x) {
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
-            if (x < 1.0) {
+            if (x < 0.0) {
+                // Dawson is an odd function
+                return (-Dawson(-x));
+            } else if (x < 1.0) {
                 // use the series expansion near the origin
                 return (Dawson_Series(x));
             } else if (x > 10.0) {
@@ -400,7 +402,7 @@ namespace Meta.Numerics.Functions {
 
             double px2 = Math.PI * x * x;
 
-            Complex z = Math.Sqrt(Math.PI) * x / 2.0 * (1.0 - ComplexMath.I);
+            Complex z = Global.SqrtPI * x / 2.0 * (1.0 - ComplexMath.I);
             //Console.WriteLine("z = {0}", z);
             //Console.WriteLine("z^2 = {0}", z * z);
 
@@ -479,7 +481,7 @@ namespace Meta.Numerics.Functions {
                 double x = z.Re;
                 double y = z.Im;
                 return (Faddeeva_Taylor(new Complex(x, 0.0),
-                                        Math.Exp(-x * x) + 2.0 * AdvancedMath.Dawson(x) / Math.Sqrt(Math.PI) * ComplexMath.I,
+                                        Math.Exp(-x * x) + 2.0 * AdvancedMath.Dawson(x) / Global.SqrtPI * ComplexMath.I,
                                         new Complex(0.0, y)));
             } else if (r > 7.0) {
                 // use Laplace continued fraction for large z
@@ -501,7 +503,7 @@ namespace Meta.Numerics.Functions {
                 f = f * ZQ + Faddeeva_Weideman_Coefficients[k];
             }
             Complex ZP = ZN * ZD;
-            return (2.0 / ZP * f * ZQ + 1.0 / Math.Sqrt(Math.PI) / ZD);
+            return (2.0 / ZP * f * ZQ + 1.0 / Global.SqrtPI / ZD);
         }
 
         private static double Faddeeva_Weideman_L = Math.Sqrt(40.0 / Math.Sqrt(2.0));
@@ -580,7 +582,7 @@ namespace Meta.Numerics.Functions {
         // converges at about the same rate along both real and imaginary axis
 
         private static Complex Faddeeva_Series (Complex z) {
-            Complex df = 2.0 / Math.Sqrt(Math.PI) * ComplexMath.I * z;
+            Complex df = 2.0 / Global.SqrtPI * ComplexMath.I * z;
             Complex f = 1.0 + df;
             Complex zz = z * z;
             for (int i = 1; i < 250; i++) {
@@ -610,7 +612,7 @@ namespace Meta.Numerics.Functions {
                 Df = (b * D - 1.0) * Df;
                 f += Df;
                 if (f == f_old) {
-                    return (ComplexMath.I / Math.Sqrt(Math.PI) * f);
+                    return (ComplexMath.I / Global.SqrtPI * f);
                 }
             }
             throw new NonconvergenceException();
@@ -623,7 +625,7 @@ namespace Meta.Numerics.Functions {
         private static Complex Faddeeva_Taylor (Complex z0, Complex w0, Complex dz) {
             // first order Taylor expansion
             Complex wp_old = w0;
-            Complex wp = 2.0 * (ComplexMath.I / Math.Sqrt(Math.PI) - z0 * w0);
+            Complex wp = 2.0 * (ComplexMath.I / Global.SqrtPI - z0 * w0);
             Complex zz = dz;
 
             Complex w = w0 + wp * dz;

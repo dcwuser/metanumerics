@@ -677,7 +677,7 @@ namespace Meta.Numerics.Statistics {
             Function<double,double>[] functions = new Function<double,double>[order + 1];
             for (int i = 0; i < functions.Length; i++) {
                 int n = i;
-                functions[i] = delegate(double x) { return (Math.Pow(x, n)); };
+                functions[i] = delegate(double x) { return (MoreMath.Pow(x, n)); };
                 // the weird juggling of integer variables is necessary to ensure that each delegate gets is own variable
                 // containing the power; without this trick, each points to the same variable, which contains the last value
             }

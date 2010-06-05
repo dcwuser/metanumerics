@@ -76,7 +76,9 @@ namespace Test
             new KuiperDistribution(),
             new KolmogorovDistribution(),
             new TriangularDistribution(1.0,2.0,4.0),
-            new BetaDistribution(0.5, 2.0)
+            new BetaDistribution(0.5, 2.0),
+            new ParetoDistribution(1.0, 3.0),
+            new WaldDistribution(3.0, 1.0)
         };
 
         private double[] probabilities = new double[] {
@@ -104,10 +106,17 @@ namespace Test
         [TestMethod]
         public void DistributionMomentSumsTest () {
             foreach (Distribution distribution in distributions) {
+                Console.WriteLine(distribution.GetType().Name);
                 // C2 = M2 - M1^2
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.MomentAboutMean(2) + Math.Pow(distribution.Moment(1), 2.0), distribution.Moment(2)), String.Format("{0} C2={1} M1={2} M2={3}",distribution.GetType().Name, distribution.MomentAboutMean(2), distribution.Moment(1), distribution.Moment(2)));
+                double C2 = distribution.MomentAboutMean(2);
+                if (!Double.IsInfinity(C2)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(C2 + Math.Pow(distribution.Moment(1), 2.0), distribution.Moment(2)));
+                }
                 // C3 = M3 - 3 M2 M1 + 2 M1^3
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.MomentAboutMean(3) + 3.0 * distribution.Moment(2) * distribution.Moment(1), distribution.Moment(3) + 2.0 * Math.Pow(distribution.Moment(1), 3.0)));
+                double C3 = distribution.MomentAboutMean(3);
+                if (!Double.IsInfinity(C3)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(C3 + 3.0 * distribution.Moment(2) * distribution.Moment(1), distribution.Moment(3) + 2.0 * Math.Pow(distribution.Moment(1), 3.0)));
+                }
                 // C4 = M4 - 4 M3 M1 + 6 M2 M1^2 - 3 M1^4
             }
         }

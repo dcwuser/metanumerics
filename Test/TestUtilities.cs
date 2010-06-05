@@ -14,6 +14,8 @@ namespace Test {
         // allow last three digits to deviate
         public static readonly double TargetPrecision = Math.Pow(2.0,-42);
 
+        // equality of reals
+
         public static bool IsNearlyEqual (double x, double y) {
             return (IsNearlyEqual(x, y, TargetPrecision));
         }
@@ -27,6 +29,23 @@ namespace Test {
             }
 
         }
+
+        // equality of complexes
+
+        public static bool IsNearlyEqual (Complex u, Complex v) {
+            return (IsNearlyEqual(u, v, TargetPrecision));
+        }
+
+        public static bool IsNearlyEqual (Complex u, Complex v, double e) {
+
+            if (ComplexMath.Abs(u - v) <= e * (ComplexMath.Abs(u) + ComplexMath.Abs(v))) {
+                return (true);
+            } else {
+                return (false);
+            }
+        }
+
+        // equality of sums; this deals with "fair" loss of precision due to cancelation
 
         public static bool IsSumNearlyEqual (double x1, double x2, double y) {
             return (IsSumNearlyEqual(x1, x2, y, TargetPrecision));
@@ -94,18 +113,7 @@ namespace Test {
 
         }
 
-        public static bool IsNearlyEqual (Complex u, Complex v) {
-            return (IsNearlyEqual(u, v, TargetPrecision));
-        }
 
-        public static bool IsNearlyEqual (Complex u, Complex v, double e) {
-
-            if (ComplexMath.Abs(u - v) <= e * (ComplexMath.Abs(u) + ComplexMath.Abs(v))) {
-                return (true);
-            } else {
-                return (false);
-            }
-        }
 
         public static bool IsNearlyEqual (double[] u, double[] v) {
             return (IsNearlyEqual(u, v, TargetPrecision));
@@ -265,7 +273,8 @@ namespace Test {
             return (result);
         }
 
-        // returns n positive reals numbers distributed logarithmicly between 10^a and 10^b
+        // returns n positive reals numbers distributed log-uniformly between a and b
+
         public static double[] GenerateRealValues (double a, double b, int n) {
             if ((a <= 0.0) || (b <= 0.0)) throw new ArgumentException();
             double la = Math.Log(a);
@@ -281,11 +290,16 @@ namespace Test {
 
         // returns n complex distributed logarithmicly between 10^a and 10^b in all four quadrants
         public static Complex[] GenerateComplexValues (double a, double b, int n) {
+            if ((a <= 0.0) || (b <= 0.0)) throw new ArgumentException();
+            double la = Math.Log(a);
+            double lb = Math.Log(b);
             Complex[] result = new Complex[n];
             Random rng = new Random(1);
             for (int i = 0; i < n; i++) {
-                double re = Math.Pow(10.0, a + (b - a) * rng.NextDouble());
-                double im = Math.Pow(10.0, a + (b - a) * rng.NextDouble());
+                //double re = Math.Pow(10.0, a + (b - a) * rng.NextDouble());
+                double re = Math.Exp(la + (lb - la) * rng.NextDouble());
+                //double im = Math.Pow(10.0, a + (b - a) * rng.NextDouble());
+                double im = Math.Exp(la + (lb - la) * rng.NextDouble());
                 if (rng.NextDouble() < 0.5) re = -re;
                 if (rng.NextDouble() < 0.5) im = -im;
                 result[i] = new Complex(re, im);

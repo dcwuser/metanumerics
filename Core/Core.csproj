@@ -50,12 +50,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\BigFloat.cs" />
     <Compile Include="Core\Complex.cs" />
     <Compile Include="Core\Exceptions.cs" />
     <Compile Include="Core\Functions.cs" />
+    <Compile Include="Core\MoreMath.cs" />
+    <Compile Include="Core\Polynomial.cs" />
     <Compile Include="Functions\AdvancedMath_Constants.cs" />
     <Compile Include="Functions\AdvancedMath_Coulomb.cs" />
     <Compile Include="Functions\AdvancedMath_Polylog.cs" />
+    <Compile Include="Functions\FunctionMath_Differentiate.cs" />
     <Compile Include="Functions\Spin.cs" />
     <Compile Include="Functions\AdvancedMath_Harmonic.cs" />
     <Compile Include="Functions\AdvancedMath_Lambert.cs" />
@@ -85,7 +89,20 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Statistics\ContingencyTable.cs" />
     <Compile Include="Statistics\DataSet.cs" />
-    <Compile Include="Statistics\Distributions.cs" />
+    <Compile Include="Statistics\Distributions\BetaDistribution.cs" />
+    <Compile Include="Statistics\Distributions\ChiSquaredDistribution.cs" />
+    <Compile Include="Statistics\Distributions\Distributions.cs" />
+    <Compile Include="Statistics\Distributions\ExponentialDistribution.cs" />
+    <Compile Include="Statistics\Distributions\FisherDistribution.cs" />
+    <Compile Include="Statistics\Distributions\LogisticDistribution.cs" />
+    <Compile Include="Statistics\Distributions\LognormalDistribution.cs" />
+    <Compile Include="Statistics\Distributions\NormalDistribution.cs" />
+    <Compile Include="Statistics\Distributions\ParetoDistribution.cs" />
+    <Compile Include="Statistics\Distributions\StudentDistribution.cs" />
+    <Compile Include="Statistics\Distributions\TriangularDistribution.cs" />
+    <Compile Include="Statistics\Distributions\UniformDistribution.cs" />
+    <Compile Include="Statistics\Distributions\WaldDistribution.cs" />
+    <Compile Include="Statistics\Distributions\WeibullDistribution.cs" />
     <Compile Include="Statistics\FitResult.cs" />
     <Compile Include="Statistics\MultivariateSample.cs" />
     <Compile Include="Statistics\Sample.cs" />

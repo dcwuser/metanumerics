@@ -1228,32 +1228,71 @@ namespace Meta.Numerics.Matrices {
         //   A P = A - (A u) u^T = A - v u^T where v = A u
         // This is a O(N^2) operation.
 
-        private void QRDecompose () {
+        private double ComputeHouseHolderTransform2 (double[] v) {
+
+            PrintVector(v);
+
+            // compute column norm
+            double y = 0.0;
+            for (int i = 1; i < v.Length; i++) {
+                y += MoreMath.Pow2(v[i]);
+            }
+            double x = Math.Sqrt(MoreMath.Pow2(v[0]) + y);
+            Debug.WriteLine(String.Format("x={0}", x));
+
+            // create the un-normalized Householder vector and compute the normalization factor
+            if (v[0] < 0.0) x = -x;
+            v[0] -= x;
+            double norm = Math.Sqrt(MoreMath.Pow2(v[0]) + y);
+            Debug.WriteLine(String.Format("x={0}", x));
+
+            PrintVector(v);
+            Debug.WriteLine(String.Format("norm={0}", norm));
+
+            // normalize the transform
+            if (norm != 0.0) {
+                for (int i = 0; i < v.Length; i++) {
+                    v[i] = v[i] / norm;
+                }
+            }
+            PrintVector(v);
+
+            return (x);
+        }
+
+        public void QRDecompose () {
 			// loop over columns, doing a Householder transform for each
             for (int c = 0; c < dimension; c++) {
 
-                // determine column norm
-                double x = 0.0;
+                // get the column to zero
+                double[] v = new double[dimension - c];
                 for (int r = c; r < dimension; r++) {
-                    x += this[r, c] * this[r, c];
-                }
-                x = Math.Sqrt(x);
-
-                // choose the first component of Householder vector in a way that minimizes roundoff error
-                double s, d;
-                if (this[c, c] < 0) {
-                    this[c, c] -= x;
-                    d = x;
-                    s = -x * this[c, c];
-                } else {
-                    this[c, c] += x;
-                    d = -x;
-                    s = x * this[c, c];
+                    v[r - c] = this[r, c];
                 }
 
-                // check for singularity
-                if (s == 0.0) throw new DivideByZeroException();
+                // get the householder transform that does it
+                double x = ComputeHouseHolderTransform2(v);
 
+                // zero column
+                this[c, c] = x;
+                for (int r = c + 1; r < dimension; r++) {
+                    this[r, c] = 0.0;
+                }
+
+                // update submatrix
+                for (int j = c + 1; j < dimension; j++) {
+                    // compute v * column
+                    double p = 0.0;
+                    for (int k = c; k < dimension; k++) {
+                        p += v[k - c] * this[k, j];
+                    }
+                    // update column
+                    for (int k = c; k < dimension; k++) {
+                        this[k, j] = this[k, j] - 2.0 * p * v[k - c]; 
+                    }
+                }
+
+                /*
                 // update lower right submatrix
                 for (int j = c + 1; j < dimension; j++) {
                     double sum = 0.0;
@@ -1274,6 +1313,7 @@ namespace Meta.Numerics.Matrices {
 
                 // insert the diagonal entry where the leading component was stored
                 this[c, c] = d;
+                */
 
                 PrintMatrix(this);
 

@@ -61,7 +61,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexFaddeevaConjugationTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-4,4,50)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4,1.0E4,50)) {
                 if (z.Im * z.Im > Math.Log(Double.MaxValue / 10.0)) continue; // large imaginary values blow up
                 Console.WriteLine("z={0}, w(z*)={1}, w*(-z)={2}", z, AdvancedComplexMath.Faddeeva(z.Conjugate), AdvancedComplexMath.Faddeeva(-z).Conjugate);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.Faddeeva(z.Conjugate), AdvancedComplexMath.Faddeeva(-z).Conjugate));
@@ -84,7 +84,7 @@ namespace Test {
         [TestMethod]
         public void ComplexGammaConjugationTest () {
             // limited to 10^-2 to 10^2 to avoid overflow
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 2, 10)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 10)) {
                 Console.WriteLine("z={0} G(z*)={1} G*(z)={2}", z, AdvancedComplexMath.Gamma(z.Conjugate), AdvancedComplexMath.Gamma(z).Conjugate);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.Gamma(z.Conjugate), AdvancedComplexMath.Gamma(z).Conjugate));
             }
@@ -92,7 +92,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexGammaRecurranceTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 2, 20)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 20)) {
                 Complex G = AdvancedComplexMath.Gamma(z);
                 Complex Gz = G * z;
                 Complex GP = AdvancedComplexMath.Gamma(z + 1.0);
@@ -114,7 +114,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexGammaInequalityTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 2, 10)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 10)) {
                 Console.WriteLine(z);
                 Assert.IsTrue(ComplexMath.Abs(AdvancedComplexMath.Gamma(z)) <= Math.Abs(AdvancedMath.Gamma(z.Re)));
             }
@@ -136,7 +136,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexLogGammaConjugationTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-4, 4, 20)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 20)) {
                 if (z.Re <= 0.0) continue;
                 Console.WriteLine("z={0} lnG(z*)={1} lnG*(z)={2}", z, AdvancedComplexMath.LogGamma(z.Conjugate), AdvancedComplexMath.LogGamma(z).Conjugate);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.LogGamma(z.Conjugate), AdvancedComplexMath.LogGamma(z).Conjugate));
@@ -155,7 +155,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexPsiRecurrenceTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 2, 12)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 12)) {
                 //Complex z = new Complex(0.398612, 888.865);
                 //double t = Math.Exp(900.0);
                 //Console.WriteLine("{0} {1}", t, 1.0 / t);
@@ -172,7 +172,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexPsiDuplicationTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 3, 12)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E3, 12)) {
                 Console.WriteLine(z);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedComplexMath.Psi(2.0 * z),
@@ -183,7 +183,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexPsiConjugationTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 3, 12)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E3, 12)) {
                 Console.WriteLine(z);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedComplexMath.Psi(z.Conjugate),
@@ -213,7 +213,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexDiLogSymmetryTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 2, 12)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 12)) {
 
                 Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
                     AdvancedComplexMath.DiLog(z), AdvancedComplexMath.DiLog(-z),
@@ -271,7 +271,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexDiLogConjugationTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-1, 1, 10)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-1, 1.0E1, 10)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedComplexMath.DiLog(z.Conjugate), AdvancedComplexMath.DiLog(z).Conjugate
                 ));
@@ -294,6 +294,18 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(Dp.Im, -Dm.Im));
 
             }
+        }
+
+        [TestMethod]
+        public void ComplexRiemannTest () {
+
+            Complex z = new Complex(10.0, 10.0);
+            Complex r = AdvancedComplexMath.Riemann_Euler(z);
+            Console.WriteLine(r);
+
+            double r1 = AdvancedMath.RiemannZeta(z.Re);
+            Console.WriteLine(r1);
+
         }
 
     }

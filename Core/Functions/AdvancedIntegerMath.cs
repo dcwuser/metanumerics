@@ -1,5 +1,6 @@
-
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Meta.Numerics.Functions {
 
@@ -144,11 +145,11 @@ namespace Meta.Numerics.Functions {
             if (n % 2 == 0) {
                 // m = n/2, n!! = 2^m Gamma(m+1)
                 int m = n / 2;
-                return (m * Math.Log(2.0) + AdvancedMath.LogGamma(m + 1.0));
+                return (m * Global.LogTwo + AdvancedMath.LogGamma(m + 1.0));
             } else {
                 // m = (n+1)/2, n!! = 2^m Gamma(m+1/2) / Sqrt(PI)
                 int m = (n + 1) / 2;
-                return (m * Math.Log(2.0) + AdvancedMath.LogGamma(m + 0.5) - 0.5 * Math.Log(Math.PI));
+                return (m * Global.LogTwo + AdvancedMath.LogGamma(m + 0.5) - 0.5 * Math.Log(Math.PI));
             }
         }
 
@@ -225,26 +226,229 @@ namespace Meta.Numerics.Functions {
         // this doesn't work due to integer overflow; we need an arbitrary-precision integer
         // structure to make it work
 
-        /*
-        public static uint PowMod (uint b, uint e, uint m) {
+        /// <summary>
+        /// Computes a power of an integer in modular arithmetic.
+        /// </summary>
+        /// <param name="b">The base, which must be positive.</param>
+        /// <param name="e">The exponent, which must be positive.</param>
+        /// <param name="m">The modulus, which must be positive.</param>
+        /// <returns>The value of b<sup>e</sup> mod m.</returns>
+        /// <remarks>
+        /// <para>Modular exponentiation is used in many number-theory applications, including
+        /// primality testing, prime factorization, and cryptography.</para>
+        /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Modular_exponentiation"/>
+        public static int PowMod (int b, int e, int m) {
+            if (b < 1) throw new ArgumentOutOfRangeException("x");
+            if (e < 1) throw new ArgumentOutOfRangeException("y");
+            if (m < 1) throw new ArgumentOutOfRangeException("m");
 
-            uint r = 1;
+            // use long internally
+            // since the "worst" we ever do before modding is to square, and since a long should
+            // hold twice as many digits as an int, this algorithm should not overflow
+            long bb = Convert.ToInt64(b);
+            long mm = Convert.ToInt64(m);
+            long rr = 1;
 
             while (e > 0) {
                 if ((e & 1) == 1) {
-                    r = checked((r * b) % m);
+                    rr = checked((rr * bb) % mm);
                 }
                 e = e >> 1;
-                b = checked((b * b) % m);
+                bb = checked((bb * bb) % mm);
             }
 
-            return (r);
+            return (Convert.ToInt32(rr));
 
         }
+
+
+        public static void Permute (int n) {
+
+            int[] p = new int[n + 1];
+            p[n] = 1;
+
+            // print the permutation
+            for (int j = n; j >= 1; j--) {
+                for (int i = 1; i <= p[j]; i++) {
+                    Console.Write("+{0}", j);
+                }
+            }
+            Console.WriteLine();
+
+            int count = 1;
+
+            while (p[1] != n) {
+
+                // compute next permutation
+
+                // find lowest number over one
+                int k = 2;
+                while (p[k] == 0) {
+                    k++;
+                }
+
+                // reduce it by one
+                p[k]--;
+
+                // determine how much we have to sum to
+                int s = n;
+                for (int j = k; j <= n; j++) {
+                    s -= j * p[j];
+                }
+
+                // produce that sum as quickly as we can with numbers less than or equal to k
+                for (int j = k - 1; j >= 1; j--) {
+                    p[j] = 0;
+                    while (s >= j) {
+                        p[j]++;
+                        s -= j;
+                    }
+                }
+
+                // print the permutation
+                for (int j = n; j >= 1; j--) {
+                    for (int i = 1; i <= p[j]; i++) {
+                        Console.Write("+{0}", j);
+                    }
+                }
+                Console.WriteLine();
+
+                count++;
+
+            }
+
+            Console.WriteLine(count);
+
+        }
+
+        /*
+        def ruleAsc(n):
+    a = [0 for i in range(n + 1)]
+    k = 1
+    a[0] = 0
+    a[1] = n
+    while k != 0:
+        x = a[k - 1] + 1
+        y = a[k] - 1
+        k -= 1
+        while x <= y:
+            a[k] = x
+            y -= x
+            k += 1
+        a[k] = x + y
+        yield a[:k + 1]
         */
 
-        // see http://en.wikipedia.org/wiki/Modular_exponentiation
+        public static void P2 (int n) {
+
+            int[] a = new int[n + 2];
+            //int[] a = new int[n + 1];
+
+            int k = 2;
+            //int k = 1;
+            a[1] = 0;
+            //a[0] = 0;
+            a[2] = n;
+            //a[1] = n;
+
+            while (k != 1) {
+            //while (k != 0) {
+                int y = a[k] - 1;
+                k--;
+                int x = a[k] + 1;
+                while (x <= y) {
+                    a[k] = x;
+                    y -= x;
+                    k++;
+                }
+                a[k] = x + y;
+
+                // print the permutation
+                Console.WriteLine("k={0}",k);
+                for (int j = 0; j < a.Length; j++) {
+                    Console.Write("{0} ", a[j]);
+                }
+                Console.WriteLine();
+
+            }
+
+
+        }
 
 	}
+
+    public class IntegerPartitionEnumerator : IEnumerator<int[]> {
+
+        public IntegerPartitionEnumerator (int n) {
+            this.n = n;
+            a = new int[n + 1];
+            Reset();
+        }
+
+        // the integer being partioned
+        int n;
+
+        // store for the current partition (only the first k elements are relevent)
+        int[] a;
+
+        // the number of terms in the current partition
+        int k;
+
+        public int[] Current {
+            get {
+                // if (a[0] == 0) throw new InvalidOperationException();
+                int[] p = new int[k+1];
+                Array.Copy(a, p, k + 1);
+                //Array.Copy(a, 1, p, 0, k+1);
+                return (p);
+            }
+        }
+
+        object IEnumerator.Current {
+            get {
+                return (Current);
+            }
+        }
+
+        public void Reset () {
+            k = 1;
+            a[0] = 0;
+            a[1] = n;
+        }
+
+        public bool MoveNext () {
+
+            if (k == 0) {
+                return (false);
+            } else {
+                int y = a[k] - 1;
+                k--;
+                int x = a[k] + 1;
+                while (x <= y) {
+                    a[k] = x;
+                    y -= x;
+                    k++;
+                }
+                a[k] = x + y;
+
+                /*
+                // print the permutation
+                Console.WriteLine("k={0}", k);
+                for (int j = 0; j < a.Length; j++) {
+                    Console.Write("{0} ", a[j]);
+                }
+                Console.WriteLine();
+                */
+
+                return (true);
+            }
+
+        }
+
+        void IDisposable.Dispose () {
+        }
+
+    }
 	
 }

@@ -184,10 +184,8 @@ namespace Meta.Numerics.Functions {
                 fK += df;
 
                 if ((fI == fI_old) && (fK == fK_old)) {
-                    sI = fI / Math.Sqrt(2.0 * Math.PI * x);
+                    sI = fI / Math.Sqrt(Global.TwoPI * x);
                     sK = fK / Math.Sqrt(2.0 * x / Math.PI);
-                    //lnI = x - Math.Log(2.0 * Math.PI * x) / 2.0 + Math.Log(fI);
-                    //lnK = -x - Math.Log(2.0 * x / Math.PI) / 2.0 + Math.Log(fK);
                     return;
 
                 }
@@ -544,7 +542,7 @@ namespace Meta.Numerics.Functions {
                 double y = 2.0 / 3.0 * Math.Pow(-x, 3.0 / 2.0);
                 double J = BesselJ(1.0 / 3.0, y);
                 double Y = BesselY(1.0 / 3.0, y);
-                return (Math.Sqrt(-x) / 2.0 * (J - Y / Math.Sqrt(3.0)));
+                return (Math.Sqrt(-x) / 2.0 * (J - Y / Global.SqrtThree));
             }
         }
 
@@ -589,13 +587,13 @@ namespace Meta.Numerics.Functions {
                 double y = 2.0 / 3.0 * Math.Pow(x, 3.0 / 2.0);
                 double I = ModifiedBesselI(1.0 / 3.0, y);
                 double K = ModifiedBesselK(1.0 / 3.0, y);
-                return (Math.Sqrt(x) * (2.0 / Math.Sqrt(3.0) * I + K / Math.PI));
+                return (Math.Sqrt(x) * (2.0 / Global.SqrtThree * I + K / Math.PI));
             } else {
                 // change to use a function that returns J and Y together
                 double y = 2.0 / 3.0 * Math.Pow(-x, 3.0 / 2.0);
                 double J = BesselJ(1.0 / 3.0, y);
                 double Y = BesselY(1.0 / 3.0, y);
-                return (-Math.Sqrt(-x) / 2.0 * (J / Math.Sqrt(3.0) + Y));
+                return (-Math.Sqrt(-x) / 2.0 * (J / Global.SqrtThree + Y));
             }
         }
 

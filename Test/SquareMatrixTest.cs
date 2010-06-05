@@ -417,7 +417,7 @@ namespace Test {
 
         }
 
-        //[TestMethod]
+        [TestMethod]
         public void QRTest () {
 
 
@@ -432,7 +432,7 @@ namespace Test {
             M[2,0] = -4.0;
             M[2,1] = 24.0;
             M[2,2] = -41.0;
-            //M.QRDecompose();
+            M.QRDecompose();
 
         }
 

@@ -226,7 +226,7 @@ namespace Meta.Numerics.Statistics {
             for (int i = 0; i < data.Count; i++) {
                 double t = 1.0;
                 for (int j = 0; j < powers.Count; j++) {
-                    t *= Math.Pow(data[i][j], powers[j]);
+                    t *= MoreMath.Pow(data[i][j], powers[j]);
                 }
                 M += t;
             }
@@ -264,7 +264,7 @@ namespace Meta.Numerics.Statistics {
             for (int i = 0; i < data.Count; i++) {
                 double t = 1.0;
                 for (int j = 0; j < powers.Count; j++) {
-                    t *= Math.Pow(data[i][j] - means[j], powers[j]);
+                    t *= MoreMath.Pow(data[i][j] - means[j], powers[j]);
                 }
                 C += t;
             }
@@ -452,6 +452,47 @@ namespace Meta.Numerics.Statistics {
 
         }
 
+        /// <summary>
+        /// Performs a paired Student t-test.
+        /// </summary>
+        /// <param name="d1">The column representing the first group.</param>
+        /// <param name="d2">The column representing the second group.</param>
+        /// <returns>The result of the test.</returns>
+        /// <remarks>
+        /// <para>Like a two-sample, unpaired t-test (<see cref="Sample.StudentTTest(Sample,Sample)" />),
+        /// a paired t-test compares two samples to detect a difference in means.
+        /// Unlike the unpaired version, the paired version assumes that each </para>
+        /// </remarks>
+        public TestResult PairedStudentTTest (int d1, int d2) {
+
+            if ((d1 < 0) || (d1 >= n)) throw new ArgumentOutOfRangeException("d1");
+            if ((d2 < 0) || (d2 >= n)) throw new ArgumentOutOfRangeException("d2");
+            if (Count < 2) throw new InvalidOperationException();
+
+            // the paired t-test is just a normal t-test of one sample against a mean,
+            // but where the sample consists of the differences between the paired measurements,
+            // and the mean being tested against is (usually) zero
+
+            // loop over pairs, computing mean and standard deviation of differences
+            double m = 0.0;
+            double v = 0.0;
+            for (int i = 0; i < Count; i++) {
+                double z = data[i][d1] - data[i][d2];
+                v += MoreMath.Pow2(z - m) * i / (i + 1);
+                m += (z - m) / (i + 1);
+            }
+            v = v / (Count-1);
+            Console.WriteLine("m={0} v={1}", m, v);
+
+            // compute standard error
+            double s = Math.Sqrt(v / Count);
+
+            // t is the mean deviation as a fraction of standard error
+            double t = m / s;
+
+            return (new TestResult(t, new StudentDistribution(Count-1)));
+
+        }
 
         /// <summary>
         /// Performs a linear regression analysis using the input variables to predict the output variable.

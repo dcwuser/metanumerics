@@ -105,7 +105,7 @@ namespace Meta.Numerics.Functions {
                 };
                 Interval r1 = Interval.FromEndpoints(-Math.PI / 2.0, Math.PI / 2.0);
 
-                return (Integrate(f1, r1));
+                return (Integrate(f1, r1, settings));
 
             } else if (Double.IsPositiveInfinity(range.RightEndpoint)) {
 
@@ -121,7 +121,7 @@ namespace Meta.Numerics.Functions {
                 };
                 Interval r1 = Interval.FromEndpoints(-1.0, 1.0);
 
-                return (Integrate(f1, r1));
+                return (Integrate(f1, r1, settings));
 
             } else if (Double.IsNegativeInfinity(range.LeftEndpoint)) {
 
@@ -137,7 +137,7 @@ namespace Meta.Numerics.Functions {
                 };
                 Interval r1 = Interval.FromEndpoints(-1.0, 1.0);
 
-                return(Integrate(f1, r1));
+                return(Integrate(f1, r1, settings));
 
             }
 

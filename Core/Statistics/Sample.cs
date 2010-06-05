@@ -134,7 +134,7 @@ namespace Meta.Numerics.Statistics {
             if (n == 1) return (mean);
             double m = 0.0;
             for (int i = 0; i < data.Count; i++) {
-                m += Math.Pow(data[i], n);
+                m += MoreMath.Pow(data[i], n);
             }
             return (m / data.Count);
         }
@@ -149,7 +149,7 @@ namespace Meta.Numerics.Statistics {
             if (n == 1) return (0.0);
             double m = 0.0;
             for (int i = 0; i < data.Count; i++) {
-                m += Math.Pow(data[i] - mean, n);
+                m += MoreMath.Pow(data[i] - mean, n);
             }
             return (m / data.Count);
         }
@@ -388,17 +388,22 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Tests whether the sample mean is compatible with the mean of another sample.
         /// </summary>
-        /// <param name="sample">The other sample.</param>
+        /// <param name="sample">The other sample, which must contain at least two entries.</param>
         /// <returns>The result of the test. The test statistic is a t-value. If t &gt; 0, the one-sided likelyhood
         /// to obtain a greater value under the null hypothesis is the (right) propability of that value. If t &lt; 0, the
         /// corresponding one-sided likelyhood is the (left) probability of that value. The two-sided likelyhood to obtain
         /// a t-value as far or farther from zero as the value obtained is just twice the one-sided likelyhood.</returns>
-        /// <remarks><para></para></remarks>
+        /// <remarks>
+        /// <para>Calling this method is equivilent to calling the static method <see cref="Sample.StudentTTest(Sample,Sample)"/>
+        /// with the current instance and the other sample as arguments.</para>
+        /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <seealso cref="StudentDistribution" />
         public TestResult StudentTTest (Sample sample) {
             if (sample == null) throw new ArgumentNullException("sample");
 
+            return (Sample.StudentTTest(this, sample));
+            /*
             double m1 = this.Mean;
             double s1 = Math.Sqrt(this.Count / (this.Count - 1.0)) * this.StandardDeviation;
             double m2 = sample.Mean;
@@ -411,6 +416,138 @@ namespace Meta.Numerics.Statistics {
             // compute t statistic and probability
             double t = (m1 - m2) / (s * Math.Sqrt(1.0 / this.Count + 1.0 / sample.Count));
             return (new TestResult(t, new StudentDistribution(dof)));
+            */
+        }
+
+        /// <summary>
+        /// Tests whether one sample mean is compatible with another sample mean.
+        /// </summary>
+        /// <param name="a">The first sample, which must contain at least two entries.</param>
+        /// <param name="b">The second sample, which must contain at least two entries.</param>
+        /// <returns>The result of an (equal-variance) Student t-test.</returns>
+        /// <remarks>
+        /// <para>Calling this method is equivilent to calling the instance method <see cref="StudentTTest(Sample)"/>
+        /// on the first sample with the second sample as argument.</para>
+        /// </remarks>
+        public static TestResult StudentTTest (Sample a, Sample b) {
+
+            if (a == null) throw new ArgumentNullException("a");
+            if (b == null) throw new ArgumentNullException("b");
+
+            // get counts
+            int na = a.Count;
+            int nb = b.Count;
+
+            if (na < 2) throw new InvalidOperationException();
+            if (nb < 2) throw new InvalidOperationException();
+
+            // get means
+            double ma = a.mean;
+            double mb = b.mean;
+
+            // get variances
+            double va = a.Variance;
+            double vb = b.Variance;
+
+            // get pooled variance and count
+            double v = (na * va + nb * vb) / (na + nb - 2);
+            double n = 1.0 / (1.0 / na + 1.0 / nb);
+
+            // evaluate t
+            double t = (ma - mb) / Math.Sqrt(v / n);
+
+            return (new TestResult(t, new StudentDistribution(na + nb - 2)));
+
+        }
+
+        /// <summary>
+        /// Performs a one-way ANOVA.
+        /// </summary>
+        /// <param name="samples">The samples to compare.</param>
+        /// <returns>The result of an F-test comparing the between-group variance to
+        /// the within-group variance.</returns>
+        /// <remarks>
+        /// <para>The one-way ANOVA is an extension of the Student t-test to more than
+        /// two groups. The test's null hypothesis is that all the groups' data are drawn
+        /// from the same distribution. If the null hypothesis is rejected, it indicates
+        /// that at least one of the groups differs significantly from the others.</para>
+        /// <para>Given more than two groups, you should use an ANOVA to test for differences
+        /// in the means of the groups rather than perform multiple t-tests. The reason
+        /// is that each t-test risks a false positive, so multiple t-tests increase
+        /// the risk of a false positive. For example, given a 95% confidence requirement,
+        /// there is only a 5% chance that a t-test will incorrectly diagnose a significant
+        /// difference. But given 5 samples, there are 5*4/2 = 10 t-tests to be
+        /// performed, giving about a 40% chance that one of them will incorrectly
+        /// diagnose a significant difference. The ANOVA avoids the accumulation of risk
+        /// by performing a single test at the required confidence level to test for
+        /// any significant differences between the groups.</para>
+        /// <para>A one-way ANOVA test on two samples is equivilent to a
+        /// <see cref="Sample.StudentTTest" />t-test, and should yield exactly the same
+        /// significance level.</para>
+        /// <para>ANOVA is an acronym for "Analysis of Variance". Do not be confused
+        /// by the name and by the use of a ratio-of-variances test statistic: an
+        /// ANOVA is primarily (although not exclusively) sensitive to changes in the
+        /// <i>mean</i> between groups. The variances being compared by the test are not the
+        /// variances of the individual groups; instead the test is comparing the variance of
+        /// all groups considered together as one single sample to the variance of the groups
+        /// considered as individual samples. If the means of some groups differ significantly,
+        /// the the all-groups variance will be much larger than the vairiances of the
+        /// individual groups, and the test will detect a significant difference. Thus the
+        /// test uses variance as a tool to detect shifts in mean, not because it
+        /// is interesed in the individual sample variances per se.</para>
+        /// <para>ANOVA is most appropriate when the sample data are approximately normal
+        /// and the samples are  distinguished by a nominal variable. For example, given
+        /// a random sampling of the ages of members of five different political parties,
+        /// a one-way ANOVA would be an appropriate test of the whether the different
+        /// parties tend to attract different-aged memberships.</para>
+        /// <para>On the other hand, given
+        /// data on the incomes and vacation lengths of a large number of people,
+        /// dividing the people into five income quintiles and performing a one-way ANOVA
+        /// to compare the vacation day distribution of each quintile would <i>not</i> be an
+        /// appropriate way to test the hypothesis that richer people take longer
+        /// vacations. Since income is a cardinal variable, it would be better to
+        /// in this case of put the data into a <see cref="MultivariateSample"/> and
+        /// perform a test of association, such as a <see cref="MultivariateSample.PearsonRTest" />,
+        /// <see cref="MultivariateSample.SpearmanRhoTest" />, or <see cref="MultivariateSample.KendallTauTest" />
+        /// between the two variables. If you have measurements
+        /// of additional variables for each indiviual, a <see cref="MultivariateSample.LinearRegression" />
+        /// analysis would allow you to adjust for confounding effects of the other variables.</para>
+        /// </remarks>
+        public static TestResult OneWayAnovaTest (params Sample[] samples) {
+            return (OneWayAnovaTest((IList<Sample>) samples));
+        }
+
+        public static TestResult OneWayAnovaTest (IList<Sample> samples) {
+
+            if (samples == null) throw new ArgumentNullException("samples");
+            if (samples.Count < 2) throw new InvalidOperationException();
+
+            // determine total count, mean, and within-group sum-of-squares
+            int n = 0;
+            double mean = 0.0;
+            double SSW = 0.0;
+            for (int i=0; i<samples.Count; i++) {
+                n += samples[i].Count;
+                mean += samples[i].Count * samples[i].Mean;
+                SSW += samples[i].Count * samples[i].Variance;
+            }
+            mean = mean / n;
+
+            // determine between-group sum-of-squares
+            double SSB = 0.0;
+            for (int i = 0; i < samples.Count; i++) {
+                SSB += samples[i].Count * MoreMath.Pow2(samples[i].Mean - mean);
+            }
+
+            // determine degrees of freedom associated with each sum-of-squares
+            int dB = samples.Count - 1;
+            int dW = n - 1 - dB; 
+
+            // determine F statistic
+            double F = (SSB / dB) / (SSW / dW);
+
+            return (new TestResult(F, new FisherDistribution(dB, dW)));
+
         }
 
         /*

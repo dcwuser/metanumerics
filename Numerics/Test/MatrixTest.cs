@@ -62,7 +62,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void MatrixAccessTest () {
+        public void MatrixAccess () {
 
             // create a matrix via outer product
             ColumnVector cv = new ColumnVector(new double[] { 1, 2 });
@@ -111,7 +111,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void MatrixArithmeticTest () {
+        public void MatrixArithmetic () {
 
             Matrix M = GenerateRandomMatrix(2, 3);
 
@@ -133,6 +133,27 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void MatrixQRDecomposition () {
+
+            Matrix M = GenerateRandomMatrix(30, 10);
+
+            QRDecomposition QRD = M.QRDecompose();
+            Assert.IsTrue(QRD.RowCount == M.RowCount);
+            Assert.IsTrue(QRD.ColumnCount == M.ColumnCount);
+
+            SquareMatrix Q = QRD.QMatrix();
+            Assert.IsTrue(Q.Dimension == M.RowCount);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(Q * Q.Transpose(), TestUtilities.CreateSquareUnitMatrix(Q.Dimension)));
+
+            Matrix R = QRD.RMatrix();
+            Assert.IsTrue(R.RowCount == M.RowCount);
+            Assert.IsTrue(R.ColumnCount == M.ColumnCount);
+
+            Matrix QR = Q * R;
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(QR, M));
+
+        }
 
     }
 }

@@ -5,9 +5,18 @@ using Meta.Numerics.Functions;
 
 namespace Meta.Numerics.Statistics {
 
-
+    /// <summary>
+    /// Represents a Pareto or power law distribution.
+    /// </summary>
+    /// <seealso href="http://en.wikipedia.org/wiki/Pareto_distribution"/>
     public class ParetoDistribution : Distribution {
 
+
+        /// <summary>
+        /// Initializes a new Pareto distribution.
+        /// </summary>
+        /// <param name="mu">The scale parameter, which must be positive.</param>
+        /// <param name="alpha">The shapre parameter, which must be positive.</param>
         public ParetoDistribution (double mu, double alpha) {
             if (mu <= 0.0) throw new ArgumentOutOfRangeException("mu");
             if (alpha <= 0.0) throw new ArgumentOutOfRangeException("alpha");
@@ -18,12 +27,21 @@ namespace Meta.Numerics.Statistics {
         private double mu;
         private double alpha;
 
+        /// <summary>
+        /// Gets the scale parameter of the Pareto distribution.
+        /// </summary>
         public double ScaleParameter {
             get {
                 return (mu);
             }
         }
 
+        /// <summary>
+        /// Gets the shape parameter of the Pareto distribution.
+        /// </summary>
+        /// <remarks>
+        /// <para>For a given shape parameter &#x3B1;, the probability density falls off as x<sup>-(&#x3B1;+1)</sup>.</para>
+        /// </remarks>
         public double ShapeParameter {
             get {
                 return (alpha);
@@ -97,6 +115,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <inheritdoc />
         public override double MomentAboutMean (int n) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
@@ -105,7 +124,11 @@ namespace Meta.Numerics.Statistics {
             } else if (n == 1) {
                 return (0.0);
             } else {
-                return (CentralMomentFromRawMoment(n));
+                if (alpha > n) {
+                    return (CentralMomentFromRawMoment(n));
+                } else {
+                    return (Double.PositiveInfinity);
+                }
             }
         }
 
@@ -143,6 +166,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <inheritdoc />
         private double LeftProbabilitySeries (double r) {
             // expand 1 - (1+r)^(-alpha) for small r
             double df = alpha * r;

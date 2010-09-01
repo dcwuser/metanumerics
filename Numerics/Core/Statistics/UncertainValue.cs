@@ -68,7 +68,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="value">The best estimate of the value.</param>
         /// <param name="uncertainty">The uncertainty in the value.</param>
 		public UncertainValue (double value, double uncertainty) {
-			if (uncertainty < 0.0) throw new ArgumentOutOfRangeException("uncertainty", uncertainty, "Uncertainties must be non-negative.");
+			if (uncertainty < 0.0) throw new ArgumentOutOfRangeException("uncertainty");
 			v = value;
 			u = uncertainty;
 		}
@@ -78,7 +78,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Creates a string representation of the uncertain value.
         /// </summary>
-        /// <returns>A string of the format <paramref name="value"/> &#x00B1; <paramref name="uncertainty"/>.</returns>
+        /// <returns>A string of the format <i>value</i> &#x00B1; <i>uncertainty</i>.</returns>
 		public override string ToString() {
 			return String.Format(CultureInfo.CurrentCulture, "{0} \u00B1 {1}", Value, Uncertainty);
         }

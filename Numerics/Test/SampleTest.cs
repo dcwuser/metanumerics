@@ -279,6 +279,48 @@ namespace Test {
         }
 
         [TestMethod]
+        public void SampleSignTest () {
+
+            // start with a non-normally distributed population
+            Distribution xDistribution = new ExponentialDistribution();
+
+            // draw 50 samples from it and compute the t statistic for each
+            Sample wSample = new Sample();
+            for (int i = 0; i < 50; i++) {
+                Sample xSample = CreateSample(xDistribution, 8, i);
+                TestResult wResult = xSample.SignTest(xDistribution.Median);
+                double W = wResult.Statistic;
+                //Console.WriteLine("W = {0}", W);
+                wSample.Add(W);
+            }
+
+            // sanity check our sample of t's
+            Assert.IsTrue(wSample.Count == 50);
+
+            // check that the t statistics are distributed as expected
+            DiscreteDistribution wDistribution = new BinomialDistribution(0.5, 8);
+
+            // check on the mean
+            Console.WriteLine("m = {0} vs. {1}", wSample.PopulationMean, wDistribution.Mean);
+            Assert.IsTrue(wSample.PopulationMean.ConfidenceInterval(0.95).ClosedContains(wDistribution.Mean));
+
+            // check on the standard deviation
+            Console.WriteLine("s = {0} vs. {1}", wSample.PopulationStandardDeviation, wDistribution.StandardDeviation);
+            Assert.IsTrue(wSample.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(wDistribution.StandardDeviation));
+
+            // check on the skew
+            Console.WriteLine("t = {0} vs. {1}", wSample.PopulationMomentAboutMean(3), wDistribution.MomentAboutMean(3));
+            Assert.IsTrue(wSample.PopulationMomentAboutMean(3).ConfidenceInterval(0.95).ClosedContains(wDistribution.MomentAboutMean(3)));
+
+            // check on the kuritosis
+            Console.WriteLine("u = {0} vs. {1}", wSample.PopulationMomentAboutMean(4), wDistribution.MomentAboutMean(4));
+            Assert.IsTrue(wSample.PopulationMomentAboutMean(4).ConfidenceInterval(0.95).ClosedContains(wDistribution.MomentAboutMean(4)));
+
+            // KS tests are only for continuous distributions            
+
+        }
+
+        [TestMethod]
         public void SampleComparisonTest () {
 
             // create one set of samples from our distributions
@@ -659,7 +701,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void AnovaStudentRelationTest () {
+        public void AnovaStudentAgreement () {
 
             // create two random samples
             Sample A = new Sample(new double[] { 10, 20, 30 });

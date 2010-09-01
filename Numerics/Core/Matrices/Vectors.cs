@@ -14,7 +14,7 @@ namespace Meta.Numerics.Matrices {
     /// <seealso cref="RowVector" />
     public class Vector<T> : IList<T>, ICollection<T>, IEnumerable<T>, IEnumerable where T : struct {
 
-        T[] v;
+        private T[] v;
 
         /// <summary>
         /// Instantiates a new vector of the given dimension.

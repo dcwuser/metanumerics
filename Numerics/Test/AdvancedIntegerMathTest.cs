@@ -173,6 +173,7 @@ namespace Test {
             Assert.AreEqual<long>(AdvancedIntegerMath.GCF(a, b) * AdvancedIntegerMath.LCM(a, b), a * b);
         }
 
+#if FUTURE
         [TestMethod]
         public void IntegerParticianTest () {
 
@@ -191,6 +192,7 @@ namespace Test {
             Console.WriteLine(P);
 
         }
+#endif
 
         [TestMethod]
         public void PowModTest () {

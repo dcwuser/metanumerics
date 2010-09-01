@@ -156,6 +156,14 @@ namespace Meta.Numerics.Functions {
         }
 
         /// <summary>
+        /// Computes a hash function for the spinor.
+        /// </summary>
+        /// <returns>An integer which is guaranteed equal for equal spinors, an unlikely to be equal for unequal spinors.</returns>
+        public override int GetHashCode () {
+            return (twoJ);
+        }
+
+        /// <summary>
         /// Produces a string representation of the spinor.
         /// </summary>
         /// <returns>A string representation of the spinor.</returns>
@@ -299,6 +307,15 @@ namespace Meta.Numerics.Functions {
         /// <returns>True if <paramref name="obj"/> is an equal spin state, otherwise false.</returns>
         public override bool Equals (object obj) {
             return ((obj is SpinState) && Equals(this, (SpinState)obj));
+        }
+
+        /// <summary>
+        /// Computes a hash function for the spin state.
+        /// </summary>
+        /// <returns>An integer which is guaranteed equal for equal spin states, an unlikely to be equal for unequal spin states.</returns>
+        public override int GetHashCode () {
+            // left-shift 2j by about half the with of an int (which is 32 bits) so 2j and 2m values are unlikely to interfere
+            return ((TwoJ << 14) ^ (TwoM));
         }
 
         /// <summary>

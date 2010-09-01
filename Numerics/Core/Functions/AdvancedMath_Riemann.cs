@@ -65,7 +65,7 @@ namespace Meta.Numerics.Functions {
             return (sum1 + sum2 / Math.Pow(2.0, DirichletEta_Coefficients.Length));
         }
 
-        private static double[] DirichletEta_Coefficients = ReimannCoefficients(15);
+        private static readonly double[] DirichletEta_Coefficients = ReimannCoefficients(15);
 
 		private static double[] ReimannCoefficients (int n) {
 			double[] e = new double[n];
@@ -90,7 +90,7 @@ namespace Meta.Numerics.Functions {
             throw new NonconvergenceException();
         }
 
-        private static double[] StieltjesConstants = new double[] {
+        private static readonly double[] StieltjesConstants = new double[] {
             0.577215664901532860607,
            -0.072815845483676724861,
            -0.009690363192872318484,
@@ -111,6 +111,7 @@ namespace Meta.Numerics.Functions {
 
     public static partial class AdvancedComplexMath {
 
+#if FUTURE
         public static Complex Riemann_Euler (Complex z) {
             Complex f = 1.0;
             for (int k = 0; k < primes.Length; k++) {
@@ -127,6 +128,7 @@ namespace Meta.Numerics.Functions {
             59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131,
             137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223
         };
+#endif
 
     }
 

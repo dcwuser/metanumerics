@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 namespace Meta.Numerics {
 
+#if FUTURE
+
     public class Polynomial {
 
         public Polynomial (int n) {
@@ -29,7 +31,6 @@ namespace Meta.Numerics {
         public double Evaluate (double x) {
             throw new NotImplementedException();
         }
-
 
     }
 
@@ -65,5 +66,6 @@ namespace Meta.Numerics {
 
     }
 
+#endif
 
 }

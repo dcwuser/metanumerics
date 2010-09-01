@@ -138,6 +138,15 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <summary>
+        /// Computes the expectation value of the given function.
+        /// </summary>
+        /// <param name="f">The function.</param>
+        /// <returns>The expectation value of the function.</returns>
+        public virtual double ExpectationValue (Function<double, double> f) {
+            return (FunctionMath.Integrate(f, Support));
+        }
+
         // compute central moments from raw moments
         // this is subject to loss of precision from cancelation, so be careful
 
@@ -1362,6 +1371,67 @@ namespace Meta.Numerics.Statistics {
 
     }
     */
+#if FUTURE
+    internal static class DistributionMath {
+
+        public static double ComputeCentralMomentFromRawMoments (double[] rawMoments, int n) {
+
+            throw new NotImplementedException();
+        }
+
+        public static double ComputeRawMomentFromCentralMoments (double mean, double[] centralMoments, int n) {
+
+            if (centralMoments == null) throw new ArgumentNullException("C");
+            if (centralMoments.Length <= n) throw new InvalidOperationException();
+
+
+            throw new NotImplementedException();
+        }
+
+        public static double ComputeRawMomentFromCulumants (double[] cumulants, int n) {
+
+            if (cumulants == null) throw new ArgumentNullException("cumulants");
+            if (n < 0) throw new ArgumentNullException("n");
+            if (cumulants.Length <= n) throw new InvalidOperationException();
+
+            double K = 0.0;
+            IntegerPartitionEnumerator e = new IntegerPartitionEnumerator(n);
+            while (e.MoveNext()) {
+                double K1 = 1.0;
+                int[] fs = e.Current;
+                foreach (int f in fs) {
+                    K1 *= cumulants[f];
+                }
+                K += K1;
+            }
+
+            return (K);
+
+        }
+
+        public static double ComputeCentralMomentFromCumulants (double[] cumulants, int n) {
+            throw new NotImplementedException();
+        }
+
+        public static double ComputeCumulantFromRawMoments (double[] rawMoments, int n) {
+
+            if (rawMoments == null) throw new ArgumentNullException("rawMoments");
+            if (n < 0) throw new ArgumentOutOfRangeException("n");
+            if (rawMoments.Length <= n) throw new InvalidOperationException();
+
+            double K = rawMoments[n];
+            for (int k = n - 1; k >= 0; k++) {
+            }
+
+            return (K);
+        }
+
+        public static double CumputeCumulantFromCentralMoments (int mean, double[] centralMoments, int n) {
+            throw new NotImplementedException();
+        }
+
+    }
+#endif
 
     // Deviates
     // Maximum likelyhood estimation

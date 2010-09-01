@@ -454,7 +454,7 @@ namespace Meta.Numerics {
         /// Raises a complex number to an integer power.
         /// </summary>
         /// <param name="z">The argument.</param>
-        /// <param name="p">The power.</param>
+        /// <param name="n">The power.</param>
         /// <returns>The value of z<sup>p</sup>.</returns>
         public static Complex Pow (Complex z, int n) {
 

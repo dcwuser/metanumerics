@@ -710,6 +710,32 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        // large order expansion using Airy functions
+        /*
+        public static double BesselJ_Airy (double nu, double x) {
+
+            double z = Bessel_Zeta(x / nu);
+            double nu3 = Math.Pow(nu, 1.0 / 3.0);
+            double nu23 = nu3 * nu3;
+            double x = nu23 * z;
+
+            double ai, aip; // airy functions
+
+            throw new NotImplementedException();
+
+        }
+        */
+
+        public static double Bessel_Zeta (double z) {
+            if (z < 1.0) {
+                double sz = Math.Sqrt((1.0 + z) * (1.0 - z));
+                return (Math.Log((1.0 + sz) / z) - sz);
+            } else {
+                double sz = Math.Sqrt((z + 1.0) * (z - 1.0));
+                return (sz - Math.Acos(1.0 / z));
+            }
+        }
+
         // **** Spherical Bessel functions ****
 
         /// <summary>

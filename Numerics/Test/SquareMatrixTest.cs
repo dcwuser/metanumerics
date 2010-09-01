@@ -267,6 +267,7 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(P * V, L * U));
 
                 // check that the determinant agrees with the analytic expression
+                Console.WriteLine("det {0} {1}", LU.Determinant(), det);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(LU.Determinant(), det));
 
                 // check that the inverse works
@@ -436,7 +437,7 @@ namespace Test {
 
         }
 
-        //[TestMethod]
+        [TestMethod]
         public void TimeMatrixMultiply () {
 
             SquareMatrix M = new SquareMatrix(3);
@@ -485,6 +486,64 @@ namespace Test {
             //PrintMatrix(MI * M);
             SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(M.Dimension);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(M * MI, I));
+
+        }
+
+        [TestMethod]
+        public void T1 () {
+
+            SquareMatrix A = new SquareMatrix(3);
+            A[0, 0] = 0;
+            A[1, 0] = 1;
+            A[2, 0] = 2;
+            A[0, 1] = 1;
+            A[1, 1] = 0;
+            A[2, 1] = 2;
+            A[0, 2] = 2;
+            A[1, 2] = 1;
+            A[2, 2] = 0;
+
+            A = CreateSquareRandomMatrix(4);
+
+            PrintMatrix(A);
+
+            SquareLUDecomposition LU = A.LUDecomposition();
+
+            Console.WriteLine("dim = {0}", LU.Dimension);
+            Console.WriteLine("det = {0}", LU.Determinant());
+
+            Console.WriteLine("P=");
+            SquareMatrix P = LU.PMatrix();
+            PrintMatrix(P);
+
+            Console.WriteLine("L =");
+            SquareMatrix L = LU.LMatrix();
+            PrintMatrix(L);
+
+            Console.WriteLine("U =");
+            SquareMatrix U = LU.UMatrix();
+            PrintMatrix(U);
+
+            Console.WriteLine("PA = ");
+            PrintMatrix(P * A);
+
+            Console.WriteLine("LU = ");
+            PrintMatrix(L * U);
+
+            Console.WriteLine("inv(A) = ");
+            SquareMatrix AI = LU.Inverse();
+            PrintMatrix(AI);
+
+            Console.WriteLine("inv(A) A = ");
+            PrintMatrix(AI * A);
+
+            Console.WriteLine("solve");
+            double[] x = new double[LU.Dimension];
+            for (int i = 0; i < x.Length; i++) {
+                x[i] = i;
+            }
+            ColumnVector y = LU.Solve(x);
+            PrintMatrix(A * y);
 
         }
 

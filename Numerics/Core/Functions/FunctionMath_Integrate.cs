@@ -4,8 +4,6 @@ using Meta.Numerics.Statistics;
 
 namespace Meta.Numerics.Functions {
 
-    // used to pass evaulation parameters; we may want to make this public
-
     /// <summary>
     /// Contains settings controling the evaluation of a function.
     /// </summary>
@@ -312,7 +310,7 @@ namespace Meta.Numerics.Functions {
 
         // abcissas and weights 
 
-        private static double[] x = new double[] {
+        private static readonly double[] x = new double[] {
             -0.9914553711208126,
             -0.9491079123427585,
             -0.8648644233597691,
@@ -330,7 +328,7 @@ namespace Meta.Numerics.Functions {
             0.9914553711208126
         };
 
-        private static double[] c1 = new double[] {
+        private static readonly double[] c1 = new double[] {
             0.0,
             0.1294849661688697,
             0.0,
@@ -348,7 +346,7 @@ namespace Meta.Numerics.Functions {
             0.0
         };
 
-        private static double[] c2 = new double[] {
+        private static readonly double[] c2 = new double[] {
             0.02293532201052922,
             0.06309209262997855,
             0.1047900103222502,

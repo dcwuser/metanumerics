@@ -1,5 +1,6 @@
 
 using System;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Functions {
 
@@ -126,6 +127,7 @@ namespace Meta.Numerics.Functions {
         /// <para>The associated Laguerre polynomials are orthonogal on the interval [0,+&#8734;) with the weight
         /// x<sup>a</sup> e<sup>-x</sup>.</para>
         /// </remarks>
+        /// <seealso href="http://mathworld.wolfram.com/LaguerrePolynomial.html" />
 		public static double LaguerreL (int n, double a, double x) {
 			if (n<0) throw new ArgumentOutOfRangeException("n");
 			if (a<=-1) throw new ArgumentOutOfRangeException("a"); 
@@ -214,40 +216,91 @@ namespace Meta.Numerics.Functions {
 
         // Legendre polynomials normalized for their use in the spherical harmonics
 
-        internal static double LegendrePe (int l, int m, double x) {
+        /// <summary>
+        /// Computes the value of an associated Legendre polynomial.
+        /// </summary>
+        /// <param name="l">The order, which must be non-negative.</param>
+        /// <param name="m">The associated order, which must lie between -l and l inclusive.</param>
+        /// <param name="x">The argument, which must lie on the closed interval betwen -1 and +1.</param>
+        /// <returns>The value of P<sub>l,m</sub>(x).</returns>
+        /// <remarks>
+        /// <para>Associated Legendre polynomials appear in the definition of the <see cref="AdvancedMath.SphericalHarmonic"/> functions.</para>
+        /// <para>For values of l and m over about 150, values of this polynomial can exceed the capacity of double-wide floating point numbers.</para>
+        /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Associated_Legendre_polynomials"/>
+        public static double LegendreP (int l, int m, double x) {
 
             if (l < 0) throw new ArgumentOutOfRangeException("l");
-            if ((m < 0) || (m > l)) throw new ArgumentOutOfRangeException("m");
+
+            //if (l < 0) {
+            //    return (LegendreP(-l + 1, m, x));
+            //}
+
+            if (Math.Abs(m) > l) throw new ArgumentOutOfRangeException("m");
+
+            double f;
+            if (l < 10) {
+                // for low enough orders, we can can get the factorial quickly from a table look-up and without danger of overflow
+                f = Math.Sqrt(AdvancedIntegerMath.Factorial(l + m) / AdvancedIntegerMath.Factorial(l - m));
+            } else {
+                // for higher orders, we must move into log space to avoid overflow
+                f = Math.Exp((AdvancedIntegerMath.LogFactorial(l + m) - AdvancedIntegerMath.LogFactorial(l - m)) / 2.0);
+            }
+
+            if (m < 0) {
+                m = -m;
+                if (m % 2 != 0) f = -f;
+            }
+
             if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException("x");
 
+            return (f * LegendrePe(l, m, x));
+
+        }
+
+
+        // renormalized associated legendre polynomials Pe{l,m} = sqrt( (l-m)! / (l+m)! ) P{l,m}
+        // unlike the unrenormalized P{l,m}, the renormalized Pe{l,m} do not get too big
+
+        // this is not quite the same renormalization used by NR; it omits a factor sqrt((2l+1)/4Pi)
+        // by omitting this factor, we avoid some unnecessary factors and divisions by 4Pi
+
+        // the l-recurrsion (l-m) P{l,m} = x (2l-1) P{l-1,m} - (l+m-1) P{l-2,m} becomes
+        // sqrt((l-m)(l+m)) P{l,m} = x (2l-1) P{l-1,m} - sqrt((l-1-m)(l-1+m)) P{l-2,m}
+        // this is stable for increasing l
+
+        // the initial value P{m,m} = (-1)^m (2m-1)!! (1-x^2)^(m/2) becomes
+        // Pe{m,m} = (-1)^m (2m-1)!! sqrt( (1-x^2)^m / (2m)! ) = (-1)^m sqrt( prod_{k=1}^{m} (2k-1) (1-x^2) / (2k) )
+
+        internal static double LegendrePe (int l, int m, double x) {
+
+            Debug.Assert(l >= 0);
+            Debug.Assert(0 <= m); Debug.Assert(m <= l);
+            Debug.Assert(Math.Abs(x) <= 1.0);
+
             double xx = (1.0 + x) * (1.0 - x);
-            // determine PM0 = P{m,m}
-            double PM0 = 1.0;
-            //Console.WriteLine("PM0={0}", PM0);
-            for (int i=1; i <= m; i++) {
-                int i2 = 2*i;
-                PM0 = PM0 * xx * (i2-1) / i2;
-                //Console.WriteLine("i={0} PM0={1}", i, PM0);
+            // determine P{m,m}
+            double P0 = 1.0;
+            for (int k = 1; k <= m; k++) {
+                P0 *= (1.0 - 1.0 / (2 * k)) * xx;
             }
-            PM0 = Math.Sqrt((2*m+1)/(4.0*Math.PI) * PM0);
-            //Console.WriteLine("PM0={0}", PM0);
-            if (l == m) return (PM0);
-            // determine PM1 = P{m+1,m}
-            double PM1 = x * Math.Sqrt(2 * m + 3) * PM0;
-            //Console.WriteLine("PM1={0}", PM1);
-            if (l == (m + 1)) return (PM1);
-            // recurr upward to P{l,m}
-            double c0 = Math.Sqrt(2 * m + 3);
+            P0 = Math.Sqrt(P0);
+            if (m % 2 != 0) P0 = -P0;
+            if (l == m) return (P0);
+            // determine P{m+1,m}
+            double s0 = Math.Sqrt(2*m+1);
+            double P1 = x * s0 * P0;
+            // iterate up to P{l,m}
             for (int k = m + 2; k <= l; k++) {
-                double c = Math.Sqrt((4 * k * k - 1.0) / (k * k - m * m));
-                double PM2 = c * (x * PM1 - PM0 / c0);
-                // prepare of the next cycle
-                PM0 = PM1;
-                PM1 = PM2;
-                c0 = c;
+                double s2 = Math.Sqrt((k - m) * (k + m));
+                double P2 = (x * (2 * k - 1) * P1 - s0 * P0) / s2;
+                // prepare for next iteration
+                s0 = s2;
+                P0 = P1;
+                P1 = P2;
             }
-            //Console.WriteLine("PM2={0}", PM1);
-            return (PM1);
+            return (P1);
+
         }
 
         // orthogonal on [-1,1] with weight (1-x^2)^{-1/2}

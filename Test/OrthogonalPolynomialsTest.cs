@@ -65,7 +65,7 @@ namespace Test {
         // Hermite
 
         [TestMethod]
-        public void HermiteSpecialCaseTest () {
+        public void HermiteSpecialCases () {
             foreach (double x in arguments) {
                 Assert.IsTrue(OrthogonalPolynomials.HermiteH(0, x) == 1.0);
                 Assert.IsTrue(OrthogonalPolynomials.HermiteH(1, x) == 2.0 * x);
@@ -84,7 +84,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void HermiteReflectionTest () {
+        public void HermiteReflection () {
             foreach (int n in orders) {
                 foreach (double x in arguments) {
                     if (n % 2 == 0) {
@@ -97,7 +97,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void HermiteRecurrenceTest () {
+        public void HermiteRecurrence () {
             foreach (int n in orders) {
                 if (n < 100) {
                     foreach (double x in arguments) {
@@ -108,7 +108,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void HermiteAdditionTest () {
+        public void HermiteAddition () {
             foreach (int n in orders) {
                 if (n > 100) continue;
                 foreach (double x in arguments) {
@@ -126,7 +126,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void HermiteSumTest () {
+        public void HermiteSum () {
             // accuracy of equality falls at high n because of cancelations among large terms
             for (int n=0; n<12; n++) {
                 double sum = 0.0;
@@ -145,7 +145,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void HermiteOrthonormalityTest () {
+        public void HermiteOrthonormality () {
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 30, 3)) {
                 foreach (int m in TestUtilities.GenerateIntegerValues(1, 30, 3)) {
                     Function<double, double> f = delegate(double x) {
@@ -168,14 +168,14 @@ namespace Test {
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
-        public void HermiteInvalidOrderTest () {
+        public void HermiteInvalidOrder () {
             OrthogonalPolynomials.HermiteH(-1, 1.0);
         }
 
         // Laguerre
 
         [TestMethod]
-        public void LaguerreSpecialCaseTest () {
+        public void LaguerreSpecialCases () {
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 Assert.IsTrue(OrthogonalPolynomials.LaguerreL(n, 0.0) == 1.0);
             }
@@ -185,7 +185,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void LaguerreRecurrenceTest () {
+        public void LaguerreRecurrence () {
             foreach (int n in TestUtilities.GenerateRealValues(1.0, 1.0E2, 5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,10)) {
                     double LP = OrthogonalPolynomials.LaguerreL(n + 1, x);
@@ -197,7 +197,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void LaguerreInequalityTest () {
+        public void LaguerreInequality () {
             foreach (int n in TestUtilities.GenerateRealValues(1.0, 1.0E2, 5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
                     Assert.IsTrue(OrthogonalPolynomials.LaguerreL(n,x) <= Math.Exp(x/2.0));
@@ -207,18 +207,40 @@ namespace Test {
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
-        public void LaguerreInvalidOrderTest () {
+        public void LaguerreInvalidOrder () {
             OrthogonalPolynomials.LaguerreL(-1, 1.0);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
-        public void LaguerreInvalidArgumentTest () {
+        public void LaguerreInvalidArgument () {
             OrthogonalPolynomials.LaguerreL(1, -0.1);
         }
 
         [TestMethod]
-        public void LaguerreOrthonormalityTest () {
+        public void LaguerreOrthonormality () {
+            // to avoid highly oscilatory integrals, don't use very high orders
+            int[] orders = TestUtilities.GenerateIntegerValues(1, 30, 3);
+            for (int i = 0; i < orders.Length; i++) {
+                int n = orders[i];
+                for (int j = 0; j <= i; j++) {
+                    int m = orders[j];
+
+                    Function<double, double> f = delegate(double x) {
+                        return (Math.Exp(-x) * OrthogonalPolynomials.LaguerreL(n, x) * OrthogonalPolynomials.LaguerreL(m, x));
+                    };
+                    Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
+                    double I = FunctionMath.Integrate(f, r);
+                    Console.WriteLine("{0} {1} {2}", n, m, I);
+                    if (n == m) {
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(I, 1.0));
+                    } else {
+                        Assert.IsTrue(Math.Abs(I) < TestUtilities.TargetPrecision);
+                    }
+
+                }
+            }
+            /*
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 3)) {
                 foreach (int m in TestUtilities.GenerateIntegerValues(1, 100, 3)) {
                     Function<double, double> f = delegate(double x) {
@@ -234,12 +256,13 @@ namespace Test {
                     }
                 }
             }
+            */
         }
 
         // associated Laguerre
 
         [TestMethod]
-        public void AssociatedLaguerreSpecialCaseTest () {
+        public void AssociatedLaguerreSpecialCases () {
             foreach (double a in TestUtilities.GenerateRealValues(0.01, 100.0, 5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(0.01, 100.0, 5)) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
@@ -253,7 +276,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void AssociatedLaguerreAlphaRecurrenceTest () {
+        public void AssociatedLaguerreAlphaRecurrence () {
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double a in TestUtilities.GenerateRealValues(0.01, 100.0, 5)) {
                     foreach (double x in TestUtilities.GenerateRealValues(0.01, 100.0, 5)) {
@@ -267,7 +290,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void AssociatedLaguerreSumTest () {
+        public void AssociatedLaguerreSum () {
             foreach (int n in TestUtilities.GenerateRealValues(1, 100, 5)) {
                 foreach (double a in TestUtilities.GenerateRealValues(0.1, 100.0, 5)) {
                     foreach (double x in TestUtilities.GenerateRealValues(0.01, 1000.0, 5)) {
@@ -290,12 +313,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void AssociatedLaguerreEvaluationTest () {
-            Console.WriteLine(OrthogonalPolynomials.LaguerreL(100, 7.0/3.0, 2.0));
-        }
-
-        [TestMethod]
-        public void AssociatedLaguerreOrthonormalityTest () {
+        public void AssociatedLaguerreOrthonormality () {
             // don't let orders get too big, or (1) the Gamma function will overflow and (2) our integral will become highly oscilatory
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 10, 3)) {
                 foreach (int m in TestUtilities.GenerateIntegerValues(1, 10, 3)) {
@@ -345,7 +363,7 @@ namespace Test {
         private double[] cArguments = new double[] { 0.00001, 0.02, 0.34, 0.56, 0.78, 0.99999 };
 
         [TestMethod]
-        public void ChebyshevSpecialCaseTest () {
+        public void ChebyshevSpecialCases () {
             foreach (double x in cArguments) {
                 Assert.IsTrue(OrthogonalPolynomials.ChebyshevT(0, x) == 1.0);
                 Assert.IsTrue(OrthogonalPolynomials.ChebyshevT(1, x) == x);
@@ -365,7 +383,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ChebyshevInequalityTest () {
+        public void ChebyshevInequality () {
             foreach (int n in orders) {
                 foreach (double x in cArguments) {
                     Assert.IsTrue(Math.Abs(OrthogonalPolynomials.ChebyshevT(n, x)) <= 1.0);
@@ -374,7 +392,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ChebyshevRecurrenceTest () {
+        public void ChebyshevRecurrence () {
             foreach (int n in orders) {
                 foreach (double x in cArguments) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ChebyshevT(n + 1, x), 2.0 * x * OrthogonalPolynomials.ChebyshevT(n, x) - OrthogonalPolynomials.ChebyshevT(n - 1, x)));
@@ -383,7 +401,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ChebyshevReflectionTest () {
+        public void ChebyshevReflection () {
             foreach (int n in orders) {
                 foreach (double x in cArguments) {
                     if (n % 2 == 0) {
@@ -396,7 +414,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ChebyshevDoublingTest () {
+        public void ChebyshevDoubling () {
             foreach (int n in TestUtilities.GenerateIntegerValues(1,100,5)) {
                 foreach (double x in cArguments) {
                     Console.WriteLine("n={0}, x={1}, T2={2}, T1={3}", n, x, OrthogonalPolynomials.ChebyshevT(2 * n, x), OrthogonalPolynomials.ChebyshevT(n, 1.0 - 2 * x * x));
@@ -411,7 +429,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ChebyshevMultiplicationTest () {
+        public void ChebyshevMultiplication () {
             foreach (int n in orders) {
                 foreach (int m in orders) {
                     if (n * m > 500) continue; // we don't test very high order
@@ -432,7 +450,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ChebyshevCosineTest () {
+        public void ChebyshevCosine () {
             // test T_n(cos t) = cos(n t)
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double t in GenerateRandomAngles(-Math.PI, Math.PI, 5)) {
@@ -444,7 +462,7 @@ namespace Test {
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
-        public void ChebyshevInvalidArgumentTest () {
+        public void ChebyshevInvalidArgument () {
             OrthogonalPolynomials.ChebyshevT(2, -1.1);
         }
 
@@ -455,7 +473,7 @@ namespace Test {
         // Legendre
 
         [TestMethod]
-        public void LegendreSpecialCaseTest () {
+        public void LegendreSpecialCases () {
             foreach (double x in cArguments) {
                 Assert.IsTrue(OrthogonalPolynomials.LegendreP(0, x) == 1.0);
                 Assert.IsTrue(OrthogonalPolynomials.LegendreP(1, x) == x);
@@ -466,7 +484,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void LegendreInequalityTest () {
+        public void LegendreInequality () {
             foreach (int n in orders) {
                 foreach (double x in cArguments) {
                     Assert.IsTrue(Math.Abs(OrthogonalPolynomials.LegendreP(n, x)) <= 1.0);
@@ -475,7 +493,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void LegendreRecurrenceTest () {
+        public void LegendreRecurrence () {
             foreach (int n in orders) {
                 foreach (double x in cArguments) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual((n + 1) * OrthogonalPolynomials.LegendreP(n + 1, x), (2 * n + 1) * x * OrthogonalPolynomials.LegendreP(n, x) - n * OrthogonalPolynomials.LegendreP(n - 1, x)));
@@ -484,7 +502,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void LegendreReflectionTest () {
+        public void LegendreReflection () {
             foreach (int n in orders) {
                 foreach (double x in cArguments) {
                     if (n % 2 == 0) {
@@ -497,7 +515,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void LegendreNegativeOrderTest () {
+        public void LegendreNegativeOrder () {
             foreach (int n in orders) {
                 foreach (double x in cArguments) {
                     Assert.IsTrue(OrthogonalPolynomials.LegendreP(-n, x) == OrthogonalPolynomials.LegendreP(n - 1, x));
@@ -508,12 +526,12 @@ namespace Test {
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
-        public void LegendreInvalidArgumentTest () {
+        public void LegendreInvalidArgument () {
             OrthogonalPolynomials.LegendreP(2, -1.1);
         }
 
         [TestMethod]
-        public void LegendreOrthonormalityTest () {
+        public void LegendreOrthonormality () {
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 3)) {
                 foreach (int m in TestUtilities.GenerateIntegerValues(1, 100, 3)) {
                     Function<double, double> f = delegate(double x) {
@@ -543,7 +561,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SphericalHarmonicSpecialCaseTest () {
+        public void SphericalHarmonicSpecialCases () {
             // ell=0, m=0
             foreach (double theta in GenerateRandomAngles(-Math.PI, Math.PI, 5)) {
                 foreach (double phi in GenerateRandomAngles(0.0, 2.0 * Math.PI, 5)) {
@@ -560,7 +578,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SphericalHarmonicLegendreTest () {
+        public void SphericalHarmonicLegendre () {
             foreach (int ell in TestUtilities.GenerateIntegerValues(1, 100, 6)) {
                 foreach (double theta in GenerateRandomAngles(-Math.PI, Math.PI, 5)) {
                     // this loop shouldn't matter since the answer is phi-independent
@@ -575,7 +593,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SphericalHarmonicConjugationTest () {
+        public void SphericalHarmonicConjugation () {
             foreach (int ell in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double theta in GenerateRandomAngles(-Math.PI, Math.PI, 5)) {
                     foreach (double phi in GenerateRandomAngles(0.0, 2.0 * Math.PI, 5)) {
@@ -592,7 +610,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SphericalHarmonicNormalizationTest () {
+        public void SphericalHarmonicNormalization () {
             foreach (int ell in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double theta in GenerateRandomAngles(-Math.PI, Math.PI, 5)) {
                     foreach (double phi in GenerateRandomAngles(0.0, 2.0 * Math.PI, 5)) {
@@ -609,7 +627,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SphericalHarmonicAdditionTest () {
+        public void SphericalHarmonicAddition () {
             foreach (int ell in TestUtilities.GenerateIntegerValues(1, 100, 6)) {
                 foreach (double theta in GenerateRandomAngles(-Math.PI, Math.PI, 4)) {
                     foreach (double phi in GenerateRandomAngles(0, 2.0 * Math.PI, 3)) {
@@ -626,7 +644,21 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ZernikeSpecialCaseTest () {
+        public void SphericalHarmonicLowOrders () {
+            foreach (double theta in GenerateRandomAngles(-Math.PI, Math.PI, 4)) {
+                foreach (double phi in GenerateRandomAngles(0, 2.0 * Math.PI, 4)) {
+
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.SphericalHarmonic(0, 0, theta, phi), 1.0 / Math.Sqrt(4.0 * Math.PI)));
+                    //Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.SphericalHarmonic(1, -1, theta, phi), Math.Sqrt(3.0 / 8.0 / Math.PI) * Math.Sin(theta) * ComplexMath.Exp(-ComplexMath.I * phi)));
+                    //Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.SphericalHarmonic(1, 1, theta, phi), -Math.Sqrt(3.0 / 8.0 / Math.PI) * Math.Sin(theta) * ComplexMath.Exp(ComplexMath.I * phi)));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.SphericalHarmonic(1, 0, theta, phi), Math.Sqrt(3.0 / 4.0 / Math.PI) * Math.Cos(theta)));
+
+                }
+            }
+        }
+
+        [TestMethod]
+        public void ZernikeSpecialCases () {
 
             foreach (double x in TestUtilities.GenerateUniformRealValues(0.0, 1.0, 4)) {
                 Console.WriteLine(x);
@@ -644,7 +676,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ZernikeOrthonormalityTest () {
+        public void ZernikeOrthonormality () {
 
             foreach (int na in TestUtilities.GenerateIntegerValues(1, 30, 8)) {
                 foreach (int nb in TestUtilities.GenerateIntegerValues(1, 30, 6)) {
@@ -677,7 +709,7 @@ namespace Test {
 
         
         [TestMethod]
-        public void ZernikeBesselTest () {
+        public void ZernikeBessel () {
 
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 30, 6)) {
                 foreach (int m in TestUtilities.GenerateUniformIntegerValues(0, n, 6)) {
@@ -706,6 +738,100 @@ namespace Test {
                         // the can achieve the absolute target precisions, so translate
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(I, J, Math.Abs(TestUtilities.TargetPrecision / J)));
 
+                    }
+                }
+            }
+
+        }
+
+        [TestMethod]
+        public void AssociatedLegendreLowOrders () {
+
+            foreach (double x in TestUtilities.GenerateRealValues(0.01, 1.0, 10)) {
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(0, 0, x), 1.0));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(1, 0, x), x));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(1, 1, x), -Math.Sqrt(1.0 - x * x)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(2, 0, x), (3.0 * x * x - 1.0) / 2.0));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(2, 1, x), -3.0 * x * Math.Sqrt(1.0 - x * x)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(2, 2, x), 3.0 * (1.0 - x * x)));
+
+            }
+
+        }
+
+        [TestMethod]
+        public void AssociatedLegendreAgreement () {
+            foreach (int l in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
+                foreach (double x in TestUtilities.GenerateRealValues(0.01, 1.0, 5)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        OrthogonalPolynomials.LegendreP(l, 0, x), OrthogonalPolynomials.LegendreP(l, x)
+                    ));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedLegendreRecurrenceL () {
+
+            foreach (int l in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
+                foreach (int m in TestUtilities.GenerateUniformIntegerValues(0, l-1, 4)) {
+                    foreach (double x in TestUtilities.GenerateRealValues(0.01, 1.0, 4)) {
+                        Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                            (l-m+1) * OrthogonalPolynomials.LegendreP(l+1, m, x),
+                            (l+m) * OrthogonalPolynomials.LegendreP(l-1, m, x),
+                            (2*l+1) * x * OrthogonalPolynomials.LegendreP(l, m, x)
+                        ));
+                    }
+                }
+            }
+
+        }
+
+        [TestMethod]
+        public void AssociatedLegendreRecurrenceM () {
+
+            foreach (int l in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
+                foreach (int m in TestUtilities.GenerateUniformIntegerValues(0, l - 1, 4)) {
+                    foreach (double x in TestUtilities.GenerateRealValues(0.1, 1.0, 4)) {
+                        Console.WriteLine("l={0} m={1} x={2}", l, m, x);
+                        Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                            OrthogonalPolynomials.LegendreP(l, m + 1, x),
+                            (l + m) * (l - m + 1 ) * OrthogonalPolynomials.LegendreP(l, m - 1, x),
+                            - 2 * m * x / Math.Sqrt(1.0 - x * x) * OrthogonalPolynomials.LegendreP(l, m, x)
+                        ));
+                    }
+                }
+            }
+
+        }
+
+        [TestMethod]
+        public void AssociatedLegendreOrthonormalityL () {
+
+            // don't let l and m get too big, or numerical integration will fail due to heavily oscilatory behavior
+
+            int[] ells = TestUtilities.GenerateIntegerValues(1, 10, 4);
+            for (int ki = 0; ki < ells.Length; ki++) {
+                int k = ells[ki];
+                for (int li = 0; li <= ki; li++) {
+                    int l = ells[li];
+                    foreach(int m in TestUtilities.GenerateUniformIntegerValues(0, Math.Min(k,l), 4)) {
+
+                        Function<double, double> f = delegate(double x) {
+                            return (OrthogonalPolynomials.LegendreP(k, m, x) * OrthogonalPolynomials.LegendreP(l, m, x));
+                        };
+                        double I = FunctionMath.Integrate(f, Interval.FromEndpoints(-1.0, 1.0));
+
+                        Console.WriteLine("k={0} l={1} m={2} I={3}", k, l, m, I);
+
+                        if (k == l) {
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                                I, 2.0 / (2 * k + 1) * Math.Exp(AdvancedIntegerMath.LogFactorial(l+m) - AdvancedIntegerMath.LogFactorial(l-m))
+                            ));
+                        } else {
+                            Assert.IsTrue(Math.Abs(I) < TestUtilities.TargetPrecision);
+                        }
                     }
                 }
             }

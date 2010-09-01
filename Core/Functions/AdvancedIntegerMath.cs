@@ -9,7 +9,7 @@ namespace Meta.Numerics.Functions {
     /// </summary>
 	public static class AdvancedIntegerMath {
 
-		private static long[]  factorialTable = CreateFactorialTable(20);
+		private static readonly long[]  factorialTable = CreateFactorialTable(20);
 
 		private static long[] CreateFactorialTable (int n) {
 			long[] factorials = new long[n];
@@ -239,8 +239,8 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Modular_exponentiation"/>
         public static int PowMod (int b, int e, int m) {
-            if (b < 1) throw new ArgumentOutOfRangeException("x");
-            if (e < 1) throw new ArgumentOutOfRangeException("y");
+            if (b < 1) throw new ArgumentOutOfRangeException("b");
+            if (e < 1) throw new ArgumentOutOfRangeException("e");
             if (m < 1) throw new ArgumentOutOfRangeException("m");
 
             // use long internally
@@ -262,6 +262,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
+#if FUTURE
 
         public static void Permute (int n) {
 
@@ -375,9 +376,11 @@ namespace Meta.Numerics.Functions {
 
 
         }
+#endif
 
 	}
 
+#if FUTURE
     public class IntegerPartitionEnumerator : IEnumerator<int[]> {
 
         public IntegerPartitionEnumerator (int n) {
@@ -450,5 +453,6 @@ namespace Meta.Numerics.Functions {
         }
 
     }
+#endif
 	
 }

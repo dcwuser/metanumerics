@@ -4,6 +4,8 @@ using System.Text;
 
 namespace Meta.Numerics.Core {
 
+#if FUTURE
+
     public struct BigFloat {
 
         private byte[] mantissa;
@@ -21,5 +23,7 @@ namespace Meta.Numerics.Core {
         }
 
     }
+
+#endif
 
 }

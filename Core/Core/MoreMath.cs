@@ -2,6 +2,13 @@
 
 namespace Meta.Numerics {
 
+    /// <summary>
+    /// Contains addtional basic math operations.
+    /// </summary>
+    /// <remarks>
+    /// <para>The <see cref="System.Math"/> class defines many basic math operations, but a few that are important for optimal numerical
+    /// practice are missing. They are defined by this class.</para>
+    /// </remarks>
     public static class MoreMath {
 
         /// <summary>

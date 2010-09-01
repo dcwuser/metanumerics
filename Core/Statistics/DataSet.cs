@@ -442,6 +442,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         void ICollection<DataPoint>.CopyTo (DataPoint[] array, int offset) {
+            if (array == null) throw new ArgumentNullException("array");
             int i = offset;
             DataPointEnumerator e = new DataPointEnumerator(GetEnumerator());
             while (e.MoveNext()) {

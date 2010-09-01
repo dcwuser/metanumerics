@@ -371,10 +371,12 @@ namespace Meta.Numerics.Statistics {
         /// mean.</para>
         /// <para>Because the distribution of a t-statistic assumes a normally distributed population, this
         /// test should only be used on sample data compatible with a normal distribution. The Mann-Whitney
-        /// U test is a less powerful non-parametric alternative that can be used to test mean compatibility
-        /// on arbitrarly distributed data sets.</para></remarks>
+        /// U test is a less powerful but non-parametric alternative that can be used to test median compatibility
+        /// of arbitrarly distributed data sets.</para></remarks>
         /// <seealso cref="StudentDistribution" />
         public TestResult StudentTTest (double referenceMean) {
+
+            // we need to be able to compute a mean and standard deviation in order to do this test; the standard deviation requires at least 2 data points
             if (this.Count < 2) throw new InvalidOperationException();
             double sigma = Math.Sqrt(this.Count / (this.Count - 1.0)) * this.StandardDeviation;
             double se = sigma / Math.Sqrt(this.Count);
@@ -383,6 +385,31 @@ namespace Meta.Numerics.Statistics {
             int dof = this.Count - 1;
 
             return (new TestResult(t, new StudentDistribution(dof)));
+        }
+
+        /// <summary>
+        /// Tests whether the sample median is compatible with the given reference value.
+        /// </summary>
+        /// <param name="referenceMedian">The reference median.</param>
+        /// <returns>The result of the test.</returns>
+        /// <remarks>
+        /// <para>The sign test is a non-parametric alternative to the Student t-test.</para>
+        /// </remarks>
+        /// <seealso cref="StudentTTest(double)"/>
+        public TestResult SignTest (double referenceMedian) {
+
+            // we need some data to do a sign test
+            if (this.Count < 1) throw new InvalidOperationException();
+
+            // count the number of entries that exceed the reference median
+            int W = 0;
+            foreach (double value in data) {
+                if (value > referenceMedian) W++;
+            }
+
+            // W should be distributed binomially
+            return (new TestResult(W, new DiscreteAsContinuousDistribution(new BinomialDistribution(0.5, data.Count))));
+
         }
 
         /// <summary>
@@ -510,13 +537,21 @@ namespace Meta.Numerics.Statistics {
         /// perform a test of association, such as a <see cref="MultivariateSample.PearsonRTest" />,
         /// <see cref="MultivariateSample.SpearmanRhoTest" />, or <see cref="MultivariateSample.KendallTauTest" />
         /// between the two variables. If you have measurements
-        /// of additional variables for each indiviual, a <see cref="MultivariateSample.LinearRegression" />
+        /// of additional variables for each indiviual, a <see cref="MultivariateSample.LinearRegression(int)" />
         /// analysis would allow you to adjust for confounding effects of the other variables.</para>
         /// </remarks>
         public static TestResult OneWayAnovaTest (params Sample[] samples) {
             return (OneWayAnovaTest((IList<Sample>) samples));
         }
 
+        /// <summary>
+        /// Performs a one-way ANOVA.
+        /// </summary>
+        /// <param name="samples">The samples to compare.</param>
+        /// <returns></returns>
+        /// <remarks>
+        /// <para>For detailed information, see the variable argumet overload.</para>
+        /// </remarks>
         public static TestResult OneWayAnovaTest (IList<Sample> samples) {
 
             if (samples == null) throw new ArgumentNullException("samples");
@@ -691,7 +726,7 @@ namespace Meta.Numerics.Statistics {
         /// in the large-N limit. Because of the large-N assumption, this test should not be used with small (less than ~50)
         /// data sets.</para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="distrubution"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="distribution"/> is null.</exception>
         /// <seealso cref="KolmogorovDistribution"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
         public TestResult KolmogorovSmirnovTest (Distribution distribution) {
@@ -884,7 +919,7 @@ namespace Meta.Numerics.Statistics {
         /// Determines whether the sample contains a given value.
         /// </summary>
         /// <param name="value">The value to check for.</param>
-        /// <returns>Whether the sample contains <paramref name="datum"/>.</returns>
+        /// <returns>Whether the sample contains <paramref name="value"/>.</returns>
         public bool Contains (double value) {
             return (data.Contains(value));
         }

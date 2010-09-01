@@ -210,8 +210,8 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        private static double Dawson_Rybicki_h = 0.25;
-        private static double[] Dawson_Rybicki_coefficients = Compute_Dawson_Rybicki_Coefficients(0.25, 16);
+        private static readonly double Dawson_Rybicki_h = 0.25;
+        private static readonly double[] Dawson_Rybicki_coefficients = Compute_Dawson_Rybicki_Coefficients(0.25, 16);
 
         // pre-computes e^{-(h m)^2} for Rybicki algorithm
 
@@ -506,8 +506,8 @@ namespace Meta.Numerics.Functions {
             return (2.0 / ZP * f * ZQ + 1.0 / Global.SqrtPI / ZD);
         }
 
-        private static double Faddeeva_Weideman_L = Math.Sqrt(40.0 / Math.Sqrt(2.0));
-        private static double[] Faddeeva_Weideman_Coefficients = {
+        private static readonly double Faddeeva_Weideman_L = Math.Sqrt(40.0 / Math.Sqrt(2.0));
+        private static readonly double[] Faddeeva_Weideman_Coefficients = {
             3.0005271472811341147438, // 0
             2.899624509389705247492,
             2.616054152761860368947,

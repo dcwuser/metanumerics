@@ -1,0 +1,172 @@
+﻿using System;
+
+using Meta.Numerics;
+using Meta.Numerics.Functions;
+
+namespace Meta.Numerics.Statistics {
+
+    /// <summary>
+    /// Represents a discrete binomial distribution.
+    /// </summary>
+    /// <remarks>
+    /// <para>The binomial distribution gives the probability of obtaining exactly k successes
+    /// in n independent trails in which the probability of success is p.</para>
+    /// <para>For a single trial, the binomial distribution reduces to a Bernoulli distribution.</para>
+    /// </remarks>
+    public class BinomialDistribution : DiscreteDistribution {
+
+        /// <summary>
+        /// Initializes a new binomial distribution.
+        /// </summary>
+        /// <param name="p">The probability of the success in a single trial, which must lie between zero and one.</param>
+        /// <param name="m">The number of trials, which must be positive.</param>
+        public BinomialDistribution (double p, int m) {
+            if ((p < 0.0) || (p > 1.0)) throw new ArgumentOutOfRangeException("p");
+            if (m < 1) throw new ArgumentOutOfRangeException("m");
+            this.p = p;
+            this.q = 1.0 - p;
+            this.m = m;
+        }
+
+        private int m;
+        private double p, q;
+
+        /// <inheritdoc />
+        public override double ProbabilityMass (int k) {
+            if ((k < 0) || (k > m)) {
+                return (0.0);
+            } else {
+                int kp = m - k;
+                int k1 = Math.Min(k, kp);
+                if ((m <= 32) || (k1 <= 2) || (k1 * Math.Log(Math.E * m / k1) < Math.Log(Int64.MaxValue))) {
+                    // for small enough integers, use the exact binomial coefficient,
+                    // which can be evaluated quickly and exactly
+                    return (AdvancedIntegerMath.BinomialCoefficient(m, k) * MoreMath.Pow(p, k) * MoreMath.Pow(q, m - k));
+                } else {
+                    // otherwise, use the difference of factorials; strong cancelations occur only at
+                    // the edges of Pascal's triangle, which will have been handled by the branch above
+                    return (Math.Exp(
+                        AdvancedIntegerMath.LogFactorial(m) - AdvancedIntegerMath.LogFactorial(k) - AdvancedIntegerMath.LogFactorial(m - k) +
+                        k * Math.Log(p) + (m - k) * Math.Log(q)
+                    ));
+                }
+                // should we try to use an expansion around the normal approximation?
+            }
+        }
+
+        /// <inheritdoc />
+        public override DiscreteInterval Support {
+            get {
+                return (DiscreteInterval.FromEndpoints(0, m));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Mean {
+            get {
+                return (m * p);
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Variance {
+            get {
+                return (m * p * q);
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Skewness {
+            get {
+                return ((q - p) / Math.Sqrt(m * p * q));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Moment (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (1.0);
+            } else {
+                // if m is large, this is slow; find a better way
+                return (ExpectationValue(delegate (double k) { return (MoreMath.Pow(k, n)); }));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double MomentAboutMean (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (1.0);
+            } else if (n == 1) {
+                return (0.0);
+            } else {
+                double mu = Mean;
+                return (ExpectationValue(delegate(double k) { return (MoreMath.Pow(k - mu, n)); }));
+            }
+        }
+
+        // for any m larger than a few, this is a slow way to compute explicit moment
+        // Riordan gives a recurrence; we should probably use it, but its implementation is a little complicated
+
+        /// <inheritdoc />
+        public override double LeftProbability (int k) {
+            if (k < 0) {
+                return (0.0);
+            } else if (k >= m) {
+                return (1.0);
+            } else {
+                // use direct summation in tails
+                return (AdvancedMath.Beta(m - k, k + 1, q) / AdvancedMath.Beta(m - k, k + 1));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double RightProbability (int k) {
+            if (k < 0) {
+                return (1.0);
+            } else if (k >= m) {
+                return (0.0);
+            } else {
+                // use direct summation in tails
+                return (AdvancedMath.Beta(k + 1, m - k, p) / AdvancedMath.Beta(k + 1, m - k));
+            }
+        }
+
+        /// <inheritdoc />
+        public override int InverseLeftProbability (double P) {
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if (m < 16) {
+                // for small distributions, add probabilities directly
+                int k = 0;
+                double P0 = MoreMath.Pow(q, m);
+                double PP = P0;
+                while (k < m) {
+                    if (P <= PP) break;
+                    k++;
+                    P0 *= (m + 1 - k) / k * p / q;
+                    PP += P0;
+                }
+                return (k);
+            } else {
+                // for larger distributions, use bisection
+                // this will require log_{2}(m) CDF evaluations, which is at most 31
+                int ka = 0;
+                int kb = m + 1;
+                while ((kb - ka) > 1) {
+                    int k = (ka + kb) / 2;
+                    if (P > LeftProbability(k)) {
+                        ka = k;
+                    } else {
+                        kb = k;
+                    }
+                }
+                return (ka);
+            }
+        }
+
+    }
+
+}

@@ -2,8 +2,25 @@
 
 namespace Meta.Numerics.Statistics {
 
+    /// <summary>
+    /// Represents a Wald distribution.
+    /// </summary>
+    /// <remakrs>
+    /// <para>The Wald distribution, also called the inverse Gaussian distribution, is the distribution of first
+    /// passage times for a random walk.</para>
+    /// <para>This can be phrased in terms of the Gambler's ruin problem: given an initial endowment x, a gambler
+    /// repeatedly plays a game in which he wins 1 dollar with probability p and looses one dollar with probability
+    /// q = 1 - p. If q > p, he will eventually loose all his endowment. What is the probability distribution that
+    /// he will do so after exactly t games?</para>
+    /// </remakrs>
+    /// <seealso href="http://en.wikipedia.org/wiki/Inverse_Gaussian_distribution"/>
     public class WaldDistribution : Distribution {
 
+        /// <summary>
+        /// Instantiates a new Wald distribution.
+        /// </summary>
+        /// <param name="mean">The mean value, which must be positive.</param>
+        /// <param name="shape">The shape parameter, which must be positive.</param>
         public WaldDistribution (double mean, double shape) {
             if (mean <= 0.0) throw new ArgumentOutOfRangeException("mean");
             if (shape <= 0.0) throw new ArgumentOutOfRangeException("shape");
@@ -56,6 +73,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <inheritdoc />
         public override double MomentAboutMean (int n) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
@@ -78,6 +96,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <inheritdoc />
         public override double LeftProbability (double x) {
             if (x <= 0.0) {
                 return (0.0);

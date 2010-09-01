@@ -10,11 +10,11 @@ namespace Meta.Numerics {
         // double dedicates 10 bits to the magnitude of the the exponent so 2^10 = 1024 is the largest exponent,
         // and 2^1024 is the largest representable double. 2^512 is its square root, which we compare to to
         // decide if we are in danger of overflowing
-        public static double SqrtMax = Math.Pow(2.0, 512);
+        public static readonly double SqrtMax = Math.Pow(2.0, 512);
 
         // double dedicates 52 bits to the magnitude of the mantissa, so 2^-52 is the smallest fraction difference
         // it can detect; in order to avoid any funny effects at the margin, we only try for 2^-50
-        public static double Accuracy = Math.Pow(2.0, -50);
+        public static readonly double Accuracy = Math.Pow(2.0, -50);
 
         public static void Swap<T> (ref T a, ref T b) {
             T t = a;

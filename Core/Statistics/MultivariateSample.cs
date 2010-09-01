@@ -57,6 +57,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="value">The values associated with the entry.</param>
         public void Add (IList<double> value) {
 
+            if (value == null) throw new ArgumentNullException("value");
             if (value.Count != n) throw new DimensionMismatchException();
 
             double[] datum = new double[n];
@@ -80,14 +81,15 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Removes an entry from the sample.
         /// </summary>
-        /// <param name="value">The values associated with the entry to remove.</param>
+        /// <param name="values">The values associated with the entry to remove.</param>
         /// <returns>Whether the entry was found and removed.</returns>
-        public bool Remove (IList<double> value) {
+        public bool Remove (IList<double> values) {
 
-            if (value.Count != n) throw new DimensionMismatchException();
+            if (values == null) throw new ArgumentNullException("values");
+            if (values.Count != n) throw new DimensionMismatchException();
 
             for (int i = 0; i < Count; i++) {
-                if (Matches(data[i], value)) {
+                if (Matches(data[i], values)) {
                     // fix mean
                     data.RemoveAt(i);
                     return (true);
@@ -482,7 +484,7 @@ namespace Meta.Numerics.Statistics {
                 m += (z - m) / (i + 1);
             }
             v = v / (Count-1);
-            Console.WriteLine("m={0} v={1}", m, v);
+            //Console.WriteLine("m={0} v={1}", m, v);
 
             // compute standard error
             double s = Math.Sqrt(v / Count);

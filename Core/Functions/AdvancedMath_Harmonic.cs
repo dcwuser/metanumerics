@@ -17,17 +17,22 @@ namespace Meta.Numerics.Functions {
         public static Complex SphericalHarmonic (int l, int m, double theta, double phi) {
             if (l < 0) throw new ArgumentOutOfRangeException("l");
             if ((m > l) || (m < -l)) throw new ArgumentOutOfRangeException("m");
+
             if (m < 0) {
                 Complex y = SphericalHarmonic(l, -m, theta, phi);
                 if ((m % 2) != 0) y = -y;
                 return (y.Conjugate);
             }
 
-            double LP = OrthogonalPolynomials.LegendrePe(l, m, Math.Cos(theta));
+            double LP = Math.Sqrt((2*l+1) / (4.0 * Math.PI)) * OrthogonalPolynomials.LegendrePe(l, m, Math.Cos(theta));
             double mp = m * phi;
             return (new Complex(LP * AdvancedMath.Cos(mp,0.0), LP * AdvancedMath.Sin(mp,0.0)));
 
         }
-        // Use: Spherically symmetric wave functions in QM; expansion in spherical coordinates
+
+        // spherical harmonics are used in spherically symmetric wave functions in QM, multipole expansions in EM, expansion of any function on a sphere
+
+        // Y{l,m} = sqrt( (2l+1)/(4Pi) (l-m)!/(l+m)! ) P{l,m}; in terms of the renormalized Pe{l,m}, this is Y{l,m] = sqrt( (2l+1)/(4Pi) ) Pe{l,m}
+
     }
 }

@@ -13,8 +13,7 @@ namespace Meta.Numerics.Matrices {
     public sealed class SquareMatrix : ISquareMatrix {
 
         private int dimension;
-        //private double[,] values;
-        private double[] values;
+        private double[] store;
 
         /// <summary>
         /// Initializes a new square matrix.
@@ -24,8 +23,12 @@ namespace Meta.Numerics.Matrices {
         public SquareMatrix (int dimension) {
             if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
             this.dimension = dimension;
-            //this.values = new double[dimension, dimension];
-            this.values = new double[dimension * dimension];
+            this.store = new double[dimension * dimension];
+        }
+
+        internal SquareMatrix (double[] storage, int dimension) {
+            this.store = storage;
+            this.dimension = dimension;
         }
 
         /*
@@ -80,11 +83,15 @@ namespace Meta.Numerics.Matrices {
         // this bypasses bounds checks, so make sure the bounds are right!
 
         internal double GetEntry (int r, int c) {
-            return (values[r * dimension + c]);
+            //Console.WriteLine("get from {0}", dimension * c + r);
+            return (store[dimension * c + r]);
+            //return (values[r * dimension + c]);
         }
 
-        internal void SetEntry (int r, int c, double e) {
-            values[r * dimension + c] = e;
+        internal void SetEntry (int r, int c, double value) {
+            //Console.WriteLine("set {0} at {1}", value, dimension * c + r);
+            store[dimension * c + r] = value;
+            //values[r * dimension + c] = value;
         }
 
 
@@ -127,14 +134,8 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>An independent clone of the matrix.</returns>
         public SquareMatrix Clone () {
-            // replace with direct array copy for even more speed?
-            SquareMatrix clone = new SquareMatrix(dimension);
-            for (int r = 0; r < dimension; r++) {
-                for (int c = 0; c < dimension; c++) {
-                    clone.SetEntry(r, c, this.GetEntry(r, c));
-                }
-            }
-            return (clone);
+            double[] cStore = MatrixAlgorithms.Clone(store, dimension, dimension);
+            return (new SquareMatrix(cStore, dimension));
         }
 
         IMatrix IMatrix.Clone () {
@@ -146,13 +147,8 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>The matrix transpose M<sup>T</sup>.</returns>
         public SquareMatrix Transpose () {
-            SquareMatrix transpose = new SquareMatrix(dimension);
-            for (int r = 0; r < dimension; r++) {
-                for (int c = 0; c < dimension; c++) {
-                    transpose[c, r] = this[r, c];
-                }
-            }
-            return (transpose);
+            double[] tStore = MatrixAlgorithms.Transpose(store, dimension, dimension);
+            return (new SquareMatrix(tStore, dimension));
         }
 
         IMatrix IMatrix.Transpose () {
@@ -261,6 +257,27 @@ namespace Meta.Numerics.Matrices {
         /// <para>The LU decomposition of a square matrix is an O(N<sup>3</sup>) operation.</para>
         /// </remarks>
         public SquareLUDecomposition LUDecomposition () {
+
+            // copy the matrix content
+            double[] luStore = new double[store.Length];
+            Array.Copy(store, luStore, store.Length);
+
+            // prepare an initial permutation and parity
+            int[] permutation = new int[dimension];
+            for (int i = 0; i < permutation.Length; i++) {
+                permutation[i] = i;
+            }
+            int parity = 1;
+
+            // do the LU decomposition
+            SquareMatrixAlgorithms.LUDecompose(luStore, permutation, ref parity, dimension);
+
+            // package it up and return it
+            SquareLUDecomposition LU = new SquareLUDecomposition(luStore, permutation, parity, dimension);
+
+            return (LU);
+
+            /*
             SquareMatrix M = this.Clone();
 
             int[] perm;
@@ -268,9 +285,10 @@ namespace Meta.Numerics.Matrices {
             LUDecompose(M, out perm, out parity);
 
             return (new SquareLUDecomposition(M, perm, parity));
+             */
         }
 
-
+        /*
         private static void LUDecompose (SquareMatrix M, out int[] permutations, out int parity) {
 
             int n = M.Dimension;
@@ -356,6 +374,7 @@ namespace Meta.Numerics.Matrices {
 
 
         }
+        */
 
         /*
         private static int Min (int a, int b) {
@@ -1354,6 +1373,11 @@ namespace Meta.Numerics.Matrices {
             return (Matrix.Equals(this, obj as IMatrix));
         }
 
+        /// <inheritdoc />
+        public override int GetHashCode () {
+            return base.GetHashCode();
+        }
+
         // matrix arithmetic
 
         internal static SquareMatrix Add (ISquareMatrix M1, ISquareMatrix M2) {
@@ -1523,256 +1547,74 @@ namespace Meta.Numerics.Matrices {
     }
 
 
-    /// <summary>
-    /// Represents the LU decomposition of a square matrix.
-    /// </summary>
-    /// <remarks><para>An LU decomposition is a representation of a matrix M as the product of a lower-left-triagular matrix L and
-    /// and an upper-right-triangular matrix U. To avoid numerical instability, we allow ourselves to decompose a row-wise
-    /// permutation of a matrix, so that we have P M = L U, where P is a permutation matrix.</para>
-    /// <para>Given an LU decomposition of M, we can solve equations of the form M x = y in O(N<sup>2</sup>) time. We can also compute
-    /// det M in O(N) time.</para></remarks>
-    /// <seealso cref="SquareMatrix"/>
-    public class SquareLUDecomposition : ISquareDecomposition {
+    internal static class SquareMatrixAlgorithms {
 
-        private SquareMatrix lu;
-        private int[] perm;
-        private int parity;
+        // on input:
+        // store contains the matrix in column-major order (must have the length dimension^2)
+        // permutation contains the row permutation (typically 0, 1, 2, ..., dimension - 1; must have the length dimension^2)
+        // parity contains the parity of the row permutation (typically 1; must be 1 or -1)
+        // dimension contains the dimension of the matrix (must be non-negative)
+        // on output:
+        // store is replaced by the L and U matrices, L in the lower-left triangle (with 1s along the diagonal), U in the upper-right triangle
+        // permutation is replaced by the row permutation, and parity be the parity of that permutation
+        
+        // A = PLU
 
-        /// <summary>
-        /// Gets the dimension of the system.
-        /// </summary>
-        public int Dimension {
-            get {
-                return (lu.Dimension);
-            }
-        }
+        public static void LUDecompose (double[] store, int[] permutation, ref int parity, int dimension) {
 
-        /// <summary>
-        /// Computes the determinant of the original matrix.
-        /// </summary>
-        /// <returns></returns>
-        public double Determinant () {
-            double lnDet = 0.0;
-            int sign = parity;
-            for (int i = 0; i < Dimension; i++) {
-                if (lu[i, i] < 0.0) {
-                    sign = -sign;
-                    lnDet += Math.Log(-lu[i, i]);
-                } else {
-                    lnDet += Math.Log(lu[i, i]);
-                }
-            }
-            return (Math.Exp(lnDet) * sign);
-        }
+            for (int d = 0; d < dimension; d++) {
 
+                int pivotRow = -1;
+                double pivotValue = 0.0;
 
-        /// <summary>
-        /// Returns the solution vector that, when multiplied by the original matrix, produces the given left-hand side vector.
-        /// </summary>
-        /// <param name="rhs">The right-hand side vector.</param>
-        /// <returns>The left-hand side vector.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="rhs"/> is <c>null</c>.</exception>
-        /// <exception cref="DimensionMismatchException">The dimension of <paramref name="rhs"/> is not the same as the
-        /// dimension of the matrix.</exception>
-        public ColumnVector Solve (IList<double> rhs) {
-            if (rhs.Count != Dimension) throw new DimensionMismatchException();
-
-            int n = Dimension;
-
-            ColumnVector x = new ColumnVector(n);
-
-            // unscramble and solve Ly=z
-            for (int i = 0; i < n; i++) {
-                double t = rhs[perm[i]];
-                for (int j = 0; j < i; j++) {
-                    t -= lu.GetEntry(i, j) * x[j];
-                }
-                x[i] = t;
-            }
-
-            // solve Ux = y
-            for (int i = n - 1; i >= 0; i--) {
-                double t = x[i];
-                for (int j = n - 1; j > i; j--) {
-                    t -= lu.GetEntry(i, j) * x[j];
-                }
-                x[i] = t / lu.GetEntry(i, i);
-            }
-
-            return (x);
-
-        }
-
-        /// <summary>
-        /// Returns the the inverse of the original matrix.
-        /// </summary>
-        /// <returns></returns>
-        public SquareMatrix Inverse () {
-
-            // this is basically just inserting unit vectors into Solve,
-            // but we reproduce that logic so as to take some advantage
-            // of the fact that most of the components are zero
-
-            int n = Dimension;
-
-            SquareMatrix MI = new SquareMatrix(n);
-
-            // iterate over the columns
-            for (int c = 0; c < n; c++) {
-
-                // we are dealing with the k'th unit vector
-                // the c'th unit vector gets mapped to the k'th unit vector, where perm[k] = c
-
-                // solve L y = e_k
-                // components below the k'th are zero; this loop determines k as it zeros lower components
-                int k = 0;
-                while (perm[k] != c) {
-                    MI.SetEntry(k, c, 0.0);
-                    k++;
-                }
-                // the k'th component is one
-                MI[k, c] = 1.0;
-                // higher components are non-zero...
-                for (int i = k+1; i < n; i++) {
-                    double t = 0.0;
-                    // ...but loop to compute them need only go over j for which MI[j, c] != 0, i.e. j >= k
-                    for (int j = k; j < i; j++) {
-                        t -= lu.GetEntry(i, j) * MI.GetEntry(j, c);
+                for (int r = d; r < dimension; r++) {
+                    int a0 = dimension * d + r;
+                    double t = store[a0] - Blas1.dDot(store, r, dimension, store, dimension * d, 1, d);
+                    store[a0] = t;
+                    if (Math.Abs(t) > Math.Abs(pivotValue)) {
+                        pivotRow = r;
+                        pivotValue = t;
                     }
-                    MI.SetEntry(i, c, t);
+                }
+                //Console.WriteLine("pivot row = {0}, pivot value = {1}", pivotRow, pivotValue);
+                //pivotValue = aStore[dimension * d + d];
+
+                if (pivotValue == 0.0) throw new DivideByZeroException();
+
+                if (pivotRow != d) {
+                    // switch rows
+                    Blas1.dSwap(store, d, dimension, store, pivotRow, dimension, dimension);
+                    int t = permutation[pivotRow];
+                    permutation[pivotRow] = permutation[d];
+                    permutation[d] = t;
+                    parity = -parity;
                 }
 
-                // solve U x = y
-                // at this stage, the first few components of y are zero and component k is one
-                // but this doesn't let us limit the loop any further, since we already only loop over j > i 
-                for (int i = n - 1; i >= 0; i--) {
-                    double t = MI.GetEntry(i, c);
-                    for (int j = n - 1; j > i; j--) {
-                        t -= lu.GetEntry(i, j) * MI.GetEntry(j, c);
-                    }
-                    MI.SetEntry(i, c, t / lu.GetEntry(i, i));
+                Blas1.dScal(1.0 / pivotValue, store, dimension * d + d + 1, 1, dimension - d - 1);
+
+                for (int c = d + 1; c < dimension; c++) {
+                    double t = Blas1.dDot(store, d, dimension, store, dimension * c, 1, d);
+                    store[dimension * c + d] -= t;
                 }
 
             }
 
-            return (MI);
-
         }
 
-        ISquareMatrix ISquareDecomposition.Inverse () {
-            return (Inverse());
-        }
-
-        /// <summary>
-        /// Gets the L factor.
-        /// </summary>
-        /// <returns></returns>
-        public SquareMatrix LMatrix () {
-            SquareMatrix L = new SquareMatrix(Dimension);
-            for (int r = 0; r < Dimension; r++) {
-                for (int c = 0; c < r; c++) {
-                    L[r, c] = lu[r, c];
-                }
-                L[r, r] = 1.0;
-            }
-            return (L);
-        }
-
-        /// <summary>
-        /// Gets the U factor.
-        /// </summary>
-        /// <returns></returns>
-        public SquareMatrix UMatrix () {
-            SquareMatrix U = new SquareMatrix(Dimension);
-            for (int r = 0; r < Dimension; r++) {
-                for (int c = r; c < Dimension; c++) {
-                    U[r, c] = lu[r, c];
-                }
-            }
-            return (U);
-        }
-
-        /// <summary>
-        /// Gets the permutation matrix.
-        /// </summary>
-        /// <returns></returns>
-        public SquareMatrix PMatrix () {
-            SquareMatrix P = new SquareMatrix(Dimension);
-            for (int r = 0; r < Dimension; r++) {
-                P[r, perm[r]] = 1.0;
-            }
-            return (P);
-        }
-
-        internal SquareLUDecomposition (SquareMatrix lu, int[] perm, int pi) {
-            this.lu = lu;
-            this.perm = perm;
-            this.parity = pi;
-        }
-
-    }
-
-
-    /// <summary>
-    /// Represents a collection of complex eigenvalues and eigenvectors.
-    /// </summary>
-    public class ComplexEigensystem {
-
-        private int dimension;
-
-        private Complex[] eigenvalues;
-
-        private Complex[,] eigenvectors;
-
-        internal ComplexEigensystem (int dimension, Complex[] eigenvalues, Complex[,] eigenvectors) {
-            this.dimension = dimension;
-            this.eigenvalues = eigenvalues;
-            this.eigenvectors = eigenvectors;
-        }
-
-        /// <summary>
-        /// Gets the dimension of the eigensystem.
-        /// </summary>
-        public int Dimension {
-            get {
-                return (dimension);
+        public static void SolveLowerLeftTriangular (double[] tStore, double[] x, int xOffset, int dimension) {
+            for (int r = 0; r < dimension; r++) {
+                double t = Blas1.dDot(tStore, r, dimension, x, xOffset, 1, r);
+                x[xOffset + r] -= t;
             }
         }
 
-        /// <summary>
-        /// Gets the specified eigenvalue.
-        /// </summary>
-        /// <param name="n">The number of the eigenvalue.</param>
-        /// <returns>The <paramref name="n"/>th eigenvalue.</returns>
-        public Complex Eigenvalue (int n) {
-            if ((n < 0) || (n >= dimension)) throw new ArgumentOutOfRangeException("n");
-            return (eigenvalues[n]);
-        }
-
-        /// <summary>
-        /// Gets the specified eigenvector.
-        /// </summary>
-        /// <param name="n">The number of the eigenvector.</param>
-        /// <returns>The <paramref name="n"/>th eigenvector.</returns>
-        public Vector<Complex> Eigenvector (int n) {
-            if ((n < 0) || (n >= dimension)) throw new ArgumentOutOfRangeException("n");
-            Vector<Complex> eigenvector = new Vector<Complex>(dimension);
-            for (int i = 0; i < dimension; i++) {
-                eigenvector[i] = eigenvectors[i, n];
-            }
-            return (eigenvector);
-        }
-
-        /*
-        /// <summary>
-        /// Gets the matrix transform that diagonalizes the original matrix.
-        /// </summary>
-        public Complex[,] Transform {
-            get {
-                return (eigenvectors);
+        public static void SolveUpperRightTriangular (double[] tStore, double[] x, int xOffset, int dimension) {
+            for (int r = dimension - 1; r >= 0; r--) {
+                int i0 = dimension * r + r;
+                double t = Blas1.dDot(tStore, i0 + dimension, dimension, x, xOffset + r + 1, 1, dimension - r - 1);
+                x[xOffset + r] = (x[xOffset + r] - t) / tStore[i0];
             }
         }
-        */
 
     }
 

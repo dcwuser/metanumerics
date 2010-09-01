@@ -86,14 +86,14 @@ namespace Test
         };
 
         [TestMethod]
-        public void DistributionMedianTest () {
+        public void DistributionMedian () {
             foreach (Distribution distribution in distributions) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Median, distribution.InverseLeftProbability(0.5)), String.Format("{0} m={1} P(0.5)={2}", distribution.GetType().Name, distribution.Median, distribution.InverseLeftProbability(0.5)));
             }
         }
 
         [TestMethod]
-        public void DistributionMomentsSpecialCasesTest () {
+        public void DistributionMomentsSpecialCases () {
             foreach (Distribution distribution in distributions) {
                 Assert.IsTrue(distribution.Moment(0) == 1.0);
                 Assert.IsTrue(distribution.Moment(1) == distribution.Mean);
@@ -104,7 +104,20 @@ namespace Test
         }
 
         [TestMethod]
-        public void DistributionMomentSumsTest () {
+        public void DistributionSkewness () {
+            foreach (Distribution distribution in distributions) {
+                Console.WriteLine(distribution.GetType().FullName);
+                //Console.WriteLine("  {0} {1} {2}", distribution.Skewness, distribution.MomentAboutMean(3), distribution.MomentAboutMean(2));
+                if (!Double.IsInfinity(distribution.Skewness)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        distribution.Skewness, distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 3.0 / 2.0)
+                    ));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void DistributionMomentSums () {
             foreach (Distribution distribution in distributions) {
                 Console.WriteLine(distribution.GetType().Name);
                 // C2 = M2 - M1^2
@@ -122,14 +135,14 @@ namespace Test
         }
 
         [TestMethod]
-        public void DistributionCentralInequalityTest () {
+        public void DistributionCentralInequality () {
             foreach (Distribution distribution in distributions) {
                 Assert.IsTrue(Math.Abs(distribution.Mean - distribution.Median) <= distribution.StandardDeviation);
             }
         }
 
         [TestMethod]
-        public void DistributionMonotonicityTest () {
+        public void DistributionMonotonicity () {
             foreach (Distribution distribution in distributions) {
                 for (int i = 0; i < (probabilities.Length - 1); i++) {
                     Assert.IsTrue(distribution.InverseLeftProbability(probabilities[i]) < distribution.InverseLeftProbability(probabilities[i+1]));
@@ -138,7 +151,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void DistributionProbabilityTest () {
+        public void DistributionProbability () {
             foreach (Distribution distribution in distributions) {
                 // some of these x's will be outside range,
                 // but that should just produce zero probability values
@@ -165,7 +178,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void DistributionUnitarityIntegralTest () {
+        public void DistributionUnitarityIntegral () {
             foreach (Distribution distribution in distributions) {
                 double M0 = FunctionMath.Integrate(distribution.ProbabilityDensity, distribution.Support);
                 Console.WriteLine("{0} 1 {1}", distribution.GetType().Name, M0);
@@ -174,7 +187,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void DistributionMeanIntegralTest () {
+        public void DistributionMeanIntegral () {
             foreach (Distribution distribution in distributions) {
                 Function<double, double> f = delegate(double x) {
                     return (distribution.ProbabilityDensity(x) * x);
@@ -191,7 +204,7 @@ namespace Test
 
         // test variance
         [TestMethod]
-        public void DistributionVarianceIntegralTest () {
+        public void DistributionVarianceIntegral () {
             foreach (Distribution distribution in distributions) {
                 Function<double, double> f = delegate(double x) {
                     double z = x - distribution.Mean;
@@ -206,7 +219,7 @@ namespace Test
         // test higher raw moments
 
         [TestMethod]
-        public void DistributionRawMomentIntegralTest () {
+        public void DistributionRawMomentIntegral () {
             foreach (Distribution distribution in distributions) {
                 // range of moments is about 3 to 20
                 foreach (int n in TestUtilities.GenerateIntegerValues(3, 20, 3)) {
@@ -232,7 +245,7 @@ namespace Test
 
         // test higher central moments
         [TestMethod]
-        public void DistributionCentralMomentIntegralTest () {
+        public void DistributionCentralMomentIntegral () {
             foreach (Distribution distribution in distributions) {
                 // range of moments is about 3 to 20
                 foreach (int n in TestUtilities.GenerateIntegerValues(3, 20, 3)) {
@@ -264,7 +277,7 @@ namespace Test
 
         // test P values
         [TestMethod]
-        public void DistributionProbabilityIntegralTest () {
+        public void DistributionProbabilityIntegral () {
             Random rng = new Random(1);
             foreach (Distribution distribution in distributions) {
                 for (int i = 0; i < 3; i++) {
@@ -305,7 +318,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void DistributionInvalidProbabilityInputTest () {
+        public void DistributionInvalidProbabilityInput () {
 
             foreach (Distribution distribution in distributions) {
 

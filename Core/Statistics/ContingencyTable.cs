@@ -32,6 +32,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="data">A (zero-based) matrix of contingency table entries.</param>
         public ContingencyTable (int[,] data) {
+            if (data == null) throw new ArgumentNullException("data");
             this.data = new int[data.GetLength(0), data.GetLength(1)];
             for (int r = 0; r < data.GetLength(0); r++) {
                 for (int c = 0; c < data.GetLength(1); c++) {
@@ -208,6 +209,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="data">A two-dimensional matrix of table entries.</param>
         public BinaryContingencyTable (int[,] data) : base(data) {
+            if (data == null) throw new ArgumentNullException("data");
             if ((data.GetLength(0) != 2) || (data.GetLength(1) != 2)) throw new DimensionMismatchException();
         }
 

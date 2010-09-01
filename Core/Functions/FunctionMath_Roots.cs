@@ -2,6 +2,7 @@
 using System.Diagnostics;
 
 using Meta.Numerics;
+using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Functions {
 
@@ -14,6 +15,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">A ordinate believed to be near the sought zero.</param>
         /// <returns>An ordinate at which the function has a zero.</returns>
         public static double FindZero (Function<double, double> f, double x) {
+
+            if (f == null) throw new ArgumentNullException("f");
 
             // take a step
             double fx = f(x);
@@ -52,6 +55,9 @@ namespace Meta.Numerics.Functions {
         /// <returns>An ordinate within the bracket at which the function has a zero.</returns>
         /// <exception cref="InvalidOperationException">The function does not change sign across the given interval.</exception>
         public static double FindZero (Function<double, double> f, Interval bracket) {
+
+            if (f == null) throw new ArgumentNullException("f");
+
             double x1 = bracket.LeftEndpoint;
             double x2 = bracket.RightEndpoint;
             double f1 = f(x1);
@@ -123,6 +129,39 @@ namespace Meta.Numerics.Functions {
             throw new NonconvergenceException();
 
         }
+
+        // multidimensional
+
+#if FUTURE
+        public static void FindZero (Function<double[], double[]> f, double[] x0) {
+
+            if (f == null) throw new ArgumentNullException("f");
+            if (x0 == null) throw new ArgumentNullException("x0");
+
+            int d = x0.Length;
+            SquareMatrix B = new SquareMatrix(d);
+            ColumnVector x = new ColumnVector(x0);
+
+            for (int n = 0; n < Global.SeriesMax; n++) {
+
+                // determine
+                ColumnVector F1 = new ColumnVector(f(x.ToArray()));
+
+                // determine Newton step
+                SquareLUDecomposition LU = B.LUDecomposition();
+                ColumnVector dx = -LU.Solve(F1);
+
+                // take newton step
+                x = x + dx;
+
+                // update B
+
+            }
+
+            throw new NonconvergenceException();
+
+        }
+#endif
 
     }
 

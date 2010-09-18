@@ -60,7 +60,8 @@ namespace Test {
 
         private DiscreteDistribution[] distributions = new DiscreteDistribution[] {
             new BernoulliDistribution(0.1),
-            new BinomialDistribution(0.2, 30)
+            new BinomialDistribution(0.2, 30),
+            new PoissonDistribution(4.5)
         };
 
         [TestMethod]
@@ -101,7 +102,7 @@ namespace Test {
         public void DiscreteDistributionUnitarity () {
             foreach (DiscreteDistribution distribution in distributions) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    distribution.ExpectationValue(delegate (double k) { return (1.0); }), 1.0
+                    distribution.ExpectationValue(delegate (int k) { return (1.0); }), 1.0
                 ));
             }
         }
@@ -110,7 +111,7 @@ namespace Test {
         public void DiscreteDistributionMean () {
             foreach (DiscreteDistribution distribution in distributions) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    distribution.ExpectationValue(delegate(double k) { return (k); }), distribution.Mean
+                    distribution.ExpectationValue(delegate(int k) { return (k); }), distribution.Mean
                 ));
             }
         }
@@ -120,9 +121,65 @@ namespace Test {
             foreach (DiscreteDistribution distribution in distributions) {
                 double m = distribution.Mean;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    distribution.ExpectationValue(delegate(double x) { return (Math.Pow(x-m, 2)); }), distribution.Variance
+                    distribution.ExpectationValue(delegate(int x) { return (Math.Pow(x-m, 2)); }), distribution.Variance
                 ));
             }
+        }
+
+        [TestMethod]
+        public void DiscreteDistributionSkewness () {
+            foreach (DiscreteDistribution distribution in distributions) {
+                Console.WriteLine(distribution.GetType().FullName);
+                Console.WriteLine(distribution.MomentAboutMean(3));
+                Console.WriteLine(distribution.MomentAboutMean(2));
+                Console.WriteLine(distribution.Skewness);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    distribution.Skewness, distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 3.0 / 2.0)
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void DiscreteDistributionProbabilityAxioms () {
+
+            foreach (DiscreteDistribution distribution in distributions) {
+
+                // some of these values will be outside the support, but that's fine, our results should still be consistent with probability axioms
+                foreach (int k in TestUtilities.GenerateUniformIntegerValues(-10, +100, 6)) {
+
+                    double DP = distribution.ProbabilityMass(k);
+                    Assert.IsTrue(DP >= 0.0); Assert.IsTrue(DP <= 1.0);
+
+                    double P = distribution.LeftProbability(k);
+                    double Q = distribution.RightProbability(k);
+
+                    Assert.IsTrue(P >= 0.0); Assert.IsTrue(P <= 1.0);
+                    Assert.IsTrue(Q >= 0.0); Assert.IsTrue(Q <= 1.0);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(P + Q, 1.0));
+
+                }
+
+            }
+
+        }
+
+        [TestMethod]
+        public void DiscreteDistributionInverseCDF () {
+
+            Random rng = new Random(1);
+            for (int i = 0; i < 10; i++) {
+
+                double P = rng.NextDouble();
+
+                foreach (DiscreteDistribution distribution in distributions) {
+                    int x = distribution.InverseLeftProbability(P);
+                    Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, P, x, distribution.LeftProbability(x));
+                    Assert.IsTrue(distribution.LeftProbability(x) >= P);
+                }
+
+
+            }
+
         }
 
     }

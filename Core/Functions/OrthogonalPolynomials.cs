@@ -97,9 +97,11 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value L<sub>n</sub>(x).</returns>
         /// <remarks>
         /// <para>Laguerre functions are orthogonal on the interval [0,+&#8734;) with the weight e<sup>-x</sup>.</para>
+        /// <img src="../images/LaguerreLOrthonormality.png" />
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Laguerre_polynomial" />
         /// <seealso href="http://mathworld.wolfram.com/LaguerrePolynomial.html" />
+        /// <seealso cref="LaguerreL(int,double,double)"/>
 		public static double LaguerreL (int n, double x) {
 			if (n<0) throw new ArgumentOutOfRangeException("n");
 			if (x<0.0) throw new ArgumentOutOfRangeException("x");

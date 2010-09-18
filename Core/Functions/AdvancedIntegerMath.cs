@@ -24,15 +24,18 @@ namespace Meta.Numerics.Functions {
         /// Computes the factorial of an integer.
         /// </summary>
         /// <param name="n">The argument, which must be non-negative.</param>
-        /// <returns>The factorial <paramref name="n"/>!.</returns>
+        /// <returns>The factorial n!.</returns>
         /// <remarks>
-        /// <para>The factorial of an integer n is the product of all integers from 1 to n.</para>
-        /// <para>Because n! becomes too large to be representable as a double-precision floating point number for quite
-        /// moderate values of n, you may find it convenient to use the <see cref="LogFactorial"/> in order to avoid
-        /// overflow when computing expression in which large factorials will cancel with other large factors.</para>
+        /// <para>The factorial of an integer n is the product of all integers from 1 to n. For example, 4! = 4 * 3 * 2 * 1 = 24.</para>
+        /// <para>Because n! grows extremely quickly with increasing n, we return the result as a double, even though
+        /// the value is always an integer. (13! would overlow an int. 21! would overflow a long. 171! overflows even a double.)</para>
+        /// <para>In order to deal with factorials of larger runbers, you can use the <see cref="LogFactorial"/> method, which
+        /// returns accurate values of ln(n!) even for values of n for which n! itself overflows a double.</para>
+        /// <para>The factorial is generalized to non-integer arguments by the &#x393; function (<see cref="AdvancedMath.Gamma(double)"/>).</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso cref="LogFactorial"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Factorial"/>
 		public static double Factorial (int n) {
 			if (n<0) throw new ArgumentOutOfRangeException("n");
 			if (n<factorialTable.Length) {
@@ -46,7 +49,10 @@ namespace Meta.Numerics.Functions {
         /// Computes the logrithm of the factorial of an integer.
         /// </summary>
         /// <param name="n">The argument, which must be non-negative.</param>
-        /// <returns>The log factorial ln(<paramref name="n"/>!).</returns>
+        /// <returns>The natrual logarithm of the factorial: ln(n!).</returns>
+        /// <remarks>
+        /// <para>This function provides accurate values of ln(n!) even for values of n which would cause n! to overflow.</para>
+        /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso cref="Factorial"/>
 		public static double LogFactorial (int n) {
@@ -66,8 +72,8 @@ namespace Meta.Numerics.Functions {
         /// <returns>The binomial coefficent C(<paramref name="n"/>,<paramref name="m"/>),
         /// also denoted "<paramref name="n"/> choose <paramref name="m"/>".</returns>
         /// <remarks>
-        /// <para>The binomial coefficient C(n,m) is the coefficient of x<sup><paramref name="m"/></sup> in the expansion
-        /// of (1+x)<sup><paramref name="n"/></sup>.</para>
+        /// <para>The binomial coefficient C(n,m) is the coefficient of x<sup>m</sup> in the expansion
+        /// of (1+x)<sup>n</sup>.</para>
         /// <para>C(n,m) can also be given a combinatoric intrepretation as the total number of distinct subsets of m items in a set of n items.</para>
         /// <para>Pascal's triangle is a classic representation of binomial coefficients.</para>
         /// <table style="text-align: center;">
@@ -84,6 +90,7 @@ namespace Meta.Numerics.Functions {
         /// calling this method for each one.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative, or <paramref name="m"/> lies outside [0,<paramref name="n"/>].</exception>
+        /// <seealso href="http://en.wikipedia.org/wiki/Binomial_coefficient"/>
 		public static long BinomialCoefficient (int n, int m) {
 			if (n<0) throw new ArgumentOutOfRangeException("n");
 			if (m<0) throw new ArgumentOutOfRangeException("m");
@@ -153,16 +160,29 @@ namespace Meta.Numerics.Functions {
             }
         }
 
-        internal static double DoubleFactorial (int n) {
-            if (n < 30) {
+        /// <summary>
+        /// Computes the double factorial of the given number.
+        /// </summary>
+        /// <param name="n">The argument, which must be positive.</param>
+        /// <returns>The double factorial n!!.</returns>
+        /// <seealso href="http://mathworld.wolfram.com/DoubleFactorial.html"/>
+        public static double DoubleFactorial (int n) {
+            if (n < 0) throw new ArgumentOutOfRangeException("n");
+            if (n < 32) {
                 return ((double) DoubleFactorial_Multiply(n));
             } else {
                 return (Math.Round(Math.Exp(LogDoubleFactorial_Gamma(n))));
             }
         }
 
-        internal static double LogDoubleFactorial (int n) {
-            if (n < 30) {
+        /// <summary>
+        /// Computes the natural logarithm of the double factorial of the given number.
+        /// </summary>
+        /// <param name="n">The argument.</param>
+        /// <returns>The value of ln(n!!).</returns>
+        public static double LogDoubleFactorial (int n) {
+            if (n < 0) throw new ArgumentOutOfRangeException("n"); 
+            if (n < 32) {
                 return (Math.Log((double) DoubleFactorial_Multiply(n)));
             } else {
                 return (LogDoubleFactorial_Gamma(n));
@@ -219,12 +239,11 @@ namespace Meta.Numerics.Functions {
 		}
 
 		// primality testing
-		// 3J 6J 9J symbols
 
 		// Bernoulli and Euler polynomials
+        
+        // Stirling numbers
 
-        // this doesn't work due to integer overflow; we need an arbitrary-precision integer
-        // structure to make it work
 
         /// <summary>
         /// Computes a power of an integer in modular arithmetic.
@@ -259,6 +278,54 @@ namespace Meta.Numerics.Functions {
             }
 
             return (Convert.ToInt32(rr));
+
+        }
+
+        /// <summary>
+        /// Enumerates all partitions of the given integer
+        /// </summary>
+        /// <param name="n">The integer to partition, which must be positive.</param>
+        /// <returns></returns>
+        /// <remarks>
+        /// <para>Integer partitions are ways to write an integer as a sum of smaller integers. For example, the integer 4 has 5 partitions: 4,
+        /// 3 + 1, 2 + 2, 2 + 1 + 1, and 1 + 1 + 1 + 1.</para>
+        /// <para>Integer partitions appear in combinatoric problems and solutions to problems that may be mapped into combinatoric problems.
+        /// For example, the terms which appear in <a href="http://en.wikipedia.org/wiki/Fa%C3%A0_di_Bruno%27s_formula">Faà di Bruno's formula</a>
+        /// correspond to integer partitions.</para>
+        /// <para>The number of partitions grows very rapidly with n. Already for n = 122, the number of partitions is
+        /// 2,291,320,912, larger than that the capacity of an int. Since enumerating through partitions does not require us to count them,
+        /// this method will work for this and larger values of <paramref name="n"/>. Just keep in mind that completing the enumeration of
+        /// such a large number of paritions is liable to take a long time, even though our algorithm produces each partition very quickly.</para>
+        /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Integer_partition"/>
+        public static IEnumerable<int[]> Partitions (int n) {
+
+            if (n < 1) throw new ArgumentOutOfRangeException("n");
+
+            // initialize the state
+            int[] a = new int[n + 1];
+            int k = 1;
+            a[0] = 0;
+            a[1] = n;
+
+            while (k != 0) {
+
+                // advance to the next partition
+                int y = a[k] - 1;
+                k--;
+                int x = a[k] + 1;
+                while (x <= y) {
+                    a[k] = x;
+                    y -= x;
+                    k++;
+                }
+                a[k] = x + y;
+
+                // return a copy so our state array can't be disturbed
+                int[] p = new int[k + 1];
+                Array.Copy(a, p, k + 1);
+                yield return (p);
+            }
 
         }
 

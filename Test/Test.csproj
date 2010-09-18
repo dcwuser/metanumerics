@@ -100,9 +100,6 @@
     <Compile Include="VectorTest.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Shadow Include="Test References\Meta.Numerics.accessor" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="AuthoringTests.txt" />
   </ItemGroup>
   <ItemGroup>

@@ -393,7 +393,12 @@ namespace Meta.Numerics.Statistics {
         /// <param name="referenceMedian">The reference median.</param>
         /// <returns>The result of the test.</returns>
         /// <remarks>
-        /// <para>The sign test is a non-parametric alternative to the Student t-test.</para>
+        /// <para>The sign test is a non-parametric alternative to the Student t-test. It test whether the sample is consistent
+        /// with the given refernce median.</para>
+        /// <para>The null hypothesis for the test is that the median of the underlying population from which the sample is
+        /// drawn is the reference median. The test statistic is number of sample values that lie above the median. The left
+        /// probability is the chance that so few values would lie below the referene median, assuming that the reference median
+        /// really is the median of the underlying population from which the sample is drawn.</para>
         /// </remarks>
         /// <seealso cref="StudentTTest(double)"/>
         public TestResult SignTest (double referenceMedian) {
@@ -509,8 +514,8 @@ namespace Meta.Numerics.Statistics {
         /// by performing a single test at the required confidence level to test for
         /// any significant differences between the groups.</para>
         /// <para>A one-way ANOVA test on two samples is equivilent to a
-        /// <see cref="Sample.StudentTTest" />t-test, and should yield exactly the same
-        /// significance level.</para>
+        /// t-test (<see cref="Sample.StudentTTest(Sample,Sample)" />), and should yield exactly
+        /// the same significance level.</para>
         /// <para>ANOVA is an acronym for "Analysis of Variance". Do not be confused
         /// by the name and by the use of a ratio-of-variances test statistic: an
         /// ANOVA is primarily (although not exclusively) sensitive to changes in the
@@ -540,7 +545,7 @@ namespace Meta.Numerics.Statistics {
         /// of additional variables for each indiviual, a <see cref="MultivariateSample.LinearRegression(int)" />
         /// analysis would allow you to adjust for confounding effects of the other variables.</para>
         /// </remarks>
-        public static TestResult OneWayAnovaTest (params Sample[] samples) {
+        public static OneWayAnovaResult OneWayAnovaTest (params Sample[] samples) {
             return (OneWayAnovaTest((IList<Sample>) samples));
         }
 
@@ -552,7 +557,7 @@ namespace Meta.Numerics.Statistics {
         /// <remarks>
         /// <para>For detailed information, see the variable argumet overload.</para>
         /// </remarks>
-        public static TestResult OneWayAnovaTest (IList<Sample> samples) {
+        public static OneWayAnovaResult OneWayAnovaTest (IList<Sample> samples) {
 
             if (samples == null) throw new ArgumentNullException("samples");
             if (samples.Count < 2) throw new InvalidOperationException();
@@ -579,9 +584,15 @@ namespace Meta.Numerics.Statistics {
             int dW = n - 1 - dB; 
 
             // determine F statistic
+            //Console.WriteLine("SSB={0} dB={1} SSW={2} dW={3}", SSB, dB, SSW, dW);
             double F = (SSB / dB) / (SSW / dW);
 
-            return (new TestResult(F, new FisherDistribution(dB, dW)));
+            AnovaRow factor = new AnovaRow(SSB, dB);
+            AnovaRow residual = new AnovaRow(SSW, dW);
+            AnovaRow total = new AnovaRow(SSB + SSW, n - 1);
+            return (new OneWayAnovaResult(factor, residual, total));
+
+            //return (new TestResult(F, new FisherDistribution(dB, dW)));
 
         }
 

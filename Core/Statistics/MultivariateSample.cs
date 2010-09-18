@@ -499,7 +499,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Performs a linear regression analysis using the input variables to predict the output variable.
         /// </summary>
-        /// <param name="inputIndices">The indices of the input variables to use.</param>
+        /// <param name="inputIndexes">The indices of the input variables to use.</param>
         /// <param name="outputIndex">The index of the variable to predict.</param>
         /// <returns>The result of the regression.</returns>
         /// <remarks>
@@ -511,19 +511,19 @@ namespace Meta.Numerics.Statistics {
         /// of the x's; it merely asserts a particular underlying relationship between the x's and
         /// the y.</para>
         /// <h4>Inputs and Outputs</h4>
-        /// <para>The <paramref name="inputIndices"/> array specifies the input variables
+        /// <para>The <paramref name="inputIndexes"/> array specifies the input variables
         /// as particular columns of the multivariate sample. The <paramref name="outputIndex" />
         /// specifies column containing the output variable to predict as a linear combination
         /// of input variables. The <paramref name="outputIndex" /> may not appear in the
-        /// <paramref name="inputIndices"/> array. By leaving other indices out of the
-        /// <paramref name="inputIndices"/> array, you can perform a regression fit using a
+        /// <paramref name="inputIndexes"/> array. By leaving other indices out of the
+        /// <paramref name="inputIndexes"/> array, you can perform a regression fit using a
         /// reduced set of input variables. Of course, all indices must correspond to an
-        /// existing column and indices may not be repeated in the <paramref name="inputIndices"/>
+        /// existing column and indices may not be repeated in the <paramref name="inputIndexes"/>
         /// array.</para>
         /// <para>The parameters of the returned fit result are the liklihood-maximizing values of
-        /// the coefficients, in the order specified by the <paramref name="inputIndices"/> array,
+        /// the coefficients, in the order specified by the <paramref name="inputIndexes"/> array,
         /// followed by the intercept parameter. For example, given
-        /// <paramref name="inputIndices"/> = (1, 4, 3), the fit result parameter list would
+        /// <paramref name="inputIndexes"/> = (1, 4, 3), the fit result parameter list would
         /// be (&#x3B2;<sub>1</sub>, &#x3B2;<sub>4</sub>, &#x3B2;<sub>3</sub>, &#x3B1;).</para>
         /// <para>The correlation matrix among fit parameters is also returned with the fit
         /// result, as is an F-test for the goodness of the fit. If the result of the F-test
@@ -575,19 +575,19 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <seealso cref="LinearRegression(int)"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Linear_regression"/>
-        public FitResult LinearRegression (IList<int> inputIndices, int outputIndex) {
+        public FitResult LinearRegression (IList<int> inputIndexes, int outputIndex) {
             // check inputs
-            if (inputIndices == null) throw new ArgumentNullException("inputIndices");
-            for (int i = 0; i < inputIndices.Count; i++) {
-                if ((inputIndices[i] < 0) || (inputIndices[i] >= n)) throw new ArgumentOutOfRangeException("inputIndices");
-                if (inputIndices[i] == outputIndex) throw new ArgumentException("inputIndices");
+            if (inputIndexes == null) throw new ArgumentNullException("inputIndices");
+            for (int i = 0; i < inputIndexes.Count; i++) {
+                if ((inputIndexes[i] < 0) || (inputIndexes[i] >= n)) throw new ArgumentOutOfRangeException("inputIndices");
+                if (inputIndexes[i] == outputIndex) throw new ArgumentException("inputIndices");
                 for (int j = 0; j < i; j++) {
-                    if (inputIndices[j] == inputIndices[i]) throw new ArgumentException("inputIndices");
+                    if (inputIndexes[j] == inputIndexes[i]) throw new ArgumentException("inputIndices");
                 }
             }
             if ((outputIndex < 0) || (outputIndex >= n)) throw new ArgumentOutOfRangeException("outputIndex");
             // do the fit
-            return (LinearRegression_Internal(inputIndices, outputIndex));
+            return (LinearRegression_Internal(inputIndexes, outputIndex));
         }
 
         // the internal linear regression routine, which assumes inputs are entirely valid

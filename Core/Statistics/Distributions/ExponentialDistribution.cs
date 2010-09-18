@@ -12,10 +12,14 @@ namespace Meta.Numerics.Statistics {
     /// <remarks>
     /// <para>An exponential distribution falls off exponentially in the range from zero to infinity. It is a one-parameter
     /// distribution, determined entirely by its rate of fall-off.</para>
+    /// <img src="../images/ExponentialPlot.png" />
     /// <para>The exponential distribution describes the distribution of decay times of radioactive particles.</para>
     /// <para>An exponential distribution with mean one is called a standard exponential distribution. Any exponential distribution
     /// can be converted to a standard exponential by reparameterizing the data into "fractions of the mean,"
     /// i.e. z = x / &#x3BC;.</para>
+    /// <para>Processes resulting in events that are exponentially distributed in time are said to be "ageless" because the hazard function
+    /// of the exponential distribution is constant. The Weibull distribution is a generalization of the exponential distribution which the
+    /// hazard function changes (typically by increasing) with time.</para>
     /// </remarks>
     /// <seealso href="WeibullDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Exponential_distribution"/>

@@ -301,7 +301,7 @@ namespace Meta.Numerics.Functions {
             -2.71994908488607703910e-9
         };
 
-        internal static readonly double LanczosR = 10.900511;
+        internal const double LanczosR = 10.900511;
 
         /*
         private static double LanczosLogGamma (double[] f, double g, double c, double x) {

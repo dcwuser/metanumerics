@@ -1209,6 +1209,129 @@ namespace Test
         }
 
         [TestMethod]
+        public void EllipticKSpecialCases () {
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticK(0.0), Math.PI / 2.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticK(1.0 / Math.Sqrt(2.0)), Math.Pow(AdvancedMath.Gamma(1.0 / 4.0), 2.0) / Math.Sqrt(Math.PI) / 4.0));
+
+        }
+
+        [TestMethod]
+        public void EllipticKIntegral () {
+
+            Interval i = Interval.FromEndpoints(0.0, Math.PI / 2.0);
+
+            foreach (double k in TestUtilities.GenerateRealValues(0.01, 1.0, 4)) {
+
+                Function<double, double> f = delegate(double t) {
+                    double z = k * Math.Sin(t);
+                    return (1.0 / Math.Sqrt(1.0 - z * z));
+                };
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    FunctionMath.Integrate(f, i), AdvancedMath.EllipticK(k)
+                ));
+
+            }
+
+        }
+
+        [TestMethod]
+        public void EllipticKCatalanIntegral () {
+
+            System.Diagnostics.Stopwatch timer = System.Diagnostics.Stopwatch.StartNew();
+
+
+            Interval i = Interval.FromEndpoints(0.0, 1.0);
+
+            Function<double, double> f1 = delegate(double k) {
+                return (AdvancedMath.EllipticK(k));
+            };
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                FunctionMath.Integrate(f1, i), 2.0 * AdvancedMath.Catalan
+            ));
+
+            Function<double, double> f2 = delegate(double k) {
+                return (AdvancedMath.EllipticK(k) * k);
+            };
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                FunctionMath.Integrate(f2, i), 1.0
+            ));
+
+            timer.Stop();
+            Console.WriteLine(timer.ElapsedTicks);
+
+        }
+
+        [TestMethod]
+        public void EllipticFIntegration () {
+
+            foreach (double k in TestUtilities.GenerateRealValues(0.01, 1.0, 4)) {
+
+                Function<double, double> f = delegate(double t) {
+                    double z = k * Math.Sin(t);
+                    return (1.0 / Math.Sqrt(1.0 - z * z));
+                };
+
+                foreach (double phi in TestUtilities.GenerateUniformRealValues(0.0, Math.PI/2.0, 4)) {
+
+                    Interval i = Interval.FromEndpoints(0.0, phi);
+
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        FunctionMath.Integrate(f, i), AdvancedMath.EllipticF(phi, k)
+                    ));
+
+                }
+
+            }
+
+        }
+
+        [TestMethod]
+        public void CarlsonFDuplication () {
+
+            double[] args = TestUtilities.GenerateRealValues(0.01, 100.0, 5);
+            for (int i = 0; i < args.Length; i++) {
+                double x = args[i];
+                for (int j = 0; j <= i; j++) {
+                    double y = args[j];
+                    for (int k = 0; k <= j; k++) {
+                        double z = args[k];
+
+                        double a = Math.Sqrt(x * y) + Math.Sqrt(x * z) + Math.Sqrt(y * z);
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                            AdvancedMath.CarlsonF(x, y, z), 2.0 * AdvancedMath.CarlsonF(x+a, y+a, z+a)
+                        ));
+
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void CarlsonSpecialCases () {
+
+            foreach (double x in TestUtilities.GenerateRealValues(0.01, 1.0E4, 8)) {
+
+                // triply degenerate case
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.CarlsonF(x, x, x), 1.0 / Math.Sqrt(x)));
+
+
+            }
+
+        }
+
+
+        [TestMethod]
+        public void ETest () {
+            double k = 1.0E-4;
+            Console.WriteLine(AdvancedMath.EllipticK(k));
+            //Console.WriteLine(AdvancedMath.EllipticK_Series(0.5));
+            Console.WriteLine(AdvancedMath.CarlsonF(0.0, 1.0 - k * k, 1.0));
+
+        }
+
+        [TestMethod]
         public void Timing () {
 
             System.Diagnostics.Stopwatch timer = System.Diagnostics.Stopwatch.StartNew();

@@ -64,7 +64,7 @@ namespace Test {
         #endregion
 
         [TestMethod]
-        public void SampleManipulationsTest () {
+        public void SampleManipulations () {
             
             // create a sample
             double[] data = new double[] { -1.1, 2.2, -3.3, 4.4 };
@@ -113,9 +113,9 @@ namespace Test {
         };
 
         [TestMethod]
-        public void SampleMomentsTest () {
+        public void SampleMoments () {
             foreach (Distribution distribution in distributions) {
-                //Distribution distribution = new NormalDistribution(3.0, 2.0);
+                
                 Sample sample = CreateSample(distribution, 100);
 
                 Assert.IsTrue(sample.Count == 100);
@@ -128,8 +128,8 @@ namespace Test {
                 Interval si = s.ConfidenceInterval(0.95);
                 Assert.IsTrue(si.ClosedContains(distribution.StandardDeviation));
 
-                for (int n = 3; n < 4; n++) {
-                    UncertainValue c = sample.PopulationMomentAboutMean(3);
+                for (int n = 1; n <= 6; n++) {
+                    UncertainValue c = sample.PopulationMomentAboutMean(n);
                     Interval ci = c.ConfidenceInterval(0.95);
                     Assert.IsTrue(ci.ClosedContains(distribution.MomentAboutMean(n)));
 
@@ -142,9 +142,9 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SampleInterquartileRangeTest () {
+        public void SampleInterquartileRange () {
             foreach (Distribution distribution in distributions) {
-                //Distribution distribution = new NormalDistribution(3.0, 2.0);
+                
                 Sample sample = CreateSample(distribution, 100);
 
                 Interval iqr = sample.InterquartileRange;
@@ -241,15 +241,22 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SampleTTestTest () {
+        public void TTestDistribution () {
 
             // start with a normally distributed population
             Distribution xDistribution = new NormalDistribution(2.0, 3.0);
+            Random rng = new Random(1);
 
             // draw 100 samples from it and compute the t statistic for each
             Sample tSample = new Sample();
-            for (int i = 0; i < 50; i++) {
-                Sample xSample = CreateSample(xDistribution, 10, i);
+            for (int i = 0; i < 100; i++) {
+
+                // each sample has 9 values
+                Sample xSample = new Sample();
+                for (int j = 0; j < 9; j++) {
+                    xSample.Add(xDistribution.GetRandomValue(rng));
+                }
+                //Sample xSample = CreateSample(xDistribution, 10, i);
                 TestResult tResult = xSample.StudentTTest(2.0);
                 double t = tResult.Statistic;
                 Console.WriteLine("t = {0}", t);
@@ -257,10 +264,10 @@ namespace Test {
             }
 
             // sanity check our sample of t's
-            Assert.IsTrue(tSample.Count == 50);
+            Assert.IsTrue(tSample.Count == 100);
 
             // check that the t statistics are distributed as expected
-            Distribution tDistribution = new StudentDistribution(10);
+            Distribution tDistribution = new StudentDistribution(9);
 
             // check on the mean
             Console.WriteLine("m = {0} vs. {1}", tSample.PopulationMean, tDistribution.Mean);
@@ -279,15 +286,20 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SampleSignTest () {
+        public void SignTestDistribution () {
 
             // start with a non-normally distributed population
             Distribution xDistribution = new ExponentialDistribution();
+            Random rng = new Random(1);
 
-            // draw 50 samples from it and compute the t statistic for each
+            // draw 100 samples from it and compute the t statistic for each
             Sample wSample = new Sample();
-            for (int i = 0; i < 50; i++) {
-                Sample xSample = CreateSample(xDistribution, 8, i);
+            for (int i = 0; i < 100; i++) {
+
+                // each sample has 8 observations
+                Sample xSample = new Sample();
+                for (int j = 0; j < 8; j++) { xSample.Add(xDistribution.GetRandomValue(rng)); }
+                //Sample xSample = CreateSample(xDistribution, 8, i);
                 TestResult wResult = xSample.SignTest(xDistribution.Median);
                 double W = wResult.Statistic;
                 //Console.WriteLine("W = {0}", W);
@@ -295,7 +307,7 @@ namespace Test {
             }
 
             // sanity check our sample of t's
-            Assert.IsTrue(wSample.Count == 50);
+            Assert.IsTrue(wSample.Count == 100);
 
             // check that the t statistics are distributed as expected
             DiscreteDistribution wDistribution = new BinomialDistribution(0.5, 8);
@@ -406,13 +418,6 @@ namespace Test {
         }
 
         [TestMethod]
-        public void TestADistribution () {
-
-            TestMoments(new ExponentialDistribution(1.0));
-
-        }
-
-        [TestMethod]
         public void SampleKolmogorovSmirnovTest () {
 
             // this test has a whiff of meta-statistics about it
@@ -507,7 +512,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SampleMaximumLikelihoodFitTest () {
+        public void SampleMaximumLikelihoodFit () {
 
             // normal distriubtion
 
@@ -607,6 +612,7 @@ namespace Test {
             */
         }
 
+        /*
         [TestMethod]
         public void SampleMannWhitneyComputationTest () {
 
@@ -622,6 +628,7 @@ namespace Test {
             Console.WriteLine(result.RightProbability);
 
         }
+        */
 
         [TestMethod]
         public void SampleFisherFTest () {
@@ -682,6 +689,7 @@ namespace Test {
 
         }
 
+        /*
         [TestMethod]
         public void AnovaTest () {
 
@@ -695,8 +703,44 @@ namespace Test {
             C.Add(new double[] { 32, 39, 35, 41, 44 });
 
             Sample.OneWayAnovaTest(A, B, C);
+            //Console.WriteLine("{0} {1} {2}", result.Statistic, result.LeftProbability, result.RightProbability);
 
             // note F = t^2 for two groups
+
+        }
+        */
+
+        [TestMethod]
+        public void AnovaDistribution () {
+
+            Distribution sDistribution = new NormalDistribution();
+            Random rng = new Random(1);
+
+            Sample fSample = new Sample();
+
+            // do 100 ANOVAs
+            for (int t = 0; t < 100; t++) {
+                // each ANOVA has 4 groups
+                List<Sample> groups = new List<Sample>();
+                for (int g = 0; g < 4; g++) {
+                    // each group has 3 data points
+                    Sample group = new Sample();
+                    for (int i = 0; i < 3; i++) {
+                        group.Add(sDistribution.GetRandomValue(rng));
+                    }
+                    groups.Add(group);
+                }
+
+                OneWayAnovaResult result = Sample.OneWayAnovaTest(groups);
+                fSample.Add(result.Factor.FTest.Statistic);
+            }
+
+            // compare the distribution of F statistics to the expected distribution
+            Distribution fDistribution = new FisherDistribution(3, 8);
+            Console.WriteLine("m={0} s={1}", fSample.PopulationMean, fSample.PopulationStandardDeviation);
+            TestResult kResult = fSample.KolmogorovSmirnovTest(fDistribution);
+            Console.WriteLine(kResult.LeftProbability);
+            Assert.IsTrue(kResult.LeftProbability < 0.95);
 
         }
 
@@ -712,7 +756,7 @@ namespace Test {
             // do a Student t-test and a one-way ANOVA
             //TestResult ts = Sample.StudentTTest(A, B);
             TestResult ts = A.StudentTTest(B);
-            TestResult ta = Sample.OneWayAnovaTest(A, B);
+            TestResult ta = Sample.OneWayAnovaTest(A, B).Factor.FTest;
 
             // the results should agree, with F = t^2 and same probability
             Console.WriteLine("{0} {1}", MoreMath.Pow(ts.Statistic, 2), ta.Statistic);

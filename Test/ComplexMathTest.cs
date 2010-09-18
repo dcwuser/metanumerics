@@ -260,7 +260,27 @@ namespace Test
             }
         }
 
+        [TestMethod]
+        public void PowComplexExponent () {
 
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 6)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(Math.E, z), ComplexMath.Exp(z)));
+            }
+
+        }
+
+        [TestMethod]
+        public void ComplexPowSpecialCases () {
+
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 0), 1.0));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 1), z));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 2), z * z));
+
+            }
+
+        }
 
     }
 }

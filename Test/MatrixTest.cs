@@ -138,7 +138,7 @@ namespace Test {
 
             Matrix M = GenerateRandomMatrix(30, 10);
 
-            QRDecomposition QRD = M.QRDecompose();
+            QRDecomposition QRD = M.QRDecomposition();
             Assert.IsTrue(QRD.RowCount == M.RowCount);
             Assert.IsTrue(QRD.ColumnCount == M.ColumnCount);
 

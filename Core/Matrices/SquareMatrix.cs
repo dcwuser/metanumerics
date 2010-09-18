@@ -164,9 +164,15 @@ namespace Meta.Numerics.Matrices {
         /// <para>The inversion of a matrix is an O(N<sup>3</sup>) operation.</para>
         /// </remarks>
         public SquareMatrix Inverse () {
-            SquareMatrix M = this.Clone();
-            GaussJordanInvert(M);
-            return (M);
+
+            double[] iStore = MatrixAlgorithms.Clone(store, dimension, dimension);
+            SquareMatrixAlgorithms.GaussJordanInvert(iStore, dimension);
+            return(new SquareMatrix(iStore, dimension));
+
+
+            //SquareMatrix M = this.Clone();
+            //GaussJordanInvert(M);
+            //return (M);
         }
 
         /*
@@ -194,7 +200,7 @@ namespace Meta.Numerics.Matrices {
         }
 
         
-
+        /*
         private static void GaussJordanInvert (SquareMatrix M) {
 
 
@@ -245,6 +251,7 @@ namespace Meta.Numerics.Matrices {
             }
 
         }
+        */
 
         /// <summary>
         /// Computes the LU decomposition of the matrix.
@@ -436,8 +443,8 @@ namespace Meta.Numerics.Matrices {
         public ComplexEigensystem Eigensystem () {
 
             SquareMatrix A = this.Clone();
-            Debug.WriteLine("Start A=");
-            PrintMatrix(A);
+            //Debug.WriteLine("Start A=");
+            //PrintMatrix(A);
 
             // start with an identity matrix to track the transforms
             SquareMatrix Q = new SquareMatrix(dimension);
@@ -456,21 +463,21 @@ namespace Meta.Numerics.Matrices {
 
             // reduce to Hessenberg form
             ReduceToHessenberg(A, Q);
-            Debug.WriteLine("Hessenberg A=");
-            PrintMatrix(A);
-            Debug.WriteLine("Transform Q=");
-            PrintMatrix(Q);
-            Debug.WriteLine("Test Q^T M Q = A");
-            PrintMatrix(Q.Transpose() * this * Q);
+            //Debug.WriteLine("Hessenberg A=");
+            //PrintMatrix(A);
+            //Debug.WriteLine("Transform Q=");
+            //PrintMatrix(Q);
+            //Debug.WriteLine("Test Q^T M Q = A");
+            //PrintMatrix(Q.Transpose() * this * Q);
             
             // reduce to Schur form, extracting eigenvalues as we go
             Complex[] eigenvalues = ExtractEigenvalues(A, Q);
-            Debug.WriteLine("Schur A=");
-            PrintMatrix(A);
-            Debug.WriteLine("Transform Q=");
-            PrintMatrix(Q);
-            Debug.WriteLine("Test Q^T M Q = A");
-            PrintMatrix(Q.Transpose() * this * Q);
+            //Debug.WriteLine("Schur A=");
+            //PrintMatrix(A);
+            //Debug.WriteLine("Transform Q=");
+            //PrintMatrix(Q);
+            //Debug.WriteLine("Test Q^T M Q = A");
+            //PrintMatrix(Q.Transpose() * this * Q);
 
             // get eigenvectors
             Complex[,] eigenvectors = ExtractEigenvectors(A, Q, eigenvalues);
@@ -694,7 +701,7 @@ namespace Meta.Numerics.Matrices {
                 // check whether we have all the eigenvalues
                 if (c >= dim) break;
 
-                Debug.WriteLine(String.Format("iteration count = {0}", count));
+                //Debug.WriteLine(String.Format("iteration count = {0}", count));
                 //Debug.WriteLine("A = ");
                 //PrintMatrix(A);
 
@@ -707,7 +714,7 @@ namespace Meta.Numerics.Matrices {
                             // we have uncovered an eigenvalue at the top
                             values[a] = A[a,a]; // record the eigenvalue
                             c++; // one more eigenvalue
-                            Debug.WriteLine(String.Format("Got eigenvalue {0} from top: {1}", c, values[a]));
+                            //Debug.WriteLine(String.Format("Got eigenvalue {0} from top: {1}", c, values[a]));
                             a++; // active area shrinks by one from the top
                             //count = 0; // reset the iteration count
                         } else if (a == (r - 2)) {
@@ -717,7 +724,7 @@ namespace Meta.Numerics.Matrices {
                             double det = A[a, a] * A[a + 1, a + 1] - A[a, a + 1] * A[a + 1, a];
                             ExtractTwoByTwoEigenvalues(tr, det, out values[a], out values[a + 1]);
                             c += 2; // eigenvalue count increases by two
-                            Debug.WriteLine(String.Format("Got eigenvalues up to {0} from the top: {1}, {2}", c, values[a], values[a+1]));
+                            //Debug.WriteLine(String.Format("Got eigenvalues up to {0} from the top: {1}, {2}", c, values[a], values[a+1]));
                             a += 2; // active area shrinks by two from the top
                             //count = 0; // reset the iteration count
                         }
@@ -732,7 +739,7 @@ namespace Meta.Numerics.Matrices {
                     // we have isolated a single eigenvalue in the lower-right corner
                     values[n] = A[n, n]; // record the eigenvalue
                     c++; // one more eigenvalue
-                    Debug.WriteLine(String.Format("Got eigenvalue {0} from bottom: {1}", c, values[n]));
+                    //Debug.WriteLine(String.Format("Got eigenvalue {0} from bottom: {1}", c, values[n]));
                     n--; // active area decreases by one from bottom
                     //count = 0; // reset the iteration count
                 } else {
@@ -747,7 +754,7 @@ namespace Meta.Numerics.Matrices {
                         // compute its eigenvalues
                         ExtractTwoByTwoEigenvalues(tr, det, out values[m], out values[n]);
                         c += 2; // two more eigenvalues
-                        Debug.WriteLine(String.Format("Got eigenvalues up to {0} from bottom: {1}, {2}", c, values[m], values[n]));
+                        //Debug.WriteLine(String.Format("Got eigenvalues up to {0} from bottom: {1}, {2}", c, values[m], values[n]));
                         n -= 2; // the active area decreases by two from the bottom
                         //count = 0; // reset the iteration count
 
@@ -1127,6 +1134,8 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+#if FUTURE
+
         private static double[] Balance (SquareMatrix A) {
 
             int d = A.Dimension;
@@ -1168,6 +1177,8 @@ namespace Meta.Numerics.Matrices {
             double y = Math.Round(Math.Log(x) / Math.Log(2.0));
             return (Math.Pow(2.0, y));
         }
+
+#endif
 
         [Conditional("DEBUG")]
         internal static void PrintMatrix (IMatrix M) {
@@ -1249,7 +1260,7 @@ namespace Meta.Numerics.Matrices {
 
         private double ComputeHouseHolderTransform2 (double[] v) {
 
-            PrintVector(v);
+            //PrintVector(v);
 
             // compute column norm
             double y = 0.0;
@@ -1263,10 +1274,10 @@ namespace Meta.Numerics.Matrices {
             if (v[0] < 0.0) x = -x;
             v[0] -= x;
             double norm = Math.Sqrt(MoreMath.Pow2(v[0]) + y);
-            Debug.WriteLine(String.Format("x={0}", x));
+            //Debug.WriteLine(String.Format("x={0}", x));
 
-            PrintVector(v);
-            Debug.WriteLine(String.Format("norm={0}", norm));
+            //PrintVector(v);
+            //Debug.WriteLine(String.Format("norm={0}", norm));
 
             // normalize the transform
             if (norm != 0.0) {
@@ -1274,71 +1285,23 @@ namespace Meta.Numerics.Matrices {
                     v[i] = v[i] / norm;
                 }
             }
-            PrintVector(v);
+            //PrintVector(v);
 
             return (x);
         }
 
-        public void QRDecompose () {
-			// loop over columns, doing a Householder transform for each
-            for (int c = 0; c < dimension; c++) {
+        public SquareQRDecomposition QRDecomposition () {
 
-                // get the column to zero
-                double[] v = new double[dimension - c];
-                for (int r = c; r < dimension; r++) {
-                    v[r - c] = this[r, c];
-                }
+            double[] rStore = MatrixAlgorithms.Clone(store, dimension, dimension);
 
-                // get the householder transform that does it
-                double x = ComputeHouseHolderTransform2(v);
+            double[] qtStore = new double[dimension * dimension];
+            for (int i = 0; i < dimension; i++) { qtStore[dimension * i + i] = 1.0; }
 
-                // zero column
-                this[c, c] = x;
-                for (int r = c + 1; r < dimension; r++) {
-                    this[r, c] = 0.0;
-                }
+            MatrixAlgorithms.QRDecompose(rStore, qtStore, dimension, dimension);
 
-                // update submatrix
-                for (int j = c + 1; j < dimension; j++) {
-                    // compute v * column
-                    double p = 0.0;
-                    for (int k = c; k < dimension; k++) {
-                        p += v[k - c] * this[k, j];
-                    }
-                    // update column
-                    for (int k = c; k < dimension; k++) {
-                        this[k, j] = this[k, j] - 2.0 * p * v[k - c]; 
-                    }
-                }
+            return (new SquareQRDecomposition(qtStore, rStore, dimension));
 
-                /*
-                // update lower right submatrix
-                for (int j = c + 1; j < dimension; j++) {
-                    double sum = 0.0;
-                    for (int k = c; k < dimension; k++) {
-                        sum += this[k, c] * this[k, j];
-                    }
-                    sum = sum / s;
-                    for (int i = c; i < dimension; i++) {
-                        this[i, j] -= this[i, c] * sum;
-                    }
-                }
-
-                // renormalize the Householder vector so that leading component is 1;
-                // this is always possible if s=0 exception wasn't triggered above
-                for (int r = c + 1; r < dimension; r++) {
-                    this[r, c] = this[r, c] / this[c, c];
-                }
-
-                // insert the diagonal entry where the leading component was stored
-                this[c, c] = d;
-                */
-
-                PrintMatrix(this);
-
-            }
         }
-
 
         // operators
 
@@ -1597,6 +1560,60 @@ namespace Meta.Numerics.Matrices {
                     store[dimension * c + d] -= t;
                 }
 
+            }
+
+        }
+
+        // inverts the matrix in place
+        // the in-place-ness makes this a bit confusing
+
+        public static void GaussJordanInvert (double[] store, int dimension) {
+
+            // keep track of row exchanges
+            int[] ps = new int[dimension];
+
+            // iterate over dimensions
+            for (int k = 0; k < dimension; k++) {
+
+                // look for a pivot in the kth column on any lower row
+                int p = k;
+                double q = MatrixAlgorithms.GetEntry(store, dimension, dimension, k, k);
+                
+                for (int r = k + 1; r < dimension; r++) {
+                    double s = MatrixAlgorithms.GetEntry(store, dimension, dimension, r, k);
+                    if (Math.Abs(s) > Math.Abs(q)) {
+                        p = r;
+                        q = s;
+                    }
+                }
+                ps[k] = p;
+
+                // if no non-zero pivot is found, the matrix is singular and cannot be inverted
+                if (q == 0.0) throw new DivideByZeroException();
+
+                // if the best pivot was on a lower row, swap it into the kth row
+                if (p != k) {
+                    Blas1.dSwap(store, k, dimension, store, p, dimension, dimension);
+                }
+
+                // divide the pivot row by the pivot element, so the diagonal element becomes unity
+                MatrixAlgorithms.SetEntry(store, dimension, dimension, k, k, 1.0);
+                Blas1.dScal(1.0 / q, store, k, dimension, dimension);
+
+                // add factors to the pivot row to zero all off-diagonal elements in the kth column
+                for (int r = 0; r < dimension; r++) {
+                    if (r == k) continue;
+                    double a = MatrixAlgorithms.GetEntry(store, dimension, dimension, r, k);
+                    MatrixAlgorithms.SetEntry(store, dimension, dimension, r, k, 0.0);
+                    Blas1.dAxpy(-a, store, k, dimension, store, r, dimension, dimension);
+                }
+
+            }
+
+            // unscramble exchanges
+            for (int k = dimension - 1; k >= 0; k--) {
+                int p = ps[k];
+                if (p != k) Blas1.dSwap(store, dimension * p, 1, store, dimension * k, 1, dimension);
             }
 
         }

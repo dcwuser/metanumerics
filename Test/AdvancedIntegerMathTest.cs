@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
+
 using Meta.Numerics.Functions;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Test {
@@ -63,16 +66,18 @@ namespace Test {
         private int nmax = 30;
 
         [TestMethod]
-        public void FactorialSpecialCasesTest () {
+        public void FactorialSpecialCases () {
             Assert.IsTrue(AdvancedIntegerMath.Factorial(0) == 1);
             Assert.IsTrue(AdvancedIntegerMath.Factorial(1) == 1);
             Assert.IsTrue(AdvancedIntegerMath.Factorial(2) == 2);
             Assert.IsTrue(AdvancedIntegerMath.Factorial(3) == 6);
+            Assert.IsTrue(AdvancedIntegerMath.Factorial(4) == 24);
         }
 
         [TestMethod()]
-        public void FactorialRecurrenceTest () {
-            for (int n = 1; n < nmax; n++) {
+        public void FactorialRecurrence () {
+
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 30, 5)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedIntegerMath.Factorial(n), n * AdvancedIntegerMath.Factorial(n - 1)));
             }
         }
@@ -81,6 +86,28 @@ namespace Test {
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
         public void FactorialNegativeArgumentTest () {
             AdvancedIntegerMath.Factorial(-1);
+        }
+
+        [TestMethod]
+        public void DoubleFactorialSpecialCases () {
+            Assert.IsTrue(AdvancedIntegerMath.DoubleFactorial(0) == 1);
+            Assert.IsTrue(AdvancedIntegerMath.DoubleFactorial(1) == 1);
+            Assert.IsTrue(AdvancedIntegerMath.DoubleFactorial(2) == 2);
+            Assert.IsTrue(AdvancedIntegerMath.DoubleFactorial(3) == 3);
+            Assert.IsTrue(AdvancedIntegerMath.DoubleFactorial(4) == 8);
+            Assert.IsTrue(AdvancedIntegerMath.DoubleFactorial(5) == 15);
+        }
+
+        [TestMethod]
+        public void FactorialDoubleFactorialRelationship () {
+
+            // n! = n!! (n-1)!!
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedIntegerMath.LogFactorial(n),
+                    AdvancedIntegerMath.LogDoubleFactorial(n) + AdvancedIntegerMath.LogDoubleFactorial(n - 1)
+                ));
+            }
         }
 
         // Binomial coefficients
@@ -110,16 +137,19 @@ namespace Test {
         }
 
         [TestMethod]
-        public void BinomialCoefficientSpecialCasesTest () {
-            for (int n = 0; n < nmax; n++) {
+        public void BinomialCoefficientSpecialCases () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 30, 5)) {
                 Assert.IsTrue(AdvancedIntegerMath.BinomialCoefficient(n, 0) == 1);
+                Assert.IsTrue(AdvancedIntegerMath.BinomialCoefficient(n, 1) == n);
+                Assert.IsTrue(AdvancedIntegerMath.BinomialCoefficient(n, n - 1) == n);
                 Assert.IsTrue(AdvancedIntegerMath.BinomialCoefficient(n, n) == 1);
             }
         }
 
         [TestMethod]
-        public void BinomialCoefficientSumTest () {
-            for (int n = 0; n < nmax; n++) {
+        public void BinomialCoefficientSum () {
+
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 30, 5)) {
                 long sum = 0;
                 long product = 1;
                 for (int m = 0; m <= n; m++) {
@@ -127,7 +157,7 @@ namespace Test {
                     if (m > 0) product *= 2;
                 }
                 Console.WriteLine("n={0}, sum={0}, product={1}", n, sum, product);
-                Assert.IsTrue(sum == product, String.Format("n={0}, sum={0}, product={1}", n, sum, product));
+                Assert.IsTrue(sum == product);
             }
         }
 
@@ -173,26 +203,41 @@ namespace Test {
             Assert.AreEqual<long>(AdvancedIntegerMath.GCF(a, b) * AdvancedIntegerMath.LCM(a, b), a * b);
         }
 
-#if FUTURE
         [TestMethod]
-        public void IntegerParticianTest () {
+        public void IntegerPartitionCounts () {
 
-            IntegerPartitionEnumerator e = new IntegerPartitionEnumerator(120);
-            int P = 0;
-            while (e.MoveNext()) {
-                P++;
-                /*
-                int[] p = e.Current;
-                for (int i = 0; i < p.Length; i++) {
-                    Console.Write("{0} ", p[i]);
-                }
-                Console.WriteLine();
-                */
-            }
-            Console.WriteLine(P);
+            // these counts are from Table 21.5 of Abromowitz & Stegun
+            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(1)) == 1);
+            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(2)) == 2);
+            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(3)) == 3);
+            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(4)) == 5);
+            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(5)) == 7);
+            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(6)) == 11);
+            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(7)) == 15);
+            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(8)) == 22);
 
         }
-#endif
+
+        private int CountValues (IEnumerable enumeration) {
+            int count = 0;
+            foreach (object value in enumeration) count++;
+            return(count);
+        }
+
+        [TestMethod]
+        public void IntegerPartitionSums () {
+
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
+
+                foreach (int[] partition in AdvancedIntegerMath.Partitions(n)) {
+                    int s = 0;
+                    foreach (int i in partition) s += i;
+                    Assert.IsTrue(s == n);
+                }
+
+            }
+
+        }
 
         [TestMethod]
         public void PowModTest () {

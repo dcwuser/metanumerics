@@ -82,20 +82,20 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Computes the solution to a system of equations.
         /// </summary>
-        /// <param name="rhs"></param>
-        /// <returns></returns>
+        /// <param name="rhs">The right-hand-side vector.</param>
+        /// <returns>The left-hand-side vector.</returns>
         ColumnVector Solve (IList<double> rhs);
 
         /// <summary>
         /// Computes the inverse of the original matrix.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The matrix inverse.</returns>
         ISquareMatrix Inverse ();
 
         /// <summary>
         /// Computes the determinant of the original matrix.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The matrix determinant.</returns>
         double Determinant ();
 
     }

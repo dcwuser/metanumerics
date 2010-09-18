@@ -169,7 +169,7 @@ namespace Meta.Numerics.Matrices {
         /// matrix has more columns than rows, you can QR decompose its transpose.</para>
         /// </remarks>
         /// <seealso cref="QRDecomposition"/>
-        public QRDecomposition QRDecompose () {
+        public QRDecomposition QRDecomposition () {
 
             if (rows < columns) throw new InvalidOperationException();
 

@@ -12,8 +12,8 @@ namespace Meta.Numerics.Statistics {
     /// "success" and "failure", but the same logic is applicable to any binary set of outcomes: right or left, true or false, etc.
     /// We represent the outcomes by 1 and 0, which are the only two integers for which the Bernoulli probability
     /// does not vanish. The parameter p is the probability of obtaining outcome 1.</para>
-    /// <para>When multiple, independent Bernoulli trials are conducted, the binomial distribution describes
-    /// the probablity of obtaining any particular number of successes.</para>
+    /// <para>When multiple, independent Bernoulli trials are conducted, the binomial distribution (<see cref="BinomialDistribution"/>)
+    /// describes the probablity of obtaining any particular number of successes.</para>
     /// </remarks>
     /// <seealso cref="BinomialDistribution"/>
     public class BernoulliDistribution : DiscreteDistribution {

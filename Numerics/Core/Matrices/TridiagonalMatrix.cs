@@ -472,7 +472,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="T1">The first matrix.</param>
         /// <param name="T2">The second matrix.</param>
-        /// <returns>True if <paramref name="M1"/> and <paramref name="M2"/> are equal, otherwise false.</returns>
+        /// <returns>True if <paramref name="T1"/> and <paramref name="T2"/> are equal, otherwise false.</returns>
         public static bool operator == (TridiagonalMatrix T1, TridiagonalMatrix T2) {
             return (TridiagonalMatrix.Equals(T1, T2));
         }
@@ -482,7 +482,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="T1">The first matrix.</param>
         /// <param name="T2">The second matrix.</param>
-        /// <returns>False if <paramref name="M1"/> and <paramref name="M2"/> are equal, otherwise true.</returns>
+        /// <returns>False if <paramref name="T1"/> and <paramref name="T2"/> are equal, otherwise true.</returns>
         public static bool operator != (TridiagonalMatrix T1, TridiagonalMatrix T2) {
             return (!TridiagonalMatrix.Equals(T1, T2));
         }
@@ -494,6 +494,11 @@ namespace Meta.Numerics.Matrices {
         /// <returns>True if <paramref name="obj"/> is an equal matrix, otherwise false.</returns>
         public override bool Equals (object obj) {
             return (Matrix.Equals(this, obj as IMatrix));
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode () {
+            return base.GetHashCode();
         }
 
 #if SHO

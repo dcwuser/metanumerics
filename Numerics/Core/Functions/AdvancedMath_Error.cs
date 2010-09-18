@@ -210,7 +210,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        private static readonly double Dawson_Rybicki_h = 0.25;
+        private const double Dawson_Rybicki_h = 0.25;
         private static readonly double[] Dawson_Rybicki_coefficients = Compute_Dawson_Rybicki_Coefficients(0.25, 16);
 
         // pre-computes e^{-(h m)^2} for Rybicki algorithm

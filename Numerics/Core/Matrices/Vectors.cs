@@ -31,15 +31,16 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="list">The component elements.</param>
         public Vector (IList<T> list) {
+            if (list == null) throw new ArgumentNullException("list");
             v = new T[list.Count];
             list.CopyTo(v, 0);
         }
 
         /// <summary>
-        /// Gets or sets the <paramref name="n"/>th vector component.
+        /// Gets or sets the specified vector component.
         /// </summary>
         /// <param name="index">The (zero-based) component index.</param>
-        /// <returns>The <paramref name="n"/>th vector component.</returns>
+        /// <returns>The value of the specified vector component.</returns>
         public T this[int index] {
             get {
                 return (v[index]);
@@ -282,6 +283,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="v2">The second column vector.</param>
         /// <returns>The difference of <paramref name="v1"/> and <paramref name="v2"/>.</returns>
         public static ColumnVector operator - (ColumnVector v1, ColumnVector v2) {
+            if (v1 == null) throw new ArgumentNullException("v1");
+            if (v2 == null) throw new ArgumentNullException("v2");
             if (v1.Dimension != v2.Dimension) throw new DimensionMismatchException();
             int d = v1.Dimension;
             ColumnVector u = new ColumnVector(d);

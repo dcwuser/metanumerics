@@ -90,7 +90,7 @@ namespace Meta.Numerics.Statistics {
                 return (1.0);
             } else {
                 // if m is large, this is slow; find a better way
-                return (ExpectationValue(delegate (double k) { return (MoreMath.Pow(k, n)); }));
+                return (ExpectationValue(delegate (int k) { return (MoreMath.Pow(k, n)); }));
             }
         }
 
@@ -104,7 +104,7 @@ namespace Meta.Numerics.Statistics {
                 return (0.0);
             } else {
                 double mu = Mean;
-                return (ExpectationValue(delegate(double k) { return (MoreMath.Pow(k - mu, n)); }));
+                return (ExpectationValue(delegate(int k) { return (MoreMath.Pow(k - mu, n)); }));
             }
         }
 
@@ -139,7 +139,7 @@ namespace Meta.Numerics.Statistics {
         public override int InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
             if (m < 16) {
-                // for small distributions, add probabilities directly
+                // for small distributions, just add probabilities directly
                 int k = 0;
                 double P0 = MoreMath.Pow(q, m);
                 double PP = P0;
@@ -154,11 +154,11 @@ namespace Meta.Numerics.Statistics {
                 // for larger distributions, use bisection
                 // this will require log_{2}(m) CDF evaluations, which is at most 31
                 int ka = 0;
-                int kb = m + 1;
-                while ((kb - ka) > 1) {
+                int kb = m;
+                while (ka != kb) {
                     int k = (ka + kb) / 2;
                     if (P > LeftProbability(k)) {
-                        ka = k;
+                        ka = k + 1;
                     } else {
                         kb = k;
                     }

@@ -22,10 +22,12 @@ namespace Meta.Numerics.Matrices {
         public SymmetricMatrix (int dimension) {
             if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
             this.dimension = dimension;
-            values = new double[dimension][];
-            for (int r = 0; r < dimension; r++) {
-                values[r] = new double[r + 1];
-            }
+            values = SymmetricMatrixAlgorithms.InitializeStorage(dimension);
+        }
+
+        internal SymmetricMatrix (double[][] storage, int dimension) {
+            this.values = storage;
+            this.dimension = dimension;
         }
 
         /// <summary>
@@ -80,6 +82,7 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
+        /*
         private double GetEntry (int r, int c) {
             Debug.Assert(c <= r);
             return (values[r][c]);
@@ -89,6 +92,7 @@ namespace Meta.Numerics.Matrices {
             Debug.Assert(c <= r);
             values[r][c] = value;
         }
+        */
 
         /// <summary>
         /// Returns an independent copy of the matrix.
@@ -155,10 +159,10 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Returns the Cholesky decomposition of the matrix.
         /// </summary>
-        /// <returns>The Cholesky decomposition of the matrix, or null is the matrix is not positive definite.</returns>
+        /// <returns>The Cholesky decomposition of the matrix, or null if the matrix is not positive definite.</returns>
         /// <remarks>
         /// <para>A Cholesky decomposition is a special decomposition that is possible only for positive definite matrices.
-        /// (A positive definite matrix has x<sup>T</sup>Mx > 0 for any vector x. Equivilently, M is positive definite if
+        /// (A positive definite matrix M has x<sup>T</sup>Mx > 0 for any vector x. Equivilently, M is positive definite if
         /// all its eigenvalues are positive.)</para>
         /// <para>The Cholesky decomposition represents M = C C<sup>T</sup>, where C is lower-left triangular (and thus C<sup>T</sup>
         /// is upper-right triangular. It is basically an LU decomposition where the L and U factors are related by transposition.
@@ -169,28 +173,14 @@ namespace Meta.Numerics.Matrices {
         /// method returns null, M is not positive definite.</para>
         /// </remarks>
         public CholeskyDecomposition CholeskyDecomposition () {
-            SymmetricMatrix LU = new SymmetricMatrix(dimension);
-            for (int i = 0; i < dimension; i++) {
-                double p = this[i, i];
-                for (int j = 0; j < i; j++) {
-                    p -= Math.Pow(LU[i, j], 2);
-                }
 
-                // If a pivot is negative, the matrix is not positive definite
-                if (p <= 0) return (null);
-                LU[i, i] = Math.Sqrt(p);
-
-                for (int j = i + 1; j < dimension; j++) {
-                    LU[j, i] = this[i, j];
-                    for (int k = 0; k < i; k++) {
-                        LU[j, i] -= LU[i, k] * LU[j, k];
-                    }
-                    LU[j, i] = LU[j, i] / LU[i, i];
-                }
+            double[][] cdStorage = SymmetricMatrixAlgorithms.CholeskyDecomposition(values, dimension);
+            if (cdStorage == null) {
+                return (null);
+            } else {
+                return (new CholeskyDecomposition(new SymmetricMatrix(cdStorage, dimension)));
             }
 
-            CholeskyDecomposition CD = new CholeskyDecomposition(LU);
-            return (CD);
         }
 
 
@@ -585,6 +575,11 @@ namespace Meta.Numerics.Matrices {
 
         // operators
 
+        /// <inheritdoc />
+        public override int GetHashCode () {
+            return base.GetHashCode();
+        }
+
         internal static bool Equals (SymmetricMatrix M1, SymmetricMatrix M2) {
             if (Object.ReferenceEquals(M1, null)) {
                 if (Object.ReferenceEquals(M2, null)) {
@@ -745,150 +740,47 @@ namespace Meta.Numerics.Matrices {
 
     }
 
-    /// <summary>
-    /// Represents the Cholesky Decomposition of a symmetric, positive definite matrix. 
-    /// </summary>
-    /// <seealso cref="SymmetricMatrix.CholeskyDecomposition"/>
-    public class CholeskyDecomposition : ISquareDecomposition {
 
-        internal SymmetricMatrix sqrtM;
+    internal static class SymmetricMatrixAlgorithms {
 
-        /// <summary>
-        /// Gets the dimension of the system.
-        /// </summary>
-        public virtual int Dimension {
-            get {
-                return (sqrtM.Dimension);
-            }
-        }
-
-        /// <summary>
-        /// Returns the Cholesky square root matrix.
-        /// </summary>
-        /// <returns>A lower-left triangular matrix A, such that A A<sup>T</sup> = M.</returns>
-        public virtual SquareMatrix SquareRootMatrix () {
-            SquareMatrix A = new SquareMatrix(Dimension);
-            for (int r = 0; r < Dimension; r++) {
-                for (int c = 0; c <= r; c++) {
-                    A[r, c] = sqrtM[r, c];
-                }
+        public static double[][] InitializeStorage (int dimension) {
+            double[][] A = new double[dimension][];
+            for (int i = 0; i < dimension; i++) {
+                A[i] = new double[i+1];
             }
             return (A);
         }
 
-        /*
-        public virtual LowerTriangularMatrix LeftFactor {
-            get {
-                LowerTriangularMatrix L = new LowerTriangularMatrix(Dimension);
-                for (int r = 0; r < Dimension; r++) {
-                    for (int c = 0; c <= r; c++) {
-                        L[r, c] = sqrtM[r, c];
-                    }
-                }
-                return (L);
-            }
-        }
+        public static double[][] CholeskyDecomposition (double[][] A, int dimension) {
 
-        public virtual UpperTriangularMatrix RightFactor {
-            get {
-                UpperTriangularMatrix R = new UpperTriangularMatrix(Dimension);
-                for (int c = 0; c < Dimension; c++) {
-                    for (int r = 0; r <= c; r++) {
-                        R[r, c] = sqrtM[r, c];
-                    }
-                }
-                return (R);
-            }
-        }
-        */
+            double[][] CD = InitializeStorage(dimension);
 
-        /// <summary>
-        /// Computes the solution vector that, when multiplied by the original matrix, produces the given left-hand side vector.
-        /// </summary>
-        /// <param name="rhs">The right-hand-side vector.</param>
-        /// <returns>The left-hand-side (solution) vector.</returns>
-        public virtual ColumnVector Solve (IList<double> rhs) {
-            if (rhs == null) throw new ArgumentNullException("rhs");
-            if (rhs.Count != Dimension) throw new InvalidOperationException();
-
-            // Determine Ly = x
-            double[] y = new double[Dimension];
-            for (int i = 0; i < Dimension; i++) {
-                y[i] = rhs[i];
+            for (int i = 0; i < dimension; i++) {
+                double q = A[i][i];
                 for (int j = 0; j < i; j++) {
-                    y[i] -= sqrtM[j, i] * y[j];
+                    q -= MoreMath.Pow2(CD[i][j]);
                 }
-                y[i] = y[i] / sqrtM[i, i];
+
+                if (q <= 0.0) return (null);
+                q = Math.Sqrt(q);
+
+                CD[i][i] = q;
+
+                for (int j = i + 1; j < dimension; j++) {
+                    double p = A[j][i];
+                    for (int k=0; k < i; k++) {
+                        p -= CD[i][k] * CD[j][k];
+                    }
+                    CD[j][i] = p / q;
+                }
             }
 
-            // Determine L^{T} z = y
-            double[] z = new double[Dimension];
+            return (CD);
 
-            // Re-use y for z, since we don't need a value after it's set
-            for (int i = (Dimension - 1); i >= 0; i--) {
-                z[i] = y[i];
-                for (int j = (Dimension - 1); j > i; j--) {
-                    z[i] -= sqrtM[i, j] * z[j];
-                }
-                z[i] = z[i] / sqrtM[i, i];
-            }
-            return (new ColumnVector(z));
-        }
-
-        /// <summary>
-        /// Computes the inverse of the original matrix.
-        /// </summary>
-        /// <returns>M<sup>-1</sup></returns>
-        public virtual SymmetricMatrix Inverse() {
-                SymmetricMatrix MI = new SymmetricMatrix(Dimension);
-
-                // do each column as a RHS
-                for (int c = 0; c < Dimension; c++) {
-                    MI[c, c] = 1.0 / sqrtM[c, c];
-                    for (int r = c + 1; r < Dimension; r++) {
-                        MI[r, c] = 0.0;
-                        for (int i = c; i < r; i++) {
-                            MI[r, c] -= sqrtM[r, i] * MI[i, c];
-                        }
-                        MI[r, c] = MI[r, c] / sqrtM[r, r];
-                    }
-                }
-
-                // unnecessary?
-                for (int c = 0; c < Dimension; c++) {
-                    for (int r = (Dimension - 1); r >= c; r--) {
-                        for (int i = r + 1; i < Dimension; i++) {
-                            MI[r, c] -= sqrtM[r, i] * MI[i, c];
-                        }
-                        MI[r, c] = MI[r, c] / sqrtM[r, r];
-                    }
-                }
-                // end unnecessary?
-
-                return (MI);
-        }
-
-        ISquareMatrix ISquareDecomposition.Inverse () {
-            return (Inverse());
-        }
-
-        /// <summary>
-        /// Computes the determinant of the original matrix.
-        /// </summary>
-        /// <returns>det M</returns>
-        public virtual double Determinant () {
-                double lnDet = 0.0;
-                for (int i = 0; i < Dimension; i++) {
-                    lnDet += 2.0 * Math.Log(sqrtM[i, i]);
-                }
-                return (Math.Exp(lnDet));
-        }
-
-        internal CholeskyDecomposition (SymmetricMatrix sqrtM) {
-            this.sqrtM = sqrtM;
         }
 
     }
+
 
 #if FUTURE
 

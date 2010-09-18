@@ -3,10 +3,302 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
 
-namespace Test {
+namespace FutureTest {
+
+    // proposed matrix class hierarchy
+
+    public abstract class RectangularMatrixBase {
+
+        public abstract double this[int r, int c] { get; set; }
+
+        public abstract int RowCount { get; }
+
+        public abstract int ColumnCount { get; }
+
+        // we an implement some operations, but many will be slow because they do not have access to the underlying storage
+        // override them with faster implementations
+
+        public virtual double OneNorm () {
+            throw new NotImplementedException();
+        }
+
+        public virtual double InfinityNorm () {
+            throw new NotImplementedException();
+        }
+
+        public static RectangularMatrix operator + (RectangularMatrixBase M1, RectangularMatrixBase M2) {
+            if (M1 == null) throw new ArgumentNullException("M1");
+            if (M2 == null) throw new ArgumentNullException("M2");
+            throw new NotImplementedException();
+        }
+
+        public static RectangularMatrix operator * (RectangularMatrixBase M1, RectangularMatrixBase M2) {
+            throw new NotImplementedException();
+        }
+
+        public static bool operator == (RectangularMatrixBase M1, RectangularMatrixBase M2) {
+            throw new NotImplementedException();
+        }
+
+        public static bool operator != (RectangularMatrixBase M1, RectangularMatrixBase M2) {
+            return (!(M1 == M2));
+        }
+
+        public override bool Equals (object obj) {
+            RectangularMatrixBase M = obj as RectangularMatrix;
+            if (obj == null) {
+                return (false);
+            } else {
+                return ((this == M));
+            }
+        }
+
+        public override int GetHashCode () {
+            throw new NotImplementedException();
+        }
+    }
+
+    public sealed class RectangularMatrix : RectangularMatrixBase {
+
+        public override double this[int r, int c] {
+            get {
+                throw new NotImplementedException();
+            }
+            set {
+                throw new NotImplementedException();
+            }
+        }
+
+        public override int RowCount {
+            get { throw new NotImplementedException(); }
+        }
+
+        public override int ColumnCount {
+            get { throw new NotImplementedException(); }
+        }
+
+        public static RectangularMatrix operator * (RectangularMatrix M1, RectangularMatrix M2) {
+            // this is faster than the base operator, because it knows about the underlying structure
+            throw new NotImplementedException();
+        }
+
+        public static ColumnVector operator * (RectangularMatrix M1, ColumnVector v1) {
+            // this is faster than the base operator, because it knows about the underlying structure
+            throw new NotImplementedException();
+        }
+
+    }
+
+    public abstract class SquareMatrixBase : RectangularMatrixBase {
+
+        public abstract int Dimension { get; }
+
+        public override int RowCount {
+            get { return (Dimension); }
+        }
+
+        public override int ColumnCount {
+            get { return (Dimension); }
+        }
+
+        public virtual double Trace () {
+            throw new NotImplementedException();
+        }
+
+        public static SquareMatrix operator + (SquareMatrixBase M1, SquareMatrixBase M2) {
+            throw new NotImplementedException();
+        }
+
+        public static SquareMatrix operator * (SquareMatrixBase M1, SquareMatrixBase M2) {
+            throw new NotImplementedException();
+        }
+
+    }
+
+    public sealed class SquareMatrix : SquareMatrixBase {
+
+        public override double this[int r, int c] {
+            get {
+                throw new NotImplementedException();
+            }
+            set {
+                throw new NotImplementedException();
+            }
+        }
+
+        public override int Dimension {
+            get { throw new NotImplementedException(); }
+        }
+
+        public SquareMatrix Inverse () {
+            throw new NotImplementedException();
+        }
+
+    }
+
+    public sealed class SymmetricMatrix : SquareMatrixBase {
+
+        public override double this[int r, int c] {
+            get {
+                throw new NotImplementedException();
+            }
+            set {
+                throw new NotImplementedException();
+            }
+        }
+
+        public override int Dimension {
+            get { throw new NotImplementedException(); }
+        }
+
+        public SymmetricMatrix Inverse () {
+            throw new NotImplementedException();
+        }
+
+        public static SymmetricMatrix operator + (SymmetricMatrix M1, SymmetricMatrix M2) {
+            throw new NotImplementedException();
+        }
+
+    }
+
+    public sealed class TridiagonalMatrix : SquareMatrixBase {
+
+        public override double this[int r, int c] {
+            get {
+                throw new NotImplementedException();
+            }
+            set {
+                throw new NotImplementedException();
+            }
+        }
+
+        public override int Dimension {
+            get { throw new NotImplementedException(); }
+        }
+
+        public SquareMatrix Inverse () {
+            throw new NotImplementedException();
+        }
+
+        public static TridiagonalMatrix operator + (TridiagonalMatrix M1, TridiagonalMatrix M2) {
+            throw new NotImplementedException();
+        }
+
+        public static SquareMatrix operator * (TridiagonalMatrix M1, TridiagonalMatrix M2) {
+            throw new NotImplementedException();
+        }
+
+    }
+
+    public abstract class VectorBase : RectangularMatrixBase {
+
+        public virtual double this[int n] {
+            get {
+                throw new NotImplementedException();
+            }
+            set {
+                throw new NotImplementedException();
+            }
+        }
+
+        public virtual int Dimension {
+            get {
+                throw new NotImplementedException();
+            }
+        }
+
+        public override int RowCount {
+            get { return (Dimension); }
+        }
+
+        public override int ColumnCount {
+            get { return (Dimension); }
+        }
+
+        public virtual double TwoNorm () {
+            throw new NotImplementedException();
+        }
+
+    }
+
+    public sealed class ColumnVector : VectorBase {
+
+        public override double this[int r, int c] {
+            get { throw new NotImplementedException(); }
+            set { throw new NotImplementedException(); }
+        }
+
+        public static ColumnVector operator + (ColumnVector v1, ColumnVector v2) {
+            throw new NotImplementedException();
+        }
+
+        public static ColumnVector operator * (RectangularMatrixBase M1, ColumnVector v2) {
+            throw new NotImplementedException();
+        }
+
+    }
+
+    public sealed class RowVector : VectorBase {
+
+        public override double this[int r, int c] {
+            get { throw new NotImplementedException(); }
+            set { throw new NotImplementedException(); }
+        }
+
+        public static RowVector operator + (RowVector v1, RowVector v2) {
+            throw new NotImplementedException();
+        }
+
+        public static RowVector operator * (RowVector v1, RectangularMatrixBase M2) {
+            throw new NotImplementedException();
+        }
+
+        public static double operator * (RowVector v1, ColumnVector v2) {
+            throw new NotImplementedException();
+        }
+
+    }
+
+
 
     [TestClass()]
     public class FutureTest {
+
+        //[TestMethod]
+        public void MatrixOps () {
+            RectangularMatrix RT = new RectangularMatrix();
+            SquareMatrix SQ = new SquareMatrix();
+            SymmetricMatrix SY = new SymmetricMatrix();
+            TridiagonalMatrix TR = new TridiagonalMatrix();
+
+            ColumnVector CV = new ColumnVector();
+            RowVector RV = new RowVector();
+
+            RectangularMatrixBase R;
+            R = RT * RT;
+            R = RT * SQ;
+            R = RT * SY;
+            R = RT * TR;
+            R = SQ * RT;
+            R = SQ * SQ;
+            R = SQ * SY;
+            R = SQ * TR;
+            R = SY * RT;
+            R = SY * SQ;
+            R = SY * SY;
+            R = SY * TR;
+            R = TR * RT;
+            R = TR * SQ;
+            R = TR * SY;
+            R = TR * TR;
+
+            ColumnVector V;
+            V = RT * CV;
+            V = SQ * CV;
+            V = SY * CV;
+            V = TR * CV;
+
+        }
 
         private TestContext testContextInstance;
 
@@ -225,7 +517,7 @@ namespace Test {
 
         //}
 
-        [TestMethod]
+        //[TestMethod]
         public void TestDFT () {
 
             /*

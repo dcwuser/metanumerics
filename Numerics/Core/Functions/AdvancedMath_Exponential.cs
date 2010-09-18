@@ -146,35 +146,6 @@ namespace Meta.Numerics.Functions {
             throw new NonconvergenceException();
         }
 
-        /*
-        /// <summary>
-        /// Computes the Fresnel cosine integral.
-        /// </summary>
-        /// <param name="x"></param>
-        /// <returns></returns>
-        /// <remarks><para>The Fresnel cosine integral appears in optics applications involving wave interference.</para>
-        /// <para>The Fresnel integrals are related to the error function for arguments lying along a line in the fourth quadrant of the complex plane.</para></remarks>
-        public static double FresnelC (double x) {
-            if (x < 1.5) {
-                return (FresnelC_Series(x));
-            } else {
-                throw new NotImplementedException();
-            }
-        }
-
-        public static double FresnelS (double x) {
-            double xx = Math.PI * x * x / 2.0;
-            double xxxx = xx * xx;
-            double dy = x;
-            double y = dy;
-            throw new NotImplementedException();
-        }
-
-        private static double FresnelC_Series (double x) {
-            throw new NotImplementedException();
-        }
-        */
-
         /// <summary>
         /// Computes the cosine integral.
         /// </summary>

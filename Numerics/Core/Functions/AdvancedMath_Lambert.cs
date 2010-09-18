@@ -44,7 +44,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        private static readonly double EI = 1.0 / Math.E;
+        private const double EI = 1.0 / Math.E;
 
         private static double Lambert_Halley (double x, double w0) {
 

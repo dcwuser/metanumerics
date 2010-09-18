@@ -147,6 +147,20 @@ namespace Meta.Numerics.Statistics {
             return (FunctionMath.Integrate(f, Support));
         }
 
+        /// <summary>
+        /// Returns a random value.
+        /// </summary>
+        /// <param name="rng">A random number generator.</param>
+        /// <returns>A number distributed according to the distribution.</returns>
+        /// <remarks>
+        /// <para>Note that the random number generator <paramref name="rng"/> will be advanced by this method. The next call to its
+        /// generator methods will not give the same value as it would had it not been passed to this method.</para>
+        /// </remarks>
+        public double GetRandomValue (Random rng) {
+            if (rng == null) throw new ArgumentNullException("rng");
+            return (InverseLeftProbability(rng.NextDouble()));
+        }
+
         // compute central moments from raw moments
         // this is subject to loss of precision from cancelation, so be careful
 

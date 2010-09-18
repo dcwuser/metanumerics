@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Meta.Numerics.Matrices {
 
+    /// <summary>
+    /// Represents the QR decomposition of a square matrix.
+    /// </summary>
     public sealed class SquareQRDecomposition : ISquareDecomposition {
 
         private double[] qtStore;
@@ -33,6 +36,11 @@ namespace Meta.Numerics.Matrices {
             return (new SquareMatrix(store, dimension));
         }
 
+        /// <summary>
+        /// Solve the system of equations Ax=b, where A is the original matrix.
+        /// </summary>
+        /// <param name="rhs">The right-hand-side vector b.</param>
+        /// <returns>The solution vector x.</returns>
         public ColumnVector Solve (IList<double> rhs) {
 
             if (rhs == null) throw new ArgumentNullException("rhs");
@@ -42,10 +50,15 @@ namespace Meta.Numerics.Matrices {
             rhs.CopyTo(y, 0);
 
             y = MatrixAlgorithms.Multiply(qtStore, dimension, dimension, y, dimension, 1);
+            SquareMatrixAlgorithms.SolveUpperRightTriangular(rStore, y, 0, dimension);
 
             return (new ColumnVector(y));
         }
 
+        /// <summary>
+        /// Computes the determinant of the original matrix.
+        /// </summary>
+        /// <returns>det A</returns>
         public double Determinant () {
             double det = 1.0;
             for (int i = 0; i < dimension; i++) {
@@ -54,15 +67,27 @@ namespace Meta.Numerics.Matrices {
             return (det);
         }
 
+        /// <summary>
+        /// Computes the inverse of the original matrix.
+        /// </summary>
+        /// <returns>A<sup>-1</sup></returns>
         public SquareMatrix Inverse () {
-            throw new NotImplementedException();
+
+            // solve R Q^T column-by-column
+            double[] iStore = MatrixAlgorithms.Clone(qtStore, dimension, dimension);
+            for (int c = 0; c < dimension; c++) {
+                SquareMatrixAlgorithms.SolveUpperRightTriangular(rStore, iStore, dimension * c, dimension);
+            }
+            return (new SquareMatrix(iStore, dimension));
         }
 
         ISquareMatrix ISquareDecomposition.Inverse () {
             return (Inverse());
         }
 
-
+        /// <summary>
+        /// Gets the dimension of the original matrix.
+        /// </summary>
         public int Dimension {
             get {
                 return(dimension);

@@ -631,7 +631,8 @@ namespace Meta.Numerics.Functions {
 
             double YP = Y * (z.Re + z.Im / g);
 
-            return new SolutionPair(nu, x, J, JP, Y, YP);
+            //return new SolutionPair(nu, x, J, JP, Y, YP);
+            return new SolutionPair(J, JP, Y, YP);
 
         }
 
@@ -650,7 +651,8 @@ namespace Meta.Numerics.Functions {
 
             double YP = Y * (z.Re + z.Im / g);
 
-            return new SolutionPair(0, 0.0, J, JP, Y, YP);
+            //return new SolutionPair(0, 0.0, J, JP, Y, YP);
+            return new SolutionPair(J, JP, Y, YP);
 
         }
 
@@ -703,7 +705,8 @@ namespace Meta.Numerics.Functions {
             double N = Math.Sqrt(2.0 / Math.PI / x);
 
             //Debug.WriteLine(String.Format("x={0} nu={1} ca={2} sb={3}", x, nu, c * a, s * b));
-            SolutionPair result = new SolutionPair(nu, x, N * (c * a - s * b), 0.0, N * (s * a + c * b), 0.0);
+            //SolutionPair result = new SolutionPair(nu, x, N * (c * a - s * b), 0.0, N * (s * a + c * b), 0.0);
+            SolutionPair result = new SolutionPair(N * (c * a - s * b), 0.0, N * (s * a + c * b), 0.0);
             //BesselResult result = new BesselResult(nu, x, N * Math.Sin(t - p), 0.0, N * Math.Sin(t + p), 0.0);
 
             return (result);
@@ -726,6 +729,7 @@ namespace Meta.Numerics.Functions {
         }
         */
 
+        /*
         public static double Bessel_Zeta (double z) {
             if (z < 1.0) {
                 double sz = Math.Sqrt((1.0 + z) * (1.0 - z));
@@ -735,6 +739,7 @@ namespace Meta.Numerics.Functions {
                 return (sz - Math.Acos(1.0 / z));
             }
         }
+        */
 
         // **** Spherical Bessel functions ****
 
@@ -1013,8 +1018,10 @@ namespace Meta.Numerics.Functions {
 
     internal struct SolutionPair {
 
-        private double nu, x, j, jPrime, y, yPrime;
+        //private double nu, x, j, jPrime, y, yPrime;
+        private double j, jPrime, y, yPrime;
 
+        /*
         public double Order {
             get {
                 return (nu);
@@ -1026,6 +1033,7 @@ namespace Meta.Numerics.Functions {
                 return (x);
             }
         }
+        */
 
         public double Regular {
             get {
@@ -1070,10 +1078,11 @@ namespace Meta.Numerics.Functions {
             }
         }
         */
-
-        internal SolutionPair (double nu, double x, double j, double jPrime, double y, double yPrime) {
-            this.nu = nu;
-            this.x = x;
+        
+       internal SolutionPair (double j, double jPrime, double y, double yPrime) {
+       //internal SolutionPair (double nu, double x, double j, double jPrime, double y, double yPrime) {
+            //this.nu = nu;
+            //this.x = x;
             this.j = j;
             this.jPrime = jPrime;
             this.y = y;

@@ -44,6 +44,7 @@ namespace Meta.Numerics.Matrices {
             return (new Matrix(store, rows, columns));
         }
 
+        /*
         public ColumnVector Solve (IList<double> rhs) {
 
             if (rhs == null) throw new ArgumentNullException("rhs");
@@ -56,6 +57,7 @@ namespace Meta.Numerics.Matrices {
 
             return (new ColumnVector(y));
         }
+        */
 
         /// <summary>
         /// Get the number of rows in the original matrix.

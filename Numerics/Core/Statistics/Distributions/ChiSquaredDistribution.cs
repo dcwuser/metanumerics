@@ -12,9 +12,12 @@ namespace Meta.Numerics.Statistics {
     /// <remarks>
     /// <para>A chi squared distribution is an asymmetrical distribution ranging from zero to infinity with a peak near its
     /// number of degrees of freedom &#x3BD;. It is a one-parameter distribution determined entirely by the parameter nu.</para>
-    /// <para>The sum of the squares of &#x3BD; independent standard-normal distributed variables is distributed a &#x3C7;<sup>2</sup>
+    /// <img src="../images/ChiSquaredPlot.png" />
+    /// <para>The figure above shows the &#x3C7;<sup>2</sup> distribution for &#x3BD; = 6, as well as the normal distribution
+    /// with equal mean and variance for reference.</para>
+    /// <para>The sum of the squares of &#x3BD; independent standard-normal distributed variables is distributed as &#x3C7;<sup>2</sup>
     /// with &#x3BD; degrees of freedom.</para>
-    /// <img src="images/ChiSquaredFromNormal.png" />
+    /// <img src="../images/ChiSquaredFromNormal.png" />
     /// <para>The &#x3C7;<sup>2</sup> distribution appears in least-squares fitting as the distribution of the sum-of-squared-deviations
     /// under the null hypothesis that the model explains the data.</para>
     /// </remarks>

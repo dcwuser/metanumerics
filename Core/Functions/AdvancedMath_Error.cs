@@ -235,7 +235,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value of C(x).</returns>
         /// <remarks>
-        /// <para>The Fresnel cosine integral can be defined via C(x) = <sub>0</sub>&#x222B;<sup>x</sup>dt cos(&#x3C0; t<sup>2</sup>/2).</para>
+        /// <para>The Fresnel cosine integral is defined as:</para>
+        /// <img src="../images/FresnelCIntegral.png" />
         /// <para>It appears in wave optics in the calculation of diffraction patterns.</para>
         /// </remarks>
         /// <seealso cref="FresnelS"/>
@@ -260,7 +261,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value of S(x).</returns>
         /// <remarks>
-        /// <para>The Fresnel sine integral can be defined via S(x) = <sub>0</sub>&#x222B;<sup>x</sup>dt sin(&#x3C0; t<sup>2</sup>/2).</para>
+        /// <para>The Fresnel sine integral is defined as:</para>
+        /// <img src="../images/FresnelSIntegral.png" />
         /// <para>It appears in wave optics in the calculation of diffraction patterns.</para>
         /// </remarks>
         /// <seealso cref="FresnelC"/>
@@ -293,6 +295,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="FresnelS"/>
         /// <seealso cref="FresnelC"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Fresnel_integral"/>
+        /// <seealso href="http://mathworld.wolfram.com/CornuSpiral.html"/>
         public static Complex Fresnel (double x) {
             if (x < 0.0) return (-Fresnel(-x));
             if (x < 2.0) {

@@ -134,12 +134,14 @@ namespace Test
 
         [TestMethod]
         public void ComplexEqualityTest () {
-            Assert.IsTrue(a == a);
+            Complex a1 = a;
+            Assert.IsTrue(a == a1);
             Assert.IsFalse(a == b);
         }
 
         public void ComplexInequalityTest () {
-            Assert.IsFalse(a != a);
+            Complex a1 = a;
+            Assert.IsFalse(a != a1);
             Assert.IsTrue(a != b);
         }
 

@@ -5,6 +5,7 @@ namespace Meta.Numerics.Functions {
 
     public static partial class AdvancedMath {
 
+        /*
         private static double Maximum (params double[] values) {
             double max = 0.0;
             foreach (double value in values) {
@@ -13,6 +14,7 @@ namespace Meta.Numerics.Functions {
             }
             return (max);
         }
+        */
 
         /// <summary>
         /// Computes the Carslon elliptic integral R<sub>F</sub>.
@@ -22,10 +24,16 @@ namespace Meta.Numerics.Functions {
         /// <param name="z">The third parameter, which must be non-negative.</param>
         /// <returns>The value of R<sub>F</sub>(x,y,z).</returns>
         /// <remarks>
+        /// <para>The Carlson F integral is:</para>
+        /// <img src="../images/CarlsonFIntegral.png" />
         /// <para>As can be seen from the integral, all three parameters are equivilent, so R<sub>F</sub> is symmetric with respect to any
         /// permutation of the parameters.</para>
+        /// <para>The Carlson integrals can be used to express integrals of rational functions. In that sense, they are replacements for
+        /// the Legendre elliptic functions.</para>
         /// </remarks>
         /// <seealso cref="EllipticK"/>
+        /// <seealso cref="EllipticF"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Carlson_symmetric_form"/>
         public static double CarlsonF (double x, double y, double z) {
 
             if (x < 0.0) throw new ArgumentOutOfRangeException("x");
@@ -41,7 +49,8 @@ namespace Meta.Numerics.Functions {
                 double dx = (x - m) / m;
                 double dy = (y - m) / m;
                 double dz = (z - m) / m;
-                double e = Maximum(dx, dy, dz);
+                double e = Math.Max(Math.Abs(dx), Math.Max(Math.Abs(dy), Math.Abs(dz)));
+                //double e = Maximum(dx, dy, dz);
 
                 // if we are close enough, use the seventh order expansion
 
@@ -69,7 +78,6 @@ namespace Meta.Numerics.Functions {
 
             throw new NonconvergenceException();
 
-
         }
 
         private static double EllipticK_Series (double k) {
@@ -82,14 +90,14 @@ namespace Meta.Numerics.Functions {
                 double f_old = f;
                 z = z * (2 * n - 1) / (2 * n) * k;
                 f += z * z;
-                if (f == f_old) return (Math.PI / 2.0 * f);
+                if (f == f_old) return (Global.HalfPI * f);
             }
 
             throw new NonconvergenceException();
 
         }
 
-        private static readonly double SqrtAccuracy = Math.Sqrt(Global.Accuracy);
+        // compute K via the arithmetic-geometric-mean algorithm
 
         private static double Elliptic_AGM (double k) {
 
@@ -100,8 +108,12 @@ namespace Meta.Numerics.Functions {
 
                 double am = (a + b) / 2.0;
 
+                // if a and b are seperated by a small e, the update only changes a and b by e^2
+                // therefore we can stop as soon as a and b are within the square root of machine precision
+                // in fact, we must not use (a == b) as a termination criterion, because we can get into a loop
+                // where a and b dance around and never become precisely equal
                 if (Math.Abs(a-b) < SqrtAccuracy) {
-                    return (Math.PI / 2.0 / am);
+                    return (Global.HalfPI / am);
                 }
 
                 double gm = Math.Sqrt(a * b);
@@ -115,35 +127,46 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        private static readonly double SqrtAccuracy = Math.Sqrt(Global.Accuracy);
+
         /// <summary>
         /// Computes the complete elliptic integral of the first kind.
         /// </summary>
         /// <param name="k">The elliptic modulus, which must lie between zero and one.</param>
         /// <returns>The value of the Legendre integral K(k).</returns>
         /// <remarks>
-        /// <para>K(k) is defined via an elliptic integral.</para>
+        /// <para>K(k) is defined as the complete elliptic integral:</para>
         /// <img src="../images/EllipticKIntegral.png" />
         /// <para>It appears in the Legendre reduction of integrals of rational funtions.</para>
-        /// <para>Be aware that some authors use the the parameter m = k<sup>2</sup> instead of k.</para>
+        /// <para>Be aware that some authors use the the parameter m = k<sup>2</sup> instead of the modulus k.</para>
         /// </remarks>
+        /// <seealso cref="EllipticF"/>
         public static double EllipticK (double k) {
             if ((k < 0) || (k > 1.0)) throw new ArgumentOutOfRangeException("k");
             if (k < 0.25) {
                 return (EllipticK_Series(k));
-                //return (CarlsonF(0.0, 1.0 - k * k, 1.0));
             } else {
+                if (k == 1.0) return (Double.PositiveInfinity);
                 return (Elliptic_AGM(k));
-                //return (CarlsonF(0.0, 1.0 - k * k, 1.0));
             }
         }
 
         /// <summary>
         /// Computes the incomplete elliptic integral of the first kind.
         /// </summary>
-        /// <param name="phi">The integration angle.</param>
+        /// <param name="phi">The integration angle (in radians).</param>
         /// <param name="k">The elliptic modulus, which must lie between zero and one.</param>
-        /// <returns>The value of the Legendre integral K(k).</returns>
+        /// <returns>The value of the Legendre integral F(k).</returns>
+        /// <remarks>
+        /// <para>Legendre's first incomplete elliptic integral is:</para>
+        /// <img src="../images/EllipticFIntegral.png" />
+        /// <para>When the integral angle is &#x3C0;, this function reduces to the complete elliptic integral of the
+        /// first kind (<see cref="EllipticK"/>.</para>
+        /// <para>Be aware that some authors use the the parameter m = k<sup>2</sup> instead of the modulus k.</para>
+        /// </remarks>
+        /// <seealso cref="EllipticK"/>
         public static double EllipticF (double phi, double k) {
+            if (Math.Abs(phi) > Global.HalfPI) throw new ArgumentOutOfRangeException("phi");
             if ((k < 0) || (k > 1.0)) throw new ArgumentOutOfRangeException("k");
             double s = AdvancedMath.Sin(phi, 0.0);
             double c = AdvancedMath.Cos(phi, 0.0);

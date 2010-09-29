@@ -9,6 +9,12 @@ namespace Meta.Numerics.Functions {
     /// <summary>
     /// Represents a spinor.
     /// </summary>
+    /// <remarks>
+    /// <para>From a physicist's point of view, a spinor is an object with a particular quantum-mechanical spin. The quantum state of such
+    /// an object is represented by a <see cref="SpinState"/> object.</para>
+    /// <para>From a mathematician's point of view, a spinor labels an irreducible representation of the SO(3) or SU(2) Lie group.
+    /// Individual vectors within each irreducible representation are represented by <see cref="SpinState"/> objects.</para>
+    /// </remarks>
     public struct Spin {
 
         // construction
@@ -1252,7 +1258,6 @@ namespace Meta.Numerics.Functions {
 
             // normalize
             double N = NL + NR;
-            //Console.WriteLine("{0} + {1} = {2}", NL, NR, N);
             c = c / Math.Sqrt(N * (tj4+1));
 
             return (c);

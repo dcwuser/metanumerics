@@ -174,11 +174,33 @@ namespace Test {
                 foreach (DiscreteDistribution distribution in distributions) {
                     int x = distribution.InverseLeftProbability(P);
                     Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, P, x, distribution.LeftProbability(x));
-                    Assert.IsTrue(distribution.LeftProbability(x) >= P);
+                    Assert.IsTrue(distribution.LeftProbability(x - 1) < P);
+                    Assert.IsTrue(P <= distribution.LeftProbability(x));
                 }
 
 
             }
+
+        }
+
+        [TestMethod]
+        public void DiscreteContinuousAgreement () {
+
+            DiscreteDistribution dd = new BinomialDistribution(0.6, 7);
+            Distribution cd = new DiscreteAsContinuousDistribution(dd);
+
+            Assert.IsTrue(cd.Mean == dd.Mean);
+            Assert.IsTrue(cd.StandardDeviation == dd.StandardDeviation);
+            Assert.IsTrue(cd.Variance == dd.Variance);
+            Assert.IsTrue(cd.Skewness == dd.Skewness);
+            Assert.IsTrue(cd.Moment(5) == dd.Moment(5));
+            Assert.IsTrue(cd.MomentAboutMean(5) == dd.MomentAboutMean(5));
+
+            // this should cause an interval conversion
+            Assert.IsTrue(cd.Support == dd.Support);
+
+            Assert.IsTrue(cd.LeftProbability(4.5) == dd.LeftProbability(4));
+            Assert.IsTrue(cd.RightProbability(4.5) == dd.RightProbability(4));
 
         }
 

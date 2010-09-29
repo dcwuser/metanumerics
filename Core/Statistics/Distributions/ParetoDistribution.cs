@@ -48,6 +48,16 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+
+        /// <summary>
+        /// Gets the Geni coefficient corresponding to the distribution.
+        /// </summary>
+        public double GiniCoefficient {
+            get {
+                return (1.0 / (2.0 * alpha - 1.0));
+            }
+        }
+
         /// <inheritdoc />
         public override double Mean {
             get {
@@ -166,7 +176,6 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        /// <inheritdoc />
         private double LeftProbabilitySeries (double r) {
             // expand 1 - (1+r)^(-alpha) for small r
             double df = alpha * r;

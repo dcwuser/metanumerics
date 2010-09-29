@@ -27,10 +27,12 @@ namespace Meta.Numerics.Functions {
         /// <returns>The factorial n!.</returns>
         /// <remarks>
         /// <para>The factorial of an integer n is the product of all integers from 1 to n. For example, 4! = 4 * 3 * 2 * 1 = 24.</para>
+        /// <para>n! also has a combinatorial intrepretation as the number of permutations of n objects. For example, a set of 3
+        /// objects (abc) has 3! = 6 permutations: (abc), (bac), (cba), (acb), (cab), (bca).</para>
         /// <para>Because n! grows extremely quickly with increasing n, we return the result as a double, even though
         /// the value is always an integer. (13! would overlow an int. 21! would overflow a long. 171! overflows even a double.)</para>
         /// <para>In order to deal with factorials of larger runbers, you can use the <see cref="LogFactorial"/> method, which
-        /// returns accurate values of ln(n!) even for values of n for which n! itself overflows a double.</para>
+        /// returns accurate values of ln(n!) even for values of n for which n! would overflow a double.</para>
         /// <para>The factorial is generalized to non-integer arguments by the &#x393; function (<see cref="AdvancedMath.Gamma(double)"/>).</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
@@ -65,16 +67,19 @@ namespace Meta.Numerics.Functions {
 		}
 
         /// <summary>
-        /// Computes binomial coefficients.
+        /// Computes a binomial coefficient.
         /// </summary>
-        /// <param name="n">The upper argument, which must be non-negative. (The order of the polynomial.)</param>
-        /// <param name="m">The lower argument, which must be non-negative and less than or equal to <paramref name="n"/>. (The order of the term.)</param>
+        /// <param name="n">The upper argument, which must be non-negative.</param>
+        /// <param name="m">The lower argument, which must be non-negative and less than or equal to <paramref name="n"/>.</param>
         /// <returns>The binomial coefficent C(<paramref name="n"/>,<paramref name="m"/>),
         /// also denoted "<paramref name="n"/> choose <paramref name="m"/>".</returns>
         /// <remarks>
-        /// <para>The binomial coefficient C(n,m) is the coefficient of x<sup>m</sup> in the expansion
-        /// of (1+x)<sup>n</sup>.</para>
-        /// <para>C(n,m) can also be given a combinatoric intrepretation as the total number of distinct subsets of m items in a set of n items.</para>
+        /// <para>The binomial coefficient C(n,m) is the coefficient of x<sup>m</sup> in the expansion of (1+x)<sup>n</sup>.</para>
+        /// <img src="../images/BinomialExpansion.png" />
+        /// <para>C(n,m) can also be given a combinatoric intrepretation as the total number of ways to pick m items from a set of n distinct items.</para>
+        /// <para>For example C(4,2) = 6. This can be seen by expanding (1+x)<sup>4</sup>=1 + 4 x + 6 x<sup>2</sup> + 4 x<sup>3</sup> + x<sup>4</sup>
+        /// and noting that the coefficient of the x<sup>2</sup> term is 6. It can also be seen by considering the six-member set (abcd) and
+        /// noting that there are 6 possible two-member subests: (ab), (ac), (ad), (bc), (bd), (cd).</para>
         /// <para>Pascal's triangle is a classic representation of binomial coefficients.</para>
         /// <table style="text-align: center;">
         /// <tr><td colspan="3"></td><td colspan="2">C(0,0)</td></tr>
@@ -85,8 +90,8 @@ namespace Meta.Numerics.Functions {
         /// <para>The relation of an element in Pascal's triangle to its two parent elements is C(n+1,m) = C(n,m-1) + C(n,m).
         /// There are many other relationships among binomial coefficients. Among the most computationally useful is
         /// B(n,m+1) = (n-m)/(m+1) B(n,m), which can be used to generate all the binomial coefficients in a row of Pascal's
-        /// triangle (i.e., all the coefficients for a given order polynomial) starting from an outer values B(n,0) = 1 =B(n,n).
-        /// If you need a series of binomial coefficients, using a recurrion will be more computationally efficient than
+        /// triangle (i.e., all the coefficients for a given order polynomial) starting from an outer values B(n,0) = 1 = B(n,n).
+        /// If you need a series of binomial coefficients, using a recursion will be more computationally efficient than
         /// calling this method for each one.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative, or <paramref name="m"/> lies outside [0,<paramref name="n"/>].</exception>
@@ -165,6 +170,11 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="n">The argument, which must be positive.</param>
         /// <returns>The double factorial n!!.</returns>
+        /// <remarks>
+        /// <para>The double factorial of an integer is the product all integers of the same parity, up to an including the integer.
+        /// Thus 5! = 5 * 3 * 1 = 15 and 6! = 6 * 4 * 2 = 48.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso href="http://mathworld.wolfram.com/DoubleFactorial.html"/>
         public static double DoubleFactorial (int n) {
             if (n < 0) throw new ArgumentOutOfRangeException("n");
@@ -180,6 +190,8 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="n">The argument.</param>
         /// <returns>The value of ln(n!!).</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
+        /// <seealso cref="DoubleFactorial"/>
         public static double LogDoubleFactorial (int n) {
             if (n < 0) throw new ArgumentOutOfRangeException("n"); 
             if (n < 32) {
@@ -256,6 +268,7 @@ namespace Meta.Numerics.Functions {
         /// <para>Modular exponentiation is used in many number-theory applications, including
         /// primality testing, prime factorization, and cryptography.</para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="b"/>,  <paramref name="e"/>, or <paramref name="m"/> is not positive.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Modular_exponentiation"/>
         public static int PowMod (int b, int e, int m) {
             if (b < 1) throw new ArgumentOutOfRangeException("b");
@@ -285,18 +298,20 @@ namespace Meta.Numerics.Functions {
         /// Enumerates all partitions of the given integer
         /// </summary>
         /// <param name="n">The integer to partition, which must be positive.</param>
-        /// <returns></returns>
+        /// <returns>An enumeration of all partitions of the given integer.</returns>
         /// <remarks>
         /// <para>Integer partitions are ways to write an integer as a sum of smaller integers. For example, the integer 4 has 5 partitions: 4,
         /// 3 + 1, 2 + 2, 2 + 1 + 1, and 1 + 1 + 1 + 1.</para>
         /// <para>Integer partitions appear in combinatoric problems and solutions to problems that may be mapped into combinatoric problems.
         /// For example, the terms which appear in <a href="http://en.wikipedia.org/wiki/Fa%C3%A0_di_Bruno%27s_formula">Faà di Bruno's formula</a>
         /// correspond to integer partitions.</para>
-        /// <para>The number of partitions grows very rapidly with n. Already for n = 122, the number of partitions is
-        /// 2,291,320,912, larger than that the capacity of an int. Since enumerating through partitions does not require us to count them,
-        /// this method will work for this and larger values of <paramref name="n"/>. Just keep in mind that completing the enumeration of
-        /// such a large number of paritions is liable to take a long time, even though our algorithm produces each partition very quickly.</para>
+        /// <para>The number of partitions grows very rapidly with n. Since enumerating through partitions does not require us to count them,
+        /// no overflows will occur even for large values of <paramref name="n"/>. However, completing the enumeration of
+        /// such a large number of paritions will take a long time, even though our algorithm produces each partition very quickly. For
+        /// example, there are about two hundred million partitions of the integer 100.
+        /// </para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is not positive.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Integer_partition"/>
         public static IEnumerable<int[]> Partitions (int n) {
 
@@ -329,197 +344,6 @@ namespace Meta.Numerics.Functions {
 
         }
 
-#if FUTURE
-
-        public static void Permute (int n) {
-
-            int[] p = new int[n + 1];
-            p[n] = 1;
-
-            // print the permutation
-            for (int j = n; j >= 1; j--) {
-                for (int i = 1; i <= p[j]; i++) {
-                    Console.Write("+{0}", j);
-                }
-            }
-            Console.WriteLine();
-
-            int count = 1;
-
-            while (p[1] != n) {
-
-                // compute next permutation
-
-                // find lowest number over one
-                int k = 2;
-                while (p[k] == 0) {
-                    k++;
-                }
-
-                // reduce it by one
-                p[k]--;
-
-                // determine how much we have to sum to
-                int s = n;
-                for (int j = k; j <= n; j++) {
-                    s -= j * p[j];
-                }
-
-                // produce that sum as quickly as we can with numbers less than or equal to k
-                for (int j = k - 1; j >= 1; j--) {
-                    p[j] = 0;
-                    while (s >= j) {
-                        p[j]++;
-                        s -= j;
-                    }
-                }
-
-                // print the permutation
-                for (int j = n; j >= 1; j--) {
-                    for (int i = 1; i <= p[j]; i++) {
-                        Console.Write("+{0}", j);
-                    }
-                }
-                Console.WriteLine();
-
-                count++;
-
-            }
-
-            Console.WriteLine(count);
-
-        }
-
-        /*
-        def ruleAsc(n):
-    a = [0 for i in range(n + 1)]
-    k = 1
-    a[0] = 0
-    a[1] = n
-    while k != 0:
-        x = a[k - 1] + 1
-        y = a[k] - 1
-        k -= 1
-        while x <= y:
-            a[k] = x
-            y -= x
-            k += 1
-        a[k] = x + y
-        yield a[:k + 1]
-        */
-
-        public static void P2 (int n) {
-
-            int[] a = new int[n + 2];
-            //int[] a = new int[n + 1];
-
-            int k = 2;
-            //int k = 1;
-            a[1] = 0;
-            //a[0] = 0;
-            a[2] = n;
-            //a[1] = n;
-
-            while (k != 1) {
-            //while (k != 0) {
-                int y = a[k] - 1;
-                k--;
-                int x = a[k] + 1;
-                while (x <= y) {
-                    a[k] = x;
-                    y -= x;
-                    k++;
-                }
-                a[k] = x + y;
-
-                // print the permutation
-                Console.WriteLine("k={0}",k);
-                for (int j = 0; j < a.Length; j++) {
-                    Console.Write("{0} ", a[j]);
-                }
-                Console.WriteLine();
-
-            }
-
-
-        }
-#endif
-
 	}
 
-#if FUTURE
-    public class IntegerPartitionEnumerator : IEnumerator<int[]> {
-
-        public IntegerPartitionEnumerator (int n) {
-            this.n = n;
-            a = new int[n + 1];
-            Reset();
-        }
-
-        // the integer being partioned
-        int n;
-
-        // store for the current partition (only the first k elements are relevent)
-        int[] a;
-
-        // the number of terms in the current partition
-        int k;
-
-        public int[] Current {
-            get {
-                // if (a[0] == 0) throw new InvalidOperationException();
-                int[] p = new int[k+1];
-                Array.Copy(a, p, k + 1);
-                //Array.Copy(a, 1, p, 0, k+1);
-                return (p);
-            }
-        }
-
-        object IEnumerator.Current {
-            get {
-                return (Current);
-            }
-        }
-
-        public void Reset () {
-            k = 1;
-            a[0] = 0;
-            a[1] = n;
-        }
-
-        public bool MoveNext () {
-
-            if (k == 0) {
-                return (false);
-            } else {
-                int y = a[k] - 1;
-                k--;
-                int x = a[k] + 1;
-                while (x <= y) {
-                    a[k] = x;
-                    y -= x;
-                    k++;
-                }
-                a[k] = x + y;
-
-                /*
-                // print the permutation
-                Console.WriteLine("k={0}", k);
-                for (int j = 0; j < a.Length; j++) {
-                    Console.Write("{0} ", a[j]);
-                }
-                Console.WriteLine();
-                */
-
-                return (true);
-            }
-
-        }
-
-        void IDisposable.Dispose () {
-        }
-
-    }
-#endif
-	
 }

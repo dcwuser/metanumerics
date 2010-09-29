@@ -84,6 +84,10 @@ namespace Meta.Numerics.Statistics {
         }
 
 #if SHO
+        /// <summary>
+        /// Produces the representation of the uncertain value for the Python interactive console.
+        /// </summary>
+        /// <returns>A string representation of the uncertain value.</returns>
         public string __repr__ () {
             return(ToString());
         }
@@ -98,19 +102,8 @@ namespace Meta.Numerics.Statistics {
         /// <param name="v2">The second uncertain value.</param>
         /// <returns>True if the two uncertain values are equal, otherwise false.</returns>
         public static bool operator == (UncertainValue v1, UncertainValue v2) {
-            if (Object.ReferenceEquals(v1, null)) {
-                if (Object.ReferenceEquals(v2, null)) {
-                    return (true);
-                } else {
-                    return (false);
-                }
-            } else {
-                if (Object.ReferenceEquals(v2, null)) {
-                    return (false);
-                } else {
-                    return ((v1.Value == v2.Value) && (v1.Uncertainty == v2.Uncertainty));
-                }
-            } 
+            // dont' need to check for nulls because UncertainValue is a structure
+            return ((v1.Value == v2.Value) && (v1.Uncertainty == v2.Uncertainty));
         }
 
         /// <summary>
@@ -166,17 +159,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="v2">The second uncertain value.</param>
         /// <returns>The sum of the two uncertain values.</returns>
 		public static UncertainValue operator+ (UncertainValue v1, UncertainValue v2) {
-			UncertainValue v = new UncertainValue();
-			v.Value = v1.Value + v2.Value;
-			if (v1.Uncertainty > v2.Uncertainty) {
-				v.Uncertainty = v1.Uncertainty * Math.Sqrt( 1.0 + Math.Pow(v2.Uncertainty/v1.Uncertainty,2) );
-            } else if (v2.Uncertainty > v1.Uncertainty) {
-                v.Uncertainty = v2.Uncertainty * Math.Sqrt(1.0 + Math.Pow(v1.Uncertainty / v2.Uncertainty, 2));
-            } else {
-                // must handle this as a seperate case to avoid division by zero when v1.Uncertainty == v2.Uncertainty == 0
-                v.Uncertainty = Math.Sqrt(2.0) * v1.Uncertainty;
-            }
-			return(v);
+            return (new UncertainValue(v1.Value + v2.Value, MoreMath.Hypot(v1.Uncertainty, v2.Uncertainty)));
 		}
 
         /// <summary>
@@ -186,17 +169,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="v2">The second uncertain value.</param>
         /// <returns>The difference of the two uncertain values.</returns>
         public static UncertainValue operator - (UncertainValue v1, UncertainValue v2) {
-			UncertainValue v = new UncertainValue();
-			v.Value = v1.Value - v2.Value;
-			if (v1.Uncertainty > v2.Uncertainty) {
-				v.Uncertainty = v1.Uncertainty * Math.Sqrt( 1.0 + Math.Pow(v2.Uncertainty/v1.Uncertainty,2) );
-            } else if (v2.Uncertainty > v1.Uncertainty) {
-                v.Uncertainty = v2.Uncertainty * Math.Sqrt(1.0 + Math.Pow(v1.Uncertainty / v2.Uncertainty, 2));
-            } else {
-                // must handle this as a seperate case to avoid division by zero when v1.Uncertainty == v2.Uncertainty == 0
-                v.Uncertainty = Math.Sqrt(2.0) * v1.Uncertainty;
-            }
-			return(v);
+            return(new UncertainValue(v1.Value - v2.Value, MoreMath.Hypot(v1.Uncertainty, v2.Uncertainty)));
 		}
 
         /// <summary>
@@ -208,7 +181,7 @@ namespace Meta.Numerics.Statistics {
         public static UncertainValue operator * (UncertainValue v1, UncertainValue v2) {
 			UncertainValue v = new UncertainValue();
 			v.Value = v1.Value * v2.Value;
-			v.Uncertainty = Math.Abs(v.Value) * Math.Sqrt( Math.Pow(v1.RelativeUncertainty,2) + Math.Pow(v2.RelativeUncertainty,2) );
+			v.Uncertainty = Math.Abs(v.Value) * MoreMath.Hypot(v1.RelativeUncertainty, v2.RelativeUncertainty);
 			return(v);
 		}
 
@@ -221,7 +194,7 @@ namespace Meta.Numerics.Statistics {
         public static UncertainValue operator / (UncertainValue v1, UncertainValue v2) {
 			UncertainValue v = new UncertainValue();
 			v.Value = v1.Value/v2.Value;
-			v.Uncertainty = Math.Abs(v.Value) * Math.Sqrt( Math.Pow(v1.RelativeUncertainty,2) + Math.Pow(v2.RelativeUncertainty,2) );
+            v.Uncertainty = Math.Abs(v.Value) * MoreMath.Hypot(v1.RelativeUncertainty, v2.RelativeUncertainty);
 			return(v);		
 		}
 

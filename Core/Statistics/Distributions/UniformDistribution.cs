@@ -31,6 +31,17 @@ namespace Meta.Numerics.Statistics {
             this.range = range;
         }
 
+
+        /// <summary>
+        /// Initializes a new standard uniform distribution.
+        /// </summary>
+        /// <remarks>
+        /// <para>A standard uniform distribution is uniform on the interval [0,1].</para>
+        /// </remarks>
+        public UniformDistribution () {
+            this.range = Interval.FromEndpoints(0.0, 1.0);
+        }
+
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             if (range.ClosedContains(x)) {

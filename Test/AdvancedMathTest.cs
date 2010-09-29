@@ -1217,6 +1217,14 @@ namespace Test
         }
 
         [TestMethod]
+        public void EllipticKInequality () {
+            foreach (double k in TestUtilities.GenerateUniformRealValues(0.0, 1.0, 4)) {
+                double S = AdvancedMath.EllipticK(k) + Math.Log(Math.Sqrt(1.0 - k * k));
+                Assert.IsTrue((Math.Log(4.0) <= S) && (S <= Math.PI / 2.0));
+            }
+        }
+
+        [TestMethod]
         public void EllipticKIntegral () {
 
             Interval i = Interval.FromEndpoints(0.0, Math.PI / 2.0);
@@ -1261,6 +1269,13 @@ namespace Test
             timer.Stop();
             Console.WriteLine(timer.ElapsedTicks);
 
+        }
+
+        [TestMethod]
+        public void EllipticFSpecialCases () {
+            foreach (double phi in TestUtilities.GenerateUniformRealValues(0.0, Math.PI / 2.0, 4)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticF(phi, 0.0), phi));
+            }
         }
 
         [TestMethod]
@@ -1331,30 +1346,6 @@ namespace Test
 
         }
 
-        [TestMethod]
-        public void Timing () {
-
-            System.Diagnostics.Stopwatch timer = System.Diagnostics.Stopwatch.StartNew();
-
-            double e;
-            for (double x = -10.0; x < 10.0; x += 0.0001) {
-		        e = AdvancedMath.Erf(x);
-	        };
-
-            /*
-            double J;
-            for (int n = 0; n < 100; n++) {
-                for (int x = 0; x < 1000; x++) {
-                    J = AdvancedMath.BesselJ(n, (double)x);
-                }
-            }
-            */
-
-            timer.Stop();
-
-            Console.WriteLine(timer.ElapsedMilliseconds);
-
-        }
 
 
 #if FUTURE

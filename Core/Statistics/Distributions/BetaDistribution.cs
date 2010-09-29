@@ -7,15 +7,25 @@ using Meta.Numerics.Functions;
 namespace Meta.Numerics.Statistics {
 
     /// <summary>
-    /// Represents a &#x3B2; distribution.
+    /// Represents a beta distribution.
     /// </summary>
     /// <remarks>
-    /// <para>The &#x3B2; distribution is defined on the interval [0,1]. Depending on its two shape parameters, it can take on a wide
+    /// <para>The beta distribution is defined on the interval [0,1]. Depending on its two shape parameters, it can take on a wide
     /// variety of forms on this interval.</para>
-    /// <para>The &#x3B2; distribution appears in a few statistical applications. Because of its versatility, it is also sometimes
-    /// used as an ad hoc model for a distribution on a finite interval.</para>
+    /// <para>If the two shape parameters are equal, the distribution is symmetric. If the first shape parameter is less than one,
+    /// the distribution has a singularity at its left endpoint. If the second shape parameter is less than one, the distribution
+    /// has a singularity at its right endpoint.</para>
+    /// <para>When both shape parameters are one, the beta distribution reduces to a standard uniform distribution.</para>
+    /// <img src="../images/UniformFromBeta.png" />
+    /// <para>Beta distributions describe the maximum and minimum values obtained from multiple, independent draws from a standard
+    /// uniform distribution. For n draws, the maximum value is distributed as B(n,1).</para>
+    /// <img src="../images/BetaFromUniform.png" />
+    /// <para>Similiarly, the minimum value is distributed as B(1,n).</para>
+    /// <para>Because of the wide variety of distributions on the unit interval it can describe, the beta distribution is sometimes
+    /// used as an ad hoc model to describe any distribution observed on a finite interval.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Beta_distribution"/>
+    /// <seealso href="http://mathworld.wolfram.com/BetaDistribution.html"/>
     public class BetaDistribution : Distribution {
 
         /// <summary>

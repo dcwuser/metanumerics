@@ -155,5 +155,35 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void qrt () {
+
+            Matrix A = new Matrix(3, 2);
+            A[0, 0] = 2.0;
+            A[0, 1] = 2.0;
+            A[1, 0] = 1.0;
+            A[1, 1] = 0.0;
+            A[2, 0] = 2.0;
+            A[2, 1] = 1.0;
+            QRDecomposition QR = A.QRDecomposition();
+            SquareMatrix Q = QR.QMatrix();
+            WriteMatrix(Q);
+            Matrix R = QR.RMatrix();
+            WriteMatrix(R);
+            WriteMatrix(Q * R);
+
+        }
+
+
+        private void WriteMatrix (IMatrix A) {
+            Console.WriteLine("--");
+            for (int r = 0; r < A.RowCount; r++) {
+                for (int c = 0; c < A.ColumnCount; c++) {
+                    Console.Write("{0}  ", A[r, c]);
+                }
+                Console.WriteLine();
+            }
+
+        }
     }
 }

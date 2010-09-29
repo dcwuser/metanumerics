@@ -6,6 +6,13 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents the QR decomposition of a square matrix.
     /// </summary>
+    /// <remarks>
+    /// <para>A QR decomposition represents a matrix as the product of an orthogonal matrix Q and an upper-right-triangular matrix R.</para>
+    /// <para>Like a LU decomposition (<see cref="SquareLUDecomposition"/>, a QR decomposition can be used to solve systems of equations,
+    /// or compute a determinant or matrix inverse.</para>
+    /// <para>To obtain the QR decomposition of a square matrix, use the <see cref="SquareMatrix.QRDecomposition"/> method of the
+    /// <see cref="SquareMatrix"/> class.</para>
+    /// </remarks>
     public sealed class SquareQRDecomposition : ISquareDecomposition {
 
         private double[] qtStore;

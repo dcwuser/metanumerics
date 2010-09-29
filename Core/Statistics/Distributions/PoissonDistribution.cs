@@ -93,6 +93,36 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <inheritdoc />
+        public override int InverseLeftProbability (double P) {
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+
+            //Console.WriteLine("P={0}", P);
+
+            // expand interval until we bracket P
+            int ka = 0;
+            int kb = (int) Math.Truncate(mu);
+            //Console.WriteLine("[{0} {1}] {2}", ka, kb, LeftProbability(kb));
+            while (P > LeftProbability(kb)) {
+                ka = kb;
+                kb = 2 * kb;
+                //Console.WriteLine("[{0} {1}] {2}", ka, kb, LeftProbability(kb));
+            }
+
+            // reduce interval until we have isolated P
+            // this logic is copied from Binomial; we should factor it out
+            while (ka != kb) {
+                int k = (ka + kb) / 2;
+                if (P > LeftProbability(k)) {
+                    ka = k + 1;
+                } else {
+                    kb = k;
+                }
+            }
+            return (ka);
+
+        }
+
     }
 
 }

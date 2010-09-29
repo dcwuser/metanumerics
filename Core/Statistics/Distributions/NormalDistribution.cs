@@ -61,13 +61,6 @@ namespace Meta.Numerics.Statistics {
         /// <inheritdoc />
         public override double RightProbability (double x) {
             double z = (x - mu) / sigma;
-            /*
-            if (z < 0.0) {
-                return (0.5 * (1.0 + AdvancedMath.Erf(-z / Global.SqrtTwo)));
-            } else {
-                return (0.5 * AdvancedMath.Erfc(z / Global.SqrtTwo));
-            }
-            */
             return (Phi(-z));
         }
 

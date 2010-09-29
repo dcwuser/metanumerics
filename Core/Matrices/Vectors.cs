@@ -253,7 +253,7 @@ namespace Meta.Numerics.Matrices {
             return (Vector<double>.Equals(this, obj as ColumnVector));
         }
 
-        /// <usebase />
+        /// <inheritdoc />
         public override int GetHashCode () {
             return (Vector<double>.GetHashCode(this));
         }
@@ -408,7 +408,10 @@ namespace Meta.Numerics.Matrices {
         }
 
 #if SHO
-        [Obsolete]
+        /// <summary>
+        /// Produces the representation of the vector for the Python interactive console.
+        /// </summary>
+        /// <returns>A string representation of the vector.</returns>
         public string __repr__ () {
             StringWriter writer = new StringWriter();
             Matrix.WriteMatrix(this, writer);
@@ -427,6 +430,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Initializes a row vector of a given dimension.
         /// </summary>
+        /// <param name="dimension">The dimension of the vector.</param>
         public RowVector (int dimension) : base(dimension) {
         }
 
@@ -529,7 +533,7 @@ namespace Meta.Numerics.Matrices {
             return (Vector<double>.Equals(this, obj as RowVector));
         }
 
-        /// <usebase />
+        /// <inheritdoc />
         public override int GetHashCode () {
             return (Vector<double>.GetHashCode(this));
         }
@@ -626,7 +630,10 @@ namespace Meta.Numerics.Matrices {
         }
 
 #if SHO
-        [Obsolete]
+        /// <summary>
+        /// Produces the representation of the vector for the Python interactive console.
+        /// </summary>
+        /// <returns>A string representation of the vector.</returns>        
         public string __repr__ () {
             StringWriter writer = new StringWriter();
             Matrix.WriteMatrix(this, writer);

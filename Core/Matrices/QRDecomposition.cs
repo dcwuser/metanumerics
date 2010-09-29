@@ -7,6 +7,13 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents a QR decomposition of a matrix.
     /// </summary>
+    /// <remarks>
+    /// <para>A QR decomposition represents a rectangular matrix as the product of a square, orthogonal matrix Q and a rectangular,
+    /// right-upper-triangular matrix R. For example:</para>
+    /// <img src="../images/QRDecomposition.png" />
+    /// <para>The method <see cref="Matrix.QRDecomposition"/> of the <see cref="Matrix"/> class can be used to QR decompose a
+    /// rectangular matrix.</para>
+    /// </remarks>
     public sealed class QRDecomposition {
 
         private double[] qtStore;

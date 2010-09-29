@@ -73,6 +73,7 @@
     <Compile Include="Bugs.cs" />
     <Compile Include="ComplexMathTest.cs" />
     <Compile Include="ComplexTest.cs" />
+    <Compile Include="ContingencyTableTest.cs" />
     <Compile Include="DataSetTest.cs" />
     <Compile Include="DiscreteDistributionTest.cs" />
     <Compile Include="DistributionTest.cs" />

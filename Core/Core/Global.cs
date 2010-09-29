@@ -26,6 +26,8 @@ namespace Meta.Numerics {
 
         public const double TwoPI = 2.0 * Math.PI;
 
+        public const double HalfPI = Math.PI / 2.0;
+
         // pre-calculate some often-used square roots
 
         public static readonly double SqrtTwo = Math.Sqrt(2.0);

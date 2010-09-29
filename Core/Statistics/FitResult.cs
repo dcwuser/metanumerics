@@ -28,6 +28,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets an array of the best fit parameter set.
         /// </summary>
+        /// <returns>An independent array of the best fit parameter values.</returns>
         public double[] Parameters () {
             double[] result = new double[Dimension];
             parameters.CopyTo(result, 0);

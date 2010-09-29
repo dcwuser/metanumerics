@@ -9,6 +9,7 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// The golden ratio.
         /// </summary>
+        /// <remarks><para>The golden ratio &#x3C6; = 1.1618...</para></remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Golden_ratio"/>
         /// <seealso href="http://mathworld.wolfram.com/GoldenRatio.html" />
         public static readonly double GoldenRatio = (1.0 + Math.Sqrt(5.0)) / 2.0;

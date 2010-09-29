@@ -114,12 +114,12 @@ namespace Test
             Assert.IsTrue(log.Value == Math.Log(q.Value));
             Assert.IsTrue(log.Uncertainty == 0.0);
 
-            UncertainValue tan = UncertainMath.Tan(p);
-            Assert.IsTrue(tan.Value == Math.Tan(p.Value));
+            UncertainValue tan = UncertainMath.Tan(q);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(tan.Value, Math.Tan(q.Value)));
             Assert.IsTrue(tan.Uncertainty == 0.0);
 
             UncertainValue atan = UncertainMath.Atan(q);
-            Assert.IsTrue(atan.Value == Math.Atan(q.Value));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(atan.Value, Math.Atan(q.Value)));
             Assert.IsTrue(atan.Uncertainty == 0.0);
 
 

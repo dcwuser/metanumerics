@@ -8,10 +8,16 @@ namespace Meta.Numerics.Matrices {
     /// Represents the LU decomposition of a square matrix.
     /// </summary>
     /// <remarks><para>An LU decomposition is a representation of a matrix M as the product of a lower-left-triagular matrix L and
-    /// and an upper-right-triangular matrix U. To avoid numerical instability, we allow ourselves to decompose a row-wise
-    /// permutation of a matrix, so that we have P M = L U, where P is a permutation matrix.</para>
-    /// <para>Given an LU decomposition of M, we can solve equations of the form M x = y in O(N<sup>2</sup>) time. We can also compute
-    /// det M in O(N) time.</para></remarks>
+    /// and an upper-right-triangular matrix U. To reduce numerical instabilities, we actually decompose a row-wise
+    /// permutation of a matrix, so that we have P A = L U, where P is a permutation matrix.</para>
+    /// <para>For example, here is an LU decomposition of a permutation of a simple 3 X 3 matrix:</para>
+    /// <img src="../images/LUDecomposition.png" />
+    /// <para>Given an LU decomposition of a permutation A, we can solve systems of linear equations or compute the determinant or inverse of A.
+    /// LU decomposition is the fastest way to solve an arbitrary system of linear equations. It is much faster,
+    /// and less subject to rounding errors, to solve Ax=b by LU decomposition than than by inverting A and multiplying A<sup>-1</sup>b.</para>
+    /// <para>You can use the <see cref="SquareMatrix.LUDecomposition"/> method to obtain the LU decomposition of any non-singular
+    /// square matrix.</para>
+    /// </remarks>
     /// <seealso cref="SquareMatrix"/>
     public class SquareLUDecomposition : ISquareDecomposition {
 
@@ -39,7 +45,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Computes the determinant of the original matrix.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The determinant of the original matrix.</returns>
         public double Determinant () {
             
             double det = parity;
@@ -119,9 +125,9 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Returns the the inverse of the original matrix.
+        /// Computes the the inverse of the original matrix.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The independent inverse of the original matrix.</returns>
         public SquareMatrix Inverse () {
 
             // set up permuted unit matrix
@@ -198,7 +204,11 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Gets the L factor.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The lower-left trangular factor L of the LU decomposition.</returns>
+        /// <remarks>
+        /// <para>The pivoted LU decomposition algorithm guarantees that the diagonal entries of this matrix are all one, and
+        /// that the magnitudes of the sub-diagonal entries are all less than or equal to one.</para>
+        /// </remarks>
         public SquareMatrix LMatrix () {
 
             double[] lStore = new double[dimension * dimension];
@@ -223,7 +233,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Gets the U factor.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The upper-right triangular factor U of the LU decomposition.</returns>
         public SquareMatrix UMatrix () {
             double[] uStore = new double[dimension * dimension];
             for (int c = 0; c < dimension; c++) {
@@ -244,7 +254,11 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Gets the permutation matrix.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The permutation matrix P in the PA = LU decomposition.</returns>
+        /// <remarks>
+        /// <para>A permutation matrix is just a "scrambled" identity matrix: 1 appears exactly once in each row and column, but
+        /// not necessarily in the diagonal position.</para>
+        /// </remarks>
         public SquareMatrix PMatrix () {
 
             double[] pStore = new double[dimension * dimension];

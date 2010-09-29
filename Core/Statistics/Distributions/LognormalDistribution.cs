@@ -10,9 +10,10 @@ namespace Meta.Numerics.Statistics {
     /// Represents a log-normal distribution.
     /// </summary>
     /// <remarks>
-    /// <para>A logrithm of a log-normal distributed variable is distributed normally.</para>
+    /// <para>The logrithm of a log-normal distributed variable is distributed normally.</para>
+    /// <img src="../images/LogNormalFromNormal.png" />
     /// <para>The log-normal distribution is commonly used in financial engineering as a model of stock prices.
-    /// If the rate of return on an asset is distributed normally, then the price will be distribution log-normally.</para>
+    /// If the rate of return on an asset is distributed normally, then its price will be distributed log-normally.</para>
     /// </remarks>
     /// <seealso cref="NormalDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Log-normal_distribution" />
@@ -38,10 +39,10 @@ namespace Meta.Numerics.Statistics {
         private double sigma = 1.0;
 
         /// <inheritdoc />
-        public override double ProbabilityDensity (double y) {
-            if (y <= 0.0) return (0.0);
-            double z = (Math.Log(y) - mu) / sigma;
-            return (Math.Exp(-z * z / 2.0) / y / (Global.SqrtTwoPI * sigma));
+        public override double ProbabilityDensity (double x) {
+            if (x <= 0.0) return (0.0);
+            double z = (Math.Log(x) - mu) / sigma;
+            return (Math.Exp(-z * z / 2.0) / x / (Global.SqrtTwoPI * sigma));
         }
 
         /// <inheritdoc />
@@ -86,24 +87,17 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <inheritdoc />
-        public override double LeftProbability (double y) {
-            if (y <= 0.0) return (0.0);
-            double z = (Math.Log(y) - mu) / sigma;
+        public override double LeftProbability (double x) {
+            if (x <= 0.0) return (0.0);
+            double z = (Math.Log(x) - mu) / sigma;
             return (NormalDistribution.Phi(z));
         }
 
         /// <inheritdoc />
-        public override double RightProbability (double y) {
-            if (y <= 0.0) return (1.0);
-            double z = (Math.Log(y) - mu) / sigma;
+        public override double RightProbability (double x) {
+            if (x <= 0.0) return (1.0);
+            double z = (Math.Log(x) - mu) / sigma;
             return (NormalDistribution.Phi(-z));
-            /*
-            if (z < 0.0) {
-                return (0.5 * (1.0 + AdvancedMath.Erf(-z / Global.SqrtTwo)));
-            } else {
-                return (0.5 * AdvancedMath.Erfc(z / Global.SqrtTwo));
-            }
-            */
         }
 
         /// <inheritdoc />
@@ -115,8 +109,11 @@ namespace Meta.Numerics.Statistics {
 
         /// <inheritdoc />
         public override double Moment (int n) {
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
-            return (Math.Exp(n * mu + n * n * sigma * sigma / 2.0));
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else {
+                return (Math.Exp(n * mu + n * n * sigma * sigma / 2.0));
+            }
         }
 
         /// <inheritdoc />

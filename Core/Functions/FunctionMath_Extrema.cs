@@ -688,11 +688,15 @@ namespace Meta.Numerics.Functions {
         /// <param name="m">The line extremum.</param>
         /// <returns>The corresponding one-dimensional space extremum.</returns>
         public static implicit operator SpaceExtremum (LineExtremum m) {
-            double[] s_x = new double[1] { m.x };
-            double s_f = m.f;
-            SymmetricMatrix s_f2 = new SymmetricMatrix(1);
-            s_f2[0, 0] = m.f2;
-            return (new SpaceExtremum(s_x, s_f, s_f2));
+            if (m == null) {
+                return (null);
+            } else {
+                double[] s_x = new double[1] { m.x };
+                double s_f = m.f;
+                SymmetricMatrix s_f2 = new SymmetricMatrix(1);
+                s_f2[0, 0] = m.f2;
+                return (new SpaceExtremum(s_x, s_f, s_f2));
+            }
         }
 
         // keep track of iterations
@@ -749,6 +753,7 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Gets the curvature matrix at the extremum.
         /// </summary>
+        /// <returns>The curvature matrix.</returns>
         public SymmetricMatrix Curvature () {
             return (f2.Clone());
         }

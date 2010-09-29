@@ -6,20 +6,26 @@ namespace Meta.Numerics.Functions {
 
     public static partial class FunctionMath {
 
-        public static double Differentiate (Function<double, double> f, double x) {
+#if FUTURE
+
+        /// <summary>
+        /// Estimates the derivative of the given function at the given point.
+        /// </summary>
+        /// <param name="f">The function to differentiate.</param>
+        /// <param name="x">The point at which to evaluate the derivative.</param>
+        /// <returns>The estimate, with uncertainty, of the value of the derivative.</returns>
+        public static UncertainValue Differentiate (Function<double, double> f, double x) {
+
+            if (f == null) throw new ArgumentNullException("f");
 
             double step = Math.Pow(2, -4) * Math.Abs(x) + Math.Pow(2, -8);
             double factor = Math.Pow(2.0, 1.0 / 2.0);
             UncertainValue v = Differentiate(f, x, step, factor);
-            if (v.Uncertainty > Math.Abs(v.Value) * Math.Pow(2, -40)) {
-                Console.WriteLine(v);
-                throw new NonconvergenceException();
-            }
-            return (v.Value);
+            return (v);
 
         }
 
-        public static UncertainValue Differentiate (Function<double, double> f, double x, double h, double s) {
+        private static UncertainValue Differentiate (Function<double, double> f, double x, double h, double s) {
 
             // choose an initial step size
             //double h = Math.Abs(x) / 16.0 + Math.Pow(2.0, -16);
@@ -55,7 +61,10 @@ namespace Meta.Numerics.Functions {
 
                 //Console.WriteLine(D[j][j]);
                 if (j > 0) {
-                    double u = Math.Abs(D[j][j] - D[j - 1][j - 1]);
+                    double u = Math.Max(
+                        Math.Abs(D[j][j] - D[j - 1][j - 1]),
+                        Math.Abs(D[j][j] - D[j][j-1])
+                     );
 
                     // check for 
                     if (u < best.Uncertainty) {
@@ -73,6 +82,8 @@ namespace Meta.Numerics.Functions {
             //throw new NonconvergenceException();
 
         }
+
+#endif
 
     }
 

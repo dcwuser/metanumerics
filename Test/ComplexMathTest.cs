@@ -104,6 +104,14 @@ namespace Test
         }
 
         [TestMethod]
+        public void ComplexTrigPeriodicity () {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 6)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sin(z), ComplexMath.Sin(z + 2.0 * Math.PI)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Cos(z), ComplexMath.Cos(z + 2.0 * Math.PI)));
+            }
+        }
+
+        [TestMethod]
         public void ComplexNegativeAnglesTest () {
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
                 if (Math.Abs(z.Im) > Math.Log(Double.MaxValue / 10.0)) continue; // sin and cos blow up in imaginary part of argument gets too big 
@@ -224,8 +232,8 @@ namespace Test
 
         [TestMethod]
         public void ComplexExpSumTest () {
-            foreach (Complex x in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
-                foreach (Complex y in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
+            foreach (Complex x in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 6)) {
+                foreach (Complex y in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 6)) {
                     // don't overflow exp
                     if ((Math.Abs(x.Re) + Math.Abs(y.Re)) > Math.Log(Double.MaxValue / 10.0)) continue;
                     Console.WriteLine("x,y = {0},{1}", x, y);

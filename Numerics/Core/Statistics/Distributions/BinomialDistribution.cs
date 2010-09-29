@@ -9,10 +9,13 @@ namespace Meta.Numerics.Statistics {
     /// Represents a discrete binomial distribution.
     /// </summary>
     /// <remarks>
-    /// <para>The binomial distribution gives the probability of obtaining exactly k successes
-    /// in n independent trails in which the probability of success is p.</para>
-    /// <para>For a single trial, the binomial distribution reduces to a Bernoulli distribution.</para>
+    /// <para>The binomial distribution gives the probability of obtaining k successes
+    /// in n independent trailsm in which the probability of success in each trial is p.</para>
+    /// <para>For a single trial, the binomial distribution reduces to a Bernoulli distribution (<see cref="BernoulliDistribution"/>).</para>
+    /// <para>The test statistic for a sign test (<see cref="Sample.SignTest"/>) is distributed according to the Bernoulli distribution.</para>
     /// </remarks>
+    /// <seealso href="http://mathworld.wolfram.com/BinomialDistribution.html"/>
+    /// <seealso href="http://en.wikipedia.org/wiki/Binomial_distribution"/>
     public class BinomialDistribution : DiscreteDistribution {
 
         /// <summary>

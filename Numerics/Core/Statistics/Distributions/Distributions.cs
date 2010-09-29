@@ -1065,6 +1065,7 @@ namespace Meta.Numerics.Statistics {
         private decimal[] counts;
         private NormalDistribution normal;
 
+        /// <inheritdoc />
         public override double  ProbabilityDensity(double x) {
  	        throw new NotImplementedException();
         }

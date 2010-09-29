@@ -88,9 +88,9 @@ namespace Test {
             foreach (int n in orders) {
                 foreach (double x in arguments) {
                     if (n % 2 == 0) {
-                        Assert.IsTrue(OrthogonalPolynomials.HermiteH(n, -x) == OrthogonalPolynomials.HermiteH(n, x));
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.HermiteH(n, -x), OrthogonalPolynomials.HermiteH(n, x)));
                     } else {
-                        Assert.IsTrue(OrthogonalPolynomials.HermiteH(n, -x) == -OrthogonalPolynomials.HermiteH(n, x));
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.HermiteH(n, -x), -OrthogonalPolynomials.HermiteH(n, x)));
                     }
                 }
             }

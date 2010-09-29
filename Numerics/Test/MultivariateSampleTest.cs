@@ -351,23 +351,23 @@ namespace Test
             try {
                 sample.LinearRegression(new int[] { -1, 2 }, 3);
                 Assert.IsTrue(false);
-            } catch (ArgumentException) {
+            } catch (ArgumentOutOfRangeException) {
                 Assert.IsTrue(true);
             }
 
             // pick repeated inputs
             try {
-                sample.LinearRegression(new int[] { 1, 1 }, 3);
+                sample.LinearRegression(new int[] { 1, 1 }, 0);
                 Assert.IsTrue(false);
-            } catch (ArgumentException) {
+            } catch (InvalidOperationException) {
                 Assert.IsTrue(true);
             }
 
             // pick outputs as inputs
             try {
-                sample.LinearRegression(new int[] { 1, 3 }, 3);
+                sample.LinearRegression(new int[] { 1, 2 }, 2);
                 Assert.IsTrue(false);
-            } catch (ArgumentException) {
+            } catch (InvalidOperationException) {
                 Assert.IsTrue(true);
             }
 

@@ -484,5 +484,64 @@ namespace Test
         }
         */
 
+
+        [TestMethod]
+        public void UniformOrderStatistics () {
+
+            Random rng = new Random(1);
+            UniformDistribution u = new UniformDistribution();
+
+            Sample maxima = new Sample();
+            Sample minima = new Sample();
+
+            for (int i = 0; i < 100; i++) {
+
+                double maximum = 0.0;
+                double minimum = 1.0;
+                for (int j = 0; j < 4; j++) {
+                    double value = u.GetRandomValue(rng);
+                    if (value > maximum) maximum = value;
+                    if (value < minimum) minimum = value;
+                }
+
+                maxima.Add(maximum);
+                minima.Add(minimum);
+
+            }
+
+            // maxima should be distributed according to Beta(n,1)
+            TestResult maxTest = maxima.KolmogorovSmirnovTest(new BetaDistribution(4, 1));
+            //Console.WriteLine(maxTest.LeftProbability);
+            Assert.IsTrue(maxTest.LeftProbability < 0.95);
+
+            // minima should be distributed according to
+            TestResult minTest = minima.KolmogorovSmirnovTest(new BetaDistribution(1, 4));
+            //Console.WriteLine(minTest.LeftProbability);
+            Assert.IsTrue(minTest.LeftProbability < 0.95);
+
+
+        }
+
+        [TestMethod]
+        public void FisherInversion () {
+
+            // x ~ Fisher(a,b) => 1/x ~ Fisher(b,a)
+
+            FisherDistribution f = new FisherDistribution(2.3, 5.6);
+            FisherDistribution fi = new FisherDistribution(f.DenominatorDegreesOfFreedom, f.NumeratorDegreesOfFreedom);
+
+            Random rng = new Random(1);
+            for (int i = 0; i < 10; i++) {
+
+                double x = f.GetRandomValue(rng);
+                double xi = 1.0 / x;
+
+                // LeftProbability <-> RightProbability because as x increases, 1/x decreases
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(f.LeftProbability(x), fi.RightProbability(xi)));
+
+            }
+
+        }
+
     }
 }

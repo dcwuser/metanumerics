@@ -99,7 +99,7 @@ namespace Meta.Numerics.Matrices {
         /// Returns a vector representing a given row of the matrix.
         /// </summary>
         /// <param name="r">The (zero-based) row number to return.</param>
-        /// <returns></returns>
+        /// <returns>An independent copy of the specified row.</returns>
         /// <remarks>The returned vector is not linked to the matrix. If an entry in the matrix is updated after this method
         /// is called, the returned object will continue to represent a row of the original, not the updated, matrix. Similiarly,
         /// updates to the elements of the returned vector will not update the original matrix.</remarks>
@@ -116,7 +116,7 @@ namespace Meta.Numerics.Matrices {
         /// Gets a copy of one column of the the matrix.
         /// </summary>
         /// <param name="c">The (zero-based) column number to return.</param>
-        /// <returns></returns>
+        /// <returns>An independent copy of the specificed column.</returns>
         /// <remarks>The returned vector is not linked to the matrix. If an entry in the matrix is updated after this method
         /// is called, the returned object will continue to represent a row of the original, not the updated, matrix. Similiarly,
         /// updates to the elements of the returned vector will not update the original matrix.</remarks>
@@ -1290,6 +1290,10 @@ namespace Meta.Numerics.Matrices {
             return (x);
         }
 
+        /// <summary>
+        /// Computes a QR decomposition of the matrix.
+        /// </summary>
+        /// <returns>A QR decomposition of the matrix.</returns>
         public SquareQRDecomposition QRDecomposition () {
 
             double[] rStore = MatrixAlgorithms.Clone(store, dimension, dimension);
@@ -1499,7 +1503,10 @@ namespace Meta.Numerics.Matrices {
         }
 
 #if SHO
-        [Obsolete]
+        /// <summary>
+        /// Produces the representation of the matrix for the Python interactive console.
+        /// </summary>
+        /// <returns>A string representation of the matrix.</returns>
         public string __repr__ () {
             StringWriter writer = new StringWriter();
             Matrix.WriteMatrix(this, writer);

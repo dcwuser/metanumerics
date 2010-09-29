@@ -142,6 +142,17 @@ namespace Test {
         }
 
         [TestMethod]
+        public void SampleMedian () {
+            Sample sample = new Sample();
+            sample.Add(2.0, 1.0);
+            Console.WriteLine(sample.Median);
+            Assert.IsTrue(sample.Median == 1.5);
+            sample.Add(3.0);
+            Console.WriteLine(sample.Median);
+            Assert.IsTrue(sample.Median == 2.0);
+        }
+
+        [TestMethod]
         public void SampleInterquartileRange () {
             foreach (Distribution distribution in distributions) {
                 
@@ -689,7 +700,7 @@ namespace Test {
 
         }
 
-        /*
+        
         [TestMethod]
         public void AnovaTest () {
 
@@ -702,13 +713,17 @@ namespace Test {
             Sample C = new Sample();
             C.Add(new double[] { 32, 39, 35, 41, 44 });
 
-            Sample.OneWayAnovaTest(A, B, C);
-            //Console.WriteLine("{0} {1} {2}", result.Statistic, result.LeftProbability, result.RightProbability);
+            OneWayAnovaResult result = Sample.OneWayAnovaTest(A, B, C);
 
-            // note F = t^2 for two groups
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Factor.SumOfSquares + result.Residual.SumOfSquares, result.Total.SumOfSquares));
+            Assert.IsTrue(result.Factor.DegreesOfFreedom + result.Residual.DegreesOfFreedom == result.Total.DegreesOfFreedom);
+
+            Assert.IsTrue(result.Total.DegreesOfFreedom == A.Count + B.Count + C.Count - 1);
+
+            Assert.IsTrue(result.FTest.Statistic == result.Factor.FTest.Statistic);
 
         }
-        */
+        
 
         [TestMethod]
         public void AnovaDistribution () {
@@ -733,6 +748,7 @@ namespace Test {
 
                 OneWayAnovaResult result = Sample.OneWayAnovaTest(groups);
                 fSample.Add(result.Factor.FTest.Statistic);
+
             }
 
             // compare the distribution of F statistics to the expected distribution
@@ -758,14 +774,47 @@ namespace Test {
             TestResult ts = A.StudentTTest(B);
             TestResult ta = Sample.OneWayAnovaTest(A, B).Factor.FTest;
 
+
             // the results should agree, with F = t^2 and same probability
-            Console.WriteLine("{0} {1}", MoreMath.Pow(ts.Statistic, 2), ta.Statistic);
-            Console.WriteLine("{0} {1}", ts.LeftProbability, ta.LeftProbability);
+            Console.WriteLine("t F {0} {1}", MoreMath.Pow(ts.Statistic, 2), ta.Statistic);
+            Console.WriteLine("P P {0} {1}", ts.LeftProbability, ta.LeftProbability);
 
             StudentDistribution ds = (StudentDistribution)ts.Distribution;
             FisherDistribution da = (FisherDistribution)ta.Distribution;
             Console.WriteLine(ds.DegreesOfFreedom);
             Console.WriteLine("{0} {1}", da.NumeratorDegreesOfFreedom, da.DenominatorDegreesOfFreedom);
+
+        }
+
+        [TestMethod]
+        public void ZTestDistribution () {
+
+            Random rng = new Random(1);
+
+            // define the sampling population (which must be normal for a z-test)
+            Distribution population = new NormalDistribution(2.0, 3.0);
+
+            // collect 100 samples
+            Sample zSample = new Sample();
+            for (int i = 0; i < 100; i++) {
+
+                // each z-statistic is formed by making a 4-count sample from a normal distribution
+                Sample sample = new Sample();
+                for (int j = 0; j < 4; j++) {
+                    sample.Add(population.GetRandomValue(rng));
+                }
+
+                // for each sample, do a z-test against the population
+                TestResult zResult = sample.ZTest(population.Mean, population.StandardDeviation);
+                zSample.Add(zResult.Statistic);
+
+            }
+
+            // the z's should be distrubuted normally
+
+            TestResult result = zSample.KolmogorovSmirnovTest(new NormalDistribution());
+            Console.WriteLine("{0} {1}", result.Statistic, result.LeftProbability);
+            Assert.IsTrue((result.LeftProbability > 0.05) && (result.LeftProbability < 0.95));
 
         }
 

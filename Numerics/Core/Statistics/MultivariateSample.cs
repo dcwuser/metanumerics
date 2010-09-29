@@ -577,12 +577,12 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="http://en.wikipedia.org/wiki/Linear_regression"/>
         public FitResult LinearRegression (IList<int> inputIndexes, int outputIndex) {
             // check inputs
-            if (inputIndexes == null) throw new ArgumentNullException("inputIndices");
+            if (inputIndexes == null) throw new ArgumentNullException("inputIndexes");
             for (int i = 0; i < inputIndexes.Count; i++) {
-                if ((inputIndexes[i] < 0) || (inputIndexes[i] >= n)) throw new ArgumentOutOfRangeException("inputIndices");
-                if (inputIndexes[i] == outputIndex) throw new ArgumentException("inputIndices");
+                if ((inputIndexes[i] < 0) || (inputIndexes[i] >= n)) throw new ArgumentOutOfRangeException("inputIndexes");
+                if (inputIndexes[i] == outputIndex) throw new InvalidOperationException();
                 for (int j = 0; j < i; j++) {
-                    if (inputIndexes[j] == inputIndexes[i]) throw new ArgumentException("inputIndices");
+                    if (inputIndexes[j] == inputIndexes[i]) throw new InvalidOperationException();
                 }
             }
             if ((outputIndex < 0) || (outputIndex >= n)) throw new ArgumentOutOfRangeException("outputIndex");

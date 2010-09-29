@@ -16,6 +16,8 @@ namespace Meta.Numerics.Statistics {
     /// describes the probablity of obtaining any particular number of successes.</para>
     /// </remarks>
     /// <seealso cref="BinomialDistribution"/>
+    /// <seealso href="http://mathworld.wolfram.com/BinomialDistribution.html"/>
+    /// <seealso href="http://en.wikipedia.org/wiki/Bernoulli_distribution"/>
     public class BernoulliDistribution : DiscreteDistribution {
 
         /// <summary>

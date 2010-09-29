@@ -167,7 +167,10 @@ namespace Meta.Numerics {
         }
 
 #if SHO
-        [Obsolete]
+        /// <summary>
+        /// Produces a representation of the interval for the Python interactive console.
+        /// </summary>
+        /// <returns>A string representation of the inverval.</returns>
         public string __repr__ () {
             return(ToString());
         }

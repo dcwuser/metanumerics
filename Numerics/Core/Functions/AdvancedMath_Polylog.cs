@@ -79,10 +79,14 @@ namespace Meta.Numerics.Functions {
     public static partial class AdvancedComplexMath {
 
         /// <summary>
-        /// Computes the complex dilogarathm function, also called Spence's function.
+        /// Computes the complex dilogarithm function, also called Spence's function.
         /// </summary>
         /// <param name="z">The complex argument.</param>
         /// <returns>The value Li<sub>2</sub>(z).</returns>
+        /// <remarks>
+        /// <para>The image below shows the complex dilogarithm function near the origin, using domain coloring.</para>
+        /// <img src="../images/ComplexDiLogPlot.png" />
+        /// </remarks>
         /// <seealso cref="AdvancedMath.DiLog"/>
         /// <seealso href="http://mathworld.wolfram.com/Dilogarithm.html" />
         public static Complex DiLog (Complex z) {

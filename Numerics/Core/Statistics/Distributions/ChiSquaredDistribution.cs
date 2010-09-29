@@ -19,7 +19,9 @@ namespace Meta.Numerics.Statistics {
     /// with &#x3BD; degrees of freedom.</para>
     /// <img src="../images/ChiSquaredFromNormal.png" />
     /// <para>The &#x3C7;<sup>2</sup> distribution appears in least-squares fitting as the distribution of the sum-of-squared-deviations
-    /// under the null hypothesis that the model explains the data.</para>
+    /// under the null hypothesis that the model explains the data. For example, the goodness-of-fit statistic returned by the
+    /// model our model fitting methods (<see cref="DataSet{T}.FitToFunction"/>, <see cref="DataSet{T}.FitToLinearFunction"/>,
+    /// <see cref="DataSet.FitToLine"/>, and others) follows a &#x3C7;<sup>2</sup> distribution.</para>
     /// </remarks>
     /// <seealso cref="ContingencyTable.PearsonChiSquaredTest"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Chi-square_distribution" />

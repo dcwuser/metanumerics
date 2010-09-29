@@ -97,7 +97,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Returns an independent copy of the matrix.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An independent copy of the matrix.</returns>
         public SymmetricMatrix Clone () {
             SymmetricMatrix clone = new SymmetricMatrix(Dimension);
             for (int r = 0; r < Dimension; r++) {
@@ -172,6 +172,7 @@ namespace Meta.Numerics.Matrices {
         /// <para>The fastest way to test whether your matrix is positive definite is attempt a Cholesky decomposition. If this
         /// method returns null, M is not positive definite.</para>
         /// </remarks>
+        /// <seealso cref="Meta.Numerics.Matrices.CholeskyDecomposition"/>
         public CholeskyDecomposition CholeskyDecomposition () {
 
             double[][] cdStorage = SymmetricMatrixAlgorithms.CholeskyDecomposition(values, dimension);
@@ -407,6 +408,8 @@ namespace Meta.Numerics.Matrices {
         /// <para>The eigenvectors of a symmetric matrix are always orthogonal and the eigenvalues are always real. The transformation
         /// matrix Z is thus orthogonal (Z<sup>-1</sup> = Z<sup>T</sup>).</para>
         /// <para>Finding the eigenvalues and eigenvectors of a symmetric matrix is an O(N<sup>3</sup>) operation.</para>
+        /// <para>If you require only the eigenvalues, not the eigenvectors, of the matrix, the <see cref="Eigenvalues"/> method
+        /// will produce them faster than this method.</para>
         /// </remarks>
         public RealEigensystem Eigensystem () {
             SymmetricMatrix clone = this.Clone();
@@ -430,7 +433,12 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Computes the eigenvalues of the matrix. 
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An array containing the matrix eigenvalues.</returns>
+        /// <remarks>
+        /// <para>If you require only the eigenvalues of the matrix, not its eigenvectors, this method will return them faster than
+        /// the <see cref="Eigensystem"/> method. If you do need the eigenvectors as well as the eigenvalues, use the <see cref="Eigensystem"/>
+        /// method instead.</para>
+        /// </remarks>
         public double[] Eigenvalues () {
             SymmetricMatrix clone = this.Clone();
             clone.Jacobi(null);
@@ -730,7 +738,10 @@ namespace Meta.Numerics.Matrices {
         }
 
 #if SHO
-        [Obsolete]
+        /// <summary>
+        /// Produces the representation of the symmetric matrix for the Python interactive console.
+        /// </summary>
+        /// <returns>A string representation of the symmetric matrix.</returns>
         public string __repr__ () {
             StringWriter writer = new StringWriter();
             Matrix.WriteMatrix(this, writer);

@@ -160,11 +160,12 @@ namespace Meta.Numerics.Statistics {
         public double Median {
             get {
                 EnsureSorted();
-				int m = data.Count/2;
+				int m = data.Count / 2;
+                if (m == 0) return(Double.NaN);
 				if ((data.Count % 2) == 0) {
-					return( data[m] );
+					return( (data[m-1] + data[m]) / 2.0 );
 				} else {
-					return( (data[m] + data[m+1]) / 2.0 );
+					return( data[m] );
 				}
             }
         }
@@ -239,7 +240,7 @@ namespace Meta.Numerics.Statistics {
         public UncertainValue PopulationMoment (int n) {
             if (n < 0) {
                 // we don't do negative moments
-                throw new ArgumentOutOfRangeException("n", n, "Moment orders must be non-negative.");
+                throw new ArgumentOutOfRangeException("n");
             } else if (n == 0) {
                 // the zeroth moment is exactly one for any distribution
                 return (new UncertainValue(1.0, 0.0));
@@ -260,10 +261,11 @@ namespace Meta.Numerics.Statistics {
         /// <param name="n">The order of the moment.</param>
         /// <returns>An estimate, with uncertainty, of the <paramref name="n"/>th moment about the mean
         /// of the underlying population.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         public UncertainValue PopulationMomentAboutMean (int n) {
             if (n < 0) {
                 // we don't do negative moments
-                throw new ArgumentOutOfRangeException("n", n, "Moment orders must be non-negative.");
+                throw new ArgumentOutOfRangeException("n");
             } else if (n == 0) {
                 // the zeroth moment is exactly one for any distribution
                 return (new UncertainValue(1.0, 0.0));
@@ -357,6 +359,30 @@ namespace Meta.Numerics.Statistics {
         // tests on the sample
 
         /// <summary>
+        /// Performs a z-test.
+        /// </summary>
+        /// <param name="referenceMean">The mean of the comparison population.</param>
+        /// <param name="referenceStandardDeviation">The standard deviation of the comparison population.</param>
+        /// <returns>A test result indicating whether the sample mean is significantly different from that of the comparison population.</returns>
+        /// <remarks>
+        /// <para>In most cases, Student's t-test (<see cref="StudentTTest(double)"/>) is more appropriate.</para>
+        /// </remarks>
+        /// <example>
+        /// <para>Suppose a standardized test exists, for which it is known that the mean score is 100 and the standard deviation is 15
+        /// across the entire population. The test is administered to a small sample of a subpopulation, who obtain a mean sample score of 95.
+        /// You can use the z-test to determine how likely it is that the subpopulation mean really is lower than the population mean,
+        /// that is that their slightly lower mean score in your sample is not merely a fluke.</para>
+        /// </example>
+        /// <seealso cref="StudentTTest(double)"/>
+        public TestResult ZTest (double referenceMean, double referenceStandardDeviation) {
+
+            if (this.Count < 1) throw new InvalidOperationException();
+            double z = (this.Mean - referenceMean) / (referenceStandardDeviation / Math.Sqrt(this.Count));
+            return(new TestResult(z, new NormalDistribution()));
+
+        }
+
+        /// <summary>
         /// Tests whether the sample mean is compatible with the reference mean.
         /// </summary>
         /// <param name="referenceMean">The reference mean.</param>
@@ -364,15 +390,36 @@ namespace Meta.Numerics.Statistics {
         /// to obtain a greater value under the null hypothesis is the (right) propability of that value. If t &lt; 0, the
         /// corresponding one-sided likelyhood is the (left) probability of that value. The two-sided likelyhood to obtain
         /// a t-value as far or farther from zero as the value obtained is just twice the one-sided likelyhood.</returns>
-        /// <remarks><para>The test statistic of the student t-test is the difference between the
-        /// sample and reference means, measured in units of the sample mean uncertainty. For normally
-        /// distributed samples, this is known to follow a Student distribution. If t is
-        /// far from zero, then the sample is unlikely to have been drawn from a population with the reference
+        /// <remarks>
+        /// <para>The test statistic of Student's t-test is the difference between the
+        /// sample and reference means, measured in units of the sample mean uncertainty. For samples drawn from a normally
+        /// distributed population with the given reference mean, this statistic can be shown to follow a Student distribution
+        /// (<see cref="StudentDistribution"/>). If t is
+        /// far from zero, then the sample is unlikely to have been drawn from a population with the given reference
         /// mean.</para>
         /// <para>Because the distribution of a t-statistic assumes a normally distributed population, this
-        /// test should only be used on sample data compatible with a normal distribution. The Mann-Whitney
-        /// U test is a less powerful but non-parametric alternative that can be used to test median compatibility
-        /// of arbitrarly distributed data sets.</para></remarks>
+        /// test should only be used only on sample data compatible with a normal distribution. The sign test (<see cref="SignTest"/>)
+        /// is a non-parametric alternative that can be used to test the compatibility of the sample median with an assumed population median.</para>
+        /// </remarks>
+        /// <example>
+        /// <para>In some country, the legal limit blood alcohol limit for drivers is 80 on some scale. Because they
+        /// have noticed that the results given by their measuring device fluctuate, the police perform three
+        /// seperate measurements on a suspected drunk driver.
+        /// They obtain the results 81, 84, and 93. They argue that, because all three results exceed the
+        /// limit, the court should be very confident that the driver's blood alcohol level did, in fact, exceed
+        /// the legal limit. You are the driver's lawyer. Can you make an argument to that the court shouldn't be so
+        /// sure?</para>
+        /// <para>Here is some code that computes the probability of obtaining such high measured values,
+        /// assuming that the true level is exactly 80.</para>
+        /// <code lang="c#">
+        /// Sample values = new Sample();
+        /// values.Add(81, 84, 93);
+        /// TestResult result = values.StudentTTest(80);
+        /// Console.WriteLine(result.RightProbability);
+        /// </code>
+        /// <para>What level of statistical confidence do you think should a court require in order to pronounce a defendant guilty?</para>
+        /// </example>
+        /// <exception cref="InvalidOperationException">There are fewer than two data points in the sample.</exception>
         /// <seealso cref="StudentDistribution" />
         public TestResult StudentTTest (double referenceMean) {
 
@@ -393,12 +440,16 @@ namespace Meta.Numerics.Statistics {
         /// <param name="referenceMedian">The reference median.</param>
         /// <returns>The result of the test.</returns>
         /// <remarks>
-        /// <para>The sign test is a non-parametric alternative to the Student t-test. It test whether the sample is consistent
-        /// with the given refernce median.</para>
+        /// <para>The sign test is a non-parametric alternative to the Student t-test (<see cref="StudentTTest(double)"/>).
+        /// It tests whether the sample is consistent with the given refernce median.</para>
         /// <para>The null hypothesis for the test is that the median of the underlying population from which the sample is
-        /// drawn is the reference median. The test statistic is number of sample values that lie above the median. The left
-        /// probability is the chance that so few values would lie below the referene median, assuming that the reference median
-        /// really is the median of the underlying population from which the sample is drawn.</para>
+        /// drawn is the reference median. The test statistic is simply number of sample values that lie above the median. Since
+        /// each sample value is equally likely to be below or above the population median, each draw is an independent Bernoulli
+        /// trial, and the total number of values above the population median is distributed accordng to a binomial distribution
+        /// (<see cref="BinomialDistribution"/>).</para>
+        /// <para>The left probability of the test result is the chance of the sample median being so low, assuming the sample to have been
+        /// drawn from a population with the reference median. The right probability of the test result is the chance of the sample median
+        /// being so high, assuming the sample to have been drawn from a population with the reference median.</para>
         /// </remarks>
         /// <seealso cref="StudentTTest(double)"/>
         public TestResult SignTest (double referenceMedian) {
@@ -435,20 +486,7 @@ namespace Meta.Numerics.Statistics {
             if (sample == null) throw new ArgumentNullException("sample");
 
             return (Sample.StudentTTest(this, sample));
-            /*
-            double m1 = this.Mean;
-            double s1 = Math.Sqrt(this.Count / (this.Count - 1.0)) * this.StandardDeviation;
-            double m2 = sample.Mean;
-            double s2 = Math.Sqrt(sample.Count / (sample.Count - 1.0)) * sample.StandardDeviation;
 
-            // compute degrees of freedom and pooled variance
-            int dof = this.Count + sample.Count - 2;
-            double s = Math.Sqrt((s1 + s2) / dof);
-
-            // compute t statistic and probability
-            double t = (m1 - m2) / (s * Math.Sqrt(1.0 / this.Count + 1.0 / sample.Count));
-            return (new TestResult(t, new StudentDistribution(dof)));
-            */
         }
 
         /// <summary>
@@ -508,14 +546,13 @@ namespace Meta.Numerics.Statistics {
         /// is that each t-test risks a false positive, so multiple t-tests increase
         /// the risk of a false positive. For example, given a 95% confidence requirement,
         /// there is only a 5% chance that a t-test will incorrectly diagnose a significant
-        /// difference. But given 5 samples, there are 5*4/2 = 10 t-tests to be
+        /// difference. But given 5 samples, there are 5 * 4 /2 = 10 t-tests to be
         /// performed, giving about a 40% chance that one of them will incorrectly
         /// diagnose a significant difference. The ANOVA avoids the accumulation of risk
         /// by performing a single test at the required confidence level to test for
         /// any significant differences between the groups.</para>
         /// <para>A one-way ANOVA test on two samples is equivilent to a
-        /// t-test (<see cref="Sample.StudentTTest(Sample,Sample)" />), and should yield exactly
-        /// the same significance level.</para>
+        /// t-test (<see cref="Sample.StudentTTest(Sample,Sample)" />).</para>
         /// <para>ANOVA is an acronym for "Analysis of Variance". Do not be confused
         /// by the name and by the use of a ratio-of-variances test statistic: an
         /// ANOVA is primarily (although not exclusively) sensitive to changes in the
@@ -553,9 +590,9 @@ namespace Meta.Numerics.Statistics {
         /// Performs a one-way ANOVA.
         /// </summary>
         /// <param name="samples">The samples to compare.</param>
-        /// <returns></returns>
+        /// <returns>The result of the test.</returns>
         /// <remarks>
-        /// <para>For detailed information, see the variable argumet overload.</para>
+        /// <para>For detailed information, see the variable argument overload.</para>
         /// </remarks>
         public static OneWayAnovaResult OneWayAnovaTest (IList<Sample> samples) {
 
@@ -853,26 +890,21 @@ namespace Meta.Numerics.Statistics {
             // find the maximum cdf seperation
             double d = 0.0;
             while ((c0 < this.Count) && (c1 < sample.Count)) {
-                //Console.WriteLine("s0[{0}]={1} vs s1[{2}]={3}", c0, this.data[c0], c1, sample.data[c1]);
                 if (this.data[c0] < sample.data[c1]) {
                     // the next data point is in sample 0
-                    //Console.WriteLine("x={0}", this.data[c0]);
                     d0 = 1.0 * (c0 + 1) / this.Count;
                     c0++;
                 } else {
                     // the next data point is in sample 1
-                    //Console.WriteLine("x={0}", sample.data[c1]);
                     d1 = 1.0 * (c1 + 1) / sample.Count;
                     c1++;
                 }
                 double dd = Math.Abs(d1 - d0);
-                //Console.WriteLine("d0={0} d1={1} dd={2}", d0, d1, dd);
                 if (dd > d) d = dd;
             }
 
             // compute the effective degrees of freedom;
             double ne = 1.0 / (1.0 / this.Count + 1.0 / sample.Count);
-            //Console.WriteLine("ne={0}", ne);
 
             // return the result
             return (new TestResult(d, new KolmogorovDistribution(1.0 / Math.Sqrt(ne))));
@@ -915,6 +947,14 @@ namespace Meta.Numerics.Statistics {
             foreach (double value in values) {
                 Add(value);
             }
+        }
+
+        /// <summary>
+        /// Adds multiple values to the sample.
+        /// </summary>
+        /// <param name="values">The values to be added.</param>
+        public void Add (params double[] values) {
+            Add((IEnumerable<double>)values);
         }
 
         /// <summary>

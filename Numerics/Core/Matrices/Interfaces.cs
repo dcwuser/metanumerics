@@ -30,13 +30,13 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Returns a clone of the matrix.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An independent copy of the matrix.</returns>
         IMatrix Clone ();
 
         /// <summary>
         /// Returns a transpose of the matrix.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An independent transpose of the matrix.</returns>
         IMatrix Transpose ();
 
     }
@@ -54,7 +54,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Computes the trace of the matrix.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The trace of the matrix.</returns>
         double Trace ();
 
         //ISquareDecomposition Decomposition ();

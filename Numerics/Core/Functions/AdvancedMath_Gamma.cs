@@ -14,7 +14,8 @@ namespace Meta.Numerics.Functions {
         /// <returns>The log Gamma function ln(&#x393;(x)).</returns>
         /// <remarks>
         /// <para>Because &#x393;(x) grows rapidly for increasing positive x, it is often necessary to
-        /// work with its logrithm in order to avoid overflow.</para>
+        /// work with its logarithm in order to avoid overflow. This function returns accurate
+        /// values of ln(&#x393;(x)) even for values of x which would cause &#x393;(x) to overflow.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso cref="Gamma(double)" />
@@ -149,14 +150,21 @@ namespace Meta.Numerics.Functions {
 		}
 
         /// <summary>
-        /// Computes the incomplete Gamma function.
+        /// Computes the upper incomplete Gamma function.
         /// </summary>
         /// <param name="a">The shape parameter, which must be positive.</param>
         /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The value of &#x393;(a,x).</returns>
-        /// <remarks><para>Like the &#x393; function itself, this function gets large very quickly. For most
-        /// purposes, you will prefer to use the normalized incomplete gamma functions <see cref="LeftGamma"/> and
-        /// <see cref="RightGamma"/>.</para></remarks>
+        /// <remarks>
+        /// <para>The incomplete Gamma function is defined by the same integrand as the Gamma function (<see cref="Gamma(double)"/>),
+        /// but the integral is not taken over the full positive real axis.</para>
+        /// <img src="../images/UpperIncompleteGammaIntegral.png" />
+        /// <para>Like the &#x393; function itself, this function gets large very quickly. For most
+        /// purposes, you will prefer to use the regularized incomplete gamma functions <see cref="LeftGamma"/> and
+        /// <see cref="RightGamma"/>.</para>
+        /// </remarks>
+        /// <seealso cref="Gamma(double)"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Incomplete_Gamma_function"/>
         public static double Gamma (double a, double x) {
             return (RightGamma(a, x) * Gamma(a));
         }
@@ -377,6 +385,10 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="z">The complex argument.</param>
         /// <returns>The complex value of &#x393;(z).</returns>
+        /// <remarks>
+        /// <para>The image below shows the complex &#x393; function near the origin using domain coloring.</para>
+        /// <img src="../images/ComplexGammaPlot.png" />
+        /// </remarks>
         /// <seealso cref="AdvancedMath.Gamma(double)"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Gamma_function" />
         /// <seealso href="http://mathworld.wolfram.com/GammaFunction.html" />
@@ -393,7 +405,7 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Compute the complex log Gamma function.
         /// </summary>
-        /// <param name="z">The complex argument, which must have non-negative z.Re.</param>
+        /// <param name="z">The complex argument, which must have a non-negative real part.</param>
         /// <returns>The complex value ln(&#x393;(z)).</returns>
         /// <exception cref="ArgumentOutOfRangeException">The real part of <paramref name="z"/> is negative.</exception>
         /// <seealso cref="AdvancedMath.LogGamma" />
@@ -469,11 +481,15 @@ namespace Meta.Numerics.Functions {
         }
 
         /// <summary>
-        /// Computes the complex digamma function.
+        /// Computes the complex digamma (&#x3C8;) function.
         /// </summary>
         /// <param name="z">The complex argument.</param>
         /// <returns>The value of &#x3C8;(z).</returns>
-        /// <seealso cref="AdvancedMath.Psi"/>
+        /// <remarks>
+        /// <para>The image below shows the complex &#x3C8; function near the origin using domain coloring.</para>
+        /// <img src="../images/ComplexPsiPlot.png" />
+        /// </remarks>
+        /// <seealso cref="AdvancedMath.Psi" />
         public static Complex Psi (Complex z) {
             if (z.Re < 0.5) {
                 // reduce z.Re in order to handle large real values!

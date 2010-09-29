@@ -65,15 +65,17 @@ namespace Test {
 
         [TestMethod]
         public void UncertainMathFunctionValuesTest () {
-            Assert.IsTrue(UncertainMath.Cos(a).Value == Math.Cos(a.Value));
-            Assert.IsTrue(UncertainMath.Sin(a).Value == Math.Sin(a.Value));
-            Assert.IsTrue(UncertainMath.Tan(a).Value == Math.Tan(a.Value));
-            Assert.IsTrue(UncertainMath.Cosh(a).Value == Math.Cosh(a.Value));
-            Assert.IsTrue(UncertainMath.Sinh(a).Value == Math.Sinh(a.Value));
-            Assert.IsTrue(UncertainMath.Tanh(a).Value == Math.Tanh(a.Value));
-            Assert.IsTrue(UncertainMath.Log(a).Value == Math.Log(a.Value));
-            Assert.IsTrue(UncertainMath.Exp(a).Value == Math.Exp(a.Value));
-            Assert.IsTrue(UncertainMath.Sqrt(a).Value == Math.Sqrt(a.Value));
+            // We need to move to IsNearlyEqual because exact equality fails in release mode, even though all-digit printed values are the same
+            // I suspect this has to do with the optomized comparison including bits beyond those that strictly belong to the value and are random
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(UncertainMath.Cos(a).Value, Math.Cos(a.Value)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(UncertainMath.Sin(a).Value, Math.Sin(a.Value)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(UncertainMath.Tan(a).Value, Math.Tan(a.Value)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(UncertainMath.Cosh(a).Value, Math.Cosh(a.Value)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(UncertainMath.Sinh(a).Value, Math.Sinh(a.Value)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(UncertainMath.Tanh(a).Value, Math.Tanh(a.Value)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(UncertainMath.Log(a).Value, Math.Log(a.Value)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(UncertainMath.Exp(a).Value, Math.Exp(a.Value)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(UncertainMath.Sqrt(a).Value, Math.Sqrt(a.Value)));
         }
 
         [TestMethod]

@@ -10,8 +10,12 @@ namespace Meta.Numerics.Statistics {
     /// Represents the distribution of Fisher's F-statistic.
     /// </summary>
     /// <remarks>
-    /// <para>F is the ratio of the variances of two sets of normally distributed variables</para>
-    /// <para>The Fisher distribution is the distribution of the F statistic (under the null hypothesis) in a F-test.</para>
+    /// <para>The ratio of the variances of two sets of normally distributed variables is distributed according to Fisher's F-distribution.</para>
+    /// <img src="../images/FisherFromNormal.png" />
+    /// <para>Many test statistics are ratios of variances and are therefore distributed according to the F-distribution. These include
+    /// the F-test (<see cref="Sample.FisherFTest"/>),
+    /// the goodness-of-fit test for a multi-linear regression (<see cref="MultivariateSample.LinearRegression(int)"/>),
+    /// and ANOVA tests (<see cref="Sample.OneWayAnovaTest(IList{Sample})"/>).</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/F_distribution"/>
     public class FisherDistribution : Distribution {

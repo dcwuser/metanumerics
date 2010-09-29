@@ -401,7 +401,10 @@ namespace Meta.Numerics.Matrices {
         }
 
 #if SHO
-        [Obsolete]
+        /// <summary>
+        /// Produces the representation of the matrix for the Python interactive console.
+        /// </summary>
+        /// <returns>A string representation of the matrix.</returns>
         public string __repr__ () {
             StringWriter writer = new StringWriter();
             Matrix.WriteMatrix(this, writer);
@@ -479,7 +482,7 @@ namespace Meta.Numerics.Matrices {
             double[] vStore = new double[rows];
 
             // loop over columns
-            for (int c = 0; c < (cols - 1); c++) {
+            for (int c = 0; c < cols; c++) {
 
                 // find a householder transform that zeros the sub-diagonal elements of the active column
                 // P = 1 - v v^T
@@ -522,13 +525,18 @@ namespace Meta.Numerics.Matrices {
                     store[rows * c + r1] = 0.0;
                 }
 
+                //Console.WriteLine("R=");
+                //WriteMatrix(store, rows, cols);
+
                 // apply P to Q
                 
                 for (int c1 = 0; c1 < rows; c1++) {
                     double p = Blas1.dDot(vStore, 0, 1, qtStore, rows * c1 + c, 1, n);
                     Blas1.dAxpy(-p, vStore, 0, 1, qtStore, rows * c1 + c, 1, n);
                 }
-                
+
+                //Console.WriteLine("QT=");
+                //WriteMatrix(qtStore, rows, rows);
             }
 
         }

@@ -6,6 +6,21 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents the Cholesky Decomposition of a symmetric, positive definite matrix. 
     /// </summary>
+    /// <remarks>
+    /// <para>A Cholesky decomposition represents a matrix as the product of a lower-left triangular matrix and its transpose. For example:</para>
+    /// <img src="../images/CholeskyDecomposition.png" />
+    /// <para>The Choleksy decomposition of a symmetric, positive definite matrix can be obtained using the
+    /// <see cref="SymmetricMatrix.CholeskyDecomposition"/> method of the <see cref="SymmetricMatrix"/> class.</para>
+    /// </remarks>
+    /// <example>
+    /// <para>Here is an example that uses a Cholesky decomposition to solve a linear algebra problem.</para>
+    /// <code lang="cs">
+    /// // Solve Ax = b via Cholesky decomposition
+    /// CholeskyDecomposition CD = A.CholsekyDecomposition();
+    /// ColumnVector b = new ColumnVector(new double[] {1, 4, 5});
+    /// ColumnVector x CD.Solve(b);
+    /// </code>
+    /// </example>
     /// <seealso cref="SymmetricMatrix.CholeskyDecomposition"/>
     public class CholeskyDecomposition : ISquareDecomposition {
 

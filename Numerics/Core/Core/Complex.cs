@@ -94,7 +94,10 @@ namespace Meta.Numerics {
 
 
 #if SHO
-        [Obsolete]
+        /// <summary>
+        /// Produces the representation of the complex number for the Python interactive console.
+        /// </summary>
+        /// <returns>A string representation of the complex number.</returns>
         public string __repr__ () {
             return(ToString());
         }
@@ -145,12 +148,12 @@ namespace Meta.Numerics {
         }
 
         /// <summary>
-        /// Determine whether the given complex number is the same.
+        /// Determines whether the given complex number is the same.
         /// </summary>
-        /// <param name="z">The complex number to compare.</param>
+        /// <param name="other">The complex number to compare.</param>
         /// <returns>True if the complex number is the same, otherwise false.</returns>
-        public bool Equals (Complex z) {
-            return (this == z);
+        public bool Equals (Complex other) {
+            return (this == other);
         }
 
         /// <summary>

@@ -77,6 +77,11 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <summary>
+        /// Computes the value corresponding to the given percentile.
+        /// </summary>
+        /// <param name="P">The percentile.</param>
+        /// <returns>The value.</returns>
         public virtual int InverseLeftProbability (double P) {
             throw new NotImplementedException();
         }
@@ -90,14 +95,14 @@ namespace Meta.Numerics.Statistics {
             if (f == null) throw new ArgumentNullException("f");
             DiscreteInterval support = Support;
 
+            // to avoid running over the whole support when it is large, we move out from the mean
+
             int i0 = (int) Math.Round(Mean);
-            Console.WriteLine("i0={0}", i0);
             double s_left = 0.0;
             for (int i = i0 - 1; i >= support.LeftEndpoint; i--) {
                 double s_left_old = s_left;
                 double ds = f(i) * ProbabilityMass(i);
                 s_left += f(i) * ProbabilityMass(i);
-                Console.WriteLine("i = {5}, ds = f * p = {0} * {1}, s1 = s0 + ds = {2} {3} = {4}", f(i), ProbabilityMass(i), s_left_old, ds, s_left, i);
                 if (s_left == s_left_old) break;
             }
             double s_right = 0.0;
@@ -105,17 +110,10 @@ namespace Meta.Numerics.Statistics {
                 double s_right_old = s_right;
                 double ds = f(i) * ProbabilityMass(i);
                 s_right += f(i) * ProbabilityMass(i);
-                Console.WriteLine("i = {5}, ds = f * p = {0} * {1}, s1 = s0 + ds = {2} {3} = {4}", f(i), ProbabilityMass(i), s_right_old, ds, s_right, i);
                 if (s_right == s_right_old) break;
             }
             return (s_left + s_right + f(i0) * ProbabilityMass(i0));
-            /*
-            double s = 0.0;
-            for (int j = support.LeftEndpoint; j <= support.RightEndpoint; j++) {
-                s += f(j) * ProbabilityMass(j);
-            }
-            return (s);
-            */
+
         }
 
         /// <summary>
@@ -136,7 +134,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public virtual double Variance {
             get {
-                throw new NotImplementedException();
+                return (MomentAboutMean(2));
             }
         }
 
@@ -145,7 +143,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public virtual double Skewness {
             get {
-                throw new NotImplementedException();
+                return (MomentAboutMean(3) / Math.Pow(MomentAboutMean(2), 3.0 / 2.0));
             }
         }
 
@@ -197,8 +195,12 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents a discrete distribution as a continous distribution.
     /// </summary>
-    internal class DiscreteAsContinuousDistribution : Distribution {
+    public class DiscreteAsContinuousDistribution : Distribution {
 
+        /// <summary>
+        /// Initializes a new shim that represents a discrete distribution as a continuous distribution.
+        /// </summary>
+        /// <param name="distribution">The discrete distiribution to represent.</param>
         public DiscreteAsContinuousDistribution (DiscreteDistribution distribution) {
             if (distribution == null) throw new ArgumentNullException("distribution");
             this.d = distribution;
@@ -207,18 +209,15 @@ namespace Meta.Numerics.Statistics {
         private DiscreteDistribution d;
 
         /// <summary>
-        /// Not implemented for discrete distributions.
+        /// Not valid for discrete distributions.
         /// </summary>
-        /// <param name="x">The </param>
-        /// <returns></returns>
         /// <remarks>
-        /// <para>The probability density of a discrete distribution consists of Dirac delta functions
-        /// at the integers, each with an integrated area equal to the probability mass of the discrete
-        /// distribution at that integer. Because such a function cannot be represented as a
-        /// numeric function over floating point types, this method is not implemented.</para>
+        /// <para>Technically, the PDF of a discrete probability distribution consists of delta functions at the integers, each
+        /// with a weight equal to the PMF at that integer. Since this is not representable in floating point arithmetic, calling
+        /// this method is an invalid operation.</para>
         /// </remarks>
         public override double ProbabilityDensity (double x) {
-            throw new NotImplementedException();
+            throw new InvalidOperationException();
         }
 
         /// <inheritdoc />
@@ -267,12 +266,19 @@ namespace Meta.Numerics.Statistics {
             return(d.InverseLeftProbability(P));
         }
 
+        /// <inheritdoc />
+        public override Interval Support {
+            get {
+                return ((Interval) d.Support);
+            }
+        }
+
     }
 
     /// <summary>
     /// Represents an interval on the integers.
     /// </summary>
-    public struct DiscreteInterval {
+    public struct DiscreteInterval : IEquatable<DiscreteInterval> {
 
         private DiscreteInterval (int a, int b) {
             if (b < a) Global.Swap(ref a, ref b);
@@ -349,8 +355,65 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <summary>
+        /// Converts a discrete interval to a continuous interval.
+        /// </summary>
+        /// <param name="i">The discrete interval.</param>
+        /// <returns>The corresponding continuous interval.</returns>
         public static implicit operator Interval (DiscreteInterval i) {
             return (Interval.FromEndpoints(IntToDouble(i.a), IntToDouble(i.b)));
+        }
+
+        // equality stuff
+
+        /// <summary>
+        /// Determines if the given discrete intervals equals the current discrete interval.
+        /// </summary>
+        /// <param name="other">The interval to compare.</param>
+        /// <returns>True if the discrete intervals are equal, otherwise false.</returns>
+        public bool Equals (DiscreteInterval other) {
+            return ((this.a == other.a) && (this.b == other.b));
+        }
+
+        /// <summary>
+        /// Determines if the given object equals the current discrete interval.
+        /// </summary>
+        /// <param name="obj">The object to compare.</param>
+        /// <returns>True if the object describes the same discrete interval, otherwise false.</returns>
+        public override bool Equals (object obj) {
+            if (obj is DiscreteInterval) {
+                return (this.Equals((DiscreteInterval)obj));
+            } else {
+                return (false);
+            }
+        }
+
+        /// <summary>
+        /// Determines if the given discrete intervals are equal.
+        /// </summary>
+        /// <param name="interval1">The first discrete interval.</param>
+        /// <param name="interval2">The second discrete interval.</param>
+        /// <returns>True if the discrete intervals are equal, otherwise false.</returns>
+        public static bool operator == (DiscreteInterval interval1, DiscreteInterval interval2) {
+            return (interval1.Equals(interval2));
+        }
+
+        /// <summary>
+        /// Determines if the given discrete intervals are unequal.
+        /// </summary>
+        /// <param name="interval1">The first discrete interval.</param>
+        /// <param name="interval2">The second discrete interval.</param>
+        /// <returns>True if the discrete intervals are unequal, otherwise false.</returns>
+        public static bool operator != (DiscreteInterval interval1, DiscreteInterval interval2) {
+            return (!(interval1 == interval2));
+        }
+
+        /// <summary>
+        /// Returns a hash value for the current discrete interval.
+        /// </summary>
+        /// <returns>A hash value for the discrete interval.</returns>
+        public override int GetHashCode () {
+            return (a ^ (b << 15));
         }
 
     }

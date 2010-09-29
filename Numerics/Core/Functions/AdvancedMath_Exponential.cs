@@ -65,7 +65,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The value of Ei<sub><paramref name="n"/></sub>(<paramref name="x"/>).</returns>
         /// <remarks>
-        /// <para>The exponential integral is defined as Ei<sub>n</sub>(x) = <sub>1</sub>&#x222B;<sup>&#x221E;</sup>dt e<sup>-xt</sup>/t<sup>n</sup>.</para>
+        /// <para>The exponential integral is defined as:</para>
+        /// <img src="../images/EIntegral.png" />
         /// <para>It is related to the incomplete Gamma function for negative, integer shape parameters by &#x393;<sub>Q</sub>(-k, x) = Ei<sub>k+1</sub>(x) / x<sup>k</sup>.</para></remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
@@ -152,6 +153,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The value of Ci(x).</returns>
         /// <remarks>
+        /// <para>The cosine integral is defined as:</para>
+        /// <img src="../images/CiIntegral.png" />
         /// <para>The cosine integral diverges logrithmically to negative inifity at the origin and executes a damped oscilation arround zero as its argument increases.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
@@ -170,7 +173,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value of Si(x).</returns>
         /// <remarks>
-        /// <para>The sine integral can be defined via Si(x) = <sub>0</sub>&#x222B;<sup>x</sup>dt sin(t)/t.</para>
+        /// <para>The sine integral is defined as:</para>
+        /// <img src="../images/SiIntegral.png" />
         /// <para>The sine integral is zero at the origin and executes a damped oscilation arround &#x3C0;/2 as its argument increases.</para>
         /// </remarks>
         public static double IntegralSi (double x) {

@@ -105,7 +105,7 @@ namespace Meta.Numerics.Matrices {
                 }
                 z[i] = z[i] / sqrtM[i, i];
             }
-            return (new ColumnVector(z));
+            return (new ColumnVector(z, Dimension));
         }
 
         /// <summary>

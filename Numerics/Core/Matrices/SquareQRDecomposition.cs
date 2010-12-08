@@ -13,7 +13,7 @@ namespace Meta.Numerics.Matrices {
     /// <para>To obtain the QR decomposition of a square matrix, use the <see cref="SquareMatrix.QRDecomposition"/> method of the
     /// <see cref="SquareMatrix"/> class.</para>
     /// </remarks>
-    public sealed class SquareQRDecomposition : ISquareDecomposition {
+    public sealed class SquareQRDecomposition {
 
         private double[] qtStore;
         private double[] rStore;
@@ -39,7 +39,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>The upper-right triangular matrix R.</returns>
         public SquareMatrix RMatrix () {
-            double[] store = MatrixAlgorithms.Clone(rStore, dimension, dimension);
+            double[] store = MatrixAlgorithms.Copy(rStore, dimension, dimension);
             return (new SquareMatrix(store, dimension));
         }
 
@@ -59,7 +59,7 @@ namespace Meta.Numerics.Matrices {
             y = MatrixAlgorithms.Multiply(qtStore, dimension, dimension, y, dimension, 1);
             SquareMatrixAlgorithms.SolveUpperRightTriangular(rStore, y, 0, dimension);
 
-            return (new ColumnVector(y));
+            return (new ColumnVector(y, dimension));
         }
 
         /// <summary>
@@ -81,16 +81,17 @@ namespace Meta.Numerics.Matrices {
         public SquareMatrix Inverse () {
 
             // solve R Q^T column-by-column
-            double[] iStore = MatrixAlgorithms.Clone(qtStore, dimension, dimension);
+            double[] iStore = MatrixAlgorithms.Copy(qtStore, dimension, dimension);
             for (int c = 0; c < dimension; c++) {
                 SquareMatrixAlgorithms.SolveUpperRightTriangular(rStore, iStore, dimension * c, dimension);
             }
             return (new SquareMatrix(iStore, dimension));
         }
-
+        /*
         ISquareMatrix ISquareDecomposition.Inverse () {
             return (Inverse());
         }
+        */
 
         /// <summary>
         /// Gets the dimension of the original matrix.

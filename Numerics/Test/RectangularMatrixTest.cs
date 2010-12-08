@@ -7,7 +7,7 @@ namespace Test {
 
 
     [TestClass()]
-    public class MatrixTest {
+    public class RectangularMatrixTest {
 
         private TestContext testContextInstance;
 
@@ -50,8 +50,8 @@ namespace Test {
         //
         #endregion
 
-        private Matrix GenerateRandomMatrix (int rd, int cd) {
-            Matrix M = new Matrix(rd, cd);
+        private RectangularMatrix GenerateRandomMatrix (int rd, int cd) {
+            RectangularMatrix M = new RectangularMatrix(rd, cd);
             Random rng = new Random(1);
             for (int r = 0; r < rd; r++) {
                 for (int c = 0; c < cd; c++) {
@@ -62,12 +62,12 @@ namespace Test {
         }
 
         [TestMethod]
-        public void MatrixAccess () {
+        public void RectangularMatrixAccess () {
 
             // create a matrix via outer product
             ColumnVector cv = new ColumnVector(new double[] { 1, 2 });
             RowVector rv = new RowVector(new double[] { 3, 4, 5 });
-            Matrix M = cv * rv;
+            RectangularMatrix M = cv * rv;
 
             // check dimensions
             Assert.IsTrue(M.RowCount == cv.Dimension);
@@ -95,7 +95,7 @@ namespace Test {
             }
 
             // test clone
-            Matrix MC = M.Clone();
+            RectangularMatrix MC = M.Clone();
             Assert.IsTrue(MC.RowCount == M.RowCount);
             Assert.IsTrue(MC.ColumnCount == M.ColumnCount);
 
@@ -111,34 +111,34 @@ namespace Test {
         }
 
         [TestMethod]
-        public void MatrixArithmetic () {
+        public void RectangularMatrixArithmetic () {
 
-            Matrix M = GenerateRandomMatrix(2, 3);
+            RectangularMatrix M = GenerateRandomMatrix(2, 3);
 
-            Matrix MA = M + M;
-            Matrix M2 = 2.0 * M;
+            RectangularMatrix MA = M + M;
+            RectangularMatrix M2 = 2.0 * M;
             Assert.IsTrue(MA == M2);
 
-            Matrix MS = M - M;
-            Matrix M0 = 0.0 * M;
+            RectangularMatrix MS = M - M;
+            RectangularMatrix M0 = 0.0 * M;
             Assert.IsTrue(MS == M0);
 
-            Matrix MT = M.Transpose();
+            RectangularMatrix MT = M.Transpose();
             Assert.IsTrue(MT.RowCount == M.ColumnCount);
             Assert.IsTrue(MT.ColumnCount == M.RowCount);
 
-            Matrix MM = M * MT;
+            RectangularMatrix MM = M * MT;
             Assert.IsTrue(MM.RowCount == M.RowCount);
             Assert.IsTrue(MM.ColumnCount == MT.ColumnCount);
 
         }
 
         [TestMethod]
-        public void MatrixQRDecomposition () {
+        public void RectangularQRDecomposition () {
 
-            Matrix M = GenerateRandomMatrix(30, 10);
+            RectangularMatrix M = GenerateRandomMatrix(30, 10);
 
-            QRDecomposition QRD = M.QRDecomposition();
+            QRDecomposition QRD = M.QRDecompose();
             Assert.IsTrue(QRD.RowCount == M.RowCount);
             Assert.IsTrue(QRD.ColumnCount == M.ColumnCount);
 
@@ -146,36 +146,16 @@ namespace Test {
             Assert.IsTrue(Q.Dimension == M.RowCount);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(Q * Q.Transpose(), TestUtilities.CreateSquareUnitMatrix(Q.Dimension)));
 
-            Matrix R = QRD.RMatrix();
+            RectangularMatrix R = QRD.RMatrix();
             Assert.IsTrue(R.RowCount == M.RowCount);
             Assert.IsTrue(R.ColumnCount == M.ColumnCount);
 
-            Matrix QR = Q * R;
+            RectangularMatrix QR = Q * R;
             Assert.IsTrue(TestUtilities.IsNearlyEqual(QR, M));
 
         }
 
-        [TestMethod]
-        public void qrt () {
-
-            Matrix A = new Matrix(3, 2);
-            A[0, 0] = 2.0;
-            A[0, 1] = 2.0;
-            A[1, 0] = 1.0;
-            A[1, 1] = 0.0;
-            A[2, 0] = 2.0;
-            A[2, 1] = 1.0;
-            QRDecomposition QR = A.QRDecomposition();
-            SquareMatrix Q = QR.QMatrix();
-            WriteMatrix(Q);
-            Matrix R = QR.RMatrix();
-            WriteMatrix(R);
-            WriteMatrix(Q * R);
-
-        }
-
-
-        private void WriteMatrix (IMatrix A) {
+        private void WriteMatrix (RectangularMatrixBase A) {
             Console.WriteLine("--");
             for (int r = 0; r < A.RowCount; r++) {
                 for (int c = 0; c < A.ColumnCount; c++) {

@@ -194,7 +194,7 @@ namespace Test {
                 Assert.IsTrue(CD != null, String.Format("d={0} not positive definite", d));
                 Assert.IsTrue(CD.Dimension == d);
                 SymmetricMatrix HI = CD.Inverse();
-                IMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
+                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(H * HI, I));
             }
         }

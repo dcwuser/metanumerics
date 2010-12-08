@@ -84,7 +84,7 @@
     <Compile Include="IntervalTest.cs" />
     <Compile Include="MixedMatrixTest.cs" />
     <Compile Include="LanczosTest.cs" />
-    <Compile Include="MatrixTest.cs" />
+    <Compile Include="RectangularMatrixTest.cs" />
     <Compile Include="MoreMathTest.cs" />
     <Compile Include="MultivariateSampleTest.cs" />
     <Compile Include="OrthogonalPolynomialsTest.cs" />

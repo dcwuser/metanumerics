@@ -3,44 +3,18 @@
 
 namespace Meta.Numerics.Matrices {
 
-#if FUTURE
-
+    /// <summary>
+    /// Describes all matrices.
+    /// </summary>
+    /// <typeparam name="T">The type of the matrix entries.</typeparam>
     public abstract class MatrixBase<T> {
 
-        protected MatrixBase (int rowCount, int columnCount) {
-            this.rowCount = rowCount;
-            this.columnCount = columnCount;
-        }
+        public abstract int RowCount { get; }
 
-        int rowCount, columnCount;
+        public abstract int ColumnCount { get; }
 
-        public virtual int RowCount {
-            get {
-                return(rowCount);
-            }
-        }
-
-        public virtual int ColumnCount {
-            get {
-                return (columnCount);
-            }
-        }
-
-        protected abstract T GetEntry (int r, int c);
-
-        protected abstract void SetEntry (int r, int c, T value);
-
-        public virtual T this[int r, int c] {
-            get {
-                return (GetEntry(r, c));
-            }
-            set {
-                SetEntry(r, c, value);
-            }
-        }
+        public abstract T this[int r, int c] { get; set; }
 
     }
-
-#endif
 
 }

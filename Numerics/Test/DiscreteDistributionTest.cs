@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
-using Meta.Numerics.Statistics;
+using Meta.Numerics.Statistics.Distributions;
 
 
 namespace Test {
@@ -61,7 +61,8 @@ namespace Test {
         private DiscreteDistribution[] distributions = new DiscreteDistribution[] {
             new BernoulliDistribution(0.1),
             new BinomialDistribution(0.2, 30),
-            new PoissonDistribution(4.5)
+            new PoissonDistribution(4.5),
+            new DiscreteUniformDistribution(5,11)
         };
 
         [TestMethod]

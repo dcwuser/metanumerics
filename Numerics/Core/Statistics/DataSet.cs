@@ -6,6 +6,7 @@ using System.Diagnostics;
 
 using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
+using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Statistics {
 

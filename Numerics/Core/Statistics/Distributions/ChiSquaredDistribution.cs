@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using Meta.Numerics.Functions;
 
-namespace Meta.Numerics.Statistics {
+namespace Meta.Numerics.Statistics.Distributions {
 
 
     /// <summary>
@@ -64,7 +64,7 @@ namespace Meta.Numerics.Statistics {
             if (x < 0.0) {
                 return (0.0);
             } else {
-                return (AdvancedMath.LeftGamma(0.5 * nu, 0.5 * x));
+                return (AdvancedMath.LeftRegularizedGamma(0.5 * nu, 0.5 * x));
             }
         }
 
@@ -73,7 +73,7 @@ namespace Meta.Numerics.Statistics {
             if (x < 0.0) {
                 return (1.0);
             } else {
-                return (AdvancedMath.RightGamma(0.5 * nu, 0.5 * x));
+                return (AdvancedMath.RightRegularizedGamma(0.5 * nu, 0.5 * x));
             }
         }
 

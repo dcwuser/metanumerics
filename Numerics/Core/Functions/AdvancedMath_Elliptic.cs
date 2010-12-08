@@ -174,6 +174,23 @@ namespace Meta.Numerics.Functions {
             return (s * CarlsonF(c * c, 1.0 - z * z, 1.0));
         }
 
+        public static double EllipticE_Series (double k) {
+
+            // (Pi/2) ( 1 - (1/2 k)^2 / 1 - (1/2 k 3/4 k)^2 / 3 - (1/2 k 3/4 k 5/6 k)^2 / 5 + ... ) 
+
+            double z = 1.0;
+            double f = 1.0;
+            for (int n = 1; n < Global.SeriesMax; n++) {
+                double f_old = f;
+                z = z * (2 * n - 1) / (2 * n) * k;
+                f -= z * z / ( 2 * n - 1);
+                if (f == f_old) return (Global.HalfPI * f);
+            }
+
+            throw new NonconvergenceException();
+
+        }
+
     }
 
 }

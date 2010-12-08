@@ -46,7 +46,7 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
-        // |x|
+        // |x| = sqrt( sum_i x_i^2 )
         public static double dNrm2 (double[] store, int offset, int stride, int count) {
             double m = 0.0;
             int n = 0;
@@ -58,6 +58,19 @@ namespace Meta.Numerics.Matrices {
                 i += stride;
             }
             return (Math.Sqrt(m));
+        }
+
+        // sum_i |x_i|
+        public static double dNrm1 (double[] store, int offset, int stride, int count) {
+            double m = 0.0;
+            int n = 0;
+            int i = offset;
+            while (n < count) {
+                m += Math.Abs(store[i]);
+                n++;
+                i += stride;
+            }
+            return (m);
         }
 
         // a^T b

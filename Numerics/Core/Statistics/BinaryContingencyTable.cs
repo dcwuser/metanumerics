@@ -1,6 +1,7 @@
 ﻿using System;
 
 using Meta.Numerics.Functions;
+using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Statistics {
 

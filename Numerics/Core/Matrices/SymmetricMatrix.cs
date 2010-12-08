@@ -8,7 +8,7 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents a symmetric matrix.
     /// </summary>
-    public sealed class SymmetricMatrix : ISymmetricMatrix {
+    public sealed class SymmetricMatrix : SquareMatrixBase, ISymmetricMatrix {
 
         private int dimension;
         private double[][] values;
@@ -33,12 +33,13 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Gets the dimension of the matrix.
         /// </summary>
-        public int Dimension {
+        public override int Dimension {
             get {
                 return (dimension);
             }
         }
 
+        /*
         int IMatrix.RowCount {
             get {
                 return (dimension);
@@ -50,6 +51,7 @@ namespace Meta.Numerics.Matrices {
                 return (dimension);
             }
         }
+        */
 
         /// <summary>
         /// Gets or sets an element of the matrix.
@@ -61,7 +63,7 @@ namespace Meta.Numerics.Matrices {
         /// <para>The set operation preserves the symmetry of the matrix; when entry M<sub>r c</sub> is changed, entry
         /// M<sub>c r</sub> is updated automatically.</para>
         /// </remarks>
-        public double this[int r, int c] {
+        public override double this[int r, int c] {
             get {
                 if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
                 if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
@@ -120,7 +122,7 @@ namespace Meta.Numerics.Matrices {
         /// Computes the trace of the matrix.
         /// </summary>
         /// <returns>The trace of the matrix tr(M).</returns>
-        public double Trace () {
+        public override double Trace () {
             double tr = 0.0;
             for (int i = 0; i < Dimension; i++) {
                 tr += this[i,i];
@@ -412,6 +414,14 @@ namespace Meta.Numerics.Matrices {
         /// will produce them faster than this method.</para>
         /// </remarks>
         public RealEigensystem Eigensystem () {
+            
+            double[][] A = SymmetricMatrixAlgorithms.Copy(values, dimension);
+            double[] V = SquareMatrixAlgorithms.CreateUnitMatrix(dimension);
+            SymmetricMatrixAlgorithms.JacobiEigensystem(A, V, dimension);
+            return (new RealEigensystem(dimension, SymmetricMatrixAlgorithms.GetDiagonal(A, dimension), V));
+            //return (null);
+            
+            /*
             SymmetricMatrix clone = this.Clone();
 
             double[,] v = new double[dimension,dimension];
@@ -427,7 +437,7 @@ namespace Meta.Numerics.Matrices {
             }
 
             return (new RealEigensystem(dimension, e, v));
-
+            */
         }
 
         /// <summary>
@@ -440,6 +450,12 @@ namespace Meta.Numerics.Matrices {
         /// method instead.</para>
         /// </remarks>
         public double[] Eigenvalues () {
+
+            double[][] A = SymmetricMatrixAlgorithms.Copy(values, dimension);
+            SymmetricMatrixAlgorithms.JacobiEigensystem(A, null, dimension);
+            return (SymmetricMatrixAlgorithms.GetDiagonal(A, dimension));
+
+            /*
             SymmetricMatrix clone = this.Clone();
             clone.Jacobi(null);
 
@@ -449,6 +465,7 @@ namespace Meta.Numerics.Matrices {
             }
 
             return (e);
+            */
         }
 
         private void Jacobi (double[,] V) {
@@ -583,6 +600,8 @@ namespace Meta.Numerics.Matrices {
 
         // operators
 
+        /*
+
         /// <inheritdoc />
         public override int GetHashCode () {
             return base.GetHashCode();
@@ -643,27 +662,27 @@ namespace Meta.Numerics.Matrices {
             return (Matrix.Equals(this, obj as IMatrix));
         }
 
-        // arithmetic operators
+        */
 
-        internal static SymmetricMatrix Add (SymmetricMatrix M1, SymmetricMatrix M2) {
-            if (M1.Dimension != M2.Dimension) throw new DimensionMismatchException();
-            SymmetricMatrix N = new SymmetricMatrix(M1.Dimension);
-            for (int r = 0; r < N.Dimension; r++) {
-                for (int c = 0; c <= r; c++) {
-                    N[r, c] = M1[r, c] + M2[r, c];
-                }
-            }
-            return (N);
-        }
+        // arithmetic operators
 
         /// <summary>
         /// Adds two symmetric matrices.
         /// </summary>
-        /// <param name="M1">The first matrix.</param>
-        /// <param name="M2">The second matrix.</param>
-        /// <returns>The sum <paramref name="M1"/> + <paramref name="M2"/>.</returns>
-        public static SymmetricMatrix operator + (SymmetricMatrix M1, SymmetricMatrix M2) {
-            return (Add(M1, M2));
+        /// <param name="A">The first matrix.</param>
+        /// <param name="B">The second matrix.</param>
+        /// <returns>The sum <paramref name="A"/> + <paramref name="B"/>.</returns>
+        public static SymmetricMatrix operator + (SymmetricMatrix A, SymmetricMatrix B) {
+            if (A == null) throw new ArgumentNullException("A");
+            if (B == null) throw new ArgumentNullException("B");
+            if (A.dimension != B.dimension) throw new DimensionMismatchException();
+            double[][] sumStore = SymmetricMatrixAlgorithms.InitializeStorage(A.dimension);
+            for (int r = 0; r < A.dimension; r++) {
+                for (int c = 0; c <= r; c++) {
+                    sumStore[r][c] = A.values[r][c] + B.values[r][c];
+                }
+            }
+            return (new SymmetricMatrix(sumStore, A.dimension));
         }
 
         /// <summary>
@@ -691,17 +710,6 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The difference <paramref name="M1"/> - <paramref name="M2"/>.</returns>
         public static SymmetricMatrix operator - (SymmetricMatrix M1, SymmetricMatrix M2) {
             return (Subtract(M1, M2));
-        }
-
-        /// <summary>
-        /// Multiplies two symmetric matrices.
-        /// </summary>
-        /// <param name="M1">The first matrix.</param>
-        /// <param name="M2">The second matrix.</param>
-        /// <returns>The matrix product <paramref name="M1"/> <paramref name="M2"/>.</returns>
-        /// <remarks><para>Note that the product of two symmetric matrix is, in general, not itself symmetric.</para></remarks>
-        public static SquareMatrix operator * (SymmetricMatrix M1, SymmetricMatrix M2) {
-            return (SquareMatrix.Multiply(M1, M2));
         }
 
         // arithmatic operators with doubles
@@ -737,18 +745,6 @@ namespace Meta.Numerics.Matrices {
             return (Multiply(1.0 / x, M));
         }
 
-#if SHO
-        /// <summary>
-        /// Produces the representation of the symmetric matrix for the Python interactive console.
-        /// </summary>
-        /// <returns>A string representation of the symmetric matrix.</returns>
-        public string __repr__ () {
-            StringWriter writer = new StringWriter();
-            Matrix.WriteMatrix(this, writer);
-            return (writer.ToString());
-        }
-#endif
-
     }
 
 
@@ -760,6 +756,23 @@ namespace Meta.Numerics.Matrices {
                 A[i] = new double[i+1];
             }
             return (A);
+        }
+
+        public static double[][] Copy (double[][] A, int dimension) {
+            double[][] B = new double[dimension][];
+            for (int i = 0; i < dimension; i++) {
+                B[i] = new double[i + 1];
+                Array.Copy(A[i], B[i], i + 1);
+            }
+            return (B);
+        }
+
+        public static double[] GetDiagonal (double[][] A, int dimension) {
+            double[] D = new double[dimension];
+            for (int i = 0; i < dimension; i++) {
+                D[i] = A[i][i];
+            }
+            return (D);
         }
 
         public static double[][] CholeskyDecomposition (double[][] A, int dimension) {
@@ -787,6 +800,105 @@ namespace Meta.Numerics.Matrices {
             }
 
             return (CD);
+
+        }
+
+        public static void JacobiEigensystem (double[][] A, double[] V, int dimension) {
+
+            int count = 0;
+            double sum;
+
+            do {
+
+                // check for non-convergence
+                count++;
+                if (count > 50) throw new NonconvergenceException();
+
+                // sweep over off-diagonal elements p,q where q < p
+                for (int p = 0; p < dimension; p++) {
+                    for (int q = 0; q < p; q++) {
+
+                        //Console.WriteLine("n={0}, p={1}, q={2}", count, p, q);
+
+                        // skip if already zero
+                        double M_pq = A[p][q];
+                        if (M_pq == 0.0) continue;
+
+                        // compute the rotation
+                        // -pi/4 < phi < pi/4 is the rotation 
+                        // s, c, and t are its sine, cosine, and tangent
+                        // theta = cot(2 phi) and t2 = tan(phi/2)
+                        double theta = 0.5 * (A[q][q] - A[p][p]) / M_pq;
+                        double t;
+                        if (theta > 0) {
+                            t = 1.0 / (Math.Sqrt(theta * theta + 1.0) + theta);
+                        } else {
+                            t = -1.0 / (Math.Sqrt(theta * theta + 1.0) - theta);
+                        }
+                        double c = 1.0 / Math.Sqrt(1.0 + t * t);
+                        double s = t * c;
+                        double t2 = s / (1.0 + c);
+
+                        // do the rotation
+                        A[p][p] += -t * M_pq;
+                        A[q][q] += t * M_pq;
+                        for (int r = 0; r < q; r++) {
+                            double M_pr = A[p][r];
+                            double M_qr = A[q][r];
+                            A[p][r] = M_pr - s * (M_qr + t2 * M_pr);
+                            A[q][r] = M_qr + s * (M_pr - t2 * M_qr);
+                        }
+                        for (int r = q + 1; r < p; r++) {
+                            double M_pr = A[p][r];
+                            double M_rq = A[r][q];
+                            A[p][r] = M_pr - s * (M_rq + t2 * M_pr);
+                            A[r][q] = M_rq + s * (M_pr - t2 * M_rq);
+                        }
+                        for (int r = p + 1; r < dimension; r++) {
+                            double M_rp = A[r][p];
+                            double M_rq = A[r][q];
+                            A[r][p] = M_rp - s * (M_rq + t2 * M_rp);
+                            A[r][q] = M_rq + s * (M_rp - t2 * M_rq);
+                        }
+                        A[p][q] = 0.0;
+
+                        // accumulate the rotations, if we are keeping track of them
+                        if (V != null) {
+                            // this update should be in BLAS, because it addresses underlying structure,
+                            // but doing it using SetEntry and GetEntry is about 3x slower
+                            int ip = dimension * p;
+                            int iq = dimension * q;
+                            for (int r = 0; r < dimension; r++) {
+                                double V_rp = V[ip];
+                                double V_rq = V[iq];
+                                V[ip] = c * V_rp - s * V_rq;
+                                V[iq] = s * V_rp + c * V_rq;
+                                ip++;
+                                iq++;
+                                //double V_rp = MatrixAlgorithms.GetEntry(V, dimension, dimension, r, p);
+                                //double V_rq = MatrixAlgorithms.GetEntry(V, dimension, dimension, r, q);
+                                //MatrixAlgorithms.SetEntry(V, dimension, dimension, r, p, c * V_rp - s * V_rq);
+                                //MatrixAlgorithms.SetEntry(V, dimension, dimension, r, q, s * V_rp + c * V_rq);
+                            }
+                        }
+
+                    }
+                }
+
+                // sum off-diagonal elements
+                sum = 0.0;
+                for (int p = 0; p < dimension; p++) {
+                    for (int q = 0; q < p; q++) {
+                        double M_pq = A[p][q];
+                        if (M_pq > 0) {
+                            sum += M_pq;
+                        } else {
+                            sum -= M_pq;
+                        }
+                    }
+                }
+
+            } while (sum > 0.0);
 
         }
 

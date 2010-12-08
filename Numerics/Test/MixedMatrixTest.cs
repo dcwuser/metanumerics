@@ -49,7 +49,7 @@ namespace Test
         //
         #endregion
 
-        private static Matrix R;
+        private static RectangularMatrix R;
 
         private static SquareMatrix M;
 
@@ -58,7 +58,7 @@ namespace Test
 
         static MixedMatrixTest () {
 
-            R = new Matrix(2, 3);
+            R = new RectangularMatrix(2, 3);
             R[0, 0] = 0;
             R[0, 1] = 1;
             R[0, 2] = 2;
@@ -106,8 +106,8 @@ namespace Test
         [TestMethod]
         public void MixedMatrixMultiplication () {
 
-            Matrix RM = R * M;
-            Matrix RS = R * S;
+            RectangularMatrix RM = R * M;
+            RectangularMatrix RS = R * S;
             SquareMatrix MS = M * S;
             SquareMatrix SM = S * M;
 

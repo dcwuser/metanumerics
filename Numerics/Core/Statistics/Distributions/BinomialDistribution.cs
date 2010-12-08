@@ -3,7 +3,7 @@
 using Meta.Numerics;
 using Meta.Numerics.Functions;
 
-namespace Meta.Numerics.Statistics {
+namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
     /// Represents a discrete binomial distribution.

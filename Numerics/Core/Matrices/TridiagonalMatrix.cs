@@ -9,7 +9,7 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents a tridiagonal matrix.
     /// </summary>
-    public sealed class TridiagonalMatrix : IMatrix, ISquareMatrix {
+    public sealed class TridiagonalMatrix : SquareMatrixBase, IMatrix, ISquareMatrix {
 
         /// <summary>
         /// Initializes a new tridiagonal matrix of the given dimension.
@@ -31,7 +31,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Gets the dimension of the matrix.
         /// </summary>
-        public int Dimension {
+        public override int Dimension {
             get {
                 return (dimension);
             }
@@ -91,7 +91,7 @@ namespace Meta.Numerics.Matrices {
         /// result in an <see cref="InvalidOperationException"/>.
         /// </para>
         /// </remarks>
-        public double this[int r, int c] {
+        public override double this[int r, int c] {
             get {
                 switch (BoundsCheck(r, c)) {
                     case -1:
@@ -167,7 +167,7 @@ namespace Meta.Numerics.Matrices {
         /// Computes the trace of the matrix.
         /// </summary>
         /// <returns>The trace tr M.</returns>
-        public double Trace () {
+        public override double Trace () {
             double tr = 0.0;
             for (int i = 0; i < Dimension; i++) {
                 tr += GetDiagonalElement(i);
@@ -394,25 +394,6 @@ namespace Meta.Numerics.Matrices {
 
         }
 
-        /// <summary>
-        /// Multiplies two tridiagonal matrices.
-        /// </summary>
-        /// <param name="T1">The first matrix.</param>
-        /// <param name="T2">The second matrix.</param>
-        /// <returns>The product <paramref name="T1"/> <paramref name="T2"/>.</returns>
-        public static SquareMatrix operator * (TridiagonalMatrix T1, TridiagonalMatrix T2) {
-
-            if (T1 == null) throw new ArgumentNullException("T1");
-            if (T2 == null) throw new ArgumentNullException("T1");
-
-            int n = T1.Dimension;
-            if (T2.Dimension != n) throw new DimensionMismatchException();
-
-            return (SquareMatrix.Multiply(T1, T2));
-            // improve this
-
-        }
-
         public static TridiagonalMatrix operator * (double f, TridiagonalMatrix T) {
 
             int n = T.Dimension;
@@ -435,7 +416,7 @@ namespace Meta.Numerics.Matrices {
         }
 
         // equality testing
-
+        /*
         private static bool Equals (TridiagonalMatrix T1, TridiagonalMatrix T2) {
             if (((object) T1) == null) {
                 if (((object) T2) == null) {
@@ -500,6 +481,7 @@ namespace Meta.Numerics.Matrices {
         public override int GetHashCode () {
             return base.GetHashCode();
         }
+        
 
 #if SHO
         [Obsolete]
@@ -509,14 +491,14 @@ namespace Meta.Numerics.Matrices {
             return (writer.ToString());
         }
 #endif
-
+        */
 
     }
 
     /// <summary>
     /// Represents the LU decomposition of a tridiagonal matrix.
     /// </summary>
-    public class TridiagonalLUDecomposition : ISquareDecomposition {
+    public class TridiagonalLUDecomposition {
 
         private int n;
 
@@ -652,9 +634,11 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+        /*
         ISquareMatrix ISquareDecomposition.Inverse () {
             return (Inverse());
         }
+        */
 
         /*
         public SquareMatrix PMatrix () {

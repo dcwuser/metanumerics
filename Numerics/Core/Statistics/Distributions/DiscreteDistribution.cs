@@ -2,7 +2,7 @@
 
 using Meta.Numerics.Functions;
 
-namespace Meta.Numerics.Statistics {
+namespace Meta.Numerics.Statistics.Distributions {
 
     // really, the inheritance hierarchy should be:
     //   Distribution

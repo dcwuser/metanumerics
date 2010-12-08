@@ -2,7 +2,7 @@
 
 using Meta.Numerics.Functions;
 
-namespace Meta.Numerics.Statistics {
+namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
     /// Represented a Poisson distribution.
@@ -79,7 +79,7 @@ namespace Meta.Numerics.Statistics {
                     }
                     return (Math.Exp(-mu) * s);
                 } else {
-                    return(AdvancedMath.RightGamma(k + 1, mu));
+                    return(AdvancedMath.RightRegularizedGamma(k + 1, mu));
                 }
             }
         }
@@ -89,7 +89,7 @@ namespace Meta.Numerics.Statistics {
             if (k < 0) {
                 return (1.0);
             } else {
-                return (AdvancedMath.LeftGamma(k + 1, mu));
+                return (AdvancedMath.LeftRegularizedGamma(k + 1, mu));
             }
         }
 

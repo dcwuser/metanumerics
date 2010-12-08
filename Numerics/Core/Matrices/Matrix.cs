@@ -13,6 +13,8 @@ namespace Meta.Numerics.Matrices {
     // 3. The Blas classes have optomized low-level operations.
     // (1) and (2) should be repeated for each kind of matrix: square, symmetric, tridiagonal, etc.
 
+#if FUTURE
+
     /// <summary>
     /// Represents a rectangular matrix of real numbers.
     /// </summary>
@@ -414,9 +416,19 @@ namespace Meta.Numerics.Matrices {
 
     }
 
+#endif
+
     internal static class MatrixAlgorithms {
 
+        public static double[] AllocateStorage (int nRows, int nCols) {
+            return (new double[nRows * nCols]);
+        }
+
         // basic access: O(1) operations
+
+        public static int GetIndex (int nRows, int nCols, int r, int c) {
+            return (nRows * c + r);
+        }
 
         public static void SetEntry (double[] store, int nRows, int nCols, int r, int c, double value) {
             store[nRows * c + r] = value;
@@ -428,7 +440,7 @@ namespace Meta.Numerics.Matrices {
 
         // transformations and simple arithmetic: O(N^2) operations
 
-        public static double[] Clone (double[] store, int nRows, int nColumns) {
+        public static double[] Copy (double[] store, int nRows, int nColumns) {
             double[] cloneStore = new double[store.Length];
             store.CopyTo(cloneStore, 0);
             return (cloneStore);
@@ -444,10 +456,36 @@ namespace Meta.Numerics.Matrices {
             return (tStore);
         }
 
+        public static double OneNorm (double[] store, int nRows, int nColumns) {
+            double norm = 0.0;
+            for (int c = 0; c < nColumns; c++) {
+                double csum = Blas1.dNrm1(store, c * nRows, 1, nRows);
+                if (csum > norm) norm = csum;
+            }
+            return (norm);
+        }
+
+        public static double InfinityNorm (double[] store, int nRows, int nColumns) {
+            double norm = 0.0;
+            for (int r = 0; r < nRows; r++) {
+                double rsum = Blas1.dNrm1(store, r, nRows, nColumns);
+                if (rsum > norm) norm = rsum;
+            }
+            return (norm);
+        }
+
         public static double[] Add (double[] xStore, double[] yStore, int nRows, int nCols) {
             double[] store = new double[nRows * nCols];
             for (int i = 0; i < store.Length; i++) {
                 store[i] = xStore[i] + yStore[i];
+            }
+            return (store);
+        }
+
+        public static double[] Subtract (double[] xStore, double[] yStore, int nRows, int nCols) {
+            double[] store = new double[nRows * nCols];
+            for (int i = 0; i < store.Length; i++) {
+                store[i] = xStore[i] - yStore[i];
             }
             return (store);
         }
@@ -482,61 +520,30 @@ namespace Meta.Numerics.Matrices {
             double[] vStore = new double[rows];
 
             // loop over columns
-            for (int c = 0; c < cols; c++) {
+            for (int k = 0; k < cols; k++) {
 
-                // find a householder transform that zeros the sub-diagonal elements of the active column
-                // P = 1 - v v^T
+                int offset = rows * k + k;
+                int length = rows - k;
+                double a;
+                SquareMatrixAlgorithms.GenerateHouseholderReflection(store, offset, 1, length, out a);
 
-                // find index of diagonal element, and store it
-                int n = rows - c;
-                int i0 = rows * c + c;
-                double x0 = store[i0];
-
-                // determine norm of column vector on and below the diagonal
-                Blas1.dCopy(store, i0, 1, vStore, 0, 1, n);
-                double xm = Blas1.dNrm2(vStore, 0, 1, n);
-
-                // if all entries are zero, no transform is required to zero sub-diagonals
-                if (xm == 0.0) continue;
-
-                // add or subtract xm from the leading (diagonal) element and normalize to produce a Householder v
-                double f = Math.Sqrt(xm * (xm + Math.Abs(x0)));
-                if (x0 < 0) {
-                    vStore[0] -= xm;
-                    store[i0] = xm;
-                } else {
-                    vStore[0] += xm;
-                    store[i0] = -xm;
-                }
-                Blas1.dScal(1.0 / f, vStore, 0, 1, n);
-
-                //Console.WriteLine("v=");
-                //WriteVector(vStore, 0, 1, n);
-
-                // apply P to A
-                // P y = (1 - v v^T) y = 1 - (v^T y) v
-                for (int c1 = c + 1; c1 < cols; c1++) {
-                    double p = Blas1.dDot(vStore, 0, 1, store, rows * c1 + c, 1, n);
-                    Blas1.dAxpy(-p, vStore, 0, 1, store, rows * c1 + c, 1, n);
-                    //store[rows * c + c1] = 0.0;
+                // apply P to the other columns of A
+                for (int c = k + 1; c < cols; c++) {
+                    SquareMatrixAlgorithms.ApplyHouseholderReflection(store, offset, 1, store, rows * c + k, 1, length);
                 }
 
-                for (int r1 = c + 1; r1 < rows; r1++) {
-                    store[rows * c + r1] = 0.0;
+                // apply P to Q to accumulate the transform
+                // since Q is rows X rows, its column count is just rows
+                for (int c = 0; c < rows; c++) {
+                    SquareMatrixAlgorithms.ApplyHouseholderReflection(store, offset, 1, qtStore, rows * c + k, 1, length);
                 }
 
-                //Console.WriteLine("R=");
-                //WriteMatrix(store, rows, cols);
-
-                // apply P to Q
-                
-                for (int c1 = 0; c1 < rows; c1++) {
-                    double p = Blas1.dDot(vStore, 0, 1, qtStore, rows * c1 + c, 1, n);
-                    Blas1.dAxpy(-p, vStore, 0, 1, qtStore, rows * c1 + c, 1, n);
+                // we are done with the Householder vector now, so we can zero the first column
+                store[offset] = a;
+                for (int i = 1; i < length; i++) {
+                    store[offset + i] = 0.0;
                 }
 
-                //Console.WriteLine("QT=");
-                //WriteMatrix(qtStore, rows, rows);
             }
 
         }

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+using Meta.Numerics.Statistics.Distributions;
+
 namespace Meta.Numerics.Statistics {
 
     /// <summary>

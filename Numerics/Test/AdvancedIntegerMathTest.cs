@@ -200,7 +200,7 @@ namespace Test {
         public void GcdLcmTest () {
             long a = 3457832408;
             long b = 56789309233;
-            Assert.AreEqual<long>(AdvancedIntegerMath.GCF(a, b) * AdvancedIntegerMath.LCM(a, b), a * b);
+            Assert.IsTrue(AdvancedIntegerMath.GCF(a, b) * AdvancedIntegerMath.LCM(a, b) == a * b);
         }
 
         [TestMethod]
@@ -242,6 +242,9 @@ namespace Test {
         [TestMethod]
         public void PowModTest () {
             Console.WriteLine(AdvancedIntegerMath.PowMod(130000000, 670, 59));
+            Console.WriteLine(AdvancedIntegerMath.PowMod(2, 360360, 779167));
+            // some examples from http://modular.math.washington.edu/edu/2007/spring/ent/ent-html/node81.html
+            Assert.IsTrue(AdvancedIntegerMath.PowMod(2, 360360, 779167) == 584876);
         }
 
     }

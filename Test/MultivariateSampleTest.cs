@@ -1,7 +1,9 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics;
+using Meta.Numerics.Statistics.Distributions;
 using Meta.Numerics.Matrices;
 
 namespace Test
@@ -89,7 +91,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void MultivariateManipulationsTest () {
+        public void MultivariateManipulations () {
 
             MultivariateSample S = new MultivariateSample(3);
 
@@ -198,6 +200,43 @@ namespace Test
             Assert.IsTrue(PS.KolmogorovSmirnovTest(PD).LeftProbability < 0.95);
             Assert.IsTrue(SS.KolmogorovSmirnovTest(SD).LeftProbability < 0.95);
             Assert.IsTrue(KS.KolmogorovSmirnovTest(KD).LeftProbability < 0.95);
+
+        }
+
+        [TestMethod]
+        public void PearsonRDistribution () {
+
+            Random rng = new Random(1);
+
+            // pick some underlying distributions for the sample variables, which must be normal but can have any parameters
+            NormalDistribution xDistribution = new NormalDistribution(1, 2);
+            NormalDistribution yDistribution = new NormalDistribution(3, 4);
+
+            // try this for several sample sizes, all low so that we see the difference from the normal distribution
+            // n = 3 maxima at ends; n = 4 uniform; n = 5 semi-circular "mound"; n = 6 parabolic "mound"
+            foreach (int n in new int[] { 3, 4, 5, 8 }) {
+                Console.WriteLine("n={0}", n);
+
+                // find r values
+                Sample rSample = new Sample();
+                for (int i = 0; i < 50; i++) {
+
+                    // to get each r value, construct a bivariate sample of the given size with no cross-correlation
+                    MultivariateSample xySample = new MultivariateSample(2);
+                    for (int j = 0; j < n; j++) {
+                        xySample.Add(xDistribution.GetRandomValue(rng), yDistribution.GetRandomValue(rng));
+                    }
+                    double r = xySample.PearsonRTest(0, 1).Statistic;
+                    rSample.Add(r);
+
+                }
+
+                // check whether r is distributed as expected
+                TestResult result = rSample.KolmogorovSmirnovTest(new PearsonRDistribution(n));
+                Console.WriteLine("P={0}", result.LeftProbability);
+                Assert.IsTrue(result.LeftProbability < 0.95);
+            }
+
 
         }
 

@@ -557,15 +557,58 @@ namespace Test
         // Incomplete gamma
 
         [TestMethod]
-        public void IncompleteGammaRecurrenceTest () {
+        public void RegularizedIncompleteGammaRecurrence () {
             foreach (double a in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.LeftGamma(a + 1.0, x) + Math.Pow(x, a) * Math.Exp(-x) / AdvancedMath.Gamma(a + 1.0), AdvancedMath.LeftGamma(a, x)));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        AdvancedMath.LeftRegularizedGamma(a + 1.0, x) + Math.Pow(x, a) * Math.Exp(-x) / AdvancedMath.Gamma(a + 1.0),
+                        AdvancedMath.LeftRegularizedGamma(a, x)
+                    ));
                 }
             }
         }
 
         // add a=0 test when we allow a=0
+
+        [TestMethod]
+        public void RegularizedIncompleteGammaExponential () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 10)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.RightRegularizedGamma(1.0, x), Math.Exp(-x)
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void RegularizedIncompleteGammaUnitarity () {
+            foreach (double a in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 10)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 10)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        AdvancedMath.LeftRegularizedGamma(a, x) + AdvancedMath.RightRegularizedGamma(a, x),
+                        1.0
+                    ));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void IncompleteGammaInequality () {
+            foreach (double a in TestUtilities.GenerateRealValues(1.0E-4, 1, 10)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 10.0, 6)) {
+                    Assert.IsTrue(
+                        AdvancedMath.Gamma(a, x) <= Math.Exp(-x) * Math.Pow(x, a - 1.0)
+                    );
+                }
+            }
+        }
+
+        [TestMethod]
+        public void IncompleteGammaIntegerInequality () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 10000, 10)) {
+                Assert.IsTrue(AdvancedMath.RightRegularizedGamma(n, n) <= 0.5);
+                Assert.IsTrue(0.5 <= AdvancedMath.RightRegularizedGamma(n, n - 1));
+            }
+        }
 
         [TestMethod]
         public void IncompleteGammaErfcTest () {

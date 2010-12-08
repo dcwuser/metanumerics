@@ -54,7 +54,7 @@ namespace Test {
 
         private RowVector R = new RowVector(new double[] { 1, 1 });
         private ColumnVector C = new ColumnVector(new double[] { 1, -1, 1 });
-        private Matrix M = new Matrix(new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
+        private RectangularMatrix M = new RectangularMatrix(new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
 
 
         [TestMethod]
@@ -128,7 +128,7 @@ namespace Test {
         public void MixedVectorArithmeticTest () {
 
             // outper product
-            Matrix CR = C * R;
+            RectangularMatrix CR = C * R;
             Assert.IsTrue(CR.RowCount == C.Dimension);
             Assert.IsTrue(CR.ColumnCount == R.Dimension);
 

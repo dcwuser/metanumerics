@@ -22,7 +22,7 @@
     <SccLocalPath>SAK</SccLocalPath>
     <SccAuxPath>SAK</SccAuxPath>
     <SccProvider>SAK</SccProvider>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -38,6 +38,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -107,13 +108,17 @@
     <Compile Include="Matrices\Interfaces.cs" />
     <Compile Include="Matrices\QRDecomposition.cs" />
     <Compile Include="Matrices\RealEigensystem.cs" />
+    <Compile Include="Matrices\RectangularMatrix.cs" />
+    <Compile Include="Matrices\RectangularMatrixBase.cs" />
     <Compile Include="Matrices\SquareLUDecomposition.cs" />
     <Compile Include="Matrices\Matrix.cs" />
     <Compile Include="Matrices\MatrixBase.cs" />
     <Compile Include="Matrices\SquareMatrix.cs" />
+    <Compile Include="Matrices\SquareMatrixBase.cs" />
     <Compile Include="Matrices\SquareQRDecomposition.cs" />
     <Compile Include="Matrices\SymmetricMatrix.cs" />
     <Compile Include="Matrices\TridiagonalMatrix.cs" />
+    <Compile Include="Matrices\VectorBase.cs" />
     <Compile Include="Matrices\Vectors.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Statistics\Anova.cs" />
@@ -123,15 +128,22 @@
     <Compile Include="Statistics\Distributions\BernoulliDistribution.cs" />
     <Compile Include="Statistics\Distributions\BetaDistribution.cs" />
     <Compile Include="Statistics\Distributions\BinomialDistribution.cs" />
+    <Compile Include="Statistics\Distributions\CauchyDistribution.cs" />
     <Compile Include="Statistics\Distributions\ChiSquaredDistribution.cs" />
     <Compile Include="Statistics\Distributions\DiscreteDistribution.cs" />
+    <Compile Include="Statistics\Distributions\DiscreteUniformDistribution.cs" />
     <Compile Include="Statistics\Distributions\Distributions.cs" />
     <Compile Include="Statistics\Distributions\ExponentialDistribution.cs" />
     <Compile Include="Statistics\Distributions\FisherDistribution.cs" />
+    <Compile Include="Statistics\Distributions\GammaDistribution.cs" />
+    <Compile Include="Statistics\Distributions\KolmogorovDistribution.cs" />
+    <Compile Include="Statistics\Distributions\KuiperDistribution.cs" />
     <Compile Include="Statistics\Distributions\LogisticDistribution.cs" />
     <Compile Include="Statistics\Distributions\LognormalDistribution.cs" />
+    <Compile Include="Statistics\Distributions\MannWhitneyDistribution.cs" />
     <Compile Include="Statistics\Distributions\NormalDistribution.cs" />
     <Compile Include="Statistics\Distributions\ParetoDistribution.cs" />
+    <Compile Include="Statistics\Distributions\PearsonRDistribution.cs" />
     <Compile Include="Statistics\Distributions\PoissonDistribution.cs" />
     <Compile Include="Statistics\Distributions\StudentDistribution.cs" />
     <Compile Include="Statistics\Distributions\TriangularDistribution.cs" />
@@ -139,6 +151,8 @@
     <Compile Include="Statistics\Distributions\WaldDistribution.cs" />
     <Compile Include="Statistics\Distributions\WeibullDistribution.cs" />
     <Compile Include="Statistics\FitResult.cs" />
+    <Compile Include="Statistics\Histogram.cs" />
+    <Compile Include="Statistics\InsufficientDataException.cs" />
     <Compile Include="Statistics\MultivariateSample.cs" />
     <Compile Include="Statistics\Sample.cs" />
     <Compile Include="Statistics\TestResult.cs" />

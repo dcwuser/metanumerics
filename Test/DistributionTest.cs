@@ -1,13 +1,14 @@
-﻿using Meta.Numerics;
-using Meta.Numerics.Functions;
-using Meta.Numerics.Statistics;
-using Meta.Numerics.Matrices;
-
-using System;
+﻿using System;
 using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-namespace Test
-{
+
+using Meta.Numerics;
+using Meta.Numerics.Functions;
+using Meta.Numerics.Statistics;
+using Meta.Numerics.Statistics.Distributions;
+using Meta.Numerics.Matrices;
+
+namespace Test {
     
     
     /// <summary>
@@ -70,33 +71,35 @@ namespace Test
             new ChiSquaredDistribution(3),
             new StudentDistribution(5),
             new LognormalDistribution(0.2,0.4),
-            new WeibullDistribution(2.0, 3.0),
+            //new WeibullDistribution(2.0, 3.0),
             new LogisticDistribution(-4.0,5.0),
             new FisherDistribution(4.0, 7.0),
             new KuiperDistribution(),
             new KolmogorovDistribution(),
-            new TriangularDistribution(1.0,2.0,4.0),
+            //new TriangularDistribution(1.0,2.0,4.0),
             new BetaDistribution(0.5, 2.0),
             new ParetoDistribution(1.0, 3.0),
-            new WaldDistribution(3.0, 1.0)
+            new WaldDistribution(3.0, 1.0),
+            new PearsonRDistribution(7),
+            new GammaDistribution(5.0, 6.0)
         };
 
         private double[] probabilities = new double[] {
-            0.00001, 0.05, 0.5, 0.95, 0.99999
+            0.00001, 0.01, 0.05, 1.0 / 3.0, 1.0 / 2.0, 2.0 / 3.0, 0.95, 0.99999
         };
 
         [TestMethod]
         public void DistributionMedian () {
             foreach (Distribution distribution in distributions) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Median, distribution.InverseLeftProbability(0.5)), String.Format("{0} m={1} P(0.5)={2}", distribution.GetType().Name, distribution.Median, distribution.InverseLeftProbability(0.5)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Median, distribution.InverseLeftProbability(0.5)));
             }
         }
 
         [TestMethod]
-        public void DistributionMomentsSpecialCases () {
+        public void DistributionMomentSpecialCases () {
             foreach (Distribution distribution in distributions) {
                 Assert.IsTrue(distribution.Moment(0) == 1.0);
-                Assert.IsTrue(distribution.Moment(1) == distribution.Mean);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Moment(1), distribution.Mean));
                 Assert.IsTrue(distribution.MomentAboutMean(0) == 1.0);
                 Assert.IsTrue(distribution.MomentAboutMean(1) == 0.0);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.MomentAboutMean(2), distribution.Variance));
@@ -107,7 +110,6 @@ namespace Test
         public void DistributionSkewness () {
             foreach (Distribution distribution in distributions) {
                 Console.WriteLine(distribution.GetType().FullName);
-                //Console.WriteLine("  {0} {1} {2}", distribution.Skewness, distribution.MomentAboutMean(3), distribution.MomentAboutMean(2));
                 if (!Double.IsInfinity(distribution.Skewness)) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         distribution.Skewness, distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 3.0 / 2.0)
@@ -221,8 +223,8 @@ namespace Test
         [TestMethod]
         public void DistributionRawMomentIntegral () {
             foreach (Distribution distribution in distributions) {
-                // range of moments is about 3 to 20
-                foreach (int n in TestUtilities.GenerateIntegerValues(3, 20, 3)) {
+                // range of moments is about 3 to 30
+                foreach (int n in TestUtilities.GenerateIntegerValues(3, 30, 10)) {
                     double M = distribution.Moment(n);
                     if (Double.IsInfinity(M)) continue; // don't try to do a non-convergent integral
                     Function<double, double> f = delegate(double x) {
@@ -247,8 +249,8 @@ namespace Test
         [TestMethod]
         public void DistributionCentralMomentIntegral () {
             foreach (Distribution distribution in distributions) {
-                // range of moments is about 3 to 20
-                foreach (int n in TestUtilities.GenerateIntegerValues(3, 20, 3)) {
+                // range of moments is about 3 to 30
+                foreach (int n in TestUtilities.GenerateIntegerValues(3, 30, 10)) {
                     double C = distribution.MomentAboutMean(n);
                     if (Double.IsInfinity(C)) continue; // don't try to integrate to infinity
                     double m = distribution.Mean;
@@ -261,11 +263,16 @@ namespace Test
                         if (C == 0.0) {
                             Assert.IsTrue(Math.Abs(CI) < TestUtilities.TargetPrecision);
                         } else {
+                            double e = TestUtilities.TargetPrecision;
                             // reduce required precision, because some distributions (e.g. Kolmogorov, Weibull)
                             // have no analytic expressions for central moments, which must therefore be
                             // determined via raw moments and are thus subject to cancelation error
                             // can we revisit this later?
-                            Assert.IsTrue(TestUtilities.IsNearlyEqual(C, CI, TestUtilities.TargetPrecision * 1000.0));
+                            if (distribution is WeibullDistribution) e = Math.Sqrt(e);
+                            if (distribution is KolmogorovDistribution) e = Math.Sqrt(e);
+                            if (distribution is KuiperDistribution) e = Math.Sqrt(e);
+                            if (distribution is BetaDistribution) e = Math.Sqrt(e);
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(C, CI, e));
                         }
                     } catch (NonconvergenceException) {
                         Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, n, C, "NC");
@@ -542,6 +549,306 @@ namespace Test
             }
 
         }
+
+        [TestMethod]
+        public void GammaFromExponential () {
+
+            // test that x_1 + x_2 + ... + x_n ~ Gamma(n) when z ~ Exponential()
+
+            Random rng = new Random(1);
+            ExponentialDistribution eDistribution = new ExponentialDistribution();
+
+            // pick some low values of n so distribution is not simply normal
+            foreach (int n in new int[] { 2, 3, 4, 5 }) {
+                Sample gSample = new Sample();
+                for (int i = 0; i < 100; i++) {
+
+                    double sum = 0.0;
+                    for (int j = 0; j < n; j++) {
+                        sum += eDistribution.GetRandomValue(rng);
+                    }
+                    gSample.Add(sum);
+
+                }
+
+                GammaDistribution gDistribution = new GammaDistribution(n);
+                TestResult result = gSample.KolmogorovSmirnovTest(gDistribution);
+                Assert.IsTrue(result.LeftProbability < 0.95);
+
+            }
+
+        }
+
+        public static double ApproximateProbit (double P) {
+
+            if (P < 0.1) {
+                return(-ApproximateInverseTailProbability(2.0 * P));
+            } else if (P < 0.9) {
+                return(ApproximateInverseCentralProbability(2.0 * P - 1.0));
+            } else {
+                return(ApproximateInverseTailProbability(2.0*(1.0 - P)));
+            }
+
+        }
+
+        public static double ApproximateInverseCentralProbability (double P) {
+
+            // this is just a term-by-term inversion of the series for erf(z)
+
+            double z = Math.Sqrt(Math.PI / 2.0) * P;
+            double zz = z * z;
+            double S = 1.0 + zz / 6.0 + 7.0 / 120.0 * zz * zz + 127.0 / 5040.0 * zz * zz * zz;
+            return (z * S);
+
+        }
+
+        public static double ApproximateInverseTailProbability (double P) {
+            double zz = P * P;
+            double log = Math.Log(2.0 / Math.PI / zz);
+            double S = log - Math.Log(log);
+            return (Math.Sqrt(S));
+        }
+
+        [TestMethod]
+        public void TestAP () {
+
+            Distribution N = new NormalDistribution();
+
+            foreach (double P in new double[] { 0.01, 0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95, 0.99 }) {
+
+                Console.WriteLine("{0} {1} {2}", P, N.InverseLeftProbability(P), ApproximateProbit(P));
+
+            }
+
+        }
+
+        // good if resulting x , a + 1; how to determine beforehand, based on P, if this will be the case?
+
+        public double ApproximateLeftTailInverseGamma (double a, double P) {
+
+            // use the fact that Gamma(a,x) = x^a so P(a,x) = Gamma(a,x) / Gamma(a) = x^a / Gamma(
+
+            double x0 = Math.Pow(AdvancedMath.Gamma(a + 1.0) * P, 1.0 / a);
+            double x1 = x0 / (a + 1.0);
+            //double S1 = x0;
+            //double S2 = x0 * (1.0 + x0 / (a + 1));
+            double S3 = x0 * (1.0 + x1 + (3.0 * a + 5.0) * x1 * x1 / (a + 2.0) / 2.0);
+            //Console.WriteLine("{0} {1} {2}", S1, S2, S3);
+            return (S3);
+        }
+
+        public double ApproximateMiddleInverseGamma (double a, double P) {
+
+            // it is well known that Gamma(a) -> Normal(a,sqrt(a)) for large a
+            // but it does so exceedingly slowly (skew decreases ~1/sqrt(a) and kurtosis ~1/a)
+            
+            // in the days of yore when people looked for normalizing transforms, Wilson and Hilferty derived that
+            // y = (x/a)^(1/3) ~ Normal(1-1/9a, 1/sqrt(9a)) with much faster decreasing higher moments
+            // we use this here, having verified that it gives much more accurate values than the naive normal approximation
+
+            double na = 9.0 * a;
+            double y = 1.0 - 1.0 / na + ApproximateProbit(P) / Math.Sqrt(na);
+            return (a * MoreMath.Pow(y, 3));
+
+        }
+
+        public double ApproximateRightTailInverseGamma (double a, double Q) {
+            double log = -Math.Log(AdvancedMath.Gamma(a) * Q);
+            return (log + (a - 1.0) * Math.Log(log));
+
+            /*
+            double am1 = a - 1.0;
+            double z = Math.Exp((AdvancedMath.LogGamma(a) + Math.Log(Q)) / am1) / am1;
+            Console.WriteLine("z={0}", z);
+            double L1 = Math.Log(-1.0 / z);
+            double L2 = Math.Log(L1);
+            //return (am1 * AdvancedMath.LambertW(
+            return (- am1 * (-L1 - L2 - L2 / L1));
+            */
+
+        }
+
+        public double ApproximateInverseGamma (double a, double P) {
+
+            double x0 = Math.Pow(AdvancedMath.Gamma(a + 1.0) * P, 1.0 / a);
+            double x1 = x0 / (a + 1.0);
+            if (x1 < 0.25) {
+                // do left-tail if possible, because it is quite fast
+                return (x0 * (1.0 + x1 + (3.0 * a + 5.0) * x1 * x1 / (a + 2.0) / 2.0));
+            } else {
+                if (a >= 1.0) {
+                    // if a is large enough, use Wilson & Hilfrety's normal approximation
+                    double na = 9.0 * a;
+                    double y = 1.0 - 1.0 / na + ApproximateProbit(P) / Math.Sqrt(na);
+                    return (a * MoreMath.Pow(y, 3));
+                } else {
+                    // for small a, use a very crude right-tail approximation
+                    // this will fail if Gamma(a) * Q > 1, but given our range for the left-tail
+                    // approximation above, we have ~0.5 < Gamma(a) * Q < ~0.8 for 0 < a < 1
+                    double Q = 1.0 - P;
+                    if (Q == 0.0) {
+                        return (Double.PositiveInfinity);
+                    } else {
+                        double log = -Math.Log(AdvancedMath.Gamma(a) * Q);
+                        return (log + (a - 1.0) * Math.Log(log));
+                    }
+                }
+            }
+
+        }
+
+        public double InverseGamma (double P) {
+
+            // start with approximation
+
+
+            // polish using Newton's method
+
+
+
+            // return when converged
+
+            return (0.0);
+
+        }
+
+        [TestMethod]
+        public void TestGD () {
+
+            double a = 0.01; double t = 1.0;
+            Distribution G = new GammaDistribution(a, t);
+
+            foreach (double x in new double[] { 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0 }) {
+            //foreach (double x in new double[] { 0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0, 6.0 }) {
+
+                double P = G.LeftProbability(x);
+                double PS = Math.Pow(x, a) * Math.Exp(-x) / AdvancedMath.Gamma(a+1);
+                double xp = t * (a + Math.Sqrt(a) * ApproximateProbit(P));
+                Console.WriteLine("{0} {1} {2} {3} {4}", x, P, ApproximateLeftTailInverseGamma(a, P), ApproximateMiddleInverseGamma(a, P), ApproximateRightTailInverseGamma(a, 1.0-P));
+
+            }
+
+
+        }
+
+        [TestMethod]
+        public void Test2 () {
+
+            GammaDistribution G = new GammaDistribution(8.0);
+            Console.WriteLine(AdvancedMath.LeftRegularizedGamma(8.0, 0.1));
+            Console.WriteLine(G.LeftProbability(0.1));
+            double PS = Math.Pow(0.1, G.ShapeParameter) * Math.Exp(-0.1) / AdvancedMath.Gamma(G.ShapeParameter + 1.0);
+            double PSI = ApproximateLeftTailInverseGamma(G.ShapeParameter, PS);
+            Console.WriteLine("{0} {1}", PS, PSI);
+
+        }
+
+        [TestMethod]
+        public void InverseErfSeries () {
+
+            int max = 20;
+            double[] c = new double[max];
+
+            c[0] = 1.0;
+            for (int i = 1; i < max; i++) {
+
+                double sum = 0.0;
+                for (int j = 0; j < i; j++) {
+                    sum += c[j] * c[i - 1 - j] / (j + 1) / (2 * j + 1);
+                }
+                c[i] = sum;
+
+                Console.WriteLine("{0} {1}", i, c[i] / (2 * i + 1));
+            }
+
+
+        }
+
+        [TestMethod]
+        public void TestInverseCDF () {
+
+            double[] P_values = new double[] { 1.0E-5, 0.01, 0.1, 1.0 / 3.0, 2.0 / 3.0, 0.9, 0.99, 1.0 - 1.0E-5 };
+            double[] a_values = new double[] { 1.0E-4, 1.0E-2, 1.0, 10.0, 100.0, 1000.0, 1.0E6 };
+            //double[] a_values = new double[] { 1.0, 10.0, 100.0, 1000.0, 1.0E6 };
+
+            foreach (double a in a_values) {
+                Distribution G = new GammaDistribution(a);
+                foreach (double P in P_values) {
+                    Console.WriteLine("{0} {1}", a, P);
+                    //double x0 = ApproximateInverseGamma(a, P);
+                    //Console.WriteLine("  {0} {1}", x0, G.LeftProbability(x0));
+                    //double x = G.InverseLeftProbability(P);
+
+                    double x = G.InverseLeftProbability(P);
+                    double Px = G.LeftProbability(x);
+                    Console.WriteLine("  {0} {1}", x, Px);
+                }
+            }
+
+        }
+
+        [TestMethod]
+        public void TestInverseCDF2 () {
+            Distribution G = new GammaDistribution(1.0);
+            //Console.WriteLine(G.LeftProbability(1.0E-200));
+            //Console.WriteLine(G.LeftProbability(1.0E-100));
+            //Console.WriteLine(G.LeftProbability(1.0E-30));
+            //Console.WriteLine(G.LeftProbability(1.0E-20));
+            //Console.WriteLine(G.LeftProbability(1.0E-10));
+            //Console.WriteLine(G.LeftProbability(0.0001));
+            //Console.WriteLine(G.LeftProbability(0.001));
+            //Console.WriteLine(G.LeftProbability(0.01));
+            //Console.WriteLine(G.LeftProbability(0.1));
+            double x = G.InverseLeftProbability(0.01);
+        }
+
+        [TestMethod]
+        public void ILP () {
+
+            //Distribution d = new GammaDistribution(5, 6);
+            //Distribution d = new UniformDistribution(Interval.FromEndpoints(1, 2));
+            //Distribution d = new ChiSquaredDistribution(3);
+            //Distribution d = new StudentDistribution(4);
+            Distribution d = new GammaDistribution(5, 6);
+            //Distribution d = new FisherDistribution(3, 4);
+            double P = 0.99999;
+            //double x = d.Mean;
+            double x = 6.0 * ApproximateInverseGamma(5, P);
+            //if (P < 0.5) {
+            //    x = 6.0 * Math.Pow(P * AdvancedMath.Gamma(5), 1.0 / 5);
+            //} else {
+            //    x = d.Mean;
+            //}
+            Distribution.InverseLeftProbability(d, x, P);
+
+        }
+
+
+        public void GammaTemme (double a, double x) {
+
+            Console.WriteLine("a={0} x={1}", a, x);
+
+            double r = x / a;
+            double e = r - 1.0;
+
+            double eta = Math.Sqrt(2.0 * (e - Math.Log(r)));
+            if (r < 1.0) eta = -eta;
+            Console.WriteLine("r={0}, e={1}, eta={0}", r, e, eta);
+
+            double Q0 = AdvancedMath.Erfc(eta * Math.Sqrt(a / 2.0)) / 2.0;
+
+            double R0 = Math.Exp(-a * eta * eta / 2.0) / Math.Sqrt(2.0 * Math.PI * a);
+
+            double C0 = -1.0 / 3.0 + e / 12.0 - 23.0 / 540.0 * e * e + 353.0 / 12960.0 * e * e * e - 589.0 / 30240.0 * e * e * e * e;
+            double C1 = -1.0 / 540.0 - e / 288.0 + 23.0 / 6048.0 * e * e - 3733.0 / 1088640.0 * e * e * e;
+            double S0 = 0.0 + C0 + C1 / a;
+
+            double Q = Q0 + R0 * S0;
+
+            Console.WriteLine(Q);
+
+        }
+
 
     }
 }

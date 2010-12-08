@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Meta.Numerics;
 using Meta.Numerics.Functions;
 
-namespace Meta.Numerics.Statistics {
+namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
     /// Represents a log-normal distribution.
@@ -112,7 +112,7 @@ namespace Meta.Numerics.Statistics {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
             } else {
-                return (Math.Exp(n * mu + n * n * sigma * sigma / 2.0));
+                return (Math.Exp(n * mu + MoreMath.Pow2(n * sigma) / 2.0));
             }
         }
 
@@ -127,15 +127,30 @@ namespace Meta.Numerics.Statistics {
             } else if (n == 2) {
                 return (Es2m1 * Mean * Mean);
             } else {
+
+                // This follows from a straightforward expansion of (x-m)^n and substitution of expressions for M_k.
+                // It eliminates some arithmetic but is still subject to loss of significance due to cancelation.
+                double s2 = sigma * sigma / 2.0;
+
+                double C = 0.0;
+                for (int i = 0; i <= n; i++) {
+                    double dC = AdvancedIntegerMath.BinomialCoefficient(n, i) * Math.Exp((MoreMath.Pow2(n - i) + i) * s2);
+                    if (i % 2 != 0) dC = -dC;
+                    C += dC;
+                }
+                return (Math.Exp(n * mu) * C);
+
                 // this isn't great, but it does the job
                 // expand in terms of moments about the origin
                 // there is likely to be some cancelation, but the distribution is wide enough that it may not matter
+                /*
                 double m = -Mean;
                 double C = 0.0;
                 for (int k = 0; k <= n; k++) {
                     C += AdvancedIntegerMath.BinomialCoefficient(n, k) * Moment(k) * Math.Pow(m, n - k);
                 }
                 return (C);
+                */
             }
 
         }

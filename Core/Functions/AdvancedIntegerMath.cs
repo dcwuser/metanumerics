@@ -344,6 +344,50 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        private static readonly int[] primes = new int[] { 2, 3, 5, 7, 11, 13 };
+
+        public static List<int> FactorByTrial (ref int n) {
+
+            List<int> factors = new List<int>();
+
+            foreach (int p in primes) {
+
+                if (n % p == 0) {
+                    n = n / p;
+                    factors.Add(p);
+                    if (n < p) return (factors);
+                }
+
+            }
+
+            return (factors);
+
+        }
+
+        private static int pollardE = 360360;
+        // lcm(1...5) = 60
+        // lcm(1...10) = 2520
+        // lcm(1...15) = 360360
+        // lcm(1...20) = 232792560
+
+        public static List<int> FactorByPollard1 (ref int n) {
+
+            List<int> factors = new List<int>();
+
+            while (true) {
+                int g = PowMod(2, pollardE, n) - 1;
+                g = (int) GCF(g, n);
+                if ((g > 1) && (g < n)) {
+                    factors.Add(g);
+                    n = n / g;
+                } else {
+                    return (factors);
+                }
+            }
+
+        }
+
+
 	}
 
 }

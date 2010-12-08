@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Meta.Numerics;
 using Meta.Numerics.Functions;
 
-namespace Meta.Numerics.Statistics {
+namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
     /// Represents a beta distribution.
@@ -122,14 +122,19 @@ namespace Meta.Numerics.Statistics {
         public override double Moment (int n) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
-                return (1.0);
-            } else if (n == 1) {
-                return (Mean);
             } else {
-                return (AdvancedMath.Beta(alpha + n, beta) / AdvancedMath.Beta(alpha, beta));
+                double sum = alpha + beta;
+                double M = 1.0;
+                for (int i = 0; i < n; i++) {
+                    M = (alpha + i) / (sum + i) * M;
+                }
+                return (M);
+                //return (AdvancedMath.Beta(alpha + n, beta) / AdvancedMath.Beta(alpha, beta));
             }
         }
+
+        // C_n = (-a/(a+b))^n 2F1(a,-n;a+b;(a+b)/a); this fact, plus the recurence relation for the hypergeometric function,
+        // gives the recurrence: C_{n+1} = n / (a+b+n) / (a+b) * ( (b-a) * C_{n} _ a * b / (a+b) * C_{n-1} )
 
         /// <inheritdoc />
         public override double MomentAboutMean (int n) {
@@ -140,7 +145,22 @@ namespace Meta.Numerics.Statistics {
             } else if (n == 1) {
                 return (0.0);
             } else {
-                return (CentralMomentFromRawMoment(n));
+
+                // use recurrsion
+
+                double s = alpha + beta;
+                double t = beta - alpha;
+                double u = alpha * beta / s;
+
+                double C0 = 1.0;
+                double C1 = 0.0;
+                for (int i = 1; i < n; i++) {
+                    double C2 = i / (s + i) / s * (t * C1 + u * C0);
+                    C0 = C1;
+                    C1 = C2;
+                }
+                return (C1);
+                //return (CentralMomentFromRawMoment(n));
             }
         }
 

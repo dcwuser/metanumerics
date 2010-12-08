@@ -15,7 +15,8 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The error can be defined via a Gaussian integral.</para>
         /// <img src="../images/ErfIntegral.png" />
-        /// <para>The area under a bell curve (<see cref="Meta.Numerics.Statistics.NormalDistribution"/>) within &#x2213;z  standard deviations of the mean is given by erf(z/&#x221A;2).</para>
+        /// <para>The area under a bell curve (<see cref="Meta.Numerics.Statistics.Distributions.NormalDistribution"/>) within &#x2213;z
+        /// standard deviations of the mean is given by erf(z/&#x221A;2).</para>
         /// <para>For large values of x, erf(x) &#x2248; 1 to within floating-point accuracy. To obtain accurate values of erfc(x) = 1 - erf(x)
         /// in this range, use the <see cref="Erfc" /> function.</para>
         /// <para>The error function for complex arguments can be computed using <see cref="AdvancedComplexMath.Faddeeva"/>.</para>
@@ -25,9 +26,9 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/Erf.html" />
         public static double Erf (double x) {
             if (x < 0.0) {
-                return (-LeftGamma(0.5, x * x));
+                return (-LeftRegularizedGamma(0.5, x * x));
             } else {
-                return (LeftGamma(0.5, x * x));
+                return (LeftRegularizedGamma(0.5, x * x));
             }
         }
 
@@ -44,9 +45,9 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="Erf" />
         public static double Erfc (double x) {
             if (x < 0.0) {
-                return (1.0 + LeftGamma(0.5, x * x));
+                return (1.0 + LeftRegularizedGamma(0.5, x * x));
             } else {
-                return (RightGamma(0.5, x * x));
+                return (RightRegularizedGamma(0.5, x * x));
             }
         }
 
@@ -73,8 +74,9 @@ namespace Meta.Numerics.Functions {
                 if (y < 0.8) {
                     // for small values, use series inversion
                     // the three-term series is good to within 5% for y~0.8, even better for smaller y
-                    double yy = y * y;
-                    x = (Global.SqrtPI / 2.0) * y * (1.0 + (Math.PI / 12.0) * yy * (1.0 + (7.0 * Math.PI / 40.0) * yy));
+                    //double yy = y * y;
+                    //x = (Global.SqrtPI / 2.0) * y * (1.0 + (Math.PI / 12.0) * yy * (1.0 + (7.0 * Math.PI / 40.0) * yy));
+                    x = ApproximateInverseErf(y);
                 } else {
                     // for large values, use a crude approximation
                     // this is pretty consistently 10% too high; how to correct?
@@ -82,11 +84,12 @@ namespace Meta.Numerics.Functions {
 
                     // this approximation is good to within 10% for y~0.8, 4% y~0.9.
                     // can we get the next term?
-                    double log = -Math.Log(Global.SqrtPI * (1.0 - y));
-                    x = Math.Sqrt(log) * (1.0 - Math.Log(log) / log / 4.0);
+                    //double log = -Math.Log(Global.SqrtPI * (1.0 - y));
+                    //x = Math.Sqrt(log) * (1.0 - Math.Log(log) / log / 4.0);
 
                     //x = Math.Sqrt(-Math.Log(y * Math.Sqrt(-Math.PI * Math.Log(y))));
                     //x = Math.Sqrt(Math.Log(Math.Sqrt(Math.PI)*(1.0-y)
+                    x = ApproximateInverseErfc(1.0 - y);
                 }
 
                 // refine it via 2nd order Newton's method (aka Halley's method)
@@ -112,6 +115,22 @@ namespace Meta.Numerics.Functions {
                 throw new NonconvergenceException();
 
             }
+        }
+
+
+        private static double ApproximateInverseErf (double y) {
+            double x = Global.SqrtPI * y / 2.0;
+            double xx = x * x;
+            double S = 1.0 + xx / 3.0 + 7.0 / 30.0 * xx * xx + 127.0 / 630.0 * xx * xx * xx;
+            return (x * S);
+
+        }
+
+        private static double ApproximateInverseErfc (double y) {
+            double yy = y * y;
+            double log = Math.Log(2.0 / Math.PI / yy);
+            double S = log - Math.Log(log);
+            return (Math.Sqrt(S / 2.0));
         }
 
         /// <summary>

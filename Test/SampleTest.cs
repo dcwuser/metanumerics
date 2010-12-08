@@ -6,6 +6,7 @@ using System.Collections;
 using Meta.Numerics;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics;
+using Meta.Numerics.Statistics.Distributions;
 
 namespace Test {
     

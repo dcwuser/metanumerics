@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics;
+using Meta.Numerics.Statistics.Distributions;
 
 // add tests of fit parameter uncertainties: are they really distributed as claimed?
 // add T and KS tests against other samples
@@ -629,6 +631,7 @@ namespace Test {
             Assert.IsTrue(sample.PopulationCovariance(1,1).ConfidenceInterval(0.95).ClosedContains(covariance[1,1]));
 
         }
-
+    
     }
+
 }

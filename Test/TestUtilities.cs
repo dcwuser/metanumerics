@@ -141,7 +141,7 @@ namespace Test {
         }
         */
 
-        private static double MatrixNorm (IMatrix M) {
+        private static double MatrixNorm (RectangularMatrixBase M) {
             double n = 0.0;
             for (int r = 0; r < M.RowCount; r++) {
                 for (int c = 0; c < M.ColumnCount; c++) {
@@ -194,7 +194,7 @@ namespace Test {
             return (M);
         }
 
-        public static bool IsNearlyEqual (IMatrix A, IMatrix B, double e) {
+        public static bool IsNearlyEqual (RectangularMatrixBase A, RectangularMatrixBase B, double e) {
             double nA = MatrixNorm(A);
             double nB = MatrixNorm(B);
             for (int r = 0; r < A.RowCount; r++) {
@@ -205,11 +205,11 @@ namespace Test {
             return (true);
         }
 
-        public static bool IsNearlyEqual (IMatrix A, IMatrix B) {
+        public static bool IsNearlyEqual (RectangularMatrixBase A, RectangularMatrixBase B) {
             return (IsNearlyEqual(A, B, TargetPrecision));
         }
 
-        public static bool IsNearlyEigenpair (ISquareMatrix A, ColumnVector v, double a) {
+        public static bool IsNearlyEigenpair (SquareMatrixBase A, ColumnVector v, double a) {
 
             // compute products
             ColumnVector Av = A * v;
@@ -229,19 +229,19 @@ namespace Test {
 
         }
 
-        public static bool IsNearlyEigenpair (ISquareMatrix A, Vector<Complex> v, Complex a) {
+        public static bool IsNearlyEigenpair (SquareMatrixBase A, Complex[] v, Complex a) {
 
             int d = A.Dimension;
 
             // compute products
-            Vector<Complex> Av = new Vector<Complex>(d);
+            Complex[] Av = new Complex[d];
             for (int i=0; i<d; i++) {
                 Av[i] = 0.0;
                 for (int j=0; j<d; j++) {
                     Av[i] += A[i,j]*v[j];
                 }
             }
-            Vector<Complex> av = new Vector<Complex>(d);
+            Complex[] av = new Complex[d];
             for (int i=0; i<d; i++) {
                 av[i] = a * v[i];
             }

@@ -19,9 +19,11 @@ namespace Meta.Numerics {
             get {
                 return (re);
             }
+            /*
             set {
                 re = value;
             }
+            */
         }
 
         /// <summary>
@@ -31,9 +33,11 @@ namespace Meta.Numerics {
             get {
                 return (im);
             }
+            /*
             set {
                 im = value;
             }
+            */
         }
 
         /// <summary>

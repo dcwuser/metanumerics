@@ -10,7 +10,7 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents a square matrix.
     /// </summary>
-    public sealed class SquareMatrix : ISquareMatrix {
+    public sealed class SquareMatrix : SquareMatrixBase {
 
         private int dimension;
         private double[] store;
@@ -23,7 +23,7 @@ namespace Meta.Numerics.Matrices {
         public SquareMatrix (int dimension) {
             if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
             this.dimension = dimension;
-            this.store = new double[dimension * dimension];
+            this.store = MatrixAlgorithms.AllocateStorage(dimension, dimension);
         }
 
         internal SquareMatrix (double[] storage, int dimension) {
@@ -31,30 +31,12 @@ namespace Meta.Numerics.Matrices {
             this.dimension = dimension;
         }
 
-        /*
-        internal SquareMatrix (double[,] values) {
-            if (values.GetLength(0) != values.GetLength(1)) throw new ArgumentException();
-            this.dimension = values.GetLength(0);
-            this.values = values;
-        }
-        */
+        // required methods
 
         /// <summary>
         /// Gets the dimension of the matrix.
         /// </summary>
-        public int Dimension {
-            get {
-                return (dimension);
-            }
-        }
-
-        int IMatrix.RowCount {
-            get {
-                return (dimension);
-            }
-        }
-
-        int IMatrix.ColumnCount {
+        public override int Dimension {
             get {
                 return (dimension);
             }
@@ -66,22 +48,32 @@ namespace Meta.Numerics.Matrices {
         /// <param name="r">The (zero-based) row number.</param>
         /// <param name="c">The (zero-based) column number.</param>
         /// <returns>The value of the specified matrix entry M<sub>r c</sub>.</returns>
-        public double this[int r, int c] {
+        public override double this[int r, int c] {
             get {
                 if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
                 if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
-                return (GetEntry(r, c));
+                return (MatrixAlgorithms.GetEntry(store, dimension, dimension, r, c));
             }
             set {
                 if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
                 if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
-                SetEntry(r, c, value);
+                MatrixAlgorithms.SetEntry(store, dimension, dimension, r, c, value);
             }
+        }
+
+        /// <inheritdoc />
+        public override double OneNorm () {
+            return (MatrixAlgorithms.OneNorm(store, dimension, dimension));
+        }
+
+        /// <inheritdoc />
+        public override double InfinityNorm () {
+            return (MatrixAlgorithms.InfinityNorm(store, dimension, dimension));
         }
 
         // use for fast access
         // this bypasses bounds checks, so make sure the bounds are right!
-
+        /*
         internal double GetEntry (int r, int c) {
             //Console.WriteLine("get from {0}", dimension * c + r);
             return (store[dimension * c + r]);
@@ -93,7 +85,7 @@ namespace Meta.Numerics.Matrices {
             store[dimension * c + r] = value;
             //values[r * dimension + c] = value;
         }
-
+        */
 
         /// <summary>
         /// Returns a vector representing a given row of the matrix.
@@ -103,7 +95,7 @@ namespace Meta.Numerics.Matrices {
         /// <remarks>The returned vector is not linked to the matrix. If an entry in the matrix is updated after this method
         /// is called, the returned object will continue to represent a row of the original, not the updated, matrix. Similiarly,
         /// updates to the elements of the returned vector will not update the original matrix.</remarks>
-        public RowVector Row (int r) {
+        public override RowVector Row (int r) {
             if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
             RowVector row = new RowVector(dimension);
             for (int c = 0; c < dimension; c++) {
@@ -120,7 +112,7 @@ namespace Meta.Numerics.Matrices {
         /// <remarks>The returned vector is not linked to the matrix. If an entry in the matrix is updated after this method
         /// is called, the returned object will continue to represent a row of the original, not the updated, matrix. Similiarly,
         /// updates to the elements of the returned vector will not update the original matrix.</remarks>
-        public ColumnVector Column (int c) {
+        public override ColumnVector Column (int c) {
             if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
             ColumnVector column = new ColumnVector(dimension);
             for (int r = 0; r < dimension; r++) {
@@ -134,13 +126,15 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>An independent clone of the matrix.</returns>
         public SquareMatrix Clone () {
-            double[] cStore = MatrixAlgorithms.Clone(store, dimension, dimension);
+            double[] cStore = MatrixAlgorithms.Copy(store, dimension, dimension);
             return (new SquareMatrix(cStore, dimension));
         }
 
+        /*
         IMatrix IMatrix.Clone () {
             return (Clone());
         }
+        */
 
         /// <summary>
         /// Creates a transpose of the matrix.
@@ -151,28 +145,20 @@ namespace Meta.Numerics.Matrices {
             return (new SquareMatrix(tStore, dimension));
         }
 
-        IMatrix IMatrix.Transpose () {
-            return (Transpose());
-        }
-
         /// <summary>
         /// Computes the inverse of the matrix.
         /// </summary>
         /// <returns>The matrix inverse M<sup>-1</sup>.</returns>
         /// <remarks>
-        /// <para>The inverse of a matrix is a matrix M<sup>-1</sup> such that M<sup>-1</sup>M = I, the identify matrix.</para>
+        /// <para>The inverse of a matrix M is a matrix M<sup>-1</sup> such that M<sup>-1</sup>M = I, whhere I is the identity matrix.</para>
+        /// <para>If the matrix is singular, inversion is not possible. In that case, this method will fail with a <see cref="DivideByZeroException"/>.</para>
         /// <para>The inversion of a matrix is an O(N<sup>3</sup>) operation.</para>
         /// </remarks>
+        /// <exception cref="DivideByZeroException">The matrix is singular.</exception>
         public SquareMatrix Inverse () {
-
-            double[] iStore = MatrixAlgorithms.Clone(store, dimension, dimension);
+            double[] iStore = MatrixAlgorithms.Copy(store, dimension, dimension);
             SquareMatrixAlgorithms.GaussJordanInvert(iStore, dimension);
             return(new SquareMatrix(iStore, dimension));
-
-
-            //SquareMatrix M = this.Clone();
-            //GaussJordanInvert(M);
-            //return (M);
         }
 
         /*
@@ -185,80 +171,13 @@ namespace Meta.Numerics.Matrices {
         private void InvertInPlace () {
         }
         */
-
-        /// <summary>
-        /// Computes the trace of the matrix.
-        /// </summary>
-        /// <returns>The trace of the matrix tr(M).</returns>
-        /// <remarks><para>The trace of a matrix is the sum of its diagonal elements.</para></remarks>
-        public double Trace () {
-				double trace = 0.0;
-				for (int i=0; i<dimension; i++) {
-					trace+= this[i,i];
-				}
-				return(trace);
-        }
-
         
-        /*
-        private static void GaussJordanInvert (SquareMatrix M) {
-
-
-            int n = M.Dimension;
-
-            // do n interations
-            for (int d = 0; d < n; d++) {
-
-                // start with the diagonal pivot
-                //double q = M[d, d];
-                double q = M.GetEntry(d, d);
-
-                // search for a better pivot in a lower row
-                int pr = d;
-                for (int r = d + 1; r < n; r++) {
-                    if (Math.Abs(M.GetEntry(r, d)) > Math.Abs(q)) {
-                        pr = d;
-                        q = M.GetEntry(pr, d);
-                    }
-                }
-
-                // if all pivot candidates are zero, the matrix is singular
-                if (q == 0.0) throw new DivideByZeroException();
-
-                // if we found a better pivot on a lower row, swap rows to bring the pivot element to the diagonal
-                if (pr != d) {
-                    for (int c = 0; c < n; c++) {
-                        double t = M.GetEntry(d, c);
-                        M.SetEntry(d, c, M.GetEntry(pr, c));
-                        M.SetEntry(pr, c, t);
-                    }
-                }
-
-                // divide the pivot row by the pivot element to make the diagonal element unity
-                M.SetEntry(d, d, 1.0);
-                for (int c = 0; c < n; c++) {
-                    M.SetEntry(d, c, M.GetEntry(d, c) / q);
-                }
-                // add factors of the pivot row to other rows to zero off-diagonal elements
-                for (int r = 0; r < n; r++) {
-                    if (r == d) continue;
-                    double p = M.GetEntry(r, d);
-                    M.SetEntry(r, d, 0.0);
-                    for (int c = 0; c < n; c++) {
-                        M.SetEntry(r, c, M.GetEntry(r, c) - p * M.GetEntry(d, c));
-                    }
-                }
-            }
-
-        }
-        */
-
         /// <summary>
         /// Computes the LU decomposition of the matrix.
         /// </summary>
         /// <returns>The LU decomposition of the matrix.</returns>
         /// <remarks>
-        /// <para>An LU decomposition of a matrix M is a set of matrices L, U, and P such that LU = PM, where L
+        /// <para>The LU decomposition of a matrix M is a set of matrices L, U, and P such that LU = PM, where L
         /// is lower-left triangular, U is upper-right triangular, and P is a permutation matrix (so that PM is
         /// a row-wise permutation of M).</para>
         /// <para>The LU decomposition of a square matrix is an O(N<sup>3</sup>) operation.</para>
@@ -266,8 +185,7 @@ namespace Meta.Numerics.Matrices {
         public SquareLUDecomposition LUDecomposition () {
 
             // copy the matrix content
-            double[] luStore = new double[store.Length];
-            Array.Copy(store, luStore, store.Length);
+            double[] luStore = MatrixAlgorithms.Copy(store, dimension, dimension);
 
             // prepare an initial permutation and parity
             int[] permutation = new int[dimension];
@@ -284,122 +202,7 @@ namespace Meta.Numerics.Matrices {
 
             return (LU);
 
-            /*
-            SquareMatrix M = this.Clone();
-
-            int[] perm;
-            int parity;
-            LUDecompose(M, out perm, out parity);
-
-            return (new SquareLUDecomposition(M, perm, parity));
-             */
         }
-
-        /*
-        private static void LUDecompose (SquareMatrix M, out int[] permutations, out int parity) {
-
-            int n = M.Dimension;
-
-            // keep track of row permutations and their parity
-            permutations = new int[n];
-            for (int i = 0; i < n; i++) {
-                permutations[i] = i;
-            }
-            parity = 1;
-
-            // go on a diagonal march
-            for (int d = 0; d < n; d++) {
-
-                // compute the linear combination of elements that will appear in the numerator of
-                // each element of L in the column below the diagonal, but don't yet divide by the
-                // pivot, because we don't yet know what it will be
-
-                // while we are doing this, consider each result as a possible pivot element,
-                // choosing the one with the largest magnitude
-
-                int p = -1;
-                double q = 0.0;
-
-                for (int r = d; r < n; r++) {
-                    double t = M.GetEntry(r, d);
-                    //double t = M[r, d];
-                    for (int i = 0; i < d; i++) {
-                        t -= M.GetEntry(r, i) * M.GetEntry(i, d);
-                        //t -= M[r, i] * M[i, d];
-                    }
-                    M.SetEntry(r, d, t);
-                    //M[r, d] = t;
-
-                    if (Math.Abs(t) > Math.Abs(q)) {
-                        p = r;
-                        q = t;
-                    }
-                }
-
-                // don't get confused by the fact that the pivot is not an entry of the original matrix
-                // what makes it the pivot is that we divide by it; this is simply a difference
-                // between Crout's algorithm and classical Gaussian elimination
-
-                // check for a zero pivot
-                if (q == 0.0) throw new DivideByZeroException();
-
-                // permute rows to put the pivot element on the diagonal
-                if (p != d) {
-                    for (int c = 0; c < n; c++) {
-                        //double t = M[d, c];
-                        double t = M.GetEntry(d, c);
-                        //M[d, c] = M[p, c];
-                        M.SetEntry(d, c, M.GetEntry(p, c));
-                        //M[p, c] = t;
-                        M.SetEntry(p, c, t);
-                    }
-                    int t_permutation = permutations[d];
-                    permutations[d] = permutations[p];
-                    permutations[p] = t_permutation;
-                    parity = -parity;
-                }
-
-                // now divide the subdiagonal elements by the chosen pivot element
-                for (int r = d + 1; r < n; r++) {
-                    M.SetEntry(r, d, M.GetEntry(r, d) / q);
-                    //M[r, d] = M[r, d] / q;
-                }
-
-                // compute the elements of U in the row to the right of the diagonal element
-                for (int c = d + 1; c < n; c++) {
-                    //double t = M[d, c];
-                    double t = M.GetEntry(d, c);
-                    for (int i = 0; i < d; i++) {
-                        t -= M.GetEntry(d, i) * M.GetEntry(i, c);
-                        //t -= M[d, i] * M[i, c];
-                    }
-                    //M[d, c] = t;
-                    M.SetEntry(d, c, t);
-                }
-
-            }
-
-
-        }
-        */
-
-        /*
-        private static int Min (int a, int b) {
-            if (a < b) {
-                return (a);
-            } else {
-                return (b);
-            }
-        }
-
-        private static int Max (int a, int b) {
-            if (a > b) {
-                return (a);
-            } else {
-                return (b);
-            }
-        }
-        */
 
         /// <summary>
         /// Computes the eigenvalues of the matrix.
@@ -407,10 +210,26 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The eigenvalues of the matrix.</returns>
         /// <seealso cref="Eigensystem"/>
         public Complex[] Eigenvalues () {
-            SquareMatrix A = this.Clone();
-            ReduceToHessenberg(A, null);
+
+            double[] scratch = MatrixAlgorithms.Copy(store, dimension, dimension);
+            SquareMatrixAlgorithms.ReduceToHessenberg(scratch, null, dimension);
+            Complex[] lambdas = SquareMatrixAlgorithms.ExtractEigenvalues(scratch, null, dimension);
+            return (lambdas);
+            
+            //SquareMatrix A = new SquareMatrix(scratch, dimension);
+            //Complex[] eigenvalues = ExtractEigenvalues(A, null);
+            
+            /*
+            //SquareMatrix A = this.Clone();
+            //ReduceToHessenberg(A, null);
+
+            s.Stop();
+            Console.WriteLine(s.ElapsedMilliseconds);
+
+            //A.Write(Console.Out);
             Complex[] eigenvalues = ExtractEigenvalues(A, null);
             return (eigenvalues);
+            */
 
         }
 
@@ -442,13 +261,22 @@ namespace Meta.Numerics.Matrices {
         /// </remarks>
         public ComplexEigensystem Eigensystem () {
 
-            SquareMatrix A = this.Clone();
+            double[] aStore = MatrixAlgorithms.Copy(store, dimension, dimension);
+            double[] qStore = SquareMatrixAlgorithms.CreateUnitMatrix(dimension);
+            SquareMatrixAlgorithms.ReduceToHessenberg(aStore, qStore, dimension);
+            Complex[] eigenvalues = SquareMatrixAlgorithms.ExtractEigenvalues(aStore, qStore, dimension);
+
+            SquareMatrix A = new SquareMatrix(aStore, dimension);
+            SquareMatrix Q = new SquareMatrix(qStore, dimension);
+
+
+            //SquareMatrix A = this.Clone();
             //Debug.WriteLine("Start A=");
             //PrintMatrix(A);
 
             // start with an identity matrix to track the transforms
-            SquareMatrix Q = new SquareMatrix(dimension);
-            for (int i = 0; i < dimension; i++) Q[i, i] = 1.0;
+            //SquareMatrix Q = new SquareMatrix(dimension);
+            //for (int i = 0; i < dimension; i++) Q[i, i] = 1.0;
 
             // balance the matrix
             /*
@@ -462,7 +290,7 @@ namespace Meta.Numerics.Matrices {
             */
 
             // reduce to Hessenberg form
-            ReduceToHessenberg(A, Q);
+            //ReduceToHessenberg(A, Q);
             //Debug.WriteLine("Hessenberg A=");
             //PrintMatrix(A);
             //Debug.WriteLine("Transform Q=");
@@ -471,7 +299,7 @@ namespace Meta.Numerics.Matrices {
             //PrintMatrix(Q.Transpose() * this * Q);
             
             // reduce to Schur form, extracting eigenvalues as we go
-            Complex[] eigenvalues = ExtractEigenvalues(A, Q);
+            //Complex[] eigenvalues = ExtractEigenvalues(A, Q);
             //Debug.WriteLine("Schur A=");
             //PrintMatrix(A);
             //Debug.WriteLine("Transform Q=");
@@ -487,6 +315,8 @@ namespace Meta.Numerics.Matrices {
             return (eigensystem);
 
         }
+
+#if PAST
 
         private static void ReduceToHessenberg (SquareMatrix A, SquareMatrix Q) {
 
@@ -704,6 +534,9 @@ namespace Meta.Numerics.Matrices {
                 //Debug.WriteLine(String.Format("iteration count = {0}", count));
                 //Debug.WriteLine("A = ");
                 //PrintMatrix(A);
+                
+                //Console.WriteLine("count = {0}", count);
+                //A.Write(Console.Out);
 
                 // zero negligible sub-diagonal elements
                 for (int r = a+1; r <= n; r++) {
@@ -816,7 +649,9 @@ namespace Meta.Numerics.Matrices {
         // the sum of the eigenvalues is tr, the product is det
         // keep track of the transformations in Q, which may be null
 
-        private static void FrancisTwoStep (SquareMatrix A, SquareMatrix Q, int a, int n, double tr, double det) {
+        public static void FrancisTwoStep (SquareMatrix A, SquareMatrix Q, int a, int n, double tr, double det) {
+
+            //Write(A);
 
             int dim = A.Dimension;
             //a = 0; // temporary
@@ -884,6 +719,8 @@ namespace Meta.Numerics.Matrices {
                 }
             }
 
+            //Write(A);
+
             // A is now no longer Hessenberg; it has two extra elements in the first column and one extra
             // element in the second. use a series of Householder transforms to fix this
 
@@ -950,6 +787,8 @@ namespace Meta.Numerics.Matrices {
 
             }
 
+            //Write(A);
+
             // now only one non-Hessenberg element remains, in the lower-right corner
             // this can be zerod with a 2D Hessenberg transform or a 2D rotation
 
@@ -1006,9 +845,11 @@ namespace Meta.Numerics.Matrices {
             // finished Francis step; A is now once again Hessenberg,
             // hopefully with smaller sub-diagonal elements
 
-
+            //Write(A);
 
         }
+
+#endif
 
         // given A in real Schur form (i.e. upper triangular except for 2 X 2 blocks along the diagonal), and Q
         // that got us there, extract eigenvectors of A and apply Q to transform them to the eigenvectors of the
@@ -1134,6 +975,596 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+        private static void WilkersonOneStep (double[] store, int dimension, int a, int n) {
+
+            //Console.WriteLine("Before:");
+            //Write(store, dimension, dimension);
+
+            int x = n - 2;
+            int y = n - 1;
+            int z = n;
+            double Axx = MatrixAlgorithms.GetEntry(store, dimension, dimension, x, x);
+            double Axy = MatrixAlgorithms.GetEntry(store, dimension, dimension, x, y);
+            double Axz = MatrixAlgorithms.GetEntry(store, dimension, dimension, x, z);
+            double Ayx = MatrixAlgorithms.GetEntry(store, dimension, dimension, y, x);
+            double Ayy = MatrixAlgorithms.GetEntry(store, dimension, dimension, y, y);
+            double Ayz = MatrixAlgorithms.GetEntry(store, dimension, dimension, y, z);
+            double Azy = MatrixAlgorithms.GetEntry(store, dimension, dimension, z, y);
+            double Azz = MatrixAlgorithms.GetEntry(store, dimension, dimension, z, z);
+
+            
+            double[] roots = CubicRealRoots(
+                -(Axx + Ayy + Azz),
+                Axx * Ayy + Axx * Azz + Ayy * Azz - Axy * Ayx - Ayz * Ayz,
+                Axy * Ayx * Azz + Axx * Ayz * Azy - Axx * Ayy * Azz - Axz * Azy * Ayx
+            );
+
+            double mu = roots[0];
+            for (int i = 1; i < roots.Length; i++) {
+                if (Math.Abs(roots[i] - Azz) < Math.Abs(mu - Azz)) mu = roots[i];
+            }
+            //Console.WriteLine("mu = {0}", mu);
+            
+            ShiftedQRStep(store, dimension, a, n, mu);
+
+            //Console.WriteLine("After:");
+            //Write(store, dimension, dimension);
+
+        }
+
+        private static double[] CubicRealRoots (double a, double b, double c) {
+            double Q = (a * a - 3.0 * b) / 9.0;
+            double R = (2.0 * a * a * a - 9.0 * a * b + 27.0 * c) / 54.0;
+
+            double Q3 = Q * Q * Q;
+            double R2 = R * R;
+
+            //double S = R * R / (Q * Q * Q);
+            //Console.WriteLine("Q={0}, R={1} S={2}", Q, R, S);
+
+            if (Q3 > R2) {
+                double t = Math.Acos(R/Math.Sqrt(Q3));
+                double x0 = -a / 3.0;
+                double x1 = -2.0 * Math.Sqrt(Q);
+                return (new double[] {
+                    x0 + x1 * Math.Cos(t / 3.0),
+                    x0 + x1 * Math.Cos((t + 2.0 * Math.PI) / 3.0),
+                    x0 + x1 * Math.Cos((t - 2.0 * Math.PI) / 3.0)
+                });
+            } else {
+                double A = Math.Pow(Math.Abs(R) + Math.Sqrt(R2 - Q3), 1.0 / 3.0);
+                if (R >= 0.0) A = -A;
+
+                double B;
+                if (A != 0.0) {
+                    B = Q / A;
+                } else {
+                    B = 0.0;
+                }
+                return (new double[] { A + B - a / 3.0 });
+
+                throw new NotImplementedException();
+            }
+        }
+
+        // a Householder reflection matrix is a rank-1 update to the identity.
+        //   P = I - b v v^T
+        // Unitarity requires b = 2 / |v|^2. To anihilate all but the first components of vector x,
+        //   P x = a e_1
+        // we must have
+        //   v = x +/- |x| e_1
+        // that is, all elements the same except the first, from which we have either added or subtracted |x|.
+        // (We choose the sign that avoids canelation.) This makes
+        //   a = -/+ |x|
+        // 
+
+#if PAST
+
+        public static void GenerateHouseholderReflection (double[] store, int offset, int stride, int count, out double a) {
+            double xm = Blas1.dNrm2(store, offset, stride, count);
+            if (xm == 0.0) {
+                a = 0.0;
+            } else {
+                double x0 = store[offset];
+                double u0;
+                if (x0 < 0.0) {
+                    // subtract |x| from (negative) x_0, avoiding cancelation (and making it more negative)
+                    u0 = x0 - xm;
+                    a = xm;
+                } else {
+                    // add |x| to (positive) x_0, avoiding cancelation (and making it more positive)
+                    u0 = x0 + xm;
+                    a = -xm;
+                }
+                store[offset] = u0;
+                // rescale u to make |u|^2 = 2 and avoid having to multiply later
+                // this will not result in division by zero, because xm > 0 and u0 > xm
+                double um = Math.Sqrt(xm * Math.Abs(u0));
+                Blas1.dScal(1.0 / um, store, offset, stride, count);
+            }
+        }
+
+        public static double[] GenerateHouseholderReflection (double[] store, int offset, int stride, int count) {
+
+            // copy the vector, so we have seperate storage for the original column and the Householder vector
+            double[] v = new double[count];
+            Blas1.dCopy(store, offset, stride, v, 0, 1, count);
+
+            // replace v with the Householder vector, and the first element of the original column by the value produced
+            GenerateHouseholderReflection(v, 0, 1, count, out store[offset]);
+
+            // zero the other column elements
+            for (int i = 1; i < count; i++) {
+                offset += stride;
+                store[offset] = 0.0;
+            }
+
+            return (v);
+        }
+
+        public static void ApplyHouseholderReflection (
+            double[] uStore, int uOffset, int uStride,
+            double[] yStore, int yOffset, int yStride,
+            int count
+        ) {
+            // (1 - b v v^T) y = y - (b v^T y) v
+            double s = Blas1.dDot(uStore, uOffset, uStride, yStore, yOffset, yStride, count);
+            Blas1.dAxpy(-s, uStore, uOffset, uStride, yStore, yOffset, yStride, count);
+        }
+
+
+#endif
+        // XXXXX    XXXXX
+        // XXXXX    XXXXX
+        // 00XXX -> X0XXX ->
+        // 000XX    X00XX
+        // 000XX    000XX
+
+        public static void Write (double[] store, int rows, int cols) {
+            Console.WriteLine("M");
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < cols; c++) {
+                    Console.Write("  {0}", store[rows * c + r]);
+                }
+                Console.WriteLine();
+            }
+        }
+
+        public static void Write (SquareMatrix A) {
+            Console.WriteLine("A");
+            for (int r = 0; r < A.Dimension; r++) {
+                for (int c = 0; c < A.Dimension; c++) {
+                    Console.Write("  {0}", A[r,c]);
+                }
+                Console.WriteLine();
+            }
+        }
+
+        /*
+        public static Complex[] ExtractEigenvalues (double[] aStore, double[] qStore, int dimension) {
+
+            int count = 0;
+
+            // keep track of extracted eigenvalues
+            Complex[] lambdas = new Complex[dimension];
+
+            double sum_old = Double.PositiveInfinity;
+
+            int n = dimension - 1;
+            while (n >= 0) {
+
+                //Write(aStore, dimension, dimension);
+
+                // find the lowest decoupled, unreduced block
+                int a = n;
+                double sum = 0.0;
+                while (a > 0) {
+                    double f = Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, a)) +
+                        Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a - 1, a - 1));
+                    double e = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, a - 1);
+                    if ((f + e) == f) {
+                        //Console.WriteLine("zero at {0}", a);
+                        MatrixAlgorithms.SetEntry(aStore, dimension, dimension, a, a - 1, 0.0);
+                        break;
+                    }
+                    sum += Math.Abs(e);
+                    a--;
+                }
+
+                // check for maximum numbers of iterations without finding an eigenvalue
+                if (count > 32) {
+                    Console.WriteLine("max iter");
+                    throw new NonconvergenceException();
+                }
+
+                // we are working between a and n, and our block is at least 3 wide
+                Console.WriteLine("a={0} n={1} sum={2}", a, n, sum);
+
+                // reduce if possible, otherwise do a iteration step
+
+                if (a == n) {
+                    // 1 X 1 block isolated
+                    Console.WriteLine("one block");
+                    lambdas[a] = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, a);
+                    n -= 1;
+                    count = 0;
+                    sum_old = Double.PositiveInfinity;
+                } else if (a == (n - 1)) {
+                    // 2 X 2 block isolated
+                    Console.WriteLine("two blocks");
+                    double Aaa = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, a);
+                    double Aba = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a + 1, a);
+                    double Aab = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, a + 1);
+                    double Abb = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a + 1, a + 1);
+                    // eigenvalues are given by the quadratic formula
+                    double c = (Aaa + Abb) / 2.0;
+                    double d = Aaa * Abb - Aba * Aab;
+                    double q2 = c * c - d;
+                    if (q2 >= 0.0) {
+                        double q = Math.Sqrt(q2);
+                        if (c >= 0.0) {
+                            lambdas[a] = c + q;
+                        } else {
+                            lambdas[a] = c - q;
+                        }
+                        // i tried to do this as c + Math.Sign(c) * q, but when c = 0, Math.Sign(c) = 0, not 1 
+                        lambdas[a + 1] = d / lambdas[a];
+                    } else {
+                        double q = Math.Sqrt(-q2);
+                        lambdas[a] = new Complex(c, q);
+                        lambdas[a + 1] = new Complex(c, -q);
+                    }
+
+                    n -= 2;
+                    count = 0;
+                    sum_old = Double.PositiveInfinity;
+                } else {
+                    Console.WriteLine("iterate");
+                    //if (1.25 * sum < sum_old) {
+                        Console.WriteLine("francis count={0}", count);
+
+                        // use the lower-left 2 X 2 matrix to generate an approximate eigenvalue pair
+
+                        int m = n - 1;
+                        double Amm = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, m, m);
+                        double Amn = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, m, n);
+                        double Anm = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, n, m);
+                        double Ann = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, n, n);
+
+                        // the trace of this 2 X 2 matrix is the sum of its eigenvalues, and its determinate is their product
+
+                        double tr = Amm + Ann;
+                        double det = Amm * Ann - Amn * Anm;
+
+                        if ((count == 8) || (count == 16) || (count == 24)) {
+                            double w = Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, n, n - 1)) +
+                                Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, m, m - 1));
+                            Console.WriteLine("ad hoc w={0}", w);
+                            tr = 2.0 * w;
+                            det = w * w;
+                        }
+                        Console.WriteLine("tr={0} det={1}", tr, det);
+
+                        FrancisTwoStep(aStore, qStore, dimension, a, n, tr, det);
+                        sum_old = sum;
+                    //} else {
+                    //    Console.WriteLine("wilkerson");
+                    //    WilkersonOneStep(aStore, dimension, a, n);
+                    //    sum_old = Double.PositiveInfinity;
+                    //}
+                    count++;
+                }
+
+            }
+
+            return (lambdas);
+
+
+        }
+
+        public static void FrancisTwoStep (double[] aStore, double[] qStore, int dimension, int a, int n, double sum, double product) {
+
+            //Console.WriteLine("Start {0} {1}", a, n);
+            //Write(aStore, dimension, dimension);
+
+            // to apply the implicit Q theorem, get the first column of what (A - mu I)(A - mu* I) would be
+            double[] v = GenerateFirstColumn(aStore, dimension, a, n, sum, product);
+
+            int d = n - a + 1;
+            Debug.Assert(d >= 3);
+
+            // generate a householder reflection for this column, and apply it to the matrix
+            double e;
+            GenerateHouseholderReflection(v, 0, 1, 3, out e);
+
+            // determine P * A
+            for (int c = a; c < dimension; c++) {
+                ApplyHouseholderReflection(v, 0, 1, aStore, dimension * c + a, 1, 3);
+            }
+            // determine A * P
+            for (int r = 0; r <= Math.Min(a + 3, n); r++) {
+                ApplyHouseholderReflection(v, 0, 1, aStore, dimension * a + r, dimension, 3);
+            }
+            // determine Q * P
+            if (qStore != null) {
+                for (int r = 0; r < dimension; r++) {
+                    ApplyHouseholderReflection(v, 0, 1, qStore, dimension * a + r, dimension, 3);
+                }
+            }
+
+            //Write(aStore, dimension, dimension);
+
+            // The matrix now looks like this:
+            // XXXXXX    ABCDEF    AAAXXX
+            // XXXXXX    ABCDEF    BBBXXX
+            // 0XXXXX -> ABCDEF -> CCCXXX
+            // 00XXXX    00XXXX    DDDXXX
+            // 000XXX    000XXX    000XXX
+            // 0000XX    0000XX    0000XX
+            // Note there are three non-Hessenberg elements. These constitute a "bulge". Now "chase the bulge" down the matrix, using
+            // Householder relfections to zero the non-Hessenberg elements of each column in turn.
+
+            for (int k = a; k <= (n - 3); k++) {
+
+                // determine the required Householder reflection
+                v[0] = aStore[dimension * k + (k + 1)];
+                v[1] = aStore[dimension * k + (k + 2)];
+                v[2] = aStore[dimension * k + (k + 3)];
+                GenerateHouseholderReflection(v, 0, 1, 3, out e);
+
+                //v = GenerateHouseholderReflection(aStore, dimension * k + k + 1, 1, 3);
+
+                // determine P * A and A * P
+                aStore[dimension * k + (k + 1)] = e;
+                aStore[dimension * k + (k + 2)] = 0.0;
+                aStore[dimension * k + (k + 3)] = 0.0;
+                for (int c = k + 1; c < dimension; c++) {
+                    ApplyHouseholderReflection(v, 0, 1, aStore, dimension * c + (k + 1), 1, 3);
+                }
+                for (int r = 0; r < Math.Max(k + 4, dimension); r++) {
+                    ApplyHouseholderReflection(v, 0, 1, aStore, dimension * (k + 1) + r, dimension, 3);
+                }
+                // if tracking eigenvalues, determine Q * P
+                if (qStore != null) {
+                    for (int r = 0; r < dimension; r++) {
+                        ApplyHouseholderReflection(v, 0, 1, qStore, dimension * (k + 1) + r, dimension, 3);
+                    }
+                }
+
+            }
+
+            //Write(aStore, dimension, dimension);
+
+            // restoring Householder form in the last column requires only a length-2 Householder reflection
+            // a Givens rotation would be another possibility here
+            int l = n - 2;
+            v[0] = aStore[dimension * l + (l + 1)];
+            v[1] = aStore[dimension * l + (l + 2)];
+            GenerateHouseholderReflection(v, 0, 1, 2, out e);
+            aStore[dimension * l + (l + 1)] = e;
+            aStore[dimension * l + (l + 2)] = 0.0;
+            for (int c = l + 1; c < dimension; c++) {
+                ApplyHouseholderReflection(v, 0, 1, aStore, dimension * c + (l + 1), 1, 2);
+            }
+            for (int r = 0; r <= n; r++) {
+                ApplyHouseholderReflection(v, 0, 1, aStore, dimension * (l + 1) + r, dimension, 2);
+            }
+            if (qStore != null) {
+                for (int r = 0; r < dimension; r++) {
+                    ApplyHouseholderReflection(v, 0, 1, qStore, dimension * (l + 1) + r, dimension, 2);
+                }
+            }
+            //double cos, sin;
+            //GenerateGivensRotation(ref aStore[dimension * l + l + 1], ref aStore[dimension * l + l + 2], out cos, out sin);
+
+            //Write(aStore, dimension, dimension);
+            //Console.WriteLine("Finish");
+        }
+
+        public static double[] GenerateFirstColumn (double[] aStore, int dimension, int a, int n, double sum, double product) {
+
+            // compute the first column of M = (A - \lambda I) (A - \lambda^* I) = A^2 - 2 Re(\lambda) + |\lambda|^2 I
+            // where 2 Re(\lambda) = sum of approximate eigenvalues, |\lambda|^2 = product of approximate eigenvalues
+            // since A is Hessenberg, this has only three entries
+
+            // first get the relevant A entries, which for the first column are from the leading Hesenberg entries
+
+            int b = a + 1;
+            int c = a + 2;
+            double Aaa = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, a);
+            double Aab = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, b);
+            double Aba = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, b, a);
+            double Abb = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, b, b);
+            double Acb = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, c, b);
+
+            // Aba should not be zero, or the problem would have been reduced
+            Debug.Assert(Aba != 0.0);
+
+            // use these entries and the sum and product of eigenvalues of get first column
+
+            double[] u = new double[3];
+            u[0] = Aaa * (Aaa - sum) + Aba * Aab + product;
+            u[1] = Aba * (Aaa + Abb - sum);
+            u[2] = Aba * Acb;
+
+            return (u);
+
+        }
+
+        public static double[] GenerateFirstColumn (double[] aStore, int dimension, int a, int n) {
+
+            // use the lower-left 2 X 2 matrix to generate an approximate eigenvalue pair
+
+            int m = n - 1;
+            double Amm = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, m, m);
+            double Amn = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, m, n);
+            double Anm = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, n, m);
+            double Ann = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, n, n);
+
+            // the trace of this 2 X 2 matrix is the sum of its eigenvalues, and its determinate is their product
+
+            double tr = Amm + Ann;
+            double det = Amm * Ann - Amn * Anm;
+            //Console.WriteLine("tr = {0}, det = {1}", tr, det);
+
+            return (GenerateFirstColumn(aStore, dimension, a, n, tr, det));
+
+        }
+         */
+
+        // generate a Givens rotation matrix, such that
+        //   (  c  s ) ( a ) = ( r )
+        //   ( -s  c ) ( b )   ( 0 )
+        // such rotations are used to zero subdiagonal elements
+
+        // given a and b, this method computes c and s, then sets a to r and b to 0
+
+        private static void GenerateGivensRotation (ref double a, ref double b, out double c, out double s) {
+
+            if (b == 0.0) {
+                c = 1.0;
+                s = 0.0;
+            } else {
+                double r = MoreMath.Hypot(a, b);
+                c = a / r;
+                s = b / r;
+                a = r;
+                b = 0.0;
+            }
+
+        }
+
+        private static void ApplyGivensRotation (
+            double c, double s,
+            double[] store1, int offset1, int stride1,
+            double[] store2, int offset2, int stride2,
+            int count)
+        {
+            int p1 = offset1;
+            int p2 = offset2;
+            for (int i = 0; i < count; i++) {
+                double t = c * store1[p1] + s * store2[p2];
+                store2[p2] = -s * store1[p1] + c * store2[p2];
+                store1[p1] = t;
+                p1 += stride1;
+                p2 += stride2;
+            }
+
+
+        }
+
+        // 1 0 0
+        // 1 1 1
+        // 0 1 1
+        // is a good example, with eigenvalues 0, 1, and 2 and a simple QR decomposition
+
+        // Start with Hessenberg matrix. Apply G1, G2, G3, etc. from right in order to zero sub-diagonal elements.
+        // Then apply G1, G2, G3 from left to complete transform. We don't want to apply G1 from left immediately after
+        // applying it from right, because it would create non-Hessenberg elements (they would become zero eventually,
+        // but we would have to track them in the meantime because they would interact with other elements). That means
+        // we have to keep track of the rotation angles on a stack as we apply them from the right so we have them when
+        // we are ready to apply from the left.
+
+        // XXXX    ABCD    XXXX    XXXX    AAXX    XAAX    XXAA
+        // XXXX    0BCD    0ABC    0XXX    BBXX    XBBX    XXBB
+        // 0XXX -> 0XXX -> 00BC -> 00AB -> 00XX -> 0CCX -> XXCC
+        // 00XX    00XX    00XX    000B    000X    000X    XXDD
+
+        // a is the starting index and n is the final index
+
+        public static void UnshiftedQRStep (double[] store, int dimension, int a, int n) {
+
+            // the count of rotations, which is one more than the dimension of the submatrix
+            int c = n - a;
+            int d = c + 1;
+
+            // create storage for angles
+            double[] cos = new double[c];
+            double[] sin = new double[c];
+
+            // determine Givens rotations and apply them from the left (i.e. on columns)
+            for (int i = 0; i < c; i++) {
+                int k = a + i;
+                GenerateGivensRotation(ref store[dimension * k + k], ref store[dimension * k + k + 1], out cos[i], out sin[i]);
+                //Console.WriteLine("{0} {1}", i, cos[i]);
+                ApplyGivensRotation(cos[i], sin[i], store, dimension * (k + 1) + k, dimension, store, dimension * (k + 1) + (k + 1), dimension, dimension - (k + 1));
+            }
+
+            // now apply them from the right (i.e. on rows)
+            for (int i = 0; i < c; i++) {
+                int k = a + i;
+                ApplyGivensRotation(cos[i], sin[i], store, dimension * k, 1, store, dimension * (k + 1), 1, k + 2);
+            }
+        }
+
+        public static void UnshiftedQRStep (double[,] H, int n) {
+
+            double[] c = new double[n];
+            double[] s = new double[n];
+            for (int k = 0; k < n - 1; k++) {
+                GenerateGivensRotation(ref H[k, k], ref H[k + 1, k], out c[k], out s[k]);
+                Console.WriteLine("{0} {1}", k, c[k]);
+                for (int i = k + 1; i < n; i++) {
+                    double t = c[k] * H[k, i] + s[k] * H[k + 1, i];
+                    H[k + 1, i] = -s[k] * H[k, i] + c[k] * H[k + 1, i];
+                    H[k, i] = t;
+                }
+            }
+            for (int k = 0; k < n - 1; k++) {
+                for (int i = 0; i <= k + 1; i++) {
+                    double t = c[k] * H[i, k] + s[k] * H[i, k + 1];
+                    H[i, k + 1] = -s[k] * H[i, k] + c[k] * H[i, k + 1];
+                    H[i, k] = t;
+                }
+            }
+        }
+
+        public static void ShiftedQRStep (double[,] H, double mu, int n) {
+            for (int k = 0; k < n; k++) {
+                H[k, k] -= mu;
+            }
+            UnshiftedQRStep(H, n);
+            for (int k = 0; k < n; k++) {
+                H[k, k] += mu;
+            }
+        }
+
+        public static void ShiftedQRStep (double[] store, int dimension, int a, int n, double mu) {
+            for (int k = a; k <= n; k++) {
+                store[dimension * k + k] -= mu;
+            }
+            UnshiftedQRStep(store, dimension, a, n);
+            for (int k = a; k <= n; k++) {
+                store[dimension * k + k] += mu;
+            }
+        }
+
+        public static void GolubKahanStep (double[] a, double [] b, int dimension, int f, int n) {
+
+            // t is a temporary storage register for copying, c contains the current non-diagonal element
+            double t, c;
+            
+            // compute the shift
+            double mu = 0.0;
+
+            // compute the Givens rotation that would zero the first column of B^T B, which has just two entries
+            double p = a[f] * a[f] - mu;
+            double q = a[f] * b[f];
+            double cos, sin;
+            GenerateGivensRotation(ref p, ref q, out cos, out sin);
+
+            // apply it to B (we don't call ApplyGivensRotation because 
+            t = cos * a[f] - sin * b[f]; b[f] = sin * a[f] + cos * b[f]; a[f] = t;
+            c = -sin * a[f + 1];
+            a[f + 1] = cos * a[f + 1];
+
+            // now "chase the bulge" down the bidiagonal; it alternates sides
+
+
+
+        }
+
+
 #if FUTURE
 
         private static double[] Balance (SquareMatrix A) {
@@ -1179,28 +1610,6 @@ namespace Meta.Numerics.Matrices {
         }
 
 #endif
-
-        [Conditional("DEBUG")]
-        internal static void PrintMatrix (IMatrix M) {
-            for (int r = 0; r < M.RowCount; r++) {
-                for (int c = 0; c < M.ColumnCount; c++) {
-                    Debug.Write(String.Format("{0,12:g8} ", M[r, c]));
-                }
-                Debug.WriteLine(String.Empty);
-            }
-            Debug.WriteLine("--");
-        }
-        
-
-        [Conditional("DEBUG")]
-        private static void PrintVector (IList<double> v) {
-            for (int i = 0; i < v.Count; i++) {
-                Debug.Write(String.Format("{0} ", v[i]));
-            }
-            Debug.WriteLine(String.Empty);
-            Debug.WriteLine("-");
-        }
-
 
 
         // given a matrix column, returns the properly normalized vector defining the Householder transform that zeros it
@@ -1295,180 +1704,63 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>A QR decomposition of the matrix.</returns>
         public SquareQRDecomposition QRDecomposition () {
-
-            double[] rStore = MatrixAlgorithms.Clone(store, dimension, dimension);
-
-            double[] qtStore = new double[dimension * dimension];
-            for (int i = 0; i < dimension; i++) { qtStore[dimension * i + i] = 1.0; }
-
+            double[] rStore = MatrixAlgorithms.Copy(store, dimension, dimension);
+            double[] qtStore = SquareMatrixAlgorithms.CreateUnitMatrix(dimension);
             MatrixAlgorithms.QRDecompose(rStore, qtStore, dimension, dimension);
-
             return (new SquareQRDecomposition(qtStore, rStore, dimension));
-
         }
 
         // operators
 
-        // equality
-
         /// <summary>
-        /// Determines whether two square matrices are equal.
+        /// Adds two real, square matrices.
         /// </summary>
-        /// <param name="M1">The first matrix.</param>
-        /// <param name="M2">The second matrix.</param>
-        /// <returns>True if <paramref name="M1"/> and <paramref name="M2"/> are equal, otherwise false.</returns>
-        public static bool operator == (SquareMatrix M1, SquareMatrix M2) {
-            return (Matrix.Equals(M1, M2));
-        }
-
-        /// <summary>
-        /// Determines whether two square matrices are not equal.
-        /// </summary>
-        /// <param name="M1">The first matrix.</param>
-        /// <param name="M2">The second matrix.</param>
-        /// <returns>False if <paramref name="M1"/> and <paramref name="M2"/> are equal, otherwise true.</returns>
-        public static bool operator != (SquareMatrix M1, SquareMatrix M2) {
-            return (!Matrix.Equals(M1, M2));
-        }
-
-        /// <summary>
-        /// Determines whether the given object is an equal matrix.
-        /// </summary>
-        /// <param name="obj">The object to compare.</param>
-        /// <returns>True if <paramref name="obj"/> is an equal matrix, otherwise false.</returns>
-        public override bool Equals (object obj) {
-            return (Matrix.Equals(this, obj as IMatrix));
-        }
-
-        /// <inheritdoc />
-        public override int GetHashCode () {
-            return base.GetHashCode();
-        }
-
-        // matrix arithmetic
-
-        internal static SquareMatrix Add (ISquareMatrix M1, ISquareMatrix M2) {
-            if (M1.Dimension != M2.Dimension) throw new DimensionMismatchException();
-            SquareMatrix N = new SquareMatrix(M1.Dimension);
-            for (int r = 0; r < N.Dimension; r++) {
-                for (int c = 0; c < N.Dimension; c++) {
-                    N[r, c] = M1[r, c] + M2[r, c];
-                }
-            }
-            return (N);
-        }
-
-
-        /// <summary>
-        /// Computes the sum of two square matrices.
-        /// </summary>
-        /// <param name="M1">The first matrix.</param>
-        /// <param name="M2">The second matrix.</param>
-        /// <returns>The sum <paramref name="M1"/> + <paramref name="M2"/>.</returns>
-        /// <remarks>
-        /// <para>Matrix addition is an O(N<sup>2</sup>) process.</para>
-        /// </remarks>
-        public static SquareMatrix operator + (SquareMatrix M1, SquareMatrix M2) {
-            return (Add(M1, M2));
-        }
-
-        public static SquareMatrix operator + (SquareMatrix M1, SymmetricMatrix M2) {
-            return (Add(M1, M2));
-        }
-        public static SquareMatrix operator + (SymmetricMatrix M1, SquareMatrix M2) {
-            return (Add(M1, M2));
-        }
-
-        internal static SquareMatrix Subtract (ISquareMatrix M1, ISquareMatrix M2) {
-            if (M1.Dimension != M2.Dimension) throw new DimensionMismatchException();
-            SquareMatrix N = new SquareMatrix(M1.Dimension);
-            for (int r = 0; r < N.Dimension; r++) {
-                for (int c = 0; c < N.Dimension; c++) {
-                    N[r, c] = M1[r, c] - M2[r, c];
-                }
-            }
-            return (N);
+        /// <param name="A">The first matrix.</param>
+        /// <param name="B">The second matrix.</param>
+        /// <returns>The sum matrix <paramref name="A"/> + <paramref name="B"/>.</returns>
+        public static SquareMatrix operator + (SquareMatrix A, SquareMatrix B) {
+            if (A == null) throw new ArgumentNullException("A");
+            if (B == null) throw new ArgumentNullException("B");
+            if (A.dimension != B.dimension) throw new DimensionMismatchException();
+            double[] abStore = MatrixAlgorithms.Add(A.store, B.store, A.dimension, A.dimension);
+            return (new SquareMatrix(abStore, A.dimension));
         }
 
         /// <summary>
         /// Computes the difference of two square matrices.
         /// </summary>
-        /// <param name="M1">The first matrix.</param>
-        /// <param name="M2">The second matrix.</param>
-        /// <returns>The difference <paramref name="M1"/> - <paramref name="M2"/>.</returns>
+        /// <param name="A">The first matrix.</param>
+        /// <param name="B">The second matrix.</param>
+        /// <returns>The difference <paramref name="A"/> - <paramref name="B"/>.</returns>
         /// <remarks>
         /// <para>Matrix subtraction is an O(N<sup>2</sup>) process.</para>
         /// </remarks>
-        public static SquareMatrix operator - (SquareMatrix M1, SquareMatrix M2) {
-            return (Subtract(M1, M2));
-        }
-
-        public static SquareMatrix operator - (SquareMatrix M1, SymmetricMatrix M2) {
-            return (Subtract(M1, M2));
-        }
-        public static SquareMatrix operator - (SymmetricMatrix M1, SquareMatrix M2) {
-            return (Subtract(M1, M2));
-        }
-
-        internal static SquareMatrix Multiply (ISquareMatrix M1, ISquareMatrix M2) {
-            if (M1.Dimension != M2.Dimension) throw new DimensionMismatchException();
-            SquareMatrix N = new SquareMatrix(M1.Dimension);
-            for (int r = 0; r < N.Dimension; r++) {
-                for (int c = 0; c < N.Dimension; c++) {
-                    // using a temp register, instead of accessing N[r,c] inside loop, buys nearly a factor of 2 in performance
-                    double t = 0.0; 
-                    for (int i = 0; i < N.Dimension; i++) {
-                        t += M1[r, i] * M2[i, c];
-                    }
-                    N[r, c] = t;
-                }
-            }
-            return (N);
+        public static SquareMatrix operator - (SquareMatrix A, SquareMatrix B) {
+            if (A == null) throw new ArgumentNullException("A");
+            if (B == null) throw new ArgumentNullException("B");
+            if (A.dimension != B.dimension) throw new DimensionMismatchException();
+            double[] abStore = MatrixAlgorithms.Subtract(A.store, B.store, A.dimension, A.dimension);
+            return (new SquareMatrix(abStore, A.dimension));
         }
 
         /// <summary>
         /// Computes the product of two square matrices.
         /// </summary>
-        /// <param name="M1">The first matrix.</param>
-        /// <param name="M2">The second matrix.</param>
-        /// <returns>The product <paramref name="M1"/> * <paramref name="M2"/>.</returns>
+        /// <param name="A">The first matrix.</param>
+        /// <param name="B">The second matrix.</param>
+        /// <returns>The product <paramref name="A"/> * <paramref name="B"/>.</returns>
         /// <remarks>
         /// <para>Note that matrix multiplication is not commutative, i.e. M1*M2 is generally not the same as M2*M1.</para>
         /// <para>Matrix multiplication is an O(N<sup>3</sup>) process.</para>
         /// </remarks>
-        public static SquareMatrix operator * (SquareMatrix M1, SquareMatrix M2) {
-            if (M1.Dimension != M2.Dimension) throw new DimensionMismatchException();
-            SquareMatrix N = new SquareMatrix(M1.Dimension);
-            for (int r = 0; r < N.Dimension; r++) {
-                for (int c = 0; c < N.Dimension; c++) {
-                    // using a temp register, instead of accessing N[r,c] inside loop, buys nearly a factor of 2 in performance!
-                    double t = 0.0;
-                    for (int i = 0; i < N.Dimension; i++) {
-                        t += M1.GetEntry(r, i) * M2.GetEntry(i, c);
-                    }
-                    N.SetEntry(r, c, t);
-                }
-            }
-            return (N);
-            // return(Multiply(M1, M2));
+        public static SquareMatrix operator * (SquareMatrix A, SquareMatrix B) {
+            // this is faster than the base operator, because it knows about the underlying structure
+            if (A == null) throw new ArgumentNullException("A");
+            if (B == null) throw new ArgumentNullException("B");
+            if (A.dimension != B.dimension) throw new DimensionMismatchException();
+            double[] abStore = MatrixAlgorithms.Multiply(A.store, A.dimension, A.dimension, B.store, B.dimension, B.dimension);
+            return (new SquareMatrix(abStore, A.dimension));
         }
-
-        public static SquareMatrix operator * (SquareMatrix M1, SymmetricMatrix M2) {
-            return (Multiply(M1, M2));
-        }
-
-        public static SquareMatrix operator * (SymmetricMatrix M1, SquareMatrix M2) {
-            return (Multiply(M1, M2));
-        }
-
-        public static SquareMatrix operator * (SquareMatrix M1, TridiagonalMatrix M2) {
-            return (Multiply(M1, M2));
-        }
-
-        public static SquareMatrix operator * (TridiagonalMatrix M1, SquareMatrix M2) {
-            return (Multiply(M1, M2));
-        }
-
 
         // mixed arithmetic
 
@@ -1502,22 +1794,18 @@ namespace Meta.Numerics.Matrices {
             return (Multiply(1.0 / x, M));
         }
 
-#if SHO
-        /// <summary>
-        /// Produces the representation of the matrix for the Python interactive console.
-        /// </summary>
-        /// <returns>A string representation of the matrix.</returns>
-        public string __repr__ () {
-            StringWriter writer = new StringWriter();
-            Matrix.WriteMatrix(this, writer);
-            return (writer.ToString());
-        }
-#endif
-
     }
 
 
-    internal static class SquareMatrixAlgorithms {
+    public static class SquareMatrixAlgorithms {
+
+        public static double[] CreateUnitMatrix (int dimension) {
+            double[] store = MatrixAlgorithms.AllocateStorage(dimension, dimension);
+            for (int i = 0; i < dimension; i++) {
+                store[dimension * i + i] = 1.0;
+            }
+            return (store);
+        }
 
         // on input:
         // store contains the matrix in column-major order (must have the length dimension^2)
@@ -1527,7 +1815,7 @@ namespace Meta.Numerics.Matrices {
         // on output:
         // store is replaced by the L and U matrices, L in the lower-left triangle (with 1s along the diagonal), U in the upper-right triangle
         // permutation is replaced by the row permutation, and parity be the parity of that permutation
-        
+
         // A = PLU
 
         public static void LUDecompose (double[] store, int[] permutation, ref int parity, int dimension) {
@@ -1640,60 +1928,432 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
-    }
+        // The reduction to Hessenberg form via a similiarity transform proceeds as follows. A Householder reflection can
+        // zero the non-Householder elements in the first column. Since this is a similiarity transform, we have to apply
+        // it from the other side as well. The letters indicate which elements are mixed by each transform.
 
-    /*
-    public class QRDecomposition {
+        // XXXXX    XXXXX    XFFFF
+        // XXXXX    ABCDE    AGGGG    
+        // XXXXX -> 0BCDE -> 0HHHH
+        // XXXXX    0BCDE    0IIII
+        // XXXXX    0BCDE    0JJJJ
 
-        private double[,] qr;
+        // Note that if we had tried to zero all the subdiagonal elements, rather than just the (sub+1)-diagonal elements, then the
+        // applicaion of the Householder reflection from the other side would have messed with our zeros. But because we only tried
+        // for Hessenberg, not upper-right-triangular, form, our zeros are safe. We then do it again for the next column.
 
-        public int Dimension {
-            get {
-                return (qr.GetLength(0));
-            }
-        }
+        // XXXXX    XXXXX    XXEEE
+        // XXXXX    XXXXX    XXFFF
+        // 0XXXX -> 0ABCD -> 0AGGG
+        // 0XXXX    00BCD    00HHH
+        // 0XXXX    00BCD    00III
 
-        public SquareMatrix QMatrix () {
+        // And so on until we are done.
 
-            // create matrix storage, initialized to the unit matrix
-            SquareMatrix Q = new SquareMatrix(Dimension);
-            for (int i = 0; i < Dimension; i++) {
-                Q[i, i] = 1.0;
-            }
+        public static void ReduceToHessenberg (double[] aStore, double[] vStore, int dim) {
 
-            // loop over Householder transforms
-            for (int n = Dimension - 1; n >= 0; n--) {
+            int dm2 = dim - 2;
+            for (int k = 0; k < dm2; k++) {
 
-                // determine Householder norm
-                double s = 1.0;
-                for (int i = n + 1; i < Dimension; i++) {
-                    s += qr[i, n] * qr[i,n];
+                // determine a Householder reflection to zero the (sub+1)-diagonal elements of the current column
+                int offset = dim * k + (k + 1);
+                int length = dim - (k + 1);
+                double a;
+                GenerateHouseholderReflection(aStore, offset, 1, length, out a);
+
+                // determine P * A
+                for (int c = k + 1; c < dim; c++) {
+                    ApplyHouseholderReflection(aStore, offset, 1, aStore, dim * c + (k + 1), 1, length);
                 }
-                s = s / 2.0;
+                // determine A * P
+                for (int r = 0; r < dim; r++) {
+                    ApplyHouseholderReflection(aStore, offset, 1, aStore, dim * (k + 1) + r, dim, length);
 
-                // multiply by previous Q
-                for (int j = n; j < Dimension; j++) {
-                    double sum = Q[n, j];
-                    for (int k = n + 1; k < Dimension; k++) {
-                        sum += qr[k, n] * Q[k, j];
-                    }
-                    sum = sum / s;
-                    Q[n, j] -= sum;
-                    for (int i = n + 1; i < Dimension; i++) {
-                        Q[i, j] -= qr[i, n] * sum;
+                }
+
+                // if we are keeping track of the transformation, determine V * P
+                if (vStore != null) {
+                    for (int r = 0; r < dim; r++) {
+                        ApplyHouseholderReflection(aStore, offset, 1, vStore, dim * (k + 1) + r, dim, length);
                     }
                 }
+
+                // We are done with our Householder vector, so we can overwrite the space we were using for it with the values produced by
+                // the reflection.
+                aStore[offset] = a;
+                for (int i = 1; i < length; i++) {
+                    aStore[offset + i] = 0.0;
+                }
+                //aStore[dim * k + (k + 1)] = a;
+                //for (int i = k + 2; i < dim; i++) {
+                //    MatrixAlgorithms.SetEntry(aStore, dim, dim, i, k, 0.0);
+                //}
+                // Not having done this earlier is not a problem because the values in that column do not come into play when computing
+                // the effects of the transform on the other entries, i.e. it doesn't "mix" with the other entries
+
             }
-            return (Q);
+
 
         }
 
-        internal QRDecomposition (double[,] qr) {
-            this.qr = qr;
+        // a Householder reflection matrix is a rank-1 update to the identity.
+        //   P = I - b v v^T
+        // Unitarity requires b = 2 / |v|^2. To anihilate all but the first components of vector x,
+        //   P x = a e_1
+        // we must have
+        //   v = x +/- |x| e_1
+        // that is, all elements the same except the first, from which we have either added or subtracted |x|.
+        // (We choose the sign that avoids canelation.) This makes
+        //   a = -/+ |x|
+        // 
+
+        public static void GenerateHouseholderReflection (double[] store, int offset, int stride, int count, out double a) {
+            double xm = Blas1.dNrm2(store, offset, stride, count);
+            if (xm == 0.0) {
+                a = 0.0;
+            } else {
+                double x0 = store[offset];
+                double u0;
+                if (x0 < 0.0) {
+                    // subtract |x| from (negative) x_0, avoiding cancelation (and making it more negative)
+                    u0 = x0 - xm;
+                    a = xm;
+                } else {
+                    // add |x| to (positive) x_0, avoiding cancelation (and making it more positive)
+                    u0 = x0 + xm;
+                    a = -xm;
+                }
+                store[offset] = u0;
+                // rescale u to make |u|^2 = 2 and avoid having to multiply later
+                // this will not result in division by zero, because xm > 0 and u0 > xm
+                double um = Math.Sqrt(xm * Math.Abs(u0));
+                Blas1.dScal(1.0 / um, store, offset, stride, count);
+            }
+        }
+
+        public static void ApplyHouseholderReflection (
+            double[] uStore, int uOffset, int uStride,
+            double[] yStore, int yOffset, int yStride,
+            int count
+        ) {
+            // (1 - b v v^T) y = y - (b v^T y) v
+            double s = Blas1.dDot(uStore, uOffset, uStride, yStore, yOffset, yStride, count);
+            Blas1.dAxpy(-s, uStore, uOffset, uStride, yStore, yOffset, yStride, count);
+        }
+
+        // EIGENVALUE ALGORITHMS 
+
+        public static Complex[] ExtractEigenvalues (double[] aStore, double[] qStore, int dimension) {
+
+            int count = 0;
+
+            // keep track of extracted eigenvalues
+            Complex[] lambdas = new Complex[dimension];
+
+            double sum_old = Double.PositiveInfinity;
+
+            int n = dimension - 1;
+            while (n >= 0) {
+
+                //Write(aStore, dimension, dimension);
+
+                // find the lowest decoupled, unreduced block
+                int a = n;
+                double sum = 0.0;
+                while (a > 0) {
+                    double f = Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, a)) +
+                        Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a - 1, a - 1));
+                    double e = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, a - 1);
+                    if ((f + e) == f) {
+                        //Console.WriteLine("zero at {0}", a);
+                        MatrixAlgorithms.SetEntry(aStore, dimension, dimension, a, a - 1, 0.0);
+                        break;
+                    }
+                    sum += Math.Abs(e);
+                    a--;
+                }
+
+                // check for maximum numbers of iterations without finding an eigenvalue
+                if (count > 32) {
+                    Console.WriteLine("max iter");
+                    throw new NonconvergenceException();
+                }
+
+                // we are working between a and n, and our block is at least 3 wide
+                Console.WriteLine("a={0} n={1} sum={2}", a, n, sum);
+
+                // reduce if possible, otherwise do a iteration step
+
+                if (a == n) {
+                    // 1 X 1 block isolated
+                    Console.WriteLine("one block");
+                    lambdas[a] = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, a);
+                    n -= 1;
+                    count = 0;
+                    sum_old = Double.PositiveInfinity;
+                } else if (a == (n - 1)) {
+                    // 2 X 2 block isolated
+                    Console.WriteLine("two blocks");
+                    double Aaa = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, a);
+                    double Aba = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a + 1, a);
+                    double Aab = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, a + 1);
+                    double Abb = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a + 1, a + 1);
+                    // eigenvalues are given by the quadratic formula
+                    double c = (Aaa + Abb) / 2.0;
+                    double d = Aaa * Abb - Aba * Aab;
+                    double q2 = c * c - d;
+                    if (q2 >= 0.0) {
+                        double q = Math.Sqrt(q2);
+                        if (c >= 0.0) {
+                            lambdas[a] = c + q;
+                        } else {
+                            lambdas[a] = c - q;
+                        }
+                        // i tried to do this as c + Math.Sign(c) * q, but when c = 0, Math.Sign(c) = 0, not 1 
+                        lambdas[a + 1] = d / lambdas[a];
+                    } else {
+                        double q = Math.Sqrt(-q2);
+                        lambdas[a] = new Complex(c, q);
+                        lambdas[a + 1] = new Complex(c, -q);
+                    }
+
+                    n -= 2;
+                    count = 0;
+                    sum_old = Double.PositiveInfinity;
+                } else {
+                    Console.WriteLine("iterate");
+                    //if (1.25 * sum < sum_old) {
+                    Console.WriteLine("francis count={0}", count);
+
+                    // use the lower-left 2 X 2 matrix to generate an approximate eigenvalue pair
+
+                    int m = n - 1;
+                    double Amm = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, m, m);
+                    double Amn = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, m, n);
+                    double Anm = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, n, m);
+                    double Ann = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, n, n);
+
+                    // the trace of this 2 X 2 matrix is the sum of its eigenvalues, and its determinate is their product
+
+                    double tr = Amm + Ann;
+                    double det = Amm * Ann - Amn * Anm;
+
+                    if ((count == 8) || (count == 16) || (count == 24)) {
+                        double w = Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, n, n - 1)) +
+                            Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, m, m - 1));
+                        Console.WriteLine("ad hoc w={0}", w);
+                        tr = 2.0 * w;
+                        det = w * w;
+                    }
+                    Console.WriteLine("tr={0} det={1}", tr, det);
+
+                    FrancisTwoStep(aStore, qStore, dimension, a, n, tr, det);
+                    sum_old = sum;
+                    //} else {
+                    //    Console.WriteLine("wilkerson");
+                    //    WilkersonOneStep(aStore, dimension, a, n);
+                    //    sum_old = Double.PositiveInfinity;
+                    //}
+                    count++;
+                }
+
+            }
+
+            return (lambdas);
+
+
+        }
+
+        private static void FrancisTwoStep (double[] aStore, double[] qStore, int dimension, int a, int n, double sum, double product) {
+
+            //Console.WriteLine("Start {0} {1}", a, n);
+            //Write(aStore, dimension, dimension);
+
+            // to apply the implicit Q theorem, get the first column of what (A - mu I)(A - mu* I) would be
+            double[] v = GenerateFirstColumn(aStore, dimension, a, n, sum, product);
+
+            int d = n - a + 1;
+            Debug.Assert(d >= 3);
+
+            // generate a householder reflection for this column, and apply it to the matrix
+            double e;
+            GenerateHouseholderReflection(v, 0, 1, 3, out e);
+
+            // determine P * A
+            for (int c = a; c < dimension; c++) {
+                ApplyHouseholderReflection(v, 0, 1, aStore, dimension * c + a, 1, 3);
+            }
+            // determine A * P
+            for (int r = 0; r <= Math.Min(a + 3, n); r++) {
+                ApplyHouseholderReflection(v, 0, 1, aStore, dimension * a + r, dimension, 3);
+            }
+            // determine Q * P
+            if (qStore != null) {
+                for (int r = 0; r < dimension; r++) {
+                    ApplyHouseholderReflection(v, 0, 1, qStore, dimension * a + r, dimension, 3);
+                }
+            }
+
+            //Write(aStore, dimension, dimension);
+
+            // The matrix now looks like this:
+            // XXXXXX    ABCDEF    AAAXXX
+            // XXXXXX    ABCDEF    BBBXXX
+            // 0XXXXX -> ABCDEF -> CCCXXX
+            // 00XXXX    00XXXX    DDDXXX
+            // 000XXX    000XXX    000XXX
+            // 0000XX    0000XX    0000XX
+            // Note there are three non-Hessenberg elements. These constitute a "bulge". Now "chase the bulge" down the matrix, using
+            // Householder relfections to zero the non-Hessenberg elements of each column in turn.
+
+            for (int k = a; k <= (n - 3); k++) {
+
+                // determine the required Householder reflection
+                v[0] = aStore[dimension * k + (k + 1)];
+                v[1] = aStore[dimension * k + (k + 2)];
+                v[2] = aStore[dimension * k + (k + 3)];
+                GenerateHouseholderReflection(v, 0, 1, 3, out e);
+
+                //v = GenerateHouseholderReflection(aStore, dimension * k + k + 1, 1, 3);
+
+                // determine P * A and A * P
+                aStore[dimension * k + (k + 1)] = e;
+                aStore[dimension * k + (k + 2)] = 0.0;
+                aStore[dimension * k + (k + 3)] = 0.0;
+                for (int c = k + 1; c < dimension; c++) {
+                    ApplyHouseholderReflection(v, 0, 1, aStore, dimension * c + (k + 1), 1, 3);
+                }
+                for (int r = 0; r < Math.Max(k + 4, dimension); r++) {
+                    ApplyHouseholderReflection(v, 0, 1, aStore, dimension * (k + 1) + r, dimension, 3);
+                }
+                // if tracking eigenvalues, determine Q * P
+                if (qStore != null) {
+                    for (int r = 0; r < dimension; r++) {
+                        ApplyHouseholderReflection(v, 0, 1, qStore, dimension * (k + 1) + r, dimension, 3);
+                    }
+                }
+
+            }
+
+            //Write(aStore, dimension, dimension);
+
+            // restoring Householder form in the last column requires only a length-2 Householder reflection
+            // a Givens rotation would be another possibility here
+            int l = n - 2;
+            v[0] = aStore[dimension * l + (l + 1)];
+            v[1] = aStore[dimension * l + (l + 2)];
+            GenerateHouseholderReflection(v, 0, 1, 2, out e);
+            aStore[dimension * l + (l + 1)] = e;
+            aStore[dimension * l + (l + 2)] = 0.0;
+            for (int c = l + 1; c < dimension; c++) {
+                ApplyHouseholderReflection(v, 0, 1, aStore, dimension * c + (l + 1), 1, 2);
+            }
+            for (int r = 0; r <= n; r++) {
+                ApplyHouseholderReflection(v, 0, 1, aStore, dimension * (l + 1) + r, dimension, 2);
+            }
+            if (qStore != null) {
+                for (int r = 0; r < dimension; r++) {
+                    ApplyHouseholderReflection(v, 0, 1, qStore, dimension * (l + 1) + r, dimension, 2);
+                }
+            }
+            //double cos, sin;
+            //GenerateGivensRotation(ref aStore[dimension * l + l + 1], ref aStore[dimension * l + l + 2], out cos, out sin);
+
+            //Write(aStore, dimension, dimension);
+            //Console.WriteLine("Finish");
+        }
+
+        private static double[] GenerateFirstColumn (double[] aStore, int dimension, int a, int n, double sum, double product) {
+
+            // compute the first column of M = (A - \lambda I) (A - \lambda^* I) = A^2 - 2 Re(\lambda) + |\lambda|^2 I
+            // where 2 Re(\lambda) = sum of approximate eigenvalues, |\lambda|^2 = product of approximate eigenvalues
+            // since A is Hessenberg, this has only three entries
+
+            // first get the relevant A entries, which for the first column are from the leading Hesenberg entries
+
+            int b = a + 1;
+            int c = a + 2;
+            double Aaa = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, a);
+            double Aab = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, b);
+            double Aba = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, b, a);
+            double Abb = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, b, b);
+            double Acb = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, c, b);
+
+            // Aba should not be zero, or the problem would have been reduced
+            Debug.Assert(Aba != 0.0);
+
+            // use these entries and the sum and product of eigenvalues of get first column
+
+            double[] u = new double[3];
+            u[0] = Aaa * (Aaa - sum) + Aba * Aab + product;
+            u[1] = Aba * (Aaa + Abb - sum);
+            u[2] = Aba * Acb;
+
+            return (u);
+
+        }
+
+        // SVD
+
+        // Bidiagonalization uses seperate left and right Householder reflections to bring a matrix into a form of bandwidth two.
+
+        // XXXXX    ABCDE    XA000    XX000    XX000
+        // XXXXX    0BCDE    0BBBB    0ABCD    0XA00
+        // XXXXX    0BCDE    0CCCC    00BCD    00BBB
+        // XXXXX -> 0BCDE -> 0DDDD -> 00BCD -> 00CCC -> etc
+        // XXXXX    0BCDE    0EEEE    00BCD    00DDD
+        // XXXXX    0BCDE    0FFFF    00BCD    00EEE
+        // XXXXX    0BCDE    0GGGG    00BCD    00FFF
+
+
+        // The end result is B = U A V, where U and V are different (so this isn't a similiarity transform) orthogonal matrices.
+
+        // Note that we can't get fully diagonal with this approach, because if the right transform tried to zero the first superdiagonal
+        // element, it would interfere with the zeros already created.
+
+        // This method gradually replaces the matrix elements with the elements of the Householder reflections used.
+        // The resulting diagonal and first superdiagonal elements are returned in d and e.
+
+        public static void Bidiagonlize (double[] store, int rows, int cols) {
+
+            Debug.Assert(rows >= cols);
+
+            for (int k = 0; k < cols; k++) {
+
+                // generate a householder reflection which, when applied from the left, will zero sub-diagonal elements in the kth column
+                // use those elements to store the reflection vector; store the resulting diagonal element seperately
+                double a;
+                GenerateHouseholderReflection(store, rows * k + k, 1, rows - k, out a);
+
+                // apply that reflection to all the columns; only subsequent ones are affected since preceeding ones
+                // contain only zeros in the subdiagonal rows
+                for (int c = k + 1; c < cols; c++) {
+                    ApplyHouseholderReflection(store, rows * k + k, 1, store, rows * c + k, 1, rows - k);
+                }
+                store[rows * k + k] = a;
+
+                if ((k + 1) < cols) {
+                    // generate a Householder reflection which, when applied from the right, will zero (super+1)-diagonal elements in the kth row
+                    // again, store the elements of the reflection vector in the zeroed matrix elements and store the resulting superdiagonal element seperately
+                    double b;
+                    GenerateHouseholderReflection(store, rows * (k + 1) + k, rows, cols - (k + 1), out b);
+                    // apply the reflection to all the rows; only subsequent ones are affected since the preceeding ones contain only zeros in the
+                    // affected columns; the already-zeroed column elements are not distrubed because those columns are not affected
+                    // this restriction is why we cannot fully diagonalize using this transform; if we tried to zero all the super-diagonal
+                    for (int r = k + 1; r < rows; r++) {
+                        ApplyHouseholderReflection(store, rows * (k + 1) + k, rows, store, rows * (k + 1) + r, rows, cols - (k + 1));
+                    }
+                    store[rows * (k + 1) + k] = b;
+                }
+
+
+            }
+
+
+
         }
 
     }
-    */
 
     /*
      * Some test Hessenberg and eigenvalue problems:

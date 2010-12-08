@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Meta.Numerics;
 using Meta.Numerics.Functions;
 
-namespace Meta.Numerics.Statistics {
+namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
     /// Represents the distribution of Fisher's F-statistic.

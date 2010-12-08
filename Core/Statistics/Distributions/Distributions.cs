@@ -6,7 +6,7 @@ using Meta.Numerics;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
 
-namespace Meta.Numerics.Statistics {
+namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
     /// Represents a probability distribution.
@@ -51,6 +51,67 @@ namespace Meta.Numerics.Statistics {
             return(y);
             // since we have the PDF = CDF', change to a method using Newton's method
 		}
+
+        public static double InverseLeftProbability (Distribution d, double x, double P) {
+            double x0 = d.Support.LeftEndpoint;
+            double x1 = d.Support.RightEndpoint;
+            double dx = Double.PositiveInfinity;
+            for (int i = 0; i < 128; i++) {
+                // remember values going in, for comparison
+                double x_old = x;
+                double dx_old = dx;
+                Console.WriteLine("[{0} {1} {2}]", x0, x, x1);
+                double F = d.LeftProbability(x) - P;
+                // since P is monotonic, we can pull bounds in on the basis of sgn(F)
+                if (F < 0) {
+                    x0 = x;
+                } else {
+                    x1 = x;
+                }
+                double DF = d.ProbabilityDensity(x);
+                dx = -F / DF;
+                Console.WriteLine("F={0} DF={1} dx={2}", F, DF, dx);
+                x = x_old + dx;
+                Console.WriteLine("x_old={0} x={1}", x_old, x);
+                // if a Newton step takes us out of bounds, use bisection instead
+                //if ((dx < 0) && (xp < x0)) xp = (x0 + x) / 2.0;
+                //if ((dx > 0) && (xp > x1)) xp = (x + x1) / 2.0;
+                // if Newton takes us out of bounds, or we are not converging fast enough, use bisection instead
+                if (x < x0) {
+                    Console.WriteLine("B1");
+                    x = (x0 + x_old) / 2.0;
+                } else if (x > x1) {
+                    Console.WriteLine("B2");
+                    x = (x_old + x1) / 2.0;
+                } else if (2.0 * Math.Abs(dx) > Math.Abs(dx_old)) {
+                    Console.WriteLine("B3");
+                    if (F < 0) {
+                        x = (x0 + x) / 2.0;
+                    } else {
+                        x = (x + x1) / 2.0;
+                    }
+                    if (Math.Sign(dx) != Math.Sign(x - x_old)) Console.WriteLine("WRONG WAY");
+                    //if (dx < 0) {
+                    //    if (!Double.IsInfinity(x0)) {
+                    //        x = (x0 + x_old) / 2.0;
+                    //    }
+                    //} else {
+                    //    if (!Double.IsInfinity(x1)) {
+                    //        x = (x_old + x1) / 2.0;
+                    //    }
+                    //}
+                    //if (F < 0) {
+                    //    x = (x0 + x_old) / 2.0;
+                    //} else {
+                    //    x = (x_old + x1) / 2.0;
+                    //}
+                }
+                // return when we have converged
+                Console.WriteLine("{0} vs. {1}", x, x_old);
+                if (x == x_old) return (x);
+            }
+            throw new NonconvergenceException();
+        }
 
         /// <summary>
         /// Returns the given moment of the distribution.
@@ -201,11 +262,12 @@ namespace Meta.Numerics.Statistics {
 
     }
 
+#if FUTURE
     /// <summary>
     /// Represents the distribution of the Kolmogorov-Smirnov D statistic.
     /// </summary>
     /// <remarks><para>The D statistic in a Kolmogorov-Smirnov test is distributed (under the null hypothesis) according to a Kolmogorov disribution.</para></remarks>
-    /// <seealse cref="Sample.KolmogorovSmirnovTest(Meta.Numerics.Statistics.Distribution)" />
+    /// <seealse cref="Sample.KolmogorovSmirnovTest(Meta.Numerics.Statistics.Distributions.Distribution)" />
     public class KolmogorovDistribution : Distribution {
 
         /// <summary>
@@ -421,8 +483,6 @@ namespace Meta.Numerics.Statistics {
         */
 
     }
-
-#if FUTURE
 
     public class FiniteKolmogorovDistribution : KolmogorovDistribution {
 
@@ -787,6 +847,7 @@ namespace Meta.Numerics.Statistics {
     }
 
 #endif
+#if FUTURE
 
     /// <summary>
     /// Represents the asymptotic distribution of Kuiper's V statistic.
@@ -807,7 +868,7 @@ namespace Meta.Numerics.Statistics {
 
         /// <inheritdoc />
         public override double LeftProbability (double x) {
-            if (x < 1.0) {
+            if (x < scale) {
                 return (AsymptoticP(x/scale));
             } else {
                 return (1.0 - AsymptoticQ(x/scale));
@@ -816,7 +877,7 @@ namespace Meta.Numerics.Statistics {
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
-            if (x < 1.0) {
+            if (x < scale) {
                 return (1.0 - AsymptoticP(x/scale));
             } else {
                 return (AsymptoticQ(x/scale));
@@ -870,7 +931,7 @@ namespace Meta.Numerics.Statistics {
 
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
-            if (x < 1.0) {
+            if (x < scale) {
                 return (AsymptoticPPrime(x/scale)/scale);
             } else {
                 return (AsymptoticQPrime(x/scale)/scale);
@@ -962,7 +1023,7 @@ namespace Meta.Numerics.Statistics {
 
     }
 
-
+#endif
 
     /// <summary>
     /// Represents the distribution of the Mann-Whitney statistic.
@@ -1044,9 +1105,9 @@ namespace Meta.Numerics.Statistics {
             double n4 = n2 * n2;
 
             double S1 = m * n / 2.0;
-            double S2 = m * n * (m + 1.0 + n) / 12.0;
+            double S2 = m * n * (m + 1 + n) / 12.0;
             double S3 = 0.0;
-            double S4 = - m * n * (m + n + 1.0) * (m2 + m + m * n + n + n2) / 120.0;            
+            double S4 = - m * n * (m + n + 1) * (m2 + m + m * n + n + n2) / 120.0;            
             double S6 = m * n * (m + n + 1.0) * (
                 2.0 * m4 + 4.0 * m3 * n + 4.0 * m3 + 7.0 * m2 * n + m2 - m +
                 2.0 * n4 + 4.0 * m * n3 + 4.0 * n3 + 7.0 * m * n2 + n2 - n +

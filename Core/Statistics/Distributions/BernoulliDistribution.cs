@@ -2,7 +2,7 @@
 
 using Meta.Numerics;
 
-namespace Meta.Numerics.Statistics {
+namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
     /// Represents a Bernoulli distribution.

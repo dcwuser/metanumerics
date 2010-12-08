@@ -43,9 +43,9 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="n">The number of the eigenvector.</param>
         /// <returns>The <paramref name="n"/>th eigenvector.</returns>
-        public Vector<Complex> Eigenvector (int n) {
+        public Complex[] Eigenvector (int n) {
             if ((n < 0) || (n >= dimension)) throw new ArgumentOutOfRangeException("n");
-            Vector<Complex> eigenvector = new Vector<Complex>(dimension);
+            Complex[] eigenvector = new Complex[dimension];
             for (int i = 0; i < dimension; i++) {
                 eigenvector[i] = eigenvectors[i, n];
             }

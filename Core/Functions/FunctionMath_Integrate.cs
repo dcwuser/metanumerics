@@ -143,6 +143,7 @@ namespace Meta.Numerics.Functions {
 
             IAdaptiveIntegrator integrator = new GaussKronrodIntegrator(integrand, range);
             IntegrationResult result = Integrate_Adaptive(integrator, settings);
+            Console.WriteLine(result.EvaluationCount);
             return (result.Result);
 
         }

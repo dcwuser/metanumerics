@@ -441,7 +441,8 @@ namespace Meta.Numerics.Functions {
             for (int k = 3; k < Global.SeriesMax; k+=2) {
                 Complex f_old = f;
                 a = k * k / 4.0 - nu2;
-                b.Im = b.Im + 2.0;
+                //b.Im = b.Im + 2.0;
+                b = b + new Complex(0.0, 2.0);
                 D = 1.0 / (b + a * D);
                 Df = (b * D - 1.0) * Df;
                 f += Df;

@@ -5,6 +5,8 @@ using System.IO;
 
 namespace Meta.Numerics.Matrices {
 
+#if FUTURE
+
     /// <summary>
     /// Represents a vector of numbers.
     /// </summary>
@@ -358,6 +360,7 @@ namespace Meta.Numerics.Matrices {
             return (u);
         }
 
+        
         /// <summary>
         /// Computes the product of a matrix and a column vector.
         /// </summary>
@@ -376,6 +379,7 @@ namespace Meta.Numerics.Matrices {
             }
             return(u);
         }
+        
 
         // additional IMatrix functions
 
@@ -642,5 +646,7 @@ namespace Meta.Numerics.Matrices {
 #endif
 
     }
+
+#endif
 
 }

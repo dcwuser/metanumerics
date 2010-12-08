@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 using Meta.Numerics.Matrices;
+using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Statistics {
 
@@ -327,13 +328,16 @@ namespace Meta.Numerics.Statistics {
         /// and +1 (perfect linear correlation).</para>
         /// <para>The Pearson test cannot reliably detect or rule out non-linear correlations.</para>
         /// <para>The Pearson correlation test requires O(N) operations.</para>
+        /// <para>The Pearson test requires at least three bivariate values.</para>
         /// </remarks>
         /// <seealso cref="SpearmanRhoTest"/>
         /// <seealso cref="KendallTauTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Pearson_correlation_coefficient" />
         public TestResult PearsonRTest (int d1, int d2) {
+            if (Count < 3) throw new InvalidOperationException();
             double r = Covariance(d1, d2) / StandardDeviation(d1) / StandardDeviation(d2);
-            Distribution p = new NormalDistribution(0.0, 1.0 / Math.Sqrt(Count));
+            Distribution p = new PearsonRDistribution(Count);
+            //Distribution p = new NormalDistribution(0.0, 1.0 / Math.Sqrt(Count));
             return (new TestResult(r, p));
         }
 
@@ -358,6 +362,7 @@ namespace Meta.Numerics.Statistics {
 
             if ((d1 < 0) || (d1 >= n)) throw new ArgumentOutOfRangeException("d1");
             if ((d2 < 0) || (d2 >= n)) throw new ArgumentOutOfRangeException("d2");
+            if (Count < 2) throw new InvalidOperationException();
 
             // compute the correlated ranks
             double[] x1 = new double[Count];

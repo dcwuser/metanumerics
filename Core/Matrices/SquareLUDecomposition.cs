@@ -19,7 +19,7 @@ namespace Meta.Numerics.Matrices {
     /// square matrix.</para>
     /// </remarks>
     /// <seealso cref="SquareMatrix"/>
-    public class SquareLUDecomposition : ISquareDecomposition {
+    public class SquareLUDecomposition {
 
         internal SquareLUDecomposition (double[] luStore, int[] permutation, int parity, int dimension) {
             this.luStore = luStore;
@@ -94,7 +94,7 @@ namespace Meta.Numerics.Matrices {
             SquareMatrixAlgorithms.SolveLowerLeftTriangular(luStore, x, 0, dimension);
             SquareMatrixAlgorithms.SolveUpperRightTriangular(luStore, x, 0, dimension);
 
-            return (new ColumnVector(x));
+            return (new ColumnVector(x, dimension));
 
             /*
             int n = Dimension;
@@ -196,10 +196,11 @@ namespace Meta.Numerics.Matrices {
             return (MI);
             */
         }
-
+        /*
         ISquareMatrix ISquareDecomposition.Inverse () {
             return (Inverse());
         }
+        */
 
         /// <summary>
         /// Gets the L factor.

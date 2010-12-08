@@ -11,7 +11,7 @@ namespace Meta.Numerics.Matrices {
     /// <para>A QR decomposition represents a rectangular matrix as the product of a square, orthogonal matrix Q and a rectangular,
     /// right-upper-triangular matrix R. For example:</para>
     /// <img src="../images/QRDecomposition.png" />
-    /// <para>The method <see cref="Matrix.QRDecomposition"/> of the <see cref="Matrix"/> class can be used to QR decompose a
+    /// <para>The method <see cref="RectangularMatrix.QRDecomposition"/> of the <see cref="RectangularMatrix"/> class can be used to QR decompose a
     /// rectangular matrix.</para>
     /// </remarks>
     public sealed class QRDecomposition {
@@ -45,10 +45,10 @@ namespace Meta.Numerics.Matrices {
         /// The upper-right triangular matrix R.
         /// </summary>
         /// <returns>The upper-right triangular matrix R.</returns>
-        public Matrix RMatrix () {
+        public RectangularMatrix RMatrix () {
             double[] store = new double[rows * columns];
             Array.Copy(rStore, store, rStore.Length);
-            return (new Matrix(store, rows, columns));
+            return (new RectangularMatrix(store, rows, columns));
         }
 
         /*

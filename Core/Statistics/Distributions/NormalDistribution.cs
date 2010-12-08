@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using Meta.Numerics.Functions;
 
-namespace Meta.Numerics.Statistics {
+namespace Meta.Numerics.Statistics.Distributions {
 
 
     /// <summary>

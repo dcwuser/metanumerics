@@ -7,6 +7,7 @@ using System.Text;
 using Meta.Numerics;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
+using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Statistics {
 
@@ -29,6 +30,14 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
+        /// Initializes a new, empty sample with the given name.
+        /// </summary>
+        /// <param name="name">The name of the sample.</param>
+        public Sample (string name) {
+            this.name = name;
+        }
+
+        /// <summary>
         /// Initializes a new sample from a list of values.
         /// </summary>
         /// <param name="values">Values to add to the sample.</param>
@@ -40,6 +49,7 @@ namespace Meta.Numerics.Statistics {
 
         // the sample data
         private List<double> data = new List<double>();
+        private string name;
 
 		// stuff to remember about the data
         private bool sorted = true;            // whether we have sorted the data
@@ -78,6 +88,15 @@ namespace Meta.Numerics.Statistics {
         public int Count {
             get {
                 return(data.Count);
+            }
+        }
+
+        /// <summary>
+        /// Gets the name of the sample.
+        /// </summary>
+        public string Name {
+            get {
+                return (name);
             }
         }
 
@@ -312,7 +331,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>A <see cref="FitResult"/> containg the mu and sigma parameters of the normal distribution that best fits the sample data,
         /// and a Kolmogorov-Smirnov test of the quality of the fit.</returns>
         /// <seealso cref="NormalDistribution" />
-        /// <seealso cref="KolmogorovSmirnovTest(Meta.Numerics.Statistics.Distribution)"/>
+        /// <seealso cref="KolmogorovSmirnovTest(Meta.Numerics.Statistics.Distributions.Distribution)"/>
         public FitResult FitToNormalDistribution () {
 
             // maximum likelyhood estimates are guaranteed to be asymptotically unbiased, but not necessarily unbiased
@@ -755,7 +774,21 @@ namespace Meta.Numerics.Statistics {
 
             // return the result
 
-            return (new TestResult(u1, new MannWhitneyDistribution(this.Count, sample.Count)));
+            // if possible, use the exact distribution
+            // to compute it, we need to do exact integer arithmetic on numbers of order the total number of possible orderings
+            // since decimal is the built-in type that can hold the largest exact integers, we use it for the computation
+            // therefore, to generate the exact distribution, the total number of possible orderings must be less than the capacity of a decimal 
+            Distribution uDistribution;
+            double lnTotal = AdvancedIntegerMath.LogFactorial(this.Count + sample.Count) - AdvancedIntegerMath.LogFactorial(this.Count) - AdvancedIntegerMath.LogFactorial(sample.Count);
+            if (lnTotal > Math.Log((double) Decimal.MaxValue)) {
+                double mu = this.Count * sample.Count / 2.0;
+                double sigma = Math.Sqrt(mu * (this.Count + sample.Count + 1) / 6.0);
+                uDistribution = new NormalDistribution(mu, sigma);
+            } else {
+                uDistribution = new DiscreteAsContinuousDistribution( new MannWhitneyExactDistribution(this.Count, sample.Count) );
+            }
+ 
+            return (new TestResult(u1, uDistribution));
 
             //return (new TestResult(u1, new DistributionAdapter(new MannWhitneyDistribution2(this.Count, sample.Count))));
 

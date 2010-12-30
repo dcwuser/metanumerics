@@ -36,6 +36,24 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         private double shape;
 
+        /// <summary>
+        /// Gets the scale parameter of the distribution.
+        /// </summary>
+        public double ScaleParameter {
+            get {
+                return (scale);
+            }
+        }
+
+        /// <summary>
+        /// Gets the shape parameter of the distribution.
+        /// </summary>
+        public double ShapeParameter {
+            get {
+                return (shape);
+            }
+        }
+
         /// <inheritdoc />
         public override Interval Support {
             get {
@@ -45,9 +63,21 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
-            double z = x / scale;
-            double zz = Math.Pow(z, shape);
-            return (Math.Exp(-zz) * zz * shape / x);
+            if (x < 0.0) {
+                return (0.0);
+            } else if (x == 0.0) {
+                if (shape < 1.0) {
+                    return (Double.PositiveInfinity);
+                } else if (shape > 1.0) {
+                    return (0.0);
+                } else {
+                    return (1.0);
+                }
+            } else {
+                double z = x / scale;
+                double zz = Math.Pow(z, shape);
+                return (Math.Exp(-zz) * zz * shape / x);
+            }
         }
 
         /// <inheritdoc />
@@ -57,20 +87,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else {
                 double z = x / scale;
                 double zz = Math.Pow(z, shape);
-                if (zz < 0.5) {
-                    // for small zz, use a series to avoid cancelation (and avoid doing exponentiation)
-                    double dP = zz;
-                    double P = dP;
-                    for (int k = 2; k < Global.SeriesMax; k++) {
-                        double P_old = P;
-                        dP = -dP * zz / k;
-                        P += dP;
-                        if (P == P_old) return (P);
-                    }
-                    throw new NonconvergenceException();
-                } else {
-                    return (1.0 - Math.Exp(-zz));
-                }
+                return (-MoreMath.ExpMinusOne(-zz));
             }
         }
 
@@ -130,6 +147,46 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (CentralMomentFromRawMoment(n));
             }
         }
+
+        /// <summary>
+        /// Computes the Weibull distribution that best fits the given sample.
+        /// </summary>
+        /// <param name="sample">The sample to fit.</param>
+        /// <returns>The result of the fit.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="sample"/> is null.</exception>
+        /// <exception cref="InsufficientDataException">The <paramref name="sample"/> contains less than three data points.</exception>
+        /// <exception cref="InsufficientDataException">The <paramref name="sample"/> contains non-positive values.</exception>
+        public static FitResult FitToSample (Sample sample) {
+
+            if (sample == null) throw new ArgumentNullException("sample");
+            if (sample.Count < 3) throw new InsufficientDataException();
+            if (sample.Minimum <= 0.0) throw new InvalidOperationException();
+
+            // guess parameters, using formulas for 1/3 and 2/3 quantile points and mean
+            double x1 = sample.InverseLeftProbability(1.0 / 3.0);
+            double x2 = sample.InverseLeftProbability(2.0 / 3.0);
+            double k0 = 0.996768 / Math.Log(x2 / x1);
+            double s0 = sample.Mean / AdvancedMath.Gamma(1.0 + 1.0 / k0);
+
+            // construct the log likeyhood function
+            Func<double[], double> f = delegate(double[] p) {
+                double lnL = 0.0;
+                foreach (double x in sample) {
+                    double r = x / p[0];
+                    lnL -= (p[1] - 1.0) * Math.Log(r) - Math.Pow(r, p[1]);
+                }
+                lnL -= sample.Count * Math.Log(p[1] / p[0]);
+                return (lnL);
+            };
+
+            // mamimize it
+            SpaceExtremum fm = FunctionMath.FindMinimum(f, new double[] { s0, k0 });
+
+            // return the result
+            return (new FitResult(fm.Location(), fm.Curvature().CholeskyDecomposition().Inverse(), null));
+
+        }
+
 
         double[] IParameterizedDistribution.GetParameters () {
             return (new double[] { scale, shape });

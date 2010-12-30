@@ -345,9 +345,10 @@ namespace Meta.Numerics.Functions {
         // gets better for higher nu (for nu=10, only 20 terms are required at x~10.0 and all digits are good), but only with Sqrt(nu)
 
         private static double BesselJ_Series (double nu, double x) {
-            double dJ = Math.Pow(0.5 * x, nu) / AdvancedMath.Gamma(nu + 1.0);
+            double z = x / 2.0;
+            double dJ = Math.Pow(z, nu) / AdvancedMath.Gamma(nu + 1.0);
             double J = dJ;
-            double zz = -0.25 * x * x;
+            double zz = -z * z;
             for (int k = 1; k < Global.SeriesMax; k++) {
                 double J_old = J;
                 dJ = dJ * zz / (nu + k) / k;
@@ -714,6 +715,26 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        /// <summary>
+        /// Computes both Bessel functions and their derivatives.
+        /// </summary>
+        /// <param name="nu">The order.</param>
+        /// <param name="x">The argument.</param>
+        /// <returns>The values of J, J', Y, and Y'.</returns>
+        public static SolutionPair Bessel (double nu, double x) {
+
+            if (x < 4.0) {
+                // use J series, and Y series
+                throw new NotImplementedException();
+            } else if (x > 40.0 + nu * nu) {
+                return (Bessel_Asymptotic(nu, x));
+            } else {
+                // use Steed's method
+                throw new NotImplementedException();
+            }
+
+        }
+
         // large order expansion using Airy functions
         /*
         public static double BesselJ_Airy (double nu, double x) {
@@ -1017,24 +1038,9 @@ namespace Meta.Numerics.Functions {
     }
 
 
-    internal struct SolutionPair {
+    public struct SolutionPair {
 
-        //private double nu, x, j, jPrime, y, yPrime;
         private double j, jPrime, y, yPrime;
-
-        /*
-        public double Order {
-            get {
-                return (nu);
-            }
-        }
-
-        public double Argument {
-            get {
-                return (x);
-            }
-        }
-        */
 
         public double Regular {
             get {
@@ -1081,9 +1087,6 @@ namespace Meta.Numerics.Functions {
         */
         
        internal SolutionPair (double j, double jPrime, double y, double yPrime) {
-       //internal SolutionPair (double nu, double x, double j, double jPrime, double y, double yPrime) {
-            //this.nu = nu;
-            //this.x = x;
             this.j = j;
             this.jPrime = jPrime;
             this.y = y;

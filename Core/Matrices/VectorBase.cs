@@ -156,6 +156,10 @@ namespace Meta.Numerics.Matrices {
         public ColumnVector (int dimension) : base(dimension) {
         }
 
+        /// <summary>
+        /// Initializes a new column vector from the given array.
+        /// </summary>
+        /// <param name="source">The array of vector components.</param>
         public ColumnVector (double[] source) : base(source.Length) {
             Blas1.dCopy(source, 0, 1, store, 0, 1, dimension);
         }
@@ -201,7 +205,7 @@ namespace Meta.Numerics.Matrices {
         /// Returns a copy of the column vector.
         /// </summary>
         /// <returns>An independent copy of the column vector.</returns>
-        public ColumnVector Clone () {
+        public ColumnVector Copy () {
             double[] copy = VectorAlgorithms.Copy(store, dimension);
             return (new ColumnVector(copy, dimension));
         }
@@ -319,7 +323,7 @@ namespace Meta.Numerics.Matrices {
         /// Returns a copy of the row vector.
         /// </summary>
         /// <returns>An independent copy of the row vector.</returns>
-        public RowVector Clone () {
+        public RowVector Copy () {
             double[] copy = VectorAlgorithms.Copy(store, dimension);
             return (new RowVector(copy, dimension));
         }

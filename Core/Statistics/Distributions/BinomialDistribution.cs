@@ -39,21 +39,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             if ((k < 0) || (k > m)) {
                 return (0.0);
             } else {
-                int kp = m - k;
-                int k1 = Math.Min(k, kp);
-                if ((m <= 32) || (k1 <= 2) || (k1 * Math.Log(Math.E * m / k1) < Math.Log(Int64.MaxValue))) {
-                    // for small enough integers, use the exact binomial coefficient,
-                    // which can be evaluated quickly and exactly
-                    return (AdvancedIntegerMath.BinomialCoefficient(m, k) * MoreMath.Pow(p, k) * MoreMath.Pow(q, m - k));
-                } else {
-                    // otherwise, use the difference of factorials; strong cancelations occur only at
-                    // the edges of Pascal's triangle, which will have been handled by the branch above
-                    return (Math.Exp(
-                        AdvancedIntegerMath.LogFactorial(m) - AdvancedIntegerMath.LogFactorial(k) - AdvancedIntegerMath.LogFactorial(m - k) +
-                        k * Math.Log(p) + (m - k) * Math.Log(q)
-                    ));
-                }
-                // should we try to use an expansion around the normal approximation?
+                // for small enough integers, use the exact binomial coefficient,
+                // which can be evaluated quickly and exactly
+                return (AdvancedIntegerMath.BinomialCoefficient(m, k) * MoreMath.Pow(p, k) * MoreMath.Pow(q, m - k));
+                // this could fail if the binomial overflows; should we go do factorials or
+                // use an expansion around the normal approximation?
             }
         }
 

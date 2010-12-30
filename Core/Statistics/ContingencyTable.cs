@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics.Distributions;
@@ -15,6 +16,9 @@ namespace Meta.Numerics.Statistics {
     /// <seealso href="http://en.wikipedia.org/wiki/Contingency_table" />
     public class ContingencyTable {
 
+        private string name;
+        private NameCollection rowNames;
+        private NameCollection columnNames;
         private int[,] data;
 
         /// <summary>
@@ -44,6 +48,30 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
+        /// Gets or sets the name of the table.
+        /// </summary>
+        public string Name {
+            get {
+                return (name);
+            }
+            set {
+                name = value;
+            }
+        }
+
+        public NameCollection RowNames {
+            get {
+                return (rowNames);
+            }
+        }
+
+        public NameCollection ColumnNames {
+            get {
+                return (columnNames);
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the count in the specified entry.
         /// </summary>
         /// <param name="r">The entry row number.</param>
@@ -60,6 +88,18 @@ namespace Meta.Numerics.Statistics {
                 if ((c < 0) || (c > data.GetLength(1))) throw new ArgumentOutOfRangeException("c");
                 if (value < 0) throw new InvalidOperationException();
                 data[r,c] = value;
+            }
+        }
+
+        public int this[string rName, string cName] {
+            get {
+                if (rName == null) throw new ArgumentNullException("rName");
+                if (cName == null) throw new ArgumentNullException("cName");
+                int r = rowNames.GetIndexForName(rName);
+                if (r < 0) throw new InvalidOperationException();
+                int c = columnNames.GetIndexForName(cName);
+                if (c < 0) throw new InvalidOperationException();
+                return (data[r, c]);
             }
         }
 
@@ -83,10 +123,10 @@ namespace Meta.Numerics.Statistics {
 
 
         /// <summary>
-        /// Gets the total counts in a row.
+        /// Gets the total counts in the given row.
         /// </summary>
-        /// <param name="r">The row number.</param>
-        /// <returns>The sum of counts in all entries in the row.</returns>
+        /// <param name="r">The (zero-based) row number.</param>
+        /// <returns>The sum of counts in the row.</returns>
         public int RowTotal (int r) {
             if ((r < 0) || (r > data.GetLength(0))) throw new ArgumentOutOfRangeException("r");
             int R = 0;
@@ -94,6 +134,17 @@ namespace Meta.Numerics.Statistics {
                 R += data[r,c];
             }
             return (R);
+        }
+
+        /// <summary>
+        /// Gets the total counts in the row with the given name.
+        /// </summary>
+        /// <param name="rName">The name of the row.</param>
+        /// <returns>The sum of counts in the row.</returns>
+        public int RowTotal (string rName) {
+            if (rName == null) throw new ArgumentNullException("rName");
+            int r = rowNames.GetIndexForName(rName);
+            return (RowTotal(r));
         }
 
         /// <summary>
@@ -145,6 +196,38 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <summary>
+        /// Computes the marginal probility of the given row.
+        /// </summary>
+        /// <param name="r">The (zero-based) row index.</param>
+        /// <returns>The probability of a random entry appearing in the given row.</returns>
+        public double ProbabilityOfRow (int r) {
+            if ((r < 0) || (r >= data.GetLength(0))) throw new ArgumentOutOfRangeException("r");
+            return (RowTotal(r) / Total);
+        }
+
+        /// <summary>
+        /// Computes the marginal probility of the given column.
+        /// </summary>
+        /// <param name="c">The (zero-based) column index.</param>
+        /// <returns>The probability of a random entry appearing in the given column.</returns>
+        public double ProbabilityOfColumn (int c) {
+            if ((c < 0) || (c >= data.GetLength(1))) throw new ArgumentOutOfRangeException("c");
+            return (ColumnTotal(c) / Total);
+        }
+
+        /// <summary>
+        /// Computes the probability of the given row conditional on the given column.
+        /// </summary>
+        /// <param name="r">The (zero-based) row index.</param>
+        /// <param name="c">The (zero-based) column index.</param>
+        /// <returns>The probability of a random entry appearing in the given row, if it appears in the given column.</returns>
+        public double ProbibilityOfRowConditionalOnColumn (int r, int c) {
+            if ((r < 0) || (r >= data.GetLength(0))) throw new ArgumentOutOfRangeException("r");
+            if ((c < 0) || (c >= data.GetLength(1))) throw new ArgumentOutOfRangeException("c");
+            return (data[r, c] / ColumnTotal(c));
+        }
+
         // suppose there are no correlations present; then the expected number of events in a given table entry is just the fraction
         // of the total events proportional to the corresponding row and column totals: N_RC = N*(N_R/N)*(N_C/N) = N_R*N_C/N
         // if this number is large for all entries, then the entries should be distributed normally with mean N_RC and variance Sqrt(N_RC)
@@ -189,6 +272,47 @@ namespace Meta.Numerics.Statistics {
             // return the test result
             return (new TestResult(chi2, new ChiSquaredDistribution(nu)));
 
+        }
+
+    }
+
+    public class NameCollection {
+
+        private List<string> names = new List<string>();
+        private Dictionary<string, int> nameToIndexMap = new Dictionary<string, int>();
+        private Dictionary<int, string> indexToNameMap = new Dictionary<int, string>();
+
+        public int Count {
+            get {
+                return (names.Count);
+            }
+        }
+
+        public string this [int index] {
+            get {
+                if ((index < 0) || (index >= Count)) throw new ArgumentOutOfRangeException("index");
+                return (names[index]);
+            }
+            set {
+                if ((index < 0) || (index >= Count)) throw new ArgumentOutOfRangeException("index");
+                string currentValue = names[index];
+                if (currentValue != null) {
+                    nameToIndexMap.Remove(currentValue);
+                    indexToNameMap.Remove(index);
+                }
+                names[index] = value;
+                nameToIndexMap[value] = index;
+                indexToNameMap[index] = value;
+            }
+        }
+
+        internal int GetIndexForName (string name) {
+            int index;
+            if (nameToIndexMap.TryGetValue(name, out index)) {
+                return (index);
+            } else {
+                return (-1);
+            }
         }
 
     }

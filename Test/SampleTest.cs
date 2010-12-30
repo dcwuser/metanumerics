@@ -90,6 +90,30 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void LowSampleMoments () {
+
+            // this is designed to test that means and standard deviations change properly when values
+            // are added and removed
+
+            Sample s = new Sample();
+            s.Add(2.0);
+            s.Add(4.0);
+            s.Add(6.0);
+
+            // set is 2, 4, 6: M = 4, V = (2^2 + 2^2) / 3
+            Assert.IsTrue(s.Count == 3);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Mean, 4.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Variance, 8.0 / 3.0));
+
+            // set is 4, 6: M = 5, V = (1^2 + 1^2) / 2
+            s.Remove(2.0);
+            Assert.IsTrue(s.Count == 2);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Mean, 5.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Variance, 1.0));
+
+        }
+
         private static Sample CreateSample (Distribution distribution, int count) {
             return (CreateSample(distribution, count, 1));
         }
@@ -145,12 +169,17 @@ namespace Test {
         [TestMethod]
         public void SampleMedian () {
             Sample sample = new Sample();
+
+
             sample.Add(2.0, 1.0);
-            Console.WriteLine(sample.Median);
+            Assert.IsTrue(sample.Minimum == 1.0);
             Assert.IsTrue(sample.Median == 1.5);
+            Assert.IsTrue(sample.Maximum == 2.0);
+
             sample.Add(3.0);
-            Console.WriteLine(sample.Median);
+            Assert.IsTrue(sample.Minimum == 1.0);
             Assert.IsTrue(sample.Median == 2.0);
+            Assert.IsTrue(sample.Maximum == 3.0);
         }
 
         [TestMethod]
@@ -167,45 +196,84 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SampleFitNormalTest () {
+        public void NormalFit () {
 
             // pick mu >> sigma so that we get no negative values;
             // otherwise the attempt to fit to an exponential will fail
-            Distribution distribution = new NormalDistribution(5.0, 2.0);
+            Distribution distribution = new NormalDistribution(6.0, 2.0);
             Sample sample = CreateSample(distribution, 100);
 
             // fit to normal should be good
-            FitResult nfit = sample.FitToNormalDistribution();
+            FitResult nfit = NormalDistribution.FitToSample(sample);
             Console.WriteLine("P_n = {0}", nfit.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(nfit.GoodnessOfFit.LeftProbability < 0.95, String.Format("P_n = {0}", nfit.GoodnessOfFit.LeftProbability));
+            Assert.IsTrue(nfit.GoodnessOfFit.LeftProbability < 0.95);
+            Assert.IsTrue(nfit.Parameter(0).ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
+            Assert.IsTrue(nfit.Parameter(1).ConfidenceInterval(0.95).ClosedContains(distribution.StandardDeviation));
 
             // fit to exponential should be bad
-            FitResult efit = sample.FitToExponentialDistribution();
+            FitResult efit = ExponentialDistribution.FitToSample(sample);
             Console.WriteLine("P_e = {0}", efit.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(efit.GoodnessOfFit.LeftProbability > 0.95, String.Format("P_e = {0}", efit.GoodnessOfFit.LeftProbability));
+            Assert.IsTrue(efit.GoodnessOfFit.LeftProbability > 0.95);
 
         }
 
         [TestMethod]
-        public void SampleFitExponentialTest () {
+        public void NormalFitUncertainties () {
 
-            Distribution distribution = new ExponentialDistribution(5.0);
+            NormalDistribution N = new NormalDistribution(-1.0, 2.0);
+
+            Random rng = new Random(2718281);
+            BivariateSample P = new BivariateSample();
+            double cmm = 0.0;
+            double css = 0.0;
+            double cms = 0.0;
+            for (int i = 0; i < 64; i++) {
+                Sample s = new Sample();
+                for (int j = 0; j < 16; j++) {
+                    s.Add(N.GetRandomValue(rng));
+                }
+                FitResult r = NormalDistribution.FitToSample(s);
+                P.Add(r.Parameter(0).Value, r.Parameter(1).Value);
+                cmm += r.Covariance(0, 0);
+                css += r.Covariance(1, 1);
+                cms += r.Covariance(0, 1);
+            }
+            cmm /= P.Count;
+            css /= P.Count;
+            cms /= P.Count;
+
+            Console.WriteLine("{0} {1}", P.X.PopulationMean, P.Y.PopulationMean);
+
+            Assert.IsTrue(P.X.PopulationMean.ConfidenceInterval(0.95).ClosedContains(N.Mean));
+            Assert.IsTrue(P.Y.PopulationMean.ConfidenceInterval(0.95).ClosedContains(N.StandardDeviation));
+
+            Assert.IsTrue(P.X.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(cmm));
+            Assert.IsTrue(P.Y.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(css));
+            Assert.IsTrue(P.PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(cms));
+
+        }
+
+        [TestMethod]
+        public void ExponentialFit () {
+
+            ExponentialDistribution distribution = new ExponentialDistribution(5.0);
             Sample sample = CreateSample(distribution, 100);
 
             // fit to normal should be bad
-            FitResult nfit = sample.FitToNormalDistribution();
+            FitResult nfit = NormalDistribution.FitToSample(sample);
             Console.WriteLine("P_n = {0}", nfit.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(nfit.GoodnessOfFit.LeftProbability > 0.95, String.Format("P_n = {0}", nfit.GoodnessOfFit.LeftProbability));
+            Assert.IsTrue(nfit.GoodnessOfFit.LeftProbability > 0.95);
 
             // fit to exponential should be good
-            FitResult efit = sample.FitToExponentialDistribution();
+            FitResult efit = ExponentialDistribution.FitToSample(sample);
             Console.WriteLine("P_e = {0}", efit.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(efit.GoodnessOfFit.LeftProbability < 0.95, String.Format("P_e = {0}", efit.GoodnessOfFit.LeftProbability));
+            Assert.IsTrue(efit.GoodnessOfFit.LeftProbability < 0.95);
+            Assert.IsTrue(efit.Parameter(0).ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
 
         }
 
         [TestMethod]
-        public void SampleFitExponentialUncertaintyTest () {
+        public void ExponentialFitUncertainty () {
 
             // check that the uncertainty in reported fit parameters is actually meaningful
             // it should be the standard deviation of fit parameter values in a sample of many fits
@@ -219,7 +287,7 @@ namespace Test {
             Sample uncertainties = new Sample();
             for (int i = 0; i < 50; i++) {
                 Sample sample = CreateSample(distribution, 10, i);
-                FitResult fit = sample.FitToExponentialDistribution();
+                FitResult fit = ExponentialDistribution.FitToSample(sample);
                 UncertainValue lambda = fit.Parameter(0);
                 values.Add(lambda.Value);
                 uncertainties.Add(lambda.Uncertainty);
@@ -241,14 +309,27 @@ namespace Test {
 
             // fit to normal should be bad
             // this is harder than others, because a chi^2 isn't so very different from a normal; to help, increse N or decrease vu
-            FitResult nfit = sample.FitToNormalDistribution();
+            FitResult nfit = NormalDistribution.FitToSample(sample);
             Console.WriteLine("P_n = {0}", nfit.GoodnessOfFit.LeftProbability);
             Assert.IsTrue(nfit.GoodnessOfFit.LeftProbability > 0.95, String.Format("P_n = {0}", nfit.GoodnessOfFit.LeftProbability));
 
             // fit to exponential should also be bad
-            FitResult efit = sample.FitToExponentialDistribution();
+            FitResult efit = ExponentialDistribution.FitToSample(sample);
             Console.WriteLine("P_e = {0}", efit.GoodnessOfFit.LeftProbability);
             Assert.IsTrue(efit.GoodnessOfFit.LeftProbability > 0.95, String.Format("P_e = {0}", efit.GoodnessOfFit.LeftProbability));
+
+        }
+
+        [TestMethod]
+        public void WeibullFit () {
+
+            foreach (double alpha in new double[] { 0.3, 1.3, 2.3 }) {
+                WeibullDistribution W = new WeibullDistribution(1.0, alpha);
+                Sample S = CreateSample(W, 50);
+                FitResult R = WeibullDistribution.FitToSample(S);
+                Assert.IsTrue(R.Parameter(0).ConfidenceInterval(0.95).ClosedContains(W.ScaleParameter));
+                Assert.IsTrue(R.Parameter(1).ConfidenceInterval(0.95).ClosedContains(W.ShapeParameter));
+            }
 
         }
 
@@ -402,7 +483,7 @@ namespace Test {
             double[] M = new double[6];
             for (int n = 0; n < 6; n++) {
                 // define x^n p(x)
-                Function<double, double> raw = delegate(double x) {
+                Func<double, double> raw = delegate(double x) {
                     return (Math.Pow(x, n) * d.ProbabilityDensity(x));
                 }; 
                 // integrate it
@@ -415,7 +496,7 @@ namespace Test {
             double[] C = new double[6];
             for (int n = 0; n < 6; n++) {
                 // define (x-m)^n p(x)
-                Function<double, double> central = delegate(double x) {
+                Func<double, double> central = delegate(double x) {
                     return (Math.Pow(x - M[1], n) * d.ProbabilityDensity(x));
                 };
                 // integrate it
@@ -689,13 +770,13 @@ namespace Test {
             Sample s2 = CreateSample(d2, 40, 3);
 
             // Mann-Whitney test 1a vs. 1b; they should not be distinguished
-            TestResult rab = s1a.MannWhitneyTest(s1b);
+            TestResult rab = Sample.MannWhitneyTest(s1a, s1b);
             Console.WriteLine("{0} {1}", rab.Statistic, rab.LeftProbability);
             Assert.IsTrue((rab.LeftProbability < 0.95) && (rab.RightProbability < 0.95));
 
             // Mann-Whitney test 1 vs. 2; they should be distinguished
             // with 1 consistently less than 2, so U abnormally small
-            TestResult r12 = s1b.MannWhitneyTest(s2);
+            TestResult r12 = Sample.MannWhitneyTest(s1b, s2);
             Console.WriteLine("{0} {1}", r12.Statistic, r12.LeftProbability);
             Assert.IsTrue(r12.RightProbability > 0.95);
 
@@ -772,7 +853,7 @@ namespace Test {
 
             // do a Student t-test and a one-way ANOVA
             //TestResult ts = Sample.StudentTTest(A, B);
-            TestResult ts = A.StudentTTest(B);
+            TestResult ts = Sample.StudentTTest(A, B);
             TestResult ta = Sample.OneWayAnovaTest(A, B).Factor.FTest;
 
 

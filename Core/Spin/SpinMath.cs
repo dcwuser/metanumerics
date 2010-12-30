@@ -1,355 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
-using System.Text;
 
-namespace Meta.Numerics.Functions {
-
-    /// <summary>
-    /// Represents a spinor.
-    /// </summary>
-    /// <remarks>
-    /// <para>From a physicist's point of view, a spinor is an object with a particular quantum-mechanical spin. The quantum state of such
-    /// an object is represented by a <see cref="SpinState"/> object.</para>
-    /// <para>From a mathematician's point of view, a spinor labels an irreducible representation of the SO(3) or SU(2) Lie group.
-    /// Individual vectors within each irreducible representation are represented by <see cref="SpinState"/> objects.</para>
-    /// </remarks>
-    public struct Spin {
-
-        // construction
-
-        /// <summary>
-        /// Instantiates a new spinor.
-        /// </summary>
-        /// <param name="j">The spin, which must be an integer or half-integer.</param>
-        public Spin (double j) {
-
-            // no negative (or too large) spins
-            double tj = 2.0 * j;
-            if ((tj < 0.0) || (tj > Int32.MaxValue)) throw new ArgumentOutOfRangeException("j");
-
-            // spin must be integer or half-integer
-            double tjt = Math.Truncate(tj);
-            if (tjt != tj) throw new ArgumentOutOfRangeException("j");
-
-            // store 2*j
-            twoJ = (int) tjt;
-            
-        }
-
-        // stored data
-
-        private int twoJ;
-
-        // accessors
-
-        /// <summary>
-        /// Gets the spin of the spinor.
-        /// </summary>
-        public double J {
-            get {
-                return (twoJ / 2.0);
-            }
-        }
-
-        internal int TwoJ {
-            get {
-                return (twoJ);
-            }
-        }
-
-        // casting
-
-        /*
-        public static implicit operator Spin (double j) {
-            return (new Spin(j));
-        }
-
-        public static implicit operator double (Spin s) {
-            return (s.TwoJ / 2.0);
-        }
-        */
-
-        // pre-defined
-
-        /// <summary>
-        /// Gets a spin-0 spinor.
-        /// </summary>
-        public static Spin SpinZero {
-            get {
-                return (new Spin(0.0));
-            }
-        }
-
-        /// <summary>
-        /// Gets a spin-1/2 spinor.
-        /// </summary>
-        public static Spin SpinOneHalf {
-            get {
-                return (new Spin(0.5));
-            }
-        }
-
-        /// <summary>
-        /// Gets a spin-1 spinor.
-        /// </summary>
-        public static Spin SpinOne {
-            get {
-                return (new Spin(1.0));
-            }
-        }
-
-        // irrep data
-
-        /// <summary>
-        /// Gets the dimension of the spinor.
-        /// </summary>
-        public int Dimension {
-            get {
-                return (twoJ + 1);
-            }
-        }
-
-        /// <summary>
-        /// Returns the set of spinor states.
-        /// </summary>
-        /// <returns>An array of spin states that spans the spinor subspace.</returns>
-        public SpinState[] States () {
-            List<SpinState> states = new List<SpinState>();
-            for (int i = -twoJ; i <= twoJ; i += 2) {
-                states.Add(new SpinState(twoJ / 2.0, i / 2.0));
-            }
-            //for (int twoM = -TwoJ; twoM <= 0; twoM = twoM + 2) {
-            //    states.Add(new SpinState(twoJ / 2.0, twoM / 2.0));
-            //}
-            return (states.ToArray());
-        }
-
-        // equality
-
-        private static bool Equals (Spin a, Spin b) {
-            return(a.TwoJ == b.TwoJ);
-        }
-
-        /// <summary>
-        /// Determines whether two spinors are equal.
-        /// </summary>
-        /// <param name="a">The first spin.</param>
-        /// <param name="b">The second spin.</param>
-        /// <returns>True if <paramref name="a"/> and <paramref name="b"/> are equal, otherwise false.</returns>
-        public static bool operator == (Spin a, Spin b) {
-            return (Equals(a, b));
-        }
-
-        /// <summary>
-        /// Determines whether two spinors are unequal.
-        /// </summary>
-        /// <param name="a">The first spin.</param>
-        /// <param name="b">The second spin.</param>
-        /// <returns>False if <paramref name="a"/> and <paramref name="b"/> are equal, otherwise true.</returns>
-        public static bool operator != (Spin a, Spin b) {
-            return (!Equals(a, b));
-        }
-
-        /// <summary>
-        /// Determines whether the given object represents the same spinor.
-        /// </summary>
-        /// <param name="obj">The object to compare.</param>
-        /// <returns>True if <paramref name="obj"/> is an equal spin, otherwise false.</returns>
-        public override bool Equals (object obj) {
-            return ((obj is Spin) && Equals(this, (Spin)obj));
-        }
-
-        /// <summary>
-        /// Computes a hash function for the spinor.
-        /// </summary>
-        /// <returns>An integer which is guaranteed equal for equal spinors, an unlikely to be equal for unequal spinors.</returns>
-        public override int GetHashCode () {
-            return (twoJ);
-        }
-
-        /// <summary>
-        /// Produces a string representation of the spinor.
-        /// </summary>
-        /// <returns>A string representation of the spinor.</returns>
-        public override string ToString () {
-            if (twoJ % 2 == 0) {
-                return ((twoJ / 2).ToString(CultureInfo.CurrentCulture));
-            } else {
-                return (twoJ.ToString(CultureInfo.CurrentCulture) + "/2");
-            }
-        }
-
-    }
-
-    /// <summary>
-    /// Represents the state of a spinor.
-    /// </summary>
-    public struct SpinState {
-
-        /// <summary>
-        /// Instantiates a new SpinState with the given spin and magnetic quantum numbers.
-        /// </summary>
-        /// <param name="j">The spin number.</param>
-        /// <param name="m">The magnetic number.</param>
-        public SpinState (double j, double m) : this(new Spin(j), m)  { }
-
-        /// <summary>
-        /// Instantiates a new SpinState with the given spin and magnetic quantum number.
-        /// </summary>
-        /// <param name="s">The spin.</param>
-        /// <param name="m">The magnetic quantum number.</param>
-        public SpinState (Spin s, double m) {
-
-            spin = s;
-
-            // 2M must be an integer
-            double tm = 2.0 * m;
-            double tmt = Math.Truncate(tm);
-            if (tmt != tm) throw new ArgumentOutOfRangeException("m");
-
-            int tmti = (int) tmt;
-
-            twoM = (int) tmt;
-            // -J <= M <= J
-            if (Math.Abs(tmti) > s.TwoJ) throw new ArgumentOutOfRangeException("m");
-            
-            // half-integer J requires half-integer M; integer J requires integer M
-            if ((s.TwoJ % 2) != Math.Abs(twoM % 2)) throw new ArgumentOutOfRangeException("m");
-
-        }
-
-        private Spin spin;
-
-        private int twoM;
-
-        /// <summary>
-        /// Gets the spin value of the spin state.
-        /// </summary>
-        public double J {
-            get {
-                return (spin.J);
-            }
-        }
-
-        /// <summary>
-        /// Gets the magnetic substate value of the spin state.
-        /// </summary>
-        public double M {
-            get {
-                return (twoM / 2.0);
-            }
-        }
-
-        internal int TwoJ {
-            get {
-                return (spin.TwoJ);
-            }
-        }
-
-        internal int TwoM {
-            get {
-                return (twoM);
-            }
-        }
-
-        internal int JPlusM {
-            get {
-                return ((spin.TwoJ + twoM) / 2);
-            }
-        }
-
-        internal int JMinusM {
-            get {
-                return ((spin.TwoJ - twoM) / 2);
-            }
-        }
-
-        internal SpinState Invert () {
-            twoM = -twoM;
-            return (this);
-        }
-
-        /// <summary>
-        /// Gets the spinor representation to which the spin state belongs.
-        /// </summary>
-        public Spin Representation {
-            get {
-                return (spin);
-            }
-        }
-
-        // equality
-
-        private static bool Equals (SpinState s1, SpinState s2) {
-            return ((s1.spin == s2.spin) && (s1.twoM == s2.twoM));
-        }
-
-        /// <summary>
-        /// Determines whether two spin states are equal.
-        /// </summary>
-        /// <param name="s1">The first spin state.</param>
-        /// <param name="s2">The second spin state.</param>
-        /// <returns>True if <paramref name="s1"/> and <paramref name="s2"/> are equal, otherwise false.</returns>
-        public static bool operator == (SpinState s1, SpinState s2) {
-            return (Equals(s1, s2));
-        }
-
-        /// <summary>
-        /// Determines whether two spin states are unequal.
-        /// </summary>
-        /// <param name="s1">The first spin state.</param>
-        /// <param name="s2">The second spin state.</param>
-        /// <returns>False if <paramref name="s1"/> and <paramref name="s2"/> are equal, otherwise true.</returns>
-        public static bool operator != (SpinState s1, SpinState s2) {
-            return (!Equals(s1, s2));
-        }
-
-        /// <summary>
-        /// Determines whether the given object represents the same spin state.
-        /// </summary>
-        /// <param name="obj">The object to compare.</param>
-        /// <returns>True if <paramref name="obj"/> is an equal spin state, otherwise false.</returns>
-        public override bool Equals (object obj) {
-            return ((obj is SpinState) && Equals(this, (SpinState)obj));
-        }
-
-        /// <summary>
-        /// Computes a hash function for the spin state.
-        /// </summary>
-        /// <returns>An integer which is guaranteed equal for equal spin states, an unlikely to be equal for unequal spin states.</returns>
-        public override int GetHashCode () {
-            // left-shift 2j by about half the with of an int (which is 32 bits) so 2j and 2m values are unlikely to interfere
-            return ((TwoJ << 14) ^ (TwoM));
-        }
-
-        /// <summary>
-        /// Produces a string representation of the spin state.
-        /// </summary>
-        /// <returns>A string representation of the spin state.</returns>
-        public override string ToString () {
-            StringBuilder text = new StringBuilder(spin.ToString());
-            text.AppendFormat(CultureInfo.CurrentCulture, ",");
-            if (twoM > 0) {
-                text.Append(CultureInfo.CurrentCulture.NumberFormat.PositiveSign);
-            } else if (twoM < 0) {
-                text.Append(CultureInfo.CurrentCulture.NumberFormat.NegativeSign);
-            }
-            text.Append(SpinString(Math.Abs(twoM)));
-            return (text.ToString());
-        }
-
-        private static string SpinString (int twoJ) {
-            if (twoJ % 2 == 0) {
-                return ((twoJ / 2).ToString(CultureInfo.CurrentCulture));
-            } else {
-                return (twoJ.ToString(CultureInfo.CurrentCulture) + "/2");
-            }
-        }
-
-    }
-
+namespace Meta.Numerics.Spin {
 
     /// <summary>
     /// Contains methods for computing functions of spin and spin states.
@@ -437,7 +89,7 @@ namespace Meta.Numerics.Functions {
             if ((s1.TwoJ + s2.TwoJ + s3.TwoJ) % 2 != 0) return (0.0);
 
             // require that Ms add to zero
-            if ((s1.TwoM + s2.TwoM + s3.TwoM) != 0) return(0.0);
+            if ((s1.TwoM + s2.TwoM + s3.TwoM) != 0) return (0.0);
 
             // determine permutation factor for row switching or inverting
             int P;
@@ -544,9 +196,9 @@ namespace Meta.Numerics.Functions {
 
             if (s1.TwoM < 0) {
                 // m1 = -1
-                double r = ThreeJ_OneJ(s1.Invert(),s2.Invert(),s3.Invert());
-                if ((s1.TwoJ + s2.TwoJ + s3.TwoJ)/2 % 2 != 0) r = -r;
-                return(r);
+                double r = ThreeJ_OneJ(s1.Invert(), s2.Invert(), s3.Invert());
+                if ((s1.TwoJ + s2.TwoJ + s3.TwoJ) / 2 % 2 != 0) r = -r;
+                return (r);
             } else if (s1.TwoM == 0) {
                 // m1 = 0
                 if (s3.TwoJ == s2.TwoJ) {
@@ -569,7 +221,7 @@ namespace Meta.Numerics.Functions {
                     return (r);
                 } else {
                     // j3 = j2 + 1
-                    double r = Math.Sqrt(1.0 * (s2.JPlusM + 1) * (s2.JPlusM + 2) / (s2.TwoJ + 1) / (s2.TwoJ + 2) / (s2.TwoJ + 3)); 
+                    double r = Math.Sqrt(1.0 * (s2.JPlusM + 1) * (s2.JPlusM + 2) / (s2.TwoJ + 1) / (s2.TwoJ + 2) / (s2.TwoJ + 3));
                     if ((s2.JMinusM % 2) != 0) r = -r;
                     return (r);
                 }
@@ -754,7 +406,7 @@ namespace Meta.Numerics.Functions {
                 //Console.WriteLine("g={0}", g);
                 g = Math.Sqrt(g);
 
-                if ((j/2) % 2 != 0) f = -f;
+                if ((j / 2) % 2 != 0) f = -f;
 
                 return (f * g);
             }
@@ -931,7 +583,7 @@ namespace Meta.Numerics.Functions {
                 if (tj >= tj_mid) {
                     break;
                 }
-                
+
                 // notice that we terminate before checking whether we are at the desired value,
                 // or adding to the normalization constant; this is different from the previous loop
                 // we do this so that the middle element does not double contribute to the normalization
@@ -1172,7 +824,7 @@ namespace Meta.Numerics.Functions {
                 a0 = ShultenGordon_E(tj, tj2, tj3, tj4, tj5, tj6);
 
                 // use recursion to compute the tj-2 symbol
-                cm = - (b0 * c0 + (tj / 2.0) * ap * cp) / ((tj + 2) / 2.0) / a0;
+                cm = -(b0 * c0 + (tj / 2.0) * ap * cp) / ((tj + 2) / 2.0) / a0;
 
                 //Console.WriteLine("{0}: {1} {2} + {3} {4} + {5} {6}", tj, a0, cm, b0, c0, ap, cp);
 
@@ -1239,7 +891,7 @@ namespace Meta.Numerics.Functions {
 
                 // use recursion relation to compute tj+2
                 //cp = (-b0 * c0 - ((tj + 2) / 2.0) * a0 * cm) / (tj / 2.0) / ap;
-                cp = - (b0 * c0 + ((tj + 2) / 2.0) * a0 * cm) / (tj / 2.0) / ap;
+                cp = -(b0 * c0 + ((tj + 2) / 2.0) * a0 * cm) / (tj / 2.0) / ap;
 
                 //Console.WriteLine("{0}: {1} {2} + {3} {4} + {5} {6}", tj, a0, cm, b0, c0, ap, cp);
 
@@ -1258,7 +910,7 @@ namespace Meta.Numerics.Functions {
 
             // normalize
             double N = NL + NR;
-            c = c / Math.Sqrt(N * (tj4+1));
+            c = c / Math.Sqrt(N * (tj4 + 1));
 
             return (c);
 

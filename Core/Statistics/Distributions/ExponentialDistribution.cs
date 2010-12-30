@@ -57,22 +57,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (x < 0.0) {
                 return (0.0);
             } else {
-                if (x < 0.25 * mu) {
-                    // if x1 << mu, use the series expansion
-                    double xx = x / mu;
-                    double df = xx;
-                    double f = df;
-                    for (int k = 2; k < 250; k++) {
-                        double f_old = f;
-                        df = -df * xx / k;
-                        f += df;
-                        if (f == f_old) return (f);
-                    }
-                    throw new NonconvergenceException();
-                } else {
-                    // otherwise, just use the analytic expression
-                    return (1.0 - Math.Exp(-x / mu));
-                }
+                // 1 - e^{-x/mu}
+                return (-MoreMath.ExpMinusOne(-x / mu));
             }
         }
 
@@ -94,11 +80,10 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double Moment (int n) {
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
-            if (n == 0) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
                 return (1.0);
-            } else if (n == 1) {
-                return (Mean);
             } else {
                 return (MoreMath.Pow(mu, n) * AdvancedIntegerMath.Factorial(n));
             }
@@ -106,8 +91,9 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double MomentAboutMean (int n) {
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
-            if (n == 0) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
                 return (1.0);
             } else if (n == 1) {
                 return (0.0);
@@ -180,6 +166,27 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         double IParameterizedDistribution.Likelihood (double x) {
             return (ProbabilityDensity(x));
+        }
+
+        public static FitResult FitToSample (Sample sample) {
+
+            if (sample == null) throw new ArgumentNullException("sample");
+
+            // none of the data is allowed to be negative
+            foreach (double value in sample) {
+                if (value < 0.0) throw new InvalidOperationException();
+            }
+
+            // the best-fit exponential's mean sample mean, with corresponding uncertainly
+
+            double lambda = sample.Mean;
+            double dLambda = lambda / Math.Sqrt(sample.Count);
+
+            Distribution distribution = new ExponentialDistribution(lambda);
+            TestResult test = sample.KolmogorovSmirnovTest(distribution);
+
+            return (new FitResult(lambda, dLambda, test));
+
         }
 
     }

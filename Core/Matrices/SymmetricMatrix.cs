@@ -8,7 +8,7 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents a symmetric matrix.
     /// </summary>
-    public sealed class SymmetricMatrix : SquareMatrixBase, ISymmetricMatrix {
+    public sealed class SymmetricMatrix : SquareMatrixBase {
 
         private int dimension;
         private double[][] values;
@@ -38,20 +38,6 @@ namespace Meta.Numerics.Matrices {
                 return (dimension);
             }
         }
-
-        /*
-        int IMatrix.RowCount {
-            get {
-                return (dimension);
-            }
-        }
-
-        int IMatrix.ColumnCount {
-            get {
-                return (dimension);
-            }
-        }
-        */
 
         /// <summary>
         /// Gets or sets an element of the matrix.
@@ -84,38 +70,18 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
-        /*
-        private double GetEntry (int r, int c) {
-            Debug.Assert(c <= r);
-            return (values[r][c]);
-        }
-
-        private void SetEntry (int r, int c, double value) {
-            Debug.Assert(c <= r);
-            values[r][c] = value;
-        }
-        */
-
         /// <summary>
-        /// Returns an independent copy of the matrix.
+        /// Copies the matrix.
         /// </summary>
         /// <returns>An independent copy of the matrix.</returns>
-        public SymmetricMatrix Clone () {
-            SymmetricMatrix clone = new SymmetricMatrix(Dimension);
+        public SymmetricMatrix Copy () {
+            double[][] copy = SymmetricMatrixAlgorithms.InitializeStorage(dimension);
             for (int r = 0; r < Dimension; r++) {
                 for (int c = 0; c <= r; c++) {
-                    clone[r,c] = this[r,c];
+                    copy[r][c] = values[r][c];
                 }
             }
-            return (clone);
-        }
-
-        IMatrix IMatrix.Clone () {
-            return (Clone());
-        }
-
-        IMatrix IMatrix.Transpose () {
-            return (Clone());
+            return (new SymmetricMatrix(copy, dimension));
         }
 
         /// <summary>
@@ -468,6 +434,7 @@ namespace Meta.Numerics.Matrices {
             */
         }
 
+#if PAST
         private void Jacobi (double[,] V) {
 
         	int count = 0;
@@ -568,6 +535,7 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+#endif
         /*
         internal static void PrintMatrix (IMatrix M) {
             for (int r = 0; r < M.RowCount; r++) {
@@ -688,61 +656,53 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Subtracts two symmetric matrices.
         /// </summary>
-        /// <param name="M1">The first matrix.</param>
-        /// <param name="M2">The second matrix.</param>
-        /// <returns>The difference <paramref name="M1"/> + <paramref name="M2"/>.</returns>
-        internal static SymmetricMatrix Subtract (SymmetricMatrix M1, SymmetricMatrix M2) {
-            if (M1.Dimension != M2.Dimension) throw new DimensionMismatchException();
-            SymmetricMatrix N = new SymmetricMatrix(M1.Dimension);
-            for (int r = 0; r < N.Dimension; r++) {
+        /// <param name="A">The first matrix.</param>
+        /// <param name="B">The second matrix.</param>
+        /// <returns>The difference <paramref name="A"/> - <paramref name="B"/>.</returns>
+        public static SymmetricMatrix operator - (SymmetricMatrix A, SymmetricMatrix B) {
+            if (A == null) throw new ArgumentNullException("A");
+            if (B == null) throw new ArgumentNullException("B");
+            if (A.dimension != B.dimension) throw new DimensionMismatchException();
+            double[][] differenceStore = SymmetricMatrixAlgorithms.InitializeStorage(A.dimension);
+            for (int r = 0; r < A.dimension; r++) {
                 for (int c = 0; c <= r; c++) {
-                    N[r, c] = M1[r, c] - M2[r, c];
+                    differenceStore[r][c] = A.values[r][c] - B.values[r][c];
                 }
             }
-            return (N);
-        }
-
-        /// <summary>
-        /// Subtracts two symmetric matrices.
-        /// </summary>
-        /// <param name="M1">The first matrix.</param>
-        /// <param name="M2">The second matrix.</param>
-        /// <returns>The difference <paramref name="M1"/> - <paramref name="M2"/>.</returns>
-        public static SymmetricMatrix operator - (SymmetricMatrix M1, SymmetricMatrix M2) {
-            return (Subtract(M1, M2));
-        }
-
-        // arithmatic operators with doubles
-
-        private static SymmetricMatrix Multiply (double x, SymmetricMatrix M) {
-            int d = M.Dimension;
-            SymmetricMatrix N = new SymmetricMatrix(d);
-            for (int r = 0; r < d; r++) {
-                for (int c = 0; c <= r; c++) {
-                    N[r, c] = x * M[r, c];
-                }
-            }
-            return (N);
+            return (new SymmetricMatrix(differenceStore, A.dimension));
         }
 
         /// <summary>
         /// Multiplies a symmetric matrix by a real factor.
         /// </summary>
-        /// <param name="f">The factor.</param>
-        /// <param name="M">The matrix.</param>
+        /// <param name="alpha">The factor.</param>
+        /// <param name="A">The matrix.</param>
         /// <returns>The product of the matrix and the factor.</returns>
-        public static SymmetricMatrix operator * (double f, SymmetricMatrix M) {
-            return (Multiply(f, M));
+        public static SymmetricMatrix operator * (double alpha, SymmetricMatrix A) {
+            if (A == null) throw new ArgumentNullException("A");
+            double[][] productStore = SymmetricMatrixAlgorithms.InitializeStorage(A.dimension);
+            for (int r = 0; r < A.Dimension; r++) {
+                for (int c = 0; c <= r; c++) {
+                    productStore[r][c] = alpha * A.values[r][c];
+                }
+            }
+            return (new SymmetricMatrix(productStore, A.dimension));
         }
 
         /// <summary>
-        /// Computes the the quotient of a symmetric matrix and a real number.
+        /// Negates a symmetric matrix.
         /// </summary>
-        /// <param name="M">The matrix.</param>
-        /// <param name="x">The real number.</param>
-        /// <returns>The quotient <paramref name="M"/>/<paramref name="x"/>.</returns>
-        public static SymmetricMatrix operator / (SymmetricMatrix M, double x) {
-            return (Multiply(1.0 / x, M));
+        /// <param name="A">The matrix.</param>
+        /// <returns>The matrix -A.</returns>
+        public static SymmetricMatrix operator - (SymmetricMatrix A) {
+            if (A == null) throw new ArgumentNullException("A");
+            double[][] resultStore = SymmetricMatrixAlgorithms.InitializeStorage(A.dimension);
+            for (int r = 0; r < A.Dimension; r++) {
+                for (int c = 0; c <= r; c++) {
+                    resultStore[r][c] = - A.values[r][c];
+                }
+            }
+            return (new SymmetricMatrix(resultStore, A.dimension));
         }
 
     }

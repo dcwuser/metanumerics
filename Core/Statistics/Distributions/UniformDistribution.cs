@@ -119,6 +119,19 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+        internal override double Cumulant (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (0.0);
+            } else if (n == 1) {
+                return (range.Midpoint);
+            } else {
+                // B_n / n where B_n is nth Bernoulli number
+                throw new NotImplementedException();
+            }
+        }
+
         /// <inheritdoc />
         public override double Mean {
             get {

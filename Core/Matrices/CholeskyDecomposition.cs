@@ -22,7 +22,7 @@ namespace Meta.Numerics.Matrices {
     /// </code>
     /// </example>
     /// <seealso cref="SymmetricMatrix.CholeskyDecomposition"/>
-    public class CholeskyDecomposition : ISquareDecomposition {
+    public class CholeskyDecomposition {
 
         internal SymmetricMatrix sqrtM;
 
@@ -139,10 +139,6 @@ namespace Meta.Numerics.Matrices {
             // end unnecessary?
 
             return (MI);
-        }
-
-        ISquareMatrix ISquareDecomposition.Inverse () {
-            return (Inverse());
         }
 
         /// <summary>

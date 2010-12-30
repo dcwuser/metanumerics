@@ -116,7 +116,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void MultivariateNormalTest () {
+        public void MultivariateNormalSummaryStatistics () {
 
             ColumnVector V = new ColumnVector( new double[] { 1.0, 2.0} );
             SymmetricMatrix C = new SymmetricMatrix(2);
@@ -129,14 +129,14 @@ namespace Test
             Assert.IsTrue(S.Count == N);
 
             // check the population means
-            Assert.IsTrue(S.PopulationMean(0).ConfidenceInterval(0.95).ClosedContains(1.0));
-            Assert.IsTrue(S.PopulationMean(1).ConfidenceInterval(0.95).ClosedContains(2.0));
+            Assert.IsTrue(S.Column(0).PopulationMean.ConfidenceInterval(0.95).ClosedContains(1.0));
+            Assert.IsTrue(S.Column(1).PopulationMean.ConfidenceInterval(0.95).ClosedContains(2.0));
 
             // check the population variances
-            Assert.IsTrue(S.PopulationCovariance(0, 0).ConfidenceInterval(0.95).ClosedContains(C[0, 0]));
-            Assert.IsTrue(S.PopulationCovariance(0, 1).ConfidenceInterval(0.95).ClosedContains(C[0, 1]));
-            Assert.IsTrue(S.PopulationCovariance(1, 0).ConfidenceInterval(0.95).ClosedContains(C[1, 0]));
-            Assert.IsTrue(S.PopulationCovariance(1, 1).ConfidenceInterval(0.95).ClosedContains(C[1, 1]));
+            Assert.IsTrue(S.Column(0).PopulationVariance.ConfidenceInterval(0.95).ClosedContains(C[0, 0]));
+            //Assert.IsTrue(S.PopulationCovariance(0, 1).ConfidenceInterval(0.95).ClosedContains(C[0, 1]));
+            //Assert.IsTrue(S.PopulationCovariance(1, 0).ConfidenceInterval(0.95).ClosedContains(C[1, 0]));
+            Assert.IsTrue(S.Column(1).PopulationVariance.ConfidenceInterval(0.95).ClosedContains(C[1, 1]));
             //Console.WriteLine(S.PopulationCovariance(0, 0));
             //Console.WriteLine(S.PopulationCovariance(1, 1));
             //Console.WriteLine(S.PopulationCovariance(0, 1));
@@ -144,18 +144,18 @@ namespace Test
             Console.WriteLine("--");
             // add tests of known higher moments for multivariate normal distribution
             // at the momement that is hard because we don't have uncertainty estimates for them
-            Console.WriteLine(S.Moment(0, 0));
-            Console.WriteLine(S.Mean(0));
-            Console.WriteLine(S.Moment(1, 0));
-            Console.WriteLine(S.Variance(0));
-            Console.WriteLine(S.MomentAboutMean(2, 0));
-            Console.WriteLine(S.MomentAboutMean(3, 0));
-            Console.WriteLine(S.MomentAboutMean(4, 0));
+            //Console.WriteLine(S.Moment(0, 0));
+            //Console.WriteLine(S.Mean(0));
+            //Console.WriteLine(S.Moment(1, 0));
+            //Console.WriteLine(S.Variance(0));
+            //Console.WriteLine(S.MomentAboutMean(2, 0));
+            //Console.WriteLine(S.MomentAboutMean(3, 0));
+            //Console.WriteLine(S.MomentAboutMean(4, 0));
 
         }
 
         [TestMethod]
-        public void MultivariateNullAssociationTest () {
+        public void BivariateNullAssociation () {
 
             Random rng = new Random(314159265);
 
@@ -169,25 +169,26 @@ namespace Test
             Distribution SD = null;
             Distribution KD = null;
 
-            // generate a large number of multivariate samples and conduct our three tests on each
+            // generate a large number of bivariate samples and conduct our three tests on each
 
             for (int j = 0; j < 100; j++) {
 
-                MultivariateSample S = new MultivariateSample(2);
+                BivariateSample S = new BivariateSample();
 
+                // sample size should be large so that asymptotic assumptions are justified
                 for (int i = 0; i < 100; i++) {
                     double x = rng.NextDouble();
                     double y = rng.NextDouble();
                     S.Add(x, y);
                 }
 
-                TestResult PR = S.PearsonRTest(0, 1);
+                TestResult PR = S.PearsonRTest();
                 PS.Add(PR.Statistic);
                 PD = PR.Distribution;
-                TestResult SR = S.SpearmanRhoTest(0, 1);
+                TestResult SR = S.SpearmanRhoTest();
                 SS.Add(SR.Statistic);
                 SD = SR.Distribution;
-                TestResult KR = S.KendallTauTest(0, 1);
+                TestResult KR = S.KendallTauTest();
                 KS.Add(KR.Statistic);
                 KD = KR.Distribution;
 
@@ -202,99 +203,11 @@ namespace Test
             Assert.IsTrue(KS.KolmogorovSmirnovTest(KD).LeftProbability < 0.95);
 
         }
-
-        [TestMethod]
-        public void PearsonRDistribution () {
-
-            Random rng = new Random(1);
-
-            // pick some underlying distributions for the sample variables, which must be normal but can have any parameters
-            NormalDistribution xDistribution = new NormalDistribution(1, 2);
-            NormalDistribution yDistribution = new NormalDistribution(3, 4);
-
-            // try this for several sample sizes, all low so that we see the difference from the normal distribution
-            // n = 3 maxima at ends; n = 4 uniform; n = 5 semi-circular "mound"; n = 6 parabolic "mound"
-            foreach (int n in new int[] { 3, 4, 5, 8 }) {
-                Console.WriteLine("n={0}", n);
-
-                // find r values
-                Sample rSample = new Sample();
-                for (int i = 0; i < 50; i++) {
-
-                    // to get each r value, construct a bivariate sample of the given size with no cross-correlation
-                    MultivariateSample xySample = new MultivariateSample(2);
-                    for (int j = 0; j < n; j++) {
-                        xySample.Add(xDistribution.GetRandomValue(rng), yDistribution.GetRandomValue(rng));
-                    }
-                    double r = xySample.PearsonRTest(0, 1).Statistic;
-                    rSample.Add(r);
-
-                }
-
-                // check whether r is distributed as expected
-                TestResult result = rSample.KolmogorovSmirnovTest(new PearsonRDistribution(n));
-                Console.WriteLine("P={0}", result.LeftProbability);
-                Assert.IsTrue(result.LeftProbability < 0.95);
-            }
-
-
-        }
-
-        [TestMethod]
-        public void MultivariateSampleAgreementTest () {
-
-
-            // check agreement of multivariate and univariate samples
-
-            MultivariateSample ms = new MultivariateSample(1);
-            Sample us = new Sample();
-
-            // add some values
-
-            Distribution dist = new WeibullDistribution(1.0, 2.0);
-            Random rng = new Random(1);
-            for (int i = 0; i < 100; i++) {
-                double x = dist.InverseLeftProbability(rng.NextDouble());
-                ms.Add(x);
-                us.Add(x);
-            }
-
-            Console.WriteLine("count");
-            Assert.IsTrue(ms.Count == us.Count);
-
-            Console.WriteLine("descriptive");
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.Mean(0), us.Mean));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.StandardDeviation(0), us.StandardDeviation));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.Variance(0), us.Variance));
-
-            Console.WriteLine("raw moments");
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.Moment(0), us.Moment(0)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.Moment(1), us.Moment(1)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.Moment(2), us.Moment(2)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.Moment(3), us.Moment(3)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.Moment(4), us.Moment(4)));
-
-            Console.WriteLine("central moments");
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.MomentAboutMean(0), us.MomentAboutMean(0)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.MomentAboutMean(1), us.MomentAboutMean(1)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.MomentAboutMean(2), us.MomentAboutMean(2)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.MomentAboutMean(3), us.MomentAboutMean(3)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.MomentAboutMean(4), us.MomentAboutMean(4)));
-
-            Console.WriteLine("population means");
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.PopulationMean(0).Value, us.PopulationMean.Value));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.PopulationMean(0).Uncertainty, us.PopulationMean.Uncertainty));
-
-            Console.WriteLine("population variance");
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.PopulationCovariance(0, 0).Value, us.PopulationVariance.Value));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ms.PopulationCovariance(0, 0).Uncertainty, us.PopulationVariance.Uncertainty));
-
-        }
-
+        
         [TestMethod]
         public void PairedStudentTTest () {
 
-            MultivariateSample s = new MultivariateSample(2);
+            BivariateSample s = new BivariateSample();
             s.Add(3, 5);
             s.Add(0, 1);
             s.Add(6, 5);
@@ -305,9 +218,7 @@ namespace Test
             s.Add(1, 11);
             s.Add(4, 8);
             Console.WriteLine(s.Count);
-            Console.WriteLine(s.PopulationMean(0));
-            Console.WriteLine(s.PopulationMean(1));
-            TestResult r = s.PairedStudentTTest(0, 1);
+            TestResult r = s.PairedStudentTTest();
             Console.WriteLine(r.Statistic);
             Console.WriteLine(r.LeftProbability);
         }
@@ -455,6 +366,38 @@ namespace Test
 
             //sample.LinearRegression(0);
             sample.LinearRegression(new int[] { 1, 2 }, 0);
+
+        }
+
+        [TestMethod]
+        public void MultivariateMoments () {
+
+            // create a random sample
+            MultivariateSample M = new MultivariateSample(3);
+            Distribution d0 = new NormalDistribution();
+            Distribution d1 = new ExponentialDistribution();
+            Distribution d2 = new UniformDistribution();
+            Random rng = new Random(1);
+            int n = 10;
+            for (int i = 0; i < n; i++) {
+                M.Add(d0.GetRandomValue(rng), d1.GetRandomValue(rng), d2.GetRandomValue(rng));
+            }
+
+            // test that moments agree
+            for (int i = 0; i < 3; i++) {
+                int[] p = new int[3];
+                p[i] = 1;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(M.Column(i).Mean, M.Moment(p)));
+                p[i] = 2;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(M.Column(i).Variance, M.MomentAboutMean(p)));
+                for (int j = 0; j < i; j++) {
+                    int[] q = new int[3];
+                    q[i] = 1;
+                    q[j] = 1;
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(M.TwoColumns(i, j).Covariance, M.MomentAboutMean(q)));
+                }
+            }
+
 
         }
 

@@ -121,6 +121,21 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
+        /// Subtracts two real, rectangular matrices.
+        /// </summary>
+        /// <param name="A">The first matrix.</param>
+        /// <param name="B">The second matrix.</param>
+        /// <returns>The sum matrix <paramref name="A"/> - <paramref name="B"/>.</returns>
+        public static RectangularMatrix operator - (RectangularMatrix A, RectangularMatrix B) {
+            if (A == null) throw new ArgumentNullException("A");
+            if (B == null) throw new ArgumentNullException("B");
+            if (A.rows != B.rows) throw new DimensionMismatchException();
+            if (A.cols != B.cols) throw new DimensionMismatchException();
+            double[] abStore = MatrixAlgorithms.Subtract(A.store, B.store, A.rows, A.cols);
+            return (new RectangularMatrix(abStore, A.rows, A.cols));
+        }
+
+        /// <summary>
         /// Multiplies two real, rectangular matrices.
         /// </summary>
         /// <param name="A">The first matrix.</param>
@@ -135,13 +150,36 @@ namespace Meta.Numerics.Matrices {
             return (new RectangularMatrix(abStore, A.rows, B.cols));
         }
 
+        /// <summary>
+        /// Multiply a real, rectangular matrix by a real constant.
+        /// </summary>
+        /// <param name="alpha">The constant.</param>
+        /// <param name="A">The matrix.</param>
+        /// <returns>The product aA.</returns>
+        public static RectangularMatrix operator * (double alpha, RectangularMatrix A) {
+            if (A == null) throw new ArgumentNullException("A");
+            double[] store = MatrixAlgorithms.Multiply(alpha, A.store, A.rows, A.cols);
+            return (new RectangularMatrix(store, A.rows, A.cols));
+        }
+
+        /// <summary>
+        /// Negates a real, rectangular matrix.
+        /// </summary>
+        /// <param name="A">The matrix.</param>
+        /// <returns>The matrix -A.</returns>
+        public static RectangularMatrix operator - (RectangularMatrix A) {
+            if (A == null) throw new ArgumentNullException("A");
+            double[] store = MatrixAlgorithms.Multiply(-1.0, A.store, A.rows, A.cols);
+            return (new RectangularMatrix(store, A.rows, A.cols));
+        }
+
         // simple specific operations
 
         /// <summary>
-        /// Creates a clone of the matrix.
+        /// Copies the matrix.
         /// </summary>
-        /// <returns>A clone of the matrix.</returns>
-        public RectangularMatrix Clone () {
+        /// <returns>An indpendent copy of the matrix.</returns>
+        public RectangularMatrix Copy () {
             double[] cStore = MatrixAlgorithms.Copy(store, rows, cols);
             return (new RectangularMatrix(cStore, rows, cols));
         }

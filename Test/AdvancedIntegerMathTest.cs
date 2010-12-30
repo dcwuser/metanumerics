@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
+using System.Diagnostics;
 
+using Meta.Numerics;
 using Meta.Numerics.Functions;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -63,8 +65,6 @@ namespace Test {
 
         // Factorial
 
-        private int nmax = 30;
-
         [TestMethod]
         public void FactorialSpecialCases () {
             Assert.IsTrue(AdvancedIntegerMath.Factorial(0) == 1);
@@ -113,21 +113,26 @@ namespace Test {
         // Binomial coefficients
 
         [TestMethod]
-        public void BinomialCoefficientRecurrenceTest () {
+        public void BinomialCoefficientRecurrence () {
             // this is the Pascal triangle recurrence
-            for (int n = 1; n < nmax; n++) {
-                for (int m = 1; m < n; m++) {
-                    //Assert.AreEqual<long>(AdvancedIntegerMath.BinomialCoefficient(n + 1, m), AdvancedIntegerMath.BinomialCoefficient(n, m) + AdvancedIntegerMath.BinomialCoefficient(n, m - 1));
-                    Assert.AreEqual<long>(AdvancedIntegerMath.BinomialCoefficient(n + 1, m + 1), AdvancedIntegerMath.BinomialCoefficient(n, m) + AdvancedIntegerMath.BinomialCoefficient(n, m+1));
-
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
+                foreach (int m in TestUtilities.GenerateUniformIntegerValues(0, n-1, 5)) {
+                    Console.WriteLine("n = {0}, m = {1}", n, m);
+                    Console.WriteLine(AdvancedIntegerMath.BinomialCoefficient(n + 1, m + 1));
+                    Console.WriteLine(AdvancedIntegerMath.BinomialCoefficient(n, m + 1));
+                    Console.WriteLine(AdvancedIntegerMath.BinomialCoefficient(n, m));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        AdvancedIntegerMath.BinomialCoefficient(n + 1, m + 1),
+                        AdvancedIntegerMath.BinomialCoefficient(n, m) + AdvancedIntegerMath.BinomialCoefficient(n, m + 1)
+                    ));
                 }
             }
         }
 
         [TestMethod]
-        public void BinomialCoefficientInequalityTest () {
-            for (int n = 1; n < nmax; n++) {
-                for (int m = 1; m < n; m++) {
+        public void BinomialCoefficientInequality () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 6)) {
+                foreach (int m in TestUtilities.GenerateUniformIntegerValues(0, n, 4)) {
                     double lower = Math.Pow(1.0 * n / m, m);
                     double upper = Math.Pow(Math.E * n / m, m);
                     double value = AdvancedIntegerMath.BinomialCoefficient(n, m);
@@ -138,7 +143,7 @@ namespace Test {
 
         [TestMethod]
         public void BinomialCoefficientSpecialCases () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 30, 5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 6)) {
                 Assert.IsTrue(AdvancedIntegerMath.BinomialCoefficient(n, 0) == 1);
                 Assert.IsTrue(AdvancedIntegerMath.BinomialCoefficient(n, 1) == n);
                 Assert.IsTrue(AdvancedIntegerMath.BinomialCoefficient(n, n - 1) == n);
@@ -147,32 +152,34 @@ namespace Test {
         }
 
         [TestMethod]
-        public void BinomialCoefficientSum () {
-
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 30, 5)) {
-                long sum = 0;
-                long product = 1;
-                for (int m = 0; m <= n; m++) {
-                    sum += AdvancedIntegerMath.BinomialCoefficient(n, m);
-                    if (m > 0) product *= 2;
+        public void BinomialCoefficientSums () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
+                double S0 = 0.0;
+                double S1 = 0.0;
+                double S2 = 0.0;
+                int k = 0;
+                foreach (double B in AdvancedIntegerMath.BinomialCoefficients(n)) {
+                    S0 += B;
+                    S1 += k * B;
+                    S2 += k * k * B;
+                    k += 1;
                 }
-                Console.WriteLine("n={0}, sum={0}, product={1}", n, sum, product);
-                Assert.IsTrue(sum == product);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(S0, MoreMath.Pow(2, n)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(S1, MoreMath.Pow(2, n - 1) * n));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(S2, MoreMath.Pow(2, n - 2) * n * (n + 1)));
             }
         }
 
         [TestMethod]
-        public void BinomialCoefficientSumOfSquaresTest () {
-            for (int n = 0; n < nmax; n++) {
-                Console.WriteLine(n);
-                long sum = 0;
-                for (int m = 0; m <= n; m++) {
-                    Console.WriteLine("  {0} {1}", m, AdvancedIntegerMath.BinomialCoefficient(n, m));
-                    long value = AdvancedIntegerMath.BinomialCoefficient(n, m);
-                    sum += value * value;
+        public void BinomialCoefficientAgreement () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
+                int m = -1;
+                IEnumerator B = AdvancedIntegerMath.BinomialCoefficients(n).GetEnumerator();
+                while (B.MoveNext()) {
+                    m++;
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual((double)B.Current, AdvancedIntegerMath.BinomialCoefficient(n, m)));
                 }
-                Console.WriteLine(AdvancedIntegerMath.BinomialCoefficient(2 * n, n));
-                Assert.IsTrue(sum == AdvancedIntegerMath.BinomialCoefficient(2 * n, n));
+
             }
         }
 
@@ -241,10 +248,38 @@ namespace Test {
 
         [TestMethod]
         public void PowModTest () {
-            Console.WriteLine(AdvancedIntegerMath.PowMod(130000000, 670, 59));
-            Console.WriteLine(AdvancedIntegerMath.PowMod(2, 360360, 779167));
+            // an example from http://en.wikipedia.org/wiki/Modular_exponentiation
+            Assert.IsTrue(AdvancedIntegerMath.PowMod(4, 13, 497) == 445);
+            // from the calculator http://www.math.umn.edu/~garrett/crypto/a01/FastPow.html
+            Assert.IsTrue(AdvancedIntegerMath.PowMod(130000000, 670, 59) == 3);
             // some examples from http://modular.math.washington.edu/edu/2007/spring/ent/ent-html/node81.html
-            Assert.IsTrue(AdvancedIntegerMath.PowMod(2, 360360, 779167) == 584876);
+            Assert.IsTrue(AdvancedIntegerMath.PowMod(2, 60, 779167) == 710981);
+            Assert.IsTrue(AdvancedIntegerMath.PowMod(2, 360360, 779167) == 584877);
+        }
+
+        [TestMethod]
+        public void BinomialTest () {
+            Console.WriteLine(AdvancedIntegerMath.BinomialCoefficient(35, 8));
+        }
+
+        [TestMethod]
+        public void BinomialEnumerator () {
+            Stopwatch s = Stopwatch.StartNew();
+
+            int c = 0;
+            foreach (double B in AdvancedIntegerMath.BinomialCoefficients(161)) {
+                Console.WriteLine(B);
+                c++;
+            }
+            Console.WriteLine(c);
+
+            //for (int k = 0; k <= 60; k++) {
+            //    double B = AdvancedIntegerMath.BinomialCoefficient(60, k);
+            //}
+
+            s.Stop();
+            //Console.WriteLine(s.ElapsedMilliseconds);
+
         }
 
     }

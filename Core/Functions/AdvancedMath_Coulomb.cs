@@ -795,7 +795,7 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// The right-hand side of the differential equation.
         /// </summary>
-        public Function<double, double, double> RightHandSide { get; set; }
+        public Func<double, double, double> RightHandSide { get; set; }
 
         protected double Evaluate (double x, double y) {
             count++;

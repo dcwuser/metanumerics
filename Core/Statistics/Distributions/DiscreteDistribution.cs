@@ -91,7 +91,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="f">The function.</param>
         /// <returns>The expectation value of the function.</returns>
-        public virtual double ExpectationValue (Function<int, double> f) {
+        public virtual double ExpectationValue (Func<int, double> f) {
             if (f == null) throw new ArgumentNullException("f");
             DiscreteInterval support = Support;
 
@@ -121,7 +121,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public virtual double Mean {
             get {
-                Function<int, double> f = delegate (int k) {
+                Func<int, double> f = delegate (int k) {
                     return (k);
                 };
                 return (ExpectationValue(f));
@@ -188,6 +188,20 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double mu = Mean;
                 return (ExpectationValue(delegate(int k) { return (MoreMath.Pow(k - mu, n)); }));
             }
+        }
+
+        internal virtual double Cumulant (int n) {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Produces a random integer drawn from the distribution.
+        /// </summary>
+        /// <param name="rng">A random number generator.</param>
+        /// <returns>A random integer drawn from the distribution.</returns>
+        public virtual int GetRandomValue (Random rng) {
+            if (rng == null) throw new ArgumentNullException("rng");
+            return (InverseLeftProbability(rng.NextDouble()));
         }
 
     }

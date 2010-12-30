@@ -57,7 +57,7 @@ namespace Test {
         [TestMethod]
         public void FindMinimumOfGamma () {
 
-            Function<double, double> f = new Function<double, double>(AdvancedMath.Gamma);
+            Func<double, double> f = new Func<double, double>(AdvancedMath.Gamma);
             LineExtremum minimum = FunctionMath.FindMinimum(f, 1.5);
 
             Console.WriteLine(minimum.Location);
@@ -83,7 +83,7 @@ namespace Test {
         [TestMethod]
         public void FindMaximumOfDawson () {
 
-            Function<double, double> f = delegate(double x) {
+            Func<double, double> f = delegate(double x) {
                 return (-AdvancedMath.Dawson(x));
             };
             LineExtremum maximum = FunctionMath.FindMinimum(f, Interval.FromEndpoints(0.0, 2.0));
@@ -95,7 +95,7 @@ namespace Test {
         [TestMethod]
         public void FindMinimumOfCosine () {
 
-            Function<double, double> f = delegate(double x) {
+            Func<double, double> f = delegate(double x) {
                 return (Math.Cos(x));
             };
             LineExtremum minimum = FunctionMath.FindMinimum(f, Interval.FromEndpoints(1.0, 6.0));
@@ -111,7 +111,7 @@ namespace Test {
         [TestMethod]
         public void FindSpaceMinimumOfRosenbock () {
 
-            Function<double[], double> f = delegate(double[] x) {
+            Func<double[], double> f = delegate(double[] x) {
                 double xx = x[0] * x[0];
                 return( 100.0 * Math.Pow(x[1] - xx, 2) + Math.Pow(1.0-x[0],2) );
             };

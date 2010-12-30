@@ -4,6 +4,8 @@ using System.Text;
 
 namespace Meta.Numerics {
 
+#if PAST
+
     /// <summary>
     /// Represents a function of one input parameter.
     /// </summary>
@@ -11,7 +13,7 @@ namespace Meta.Numerics {
     /// <typeparam name="TOut">The type of the output value.</typeparam>
     /// <param name="x">The input parameter.</param>
     /// <returns>The output value.</returns>
-    public delegate TOut Function<TIn, TOut> (TIn x);
+    public delegate TOut Func<TIn, TOut> (TIn x);
 
     /// <summary>
     /// Represents a function of two input parameters.
@@ -22,6 +24,7 @@ namespace Meta.Numerics {
     /// <param name="x1">The first input parameter.</param>
     /// <param name="x2">The second input parameter.</param>
     /// <returns>The output value.</returns>
-    public delegate TOut Function<TIn1, TIn2, TOut> (TIn1 x1, TIn2 x2);
+    public delegate TOut Func<TIn1, TIn2, TOut> (TIn1 x1, TIn2 x2);
 
+#endif
 }

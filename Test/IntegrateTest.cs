@@ -13,13 +13,13 @@ namespace Test {
 
     internal class TestIntegral {
 
-        public TestIntegral (Function<double, double> f, Interval r, double I) {
+        public TestIntegral (Func<double, double> f, Interval r, double I) {
             this.Integrand = f;
             this.Range = r;
             this.Result = I;
         }
 
-        public Function<double, double> Integrand { get; private set; }
+        public Func<double, double> Integrand { get; private set; }
 
         public Interval Range { get; private set; }
 

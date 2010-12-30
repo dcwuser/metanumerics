@@ -490,6 +490,14 @@ namespace Meta.Numerics.Matrices {
             return (store);
         }
 
+        public static double[] Multiply (double alpha, double[] store, int nRows, int nCols) {
+            double[] result = new double[nRows * nCols];
+            for (int i = 0; i < store.Length; i++) {
+                result[i] = alpha * store[i];
+            }
+            return (result);
+        }
+
         // multiplication: an O(N^3) algorithm
 
         public static double[] Multiply (double[] aStore, int aRows, int aCols, double[] bStore, int bRows, int bCols) {

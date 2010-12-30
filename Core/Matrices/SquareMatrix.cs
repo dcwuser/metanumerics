@@ -122,10 +122,10 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Clones the matrix.
+        /// Copies the matrix.
         /// </summary>
-        /// <returns>An independent clone of the matrix.</returns>
-        public SquareMatrix Clone () {
+        /// <returns>An independent copy of the matrix.</returns>
+        public SquareMatrix Copy () {
             double[] cStore = MatrixAlgorithms.Copy(store, dimension, dimension);
             return (new SquareMatrix(cStore, dimension));
         }
@@ -975,6 +975,8 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+#if PAST
+
         private static void WilkersonOneStep (double[] store, int dimension, int a, int n) {
 
             //Console.WriteLine("Before:");
@@ -1058,8 +1060,6 @@ namespace Meta.Numerics.Matrices {
         //   a = -/+ |x|
         // 
 
-#if PAST
-
         public static void GenerateHouseholderReflection (double[] store, int offset, int stride, int count, out double a) {
             double xm = Blas1.dNrm2(store, offset, stride, count);
             if (xm == 0.0) {
@@ -1113,7 +1113,6 @@ namespace Meta.Numerics.Matrices {
         }
 
 
-#endif
         // XXXXX    XXXXX
         // XXXXX    XXXXX
         // 00XXX -> X0XXX ->
@@ -1139,7 +1138,7 @@ namespace Meta.Numerics.Matrices {
                 Console.WriteLine();
             }
         }
-
+#endif
         /*
         public static Complex[] ExtractEigenvalues (double[] aStore, double[] qStore, int dimension) {
 
@@ -1412,6 +1411,8 @@ namespace Meta.Numerics.Matrices {
         }
          */
 
+#if PAST
+
         // generate a Givens rotation matrix, such that
         //   (  c  s ) ( a ) = ( r )
         //   ( -s  c ) ( b )   ( 0 )
@@ -1539,6 +1540,7 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
+
         public static void GolubKahanStep (double[] a, double [] b, int dimension, int f, int n) {
 
             // t is a temporary storage register for copying, c contains the current non-diagonal element
@@ -1563,7 +1565,7 @@ namespace Meta.Numerics.Matrices {
 
 
         }
-
+#endif
 
 #if FUTURE
 
@@ -1610,7 +1612,7 @@ namespace Meta.Numerics.Matrices {
         }
 
 #endif
-
+#if PAST
 
         // given a matrix column, returns the properly normalized vector defining the Householder transform that zeros it
         // if v is the returned vector, T = I - v v^T is the transform, applied to A as T A T
@@ -1699,6 +1701,7 @@ namespace Meta.Numerics.Matrices {
             return (x);
         }
 
+#endif
         /// <summary>
         /// Computes a QR decomposition of the matrix.
         /// </summary>
@@ -1764,6 +1767,29 @@ namespace Meta.Numerics.Matrices {
 
         // mixed arithmetic
 
+        /// <summary>
+        /// Multiply a real, square matrix by a real constant.
+        /// </summary>
+        /// <param name="alpha">The constant.</param>
+        /// <param name="A">The matrix.</param>
+        /// <returns>The product aA.</returns>
+        public static SquareMatrix operator * (double alpha, SquareMatrix A) {
+            if (A == null) throw new ArgumentNullException("A");
+            double[] store = MatrixAlgorithms.Multiply(alpha, A.store, A.dimension, A.dimension);
+            return (new SquareMatrix(store, A.dimension));
+        }
+
+        /// <summary>
+        /// Negates a real, square matrix.
+        /// </summary>
+        /// <param name="A">The matrix.</param>
+        /// <returns>The matrix -A.</returns>
+        public static SquareMatrix operator - (SquareMatrix A) {
+            if (A == null) throw new ArgumentNullException("A");
+            double[] store = MatrixAlgorithms.Multiply(-1.0, A.store, A.dimension, A.dimension);
+            return (new SquareMatrix(store, A.dimension));
+        }
+        /*
         internal static SquareMatrix Multiply (double x, SquareMatrix M) {
             SquareMatrix N = new SquareMatrix(M.Dimension);
             for (int r = 0; r < N.Dimension; r++) {
@@ -1793,11 +1819,11 @@ namespace Meta.Numerics.Matrices {
         public static SquareMatrix operator / (SquareMatrix M, double x) {
             return (Multiply(1.0 / x, M));
         }
-
+        */
     }
 
 
-    public static class SquareMatrixAlgorithms {
+    internal static class SquareMatrixAlgorithms {
 
         public static double[] CreateUnitMatrix (int dimension) {
             double[] store = MatrixAlgorithms.AllocateStorage(dimension, dimension);

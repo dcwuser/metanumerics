@@ -35,13 +35,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Initializes a new triangular distribution.
         /// </summary>
-        /// <param name="a">One point of the distribution.</param>
-        /// <param name="b">One point of the distribution.</param>
-        /// <param name="c">One point of the distribution.</param>
+        /// <param name="a">One inflection point of the distribution.</param>
+        /// <param name="b">A second inflection point of the distribution.</param>
+        /// <param name="c">A third inflection point of the distribution.</param>
         public TriangularDistribution (double a, double b, double c) {
 
             // check for validity
-            if ((a == b) && (b == c)) throw new ArgumentException();
+            if ((a == b) && (b == c)) throw new InvalidOperationException();
 
             // order points
             if (a > c) Global.Swap(ref a, ref c);

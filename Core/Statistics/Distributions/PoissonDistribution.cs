@@ -93,6 +93,16 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+        internal override double Cumulant (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (0.0);
+            } else {
+                return (mu);
+            }
+        }
+
         /// <inheritdoc />
         public override int InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");

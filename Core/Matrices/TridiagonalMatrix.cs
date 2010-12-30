@@ -9,7 +9,7 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents a tridiagonal matrix.
     /// </summary>
-    public sealed class TridiagonalMatrix : SquareMatrixBase, IMatrix, ISquareMatrix {
+    public sealed class TridiagonalMatrix : SquareMatrixBase {
 
         /// <summary>
         /// Initializes a new tridiagonal matrix of the given dimension.
@@ -32,18 +32,6 @@ namespace Meta.Numerics.Matrices {
         /// Gets the dimension of the matrix.
         /// </summary>
         public override int Dimension {
-            get {
-                return (dimension);
-            }
-        }
-
-        int IMatrix.RowCount {
-            get {
-                return (dimension);
-            }
-        }
-
-        int IMatrix.ColumnCount {
             get {
                 return (dimension);
             }
@@ -126,10 +114,10 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Clones the matrix.
+        /// Copies the matrix.
         /// </summary>
-        /// <returns>An independent clone of the matrix.</returns>
-        public TridiagonalMatrix Clone () {
+        /// <returns>An independent copy of the matrix.</returns>
+        public TridiagonalMatrix Copy () {
             TridiagonalMatrix C = new TridiagonalMatrix(dimension);
             for (int i = 0; i < (dimension-1); i++) {
                 C.SetDiagonalElement(i, GetDiagonalElement(i));
@@ -138,10 +126,6 @@ namespace Meta.Numerics.Matrices {
             }
             C.SetDiagonalElement(dimension - 1, GetDiagonalElement(dimension - 1));
             return (C);
-        }
-
-        IMatrix IMatrix.Clone () {
-            return (Clone());
         }
 
         /// <summary>
@@ -157,10 +141,6 @@ namespace Meta.Numerics.Matrices {
             }
             T.SetDiagonalElement(dimension - 1, GetDiagonalElement(dimension - 1));
             return (T);
-        }
-
-        IMatrix IMatrix.Transpose () {
-            return (Transpose());
         }
 
         /// <summary>

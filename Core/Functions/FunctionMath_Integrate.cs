@@ -72,7 +72,7 @@ namespace Meta.Numerics.Functions {
         /// to evaluate I = &#x222B;<sub>0</sub><sup>b</sup> f(x) x<sup>-1/2</sup> dx, substitute y = x<sup>1/2</sup>
         /// to obtain I = 2 &#x222B;<sub>0</sub><sup>&#x221A;b</sup> f(y<sup>2</sup>) dy.</para>
         /// </remarks>
-        public static double Integrate (Function<double, double> integrand, Interval range) {
+        public static double Integrate (Func<double, double> integrand, Interval range) {
             EvaluationSettings settings = new EvaluationSettings();
             return (Integrate(integrand, range, settings));
         }
@@ -85,7 +85,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="range">The range of integration.</param>
         /// <param name="settings">The settings which control the evaulation of the integal.</param>
         /// <returns>A numerical estimate of the given integral.</returns>
-        public static double Integrate (Function<double,double> integrand, Interval range, EvaluationSettings settings) {
+        public static double Integrate (Func<double,double> integrand, Interval range, EvaluationSettings settings) {
 
             if (integrand == null) throw new ArgumentNullException("integrand");
 
@@ -96,8 +96,8 @@ namespace Meta.Numerics.Functions {
                 // -infinity to +infinity
 
                 // remap to (-pi/2,pi/2)
-                Function<double, double> f0 = integrand;
-                Function<double, double> f1 = delegate (double t) {
+                Func<double, double> f0 = integrand;
+                Func<double, double> f1 = delegate (double t) {
                     double x = Math.Tan(t);
                     return (f0(x) * (1.0 + x * x));
                 };
@@ -111,8 +111,8 @@ namespace Meta.Numerics.Functions {
 
                 // remap to interval (-1,1)
                 double a0 = range.LeftEndpoint;
-                Function<double, double> f0 = integrand;
-                Function<double, double> f1 = delegate (double t) {
+                Func<double, double> f0 = integrand;
+                Func<double, double> f1 = delegate (double t) {
                     double q = 1.0 - t;
                     double x = a0 + (1 + t) / q;
                     return (f0(x) * (2.0 / q / q));
@@ -127,8 +127,8 @@ namespace Meta.Numerics.Functions {
 
                 // remap to interval (-1,1)
                 double b0 = range.RightEndpoint;
-                Function<double, double> f0 = integrand;
-                Function<double, double> f1 = delegate (double t) {
+                Func<double, double> f0 = integrand;
+                Func<double, double> f1 = delegate (double t) {
                     double q = t + 1.0;
                     double x = b0 + (t - 1.0) / q;
                     return(f0(x) * (2.0 / q / q));
@@ -161,7 +161,12 @@ namespace Meta.Numerics.Functions {
 
                 // go through the intervals, adding estimates (and errors)
                 // and noting which contributes the most error
+                // keep track of the total value and uncertainty
                 UncertainValue vTotal = new UncertainValue();
+                //double v = 0.0;
+                //double u = 0.0;
+
+                // keep track of which node contributes the most error
                 LinkedListNode<IAdaptiveIntegrator> maxNode = null;
                 double maxError = 0.0;
 
@@ -169,9 +174,13 @@ namespace Meta.Numerics.Functions {
                 while (node != null) {
 
                     IAdaptiveIntegrator i = node.Value;
-                    UncertainValue v = i.Estimate;
 
-                    vTotal = vTotal + v;
+                    UncertainValue v = i.Estimate;
+                    vTotal += v;
+                    //UncertainValue uv = i.Estimate;
+                    //v += uv.Value;
+                    //u += uv.Uncertainty;
+
                     if (v.Uncertainty > maxError) {
                         maxNode = node;
                         maxError = v.Uncertainty;
@@ -185,6 +194,9 @@ namespace Meta.Numerics.Functions {
                 if ((vTotal.Uncertainty <= Math.Abs(vTotal.Value) * s.RelativePrecision) || (vTotal.Uncertainty <= s.AbsolutePrecision)) {
                     return (new IntegrationResult(vTotal.Value, n));
                 }
+                //if ((vTotal.Uncertainty <= Math.Abs(vTotal.Value) * s.RelativePrecision) || (vTotal.Uncertainty <= s.AbsolutePrecision)) {
+                //    return (new IntegrationResult(vTotal.Value, n));
+                //}
 
                 // if our evaluation count is too big, throw
                 if (n > s.EvaluationBudget) throw new NonconvergenceException();
@@ -235,7 +247,7 @@ namespace Meta.Numerics.Functions {
 
     internal interface IIntegrator {
 
-        Function<double, double> Integrand { get; }
+        Func<double, double> Integrand { get; }
 
         Interval Range { get; }
 
@@ -263,15 +275,15 @@ namespace Meta.Numerics.Functions {
 
     internal abstract class Integrator : IIntegrator {
 
-        protected Integrator (Function<double, double> integrand, Interval range) {
+        protected Integrator (Func<double, double> integrand, Interval range) {
             this.f = integrand;
             this.r = range;
         }
 
-        private Function<double, double> f;
+        private Func<double, double> f;
         private Interval r;
 
-        public virtual Function<double, double> Integrand {
+        public virtual Func<double, double> Integrand {
             get {
                 return (f);
             }
@@ -304,7 +316,7 @@ namespace Meta.Numerics.Functions {
 
     internal class GaussKronrodIntegrator : Integrator, IAdaptiveIntegrator {
 
-        public GaussKronrodIntegrator (Function<double, double> integrand, Interval range) : base(integrand, range) {
+        public GaussKronrodIntegrator (Func<double, double> integrand, Interval range) : base(integrand, range) {
             Generation = 1;
             Compute();
         }

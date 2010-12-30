@@ -95,7 +95,7 @@ namespace Test {
             }
 
             // test clone
-            RectangularMatrix MC = M.Clone();
+            RectangularMatrix MC = M.Copy();
             Assert.IsTrue(MC.RowCount == M.RowCount);
             Assert.IsTrue(MC.ColumnCount == M.ColumnCount);
 
@@ -163,6 +163,30 @@ namespace Test {
                 }
                 Console.WriteLine();
             }
+
+        }
+
+        [TestMethod]
+        public void RectangularMatrixNorms () {
+
+            RectangularMatrix Z = new RectangularMatrix(3, 4);
+            Assert.IsTrue(Z.OneNorm() == 0.0);
+            Assert.IsTrue(Z.InfinityNorm() == 0.0);
+            Assert.IsTrue(Z.FrobeniusNorm() == 0.0);
+
+            RectangularMatrix A = GenerateRandomMatrix(4, 5);
+            Assert.IsTrue(A.OneNorm() > 0.0);
+            Assert.IsTrue(A.InfinityNorm() > 0.0);
+            Assert.IsTrue(A.FrobeniusNorm() > 0.0);
+
+            RectangularMatrix B = GenerateRandomMatrix(5, 6);
+            Assert.IsTrue(B.OneNorm() > 0.0);
+            Assert.IsTrue(B.InfinityNorm() > 0.0);
+            Assert.IsTrue(B.FrobeniusNorm() > 0.0);
+
+            RectangularMatrix P = A * B;
+            Assert.IsTrue(P.FrobeniusNorm() <= A.FrobeniusNorm() * B.FrobeniusNorm());
+            // Frobenium norm is sub-multiplicative
 
         }
     }

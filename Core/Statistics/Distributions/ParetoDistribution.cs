@@ -50,7 +50,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
 
         /// <summary>
-        /// Gets the Geni coefficient corresponding to the distribution.
+        /// Gets the Gini coefficient corresponding to the distribution.
         /// </summary>
         public double GiniCoefficient {
             get {

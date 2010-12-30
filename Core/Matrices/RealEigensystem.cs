@@ -10,13 +10,10 @@ namespace Meta.Numerics.Matrices {
         private int dimension;
         private double[] eigenvalues;
         private double[] eigenvectorStorage;
-        //private double[,] eigenvectors;
 
-        //internal RealEigensystem (int dimension, double[] eigenvalues, double[,] eigenvectors) {
         internal RealEigensystem (int dimension, double[] eigenvalues, double[] eigenvectorStorage) {
             this.dimension = dimension;
             this.eigenvalues = eigenvalues;
-            //this.eigenvectors = eigenvectors;
             this.eigenvectorStorage = eigenvectorStorage;
         }
 
@@ -50,17 +47,12 @@ namespace Meta.Numerics.Matrices {
             double[] eigenvector = new double[dimension];
             Blas1.dCopy(eigenvectorStorage, n * dimension, 1, eigenvector, 0, 1, dimension);
             return (new ColumnVector(eigenvector, dimension));
-            //ColumnVector eigenvector = new ColumnVector(dimension);
-            //for (int r = 0; r < dimension; r++) {
-            //    eigenvector[r] = eigenvectors[r, n];
-            //}
-            //return (eigenvector);
         }
 
         /// <summary>
         /// Gets the transformation matrix that diagonalizes the original matrix.
         /// </summary>
-        /// <returns>The orthogonal matrix V such that V<sup>T</sup>AV = D, which D is diagonal.</returns>
+        /// <returns>The orthogonal matrix V such that V<sup>T</sup>AV = D, where D is diagonal.</returns>
         public SquareMatrix Eigentransformation () {
             double[] eigenvectorStorageCopy = MatrixAlgorithms.Copy(eigenvectorStorage, dimension, dimension);
             return (new SquareMatrix(eigenvectorStorageCopy, dimension));

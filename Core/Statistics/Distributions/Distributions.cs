@@ -9,7 +9,7 @@ using Meta.Numerics.Matrices;
 namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
-    /// Represents a probability distribution.
+    /// Represents a continuous probability distribution.
     /// </summary>
 	public abstract class Distribution {
 
@@ -17,14 +17,20 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// Returns the probability density at the given point.
         /// </summary>
         /// <param name="x">The reference point.</param>
-        /// <returns>The probability density p(x1).</returns>
+        /// <returns>The probability density p(x).</returns>
+        /// <remarks>
+        /// <para>The probability density function (PDF) gives the relative probability of obtaining different values.</para>
+        /// </remarks>
 		public abstract double ProbabilityDensity (double x);
 
         /// <summary>
         /// Returns the cumulative probability to the left of (below) the given point.
         /// </summary>
         /// <param name="x">The reference point.</param>
-        /// <returns>The integrated probability P(x1) to obtain a result below the reference point.</returns>
+        /// <returns>The integrated probability to obtain a result below the reference point.</returns>
+        /// <remarks>
+        /// <para>The left probability function is commonly called the cumulative distribution function (CDF).</para>
+        /// </remarks>
 		public abstract double LeftProbability (double x);
 
         /// <summary>
@@ -32,6 +38,10 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="x">The reference point.</param>
         /// <returns>The integrated probability 1-P(x1) to obtain a result above the reference point.</returns>
+        /// <remarks>
+        /// <para>In lifetime analysis, the right probability function is commonly called the survival function, because it gives the
+        /// fraction of the population that has attained at least the given lifetime.</para>
+        /// </remarks>
 		public virtual double RightProbability (double x) {
 			return( 1.0 - LeftProbability(x) );
 		}
@@ -41,10 +51,15 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="P">The left cumulative probability P, which must lie between 0 and 1.</param>
         /// <returns>The point x1 at which the left cumulative probability attains the value P.</returns>
+        /// <remarks>
+        /// <para>The inverse left probability is commonly called the quantile function. Given a quantile,
+        /// it tells which variable value is the lower border of that quantile.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="P"/> lies outside [0,1].</exception>
 		public virtual double InverseLeftProbability (double P) {
             // find x where LeftProbability(x) = P 
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
-            Function<double,double> f = delegate(double x) {
+            Func<double,double> f = delegate(double x) {
                 return(LeftProbability(x) - P);
             };
             double y = FunctionMath.FindZero(f, Mean);
@@ -52,65 +67,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             // since we have the PDF = CDF', change to a method using Newton's method
 		}
 
-        public static double InverseLeftProbability (Distribution d, double x, double P) {
-            double x0 = d.Support.LeftEndpoint;
-            double x1 = d.Support.RightEndpoint;
-            double dx = Double.PositiveInfinity;
-            for (int i = 0; i < 128; i++) {
-                // remember values going in, for comparison
-                double x_old = x;
-                double dx_old = dx;
-                Console.WriteLine("[{0} {1} {2}]", x0, x, x1);
-                double F = d.LeftProbability(x) - P;
-                // since P is monotonic, we can pull bounds in on the basis of sgn(F)
-                if (F < 0) {
-                    x0 = x;
-                } else {
-                    x1 = x;
-                }
-                double DF = d.ProbabilityDensity(x);
-                dx = -F / DF;
-                Console.WriteLine("F={0} DF={1} dx={2}", F, DF, dx);
-                x = x_old + dx;
-                Console.WriteLine("x_old={0} x={1}", x_old, x);
-                // if a Newton step takes us out of bounds, use bisection instead
-                //if ((dx < 0) && (xp < x0)) xp = (x0 + x) / 2.0;
-                //if ((dx > 0) && (xp > x1)) xp = (x + x1) / 2.0;
-                // if Newton takes us out of bounds, or we are not converging fast enough, use bisection instead
-                if (x < x0) {
-                    Console.WriteLine("B1");
-                    x = (x0 + x_old) / 2.0;
-                } else if (x > x1) {
-                    Console.WriteLine("B2");
-                    x = (x_old + x1) / 2.0;
-                } else if (2.0 * Math.Abs(dx) > Math.Abs(dx_old)) {
-                    Console.WriteLine("B3");
-                    if (F < 0) {
-                        x = (x0 + x) / 2.0;
-                    } else {
-                        x = (x + x1) / 2.0;
-                    }
-                    if (Math.Sign(dx) != Math.Sign(x - x_old)) Console.WriteLine("WRONG WAY");
-                    //if (dx < 0) {
-                    //    if (!Double.IsInfinity(x0)) {
-                    //        x = (x0 + x_old) / 2.0;
-                    //    }
-                    //} else {
-                    //    if (!Double.IsInfinity(x1)) {
-                    //        x = (x_old + x1) / 2.0;
-                    //    }
-                    //}
-                    //if (F < 0) {
-                    //    x = (x0 + x_old) / 2.0;
-                    //} else {
-                    //    x = (x_old + x1) / 2.0;
-                    //}
-                }
-                // return when we have converged
-                Console.WriteLine("{0} vs. {1}", x, x_old);
-                if (x == x_old) return (x);
-            }
-            throw new NonconvergenceException();
+        public virtual double InverseRightProbability (double Q) {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -121,7 +79,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <seealso cref="MomentAboutMean"/>
 		public virtual double Moment (int n) {
 			// inheritors may implement
-			throw new NotImplementedException();
+            return (ExpectationValue(delegate(double x) { return (ProbabilityDensity(x) * MoreMath.Pow(x, n)); }));
 		}
 
         /// <summary>
@@ -132,7 +90,10 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <seealso cref="Moment" />
 		public virtual double MomentAboutMean (int n) {
 			// inheritors may implement
-			throw new NotImplementedException();
+            double mu = Mean;
+            return (ExpectationValue(delegate(double x) {
+                return (ProbabilityDensity(x) * MoreMath.Pow(x - mu, n));
+            }));
 		}
 
         internal virtual double Cumulant (int n) {
@@ -204,7 +165,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="f">The function.</param>
         /// <returns>The expectation value of the function.</returns>
-        public virtual double ExpectationValue (Function<double, double> f) {
+        public virtual double ExpectationValue (Func<double, double> f) {
             return (FunctionMath.Integrate(f, Support));
         }
 
@@ -217,7 +178,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <para>Note that the random number generator <paramref name="rng"/> will be advanced by this method. The next call to its
         /// generator methods will not give the same value as it would had it not been passed to this method.</para>
         /// </remarks>
-        public double GetRandomValue (Random rng) {
+        public virtual double GetRandomValue (Random rng) {
             if (rng == null) throw new ArgumentNullException("rng");
             return (InverseLeftProbability(rng.NextDouble()));
         }
@@ -258,6 +219,27 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             return (M);
 
+        }
+
+    }
+
+    internal static class MomentMath {
+
+        public static double CentralMomentFromRawMoments (double[] rawMoments) {
+            throw new NotImplementedException();
+        }
+
+        public static double RawMomentFromCentralMoments (double[] centralMoments, double mean) {
+            int n = centralMoments.Length;
+            double M = 1.0;
+            double C = 0.0;
+            IEnumerator<double> B = AdvancedIntegerMath.BinomialCoefficients(n).GetEnumerator();
+            for (int i = 0; i <= n; i++) {
+                M *= mean;
+                B.MoveNext();
+                C += M * B.Current * centralMoments[i];
+            }
+            return (C);
         }
 
     }
@@ -1025,6 +1007,8 @@ namespace Meta.Numerics.Statistics.Distributions {
 
 #endif
 
+#if PAST
+
     /// <summary>
     /// Represents the distribution of the Mann-Whitney statistic.
     /// </summary>
@@ -1365,7 +1349,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         // add moments
 
     }
-
+#endif
 
     /// <summary>
     /// Represents an parameterized likelihood distribution.

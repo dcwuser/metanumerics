@@ -71,21 +71,21 @@ namespace Test {
             new ChiSquaredDistribution(3),
             new StudentDistribution(5),
             new LognormalDistribution(0.2,0.4),
-            //new WeibullDistribution(2.0, 3.0),
+            new WeibullDistribution(2.0, 3.0),
             new LogisticDistribution(-4.0,5.0),
             new FisherDistribution(4.0, 7.0),
             new KuiperDistribution(),
             new KolmogorovDistribution(),
-            //new TriangularDistribution(1.0,2.0,4.0),
+            new TriangularDistribution(1.0,2.0,4.0),
             new BetaDistribution(0.5, 2.0),
             new ParetoDistribution(1.0, 3.0),
             new WaldDistribution(3.0, 1.0),
             new PearsonRDistribution(7),
-            new GammaDistribution(5.0, 6.0)
+            new GammaDistribution(5.0, 6.0), new GammaDistribution(78.9)
         };
 
         private double[] probabilities = new double[] {
-            0.00001, 0.01, 0.05, 1.0 / 3.0, 1.0 / 2.0, 2.0 / 3.0, 0.95, 0.99999
+            0.00001, 0.01, 0.05, 0.1, 1.0 / 3.0, 1.0 / 2.0, 2.0 / 3.0, 0.9, 0.95, 0.99999
         };
 
         [TestMethod]
@@ -123,14 +123,17 @@ namespace Test {
             foreach (Distribution distribution in distributions) {
                 Console.WriteLine(distribution.GetType().Name);
                 // C2 = M2 - M1^2
+                double M1 = distribution.Moment(1);
+                double M2 = distribution.Moment(2);
                 double C2 = distribution.MomentAboutMean(2);
                 if (!Double.IsInfinity(C2)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(C2 + Math.Pow(distribution.Moment(1), 2.0), distribution.Moment(2)));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(C2 + M1 * M1, M2));
                 }
                 // C3 = M3 - 3 M2 M1 + 2 M1^3
+                double M3 = distribution.Moment(3);
                 double C3 = distribution.MomentAboutMean(3);
                 if (!Double.IsInfinity(C3)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(C3 + 3.0 * distribution.Moment(2) * distribution.Moment(1), distribution.Moment(3) + 2.0 * Math.Pow(distribution.Moment(1), 3.0)));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(C3 + 3.0 * M2 * M1, M3 + 2.0 * M1 * M1 * M1));
                 }
                 // C4 = M4 - 4 M3 M1 + 6 M2 M1^2 - 3 M1^4
             }
@@ -147,6 +150,7 @@ namespace Test {
         public void DistributionMonotonicity () {
             foreach (Distribution distribution in distributions) {
                 for (int i = 0; i < (probabilities.Length - 1); i++) {
+                    Console.WriteLine("{0} {1}", distribution.GetType().Name, probabilities[i]);
                     Assert.IsTrue(distribution.InverseLeftProbability(probabilities[i]) < distribution.InverseLeftProbability(probabilities[i+1]));
                 }
             }
@@ -168,6 +172,7 @@ namespace Test {
             Console.WriteLine("{0} {1}", distribution.GetType().Name, x);
             double P = distribution.LeftProbability(x);
             double Q = distribution.RightProbability(x);
+            Console.WriteLine(" P={0} Q={1} P+Q={2}", P, Q, P + Q);
             Assert.IsTrue((0.0 <= P) && (P <= 1.0));
             Assert.IsTrue((0.0 <= Q) && (Q <= 1.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(P + Q, 1.0));
@@ -176,6 +181,7 @@ namespace Test {
             // DistributionMeanIntegralTest, DistributionVarianceIntegralTest, DistributionRawMomentIntegralTest,
             // and DistributionCentralMomentIntegralTest use it
             double p = distribution.ProbabilityDensity(x);
+            Console.WriteLine(" p={0}", p);
             Assert.IsTrue(p >= 0.0);
         }
 
@@ -191,7 +197,7 @@ namespace Test {
         [TestMethod]
         public void DistributionMeanIntegral () {
             foreach (Distribution distribution in distributions) {
-                Function<double, double> f = delegate(double x) {
+                Func<double, double> f = delegate(double x) {
                     return (distribution.ProbabilityDensity(x) * x);
                 };
                 double M1 = FunctionMath.Integrate(f, distribution.Support);
@@ -208,7 +214,7 @@ namespace Test {
         [TestMethod]
         public void DistributionVarianceIntegral () {
             foreach (Distribution distribution in distributions) {
-                Function<double, double> f = delegate(double x) {
+                Func<double, double> f = delegate(double x) {
                     double z = x - distribution.Mean;
                     return (distribution.ProbabilityDensity(x) * z * z);
                 };
@@ -227,7 +233,7 @@ namespace Test {
                 foreach (int n in TestUtilities.GenerateIntegerValues(3, 30, 10)) {
                     double M = distribution.Moment(n);
                     if (Double.IsInfinity(M)) continue; // don't try to do a non-convergent integral
-                    Function<double, double> f = delegate(double x) {
+                    Func<double, double> f = delegate(double x) {
                         return (distribution.ProbabilityDensity(x) * Math.Pow(x, n));
                     };
                     try {
@@ -254,7 +260,7 @@ namespace Test {
                     double C = distribution.MomentAboutMean(n);
                     if (Double.IsInfinity(C)) continue; // don't try to integrate to infinity
                     double m = distribution.Mean;
-                    Function<double, double> f = delegate(double x) {
+                    Func<double, double> f = delegate(double x) {
                         return (distribution.ProbabilityDensity(x) * Math.Pow(x - m, n));
                     };
                     try {
@@ -268,10 +274,11 @@ namespace Test {
                             // have no analytic expressions for central moments, which must therefore be
                             // determined via raw moments and are thus subject to cancelation error
                             // can we revisit this later?
-                            if (distribution is WeibullDistribution) e = Math.Sqrt(e);
+                            if (distribution is WeibullDistribution) e = Math.Sqrt(Math.Sqrt(e));
                             if (distribution is KolmogorovDistribution) e = Math.Sqrt(e);
                             if (distribution is KuiperDistribution) e = Math.Sqrt(e);
                             if (distribution is BetaDistribution) e = Math.Sqrt(e);
+                            if (distribution is TriangularDistribution) e = Math.Sqrt(e);
                             Assert.IsTrue(TestUtilities.IsNearlyEqual(C, CI, e));
                         }
                     } catch (NonconvergenceException) {
@@ -285,7 +292,7 @@ namespace Test {
         // test P values
         [TestMethod]
         public void DistributionProbabilityIntegral () {
-            Random rng = new Random(1);
+            Random rng = new Random(4);
             foreach (Distribution distribution in distributions) {
                 for (int i = 0; i < 3; i++) {
                     double x;
@@ -765,90 +772,32 @@ namespace Test {
         }
 
         [TestMethod]
-        public void TestInverseCDF () {
+        public void TimeDeviates () {
 
-            double[] P_values = new double[] { 1.0E-5, 0.01, 0.1, 1.0 / 3.0, 2.0 / 3.0, 0.9, 0.99, 1.0 - 1.0E-5 };
-            double[] a_values = new double[] { 1.0E-4, 1.0E-2, 1.0, 10.0, 100.0, 1000.0, 1.0E6 };
-            //double[] a_values = new double[] { 1.0, 10.0, 100.0, 1000.0, 1.0E6 };
+            Distribution n = new NormalDistribution();
+            Random rng = new Random(1);
 
-            foreach (double a in a_values) {
-                Distribution G = new GammaDistribution(a);
-                foreach (double P in P_values) {
-                    Console.WriteLine("{0} {1}", a, P);
-                    //double x0 = ApproximateInverseGamma(a, P);
-                    //Console.WriteLine("  {0} {1}", x0, G.LeftProbability(x0));
-                    //double x = G.InverseLeftProbability(P);
-
-                    double x = G.InverseLeftProbability(P);
-                    double Px = G.LeftProbability(x);
-                    Console.WriteLine("  {0} {1}", x, Px);
-                }
+            Stopwatch s = Stopwatch.StartNew();
+            for (int i = 0; i < 1000000; i++) {
+                //double x = BoxMueller(rng);
+                double x = n.GetRandomValue(rng);
             }
+            s.Stop();
+            Console.WriteLine(s.ElapsedMilliseconds);
 
         }
 
-        [TestMethod]
-        public void TestInverseCDF2 () {
-            Distribution G = new GammaDistribution(1.0);
-            //Console.WriteLine(G.LeftProbability(1.0E-200));
-            //Console.WriteLine(G.LeftProbability(1.0E-100));
-            //Console.WriteLine(G.LeftProbability(1.0E-30));
-            //Console.WriteLine(G.LeftProbability(1.0E-20));
-            //Console.WriteLine(G.LeftProbability(1.0E-10));
-            //Console.WriteLine(G.LeftProbability(0.0001));
-            //Console.WriteLine(G.LeftProbability(0.001));
-            //Console.WriteLine(G.LeftProbability(0.01));
-            //Console.WriteLine(G.LeftProbability(0.1));
-            double x = G.InverseLeftProbability(0.01);
+        public static double BoxMueller (Random rng) {
+
+            double v1, v2, r2;
+            do {
+                v1 = 2.0 * rng.NextDouble() - 1.0;
+                v2 = 2.0 * rng.NextDouble() - 1.0;
+                r2 = v1 * v1 + v2 * v2;
+            } while ((r2 >= 1.0) || (r2 == 0.0));
+            double x = v1 * Math.Sqrt(-2.0 * Math.Log(r2) / r2);
+            return (x);
         }
-
-        [TestMethod]
-        public void ILP () {
-
-            //Distribution d = new GammaDistribution(5, 6);
-            //Distribution d = new UniformDistribution(Interval.FromEndpoints(1, 2));
-            //Distribution d = new ChiSquaredDistribution(3);
-            //Distribution d = new StudentDistribution(4);
-            Distribution d = new GammaDistribution(5, 6);
-            //Distribution d = new FisherDistribution(3, 4);
-            double P = 0.99999;
-            //double x = d.Mean;
-            double x = 6.0 * ApproximateInverseGamma(5, P);
-            //if (P < 0.5) {
-            //    x = 6.0 * Math.Pow(P * AdvancedMath.Gamma(5), 1.0 / 5);
-            //} else {
-            //    x = d.Mean;
-            //}
-            Distribution.InverseLeftProbability(d, x, P);
-
-        }
-
-
-        public void GammaTemme (double a, double x) {
-
-            Console.WriteLine("a={0} x={1}", a, x);
-
-            double r = x / a;
-            double e = r - 1.0;
-
-            double eta = Math.Sqrt(2.0 * (e - Math.Log(r)));
-            if (r < 1.0) eta = -eta;
-            Console.WriteLine("r={0}, e={1}, eta={0}", r, e, eta);
-
-            double Q0 = AdvancedMath.Erfc(eta * Math.Sqrt(a / 2.0)) / 2.0;
-
-            double R0 = Math.Exp(-a * eta * eta / 2.0) / Math.Sqrt(2.0 * Math.PI * a);
-
-            double C0 = -1.0 / 3.0 + e / 12.0 - 23.0 / 540.0 * e * e + 353.0 / 12960.0 * e * e * e - 589.0 / 30240.0 * e * e * e * e;
-            double C1 = -1.0 / 540.0 - e / 288.0 + 23.0 / 6048.0 * e * e - 3733.0 / 1088640.0 * e * e * e;
-            double S0 = 0.0 + C0 + C1 / a;
-
-            double Q = Q0 + R0 * S0;
-
-            Console.WriteLine(Q);
-
-        }
-
 
     }
 }

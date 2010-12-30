@@ -20,14 +20,17 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <img src="../images/ChiSquaredFromNormal.png" />
     /// <para>The &#x3C7;<sup>2</sup> distribution appears in least-squares fitting as the distribution of the sum-of-squared-deviations
     /// under the null hypothesis that the model explains the data. For example, the goodness-of-fit statistic returned by the
-    /// model our model fitting methods (<see cref="DataSet{T}.FitToFunction"/>, <see cref="DataSet{T}.FitToLinearFunction"/>,
-    /// <see cref="DataSet.FitToLine"/>, and others) follows a &#x3C7;<sup>2</sup> distribution.</para>
+    /// model our model fitting methods (<see cref="UncertainMeasurementSample{T}.FitToFunction"/>, <see cref="UncertainMeasurementSample{T}.FitToLinearFunction"/>,
+    /// <see cref="UncertainMeasurementSample.FitToLine"/>, and others) follows a &#x3C7;<sup>2</sup> distribution.</para>
     /// </remarks>
     /// <seealso cref="ContingencyTable.PearsonChiSquaredTest"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Chi-square_distribution" />
     public class ChiSquaredDistribution : Distribution {
 
+        // internally, we use our Gamma distribution machinery to do our heavy lifting
+
         private int nu;
+        private GammaDistribution gamma;
 
         /// <summary>
         /// Initializes a new &#x3C7;<sup>2</sup> distribution.
@@ -36,6 +39,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         public ChiSquaredDistribution (int nu) {
             if (nu < 1) throw new ArgumentOutOfRangeException("nu");
             this.nu = nu;
+            this.gamma = new GammaDistribution(nu / 2.0);
         }
 
         /// <summary>
@@ -49,86 +53,22 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
-            if (x < 0.0) {
-                return (0.0);
-            } else {
-                double x2 = x / 2.0;
-                double nu2 = nu / 2.0;
-                return (Math.Exp((nu2 - 1.0) * Math.Log(x2) - x2 - AdvancedMath.LogGamma(nu2)) / 2.0);
-                //return (0.5 * Math.Pow(x2, nu2 - 1.0) * Math.Exp(-x2) / AdvancedMath.Gamma(nu2));
-            }
+            return (gamma.ProbabilityDensity(x / 2.0) / 2.0);
         }
 
         /// <inheritdoc />
         public override double LeftProbability (double x) {
-            if (x < 0.0) {
-                return (0.0);
-            } else {
-                return (AdvancedMath.LeftRegularizedGamma(0.5 * nu, 0.5 * x));
-            }
+            return (gamma.LeftProbability(x / 2.0));
         }
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
-            if (x < 0.0) {
-                return (1.0);
-            } else {
-                return (AdvancedMath.RightRegularizedGamma(0.5 * nu, 0.5 * x));
-            }
+            return (gamma.RightProbability(x / 2.0));
         }
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
-
-            // limit cases
-            if (P == 0.0) {
-                return (0.0);
-            } else if (P == 1.0) {
-                return (Double.PositiveInfinity);
-            }
-
-            if (nu == 1) {
-                // analytic formula for nu=1
-                double e = AdvancedMath.InverseErf(P);
-                return (2.0 * e * e);
-            } else if (nu == 2) {
-                // analytic formula for nu=2
-                return (-2.0 * Math.Log(1.0 - P));
-            } else {
-                // try a normal approximation
-                double z = Global.SqrtTwo * AdvancedMath.InverseErf(2.0 * P - 1.0);
-                double x = Mean + StandardDeviation * z;
-                // if we have run off end due to small P, use inverted small-x expansion instead
-                if (x <= 0.0) {
-                    double nu2 = nu / 2.0;
-                    x = 2.0 * Math.Exp((Math.Log(P) + AdvancedMath.LogGamma(nu2 + 1.0)) / nu2);
-                }
-                // start a search from our initial guess
-                Function<double, double> f = delegate(double y) {
-                    return (LeftProbability(y) - P);
-                };
-                x = FunctionMath.FindZero(f, x);
-                return (x);
-                // use newton's method; this failed to converge -- look into this
-                /*
-                for (int k = 0; k < 10; k++ ) {
-                    Console.WriteLine("x={0}", x);
-                    double x_old = x;
-                    Console.WriteLine("P={0}", LeftProbability(x));
-                    Console.WriteLine("p={0}", ProbabilityDensity(x));
-                    double dx = (P - LeftProbability(x)) / ProbabilityDensity(x);
-                    Console.WriteLine("dx={0}", dx);
-                    x += dx;
-                    if (x == x_old) return (x);
-                }
-                throw new NonconvergenceException();
-                */
-                // we need to be careful; what happens if we get x <= 0 in this loop?
-            }
-            //return (base.InverseLeftProbability(P));
-            // change to deal with Inverse so we can't run off the end
+            return (2.0 * gamma.InverseLeftProbability(P));
         }
 
         // improve this

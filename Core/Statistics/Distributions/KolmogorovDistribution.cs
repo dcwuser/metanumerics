@@ -220,6 +220,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
     }
 
+#if FUTURE
     public class KolmogorovExactDistribution : Distribution {
 
         public KolmogorovExactDistribution (int size) {
@@ -563,4 +564,5 @@ namespace Meta.Numerics.Statistics.Distributions {
 
     }
 
+#endif
 }

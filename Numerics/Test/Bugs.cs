@@ -4,7 +4,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
 using Meta.Numerics.Matrices;
+using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
+using Meta.Numerics.Functions;
 
 namespace Test {
 
@@ -46,6 +48,40 @@ namespace Test {
         }
 
         [TestMethod]
+        public void ImproveInverseErf () {
+
+            //foreach (double y in new double[] { 1.0E-32, 1.0E-12, 1.0E-4, 0.1, 1.0 / 3.0, 1.0 / 2.0, 2.0 / 3.0, 0.9 , 1.0 - 1.0E-4, 1.0 - 1.0E-12, 1.0 - 1.0E-32 }) {
+
+                //Console.WriteLine("y={0}", y);
+                GammaDistribution d = new GammaDistribution(5.0);
+                double x = d.InverseLeftProbability(0.01);
+                //double x = AdvancedMath.InverseErfc(y);
+                Console.WriteLine("x={0}", x);
+
+            //}
+
+        }
+
+        [TestMethod]
+        public void GamAsym () {
+
+            double a = 0.1;
+            double Q = 0.01;
+            Console.WriteLine("a={0} Q={1}", a, Q);
+
+            double z0 = -Math.Log(Q * AdvancedMath.Gamma(a));
+            double lz0 = Math.Log(z0);
+            double z1 = z0 - (1.0 - a) * lz0;
+            double z2 = z0 - (1.0 - a) * lz0 + Math.Pow(1.0 - a, 2) * (1.0 - lz0) / z0;
+
+            GammaDistribution d = new GammaDistribution(a);
+            Console.WriteLine("z0={0} Q(z0)={1}", z0, d.RightProbability(z0));
+            Console.WriteLine("z1={0} Q(z1)={1}", z1, d.RightProbability(z1));
+            Console.WriteLine("z2={0} Q(z2)={1}", z2, d.RightProbability(z2));
+
+        }
+
+        [TestMethod]
         public void DifficultEigenvalue () {
 
             SquareMatrix A = new SquareMatrix(4);
@@ -80,7 +116,6 @@ namespace Test {
             list[2] = 3.0;
 
         }
-
 
     }
 

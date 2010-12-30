@@ -34,6 +34,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="mu">The mean.</param>
         /// <param name="sigma">The standard deviation, which must be positive.</param>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="sigma"/> is less than or equal to zero.</exception>
         public NormalDistribution (double mu, double sigma) {
             if (sigma <= 0.0) throw new ArgumentOutOfRangeException("sigma");
             this.mu = mu;
@@ -161,6 +162,20 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (mu + sigma * z);
         }
 
+        /// <inheritdoc />
+        public override double GetRandomValue (Random rng) {
+            if (rng == null) throw new ArgumentNullException("rng");
+            // this is the Box-Mueller method, and it is much faster than using the inverse CDF
+            double x, y, r2;
+            do {
+                x = 2.0 * rng.NextDouble() - 1.0;
+                y = 2.0 * rng.NextDouble() - 1.0;
+                r2 = x * x + y * y;
+            } while ((r2 >= 1.0) || (r2 == 0.0));
+            double z = x * Math.Sqrt(-2.0 * Math.Log(r2) / r2);
+            return (mu + sigma * z);
+        }
+
         double[] IParameterizedDistribution.GetParameters () {
             return (new double[] { mu, sigma });
         }
@@ -175,6 +190,30 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         double IParameterizedDistribution.Likelihood (double x) {
             return (ProbabilityDensity(x));
+        }
+
+        /// <summary>
+        /// Fits the given sample to a normal distribution.
+        /// </summary>
+        /// <returns>A <see cref="FitResult"/> containg the mu and sigma parameters of the normal distribution that best fits the sample data,
+        /// and a Kolmogorov-Smirnov test of the quality of the fit.</returns>
+        public static FitResult FitToSample (Sample sample) {
+
+            // maximum likelyhood estimates are guaranteed to be asymptotically unbiased, but not necessarily unbiased
+            // this hits home for the maximum likelyhood estimate of the variance of a normal distribution, which fails
+            // to include the N/(N-1) correction factor. since we know the bias, there is no reason for us not to correct
+            // it, and we do so here
+
+            UncertainValue mu = sample.PopulationMean;
+            UncertainValue sigma = sample.PopulationStandardDeviation;
+
+            Distribution distribution = new NormalDistribution(mu.Value, sigma.Value);
+            TestResult test = sample.KolmogorovSmirnovTest(distribution);
+
+            // the best-fit sigma and mu are known to be uncorrelated
+
+            return (new FitResult(mu.Value, mu.Uncertainty, sigma.Value, sigma.Uncertainty, 0.0, test));
+
         }
 
     }

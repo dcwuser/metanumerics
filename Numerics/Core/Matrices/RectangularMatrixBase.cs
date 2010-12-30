@@ -317,7 +317,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>Throws an <see cref="InvalidOperationException"/>.</returns>
         /// <remarks>
-        /// <para>The <see cref="Object.GetHashCode"/> method is used to provide a quick equality check when an object
+        /// <para>The <see cref="Object.GetHashCode"/> method is used to provide a quick equality test when an object
         /// is used as a key in a <see cref="System.Collections.Generic.Dictionary{TKey,TValue}"/> or <see cref="System.Collections.Hashtable"/>.
         /// Since a useful hash code of a matrix would need to involve all its elements, it is not possible to make this a fast operation.
         /// Also, since matrices are not immutable, they should not be used as hash keys. (A matrix might be changed after it

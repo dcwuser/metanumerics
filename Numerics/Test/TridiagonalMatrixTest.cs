@@ -112,7 +112,7 @@ namespace Test {
             TridiagonalMatrix T = CreateRandomTridiagonalMatrix(4);
 
             // check that clone is clone
-            TridiagonalMatrix TC = T.Clone();
+            TridiagonalMatrix TC = T.Copy();
             Assert.IsTrue(TC == T);
 
             // check that clone is independend

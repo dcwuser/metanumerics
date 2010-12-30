@@ -14,7 +14,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="f">The function whoose zero is sought.</param>
         /// <param name="x">A ordinate believed to be near the sought zero.</param>
         /// <returns>An ordinate at which the function has a zero.</returns>
-        public static double FindZero (Function<double, double> f, double x) {
+        public static double FindZero (Func<double, double> f, double x) {
 
             if (f == null) throw new ArgumentNullException("f");
 
@@ -54,7 +54,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="bracket">An interval bracketing the root.</param>
         /// <returns>An ordinate within the bracket at which the function has a zero.</returns>
         /// <exception cref="InvalidOperationException">The function does not change sign across the given interval.</exception>
-        public static double FindZero (Function<double, double> f, Interval bracket) {
+        public static double FindZero (Func<double, double> f, Interval bracket) {
 
             if (f == null) throw new ArgumentNullException("f");
 
@@ -69,7 +69,7 @@ namespace Meta.Numerics.Functions {
             return (FindZero(f, x1, f1, x2, f2));
         }
 
-        private static double FindZero (Function<double, double> f, double x1, double f1, double x2, double f2) {
+        private static double FindZero (Func<double, double> f, double x1, double f1, double x2, double f2) {
 
             double x0 = Double.MaxValue;
 

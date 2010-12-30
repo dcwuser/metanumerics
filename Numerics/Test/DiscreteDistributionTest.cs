@@ -62,7 +62,8 @@ namespace Test {
             new BernoulliDistribution(0.1),
             new BinomialDistribution(0.2, 30),
             new PoissonDistribution(4.5),
-            new DiscreteUniformDistribution(5,11)
+            new DiscreteUniformDistribution(5,11),
+            new GeometricDistribution(0.6)
         };
 
         [TestMethod]
@@ -131,9 +132,9 @@ namespace Test {
         public void DiscreteDistributionSkewness () {
             foreach (DiscreteDistribution distribution in distributions) {
                 Console.WriteLine(distribution.GetType().FullName);
-                Console.WriteLine(distribution.MomentAboutMean(3));
-                Console.WriteLine(distribution.MomentAboutMean(2));
-                Console.WriteLine(distribution.Skewness);
+                //Console.WriteLine(distribution.MomentAboutMean(3));
+                //Console.WriteLine(distribution.MomentAboutMean(2));
+                //Console.WriteLine(distribution.Skewness);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     distribution.Skewness, distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 3.0 / 2.0)
                 ));
@@ -202,6 +203,38 @@ namespace Test {
 
             Assert.IsTrue(cd.LeftProbability(4.5) == dd.LeftProbability(4));
             Assert.IsTrue(cd.RightProbability(4.5) == dd.RightProbability(4));
+
+        }
+
+        [TestMethod]
+        public void DiscreteRandomValueDistribution () {
+
+            foreach (DiscreteDistribution distribution in distributions) {
+
+                Console.WriteLine(distribution.GetType().FullName);
+
+                int n = 100;
+                Random rng = new Random(1);
+                int[] counts = new int[100];
+                for (int i = 0; i < n; i++) {
+                    int k = distribution.GetRandomValue(rng);
+                    counts[k]++;
+                }
+
+                double chi2 = 0.0;
+                for (int k = 0; k < counts.Length; k++) {
+                    double P = distribution.ProbabilityMass(k);
+                    if (P > 0.0) {
+                        chi2 += MoreMath.Pow(counts[k] - n * P, 2) / (n * P);
+                    } else {
+                        if (counts[k] != 0) chi2 += Double.PositiveInfinity;
+                    }
+                }
+                Console.WriteLine(chi2);
+
+
+            }
+
 
         }
 

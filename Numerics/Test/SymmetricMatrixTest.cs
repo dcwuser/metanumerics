@@ -87,7 +87,7 @@ namespace Test {
             */
 
             // check clone
-            SymmetricMatrix MC = M.Clone();
+            SymmetricMatrix MC = M.Copy();
             Assert.IsTrue(MC == M);
             Assert.IsFalse(MC != M);
 
@@ -102,7 +102,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SymmetricMatrixArithmeticTest () {
+        public void SymmetricMatrixArithmetic () {
             SymmetricMatrix M = CreateSymmetricRandomMatrix(5,1);
 
             // addition is same a multiplication by two
@@ -145,7 +145,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void SymmetricRandomMatrixEigenvalue () {
+        public void SymmetricRandomMatrixEigenvectors () {
             for (int d = 1; d <= 100; d = d + 11) {
                 Console.WriteLine("d={0}", d);
                 SymmetricMatrix M = CreateSymmetricRandomMatrix(d, 1);
@@ -155,14 +155,22 @@ namespace Test {
                 DateTime finish = DateTime.Now;
                 Console.WriteLine("  {0} ms", (finish - start).Milliseconds);
                 Assert.IsTrue(E.Dimension == M.Dimension);
-                double[] es = new double[d];
-                for (int i = 0; i < d; i++) {
+
+                SquareMatrix D = new SquareMatrix(E.Dimension);
+                double[] es = new double[E.Dimension];
+                for (int i = 0; i < E.Dimension; i++) {
                     double e = E.Eigenvalue(i);
                     ColumnVector v = E.Eigenvector(i);
                     Assert.IsTrue(TestUtilities.IsNearlyEigenpair(M, v, e));
+                    D[i, i] = e;
                     es[i] = e;
                 }
+
                 Assert.IsTrue(TestUtilities.IsSumNearlyEqual(es, tr));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    D, E.Eigentransformation().Transpose() * M * E.Eigentransformation()
+                ));
+
             }
         }
 
@@ -172,14 +180,7 @@ namespace Test {
                 Console.WriteLine("d={0}", d);
                 SymmetricMatrix H = TestUtilities.CreateSymmetricHilbertMatrix(d);
                 double tr = H.Trace();
-                RealEigensystem E = H.Eigensystem();
-                double[] es = new double[d];
-                for (int i = 0; i < d; i++) {
-                    double e = E.Eigenvalue(i);
-                    ColumnVector v = E.Eigenvector(i);
-                    Assert.IsTrue(TestUtilities.IsNearlyEigenpair(H, v, e));
-                    es[i] = e;
-                }
+                double[] es = H.Eigenvalues();
                 Assert.IsTrue(TestUtilities.IsSumNearlyEqual(es, tr));
             }
         }

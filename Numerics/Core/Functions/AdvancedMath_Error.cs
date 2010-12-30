@@ -52,6 +52,42 @@ namespace Meta.Numerics.Functions {
         }
 
         /// <summary>
+        /// Computes the inverse complementary error function.
+        /// </summary>
+        /// <param name="y"></param>
+        /// <returns></returns>
+        /// <seealso cref="Erf"/>
+        /// <seealso cref="Erfc" />
+        /// <seealso cref="InverseErf" />
+        public static double InverseErfc (double y) {
+            if ((y < 0.0) || (y > 1.0)) throw new ArgumentOutOfRangeException("y");
+            
+            // make an initial guess
+            double x;
+            if (y < 0.25) {
+                x = ApproximateInverseErfc(y);
+            } else {
+                double y1 = 1.0 - y;
+                if (y1 == 0.0) return (0.0);
+                x = ApproximateInverseErf(y1);
+            }
+
+            double z_old = Double.PositiveInfinity;
+            for (int i = 1; i < 8; i++) {
+                double z = Erfc(x) - y;
+                if (Math.Abs(z) >= Math.Abs(z_old)) return (x);
+                double r = z * Global.SqrtPI * Math.Exp(x * x) / 2.0;
+                double dx = r / (1.0 - r * x);
+                x += dx;
+                if (Math.Abs(dx) <= Global.Accuracy * Math.Abs(x)) return (x);
+                z_old = z;
+            }
+
+            throw new NonconvergenceException();
+
+        }
+
+        /// <summary>
         /// Computes the inverse error function.
         /// </summary>
         /// <param name="y">The error function value erf(x), which must lie between -1 and 1.</param>
@@ -59,6 +95,7 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="y"/> is outside [-1,1].</exception>
         /// <seealso cref="Erf"/>
         /// <seealso cref="Erfc" />
+        /// <seealso cref="InverseErfc" />
         public static double InverseErf (double y) {
             if (Math.Abs(y) > 1.0) throw new ArgumentOutOfRangeException("y");
             if (y < 0.0) {
@@ -67,49 +104,52 @@ namespace Meta.Numerics.Functions {
 
                 if (y == 1.0) return (Double.PositiveInfinity);
 
-                // find y such that Erf(y) = x
-
                 // make an initial guess; these get us there within about 10%
                 double x;
                 if (y < 0.8) {
                     // for small values, use series inversion
-                    // the three-term series is good to within 5% for y~0.8, even better for smaller y
-                    //double yy = y * y;
-                    //x = (Global.SqrtPI / 2.0) * y * (1.0 + (Math.PI / 12.0) * yy * (1.0 + (7.0 * Math.PI / 40.0) * yy));
                     x = ApproximateInverseErf(y);
                 } else {
-                    // for large values, use a crude approximation
-                    // this is pretty consistently 10% too high; how to correct?
-                    //x = Math.Sqrt(-Math.Log((1.0 - y) * (1.0+ y)));
-
-                    // this approximation is good to within 10% for y~0.8, 4% y~0.9.
-                    // can we get the next term?
-                    //double log = -Math.Log(Global.SqrtPI * (1.0 - y));
-                    //x = Math.Sqrt(log) * (1.0 - Math.Log(log) / log / 4.0);
-
-                    //x = Math.Sqrt(-Math.Log(y * Math.Sqrt(-Math.PI * Math.Log(y))));
-                    //x = Math.Sqrt(Math.Log(Math.Sqrt(Math.PI)*(1.0-y)
+                    // for large values, use the (very limited) asymptotic expression
                     x = ApproximateInverseErfc(1.0 - y);
                 }
 
+                //Console.WriteLine(" x0 = {0}, erf(x0) = {1}", x, Erf(x));
+
                 // refine it via 2nd order Newton's method (aka Halley's method)
-                // this typically takes 2-4 cycles to converge to full precision
-                double dx = Double.MaxValue;
-                for (int i = 1; i < 25; i++) {
-                    double x_old = x;
-                    double dx_old = dx;
+
+                // Newton dx = -f0 / f1
+                // Halley dx = - f0 / f1 / ( 1 - f0 f2 / 2 f1^2 )
+
+                // for f0 = erf(x), f1 = 2/sqrt(pi) e^(-x^2), f2 = -4x/sqrt(pi) e^(-x^2)
+                // Newton simplies to dx = -r and Halley to dx = -r/(1+rt)
+
+                // this typically takes just 2-3 cycles to converge to full precision
+                //double dx_old = Double.PositiveInfinity;
+                double z_old = Double.PositiveInfinity;
+                for (int i = 1; i < 8; i++) {
 
                     double z = Erf(x) - y;
-                    dx = -z / (2.0 / Global.SqrtPI * Math.Exp(-x * x) + x * z);
 
-                    //Debug.WriteLine(String.Format("x={0}, z={1}, dx={2}", x, z, dx));
+                    // check for thrashing; this would be dangerous if we didn't know we were already in the basin of convergence
+                    // but since we do know that, we can take any increase as an indication we are about to enter a cycle
+                    if (Math.Abs(z) >= Math.Abs(z_old)) return (x);
+
+                    // in the case error function case, the expression for dx can be written in terms of the ratio r
+                    double r = z * Global.SqrtPI * Math.Exp(x * x) / 2.0;
+                    double dx = -r / (1.0 + r * x);
+
+                    //Console.WriteLine(" x={0}, z={1}, rx={2}, dx={3}", x, z, r * x, dx);
+
                     x += dx;
 
-                    // return if we have converged
-                    if (x == x_old) return (x);
+                    // check for convergence
+                    if (Math.Abs(dx) <= Global.Accuracy * Math.Abs(x)) return (x);
 
                     // return if we are thrashing
-                    if (Math.Abs(dx) >= Math.Abs(dx_old)) return (x);
+                    //if (Math.Abs(dx) >= Math.Abs(dx_old)) return (x);
+                    //dx_old = dx;
+                    z_old = z;
                 }
 
                 throw new NonconvergenceException();
@@ -118,7 +158,7 @@ namespace Meta.Numerics.Functions {
         }
 
 
-        private static double ApproximateInverseErf (double y) {
+        internal static double ApproximateInverseErf (double y) {
             double x = Global.SqrtPI * y / 2.0;
             double xx = x * x;
             double S = 1.0 + xx / 3.0 + 7.0 / 30.0 * xx * xx + 127.0 / 630.0 * xx * xx * xx;
@@ -126,7 +166,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        private static double ApproximateInverseErfc (double y) {
+        internal static double ApproximateInverseErfc (double y) {
             double yy = y * y;
             double log = Math.Log(2.0 / Math.PI / yy);
             double S = log - Math.Log(log);

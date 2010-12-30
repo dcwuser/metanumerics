@@ -10,8 +10,10 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <remarks>
     /// <para>The sum of n exponentially distributed variates is a Gamma distributed variate.</para>
     /// <img src="../images/GammaFromExponential.png" />
-    /// <para>When the shape parameter is an integer, the Gamma distribution is also called the Erlang distribution.</para>
+    /// <para>When the shape parameter is an integer, the Gamma distribution is also called the Erlang distribution. When
+    /// the shape parameter is one, the Gamma distribution reduces to the exponential distribution.</para>
     /// </remarks>
+    /// <seealso cref="ExponentialDistribution"/>
     public class GammaDistribution : Distribution {
 
         /// <summary>
@@ -44,12 +46,18 @@ namespace Meta.Numerics.Statistics.Distributions {
         double a, s;
         double ga;
 
+        /// <summary>
+        /// Gets the shape parameter for the distribution.
+        /// </summary>
         public double ShapeParameter {
             get {
                 return (a);
             }
         }
 
+        /// <summary>
+        /// Gets the scale parameter for the distribution.
+        /// </summary>
         public double ScaleParameter {
             get {
                 return (s);
@@ -65,12 +73,16 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
-            double z = x / s;
-            // use Gamma(a) or Ln(Gamma(a)) form depending on size of a
-            if (ga > 0.0) {
-                return (Math.Pow(z, a - 1.0) * Math.Exp(-z) / ga / s);
+            if (x < 0.0) {
+                return (0.0);
             } else {
-                return (Math.Exp((a - 1.0) * Math.Log(z) - z + ga) / s);
+                double z = x / s;
+                // use Gamma(a) or Ln(Gamma(a)) form depending on size of a
+                if (ga > 0.0) {
+                    return (Math.Pow(z, a - 1.0) * Math.Exp(-z) / ga / s);
+                } else {
+                    return (Math.Exp((a - 1.0) * Math.Log(z) - z + ga) / s);
+                }
             }
 
         }
@@ -98,7 +110,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double LeftProbability (double x) {
-            if (x < 0) {
+            if (x < 0.0) {
                 return (0.0);
             } else {
                 return (AdvancedMath.LeftRegularizedGamma(a, x / s));
@@ -107,7 +119,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
-            if (x < 0) {
+            if (x < 0.0) {
                 return (1.0);
             } else {
                 return (AdvancedMath.RightRegularizedGamma(a, x / s));
@@ -153,39 +165,35 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+        internal override double Cumulant (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (0.0);
+            } else {
+                return (a * AdvancedIntegerMath.Factorial(n - 1));
+            }
+        }
+
         // the remainder of this code is all this is just to invert, which is a major pain!
 
         private static double ApproximateProbit (double P) {
 
             if (P < 0.1) {
-                return (-ApproximateInverseTailProbability(2.0 * P));
+                return (-Global.SqrtTwo * AdvancedMath.ApproximateInverseErfc(2.0 * P));
             } else if (P < 0.9) {
-                return (ApproximateInverseCentralProbability(2.0 * P - 1.0));
+                return (Global.SqrtTwo * AdvancedMath.ApproximateInverseErf(2.0 * P - 1.0));
             } else {
-                return (ApproximateInverseTailProbability(2.0 * (1.0 - P)));
+                return (Global.SqrtTwo * AdvancedMath.ApproximateInverseErfc(2.0 * (1.0 - P)));
             }
 
         }
+       
 
-        private static double ApproximateInverseCentralProbability (double P) {
+        private double ApproximateInverseStandardGamma (double P, double Q) {
 
-            // this is just a term-by-term inversion of the series for erf(z)
-
-            double z = Math.Sqrt(Math.PI / 2.0) * P;
-            double zz = z * z;
-            double S = 1.0 + zz / 6.0 + 7.0 / 120.0 * zz * zz + 127.0 / 5040.0 * zz * zz * zz;
-            return (z * S);
-
-        }
-
-        private static double ApproximateInverseTailProbability (double P) {
-            double zz = P * P;
-            double log = Math.Log(2.0 / Math.PI / zz);
-            double S = log - Math.Log(log);
-            return (Math.Sqrt(S));
-        }
-
-        public double ApproximateInverseGamma (double P) {
+            if (P == 0.0) return (0.0);
+            if (Q == 0.0) return (Double.PositiveInfinity);
 
             // compute  (Gamma(a+1) * P)^(1/a)
             double x0;
@@ -196,12 +204,14 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
             double x1 = x0 / (a + 1.0);
             if (x1 < 0.33) {
-                // do left-tail if possible, because it is quite fast
+                // do left-tail expansion if possible, because it is quite fast
                 // this is just a term-by-term inversion of the power series
                 // P(a,x) = gamma(a,x) / Gamma(a) = e^{-x} x^a / Gamma(a+1) [ 1 + x / (a+1) + ... ]
-                return (x0 * (1.0 + x1 + (3.0 * a + 5.0) * x1 * x1 / (a + 2.0) / 2.0));
+                double S = 1.0 + x1 + (3.0 * a + 5.0) / (a + 2.0) * x1 * x1 / 2.0 +
+                    (8.0 * a * a + 33.0 * a + 31.0) / (a + 2.0) / (a + 3.0) * x1 * x1 * x1 / 3.0;
+                return (x0 * S);
             } else {
-                if (a >= 1.0) {
+                if (a > 1.0) {
                     // it is well known that Gamma(a) -> Normal(a,sqrt(a)) for large a
                     // but it does so exceedingly slowly (skew decreases ~1/sqrt(a) and kurtosis ~1/a)
                     // in the days of yore when people looked for normalizing transforms, Wilson and Hilferty derived that
@@ -214,75 +224,55 @@ namespace Meta.Numerics.Statistics.Distributions {
                     // for small a, use a very crude right-tail approximation
                     // this will fail if Gamma(a) * Q > 1, but given our range for the left-tail
                     // approximation above, we have ~0.5 < Gamma(a) * Q < ~0.8 for 0 < a < 1
-                    double Q = 1.0 - P;
-                    if (Q == 0.0) {
-                        return (Double.PositiveInfinity);
+                    double log;
+                    if (ga > 0.0) {
+                        log = - Math.Log(ga * Q);
                     } else {
-                        // compute -log(Gamma(a) * Q)
-                        double log;
-                        if (ga > 0.0) {
-                            log = - Math.Log(ga * Q);
-                        } else {
-                            log = ga - Math.Log(Q);
-                        }
-                        return (log + (a - 1.0) * Math.Log(log));
+                        log = ga - Math.Log(Q);
                     }
+                    return (log - (1.0 - a) * Math.Log(log));
                 }
             }
 
         }
 
+        private double InverseLeftStandardGamma (double P) {
+
+            double x = ApproximateInverseStandardGamma(P, 1.0 - P);
+            // zero x or infinite x will cause problems with the iterative method below
+            // near zero (and at infinity) the approximation becomes good to double precision anyway
+            if ((x < Global.Accuracy) || Double.IsPositiveInfinity(x)) return (x);
+
+            double y = AdvancedMath.LeftRegularizedGamma(a, x) - P;
+            for (int i = 0; i < 16; i++) {
+
+                //Console.WriteLine("  x={0:g16} y={1}", x, y);
+                
+                double r;
+                if (ga > 0.0) {
+                    r = y * ga * Math.Exp(x) / Math.Pow(x, a);
+                } else {
+                    r = y * Math.Exp(x - ga - a * Math.Log(x));
+                }
+                double dx = -r * x / (1.0 - r * (a - 1.0 - x) / 2.0);
+                x += dx;
+                //Console.WriteLine("  dx={0} x={1}", dx, x);
+
+                if (Math.Abs(dx) <= Global.Accuracy * Math.Abs(x)) return (x);
+
+                double y_new = AdvancedMath.LeftRegularizedGamma(a, x) - P;
+                if (Math.Abs(y_new) >= Math.Abs(y)) return (x);
+                y = y_new;
+
+            }
+            
+            throw new NonconvergenceException();
+        }
+
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
-
-            double x_min = 0.0;
-            double x = ApproximateInverseGamma(P);
-            double x_max = 10.0 * x;
-
-            double dx_old = Double.MaxValue;
-
-            Console.WriteLine("x0={0}", x);
-
-            for (int i = 0; i < Global.SeriesMax; i++) {
-
-                double F = LeftProbability(x) - P;
-
-
-                if (F < 0.0) {
-                    x_min = x;
-                } else {
-                    x_max = x;
-                }
-
-                double FP = ProbabilityDensity(x);
-
-                double dx = -F / FP;
-
-                double x_new = x + dx;
-
-                if (x_new < x_min) {
-                    x_new = (x_min + x) / 2.0;
-                } else if (x_new > x_max) {
-                    x_new = (x + x_max) / 2.0;
-                } else if (2.0 * Math.Abs(dx) > Math.Abs(dx_old)) {
-                    if (F < 0.0) {
-                        x_new = (x_min + x) / 2.0;
-                    } else {
-                        x_new = (x + x_max) / 2.0;
-                    }
-                }
-
-                Console.WriteLine("x_min={0} x_new={1} x_max={2}", x_min, x_new, x_max);
-
-                if (x == x_new) return (x);
-
-                dx_old = x_new - x;
-                x = x_new;
-
-            }
-
-            throw new NonconvergenceException();
+            return (s * InverseLeftStandardGamma(P));
         }
 
     }

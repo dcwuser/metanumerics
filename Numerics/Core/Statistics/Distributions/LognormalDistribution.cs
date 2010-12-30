@@ -62,7 +62,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double StandardDeviation {
             get {
-                return (Math.Sqrt(Es2m1) * Mean);
+                return (Math.Sqrt(MoreMath.ExpMinusOne(sigma * sigma)) * Mean);
             }
         }
 

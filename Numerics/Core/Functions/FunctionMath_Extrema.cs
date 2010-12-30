@@ -24,7 +24,7 @@ namespace Meta.Numerics.Functions {
         /// of <paramref name="f"/> could fail. If you can reliably bracket a minimum, the other
         /// overload of this method is safer and, if your bracket is any good, slightly faster.</para>
         /// </remarks>
-        public static LineExtremum FindMinimum (Function<double, double> f, double x) {
+        public static LineExtremum FindMinimum (Func<double, double> f, double x) {
             if (f == null) throw new ArgumentNullException("f");
             double fx = f(x);
             double d = 0.1 * Math.Abs(x) + 0.01;
@@ -33,7 +33,7 @@ namespace Meta.Numerics.Functions {
 
         // finds a minimum given an initial step size
 
-        private static LineExtremum FindMinimum (Function<double,double> f, double x, double fx, double d) {
+        private static LineExtremum FindMinimum (Func<double,double> f, double x, double fx, double d) {
 
             // take a step
             // add a while loop to make sure we have moved enough that fy != fx
@@ -118,7 +118,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="r">The interval.</param>
         /// <returns>The minimum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
-        public static LineExtremum FindMinimum (Function<double, double> f, Interval r) {
+        public static LineExtremum FindMinimum (Func<double, double> f, Interval r) {
 
             if (f == null) throw new ArgumentNullException("f");
 
@@ -199,7 +199,7 @@ namespace Meta.Numerics.Functions {
         // switching to golden section if interval does not shrink fast enough
         // see Richard Brent, "Algorithms for Minimization Without Derivatives"
 
-        private static LineExtremum FindMinimum (Function<double,double> f, double a, double b, double u, double fu, double v, double fv, double w, double fw) {
+        private static LineExtremum FindMinimum (Func<double,double> f, double a, double b, double u, double fu, double v, double fv, double w, double fw) {
 
             if (f == null) throw new ArgumentNullException("f");
             
@@ -373,7 +373,7 @@ namespace Meta.Numerics.Functions {
         /// <returns>The minimum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
         /// <exception cref="ArgumentNullException"><paramref name="x"/> is null.</exception>
-        public static SpaceExtremum FindMinimum (Function<double[], double> f, double[] x) {
+        public static SpaceExtremum FindMinimum (Func<double[], double> f, double[] x) {
 
             if (f == null) throw new ArgumentNullException("f");
             if (x == null) throw new ArgumentNullException("x");
@@ -433,7 +433,7 @@ namespace Meta.Numerics.Functions {
                     LineFunction f1 = new LineFunction(f, x, Q[i]);
 
                     // minimize it
-                    LineExtremum m = FindMinimum(new Function<double,double>(f1.Evaluate), 0.0, y, 1.0);
+                    LineExtremum m = FindMinimum(new Func<double,double>(f1.Evaluate), 0.0, y, 1.0);
 
                     // update the current position
                     x = f1.Position(m.Location);
@@ -490,7 +490,7 @@ namespace Meta.Numerics.Functions {
 
                 // attempt a minimization in the net direction
                 LineFunction f2 = new LineFunction(f, x, dx);
-                LineExtremum mm = FindMinimum(new Function<double,double>(f2.Evaluate), 0.0, y, 1.0);
+                LineExtremum mm = FindMinimum(new Func<double,double>(f2.Evaluate), 0.0, y, 1.0);
                 x = f2.Position(mm.Location);
                 y = mm.Value;
 
@@ -524,7 +524,7 @@ namespace Meta.Numerics.Functions {
         // requires 4 evaluations for off-diagonals; there are d(d-1)/2 of those
         // total of 2d^2 + d evaluations required
 
-        private static SymmetricMatrix ComputeCurvature (Function<double[], double> f, double[] x) {
+        private static SymmetricMatrix ComputeCurvature (Func<double[], double> f, double[] x) {
 
             int d = x.Length;
 
@@ -586,7 +586,7 @@ namespace Meta.Numerics.Functions {
 
     internal class LineFunction {
 
-        public LineFunction (Function<double[],double> f, double[] x, double[] dx) {
+        public LineFunction (Func<double[],double> f, double[] x, double[] dx) {
 
             if (x.Length != dx.Length) throw new DimensionMismatchException();
 
@@ -596,7 +596,7 @@ namespace Meta.Numerics.Functions {
             this.d = x.Length;
         }
 
-        private Function<double[],double> f;
+        private Func<double[],double> f;
 
         private double[] x;
 
@@ -755,7 +755,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <returns>The curvature matrix.</returns>
         public SymmetricMatrix Curvature () {
-            return (f2.Clone());
+            return (f2.Copy());
         }
 
         /// <summary>

@@ -10,18 +10,11 @@ using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Statistics {
 
-    // There is a bit of ugliness here due to the fact that we origially published with the
-    // non-generic DataPoint and DataSet. The generic versions were added later, and their
-    // introducion is mostly smooth, but in order to be non-breaking DataSet<T> can't be
-    // IEnumerable<DataPoint<T>>, because that would make DataSet IEnumerable<DataPoint<double>>,
-    // but it's already IEnumerable<DataPoint> and it can't be both. In the future, we should
-    // eliminate DataPoint and just use DataPoint<double> and re-jigger enumerablity
-
     /// <summary>
     /// Represents an experimental data point that is a function of an arbitrary variable.
     /// </summary>
     /// <typeparam name="T">The type of the ordinate (independent variable) characterizing the data point.</typeparam>
-    public class DataPoint<T> {
+    public class UncertainMeasurement<T>  {
 
         private T x;
         private UncertainValue y;
@@ -31,7 +24,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="x">The ordinate.</param>
         /// <param name="y">The abcissa.</param>
-        public DataPoint (T x, UncertainValue y) {
+        public UncertainMeasurement (T x, UncertainValue y) {
             this.x = x;
             this.y = y;
         }
@@ -42,7 +35,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="x">The ordinate.</param>
         /// <param name="y">The best estimate of the abcissa.</param>
         /// <param name="dy">The uncertainty in the abcissa.</param>
-        public DataPoint (T x, double y, double dy) {
+        public UncertainMeasurement (T x, double y, double dy) {
             this.x = x;
             this.y = new UncertainValue(y, dy);
         }
@@ -67,7 +60,7 @@ namespace Meta.Numerics.Statistics {
 
         // equality
 
-        private static bool Equals (DataPoint<T> d1, DataPoint<T> d2) {
+        private static bool Equals (UncertainMeasurement<T> d1, UncertainMeasurement<T> d2) {
             if (Object.ReferenceEquals(d1, null)) {
                 if (Object.ReferenceEquals(d2, null)) {
                     return (true);
@@ -89,7 +82,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="d1">The first data point.</param>
         /// <param name="d2">The second data point.</param>
         /// <returns>True if the data points are equal, otherwise false.</returns>
-        public static bool operator == (DataPoint<T> d1, DataPoint<T> d2) {
+        public static bool operator == (UncertainMeasurement<T> d1, UncertainMeasurement<T> d2) {
             return (Equals(d1, d2));
         }
 
@@ -99,7 +92,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="d1">The first data point.</param>
         /// <param name="d2">The second data point.</param>
         /// <returns>True if the data points are not equal, otherwise false.</returns>
-        public static bool operator != (DataPoint<T> d1, DataPoint<T> d2) {
+        public static bool operator != (UncertainMeasurement<T> d1, UncertainMeasurement<T> d2) {
             return (!Equals(d1, d2));
         }
 
@@ -109,7 +102,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="obj">The object.</param>
         /// <returns>True if the object represents the same data point, otherwise false.</returns>
         public override bool Equals (object obj) {
-            DataPoint<T> d = obj as DataPoint<T>;
+            UncertainMeasurement<T> d = obj as UncertainMeasurement<T>;
             if (Object.ReferenceEquals(d, null)) {
                 return (false);
             } else {
@@ -126,6 +119,8 @@ namespace Meta.Numerics.Statistics {
         }
 
     }
+
+#if PAST
 
     /// <summary>
     /// Represents an experimental data point that is a function of a single real variable.
@@ -160,25 +155,27 @@ namespace Meta.Numerics.Statistics {
 
     }
 
+#endif
+
     /// <summary>
     /// Represents a set of measurements.
     /// </summary>
     /// <typeparam name="T">The type of independent variable associated with each measurement.</typeparam>
-    public class DataSet<T> {
+    public class UncertainMeasurementSample<T> : ICollection<UncertainMeasurement<T>>, IEnumerable<UncertainMeasurement<T>>, IEnumerable {
 
         /// <summary>
         /// Initializes a new, empty data set.
         /// </summary>
-        public DataSet () {
+        public UncertainMeasurementSample () {
         }
 
-        private List<DataPoint<T>> data = new List<DataPoint<T>>();
+        private List<UncertainMeasurement<T>> data = new List<UncertainMeasurement<T>>();
 
         /// <summary>
         /// Adds a new data point to the set.
         /// </summary>
         /// <param name="datum">The data point.</param>
-        public void Add (DataPoint<T> datum) {
+        public void Add (UncertainMeasurement<T> datum) {
             if (datum == null) throw new ArgumentNullException("datum");
             data.Add(datum);
         }
@@ -190,16 +187,16 @@ namespace Meta.Numerics.Statistics {
         /// <param name="y">The value of the abcissa (dependent variable).</param>
         /// <param name="dy">The uncertainty of the abcissa (dependent variable).</param>
         public void Add (T x, double y, double dy) {
-            data.Add(new DataPoint<T>(x, y, dy));
+            data.Add(new UncertainMeasurement<T>(x, y, dy));
         }
 
         /// <summary>
         /// Adds a series of data points to the set.
         /// </summary>
         /// <param name="data">The data points.</param>
-        public void Add (IEnumerable<DataPoint<T>> data) {
+        public void Add (IEnumerable<UncertainMeasurement<T>> data) {
             if (data == null) throw new ArgumentNullException("data");
-            foreach (DataPoint<T> datum in data) {
+            foreach (UncertainMeasurement<T> datum in data) {
                 this.data.Add(datum);
             }
         }
@@ -210,7 +207,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="datum">The data point to remove.</param>
         /// <returns>True if the data point was found and removed; otherwise false.</returns>
-        public bool Remove (DataPoint<T> datum) {
+        public bool Remove (UncertainMeasurement<T> datum) {
             return (data.Remove(datum));
         }
 
@@ -219,7 +216,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="datum">The data point.</param>
         /// <returns>True if the set contains the given data point, otherwise false.</returns>
-        public bool Contains (DataPoint<T> datum) {
+        public bool Contains (UncertainMeasurement<T> datum) {
             return (data.Contains(datum));
         }
 
@@ -247,7 +244,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>A fit result containing the best-fit coefficients of the component functions and a &#x3C7;<sup>2</sup> test
         /// of the quality of the fit.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="functions"/> is null.</exception>
-        public FitResult FitToLinearFunction (Function<T, double>[] functions) {
+        public FitResult FitToLinearFunction (Func<T, double>[] functions) {
 
             if (functions == null) throw new ArgumentNullException("functions");
             if (functions.Length > data.Count) throw new InvalidOperationException();
@@ -307,7 +304,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>A fit result containing the best-fitting function parameters
         /// and a &#x3C7;<sup>2</sup> test of the quality of the fit.</returns>
         /// <exception cref="InvalidOperationException">There are more fit function parameters than data points.</exception>
-        public FitResult FitToFunction (Function<double[], T, double> function, double[] start) {
+        public FitResult FitToFunction (Func<double[], T, double> function, double[] start) {
             if (function == null) throw new ArgumentNullException("function");
             if (start == null) throw new ArgumentNullException("start");
 
@@ -316,10 +313,10 @@ namespace Meta.Numerics.Statistics {
 
             // create a chi^2 fit metric and minimize it 
             FitMetric<T> metric = new FitMetric<T>(this, function);
-            SpaceExtremum minimum = FunctionMath.FindMinimum(new Function<double[], double>(metric.Evaluate), start);
+            SpaceExtremum minimum = FunctionMath.FindMinimum(new Func<double[], double>(metric.Evaluate), start);
 
             // compute the covariance (Hessian) matrix by inverting the curvature matrix
-            SymmetricMatrix A = minimum.Curvature() / 2.0;
+            SymmetricMatrix A = 0.5 * minimum.Curvature();
             CholeskyDecomposition CD = A.CholeskyDecomposition(); // should not return null if we were at a minimum
             SymmetricMatrix C = CD.Inverse();
 
@@ -333,7 +330,22 @@ namespace Meta.Numerics.Statistics {
         // can't expose this yet, because IEnumerable<DataPoint<double>> would conflict
         // with IEnumerable<DataPoint>; eliminating non-generic DataPoint would fix this
 
-        internal IEnumerator<DataPoint<T>> GetEnumerator () {
+        public IEnumerator<UncertainMeasurement<T>> GetEnumerator () {
+            return (data.GetEnumerator());
+        }
+
+        bool ICollection<UncertainMeasurement<T>>.IsReadOnly {
+            get {
+                return (false);
+            }
+        }
+
+        void ICollection<UncertainMeasurement<T>>.CopyTo (UncertainMeasurement<T>[] array, int offset) {
+            if (array == null) throw new ArgumentNullException("array");
+            data.CopyTo(array, offset);
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator () {
             return (data.GetEnumerator());
         }
 
@@ -341,124 +353,31 @@ namespace Meta.Numerics.Statistics {
 
 
     /// <summary>
-    /// Represents a set of <see cref="DataPoint"/> measurements.
+    /// Represents a set of <see cref="DataPoint{double}"/> measurements.
     /// </summary>
-    public sealed class DataSet : DataSet<double>, ICollection<DataPoint> {
+    public sealed class UncertainMeasurementSample : UncertainMeasurementSample<double> {
 
         /// <summary>
         /// Initializes a new, empty data set.
         /// </summary>
-        public DataSet () : base() {
+        public UncertainMeasurementSample () : base() {
         }
 
         /// <summary>
         /// Initializes a new data set with the specified data.
         /// </summary>
-        /// <param name="data">An enumerator over the <see cref="DataPoint" />s to place in the set.</param>
-        public DataSet (IEnumerable<DataPoint> data) : base() {
+        /// <param name="data">An enumerator over the <see cref="DataPoint{double}" />s to place in the set.</param>
+        public UncertainMeasurementSample (IEnumerable<UncertainMeasurement<double>> data)
+            : base() {
             if (data == null) throw new ArgumentNullException("data");
-            foreach (DataPoint datum in data) {
+            foreach (UncertainMeasurement<double> datum in data) {
                 Add(datum);
             }
         }
 
-        //private List<DataPoint> data = new List<DataPoint>();
 
-        ///// <summary>
-        ///// Adds a new data point to the set.
-        ///// </summary>
-        ///// <param name="datum">The data point.</param>
-        //public void Add (DataPoint datum) {
-        //    if (datum == null) throw new ArgumentNullException("datum");
-        //    data.Add(datum);
-        //}
 
-        ///// <summary>
-        ///// Adds a series of data points to the set.
-        ///// </summary>
-        ///// <param name="data">The data points.</param>
-        //public void Add (IEnumerable<DataPoint> data) {
-        //    if (data == null) throw new ArgumentNullException("data");
-        //    foreach (DataPoint datum in data) {
-        //        this.data.Add(datum);
-        //    }
-        //}
 
-        ///// <summary>
-        ///// Removes a data point from the set.
-        ///// </summary>
-        ///// <param name="datum">The data point to remove.</param>
-        ///// <returns>True if the data point was found and removed; otherwise false.</returns>
-        //public bool Remove (DataPoint datum) {
-        //    return (data.Remove(datum));
-        //}
-
-        ///// <summary>
-        ///// Determines whether the set contains the given data point.
-        ///// </summary>
-        ///// <param name="datum">The data point.</param>
-        ///// <returns>True if the set contains the given data point, otherwise false.</returns>
-        //public bool Contains (DataPoint datum) {
-        //    return (data.Contains(datum));
-        //}
-
-        ///// <summary>
-        ///// Removes all data points from the set.
-        ///// </summary>
-        //public void Clear () {
-        //    data.Clear();
-        //}
-
-        ///// <summary>
-        ///// Gets the size of the data set.
-        ///// </summary>
-        //public int Count {
-        //    get {
-        //        return (data.Count);
-        //    }
-        //}
-
-        void ICollection<DataPoint>.Add (DataPoint datum) {
-            Add(datum);
-        }
-
-        bool ICollection<DataPoint>.Contains (DataPoint datum) {
-            return (Contains(datum));
-        }
-
-        bool ICollection<DataPoint>.Remove (DataPoint datum) {
-            return (Remove(datum));
-        }
-
-        int ICollection<DataPoint>.Count {
-            get {
-                return (Count);
-            }
-        }
-
-        bool ICollection<DataPoint>.IsReadOnly {
-            get {
-                return (false);
-            }
-        }
-
-        void ICollection<DataPoint>.CopyTo (DataPoint[] array, int offset) {
-            if (array == null) throw new ArgumentNullException("array");
-            int i = offset;
-            DataPointEnumerator e = new DataPointEnumerator(GetEnumerator());
-            while (e.MoveNext()) {
-                array[i] = e.Current;
-                i++;
-            }
-        }
-
-        IEnumerator<DataPoint> IEnumerable<DataPoint>.GetEnumerator () {
-            return (new DataPointEnumerator(GetEnumerator()));
-        }
-
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator () {
-            return (new DataPointEnumerator(GetEnumerator()));
-        }
 
         /*
         public FitResult FitToFunction (ParameterizedFunction function, double[] startParameters) {
@@ -538,7 +457,7 @@ namespace Meta.Numerics.Statistics {
             // do required sums
             double S = 0.0;
             double Sy = 0.0;
-            foreach (DataPoint datum in this) {
+            foreach (UncertainMeasurement<double> datum in this) {
             //for (int i = 0; i < data.Count; i++) {
                 //DataPoint datum = data[i];
                 double y = datum.Y.Value;
@@ -554,7 +473,7 @@ namespace Meta.Numerics.Statistics {
 
             // compute chi^2
             double chi2 = 0.0;
-            foreach (DataPoint datum in this) {
+            foreach (UncertainMeasurement<double> datum in this) {
             //for (int i = 0; i < data.Count; i++) {
                 //DataPoint datum = data[i];
                 double x = datum.X;
@@ -578,7 +497,7 @@ namespace Meta.Numerics.Statistics {
             // do required sums
             double Sxx = 0.0;
             double Sxy = 0.0;
-            foreach (DataPoint datum in this) {
+            foreach (UncertainMeasurement<double> datum in this) {
             //for (int i = 0; i < data.Count; i++) {
                 //DataPoint datum = data[i];
                 double x = datum.X;
@@ -595,7 +514,7 @@ namespace Meta.Numerics.Statistics {
 
             // compute chi^2
             double chi2 = 0.0;
-            foreach (DataPoint datum in this) {
+            foreach (UncertainMeasurement<double> datum in this) {
             //for (int i = 0; i < data.Count; i++) {
                 //DataPoint datum = data[i];
                 double x = datum.X;
@@ -625,7 +544,7 @@ namespace Meta.Numerics.Statistics {
             double Sy = 0.0;
             double Sxx = 0.0;
             double Sxy = 0.0;
-            foreach (DataPoint datum in this) {
+            foreach (UncertainMeasurement<double> datum in this) {
             //for (int i = 0; i < data.Count; i++) {
                 //DataPoint datum = data[i];
                 double x = datum.X;
@@ -649,7 +568,7 @@ namespace Meta.Numerics.Statistics {
 
             // compute chi^2
             double chi2 = 0.0;
-            foreach (DataPoint datum in this) {
+            foreach (UncertainMeasurement<double> datum in this) {
             //for (int i = 0; i < data.Count; i++) {
                 //DataPoint datum = data[i];
                 double x = datum.X;
@@ -676,7 +595,7 @@ namespace Meta.Numerics.Statistics {
             if (Count < order) throw new InvalidOperationException();
 
             // create the functions
-            Function<double,double>[] functions = new Function<double,double>[order + 1];
+            Func<double,double>[] functions = new Func<double,double>[order + 1];
             for (int i = 0; i < functions.Length; i++) {
                 int n = i;
                 functions[i] = delegate(double x) { return (MoreMath.Pow(x, n)); };
@@ -728,21 +647,21 @@ namespace Meta.Numerics.Statistics {
 
     internal class FitMetric<T> {
 
-        public FitMetric (DataSet<T> set, Function<double[], T, double> f) {
+        public FitMetric (UncertainMeasurementSample<T> set, Func<double[], T, double> f) {
             this.set = set;
             this.f = f;
         }
 
-        private DataSet<T> set;
+        private UncertainMeasurementSample<T> set;
 
-        private Function<double[], T, double> f;
+        private Func<double[], T, double> f;
 
         public double Evaluate (double[] p) {
             //Console.WriteLine("Computing chi^2 with p[0]={0}", p[0]);
             double chi2 = 0.0;
-            IEnumerator<DataPoint<T>> e = set.GetEnumerator();
+            IEnumerator<UncertainMeasurement<T>> e = set.GetEnumerator();
             while (e.MoveNext()) {
-                DataPoint<T> point = e.Current;
+                UncertainMeasurement<T> point = e.Current;
             //foreach (DataPoint<T> point in set) {
                 T x = point.X;
                 double fx = f(p, x);
@@ -757,6 +676,8 @@ namespace Meta.Numerics.Statistics {
         }
 
     }
+
+#if PAST
 
     internal class DataPointEnumerator : IEnumerator<DataPoint>, IEnumerator {
 
@@ -792,6 +713,7 @@ namespace Meta.Numerics.Statistics {
 
     }
 
+#endif
     /*
     internal class FitMetric {
 

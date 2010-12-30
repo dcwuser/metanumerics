@@ -31,6 +31,15 @@ namespace Meta.Numerics.Statistics.Distributions {
         private double mu;
         private double lambda;
 
+        /// <summary>
+        /// Gets the shape parameter of the distribution.
+        /// </summary>
+        public double ShapeParameter {
+            get {
+                return (lambda);
+            }
+        }
+
         /// <inheritdoc />
         public override double Mean {
             get {
@@ -113,6 +122,29 @@ namespace Meta.Numerics.Statistics.Distributions {
             get {
                 return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
             }
+        }
+
+        public static FitResult FitToSample (Sample sample) {
+
+            if (sample == null) throw new ArgumentNullException("sample");
+            if (sample.Count < 3) throw new InsufficientDataException();
+
+            // best fit mu = <x>
+            double mu = sample.Mean;
+            // best fit lambda is 1/lambda = <1/x - 1/mu>
+            double lambda = 0.0;
+            foreach (double value in sample) {
+                if (value <= 0.0) throw new InvalidOperationException();
+                lambda += (1.0 / value - 1.0 / mu);
+            }
+            lambda = sample.Count / lambda;
+
+            // variances are expressible in closed form, covariance is zero
+            double v_mu_mu = MoreMath.Pow(mu, 3) / lambda;
+            double v_lambda_lambda = 1.0;
+            double v_mu_lambda = 0.0;
+
+            return (new FitResult(mu, Math.Sqrt(v_mu_mu), lambda, Math.Sqrt(v_lambda_lambda), v_mu_lambda, null));
         }
 
     }

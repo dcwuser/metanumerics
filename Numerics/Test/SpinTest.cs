@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
+using Meta.Numerics.Spin;
 
 
 namespace Test {
@@ -351,6 +352,30 @@ namespace Test {
             }
 
             return (states);
+
+        }
+
+        [TestMethod]
+        public void SpinEquality () {
+
+            Spin s0 = Spin.SpinZero;
+            Spin s1a = Spin.SpinOne;
+            Spin s1b = new Spin(1.0);
+
+            Assert.IsTrue(s1a == s1b);
+            Assert.IsTrue(s0 != s1a);
+
+            SpinState[] ss = s1a.States();
+            Assert.IsTrue(ss.Length == s1a.Dimension);
+            for (int i = 0; i < ss.Length; i++) {
+                for (int j = 0; j < ss.Length; j++) {
+                    if (i == j) {
+                        Assert.IsTrue(ss[i] == ss[j]);
+                    } else {
+                        Assert.IsTrue(ss[i] != ss[j]);
+                    }
+                }
+            }
 
         }
 
@@ -734,7 +759,7 @@ namespace Test {
 
                         // do the integral over their product
 
-                        Function<double, double> f = delegate(double x) {
+                        Func<double, double> f = delegate(double x) {
                             return (
                                 OrthogonalPolynomials.LegendreP(l1, x) *
                                 OrthogonalPolynomials.LegendreP(l2, x) *
@@ -1063,7 +1088,7 @@ namespace Test {
             // we include these special cases in order to exercise code in the recursion routine that is active
             // only when the minimum spin of the recursion is zero
 
-            Spin s1 = new Spin(1.0);
+            Spin s1 = Spin.SpinOne;
             Spin s2 = new Spin(2.0);
             Spin s3 = new Spin(3.0);
 

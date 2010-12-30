@@ -80,7 +80,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <returns>The covariance matrix.</returns>
         public SymmetricMatrix CovarianceMatrix () {
-            return (covarianceMatrix.Clone());
+            return (covarianceMatrix.Copy());
         }
 
         /// <summary>

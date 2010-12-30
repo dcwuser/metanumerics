@@ -58,12 +58,12 @@ namespace Test {
 
 
         [TestMethod]
-        public void ColumnVectorAccessTest () {
+        public void ColumnVectorCopy () {
 
             ColumnVector v = new ColumnVector(3);
 
             // test cloning and equality/inequality testing
-            ColumnVector vc = v.Clone();
+            ColumnVector vc = v.Copy();
             Assert.IsTrue(vc == v);
             Assert.IsFalse(vc != v);
 
@@ -72,6 +72,23 @@ namespace Test {
             Assert.IsFalse(vc == v);
             Assert.IsTrue(vc != v);
 
+
+        }
+
+        [TestMethod]
+        public void RowVectorCopy () {
+
+            RowVector v = new RowVector(3);
+
+            // test cloning and equality/inequality testing
+            RowVector vc = v.Copy();
+            Assert.IsTrue(vc == v);
+            Assert.IsFalse(vc != v);
+
+            // test independence clone and equality/inequality testing
+            vc[0] += 1.0;
+            Assert.IsFalse(vc == v);
+            Assert.IsTrue(vc != v);
 
         }
 
@@ -127,7 +144,7 @@ namespace Test {
         [TestMethod]
         public void MixedVectorArithmeticTest () {
 
-            // outper product
+            // outer product
             RectangularMatrix CR = C * R;
             Assert.IsTrue(CR.RowCount == C.Dimension);
             Assert.IsTrue(CR.ColumnCount == R.Dimension);

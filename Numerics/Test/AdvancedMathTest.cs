@@ -119,7 +119,7 @@ namespace Test
         public void BesselJ0IntegralTest () {
             Interval r = Interval.FromEndpoints(0.0, Math.PI);
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
-                Function<double, double> f = delegate(double t) {
+                Func<double, double> f = delegate(double t) {
                     return (Math.Cos(x * Math.Sin(t)));
                 };
                 double J0 = FunctionMath.Integrate(f, r) / Math.PI;
@@ -131,7 +131,7 @@ namespace Test
         public void BesselY0IntegralTest () {
             Interval r = Interval.FromEndpoints(0.0, Math.PI / 2.0);
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
-                Function<double, double> f = delegate(double t) {
+                Func<double, double> f = delegate(double t) {
                     double s = Math.Sin(t);
                     return (Math.Cos(x * Math.Cos(t)) * (AdvancedMath.EulerGamma + Math.Log(2.0 * x * s * s)));
                 };
@@ -145,7 +145,7 @@ namespace Test
             Interval r = Interval.FromEndpoints(0.0, Math.PI);
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 5)) {
                 foreach (int n in TestUtilities.GenerateIntegerValues(1, 10, 3)) {
-                    Function<double, double> f = delegate(double t) {
+                    Func<double, double> f = delegate(double t) {
                         return (Math.Cos(x * Math.Sin(t) - n * t));
                     };
                     double J = FunctionMath.Integrate(f, r) / Math.PI;
@@ -158,7 +158,7 @@ namespace Test
         [TestMethod]
         public void BesselKapteynIntegralTest () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
-                Function<double, double> f = delegate(double t) {
+                Func<double, double> f = delegate(double t) {
                     return (Math.Cos(x - t) * AdvancedMath.BesselJ(0, t));
                 };
                 Interval r = Interval.FromEndpoints(0.0, x);
@@ -168,7 +168,7 @@ namespace Test
 
         [TestMethod]
         public void BesselLipshitzIntegralTest () {
-            Function<double, double> f = delegate(double t) {
+            Func<double, double> f = delegate(double t) {
                 return (Math.Exp(-t) * AdvancedMath.BesselJ(0, t));
             };
             Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
@@ -177,7 +177,7 @@ namespace Test
 
         [TestMethod]
         public void BesselWeberIntegralTest () {
-            Function<double, double> f = delegate(double t) {
+            Func<double, double> f = delegate(double t) {
                 return (Math.Exp(-t*t) * AdvancedMath.BesselJ(0, t) * t);
             };
             Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
@@ -306,7 +306,7 @@ namespace Test
         public void RealBesselJIntegralTest () {
             foreach (double nu in TestUtilities.GenerateRealValues(0.1, 10.0, 3)) {
                 foreach (double x in TestUtilities.GenerateRealValues(0.01, 100.0, 3)) {
-                    Function<double, double> f = delegate(double t) {
+                    Func<double, double> f = delegate(double t) {
                         return (Math.Cos(x * Math.Cos(t)) * Math.Pow(Math.Sin(t), 2.0 * nu));
                     };
                     Interval r = Interval.FromEndpoints(0.0, Math.PI);
@@ -430,7 +430,7 @@ namespace Test
         // Gamma functions
 
         [TestMethod]
-        public void GammaRecurrsionTest () {
+        public void GammaRecurrsion () {
             // limit x to avoid overflow
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E2,20)) {
                 Console.WriteLine("x={0}, G={1}", x, AdvancedMath.Gamma(x));
@@ -439,7 +439,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void GammaSpecialValuesTest () {
+        public void GammaSpecialCases () {
             // it would be nice to be able to make some of these comparisons exact
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(0.5), Math.Sqrt(Math.PI)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(1.0), 1.0));
@@ -450,7 +450,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void GammaReflectionTest () {
+        public void GammaReflection () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E2,20)) {
                 // don't try a large near-integer, because trig functions of large numbers aren't accurate enough 
                 if ((x > 20) && (Math.Abs(x - Math.Round(x)) < 0.05)) continue;
@@ -463,26 +463,36 @@ namespace Test
         }
 
         [TestMethod]
-        public void GammaInequalityTest () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0,1.0E2,10)) {
-                if (x >= 2.0) {
-                    double lower = Math.Pow(x / Math.E, x - 1.0);
-                    double upper = Math.Pow(x / 2.0, x - 1.0);
-                    double value = AdvancedMath.Gamma(x);
-                    Assert.IsTrue((lower <= value) && (value <= upper));
-                }
+        public void GammaInequality () {
+            foreach (double x in TestUtilities.GenerateRealValues(2.0,1.0E2,10)) {
+                // for x >= 2
+                double lower = Math.Pow(x / Math.E, x - 1.0);
+                double upper = Math.Pow(x / 2.0, x - 1.0);
+                double value = AdvancedMath.Gamma(x);
+                Assert.IsTrue((lower <= value) && (value <= upper));
             }
         }
 
         [TestMethod]
-        public void GammaIntegralTest () {
+        public void GammaIntegral () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0, 1.0E2, 3)) {
-                Function<double,double> f = delegate (double t) {
+                Func<double,double> f = delegate (double t) {
                     return( Math.Pow(t, x - 1.0) * Math.Exp(-t) );
                 };
                 Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(x), FunctionMath.Integrate(f, r)));
             }
+        }
+
+        [TestMethod]
+        public void GammaTrottIdentity () {
+
+            double G1 = AdvancedMath.Gamma(1.0 / 24.0);
+            double G5 = AdvancedMath.Gamma(5.0 / 24.0);
+            double G7 = AdvancedMath.Gamma(7.0 / 24.0);
+            double G11 = AdvancedMath.Gamma(11.0 / 24.0);
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual((G1 * G11) / (G5 * G7), Math.Sqrt(3.0) * Math.Sqrt(2.0 + Math.Sqrt(3.0)))); 
         }
 
         [TestMethod]
@@ -630,7 +640,7 @@ namespace Test
             foreach (double a in TestUtilities.GenerateRealValues(1.0, 10.0, 3)) {
                 foreach (double b in TestUtilities.GenerateRealValues(1.0, 10.0, 3)) {
                     double B = AdvancedMath.Beta(a, b);
-                    Function<double, double> f = delegate(double t) {
+                    Func<double, double> f = delegate(double t) {
                         return (Math.Pow(t, a - 1.0) * Math.Pow(1.0 - t, b - 1.0));
                     };
                     Interval r = Interval.FromEndpoints(0.0, 1.0);
@@ -676,7 +686,7 @@ namespace Test
 
         [TestMethod]
         public void InverseErfIntegralTest () {
-            Function<double, double> f = delegate(double t) {
+            Func<double, double> f = delegate(double t) {
                 return (AdvancedMath.InverseErf(t));
             };
             Interval r = Interval.FromEndpoints(0.0, 1.0);
@@ -687,7 +697,7 @@ namespace Test
         [TestMethod]
         public void ErfIntegralTest () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2,10.0,3)) {
-                Function<double, double> f = delegate(double t) {
+                Func<double, double> f = delegate(double t) {
                     return (Math.Exp(-t * t));
                 };
                 Interval r = Interval.FromEndpoints(0.0, x);
@@ -717,7 +727,7 @@ namespace Test
         [TestMethod]
         public void ErfcIntegralTest () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 10.0, 3)) {
-                Function<double, double> f = delegate(double t) {
+                Func<double, double> f = delegate(double t) {
                     return (Math.Exp(-t * t));
                 };
                 Interval r = Interval.FromEndpoints(x, Double.PositiveInfinity);
@@ -775,7 +785,7 @@ namespace Test
         public void IntegralEIntegralTest () {
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 10, 2)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 10.0, 3)) {
-                    Function<double, double> f = delegate(double t) {
+                    Func<double, double> f = delegate(double t) {
                         return (Math.Exp(-x * t) / Math.Pow(t, n));
                     };
                     Interval r = Interval.FromEndpoints(1.0, Double.PositiveInfinity);
@@ -873,7 +883,7 @@ namespace Test
 
         [TestMethod]
         public void DawsonIntegralTest () {
-            Function<double, double> f = delegate(double t) {
+            Func<double, double> f = delegate(double t) {
                 return( Math.Exp(t * t) );
             };
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 4)) {
@@ -898,7 +908,7 @@ namespace Test
 
         [TestMethod]
         public void FresnelSIntegralTest () {
-            Function<double, double> f = delegate(double t) {
+            Func<double, double> f = delegate(double t) {
                 return ( Math.Sin(Math.PI / 2.0 * t * t) );
             };
             // if x gets too high, the integral has too many oscilations to converge
@@ -910,7 +920,7 @@ namespace Test
 
         [TestMethod]
         public void FresnelCIntegralTest () {
-            Function<double, double> f = delegate(double t) {
+            Func<double, double> f = delegate(double t) {
                 return (Math.Cos(Math.PI / 2.0 * t * t));
             };
             // if x gets too high, the integral has too many oscilations to converge
@@ -922,7 +932,7 @@ namespace Test
 
         [TestMethod]
         public void IntegralSiIntegralTest () {
-            Function<double, double> f = delegate(double t) {
+            Func<double, double> f = delegate(double t) {
                 return (Math.Sin(t) / t);
             };
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
@@ -1127,7 +1137,7 @@ namespace Test
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
                 //Console.WriteLine("x={0}", x);
 
-                Function<double, double> f = delegate (double t) {
+                Func<double, double> f = delegate (double t) {
                     return (Math.Exp(x * Math.Cos(t)));
                 };
                 Interval r = Interval.FromEndpoints(0.0, Math.PI);
@@ -1143,7 +1153,7 @@ namespace Test
         [TestMethod]
         public void AiryIntegralTest () {
 
-            Function<double, double> f = delegate(double t) {
+            Func<double, double> f = delegate(double t) {
                 return (AdvancedMath.AiryAi(t));
             };
             Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
@@ -1174,13 +1184,13 @@ namespace Test
         [TestMethod]
         public void CatalanIntegralTest () {
 
-            Function<double, double> f1 = delegate(double t) {
+            Func<double, double> f1 = delegate(double t) {
                 return (t / Math.Sin(t) / Math.Cos(t));
             };
             Interval r1 = Interval.FromEndpoints(0.0, Math.PI / 4.0);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(FunctionMath.Integrate(f1, r1), AdvancedMath.Catalan));
 
-            Function<double, double> f2 = delegate(double t) {
+            Func<double, double> f2 = delegate(double t) {
                 return (-Math.Log(t) / (1 + t * t));
             };
             Interval r2 = Interval.FromEndpoints(0.0, 1.0);
@@ -1189,7 +1199,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void DiLogSpecialCaseTest () {
+        public void DiLogSpecialCases () {
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.DiLog(-1.0), -Math.PI * Math.PI / 12.0));
             Assert.IsTrue(AdvancedMath.DiLog(0.0) == 0.0);
@@ -1200,7 +1210,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void DiLogDuplicationTest () {
+        public void DiLogDuplication () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0, 10)) {
                 Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
                     AdvancedMath.DiLog(x), AdvancedMath.DiLog(-x), AdvancedMath.DiLog(x * x) / 2.0
@@ -1209,7 +1219,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void DiLogBailyIdentityTest () {
+        public void DiLogBailyIdentity () {
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(
                 36.0 * AdvancedMath.DiLog(1.0 / 2.0) - 36.0 * AdvancedMath.DiLog(1.0 / 4.0) -
@@ -1220,11 +1230,11 @@ namespace Test
         }
 
         [TestMethod]
-        public void DiLogExpIntegralTest () {
+        public void DiLogExpIntegral () {
 
             foreach (double x in TestUtilities.GenerateRealValues(0.1,10.0,5)) {
 
-                Function<double, double> f = delegate (double t) {
+                Func<double, double> f = delegate (double t) {
                     return (t / (Math.Exp(t) + x));
                 };
                 Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
@@ -1236,11 +1246,11 @@ namespace Test
         }
 
         [TestMethod]
-        public void DiLogLogIntegralTest () {
+        public void DiLogLogIntegral () {
 
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 5)) {
 
-                Function<double, double> f = delegate(double t) {
+                Func<double, double> f = delegate(double t) {
                     return (Math.Log(t) / t / (t - x));
                 };
                 Interval r = Interval.FromEndpoints(1.0, Double.PositiveInfinity);
@@ -1274,7 +1284,7 @@ namespace Test
 
             foreach (double k in TestUtilities.GenerateRealValues(0.01, 1.0, 4)) {
 
-                Function<double, double> f = delegate(double t) {
+                Func<double, double> f = delegate(double t) {
                     double z = k * Math.Sin(t);
                     return (1.0 / Math.Sqrt(1.0 - z * z));
                 };
@@ -1295,14 +1305,14 @@ namespace Test
 
             Interval i = Interval.FromEndpoints(0.0, 1.0);
 
-            Function<double, double> f1 = delegate(double k) {
+            Func<double, double> f1 = delegate(double k) {
                 return (AdvancedMath.EllipticK(k));
             };
             Assert.IsTrue(TestUtilities.IsNearlyEqual(
                 FunctionMath.Integrate(f1, i), 2.0 * AdvancedMath.Catalan
             ));
 
-            Function<double, double> f2 = delegate(double k) {
+            Func<double, double> f2 = delegate(double k) {
                 return (AdvancedMath.EllipticK(k) * k);
             };
             Assert.IsTrue(TestUtilities.IsNearlyEqual(
@@ -1326,7 +1336,7 @@ namespace Test
 
             foreach (double k in TestUtilities.GenerateRealValues(0.01, 1.0, 4)) {
 
-                Function<double, double> f = delegate(double t) {
+                Func<double, double> f = delegate(double t) {
                     double z = k * Math.Sin(t);
                     return (1.0 / Math.Sqrt(1.0 - z * z));
                 };

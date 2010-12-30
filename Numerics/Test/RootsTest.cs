@@ -1,6 +1,9 @@
-﻿using Meta.Numerics.Functions;
+﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 using Meta.Numerics;
+using Meta.Numerics.Functions;
+
 
 namespace Test
 {
@@ -61,21 +64,21 @@ namespace Test
 
         [TestMethod]
         public void FindRootOfEi () {
-            Function<double, double> f = new Function<double, double>(AdvancedMath.IntegralEi);
+            Func<double, double> f = new Func<double, double>(AdvancedMath.IntegralEi);
             double x = FunctionMath.FindZero(f, 0.5); // fails for x=1, tries to cross y-axis boundary
             Assert.IsTrue(TestUtilities.IsNearlyEqual(x, 0.37250741078136663446));
         }
 
         [TestMethod]
         public void FindRootOfPsi () {
-            Function<double, double> f = new Function<double, double>(AdvancedMath.Psi);
+            Func<double, double> f = new Func<double, double>(AdvancedMath.Psi);
             double x = FunctionMath.FindZero(f, 1.5);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(x, 1.46163214496836234126));
         }
 
         [TestMethod]
         public void FindRootOfJ0 () {
-            Function<double, double> f = delegate(double x) {
+            Func<double, double> f = delegate(double x) {
                 return (AdvancedMath.BesselJ(0, x));
             };
             double y = FunctionMath.FindZero(f, Interval.FromEndpoints(2.0, 4.0));

@@ -85,8 +85,9 @@ namespace Test {
 
         [TestMethod]
         public void HermiteReflection () {
-            foreach (int n in orders) {
-                foreach (double x in arguments) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 10)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0, 1000.0, 10)) {
+                    Console.WriteLine("n={0} x={1}", n, x);
                     if (n % 2 == 0) {
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.HermiteH(n, -x), OrthogonalPolynomials.HermiteH(n, x)));
                     } else {
@@ -98,11 +99,13 @@ namespace Test {
 
         [TestMethod]
         public void HermiteRecurrence () {
-            foreach (int n in orders) {
-                if (n < 100) {
-                    foreach (double x in arguments) {
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.HermiteH(n + 1, x), 2.0 * x * OrthogonalPolynomials.HermiteH(n, x) - 2.0 * n * OrthogonalPolynomials.HermiteH(n - 1, x)), String.Format("n={0}, x={1}, H={2}", n, x, OrthogonalPolynomials.HermiteH(n, x)));
-                    }
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 10)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0, 1000.0, 10)) {
+                    Console.WriteLine("n={0} x={1}", n, x);
+                    Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                        OrthogonalPolynomials.HermiteH(n + 1, x), 2.0 * n * OrthogonalPolynomials.HermiteH(n - 1, x),
+                        2.0 * x * OrthogonalPolynomials.HermiteH(n, x)
+                    ));
                 }
             }
         }
@@ -148,7 +151,7 @@ namespace Test {
         public void HermiteOrthonormality () {
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 30, 3)) {
                 foreach (int m in TestUtilities.GenerateIntegerValues(1, 30, 3)) {
-                    Function<double, double> f = delegate(double x) {
+                    Func<double, double> f = delegate(double x) {
                         return (Math.Exp(-x * x) * OrthogonalPolynomials.HermiteH(n, x) * OrthogonalPolynomials.HermiteH(m, x));
                     };
                     Interval r = Interval.FromEndpoints(Double.NegativeInfinity, Double.PositiveInfinity);
@@ -226,7 +229,7 @@ namespace Test {
                 for (int j = 0; j <= i; j++) {
                     int m = orders[j];
 
-                    Function<double, double> f = delegate(double x) {
+                    Func<double, double> f = delegate(double x) {
                         return (Math.Exp(-x) * OrthogonalPolynomials.LaguerreL(n, x) * OrthogonalPolynomials.LaguerreL(m, x));
                     };
                     Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
@@ -326,7 +329,7 @@ namespace Test {
                         Console.WriteLine("n={0} m={1} a={2}", n, m, a);
 
                         // evaluate the orthonormal integral
-                        Function<double, double> f = delegate(double x) {
+                        Func<double, double> f = delegate(double x) {
                             return (Math.Pow(x, a) * Math.Exp(-x) *
                                 OrthogonalPolynomials.LaguerreL(m, a, x) *
                                 OrthogonalPolynomials.LaguerreL(n, a, x)
@@ -534,7 +537,7 @@ namespace Test {
         public void LegendreOrthonormality () {
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 3)) {
                 foreach (int m in TestUtilities.GenerateIntegerValues(1, 100, 3)) {
-                    Function<double, double> f = delegate(double x) {
+                    Func<double, double> f = delegate(double x) {
                         return (OrthogonalPolynomials.LegendreP(n, x) * OrthogonalPolynomials.LegendreP(m, x));
                     };
                     Interval r = Interval.FromEndpoints(-1.0, 1.0);
@@ -686,7 +689,7 @@ namespace Test {
                         if ((m % 2) != (na % 2)) continue;
                         if ((m % 2) != (nb % 2)) continue;
 
-                        Function<double,double> f = delegate (double x) {
+                        Func<double,double> f = delegate (double x) {
                             return (OrthogonalPolynomials.ZernikeR(na, m, x) * OrthogonalPolynomials.ZernikeR(nb, m, x) * x);
                         };
 
@@ -719,7 +722,7 @@ namespace Test {
 
                         Console.WriteLine("{0} {1} {2}", n, m, x);
 
-                        Function<double, double> f = delegate(double rho) {
+                        Func<double, double> f = delegate(double rho) {
                             return (
                                 OrthogonalPolynomials.ZernikeR(n, m, rho) *
                                 AdvancedMath.BesselJ(m, x * rho) * rho
@@ -818,7 +821,7 @@ namespace Test {
                     int l = ells[li];
                     foreach(int m in TestUtilities.GenerateUniformIntegerValues(0, Math.Min(k,l), 4)) {
 
-                        Function<double, double> f = delegate(double x) {
+                        Func<double, double> f = delegate(double x) {
                             return (OrthogonalPolynomials.LegendreP(k, m, x) * OrthogonalPolynomials.LegendreP(l, m, x));
                         };
                         double I = FunctionMath.Integrate(f, Interval.FromEndpoints(-1.0, 1.0));

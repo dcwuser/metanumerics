@@ -11,7 +11,6 @@ namespace Test {
     [TestClass]
     public class SquareMatrixTest {
 
-
         private TestContext testContextInstance;
 
         /// <summary>
@@ -138,7 +137,7 @@ namespace Test {
             }
 
             // check clone
-            SquareMatrix VC = V.Clone();
+            SquareMatrix VC = V.Copy();
             Assert.IsTrue(VC == V);
             Assert.IsFalse(VC != V);
 
@@ -464,196 +463,6 @@ namespace Test {
             Console.WriteLine();
         }
 
-        private static double[] CubicRealRoots (double a, double b, double c) {
-            double Q = (a * a - 3.0 * b) / 9.0;
-            double R = (2.0 * a * a * a - 9.0 * a * b + 27.0 * c) / 54.0;
-
-            double S = R * R / (Q * Q * Q);
-
-            if (S < 1.0) {
-                double t = Math.Acos(Math.Sqrt(S));
-                double x0 = -a / 3.0;
-                double x1 = -2.0 * Math.Sqrt(Q);
-                return (new double[] {
-                    x0 + x1 * Math.Cos(t / 3.0),
-                    x0 + x1 * Math.Cos((t + 2.0 * Math.PI) / 3.0),
-                    x0 + x1 * Math.Cos((t - 2.0 * Math.PI) / 3.0)
-                });
-            } else {
-                throw new NotImplementedException();
-            }
-
-        }
-
-        public static double[] RealEigenvalues (double[,] H) {
-            double a = -(H[0, 0] + H[1, 1] + H[2, 2]);
-            double b = H[0, 0] * H[1, 1] + H[0, 0] * H[2, 2] + H[1, 1] * H[2, 2] - H[1, 0] * H[0, 1] - H[2, 1] * H[1, 2];
-            double c = H[0, 1] * H[1, 0] * H[2, 2] + H[0, 0] * H[2, 1] * H[1, 2] - H[0, 0] * H[1, 1] * H[2, 2] - H[0, 2] * H[2, 1] * H[1, 0];
-            double[] roots = CubicRealRoots(a, b, c);
-
-            for (int i = 0; i < roots.Length; i++) {
-                Console.Write("  {0}", roots[i]);
-            }
-            Console.WriteLine("-");
-
-            return (roots);
-        }
-
-        [TestMethod]
-        public void TwoStepTest () {
-            double[] store = new double[] {
-                2.0, 4.0, 0.0, 0.0, 0.0,
-                3.0, 4.0, 3.0, 0.0, 0.0,
-                4.0, 5.0, 6.0, 2.0, 0.0,
-                5.0, 6.0, 7.0, 8.0, 1.0,
-                6.0, 7.0, 8.0, 9.0, 10.0
-            };
-
-            double[] store2 = new double[] {
-                1.0, 0.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 0.0, 1.0, 0.0,
-                0.0, 0.0, 0.0, 0.0, 1.0
-            };
-
-            Complex[] evs = SquareMatrixAlgorithms.ExtractEigenvalues(store, null, 5);
-
-            foreach (Complex ev in evs) {
-                Console.WriteLine(ev);
-            }
-
-
-            /*
-            SquareMatrix.FrancisTwoStep(store, 5, 0, 4);
-            SquareMatrix.FrancisTwoStep(store, 5, 0, 4);
-            SquareMatrix.FrancisTwoStep(store, 5, 0, 4);
-            SquareMatrix.FrancisTwoStep(store, 5, 0, 4);
-            SquareMatrix.FrancisTwoStep(store, 5, 0, 4);
-            SquareMatrix.FrancisTwoStep(store, 5, 0, 4);
-
-            SquareMatrix.FrancisTwoStep(store, 5, 0, 2);
-            SquareMatrix.FrancisTwoStep(store, 5, 0, 2);
-            SquareMatrix.FrancisTwoStep(store, 5, 0, 2);
-            */
-            /*
-            SquareMatrix A = new SquareMatrix(5);
-            A[0, 0] = 2.0; A[0, 1] = 3.0; A[0, 2] = 4.0; A[0, 3] = 5.0; A[0, 4] = 6.0;
-            A[1, 0] = 4.0; A[1, 1] = 4.0; A[1, 2] = 5.0; A[1, 3] = 6.0; A[1, 4] = 7.0;
-            A[2, 0] = 0.0; A[2, 1] = 3.0; A[2, 2] = 6.0; A[2, 3] = 7.0; A[2, 4] = 8.0;
-            A[3, 0] = 0.0; A[3, 1] = 0.0; A[3, 2] = 2.0; A[3, 3] = 8.0; A[3, 4] = 9.0;
-            A[4, 0] = 0.0; A[4, 1] = 0.0; A[4, 2] = 0.0; A[4, 3] = 1.0; A[4, 4] = 10.0;
-            ComplexEigensystem e = A.Eigensystem();
-            for (int i = 0; i < e.Dimension; i++) {
-                Console.WriteLine(e.Eigenvalue(i));
-            }
-            */
-             /* 
-            SquareMatrix.FrancisTwoStep(A, null, 0, 4, 18.0, 71.0);
-            */
-
-
-
-        }
-
-
-        [TestMethod]
-        public void EigenWork () {
-
-            /*
-            double[,] H = new double[3, 3];
-            H[0, 0] = 1.0; H[0, 1] = 0.0; H[0, 2] = 0.0;
-            H[1, 0] = 1.0; H[1, 1] = 1.0; H[1, 2] = 1.0;
-            H[2, 0] = 0.0; H[2, 1] = 1.0; H[2, 2] = 1.0;
-
-            PrintMatrix(H);
-            SquareMatrix.ShiftedQRStep(H, 1.0, 3);
-            PrintMatrix(H);
-            */
-
-            double[] G = new double[] { 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0 };
-            double[] G2 = new double[] { 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0 };
-
-            int n = 200;
-            double[] G3 = new double[n * n];
-            Random rng = new Random(1);
-            for (int i = 0; i < G3.Length; i++) {
-                G3[i] = rng.NextDouble();
-            }
-
-            double tr = 0.0;
-            for (int i = 0; i < n * n; i += (n + 1)) {
-                tr += G3[i];
-            }
-            Console.WriteLine("trace = {0}", tr);
-
-            Stopwatch s1 = Stopwatch.StartNew();
-            SquareMatrixAlgorithms.ReduceToHessenberg(G3, null, n);
-            s1.Stop();
-            Console.WriteLine("s1 {0}", s1.ElapsedMilliseconds);
-
-            Stopwatch s2 = Stopwatch.StartNew();
-            Complex[] evs = SquareMatrixAlgorithms.ExtractEigenvalues(G3, null, n);
-            s2.Stop();
-            Console.WriteLine("s2 {0}", s2.ElapsedMilliseconds);
-
-            Complex sum = 0.0;
-            foreach (Complex ev in evs) {
-                Console.WriteLine(ev);
-                sum += ev;
-            }
-            Console.WriteLine("sum = {0}", sum);
-
-            /*
-            PrintMatrix(H);
-            RealEigenvalues(H);
-            SquareMatrix.ShiftedQRStep(H, 1.0, 3);
-            PrintMatrix(H);
-            RealEigenvalues(H);
-            SquareMatrix.ShiftedQRStep(H, 1.0, 3);
-            PrintMatrix(H);
-            RealEigenvalues(H);
-            SquareMatrix.ShiftedQRStep(H, 1.0, 3);
-            PrintMatrix(H);
-            RealEigenvalues(H);
-            */
-
-        }
-
-        [TestMethod]
-        public void BiDi () {
-
-            //double[] store = new double[] { 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0 };
-            double[] store = new double[] { 1.0, 4.0, 7.0, 10.0, 2.0, 5.0, 8.0, 11.0, 3.0, 6.0, 9.0, 12.0 };
-            PrintValues(store);
-            //SquareMatrix.Bidiagonlize(store, 3, 3);
-            SquareMatrixAlgorithms.Bidiagonlize(store, 4, 3);
-            PrintValues(store);
-
-        }
-
-        [TestMethod]
-        public void HR () {
-
-            int d = 5;
-            double[] store = new double[] {
-                6.0, 1.0, 7.0, -3.0, 4.0,
-                1.0, 4.0, 12.0, 21.0, 6.0,
-                -2.0, 2.0, 5.0, 4.0, -1.0,
-                19.0, 1.0, 11.0, 1.0, 3.0,
-                4.0, 3.0, -1.0, 3.0, 7.0
-            };
-            SquareMatrixAlgorithms.ReduceToHessenberg(store, null,  d);
-            PrintValues(store);
-        }
-
-        public void PrintValues (double[] store) {
-            Console.WriteLine("store:");
-            for (int i = 0; i < store.Length; i++) {
-                Console.WriteLine(store[i]);
-            }
-        }
-
         [TestMethod]
         public void TimedEigenvalues () {
 
@@ -671,6 +480,35 @@ namespace Test {
             Complex[] eigenvalues = A.Eigenvalues();
             s.Stop();
             Console.WriteLine(s.ElapsedMilliseconds);
+
+        }
+
+        [TestMethod]
+        public void SquareMatrixNorms () {
+
+            SquareMatrix Z = new SquareMatrix(3);
+            Assert.IsTrue(Z.OneNorm() == 0.0);
+            Assert.IsTrue(Z.InfinityNorm() == 0.0);
+            Assert.IsTrue(Z.FrobeniusNorm() == 0.0);
+
+            SquareMatrix A = CreateSquareRandomMatrix(4);
+            Assert.IsTrue(A.OneNorm() > 0.0);
+            Assert.IsTrue(A.InfinityNorm() > 0.0);
+            Assert.IsTrue(A.FrobeniusNorm() > 0.0);
+
+            SquareMatrix B = CreateVandermondeMatrix(4);
+            Assert.IsTrue(B.OneNorm() > 0.0);
+            Assert.IsTrue(B.InfinityNorm() > 0.0);
+            Assert.IsTrue(B.FrobeniusNorm() > 0.0);
+
+            SquareMatrix S = A + B;
+            Assert.IsTrue(S.OneNorm() <= A.OneNorm() + B.OneNorm());
+            Assert.IsTrue(S.InfinityNorm() <= A.InfinityNorm() + B.InfinityNorm());
+            Assert.IsTrue(S.FrobeniusNorm() <= A.FrobeniusNorm() + B.FrobeniusNorm());
+
+            SquareMatrix P = A * B;
+            Assert.IsTrue(P.FrobeniusNorm() <= A.FrobeniusNorm() * B.FrobeniusNorm());
+            // Frobenium norm is sub-multiplicative
 
         }
 
@@ -914,19 +752,6 @@ namespace Test {
         */
     }
 
-    /*
-    public struct SampleSummary {
 
-        public SampleSummary (int count, double mean, double variation) {
-            this.Count = count;
-            this.SampleMean = mean;
-            this.SampleVariation = variation;
-        }
-
-        public int Count;
-        public double SampleMean;
-        public double SampleVariation;
-    }
-    */
 
 }

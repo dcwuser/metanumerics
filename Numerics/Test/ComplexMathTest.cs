@@ -63,15 +63,15 @@ namespace Test
         private Complex b = new Complex(1.5, -2.3);
 
         [TestMethod()]
-        public void ComplexITest () {
-            Assert.AreEqual<double>(ComplexMath.I.Re, 0.0);
-            Assert.AreEqual<double>(ComplexMath.I.Im, 1.0);
+        public void ComplexIDefinition () {
+            Assert.IsTrue(ComplexMath.I.Re == 0.0);
+            Assert.IsTrue(ComplexMath.I.Im == 1.0);
         }
 
         // Square root
 
         [TestMethod]
-        public void ComplexSqrtTest () {
+        public void ComplexSqrt () {
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
                 Complex sz = ComplexMath.Sqrt(z);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(sz * sz,z));
@@ -130,7 +130,7 @@ namespace Test
         // Hyperbolic tests
 
         [TestMethod]
-        public void ComplexSinSinhTest () {
+        public void ComplexSinSinh () {
             foreach (Complex x in TestUtilities.GenerateComplexValues(1.0E-2,1.0E2,10)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sinh(x), -ComplexMath.I * ComplexMath.Sin(ComplexMath.I * x)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.I * ComplexMath.Sinh(-ComplexMath.I * x), ComplexMath.Sin(x)));
@@ -138,7 +138,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void ComplexCosCoshTest () {
+        public void ComplexCosCosh () {
             foreach (Complex x in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 10)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Cosh(x), ComplexMath.Cos(ComplexMath.I * x)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Cosh(-ComplexMath.I * x), ComplexMath.Cos(x)));
@@ -146,7 +146,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void ComplexTanTanhTest () {
+        public void ComplexTanTanh () {
             foreach (Complex x in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 10)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Tanh(x), -ComplexMath.I * ComplexMath.Tan(ComplexMath.I * x)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Tanh(-ComplexMath.I * x), -ComplexMath.I * ComplexMath.Tan(x)));
@@ -155,7 +155,7 @@ namespace Test
 
 
         [TestMethod]
-        public void ComplexSinhCoshTest () {
+        public void ComplexSinhCoshRelation () {
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 10)) {
                 Complex sinh = ComplexMath.Sinh(z);
                 Complex cosh = ComplexMath.Cosh(z);
@@ -166,29 +166,23 @@ namespace Test
         // Powers
 
         [TestMethod()]
-        public void PowTest () {
+        public void ComplexPowMultiplication () {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(a, 2.0) * ComplexMath.Pow(a, 3.0), ComplexMath.Pow(a, 5.0)));
-        }
-
-        [TestMethod]
-        public void ComplexPowSpecialCaseTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
-                Assert.IsTrue(ComplexMath.Pow(z, 0) == 1, "0");
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 1), z), String.Format("z={0} z^1={1}", z, ComplexMath.Pow(z,1)));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, -1), 1.0 / z), "-1");
-            }
         }
 
 
         [TestMethod]
         public void ComplexPowOneHalf () {
-            Assert.IsTrue(ComplexMath.Pow(a, 0.5) == ComplexMath.Sqrt(a));
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
+                Assert.IsTrue(ComplexMath.Pow(a, 0.5) == ComplexMath.Sqrt(a));
+            }
+
         }
 
         // log and exp
 
         [TestMethod]
-        public void ComlexLogSpecialCaseTest () {
+        public void ComplexLogSpecialCase () {
             Assert.IsTrue(ComplexMath.Log(Math.E) == 1);
             Assert.IsTrue(ComplexMath.Log(1.0) == 0.0);
             Assert.IsTrue(ComplexMath.Log(-1.0) == ComplexMath.I * Math.PI);
@@ -197,14 +191,14 @@ namespace Test
         }
 
         [TestMethod]
-        public void ComplexLogExpTest () {
+        public void ComplexLogExp () {
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Exp(ComplexMath.Log(z)), z));
             }
         }
 
         [TestMethod]
-        public void ComplexLogSumTest () {
+        public void ComplexLogSum () {
             Complex[] z = TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10);
             for (int i = 0; i < z.Length; i++) {
                 for (int j = 0; j < i; j++) {
@@ -218,13 +212,13 @@ namespace Test
         }
 
         [TestMethod]
-        public void ComplexExpSpecialCaseTest () {
+        public void ComplexExpSpecialCase () {
             Assert.IsTrue(ComplexMath.Exp(0) == 1);
             Assert.IsTrue(ComplexMath.Exp(1) == Math.E);
         }
 
         [TestMethod]
-        public void ComplexExpReflectionTest () {
+        public void ComplexExpReflection () {
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 10)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Exp(-z), 1.0 / ComplexMath.Exp(z)));
             }
@@ -261,7 +255,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void ComplexAbsTest () {
+        public void ComplexMagnitude () {
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
                 double abs = ComplexMath.Abs(z);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(abs * abs, z * z.Conjugate));
@@ -269,7 +263,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void PowComplexExponent () {
+        public void ComplexPowExponent () {
 
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 6)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(Math.E, z), ComplexMath.Exp(z)));
@@ -279,15 +273,13 @@ namespace Test
 
         [TestMethod]
         public void ComplexPowSpecialCases () {
-
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
-
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, -1), 1.0 / z));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 0), 1.0));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 1), z));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 2), z * z));
-
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 3), z * z * z));
             }
-
         }
 
     }

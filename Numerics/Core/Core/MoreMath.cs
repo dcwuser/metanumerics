@@ -113,6 +113,33 @@ namespace Meta.Numerics {
             }
         }
 
+        /// <summary>
+        /// Computes e<sup>x</sup>-1.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of e<sup>x</sup>-1.</returns>
+        /// <remarks>
+        /// <para>If x is close to 0, then e<sup>x</sup> is close to 1, and computing e<sup>x</sup>-1 by by subtracting one from
+        /// e<sup>x</sup> as computed by the <see cref="Math.Exp"/> function will be subject to severe loss of significance due to
+        /// cancelation. This method maintains full precision for all values of x by switching to a series expansion for values of
+        /// x near zero.</para>
+        /// </remarks>
+        public static double ExpMinusOne (double x) {
+            if (Math.Abs(x) < 0.125) {
+                double dr = x;
+                double r = dr;
+                for (int k = 2; k < Global.SeriesMax; k++) {
+                    double r_old = r;
+                    dr *= x / k;
+                    r += dr;
+                    if (r == r_old) return (r);
+                }
+                throw new NonconvergenceException();
+            } else {
+                return (Math.Exp(x) - 1.0);
+            }
+        }
+
     }
 
 

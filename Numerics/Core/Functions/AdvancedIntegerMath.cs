@@ -76,10 +76,12 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The binomial coefficient C(n,m) is the coefficient of x<sup>m</sup> in the expansion of (1+x)<sup>n</sup>.</para>
         /// <img src="../images/BinomialExpansion.png" />
-        /// <para>C(n,m) can also be given a combinatoric intrepretation as the total number of ways to pick m items from a set of n distinct items.</para>
-        /// <para>For example C(4,2) = 6. This can be seen by expanding (1+x)<sup>4</sup>=1 + 4 x + 6 x<sup>2</sup> + 4 x<sup>3</sup> + x<sup>4</sup>
-        /// and noting that the coefficient of the x<sup>2</sup> term is 6. It can also be seen by considering the six-member set (abcd) and
-        /// noting that there are 6 possible two-member subests: (ab), (ac), (ad), (bc), (bd), (cd).</para>
+        /// <para>C(n,m) can also be given a combinatoric intrepretation as the total number of ways to pick m items from a set of
+        /// n distinct items.</para>
+        /// <para>For example C(4,2) = 6. This can be seen by expanding (1+x)<sup>4</sup> = 
+        /// 1 + 4 x + 6 x<sup>2</sup> + 4 x<sup>3</sup> + x<sup>4</sup> and noting that the coefficient of the x<sup>2</sup> term is 6.
+        /// It can also be seen by considering the four-member set (abcd) and noting that there are 6 possible two-member subests:
+        /// (ab), (ac), (ad), (bc), (bd), (cd).</para>
         /// <para>Pascal's triangle is a classic representation of binomial coefficients.</para>
         /// <table style="text-align: center;">
         /// <tr><td colspan="3"></td><td colspan="2">C(0,0)</td></tr>
@@ -92,21 +94,44 @@ namespace Meta.Numerics.Functions {
         /// B(n,m+1) = (n-m)/(m+1) B(n,m), which can be used to generate all the binomial coefficients in a row of Pascal's
         /// triangle (i.e., all the coefficients for a given order polynomial) starting from an outer values B(n,0) = 1 = B(n,n).
         /// If you need a series of binomial coefficients, using a recursion will be more computationally efficient than
-        /// calling this method for each one.</para>
+        /// calling this method for each one. The <see cref="BinomialCoefficients"/> method provides a fast enumeration of
+        /// all the binomial coefficients in a given row of Pascal's triangle.</para>
+        /// <para>Binomial coefficients are always integers, but we return a the result as double because the value can exceed
+        /// the capacity of an int or even a long for even quite moderate values of n and m.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative, or <paramref name="m"/> lies outside [0,<paramref name="n"/>].</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Binomial_coefficient"/>
-		public static long BinomialCoefficient (int n, int m) {
-			if (n<0) throw new ArgumentOutOfRangeException("n");
-			if (m<0) throw new ArgumentOutOfRangeException("m");
-			if (m>n) throw new ArgumentOutOfRangeException("m");
+		public static double BinomialCoefficient (int n, int m) {
+			if (n < 0) throw new ArgumentOutOfRangeException("n");
+			if ((m < 0) || (m > n)) throw new ArgumentOutOfRangeException("m");
+
+            // make lower argument small
+            if (m > n / 2) m = n - m;
+            // this increases the likelyhood that we will be able to do factorial table lookup and increases the accuracy
+            // of the upper bound (e n / m)^k
+
 			if ((n<factorialTable.Length) && (m<factorialTable.Length)) {
+                // do table look-up, if possible
 				return( factorialTable[n] / factorialTable[m] / factorialTable[n-m] );
-			} else {
-                return (BinomialCoefficientLoop(n, m));
-				//return( (long) Math.Round( Math.Exp(LogFactorial(n) - LogFactorial(m) - LogFactorial(n-m)) ) );
+			} else if ((n < 60) || (m < 4) || (m * (1.0 + Math.Log(n / m)) < 0.75 * LogLongMax)) {
+                // use integer arithmetic recursion, if we will not overflow a long
+                // i tested n specifically: n=61 does not overflow but n=62 does
+                long B = 1;
+                for (int i = 1; i <= m; i++) {
+                    B = B * (n - i + 1) / i;
+                    // we must do multiplication before division; it would be nice to do division first, in order to keep quantities
+                    // as small as possible, but the previous coefficient is not guaranteed to be exactly divisible by i
+                }
+                return (B);
+             } else {
+                // our result will be very big, so we probably won't loose accuracy in subtracting big factorial logs
+                return (Math.Round(Math.Exp(LogFactorial(n) - LogFactorial(m) - LogFactorial(n - m))));
 			}
 		}
+
+        private static readonly double LogLongMax = Math.Log(Int64.MaxValue);
+
+#if PAST
 
         // this is an O(m) algorithm for computing (n m)
 
@@ -143,7 +168,39 @@ namespace Meta.Numerics.Functions {
         END;
         
         */
+#endif
 
+        /// <summary>
+        /// Evaluates a row of binomial coefficients.
+        /// </summary>
+        /// <param name="n">The upper argument.</param>
+        /// <returns>An enumeration of the binomial coefficients in the nth row of Pascal's triangle.</returns>
+        public static IEnumerable<double> BinomialCoefficients (int n) {
+
+            if (n < 0) throw new ArgumentOutOfRangeException("n");
+
+            if (n < 60) {
+                // use integer arithmetic if we won't overflow a long
+                long B = 1;
+                yield return (B);
+                for (int k = 1; k <= n; k++) {
+                    B = B * (n - k + 1) / k;
+                    yield return (B);
+                }
+            } else {
+                // otherwise use a double
+                double B = 1.0;
+                yield return(B);
+                for (int k = 1; k <= n; k++) {
+                    B = Math.Round(B / k * (n - k + 1));
+                    yield return (B);
+                }
+                // at first i was worried that the falling B's in the second half of the row would not be reproduced accurately
+                // by floating point arithmetic,  but that doesn't appear to be the case; if it does become a problem, just
+                // store the first half in an array and move down it in the second half
+            }
+
+        }
 
         private static long DoubleFactorial_Multiply (int n) {
             long f = 1;
@@ -344,6 +401,8 @@ namespace Meta.Numerics.Functions {
 
         }
 
+#if FUTURE
+
         private static readonly int[] primes = new int[] { 2, 3, 5, 7, 11, 13 };
 
         public static List<int> FactorByTrial (ref int n) {
@@ -387,6 +446,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
+#endif
 
 	}
 

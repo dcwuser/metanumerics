@@ -4,9 +4,10 @@ using System.Runtime.Serialization;
 namespace Meta.Numerics.Statistics {
 
     /// <summary>
-    /// Indicates
+    /// The exception that is thrown when an operation is attempted with less than the minimum required data.
     /// </summary>
-    class InsufficientDataException : InvalidOperationException {
+    [Serializable]
+    public class InsufficientDataException : InvalidOperationException {
 
         /// <summary>
         /// Initializes a new insufficient data exception.

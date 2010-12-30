@@ -25,22 +25,39 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="dimension">The dimension of the sample space, that is, the number of variables
         /// recorded for each sample entry.</param>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="dimension"/> is less than one.</exception>
         public MultivariateSample (int dimension) {
             if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
-            n = dimension;
-            means = new double[n];
+            storage = new DataColumnStorage[dimension];
+            for (int j = 0; j < storage.Length; j++) {
+                storage[j] = new DataColumnStorage();
+            }
         }
 
-        private int n;
         private List<double[]> data = new List<double[]>();
-        private double[] means;
+
+        private DataColumnStorage[] storage;
+
+        private int IndexOf (IList<double> value) {
+            for (int i = 0; i < Count; i++) {
+                if (Matches(value, i)) return (i);
+            }
+            return (-1);
+        }
+
+        private bool Matches (IList<double> value, int i) {
+            for (int j = 0; j < Dimension; j++) {
+                if (storage[j][i] != value[j]) return (false);
+            }
+            return (true);
+        }
 
         /// <summary>
         /// Gets the dimension of the sample.
         /// </summary>
         public int Dimension {
             get {
-                return (n);
+                return (storage.Length);
             }
         }
 
@@ -59,14 +76,11 @@ namespace Meta.Numerics.Statistics {
         public void Add (IList<double> value) {
 
             if (value == null) throw new ArgumentNullException("value");
-            if (value.Count != n) throw new DimensionMismatchException();
+            if (value.Count != Dimension) throw new DimensionMismatchException();
 
-            double[] datum = new double[n];
-            for (int i = 0; i < n; i++) {
-                datum[i] = value[i];
-                means[i] += (value[i] - means[i]) / (data.Count + 1);
+            for (int i = 0; i < Dimension; i++) {
+                storage[i].Add(value[i]);
             }
-            data.Add(datum);
 
         }
 
@@ -87,17 +101,17 @@ namespace Meta.Numerics.Statistics {
         public bool Remove (IList<double> values) {
 
             if (values == null) throw new ArgumentNullException("values");
-            if (values.Count != n) throw new DimensionMismatchException();
+            if (values.Count != Dimension) throw new DimensionMismatchException();
 
-            for (int i = 0; i < Count; i++) {
-                if (Matches(data[i], values)) {
-                    // fix mean
-                    data.RemoveAt(i);
-                    return (true);
+            int i = IndexOf(values);
+            if (i < 0) {
+                return (false);
+            } else {
+                for (int j = 0; j < Dimension; j++) {
+                    storage[j].RemoveAt(i);
                 }
+                return (true);
             }
-
-            return (false);
 
         }
 
@@ -116,25 +130,18 @@ namespace Meta.Numerics.Statistics {
         /// <param name="value">The values associated with the entry to search for.</param>
         /// <returns>Whether the sample contains the given entry.</returns>
         public bool Contains (IList<double> value) {
-            for (int i = 0; i < Count; i++) {
-                if (Matches(data[i], value)) return (true);
-            }
-            return (false);
-        }
-
-        private bool Matches (IList<double> a, IList<double> b) {
-            for (int i = 0; i < Dimension; i++) {
-                if (a[i] != b[i]) return (false);
-            }
-            return (true);
+            if (value == null) throw new ArgumentNullException("value");
+            if (value.Count != Dimension) throw new DimensionMismatchException();
+            return(IndexOf(value) >= 0); 
         }
 
         /// <summary>
         /// Removes all entries from the sample.
         /// </summary>
         public void Clear () {
-            data.Clear();
-            means = new double[n];
+            for (int j = 0; j < Dimension; j++) {
+                storage[j].Clear();
+            }
         }
 
         /// <summary>
@@ -142,68 +149,48 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public int Count {
             get {
-                return (data.Count);
+                return (storage[0].Count);
             }
         }
 
         /// <summary>
-        /// Computes the mean of one of the sample variables.
+        /// Gets the indicated column.
         /// </summary>
-        /// <param name="d">The (zero-based) variable index.</param>
-        /// <returns>The mean of the variable.</returns>
-        public double Mean (int d) {
-            if ((d < 0) || (d >= n)) throw new ArgumentOutOfRangeException("d");
-            return (means[d]);
+        /// <param name="c">The column number.</param>
+        /// <returns>A read-only <see cref="Sample"/> containing all values in the indicated column.</returns>
+        /// <remarks>
+        /// <para>Use this method to obtain column-specific information, such as the <see cref="Sample.Median"/> or
+        /// <see cref="Sample.Variance"/> of the column.</para>
+        /// <para>Note that this is a fast, O(1) operation, which does not create an independent copy of the column.
+        /// The advantage of this is that you can access columns as independent samples as often as you like without
+        /// worying about performance. The disadvantage of this is that the returned sample cannot be altered. If you
+        /// need to alter values in a column independent of the multi-variate sample, use the <see cref="Sample.Copy"/>
+        /// method to obtain an independent copy of the column.</para>
+        /// </remarks>
+        public Sample Column (int c) {
+            if ((c < 0) || (c >= Dimension)) throw new ArgumentOutOfRangeException("c");
+            return (new Sample(storage[c], true));
         }
 
         /// <summary>
-        /// Computes the standard deviation of a sample variable.
+        /// Gets the indicated columns.
         /// </summary>
-        /// <param name="d">The (zero-based) index of the variable.</param>
-        /// <returns>The standard deviation of the variable.</returns>
-        public double StandardDeviation (int d) {
-            return (Math.Sqrt(Variance(d)));
-        }
-
-        /// <summary>
-        /// Computes the variance of a sample variable.
-        /// </summary>
-        /// <param name="d">The (zero-based) index of the variable.</param>
-        /// <returns>The variance of the variable.</returns>
-        public double Variance (int d) {
-            if ((d < 0) || (d >= n)) throw new ArgumentOutOfRangeException("d");
-
-            double M = Mean(d);
-            double V = 0.0;
-            for (int i = 0; i < Count; i++) {
-                double z = data[i][d] - M;
-                V += z * z;
-            }
-            V = V / Count;
-
-            return (V);
-        }
-
-        /// <summary>
-        /// Compute the covariance between two sample variables.
-        /// </summary>
-        /// <param name="d1">The (zero-based) index of the first variable.</param>
-        /// <param name="d2">The (zero-based) index of the second variable.</param>
-        /// <returns>The covariance of the two variables.</returns>
-        public double Covariance (int d1, int d2) {
-            if ((d1 < 0) || (d1 >= n)) throw new ArgumentOutOfRangeException("d1");
-            if ((d2 < 0) || (d2 >= n)) throw new ArgumentOutOfRangeException("d2");
-
-            double m1 = Mean(d1);
-            double m2 = Mean(d2);
-
-            double C = 0.0;
-            foreach (double[] datum in data) {
-                C += (datum[d1] - m1) * (datum[d2] - m2);
-            }
-            C = C / data.Count;
-
-            return (C);
+        /// <param name="cx">The column number of the X variable.</param>
+        /// <param name="cy">The column number of the Y variable.</param>
+        /// <returns>A read-only <see cref="BivariateSample"/> consisting of the indicated columns..</returns>
+        /// <remarks>
+        /// <para>Use this method to obtain information specific to the two columns, such as the <see cref="BivariateSample.Covariance"/>,
+        /// or to perform tests specific to the two columns, such as a <see cref="BivariateSample.PearsonRTest"/>.</para>
+        /// <para>Note that this is a fast, O(1) operation, which does not create independent copies of the columns.
+        /// The advantage of this is that you can access pairs of columns as bivariate samples as often as you like without
+        /// worying about performance. The disadvantage of this is that the returned bivariate sample cannot be altered. If you
+        /// need to alter values independent of the multi-variate sample, use the <see cref="BivariateSample.Copy"/>
+        /// method to obtain an independent copy of the bivariate sample.</para>
+        /// </remarks>
+        public BivariateSample TwoColumns (int cx, int cy) {
+            if ((cx < 0) || (cx >= Dimension)) throw new ArgumentOutOfRangeException("cx");
+            if ((cy < 0) || (cy >= Dimension)) throw new ArgumentOutOfRangeException("cy");
+            return (new BivariateSample(storage[cx], storage[cy], true));
         }
 
         /// <summary>
@@ -221,15 +208,18 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="powers">The power to which each component should be raised.</param>
         /// <returns>The specified moment.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="powers"/> is null.</exception>
+        /// <exception cref="DimensionMismatchException">The length of <paramref name="powers"/> is not
+        /// equal to the <see cref="Dimension"/> of the multivariate sample.</exception>
         public double Moment (IList<int> powers) {
             if (powers == null) throw new ArgumentNullException("powers");
             if (powers.Count != Dimension) throw new DimensionMismatchException();
 
             double M = 0.0;
-            for (int i = 0; i < data.Count; i++) {
+            for (int i = 0; i < Count; i++) {
                 double t = 1.0;
-                for (int j = 0; j < powers.Count; j++) {
-                    t *= MoreMath.Pow(data[i][j], powers[j]);
+                for (int j = 0; j < Dimension; j++) {
+                    t *= MoreMath.Pow(storage[j][i], powers[j]);
                 }
                 M += t;
             }
@@ -244,30 +234,18 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="powers">The power to which each component should be raised.</param>
         /// <returns>The specified moment.</returns>
-        public double MomentAboutMean (params int[] powers) {
-            return (MomentAboutMean((IList<int>) powers));
-
-        }
-
-        /// <summary>
-        /// Computes the given sample central moment.
-        /// </summary>
-        /// <param name="powers">The power to which each component should be raised.</param>
-        /// <returns>The specified moment.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="powers"/> is null.</exception>
+        /// <exception cref="DimensionMismatchException">The length of <paramref name="powers"/> is not
+        /// equal to the <see cref="Dimension"/> of the multivariate sample.</exception>
         public double MomentAboutMean (IList<int> powers) {
             if (powers == null) throw new ArgumentNullException("powers");
             if (powers.Count != Dimension) throw new DimensionMismatchException();
 
-            // if any power is one, the moment vanishes by symmetry
-            for (int i = 0; i < powers.Count; i++) {
-                if (powers[i] == 1) return (0.0);
-            }
-
             double C = 0.0;
-            for (int i = 0; i < data.Count; i++) {
+            for (int i = 0; i < Count; i++) {
                 double t = 1.0;
-                for (int j = 0; j < powers.Count; j++) {
-                    t *= MoreMath.Pow(data[i][j] - means[j], powers[j]);
+                for (int j = 0; j < Dimension; j++) {
+                    t *= MoreMath.Pow(storage[j][i] - storage[j].Mean, powers[j]);
                 }
                 C += t;
             }
@@ -277,15 +255,7 @@ namespace Meta.Numerics.Statistics {
 
         }
 
-        /// <summary>
-        /// Estimates of the population mean of one sample variable.
-        /// </summary>
-        /// <param name="d">The (zero-based) index of the variable.</param>
-        /// <returns>An estimate, with associated uncertainty, of the population mean of the variable.</returns>
-        public UncertainValue PopulationMean (int d) {
-            if ((d < 0) || (d >= n)) throw new ArgumentOutOfRangeException("d");
-            return (new UncertainValue(Mean(d), Math.Sqrt(Variance(d) / (Count-1))));
-        }
+#if PAST
 
         /// <summary>
         /// Estimates of the population covariance of two sample variable.
@@ -314,6 +284,8 @@ namespace Meta.Numerics.Statistics {
             return (new UncertainValue(PC, dPC));
 
         }
+
+
 
         /// <summary>
         /// Performs a Pearson correlation test of association between two variables.
@@ -500,6 +472,7 @@ namespace Meta.Numerics.Statistics {
             return (new TestResult(t, new StudentDistribution(Count-1)));
 
         }
+#endif
 
         /// <summary>
         /// Performs a linear regression analysis using the input variables to predict the output variable.
@@ -569,7 +542,7 @@ namespace Meta.Numerics.Statistics {
         /// <h4>Cavets</h4>
         /// <para>It can occur that two theoretically independent variables are so closely
         /// correlated in the observational data that a regression analsysis cannot reliably
-        /// tease out the independent effect of each. In the case, a fit using only one
+        /// tease out the independent effect of each. In that case, a fit using only one
         /// of the variables will be as good or nearly as good as a fit using both, and
         /// the covariance between their corresponding linear regression coefficients will
         /// be large. In a situation like this, you should be wary of drawing any conclusions
@@ -584,13 +557,13 @@ namespace Meta.Numerics.Statistics {
             // check inputs
             if (inputIndexes == null) throw new ArgumentNullException("inputIndexes");
             for (int i = 0; i < inputIndexes.Count; i++) {
-                if ((inputIndexes[i] < 0) || (inputIndexes[i] >= n)) throw new ArgumentOutOfRangeException("inputIndexes");
+                if ((inputIndexes[i] < 0) || (inputIndexes[i] >= Dimension)) throw new ArgumentOutOfRangeException("inputIndexes");
                 if (inputIndexes[i] == outputIndex) throw new InvalidOperationException();
                 for (int j = 0; j < i; j++) {
                     if (inputIndexes[j] == inputIndexes[i]) throw new InvalidOperationException();
                 }
             }
-            if ((outputIndex < 0) || (outputIndex >= n)) throw new ArgumentOutOfRangeException("outputIndex");
+            if ((outputIndex < 0) || (outputIndex >= Dimension)) throw new ArgumentOutOfRangeException("outputIndex");
             // do the fit
             return (LinearRegression_Internal(inputIndexes, outputIndex));
         }
@@ -600,58 +573,62 @@ namespace Meta.Numerics.Statistics {
         private FitResult LinearRegression_Internal (IList<int> inputIndices, int outputIndex) {
 
             // to do a fit, we need more data than parameters
-            if (data.Count <= (inputIndices.Count + 1)) throw new InvalidOperationException();
+            if (Count <= (inputIndices.Count + 1)) throw new InsufficientDataException();
 
             // construct the design matrix
             SymmetricMatrix D = new SymmetricMatrix(inputIndices.Count + 1);
             for (int i = 0; i < inputIndices.Count; i++) {
                 for (int j = 0; j <= i; j++) {
                     double Dij = 0.0;
-                    for (int k = 0; k < data.Count; k++) {
-                        Dij += data[k][inputIndices[i]] * data[k][inputIndices[j]];
+                    for (int k = 0; k < Count; k++) {
+                        Dij += storage[inputIndices[i]][k] * storage[inputIndices[j]][k];
+                        //Dij += data[k][inputIndices[i]] * data[k][inputIndices[j]];
                     }
                     D[i,j] = Dij;
                 }
-                D[inputIndices.Count, i] = means[inputIndices[i]] * data.Count;
+                D[inputIndices.Count, i] = storage[inputIndices[i]].Mean * Count;
+                //D[inputIndices.Count, i] = means[inputIndices[i]] * data.Count;
             }
-            D[inputIndices.Count, inputIndices.Count] = data.Count;
+            D[inputIndices.Count, inputIndices.Count] = Count;
 
             // construct the right hand side
-            ColumnVector b = new ColumnVector(n);
+            ColumnVector b = new ColumnVector(Dimension);
             for (int i = 0; i < inputIndices.Count; i++) {
                 double bi = 0.0;
-                for (int k = 0; k < data.Count; k++) {
-                    bi += data[k][outputIndex] * data[k][inputIndices[i]];
+                for (int k = 0; k < Count; k++) {
+                    bi += storage[outputIndex][k] * storage[inputIndices[i]][k];
+                    //bi += data[k][outputIndex] * data[k][inputIndices[i]];
                 }
                 b[i] = bi;
             }
-            b[inputIndices.Count] = means[outputIndex] * data.Count;
+            b[inputIndices.Count] = storage[outputIndex].Mean * Count;
+            //b[inputIndices.Count] = means[outputIndex] * data.Count;
 
             // solve the system for the linear model parameters
             CholeskyDecomposition CD = D.CholeskyDecomposition();
             ColumnVector parameters = CD.Solve(b);
 
             // determine total variance (variance before fit)
-            double m = means[outputIndex];
+            double m = storage[outputIndex].Mean;
             double totalVarianceSum = 0.0;
-            for (int k = 0; k < data.Count; k++) {
-                double z = (data[k][outputIndex] - means[outputIndex]);
+            for (int k = 0; k < Count; k++) {
+                double z = (storage[outputIndex][k] - m);
                 totalVarianceSum += z * z;
             }
             // associated dof = # points - 1 (the one is for the variance-minimizing mean)
 
             // determine unexmplained remaining variance (variance after fit)
             double unexplainedVarianceSum = 0.0;
-            for (int k = 0; k < data.Count; k++) {
+            for (int k = 0; k < Count; k++) {
                 double y = parameters[inputIndices.Count];
                 for (int i = 0; i < inputIndices.Count; i++) {
-                    y += parameters[i] * data[k][inputIndices[i]];
+                    y += parameters[i] * storage[inputIndices[i]][k];
                 }
-                double z = data[k][outputIndex] - y;
+                double z = storage[outputIndex][k] - y;
                 unexplainedVarianceSum += z * z;
             }
             // associated dof = # points - # paramaters
-            int unexplainedVarianceDof = data.Count - (inputIndices.Count + 1);
+            int unexplainedVarianceDof = Count - (inputIndices.Count + 1);
             // sigma-squared for the model error term is given by the unexplained variance
             double unexplainedVariance = unexplainedVarianceSum / unexplainedVarianceDof;
 
@@ -693,10 +670,10 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="LinearRegression(IList&lt;int&gt;,int)" />
         public FitResult LinearRegression (int outputIndex) {
 
-            if ((outputIndex < 0) || (outputIndex >= n)) throw new ArgumentOutOfRangeException("outputIndex");
+            if ((outputIndex < 0) || (outputIndex >= Dimension)) throw new ArgumentOutOfRangeException("outputIndex");
 
-            List<int> inputIndices = new List<int>(n - 1);
-            for (int i = 0; i < n; i++) {
+            List<int> inputIndices = new List<int>(Dimension - 1);
+            for (int i = 0; i < Dimension; i++) {
                 if (i != outputIndex) inputIndices.Add(i);
             }
 
@@ -718,7 +695,10 @@ namespace Meta.Numerics.Statistics {
             data.CopyTo(array, start);
         }
 
-        bool ICollection<double[]>.IsReadOnly {
+        /// <summary>
+        /// Gets a value indicating whether the multivariate sample can be modified.
+        /// </summary>
+        public bool IsReadOnly {
             get {
                 return (false);
             }

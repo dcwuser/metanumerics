@@ -160,6 +160,10 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+        public static FitResult FitToHistogram (Histogram histogram) {
+            throw new NotImplementedException();
+        }
+
     }
 
 }

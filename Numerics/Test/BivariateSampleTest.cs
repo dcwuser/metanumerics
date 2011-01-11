@@ -78,6 +78,7 @@ namespace Test {
 
             // define logistic parameters
             double a0 = 1.0; double b0 = -1.0 / 2.0;
+            //double a0 = -0.5; double b0 = 2.0;
 
             // keep track of sample of returned a and b fit parameters
             BivariateSample ps = new BivariateSample();
@@ -135,7 +136,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void LinearRegression () {
+        public void BivariateLinearRegression () {
 
             // do a set of logistic regression fits
             // make sure not only that the fit parameters are what they should be, but that their variances/covariances are as returned
@@ -153,6 +154,9 @@ namespace Test {
             double caa = 0.0;
             double cbb = 0.0;
             double cab = 0.0;
+
+            // also keep track of test statistics
+            Sample fs = new Sample();
 
             // do 50 fits
             for (int k = 0; k < 50; k++) {
@@ -183,6 +187,10 @@ namespace Test {
                 cbb += r.Covariance(1, 1);
                 cab += r.Covariance(0, 1);
 
+                // record the fit statistic
+                fs.Add(r.GoodnessOfFit.Statistic);
+                Console.WriteLine("F={0}", r.GoodnessOfFit.Statistic);
+
             }
 
             caa /= ps.Count;
@@ -200,6 +208,38 @@ namespace Test {
             Assert.IsTrue(ps.X.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(caa));
             Assert.IsTrue(ps.Y.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(cbb));
             Assert.IsTrue(ps.PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(cab));
+
+            // check that F is distributed as it should be
+            Console.WriteLine(fs.KolmogorovSmirnovTest(new FisherDistribution(2, 48)).LeftProbability);
+
+        }
+
+        [TestMethod]
+        public void BivariateLinearRegressionGoodnessOfFitDistribution () {
+
+            // create uncorrelated x and y values
+            // the distribution of F-test statistics returned by linear fits should follow the expected F-distribution
+
+            Random rng = new Random(987654321);
+            NormalDistribution xd = new NormalDistribution(1.0, 2.0);
+            NormalDistribution yd = new NormalDistribution(-3.0, 4.0);
+
+            Sample fs = new Sample();
+
+            for (int i = 0; i < 127; i++) {
+                BivariateSample xys = new BivariateSample();
+                for (int j = 0; j < 7; j++) {
+                    xys.Add(xd.GetRandomValue(rng), yd.GetRandomValue(rng));
+                }
+                double f = xys.LinearRegression().GoodnessOfFit.Statistic;
+                fs.Add(f);
+            }
+
+            Distribution fd = new FisherDistribution(1, 5);
+            Console.WriteLine("{0} v. {1}", fs.PopulationMean, fd.Mean);
+            TestResult t = fs.KolmogorovSmirnovTest(fd);
+            Console.WriteLine(t.LeftProbability);
+            Assert.IsTrue(t.LeftProbability < 0.95);
 
         }
 

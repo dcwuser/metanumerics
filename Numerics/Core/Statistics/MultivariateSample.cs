@@ -18,7 +18,7 @@ namespace Meta.Numerics.Statistics {
     /// the associations between the recorded variables, and routines for fitting the sample to a model.
     /// </para>
     /// </remarks>
-    public class MultivariateSample : ICollection<double[]>, IEnumerable<double[]>, IEnumerable {
+    public sealed class MultivariateSample : ICollection<double[]>, IEnumerable<double[]>, IEnumerable {
 
         /// <summary>
         /// Initializes a multivariate sample.
@@ -28,15 +28,15 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="dimension"/> is less than one.</exception>
         public MultivariateSample (int dimension) {
             if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
-            storage = new DataColumnStorage[dimension];
+            storage = new SampleStorage[dimension];
             for (int j = 0; j < storage.Length; j++) {
-                storage[j] = new DataColumnStorage();
+                storage[j] = new SampleStorage();
             }
         }
 
         private List<double[]> data = new List<double[]>();
 
-        private DataColumnStorage[] storage;
+        private SampleStorage[] storage;
 
         private int IndexOf (IList<double> value) {
             for (int i = 0; i < Count; i++) {

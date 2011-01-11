@@ -323,28 +323,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Gets the width of the interval.
         /// </summary>
+        /// <remarks>
+        /// <para>Note that the width of the interval is one less than the number of integers in it. For example:
+        /// the interval [1,3] has width two, but contains three integers.</para>
+        /// </remarks>
         public int Width {
             get {
                 return (b - a);
             }
-        }
-
-        /// <summary>
-        /// Tests whether the given value is contained in the open interval.
-        /// </summary>
-        /// <param name="x">The value to test.</param>
-        /// <returns>True if the value lies in the open interval, otherwise false.</returns>
-        public bool OpenContains (double x) {
-            return ((IntToDouble(a) < x) && (x < IntToDouble(b)));
-        }
-
-       /// <summary>
-        /// Tests whether the given value is contained in the closed interval.
-        /// </summary>
-        /// <param name="x">The value to test.</param>
-        /// <returns>True if the value lies in the open interval, otherwise false.</returns>
-        public bool ClosedContains (double x) {
-            return ((IntToDouble(a) <= x) && (x <= IntToDouble(b)));
         }
 
         /// <summary>
@@ -431,6 +417,5 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
     }
-
 
 }

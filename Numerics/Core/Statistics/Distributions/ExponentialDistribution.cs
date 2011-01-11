@@ -23,7 +23,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </remarks>
     /// <seealso href="WeibullDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Exponential_distribution"/>
-    public class ExponentialDistribution : Distribution, IParameterizedDistribution {
+    public sealed class ExponentialDistribution : Distribution, IParameterizedDistribution {
 
         private double mu;
 

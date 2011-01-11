@@ -302,6 +302,47 @@ namespace Test {
         }
 
         [TestMethod]
+        public void WaldFitUncertainties () {
+
+            WaldDistribution wald = new WaldDistribution(3.5, 2.5);
+
+            Random rng = new Random(314159);
+            BivariateSample P = new BivariateSample();
+            double cmm = 0.0;
+            double css = 0.0;
+            double cms = 0.0;
+            for (int i = 0; i < 50; i++) {
+                Sample s = new Sample();
+                for (int j = 0; j < 50; j++) {
+                    s.Add(wald.GetRandomValue(rng));
+                }
+                FitResult r = WaldDistribution.FitToSample(s);
+                P.Add(r.Parameter(0).Value, r.Parameter(1).Value);
+                cmm += r.Covariance(0, 0);
+                css += r.Covariance(1, 1);
+                cms += r.Covariance(0, 1);
+            }
+            cmm /= P.Count;
+            css /= P.Count;
+            cms /= P.Count;
+
+            Console.WriteLine("{0} {1}", P.X.PopulationMean, P.Y.PopulationMean);
+
+            Assert.IsTrue(P.X.PopulationMean.ConfidenceInterval(0.95).ClosedContains(wald.Mean));
+            Assert.IsTrue(P.Y.PopulationMean.ConfidenceInterval(0.95).ClosedContains(wald.ShapeParameter));
+            // the ML shape parameter estimate appears to be asymptoticly unbiased, as it must be according to ML fit theory,
+            // but detectably upward biased for small n. we now correct for this.
+
+            Console.WriteLine("{0} {1} {2}", P.X.PopulationVariance, P.Y.PopulationVariance, P.PopulationCovariance);
+            Console.WriteLine("{0} {1} {2}", cmm, css, cms);
+
+            Assert.IsTrue(P.X.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(cmm));
+            Assert.IsTrue(P.Y.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(css));
+            Assert.IsTrue(P.PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(cms));
+
+        }
+
+        [TestMethod]
         public void SampleFitChiSquaredTest () {
 
             Distribution distribution = new ChiSquaredDistribution(4);

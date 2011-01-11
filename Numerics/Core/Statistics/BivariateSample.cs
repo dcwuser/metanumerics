@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 
 using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics.Distributions;
@@ -8,14 +9,14 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents a sample of data points, where each data point is described by a pair of real numbers.
     /// </summary>
-    public class BivariateSample {
+    public sealed class BivariateSample {
 
         /// <summary>
         /// Initializes a new bivariate sample.
         /// </summary>
         public BivariateSample () {
-            xData = new DataColumnStorage();
-            yData = new DataColumnStorage();
+            xData = new SampleStorage();
+            yData = new SampleStorage();
             isReadOnly = false;
         }
 
@@ -29,14 +30,14 @@ namespace Meta.Numerics.Statistics {
             yData.Name = yName;
         }
 
-        internal BivariateSample (DataColumnStorage xData, DataColumnStorage yData, bool isReadOnly) {
+        internal BivariateSample (SampleStorage xData, SampleStorage yData, bool isReadOnly) {
             this.xData = xData;
             this.yData = yData;
             this.isReadOnly = isReadOnly;
         }
 
-        private DataColumnStorage xData;
-        private DataColumnStorage yData;
+        private SampleStorage xData;
+        private SampleStorage yData;
         private bool isReadOnly;
 
         // manipulation methods
@@ -112,7 +113,7 @@ namespace Meta.Numerics.Statistics {
         /// Swaps the X and Y variables in the bivariate sample.
         /// </summary>
         public void TransposeXY () {
-            DataColumnStorage t = yData;
+            SampleStorage t = yData;
             yData = xData;
             xData = t;
         }
@@ -383,7 +384,7 @@ namespace Meta.Numerics.Statistics {
         public FitResult LinearRegression () {
 
             int n = Count;
-            if (n < 2) throw new InvalidOperationException();
+            if (n < 3) throw new InsufficientDataException();
 
             double b = this.Covariance / xData.Variance;
             double a = yData.Mean - b * xData.Mean;
@@ -400,13 +401,19 @@ namespace Meta.Numerics.Statistics {
             }
 
             double cbb = SSR / xData.Variance / n / (n -2);
-            Console.WriteLine(cbb);
+            //Console.WriteLine(cbb);
             double cab = -xData.Mean * cbb;
             double caa = SXX / n * cbb;
 
             // compute F-statistic
+            // total variance dof = n - 1, explained variance dof = 1, unexplained variance dof = n - 2
+            double totalVarianceSum = yData.Variance * n;
+            double unexplainedVarianceSum = SSR;
+            double explainedVarianceSum = totalVarianceSum - unexplainedVarianceSum;
+            double F = (explainedVarianceSum / 1) / (unexplainedVarianceSum / (n - 2));
+            TestResult test = new TestResult(F, new FisherDistribution(1, n - 2));
 
-            return (new FitResult(a, Math.Sqrt(caa), b, Math.Sqrt(cbb), cab, null));
+            return (new FitResult(a, Math.Sqrt(caa), b, Math.Sqrt(cbb), cab, test));
         }
 
         /// <summary>
@@ -417,6 +424,13 @@ namespace Meta.Numerics.Statistics {
         /// <para>Linear logistic regression is a way to fit binary outcome data to a linear model.</para>
         /// </remarks>
         public FitResult LogisticRegression () {
+
+            // check size of data set
+            if (Count < 3) throw new InsufficientDataException();
+
+            // check limits on Y
+            double p = Y.Mean; double q = 1.0 - p;
+            if ((p <= 0.0) || (q <= 0.0)) throw new InvalidOperationException();
 
             Func<double[],double> f = delegate (double[] a) {
 
@@ -438,7 +452,11 @@ namespace Meta.Numerics.Statistics {
                 return(L);
             };
 
-            SpaceExtremum m = FunctionMath.FindMinimum(f, new double[2] { -0.1, 0.1 });
+            // make an initial guess at the parameters
+            double b0 = Covariance / X.Variance / Y.Variance;
+            double a0 = Math.Log(p / q) - b0 * X.Mean;
+
+            SpaceExtremum m = FunctionMath.FindMinimum(f, new double[2] { a0, b0 });
 
             return (new FitResult(m.Location(), m.Curvature().Inverse(), null));
 
@@ -446,6 +464,23 @@ namespace Meta.Numerics.Statistics {
 
         public FitResult PolynomialRegression (int n) {
             throw new NotImplementedException();
+        }
+
+
+        /// <summary>
+        /// Loads values from a data reader.
+        /// </summary>
+        /// <param name="reader">The data reader.</param>
+        /// <param name="xIndex">The column number of the x-variable.</param>
+        /// <param name="yIndex">The column number of the y-variable.</param>
+        public void Load (IDataReader reader, int xIndex, int yIndex) {
+            if (reader == null) throw new ArgumentNullException("reader");
+            while (reader.Read()) {
+                if (reader.IsDBNull(xIndex) || reader.IsDBNull(yIndex)) continue;
+                object xValue = reader.GetValue(xIndex);
+                object yValue = reader.GetValue(yIndex);
+                Add(Convert.ToDouble(xValue), Convert.ToDouble(yValue));
+            }
         }
 
     }

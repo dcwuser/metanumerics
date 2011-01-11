@@ -26,12 +26,12 @@ namespace Meta.Numerics.Statistics.Distributions {
         private double scale = 1.0;
 
         /// <inheritdoc />
-        public override double ProbabilityDensity (double d) {
+        public override double ProbabilityDensity (double x) {
 
-            if (d < scale) {
-                return (AsymptoticPPrime(d/scale)/scale);
+            if (x < scale) {
+                return (AsymptoticPPrime(x/scale)/scale);
             } else {
-                return (AsymptoticQPrime(d/scale)/scale);
+                return (AsymptoticQPrime(x/scale)/scale);
             }
 
         }
@@ -73,23 +73,23 @@ namespace Meta.Numerics.Statistics.Distributions {
 
 
         /// <inheritdoc />
-        public override double LeftProbability (double d) {
+        public override double LeftProbability (double x) {
 
-            if (d < scale) {
-                return (AsymptoticP(d / scale));
+            if (x < scale) {
+                return (AsymptoticP(x / scale));
             } else {
-                return (1.0 - AsymptoticQ(d / scale));
+                return (1.0 - AsymptoticQ(x / scale));
             }
 
         }
 
         /// <inheritdoc />
-        public override double RightProbability (double d) {
+        public override double RightProbability (double x) {
 
-            if (d < scale) {
-                return (1.0 - AsymptoticP(d / scale));
+            if (x < scale) {
+                return (1.0 - AsymptoticP(x / scale));
             } else {
-                return (AsymptoticQ(d / scale));
+                return (AsymptoticQ(x / scale));
             }
 
         }

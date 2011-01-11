@@ -86,6 +86,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (a + (int) Math.Floor(n * P));
         }
 
+        /// <inheritdoc />
         public override double MomentAboutMean (int n) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");

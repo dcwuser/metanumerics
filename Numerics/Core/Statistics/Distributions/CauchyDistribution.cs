@@ -4,11 +4,18 @@ using System.Text;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
+#if FUTURE
+
     /// <summary>
     /// Represents a Cauchy distribution.
     /// </summary>
-    class CauchyDistribution : Distribution {
+    public class CauchyDistribution : Distribution {
 
+        /// <summary>
+        /// Initializes a new Cauchy distribution.
+        /// </summary>
+        /// <param name="mu"></param>
+        /// <param name="gamma"></param>
         public CauchyDistribution (double mu, double gamma) {
             if (gamma <= 0.0) throw new ArgumentNullException("gamma");
             this.mu = mu;
@@ -83,5 +90,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
     }
+
+#endif
 
 }

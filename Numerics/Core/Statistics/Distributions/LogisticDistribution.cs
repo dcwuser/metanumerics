@@ -16,7 +16,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// can be converted to a standard logistic distribution by reparameterzing into z = (x-m)/s.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Logistic_distribution" />
-    public class LogisticDistribution : Distribution, IParameterizedDistribution {
+    public sealed class LogisticDistribution : Distribution, IParameterizedDistribution {
 
         /// <summary>
         /// Initializes a new standard logistic distribution.

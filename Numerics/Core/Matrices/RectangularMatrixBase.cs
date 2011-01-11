@@ -243,7 +243,8 @@ namespace Meta.Numerics.Matrices {
         }
 
         public static ColumnVector operator * (RectangularMatrixBase A, ColumnVector v) {
-
+            if (A == null) throw new ArgumentNullException("A");
+            if (v == null) throw new ArgumentNullException("v");
             if (A.ColumnCount != v.Dimension) throw new DimensionMismatchException();
             ColumnVector Av = new ColumnVector(A.RowCount);
 

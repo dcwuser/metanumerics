@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
+using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 
 
@@ -60,9 +61,9 @@ namespace Test {
 
         private DiscreteDistribution[] distributions = new DiscreteDistribution[] {
             new BernoulliDistribution(0.1),
-            new BinomialDistribution(0.2, 30),
+            new BinomialDistribution(0.2, 30), new BinomialDistribution(0.4, 5),
             new PoissonDistribution(4.5),
-            new DiscreteUniformDistribution(5,11),
+            new DiscreteUniformDistribution(5, 11),
             new GeometricDistribution(0.6)
         };
 
@@ -74,7 +75,8 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Moment(1), distribution.Mean));
                 Assert.IsTrue(distribution.MomentAboutMean(0) == 1.0);
                 Assert.IsTrue(distribution.MomentAboutMean(1) == 0.0);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.MomentAboutMean(2), distribution.Variance));                
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.MomentAboutMean(2), distribution.Variance));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Sqrt(distribution.Variance), distribution.StandardDeviation));
             }
 
         }
@@ -207,33 +209,41 @@ namespace Test {
         }
 
         [TestMethod]
+        public void PoissonBug () {
+
+            PoissonDistribution pd = new PoissonDistribution(0.5);
+            double x = pd.InverseLeftProbability(0.7716);
+            Console.WriteLine(x);
+
+        }
+
+        [TestMethod]
         public void DiscreteRandomValueDistribution () {
 
-            foreach (DiscreteDistribution distribution in distributions) {
+            PoissonDistribution distribution = new PoissonDistribution(3.0);
+            Random rng = new Random(1);
+
+            //foreach (DiscreteDistribution distribution in distributions) {
 
                 Console.WriteLine(distribution.GetType().FullName);
 
-                int n = 100;
-                Random rng = new Random(1);
-                int[] counts = new int[100];
-                for (int i = 0; i < n; i++) {
-                    int k = distribution.GetRandomValue(rng);
-                    counts[k]++;
+                Histogram h = new Histogram(10);
+            
+                for (int i = 0; i < 100; i++) {
+                    h.Add(distribution.GetRandomValue(rng));
+                }
+              
+                for (int i = 0; i < 10; i++) {
+                    Console.WriteLine(h[i].Counts);
                 }
 
-                double chi2 = 0.0;
-                for (int k = 0; k < counts.Length; k++) {
-                    double P = distribution.ProbabilityMass(k);
-                    if (P > 0.0) {
-                        chi2 += MoreMath.Pow(counts[k] - n * P, 2) / (n * P);
-                    } else {
-                        if (counts[k] != 0) chi2 += Double.PositiveInfinity;
-                    }
-                }
-                Console.WriteLine(chi2);
+                TestResult test = h.ChiSquaredTest(distribution);
+                Console.WriteLine(test.Statistic);
+
+            
 
 
-            }
+            //}
 
 
         }

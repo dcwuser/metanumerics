@@ -586,6 +586,24 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void ContinuousDistributionDeviates () {
+
+            //Distribution distribution = new WaldDistribution(3.5, 2.5);
+            foreach (Distribution distribution in distributions) {
+                Console.Write(distribution.GetType().Name);
+                Sample s = new Sample();
+                Random rng = new Random(1000000);
+                for (int i = 0; i < 64; i++) {
+                    s.Add(distribution.GetRandomValue(rng));
+                }
+                TestResult r = s.KolmogorovSmirnovTest(distribution);
+                Assert.IsTrue(r.LeftProbability < 0.95);
+
+            }
+
+        }
+
         public static double ApproximateProbit (double P) {
 
             if (P < 0.1) {

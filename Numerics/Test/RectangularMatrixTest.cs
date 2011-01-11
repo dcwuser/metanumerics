@@ -1,7 +1,8 @@
-﻿using Meta.Numerics.Matrices;
-
-using System;
+﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using Meta.Numerics;
+using Meta.Numerics.Matrices;
 
 namespace Test {
 
@@ -55,7 +56,7 @@ namespace Test {
             Random rng = new Random(1);
             for (int r = 0; r < rd; r++) {
                 for (int c = 0; c < cd; c++) {
-                    M[r,c] = 2.0*rng.NextDouble() - 1.0;
+                    M[r,c] = 2.0 * rng.NextDouble() - 1.0;
                 }
             }
             return (M);
@@ -138,7 +139,7 @@ namespace Test {
 
             RectangularMatrix M = GenerateRandomMatrix(30, 10);
 
-            QRDecomposition QRD = M.QRDecompose();
+            QRDecomposition QRD = M.QRDecomposition();
             Assert.IsTrue(QRD.RowCount == M.RowCount);
             Assert.IsTrue(QRD.ColumnCount == M.ColumnCount);
 
@@ -184,10 +185,46 @@ namespace Test {
             Assert.IsTrue(B.InfinityNorm() > 0.0);
             Assert.IsTrue(B.FrobeniusNorm() > 0.0);
 
+            // Frobenius norm is sub-multiplicative
             RectangularMatrix P = A * B;
             Assert.IsTrue(P.FrobeniusNorm() <= A.FrobeniusNorm() * B.FrobeniusNorm());
-            // Frobenium norm is sub-multiplicative
 
         }
+
+        [TestMethod]
+        public void RandomRectangularSVD () {
+
+            for (int c = 1; c < 64; c += 11) {
+                Console.WriteLine(c);
+
+                RectangularMatrix R = GenerateRandomMatrix(64, c);
+
+                SingularValueDecomposition SVD = R.SingularValueDecomposition();
+
+                Assert.IsTrue(SVD.RowCount == R.RowCount);
+                Assert.IsTrue(SVD.ColumnCount == SVD.ColumnCount);
+                Assert.IsTrue(SVD.Dimension == SVD.ColumnCount);
+
+                SquareMatrix U = SVD.LeftTransformMatrix();
+                Assert.IsTrue(U.Dimension == R.RowCount);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(U.Transpose() * U, TestUtilities.CreateSquareUnitMatrix(U.Dimension)));
+
+                SquareMatrix V = SVD.RightTransformMatrix();
+                Assert.IsTrue(V.Dimension == R.ColumnCount);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(V.Transpose() * V, TestUtilities.CreateSquareUnitMatrix(V.Dimension)));
+
+                RectangularMatrix S = U.Transpose() * R * V;
+                for (int i = 0; i < SVD.Dimension; i++) {
+                    double w = SVD.SingularValue(i);
+                    Console.WriteLine("  {0} {1}", w, S[i, i]);
+                    Assert.IsTrue(w >= 0.0);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(S[i, i], w));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(R * SVD.RightSingularVector(i), w * SVD.LeftSingularVector(i)));
+                }
+
+            }
+
+        }
+
     }
 }

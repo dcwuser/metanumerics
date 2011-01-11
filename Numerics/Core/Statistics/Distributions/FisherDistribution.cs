@@ -56,31 +56,31 @@ namespace Meta.Numerics.Statistics.Distributions {
 		}
 
         /// <inheritdoc />
-        public override double ProbabilityDensity (double F) {
-            if (F <= 0.0) {
+        public override double ProbabilityDensity (double x) {
+            if (x <= 0.0) {
                 return (0.0);
             } else {
                 double N = Math.Pow(nu1, 0.5 * nu1) * Math.Pow(nu2, 0.5 * nu2) /
                     AdvancedMath.Beta(0.5 * nu1, 0.5 * nu2);
-                return (N * Math.Pow(F, 0.5 * nu1 - 1.0) * Math.Pow(nu2 + nu1 * F, -0.5 * (nu1 + nu2)));
+                return (N * Math.Pow(x, 0.5 * nu1 - 1.0) * Math.Pow(nu2 + nu1 * x, -0.5 * (nu1 + nu2)));
             }
 		}
 
         /// <inheritdoc />
-        public override double LeftProbability (double F) {
-            if (F <= 0.0) {
+        public override double LeftProbability (double x) {
+            if (x <= 0.0) {
                 return (0.0);
             } else {
-                return (AdvancedMath.Beta(0.5 * nu1, 0.5 * nu2, nu1 * F / (nu2 + nu1 * F)) / AdvancedMath.Beta(0.5 * nu1, 0.5 * nu2));
+                return (AdvancedMath.Beta(0.5 * nu1, 0.5 * nu2, nu1 * x / (nu2 + nu1 * x)) / AdvancedMath.Beta(0.5 * nu1, 0.5 * nu2));
             }
 		}
 
         /// <inheritdoc />
-        public override double RightProbability (double F) {
-            if (F <= 0.0) {
+        public override double RightProbability (double x) {
+            if (x <= 0.0) {
                 return (1.0);
             } else {
-                return (AdvancedMath.Beta(0.5 * nu2, 0.5 * nu1, nu2 / (nu2 + nu1 * F)) / AdvancedMath.Beta(0.5 * nu2, 0.5 * nu1));
+                return (AdvancedMath.Beta(0.5 * nu2, 0.5 * nu1, nu2 / (nu2 + nu1 * x)) / AdvancedMath.Beta(0.5 * nu2, 0.5 * nu1));
             }
 		}
 

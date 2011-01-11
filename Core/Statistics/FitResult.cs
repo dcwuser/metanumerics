@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 using Meta.Numerics;
@@ -116,9 +117,9 @@ namespace Meta.Numerics.Statistics {
 
         // n-parameter constructor
         internal FitResult (IList<double> parameters, SymmetricMatrix covariance, TestResult test) {
-            if (parameters == null) throw new ArgumentNullException("parameters");
-            if (covariance == null) throw new ArgumentNullException("covariance");
-            if (parameters.Count != covariance.Dimension) throw new DimensionMismatchException();
+            Debug.Assert(parameters != null);
+            Debug.Assert(covariance != null);
+            Debug.Assert(parameters.Count == covariance.Dimension);
             this.parameters = parameters;
             this.covarianceMatrix = covariance;
             this.test = test;

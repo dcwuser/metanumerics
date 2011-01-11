@@ -73,9 +73,10 @@ namespace Meta.Numerics.Functions {
 
             double x0 = Double.MaxValue;
 
-            for (int n = 0; n < 100; n++) {
+            for (int n = 0; n < Global.SeriesMax; n++) {
 
                 //Debug.WriteLine(String.Format("Bracket ({0},{1}) ({2},{3})", x1, f1, x2, f2));
+                //Console.WriteLine("Bracket ({0},{1}) ({2},{3})", x1, f1, x2, f2);
 
                 // evaluate at the bracket mid-point
                 double x3 = (x1 + x2) / 2.0;
@@ -100,6 +101,7 @@ namespace Meta.Numerics.Functions {
                 if (f4 == 0.0) return (x4);
 
                 if (Math.Abs(x4 - x0) <= RelativePrecision * Math.Abs(x0)) return (x4);
+                if (Math.Abs(x4 - x0) <= AbsolutePrecision) return (x4);
 
                 // update the bracket
                 if (Math.Sign(f3) == Math.Sign(f4)) {

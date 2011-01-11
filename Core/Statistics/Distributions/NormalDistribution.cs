@@ -5,7 +5,6 @@ using Meta.Numerics.Functions;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
-
     /// <summary>
     /// Represents a normal (Gaussian) distribution.
     /// </summary>
@@ -25,7 +24,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>The normal distribution is sometimes called a Gaussian distribtuion, after the mathematician Friedrich Gauss.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Normal_distribution"/>
-    public class NormalDistribution : Distribution, IParameterizedDistribution {
+    public sealed class NormalDistribution : Distribution, IParameterizedDistribution {
 
         private double mu, sigma;
 
@@ -198,6 +197,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>A <see cref="FitResult"/> containg the mu and sigma parameters of the normal distribution that best fits the sample data,
         /// and a Kolmogorov-Smirnov test of the quality of the fit.</returns>
         public static FitResult FitToSample (Sample sample) {
+
+            if (sample == null) throw new ArgumentNullException("sample");
+            if (sample.Count < 3) throw new InsufficientDataException();
 
             // maximum likelyhood estimates are guaranteed to be asymptotically unbiased, but not necessarily unbiased
             // this hits home for the maximum likelyhood estimate of the variance of a normal distribution, which fails

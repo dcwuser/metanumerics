@@ -18,7 +18,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// model the time-to-failure of industrial componets.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Weibull_distribution" />
-    public class WeibullDistribution : Distribution, IParameterizedDistribution {
+    public sealed class WeibullDistribution : Distribution, IParameterizedDistribution {
 
         /// <summary>
         /// Initializes a new Weibull distribution.
@@ -182,8 +182,12 @@ namespace Meta.Numerics.Statistics.Distributions {
             // mamimize it
             SpaceExtremum fm = FunctionMath.FindMinimum(f, new double[] { s0, k0 });
 
+            double[] v = fm.Location();
+            Distribution distribution = new WeibullDistribution(v[0], v[1]);
+            TestResult test = sample.KolmogorovSmirnovTest(distribution);
+
             // return the result
-            return (new FitResult(fm.Location(), fm.Curvature().CholeskyDecomposition().Inverse(), null));
+            return (new FitResult(fm.Location(), fm.Curvature().CholeskyDecomposition().Inverse(), test));
 
         }
 

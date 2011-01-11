@@ -14,6 +14,10 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </remarks>
     public class GeometricDistribution : DiscreteDistribution {
 
+        /// <summary>
+        /// Initializes a new geometric distribution.
+        /// </summary>
+        /// <param name="p">The probabability of the value zero.</param>
         public GeometricDistribution (double p) {
             if ((p <= 0.0) || (p >= 1.0)) throw new ArgumentOutOfRangeException("p");
             this.p = p;

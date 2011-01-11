@@ -206,21 +206,45 @@ namespace Meta.Numerics.Matrices {
         /// matrix has more columns than rows, you can QR decompose its transpose.</para>
         /// </remarks>
         /// <seealso cref="QRDecomposition"/>
-        public QRDecomposition QRDecompose () {
+        public QRDecomposition QRDecomposition () {
 
             if (rows < cols) throw new InvalidOperationException();
 
             double[] rStore = MatrixAlgorithms.Copy(store, rows, cols);
-            //double[] rStore = new double[store.Length];
-            //Array.Copy(store, rStore, store.Length);
 
-            //double[] qtStore = new double[rows * rows];
-            //for (int i = 0; i < rows; i++) { qtStore[rows * i + i] = 1.0; }
             double[] qtStore = SquareMatrixAlgorithms.CreateUnitMatrix(rows);
 
             MatrixAlgorithms.QRDecompose(rStore, qtStore, rows, cols);
 
             return (new QRDecomposition(qtStore, rStore, rows, cols));
+
+        }
+
+        /// <summary>
+        /// Computes the singular value decomposition of the matrix.
+        /// </summary>
+        /// <returns>The SVD of the matrix.</returns>
+        public SingularValueDecomposition SingularValueDecomposition () {
+            
+            // copy the matrix so as not to distrub the original
+            double[] copy = MatrixAlgorithms.Copy(store, rows, cols);
+
+            // bidiagonalize it
+            double[] a, b;
+            MatrixAlgorithms.Bidiagonalize(copy, rows, cols, out a, out b);
+
+            // form the U and V matrices
+            double[] left = MatrixAlgorithms.AccumulateBidiagonalU(copy, rows, cols);
+            double[] right = MatrixAlgorithms.AccumulateBidiagonalV(copy, rows, cols);
+            
+            // find the singular values of the bidiagonal matrix
+            MatrixAlgorithms.ExtractSingularValues(a, b, left, right, rows, cols);
+            
+            // sort them
+            MatrixAlgorithms.SortValues(a, left, right, rows, cols);
+
+            // package it all up
+            return (new SingularValueDecomposition(left, a, right, rows, cols));
 
         }
 

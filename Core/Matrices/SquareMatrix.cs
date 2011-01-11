@@ -975,6 +975,20 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+        /// <summary>
+        /// Computes the singular value decomposition of the square matrix.
+        /// </summary>
+        /// <returns>The singular value decomposition of the matrix.</returns>
+        /// <remarks>
+        /// <para>Singular value decomposition is an advanced matrix decomposition technique that can be applied
+        /// to all matrices, including non-square and singular square matrices.</para>
+        /// </remarks>
+        public SingularValueDecomposition SingularValueDecomposition () {
+            double[] copy = MatrixAlgorithms.Copy(store, dimension, dimension);
+            RectangularMatrix r = new RectangularMatrix(copy, dimension, dimension);
+            return (r.SingularValueDecomposition());
+        }
+
 #if PAST
 
         private static void WilkersonOneStep (double[] store, int dimension, int a, int n) {
@@ -1789,26 +1803,8 @@ namespace Meta.Numerics.Matrices {
             double[] store = MatrixAlgorithms.Multiply(-1.0, A.store, A.dimension, A.dimension);
             return (new SquareMatrix(store, A.dimension));
         }
-        /*
-        internal static SquareMatrix Multiply (double x, SquareMatrix M) {
-            SquareMatrix N = new SquareMatrix(M.Dimension);
-            for (int r = 0; r < N.Dimension; r++) {
-                for (int c = 0; c < N.Dimension; c++) {
-                    N[r, c] = x * M[r, c];
-                }
-            }
-            return (N);
-        }
 
-        /// <summary>
-        /// Computes the product of a real number and a square matrix.
-        /// </summary>
-        /// <param name="x">The real number.</param>
-        /// <param name="M">The matrix.</param>
-        /// <returns>The product of <paramref name="x"/> and <paramref name="M"/>.</returns>
-        public static SquareMatrix operator * (double x, SquareMatrix M) {
-            return (Multiply(x, M));
-        }
+        /*
 
         /// <summary>
         /// Computes the the quotient of a square matrix and a real number.
@@ -2022,16 +2018,17 @@ namespace Meta.Numerics.Matrices {
 
         }
 
-        // a Householder reflection matrix is a rank-1 update to the identity.
+        // A Householder reflection matrix is a rank-1 update to the identity.
         //   P = I - b v v^T
         // Unitarity requires b = 2 / |v|^2. To anihilate all but the first components of vector x,
         //   P x = a e_1
         // we must have
         //   v = x +/- |x| e_1
-        // that is, all elements the same except the first, from which we have either added or subtracted |x|.
-        // (We choose the sign that avoids canelation.) This makes
+        // that is, all elements the same except the first, from which we have either added or subtracted |x|. This makes
         //   a = -/+ |x|
-        // 
+        // There are two way to handle the sign. One is to choose the sign that avoids cancelation when calculating v_1,
+        // i.e. + for positive x and - for negative x. This works fine, but makes a negative for positive x, which is
+        // weird (even 1 0 0 gets turned into -1 0 0). An alternative is to write
 
         public static void GenerateHouseholderReflection (double[] store, int offset, int stride, int count, out double a) {
             double xm = Blas1.dNrm2(store, offset, stride, count);
@@ -2101,12 +2098,12 @@ namespace Meta.Numerics.Matrices {
 
                 // check for maximum numbers of iterations without finding an eigenvalue
                 if (count > 32) {
-                    Console.WriteLine("max iter");
+                    //Console.WriteLine("max iter");
                     throw new NonconvergenceException();
                 }
 
                 // we are working between a and n, and our block is at least 3 wide
-                Console.WriteLine("a={0} n={1} sum={2}", a, n, sum);
+                //Console.WriteLine("a={0} n={1} sum={2}", a, n, sum);
 
                 // reduce if possible, otherwise do a iteration step
 
@@ -2147,9 +2144,9 @@ namespace Meta.Numerics.Matrices {
                     count = 0;
                     sum_old = Double.PositiveInfinity;
                 } else {
-                    Console.WriteLine("iterate");
+                    //Console.WriteLine("iterate");
                     //if (1.25 * sum < sum_old) {
-                    Console.WriteLine("francis count={0}", count);
+                    //Console.WriteLine("francis count={0}", count);
 
                     // use the lower-left 2 X 2 matrix to generate an approximate eigenvalue pair
 
@@ -2167,11 +2164,11 @@ namespace Meta.Numerics.Matrices {
                     if ((count == 8) || (count == 16) || (count == 24)) {
                         double w = Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, n, n - 1)) +
                             Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, m, m - 1));
-                        Console.WriteLine("ad hoc w={0}", w);
+                        //Console.WriteLine("ad hoc w={0}", w);
                         tr = 2.0 * w;
                         det = w * w;
                     }
-                    Console.WriteLine("tr={0} det={1}", tr, det);
+                    //Console.WriteLine("tr={0} det={1}", tr, det);
 
                     FrancisTwoStep(aStore, qStore, dimension, a, n, tr, det);
                     sum_old = sum;
@@ -2319,65 +2316,7 @@ namespace Meta.Numerics.Matrices {
 
         }
 
-        // SVD
-
-        // Bidiagonalization uses seperate left and right Householder reflections to bring a matrix into a form of bandwidth two.
-
-        // XXXXX    ABCDE    XA000    XX000    XX000
-        // XXXXX    0BCDE    0BBBB    0ABCD    0XA00
-        // XXXXX    0BCDE    0CCCC    00BCD    00BBB
-        // XXXXX -> 0BCDE -> 0DDDD -> 00BCD -> 00CCC -> etc
-        // XXXXX    0BCDE    0EEEE    00BCD    00DDD
-        // XXXXX    0BCDE    0FFFF    00BCD    00EEE
-        // XXXXX    0BCDE    0GGGG    00BCD    00FFF
-
-
-        // The end result is B = U A V, where U and V are different (so this isn't a similiarity transform) orthogonal matrices.
-
-        // Note that we can't get fully diagonal with this approach, because if the right transform tried to zero the first superdiagonal
-        // element, it would interfere with the zeros already created.
-
-        // This method gradually replaces the matrix elements with the elements of the Householder reflections used.
-        // The resulting diagonal and first superdiagonal elements are returned in d and e.
-
-        public static void Bidiagonlize (double[] store, int rows, int cols) {
-
-            Debug.Assert(rows >= cols);
-
-            for (int k = 0; k < cols; k++) {
-
-                // generate a householder reflection which, when applied from the left, will zero sub-diagonal elements in the kth column
-                // use those elements to store the reflection vector; store the resulting diagonal element seperately
-                double a;
-                GenerateHouseholderReflection(store, rows * k + k, 1, rows - k, out a);
-
-                // apply that reflection to all the columns; only subsequent ones are affected since preceeding ones
-                // contain only zeros in the subdiagonal rows
-                for (int c = k + 1; c < cols; c++) {
-                    ApplyHouseholderReflection(store, rows * k + k, 1, store, rows * c + k, 1, rows - k);
-                }
-                store[rows * k + k] = a;
-
-                if ((k + 1) < cols) {
-                    // generate a Householder reflection which, when applied from the right, will zero (super+1)-diagonal elements in the kth row
-                    // again, store the elements of the reflection vector in the zeroed matrix elements and store the resulting superdiagonal element seperately
-                    double b;
-                    GenerateHouseholderReflection(store, rows * (k + 1) + k, rows, cols - (k + 1), out b);
-                    // apply the reflection to all the rows; only subsequent ones are affected since the preceeding ones contain only zeros in the
-                    // affected columns; the already-zeroed column elements are not distrubed because those columns are not affected
-                    // this restriction is why we cannot fully diagonalize using this transform; if we tried to zero all the super-diagonal
-                    for (int r = k + 1; r < rows; r++) {
-                        ApplyHouseholderReflection(store, rows * (k + 1) + k, rows, store, rows * (k + 1) + r, rows, cols - (k + 1));
-                    }
-                    store[rows * (k + 1) + k] = b;
-                }
-
-
-            }
-
-
-
-        }
+        
 
     }
 

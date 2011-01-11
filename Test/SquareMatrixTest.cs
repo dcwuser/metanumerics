@@ -512,6 +512,31 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void HilbertMatrixSVD () {
+
+            int n = 4;
+            SquareMatrix H = new SquareMatrix(n);
+            for (int r = 0; r < n; r++) {
+                for (int c = 0; c < n; c++) {
+                    H[r, c] = 1.0 / (r + c + 1);
+                }
+            }
+
+            SingularValueDecomposition SVD = H.SingularValueDecomposition();
+            for (int i = 0; i < n; i++) {
+                Console.WriteLine(SVD.SingularValue(i));
+            }
+
+            SquareMatrix S = SVD.LeftTransformMatrix().Transpose() * H * SVD.RightTransformMatrix();
+            for (int i = 0; i < SVD.Dimension; i++) {
+                Console.WriteLine(S[i, i]);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(S[i, i], SVD.SingularValue(i)));
+            }
+
+        }
+
+
         /*
         [TestMethod]
         public void TimeMatrixMultiply () {

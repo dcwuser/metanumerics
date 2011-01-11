@@ -124,6 +124,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+        /// <summary>
+        /// Determines the parameters of the Wald distribution that best fits a sample.
+        /// </summary>
+        /// <param name="sample">The sample to fit.</param>
+        /// <returns>The fit.</returns>
         public static FitResult FitToSample (Sample sample) {
 
             if (sample == null) throw new ArgumentNullException("sample");
@@ -138,13 +143,17 @@ namespace Meta.Numerics.Statistics.Distributions {
                 lambda += (1.0 / value - 1.0 / mu);
             }
             lambda = sample.Count / lambda;
+            // correct lambda estimate for its bias in the non-asymptotic regime
+            lambda = lambda * (1.0 - 3.0 / sample.Count);
 
             // variances are expressible in closed form, covariance is zero
-            double v_mu_mu = MoreMath.Pow(mu, 3) / lambda;
-            double v_lambda_lambda = 1.0;
+            double v_mu_mu = MoreMath.Pow(mu, 3) / lambda / sample.Count;
+            double v_lambda_lambda = 2.0 * lambda * lambda / sample.Count;
             double v_mu_lambda = 0.0;
 
-            return (new FitResult(mu, Math.Sqrt(v_mu_mu), lambda, Math.Sqrt(v_lambda_lambda), v_mu_lambda, null));
+            Distribution dist = new WaldDistribution(mu, lambda);
+            TestResult test = sample.KolmogorovSmirnovTest(dist);
+            return (new FitResult(mu, Math.Sqrt(v_mu_mu), lambda, Math.Sqrt(v_lambda_lambda), v_mu_lambda, test));
         }
 
     }

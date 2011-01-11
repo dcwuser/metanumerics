@@ -318,6 +318,9 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The sum M<sub>1</sub> + M<sub>2</sub>.</returns>
         public static TridiagonalMatrix operator + (TridiagonalMatrix T1, TridiagonalMatrix T2) {
 
+            if (T1 == null) throw new ArgumentNullException("T1");
+            if (T2 == null) throw new ArgumentNullException("T1");
+
             int n = T1.Dimension;
             if (T2.Dimension != n) throw new DimensionMismatchException();
 
@@ -350,6 +353,9 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The difference M<sub>1</sub> - M<sub>2</sub>.</returns>
         public static TridiagonalMatrix operator - (TridiagonalMatrix T1, TridiagonalMatrix T2) {
 
+            if (T1 == null) throw new ArgumentNullException("T1");
+            if (T2 == null) throw new ArgumentNullException("T1");
+
             int n = T1.Dimension;
             if (T2.Dimension != n) throw new DimensionMismatchException();
 
@@ -375,6 +381,8 @@ namespace Meta.Numerics.Matrices {
         }
 
         public static TridiagonalMatrix operator * (double f, TridiagonalMatrix T) {
+
+            if (T == null) throw new ArgumentNullException("T");
 
             int n = T.Dimension;
             TridiagonalMatrix fT = new TridiagonalMatrix(n);
@@ -535,6 +543,9 @@ namespace Meta.Numerics.Matrices {
         /// <param name="rhs">The right-hand side vector b.</param>
         /// <returns>A vector x which satisties Ax = b.</returns>
         public ColumnVector Solve (IList<double> rhs) {
+
+            if (rhs == null) throw new ArgumentNullException("rhs");
+            if (rhs.Count != n) throw new DimensionMismatchException();
 
             if (rhs.Count != n) throw new DimensionMismatchException();
 

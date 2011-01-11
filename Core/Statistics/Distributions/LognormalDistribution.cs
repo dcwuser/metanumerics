@@ -17,7 +17,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </remarks>
     /// <seealso cref="NormalDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Log-normal_distribution" />
-    public class LognormalDistribution : Distribution, IParameterizedDistribution {
+    public sealed class LognormalDistribution : Distribution, IParameterizedDistribution {
 
         /// <summary>
         /// Initializes a log normal distribution.

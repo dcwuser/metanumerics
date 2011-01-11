@@ -13,9 +13,9 @@ using Meta.Numerics.Statistics.Distributions;
 namespace Meta.Numerics.Statistics {
 
 
-    internal class DataColumnStorage  {
+    internal class SampleStorage  {
 
-        public DataColumnStorage () {
+        public SampleStorage () {
             data = new List<double>();
             M = 0.0; SS = 0.0;
             order = null;
@@ -130,8 +130,8 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        public DataColumnStorage Copy () {
-            DataColumnStorage copy = new DataColumnStorage();
+        public SampleStorage Copy () {
+            SampleStorage copy = new SampleStorage();
             copy.data = new List<double>(this.data);
             copy.M = this.M;
             copy.SS = this.SS;
@@ -157,14 +157,14 @@ namespace Meta.Numerics.Statistics {
     /// </remarks>
     public sealed class Sample : ICollection<double>, IEnumerable<double>, IEnumerable {
 
-        private DataColumnStorage data;
+        private SampleStorage data;
         private bool isReadOnly;
 
         /// <summary>
         /// Initializes a new, empty sample.
         /// </summary>
         public Sample () {
-            this.data = new DataColumnStorage();
+            this.data = new SampleStorage();
             this.isReadOnly = false;
         }
 
@@ -185,7 +185,7 @@ namespace Meta.Numerics.Statistics {
             Add(values);
         }
 
-        internal Sample (DataColumnStorage data, bool isReadOnly) {
+        internal Sample (SampleStorage data, bool isReadOnly) {
             this.data = data;
             this.isReadOnly = isReadOnly;
         }
@@ -226,6 +226,7 @@ namespace Meta.Numerics.Statistics {
             if (isReadOnly) {
                 throw new InvalidOperationException();
             } else {
+                if (values == null) throw new ArgumentNullException("values");
                 foreach (double value in values) {
                     data.Add(value);
                 }
@@ -1152,7 +1153,6 @@ namespace Meta.Numerics.Statistics {
             while (reader.Read()) {
                 if (reader.IsDBNull(column)) continue;
                 object value = reader.GetValue(column);
-                //Console.Write(value.GetType().Name);
                 Add(Convert.ToDouble(value));
             }
         }

@@ -83,6 +83,7 @@
     <Compile Include="Functions\AdvancedMath_Elliptic.cs" />
     <Compile Include="Functions\AdvancedMath_Polylog.cs" />
     <Compile Include="Functions\FunctionMath_Differentiate.cs" />
+    <Compile Include="Matrices\SingularValueDecomposition.cs" />
     <Compile Include="Spin\Spin.cs" />
     <Compile Include="Functions\AdvancedMath_Harmonic.cs" />
     <Compile Include="Functions\AdvancedMath_Lambert.cs" />

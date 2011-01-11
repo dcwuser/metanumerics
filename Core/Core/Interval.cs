@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace Meta.Numerics {
@@ -175,6 +176,22 @@ namespace Meta.Numerics {
             return(ToString());
         }
 #endif
+
+        // get the integers within a given range; this is used for fitting histograms to discrete distributions
+
+        internal IEnumerable<int> GetContainedIntegers () {
+
+            // lower limit is inclusive; for example: 3.0 -> 3, 3.1 -> 4
+            int min = (int) Math.Ceiling(a);
+            // upper limit is exclusive: for example: 3.9 -> 3, 4.0 -> 3
+            int max = (int) Math.Floor(b);
+            if (!(max < b)) max--;
+            // iterate over integers in range
+            for (int i = min; i <= max; i++) {
+                yield return(i);
+            }
+
+        }
 
     }
 

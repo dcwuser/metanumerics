@@ -50,9 +50,30 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
+        /// <summary>
+        /// Computes the magnitude of the vector.
+        /// </summary>
+        /// <returns>The Euclidean norm of the vector.</returns>
+        public virtual double Norm () {
+            return(Blas1.dNrm2(store, 0, 1, dimension));
+        }
+
+        /// <summary>
+        /// Returns the vector elements in an independent array.
+        /// </summary>
+        /// <returns>An array containing the vector element values.</returns>
+        public virtual double[] ToArray () {
+            double[] copy = VectorAlgorithms.Copy(store, dimension);
+            return (copy);
+        }
+
         // interface implementations
 
-        IEnumerator<double> IEnumerable<double>.GetEnumerator () {
+        /// <summary>
+        /// Gets an enumerator of the vector components.
+        /// </summary>
+        /// <returns>An enumerator of the vector components.</returns>
+        public IEnumerator<double> GetEnumerator () {
             return ( ((IEnumerable<double>) store).GetEnumerator() );
         }
 
@@ -161,6 +182,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="source">The array of vector components.</param>
         public ColumnVector (double[] source) : base(source.Length) {
+            if (source == null) throw new ArgumentNullException("source");
             Blas1.dCopy(source, 0, 1, store, 0, 1, dimension);
         }
 
@@ -250,6 +272,27 @@ namespace Meta.Numerics.Matrices {
             return (new ColumnVector(store, v.dimension));
         }
 
+        /// <summary>
+        /// Divides a column vector by a real, scalar constant.
+        /// </summary>
+        /// <param name="alpha">The real, scalar constant.</param>
+        /// <param name="v">The column vector.</param>
+        /// <returns>The product.</returns>
+        public static ColumnVector operator / (ColumnVector v, double alpha) {
+            if (v == null) throw new ArgumentNullException("v");
+            double[] store = VectorAlgorithms.Multiply(1.0 / alpha, v.store, v.dimension);
+            return (new ColumnVector(store, v.dimension));
+        }
+
+        /// <summary>
+        /// Negates a column vector.
+        /// </summary>
+        /// <param name="v">The column vector.</param>
+        /// <returns>-v</returns>
+        public static ColumnVector operator - (ColumnVector v) {
+            return (-1.0 * v);
+        }
+
         /*
         public static RectangularMatrix operator * (ColumnVector u, RowVector v) {
             RectangularMatrix M = new RectangularMatrix(u.Dimension, v.Dimension);
@@ -280,6 +323,7 @@ namespace Meta.Numerics.Matrices {
         }
 
         public RowVector (double[] source) : base(source.Length) {
+            if (source == null) throw new ArgumentNullException("source");
             Blas1.dCopy(source, 0, 1, store, 0, 1, dimension);
         }
 
@@ -366,6 +410,27 @@ namespace Meta.Numerics.Matrices {
             if (v == null) throw new ArgumentNullException("v");
             double[] store = VectorAlgorithms.Multiply(alpha, v.store, v.dimension);
             return (new RowVector(store, v.dimension));
+        }
+
+        /// <summary>
+        /// Divides a row vector by a real, scalar constant.
+        /// </summary>
+        /// <param name="alpha">The real, scalar constant.</param>
+        /// <param name="v">The row vector.</param>
+        /// <returns>The result.</returns>
+        public static RowVector operator / (RowVector v, double alpha) {
+            if (v == null) throw new ArgumentNullException("v");
+            double[] store = VectorAlgorithms.Multiply(1.0 / alpha, v.store, v.dimension);
+            return (new RowVector(store, v.dimension));
+        }
+
+        /// <summary>
+        /// Negates a row vector.
+        /// </summary>
+        /// <param name="v">The row vector.</param>
+        /// <returns>-v</returns>
+        public static RowVector operator - (RowVector v) {
+            return (-1.0 * v);
         }
 
         public static RowVector operator * (RowVector v, RectangularMatrixBase A) {

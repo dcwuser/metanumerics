@@ -108,16 +108,21 @@ namespace Meta.Numerics.Statistics.Distributions {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
 
             //Console.WriteLine("P={0}", P);
+            //int count = 0;
 
             // expand interval until we bracket P
             int ka = 0;
-            int kb = (int) Math.Truncate(mu);
+            int kb = (int) Math.Ceiling(mu);
             //Console.WriteLine("[{0} {1}] {2}", ka, kb, LeftProbability(kb));
             while (P > LeftProbability(kb)) {
                 ka = kb;
                 kb = 2 * kb;
                 //Console.WriteLine("[{0} {1}] {2}", ka, kb, LeftProbability(kb));
+                //count++;
+                //if (count > 32) throw new NonconvergenceException();
             }
+
+            //count = 0;
 
             // reduce interval until we have isolated P
             // this logic is copied from Binomial; we should factor it out
@@ -128,6 +133,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 } else {
                     kb = k;
                 }
+                //if (count > 32) throw new NonconvergenceException();
             }
             return (ka);
 

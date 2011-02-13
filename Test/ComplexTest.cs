@@ -64,62 +64,52 @@ namespace Test
         private Complex b = new Complex(-7.4, 3.8);
         private Complex c = new Complex(5.9, 6.0);
 
-        /// <summary>
-        ///A test for Re
-        ///</summary>
-        [TestMethod()]
-        public void ReTest () {
-            Complex z = new Complex(1.5, -2.2);
-            Assert.AreEqual<double>(z.Re, 1.5);
+        [TestMethod]
+        public void ComplexComponents () {
+            Complex z = new Complex(-1.0, 2.0);
+            Assert.IsTrue(z.Re == -1.0);
+            Assert.IsTrue(z.Im == 2.0);
         }
 
-        /// <summary>
-        ///A test for Im
-        ///</summary>
-        [TestMethod()]
-        public void ImTest () {
-            Complex z = new Complex(1.5, -2.2);
-            Assert.AreEqual<double>(z.Im, -2.2);
+        [TestMethod]
+        public void ComplexEquality () {
+            Complex ac = a;
+            Assert.IsTrue(a == ac);
+            Assert.IsFalse(a != ac);
+            Assert.IsTrue(a.GetHashCode() == ac.GetHashCode());
+
+            Assert.IsFalse(a == b);
+            Assert.IsTrue(a != b);
         }
 
-        /// <summary>
-        ///A test for Conjugate
-        ///</summary>
         [TestMethod()]
-        public void ComplexConjugateTest () {
-
-            Assert.AreEqual<double>(a.Re, a.Conjugate.Re);
-            Assert.AreEqual<double>(a.Im, -a.Conjugate.Im);
+        public void ComplexConjugation () {
+            Assert.IsTrue(a.Conjugate.Re == a.Re);
+            Assert.IsTrue(a.Conjugate.Im == -a.Im);
             Assert.IsTrue((a * a.Conjugate).Im == 0.0);
         }
 
-        /// <summary>
-        ///A test for op_UnaryNegation
-        ///</summary>
-        [TestMethod()]
-        public void ComplexNegationTest () {
+        [TestMethod]
+        public void ComplexNegation () {
             Assert.IsTrue((a + (-a)) == 0);
         }
 
-        /// <summary>
-        ///A test for op_Subtraction
-        ///</summary>
-        [TestMethod()]
-        public void ComplexSubtractionTest () {
+        [TestMethod]
+        public void ComplexSubtraction () {
             Assert.IsTrue((a - a) == 0);
             Assert.IsTrue((0 - a) == (-a));
             Assert.IsTrue((a - b) == -(b - a));
         }
 
 
-        [TestMethod()]
-        public void ComplexMultiplyTest () {
+        [TestMethod]
+        public void ComplexMultiplication () {
             Assert.IsTrue(a * b == b * a);
             Assert.IsTrue(a * (b + c) == (a * b + a * c));
         }
 
         [TestMethod]
-        public void ComplexExplicitCastTest () {
+        public void ComplexExplicitCast () {
             Complex a = new Complex(1.0, 0.0);
             double b = (double) a;
             Assert.IsTrue(b == a.Re);
@@ -127,37 +117,20 @@ namespace Test
 
         [TestMethod]
         [ExpectedException(typeof(InvalidCastException))]
-        public void ComplexExplicitCastFailureTest () {
+        public void ComplexExplicitCastFailure () {
             Complex a = new Complex(1.0,1.0);
             double b = (double) a;
         }
 
         [TestMethod]
-        public void ComplexEqualityTest () {
-            Complex a1 = a;
-            Assert.IsTrue(a == a1);
-            Assert.IsFalse(a == b);
-        }
-
-        public void ComplexInequalityTest () {
-            Complex a1 = a;
-            Assert.IsFalse(a != a1);
-            Assert.IsTrue(a != b);
-        }
-
-
-        /// <summary>
-        ///A test for op_Addition
-        ///</summary>
-        [TestMethod()]
-        public void ComplexAdditionTest () {
+        public void ComplexAddition () {
             Assert.IsTrue(a + b == b + a);
             Assert.IsTrue(a + (-b) == a - b);
         }
 
 
         [TestMethod()]
-        public void EqualsTest () {
+        public void ComplexEquals () {
             Assert.IsTrue(Complex.Equals(a, a));
             Assert.IsFalse(Complex.Equals(a, b));
         }

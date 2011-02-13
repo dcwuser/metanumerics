@@ -12,6 +12,11 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </remarks>
     public class DiscreteUniformDistribution : DiscreteDistribution {
 
+        /// <summary>
+        /// Instantiates a new discrete uniform distribution with the given endpoints.
+        /// </summary>
+        /// <param name="a">One end-point.</param>
+        /// <param name="b">The other end-point.</param>
         public DiscreteUniformDistribution (int a, int b) {
             if (b < a) Global.Swap(ref a, ref b);
             this.a = a;

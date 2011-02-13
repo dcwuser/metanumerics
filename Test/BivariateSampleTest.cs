@@ -106,7 +106,7 @@ namespace Test {
                 }
 
                 // do the regression
-                FitResult r = s.LogisticRegression();
+                FitResult r = s.LinearLogisticRegression();
 
                 // record best fit parameters
                 double a = r.Parameter(0).Value;

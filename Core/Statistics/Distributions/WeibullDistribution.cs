@@ -144,7 +144,12 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (n == 1) {
                 return (0.0);
             } else {
-                return (CentralMomentFromRawMoment(n));
+                // for large shape parameters, central moments involve strong calculations, so integrate to get them
+                if (shape < 2.0) {
+                    return (CentralMomentFromRawMoment(n));
+                } else {
+                    return(base.MomentAboutMean(n));
+                }
             }
         }
 

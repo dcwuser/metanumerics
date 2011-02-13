@@ -26,7 +26,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Beta_distribution"/>
     /// <seealso href="http://mathworld.wolfram.com/BetaDistribution.html"/>
-    public class BetaDistribution : Distribution {
+    public sealed class BetaDistribution : Distribution {
 
         /// <summary>
         /// Instantiates a new &#x3B2; distribution.

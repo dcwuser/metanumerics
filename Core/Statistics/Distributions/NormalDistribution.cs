@@ -192,8 +192,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <summary>
-        /// Fits the given sample to a normal distribution.
+        /// Computes the normal distribution that best fits the given sample.
         /// </summary>
+        /// <param name="sample">The sample to fit.</param>
         /// <returns>A <see cref="FitResult"/> containg the mu and sigma parameters of the normal distribution that best fits the sample data,
         /// and a Kolmogorov-Smirnov test of the quality of the fit.</returns>
         public static FitResult FitToSample (Sample sample) {

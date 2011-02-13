@@ -18,7 +18,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// and ANOVA tests (<see cref="Sample.OneWayAnovaTest(IList{Sample})"/>).</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/F_distribution"/>
-    public class FisherDistribution : Distribution {
+    public sealed class FisherDistribution : Distribution {
 
         private double nu1;
         private double nu2;

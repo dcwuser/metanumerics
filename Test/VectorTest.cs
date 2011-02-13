@@ -1,7 +1,9 @@
-﻿using Meta.Numerics.Matrices;
-
-
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using Meta.Numerics.Matrices;
+
 
 namespace Test {
 
@@ -93,7 +95,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ColumnVectorArithmeticTest () {
+        public void ColumnVectorArithmetic () {
 
             // addition and multiplication by a double
             ColumnVector CA = C + C;
@@ -105,19 +107,24 @@ namespace Test {
             ColumnVector C0 = 0.0 * C;
             Assert.IsTrue(CS == C0);
 
+            // negation and division by -1
+            ColumnVector CN = -C;
+            ColumnVector CD = C / (-1.0);
+            Assert.IsTrue(CN == CD);
+
             // multiply a column by a matrix
             ColumnVector MC = M * C;
             Assert.IsTrue(MC.Dimension == M.RowCount);
 
             // dot multiply
             RowVector CT = C.Transpose();
-            double n = CT * C;
-            Assert.IsTrue(n > 0);
+            double dot = CT * C;
+            Assert.IsTrue(dot > 0);
 
         }
 
         [TestMethod]
-        public void RowVectorArithmeticTest () {
+        public void RowVectorArithmetic () {
 
             // addition and multiplication by a double
             RowVector RA = R + R;
@@ -129,20 +136,24 @@ namespace Test {
             RowVector R0 = 0.0 * R;
             Assert.IsTrue(RS == R0);
 
+            // negation and multiplication by -1
+            RowVector RN = -R;
+            RowVector RD = R / (-1.0);
+            Assert.IsTrue(RN == RD);
+
             // multiply a column by a matrix
             RowVector RM = R * M;
             Assert.IsTrue(RM.Dimension == M.ColumnCount);
 
             // dot multiply
             ColumnVector RT = R.Transpose();
-            double n = R * RT;
-            Assert.IsTrue(n > 0);
-
+            double dot = R * RT;
+            Assert.IsTrue(dot > 0);
 
         }
 
         [TestMethod]
-        public void MixedVectorArithmeticTest () {
+        public void MixedVectorArithmetic () {
 
             // outer product
             RectangularMatrix CR = C * R;
@@ -153,5 +164,30 @@ namespace Test {
             double x = R * M * C;
 
         }
+
+        [TestMethod]
+        public void VectorAsCollection () {
+
+            ColumnVector v = new ColumnVector(new double[] { 1.0, 2.0, 3.0 });
+
+            IList<double> vl = v as IList<double>;
+            for (int i = 0; i < vl.Count; i++) {
+                Assert.IsTrue(vl[i] == v[i]);
+            }
+
+            ICollection<double> vc = v as ICollection<double>;
+            Assert.IsTrue(vc.Count == v.Dimension);
+            Assert.IsTrue(vc.Contains(1.0));
+
+            // IEnumerable
+            int index = 0;
+            foreach (double vi in v) {
+                Assert.IsTrue(vi == v[index]);
+                index++;
+            }
+
+
+        }
+
     }
 }

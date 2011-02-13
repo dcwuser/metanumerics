@@ -250,6 +250,7 @@ namespace Test
             Assert.IsTrue(result.Dimension == 3);
 
             // the result should be significant
+            Console.WriteLine("{0} {1}", result.GoodnessOfFit.Statistic, result.GoodnessOfFit.LeftProbability);
             Assert.IsTrue(result.GoodnessOfFit.LeftProbability > 0.95);
 
             // the parameters should match the model
@@ -297,30 +298,6 @@ namespace Test
                 Assert.IsTrue(true);
             }
 
-            // pick non-existant inputs
-            try {
-                sample.LinearRegression(new int[] { -1, 2 }, 3);
-                Assert.IsTrue(false);
-            } catch (ArgumentOutOfRangeException) {
-                Assert.IsTrue(true);
-            }
-
-            // pick repeated inputs
-            try {
-                sample.LinearRegression(new int[] { 1, 1 }, 0);
-                Assert.IsTrue(false);
-            } catch (InvalidOperationException) {
-                Assert.IsTrue(true);
-            }
-
-            // pick outputs as inputs
-            try {
-                sample.LinearRegression(new int[] { 1, 2 }, 2);
-                Assert.IsTrue(false);
-            } catch (InvalidOperationException) {
-                Assert.IsTrue(true);
-            }
-
         }
 
         public void OldMultivariateLinearRegressionTest () {
@@ -365,7 +342,7 @@ namespace Test
             Console.WriteLine(sample.Count);
 
             //sample.LinearRegression(0);
-            sample.LinearRegression(new int[] { 1, 2 }, 0);
+            sample.LinearRegression(0);
 
         }
 
@@ -398,6 +375,68 @@ namespace Test
                 }
             }
 
+
+        }
+
+        [TestMethod]
+        public void MultivariateLinearRegressionNullDistribution () {
+
+            int d = 4;
+
+            Random rng = new Random(1);
+            NormalDistribution n = new NormalDistribution();
+
+            Sample fs = new Sample();
+
+            for (int i = 0; i < 64; i++) {
+                MultivariateSample ms = new MultivariateSample(d);
+                for (int j = 0; j < 8; j++) {
+                    double[] x = new double[d];
+                    for (int k = 0; k < d; k++) {
+                        x[k] = n.GetRandomValue(rng);
+                    }
+                    ms.Add(x);
+                }
+                FitResult r = ms.LinearRegression(0);
+                fs.Add(r.GoodnessOfFit.Statistic);
+            }
+
+            // conduct a KS test to check that F follows the expected distribution
+            TestResult ks = fs.KolmogorovSmirnovTest(new FisherDistribution(3, 4));
+            Assert.IsTrue(ks.LeftProbability < 0.95);
+
+        }
+
+        [TestMethod]
+        public void MultivariateLinearRegressionAgreement () {
+
+            Random rng = new Random(1);
+
+            MultivariateSample SA = new MultivariateSample(2);
+            for (int i = 0; i < 10; i++) {
+                SA.Add(rng.NextDouble(), rng.NextDouble());
+            }
+            FitResult RA = SA.LinearRegression(0);
+            double[] PA = RA.Parameters();
+            SymmetricMatrix CA = RA.CovarianceMatrix();
+
+            MultivariateSample SB = SA.Columns(1, 0);
+            FitResult RB = SB.LinearRegression(1);
+            double[] PB = RB.Parameters();
+            SymmetricMatrix CB = RB.CovarianceMatrix();
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(PA[0], PB[1])); Assert.IsTrue(TestUtilities.IsNearlyEqual(PA[1], PB[0]));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 0], CB[1, 1])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 1], CB[1, 0])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[1, 1], CB[0, 0]));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(RA.GoodnessOfFit.Statistic, RB.GoodnessOfFit.Statistic));
+
+            BivariateSample SC = SA.TwoColumns(1, 0);
+            FitResult RC = SC.LinearRegression();
+            double[] PC = RC.Parameters();
+            SymmetricMatrix CC = RC.CovarianceMatrix();
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(PA, PC));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(CA, CC));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(RA.GoodnessOfFit.Statistic, RC.GoodnessOfFit.Statistic));
 
         }
 

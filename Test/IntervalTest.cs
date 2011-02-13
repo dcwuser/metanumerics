@@ -65,35 +65,36 @@ namespace Test {
         private double d = 5.1;
 
         [TestMethod]
-        public void IntervalZeroWidthTest () {
+        public void IntervalZeroWidth () {
             Interval aa = Interval.FromEndpoints(a, a);
-            Assert.AreEqual<double>(aa.Width, 0.0);
-            Assert.AreEqual<double>(aa.LeftEndpoint, aa.RightEndpoint);
-            Assert.AreEqual<double>(aa.Midpoint, a);
+            Assert.IsTrue(aa.Width == 0.0);
+            Assert.IsTrue(aa.LeftEndpoint == aa.RightEndpoint);
+            Assert.IsTrue(aa.Midpoint == a);
         }
 
         [TestMethod()]
-        public void IntervalWidthTest () {
+        public void IntervalWidth () {
             Interval ab = Interval.FromEndpoints(a, b);
-            Assert.AreEqual<double>(ab.Width, Math.Abs(a - b));
+            Assert.IsTrue(ab.Width == Math.Abs(a - b));
         }
 
-        /// <summary>
-        ///A test for To
-        ///</summary>
+        [TestMethod]
+        public void IntervalEndpoints () {
+            Interval ab = Interval.FromEndpoints(a, b);
+            Assert.IsTrue(ab.LeftEndpoint == a);
+            Assert.IsTrue(ab.RightEndpoint == b);
+        }
+
         [TestMethod()]
         public void ToTest () {
             Interval ab = Interval.FromEndpoints(a, b);
             Assert.AreEqual<double>(ab.RightEndpoint, b);
         }
 
-        /// <summary>
-        ///A test for Midpoint
-        ///</summary>
-        [TestMethod()]
-        public void MidpointTest () {
+        [TestMethod]
+        public void IntervalMidpoint () {
             Interval ab = Interval.FromEndpoints(a, b);
-            Assert.AreEqual(ab.Midpoint, (a + b) / 2.0);
+            Assert.IsTrue(ab.Midpoint == (a + b) / 2.0);
         }
 
         /// <summary>
@@ -105,11 +106,8 @@ namespace Test {
             Assert.AreEqual<double>(ab.LeftEndpoint, a);
         }
 
-        /// <summary>
-        ///A test for OpenContains
-        ///</summary>
-        [TestMethod()]
-        public void IntervalOpenContainsTest () {
+        [TestMethod]
+        public void IntervalOpenContains () {
             Interval ac = Interval.FromEndpoints(a, c);
             Assert.IsFalse(ac.OpenContains(a));
             Assert.IsFalse(ac.OpenContains(c));
@@ -117,37 +115,31 @@ namespace Test {
             Assert.IsFalse(ac.OpenContains(d));
         }
 
-        /// <summary>
-        ///A test for FromMidpointAndWidth
-        ///</summary>
-        [TestMethod()]
-        public void FromMidpointAndWidthTest () {
+        [TestMethod]
+        public void IntervalFromMidpointAndWidth () {
+            double m = 1.0;
+            double w = 4.0;
+            Interval ab = Interval.FromMidpointAndWidth(m, w);
+            Assert.IsTrue(ab.Width == w);
+            Assert.IsTrue(ab.Midpoint == m);
+            Assert.IsTrue(ab.LeftEndpoint == m - w / 2.0);
+            Assert.IsTrue(ab.RightEndpoint == m + w / 2.0);
         }
 
-        /// <summary>
-        ///A test for FromEndpoints
-        ///</summary>
-        [TestMethod()]
-        public void IntervalFromEndpointsTest () {
+        [TestMethod]
+        public void IntervalFromEndpoints () {
             Interval ab = Interval.FromEndpoints(a, b);
             Interval ba = Interval.FromEndpoints(b, a);
             Assert.IsTrue(ab.LeftEndpoint == ba.LeftEndpoint);
             Assert.IsTrue(ab.RightEndpoint == ba.RightEndpoint);
             Assert.IsTrue(ab.Width == ba.Width);
+            Assert.IsTrue(ab == ba);
+            Assert.IsFalse(ab != ba);
+            Assert.IsTrue(ab.GetHashCode() == ba.GetHashCode());
         }
 
-        /// <summary>
-        ///A test for FromEndpointAndWidth
-        ///</summary>
-        [TestMethod()]
-        public void FromEndpointAndWidthTest () {
-        }
-
-        /// <summary>
-        ///A test for ClosedContains
-        ///</summary>
-        [TestMethod()]
-        public void IntervalClosedContainsTest () {
+        [TestMethod]
+        public void IntervalClosedContains () {
             Interval ac = Interval.FromEndpoints(a, c);
             Assert.IsTrue(ac.ClosedContains(a));
             Assert.IsTrue(ac.ClosedContains(c));

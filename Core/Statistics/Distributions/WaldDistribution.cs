@@ -14,7 +14,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// he will do so after exactly t games?</para>
     /// </remakrs>
     /// <seealso href="http://en.wikipedia.org/wiki/Inverse_Gaussian_distribution"/>
-    public class WaldDistribution : Distribution {
+    public sealed class WaldDistribution : Distribution {
 
         /// <summary>
         /// Instantiates a new Wald distribution.

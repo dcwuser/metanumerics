@@ -5,7 +5,7 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents a collection of real eigenvalues and eigenvectors.
     /// </summary>
-    public class RealEigensystem {
+    public sealed class RealEigensystem {
 
         private int dimension;
         private double[] eigenvalues;

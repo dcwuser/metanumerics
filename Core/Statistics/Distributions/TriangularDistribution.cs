@@ -17,7 +17,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// likely value for some quantity is known or supposed.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Triangular_distribution" />
-    public class TriangularDistribution : Distribution {
+    public sealed class TriangularDistribution : Distribution {
 
         /*
         public TriangularDistribution (Interval range) {

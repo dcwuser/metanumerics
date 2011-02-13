@@ -9,7 +9,7 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents a tridiagonal matrix.
     /// </summary>
-    public sealed class TridiagonalMatrix : SquareMatrixBase {
+    public sealed class TridiagonalMatrix : AnySquareMatrix {
 
         /// <summary>
         /// Initializes a new tridiagonal matrix of the given dimension.
@@ -380,6 +380,12 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+        /// <summary>
+        /// Multiplies a tridiagonal matrix by a real constant.
+        /// </summary>
+        /// <param name="f">The constant.</param>
+        /// <param name="T">The matrix.</param>
+        /// <returns>The product matrix.</returns>
         public static TridiagonalMatrix operator * (double f, TridiagonalMatrix T) {
 
             if (T == null) throw new ArgumentNullException("T");

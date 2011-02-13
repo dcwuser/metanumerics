@@ -30,6 +30,8 @@ namespace Meta.Numerics.Statistics {
             if (rows < 1) throw new ArgumentOutOfRangeException("rows");
             if (columns < 1) throw new ArgumentOutOfRangeException("columns");
             data = new int[rows,columns];
+            rowNames = new NameCollection(rows);
+            columnNames = new NameCollection(columns);
         }
 
         /// <summary>
@@ -45,6 +47,8 @@ namespace Meta.Numerics.Statistics {
                     this.data[r, c] = data[r, c];
                 }
             }
+            rowNames = new NameCollection(data.GetLength(0));
+            columnNames = new NameCollection(data.GetLength(1));
         }
 
         /// <summary>
@@ -101,7 +105,18 @@ namespace Meta.Numerics.Statistics {
                 if (c < 0) throw new InvalidOperationException();
                 return (data[r, c]);
             }
+            set {
+                if (rName == null) throw new ArgumentNullException("rName");
+                if (cName == null) throw new ArgumentNullException("cName");
+                int r = rowNames.GetIndexForName(rName);
+                if (r < 0) throw new InvalidOperationException();
+                int c = columnNames.GetIndexForName(cName);
+                if (c < 0) throw new InvalidOperationException();
+                if (value < 0) throw new ArgumentOutOfRangeException();
+                data[r, c] = value;
+            }
         }
+
 
         /// <summary>
         /// Gets the number of rows in the table.
@@ -278,13 +293,15 @@ namespace Meta.Numerics.Statistics {
 
     public class NameCollection {
 
-        private List<string> names = new List<string>();
-        private Dictionary<string, int> nameToIndexMap = new Dictionary<string, int>();
-        private Dictionary<int, string> indexToNameMap = new Dictionary<int, string>();
+        internal NameCollection (int capacity) {
+            names = new string[capacity];
+        }
+
+        private string[] names;
 
         public int Count {
             get {
-                return (names.Count);
+                return (names.Length);
             }
         }
 
@@ -295,24 +312,14 @@ namespace Meta.Numerics.Statistics {
             }
             set {
                 if ((index < 0) || (index >= Count)) throw new ArgumentOutOfRangeException("index");
-                string currentValue = names[index];
-                if (currentValue != null) {
-                    nameToIndexMap.Remove(currentValue);
-                    indexToNameMap.Remove(index);
-                }
+                if ((value != null) && (GetIndexForName(value) >= 0)) throw new InvalidOperationException();
                 names[index] = value;
-                nameToIndexMap[value] = index;
-                indexToNameMap[index] = value;
             }
         }
 
         internal int GetIndexForName (string name) {
-            int index;
-            if (nameToIndexMap.TryGetValue(name, out index)) {
-                return (index);
-            } else {
-                return (-1);
-            }
+            int index = Array.IndexOf(names, name);
+            return (index);
         }
 
     }

@@ -16,7 +16,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </remarks>
     /// <seealso href="http://mathworld.wolfram.com/BinomialDistribution.html"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Binomial_distribution"/>
-    public class BinomialDistribution : DiscreteDistribution {
+    public sealed class BinomialDistribution : DiscreteDistribution {
 
         /// <summary>
         /// Initializes a new binomial distribution.

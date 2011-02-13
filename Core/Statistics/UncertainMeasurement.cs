@@ -353,7 +353,7 @@ namespace Meta.Numerics.Statistics {
 
 
     /// <summary>
-    /// Represents a set of <see cref="DataPoint{double}"/> measurements.
+    /// Represents a set of <see cref="UncertainMeasurement{Double}"/> measurements.
     /// </summary>
     public sealed class UncertainMeasurementSample : UncertainMeasurementSample<double> {
 
@@ -366,7 +366,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Initializes a new data set with the specified data.
         /// </summary>
-        /// <param name="data">An enumerator over the <see cref="DataPoint{double}" />s to place in the set.</param>
+        /// <param name="data">An enumerator over the <see cref="UncertainMeasurement{Double}" />s to place in the set.</param>
         public UncertainMeasurementSample (IEnumerable<UncertainMeasurement<double>> data)
             : base() {
             if (data == null) throw new ArgumentNullException("data");

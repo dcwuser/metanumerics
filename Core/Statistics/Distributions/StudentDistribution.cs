@@ -15,7 +15,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// sample means arround the population mean, for a normally distributed population.</para></remarks>
     /// <seealso cref="Sample.StudentTTest(Double)"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Student_t_distribution" />
-    public class StudentDistribution : Distribution {
+    public sealed class StudentDistribution : Distribution {
 
         private double nu;
 

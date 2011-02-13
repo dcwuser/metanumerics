@@ -242,6 +242,7 @@ namespace Meta.Numerics.Statistics {
 
             if (Count < 3) throw new InsufficientDataException();
 
+            /*
             // compute the correlated ranks
             double[] x1 = new double[Count];
             double[] x2 = new double[Count];
@@ -253,15 +254,19 @@ namespace Meta.Numerics.Statistics {
             for (int i = 0; i < Count; i++) x1[i] = i;
             Array.Sort(x2, x1);
             for (int i = 0; i < Count; i++) x2[i] = i;
+            */
 
             // analytic expressions for the mean and variance of ranks
             double M = (Count - 1) / 2.0;
             double V = (Count + 1) * (Count - 1) / 12.0;
 
             // compute the covariance of ranks
+            int[] rx = xData.GetRanks();
+            int[] ry = yData.GetRanks();
             double C = 0.0;
             for (int i = 0; i < Count; i++) {
-                C += (x1[i] - M) * (x2[i] - M);
+                C += (rx[i] - M) * (ry[i] - M);
+                //C += (x1[i] - M) * (x2[i] - M);
             }
             C = C / Count;
 
@@ -423,7 +428,7 @@ namespace Meta.Numerics.Statistics {
         /// <remarks>
         /// <para>Linear logistic regression is a way to fit binary outcome data to a linear model.</para>
         /// </remarks>
-        public FitResult LogisticRegression () {
+        public FitResult LinearLogisticRegression () {
 
             // check size of data set
             if (Count < 3) throw new InsufficientDataException();
@@ -431,6 +436,10 @@ namespace Meta.Numerics.Statistics {
             // check limits on Y
             double p = Y.Mean; double q = 1.0 - p;
             if ((p <= 0.0) || (q <= 0.0)) throw new InvalidOperationException();
+
+            // make an initial guess at the parameters
+            double b0 = Covariance / X.Variance / Y.Variance;
+            double a0 = Math.Log(p / q) - b0 * X.Mean;
 
             Func<double[],double> f = delegate (double[] a) {
 
@@ -451,10 +460,6 @@ namespace Meta.Numerics.Statistics {
                 }
                 return(L);
             };
-
-            // make an initial guess at the parameters
-            double b0 = Covariance / X.Variance / Y.Variance;
-            double a0 = Math.Log(p / q) - b0 * X.Mean;
 
             SpaceExtremum m = FunctionMath.FindMinimum(f, new double[2] { a0, b0 });
 

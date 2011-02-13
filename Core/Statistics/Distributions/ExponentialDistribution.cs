@@ -168,9 +168,20 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (ProbabilityDensity(x));
         }
 
+        /// <summary>
+        /// Computes the exponential distribution that best fits the given sample.
+        /// </summary>
+        /// <param name="sample">The sample to fit.</param>
+        /// <returns>The fit result.</returns>
+        /// <remarks>
+        /// <para>Since an exponential distribution is determined completely by its mean, this is a one-parameter fit.</para>
+        /// <para>The goodness-of-fit test is a <see cref="Sample.KolmogorovSmirnovTest"/> which is not adjusted to reflect
+        /// the fit. It is therefore unreliable for very small sample sizes.</para>
+        /// </remarks>
         public static FitResult FitToSample (Sample sample) {
 
             if (sample == null) throw new ArgumentNullException("sample");
+            if (sample.Count < 2) throw new InsufficientDataException();
 
             // none of the data is allowed to be negative
             foreach (double value in sample) {

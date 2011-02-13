@@ -65,7 +65,7 @@ namespace Test {
         #endregion
 
         private Distribution[] distributions = new Distribution[] {
-            new UniformDistribution(Interval.FromEndpoints(-2.0,1.0)),
+            new UniformDistribution(Interval.FromEndpoints(-2.0,1.0)), new UniformDistribution(Interval.FromEndpoints(7.0, 9.0)),
             new NormalDistribution(3.0,2.0),
             new ExponentialDistribution(2.0),
             new ChiSquaredDistribution(3),
@@ -604,6 +604,23 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void OutsideDistributionSupport () {
+            foreach (Distribution distribution in distributions) {
+                Interval support = distribution.Support;
+                if (support.LeftEndpoint > Double.NegativeInfinity) {
+                    Assert.IsTrue(distribution.ProbabilityDensity(support.LeftEndpoint - 1.0) == 0.0);
+                    Assert.IsTrue(distribution.LeftProbability(support.LeftEndpoint - 1.0) == 0.0);
+                    Assert.IsTrue(distribution.RightProbability(support.LeftEndpoint - 1.0) == 1.0);
+                }
+                if (support.RightEndpoint < Double.PositiveInfinity) {
+                    Assert.IsTrue(distribution.ProbabilityDensity(support.RightEndpoint + 1.0) == 0.0);
+                    Assert.IsTrue(distribution.LeftProbability(support.RightEndpoint + 1.0) == 1.0);
+                    Assert.IsTrue(distribution.RightProbability(support.RightEndpoint + 1.0) == 0.0);
+                }
+            }
+        }
+
         public static double ApproximateProbit (double P) {
 
             if (P < 0.1) {
@@ -787,34 +804,6 @@ namespace Test {
             }
 
 
-        }
-
-        [TestMethod]
-        public void TimeDeviates () {
-
-            Distribution n = new NormalDistribution();
-            Random rng = new Random(1);
-
-            Stopwatch s = Stopwatch.StartNew();
-            for (int i = 0; i < 1000000; i++) {
-                //double x = BoxMueller(rng);
-                double x = n.GetRandomValue(rng);
-            }
-            s.Stop();
-            Console.WriteLine(s.ElapsedMilliseconds);
-
-        }
-
-        public static double BoxMueller (Random rng) {
-
-            double v1, v2, r2;
-            do {
-                v1 = 2.0 * rng.NextDouble() - 1.0;
-                v2 = 2.0 * rng.NextDouble() - 1.0;
-                r2 = v1 * v1 + v2 * v2;
-            } while ((r2 >= 1.0) || (r2 == 0.0));
-            double x = v1 * Math.Sqrt(-2.0 * Math.Log(r2) / r2);
-            return (x);
         }
 
     }

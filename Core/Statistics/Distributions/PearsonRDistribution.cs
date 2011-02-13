@@ -7,7 +7,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents the distribution of Pearsons's r statistic.
     /// </summary>
-    public class PearsonRDistribution : Distribution {
+    public sealed class PearsonRDistribution : Distribution {
 
         private int n;
 

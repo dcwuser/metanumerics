@@ -141,7 +141,7 @@ namespace Test {
         }
         */
 
-        private static double MatrixNorm (RectangularMatrixBase M) {
+        private static double MatrixNorm (AnyRectangularMatrix M) {
             double n = 0.0;
             for (int r = 0; r < M.RowCount; r++) {
                 for (int c = 0; c < M.ColumnCount; c++) {
@@ -194,7 +194,7 @@ namespace Test {
             return (M);
         }
 
-        public static bool IsNearlyEqual (RectangularMatrixBase A, RectangularMatrixBase B, double e) {
+        public static bool IsNearlyEqual (AnyRectangularMatrix A, AnyRectangularMatrix B, double e) {
             double nA = MatrixNorm(A);
             double nB = MatrixNorm(B);
             for (int r = 0; r < A.RowCount; r++) {
@@ -205,11 +205,11 @@ namespace Test {
             return (true);
         }
 
-        public static bool IsNearlyEqual (RectangularMatrixBase A, RectangularMatrixBase B) {
+        public static bool IsNearlyEqual (AnyRectangularMatrix A, AnyRectangularMatrix B) {
             return (IsNearlyEqual(A, B, TargetPrecision));
         }
 
-        public static bool IsNearlyEigenpair (SquareMatrixBase A, ColumnVector v, double a) {
+        public static bool IsNearlyEigenpair (AnySquareMatrix A, ColumnVector v, double a) {
 
             // compute products
             ColumnVector Av = A * v;
@@ -229,7 +229,7 @@ namespace Test {
 
         }
 
-        public static bool IsNearlyEigenpair (SquareMatrixBase A, Complex[] v, Complex a) {
+        public static bool IsNearlyEigenpair (AnySquareMatrix A, Complex[] v, Complex a) {
 
             int d = A.Dimension;
 

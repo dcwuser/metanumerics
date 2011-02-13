@@ -25,7 +25,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </remarks>
     /// <seealso cref="ContingencyTable.PearsonChiSquaredTest"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Chi-square_distribution" />
-    public class ChiSquaredDistribution : Distribution {
+    public sealed class ChiSquaredDistribution : Distribution {
 
         // internally, we use our Gamma distribution machinery to do our heavy lifting
 

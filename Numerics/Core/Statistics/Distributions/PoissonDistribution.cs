@@ -7,7 +7,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represented a Poisson distribution.
     /// </summary>
-    public class PoissonDistribution : DiscreteDistribution {
+    public sealed class PoissonDistribution : DiscreteDistribution {
 
         /// <summary>
         /// Creates a new instance of a Poisson distribution.

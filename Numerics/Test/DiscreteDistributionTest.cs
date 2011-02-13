@@ -209,6 +209,23 @@ namespace Test {
         }
 
         [TestMethod]
+        public void OutsideDiscreteDistributionSupport () {
+            foreach (DiscreteDistribution distribution in distributions) {
+                DiscreteInterval support = distribution.Support;
+                if (support.LeftEndpoint > Int32.MinValue) {
+                    Assert.IsTrue(distribution.ProbabilityMass(support.LeftEndpoint - 1) == 0.0);
+                    Assert.IsTrue(distribution.LeftProbability(support.LeftEndpoint - 1) == 0.0);
+                    Assert.IsTrue(distribution.RightProbability(support.LeftEndpoint - 1) == 1.0);
+                }
+                if (support.RightEndpoint < Int32.MaxValue) {
+                    Assert.IsTrue(distribution.ProbabilityMass(support.RightEndpoint + 1) == 0.0);
+                    Assert.IsTrue(distribution.LeftProbability(support.RightEndpoint + 1) == 1.0);
+                    Assert.IsTrue(distribution.RightProbability(support.RightEndpoint + 1) == 0.0);
+                }
+            }
+        }
+
+        [TestMethod]
         public void PoissonBug () {
 
             PoissonDistribution pd = new PoissonDistribution(0.5);

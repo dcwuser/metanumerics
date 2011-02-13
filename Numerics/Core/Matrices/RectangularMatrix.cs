@@ -7,7 +7,7 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// A rectangular matrix of real numbers.
     /// </summary>
-    public sealed class RectangularMatrix : RectangularMatrixBase {
+    public sealed class RectangularMatrix : AnyRectangularMatrix {
 
         // initialization and storage
 

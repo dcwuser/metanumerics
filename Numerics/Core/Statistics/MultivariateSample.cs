@@ -32,11 +32,18 @@ namespace Meta.Numerics.Statistics {
             for (int j = 0; j < storage.Length; j++) {
                 storage[j] = new SampleStorage();
             }
+            isReadOnly = false;
+        }
+
+        internal MultivariateSample (SampleStorage[] columns, bool isReadOnly) {
+            this.storage = columns;
+            this.isReadOnly = isReadOnly;
         }
 
         private List<double[]> data = new List<double[]>();
 
         private SampleStorage[] storage;
+        private bool isReadOnly;
 
         private int IndexOf (IList<double> value) {
             for (int i = 0; i < Count; i++) {
@@ -77,6 +84,7 @@ namespace Meta.Numerics.Statistics {
 
             if (value == null) throw new ArgumentNullException("value");
             if (value.Count != Dimension) throw new DimensionMismatchException();
+            if (isReadOnly) throw new InvalidOperationException();
 
             for (int i = 0; i < Dimension; i++) {
                 storage[i].Add(value[i]);
@@ -102,6 +110,7 @@ namespace Meta.Numerics.Statistics {
 
             if (values == null) throw new ArgumentNullException("values");
             if (values.Count != Dimension) throw new DimensionMismatchException();
+            if (isReadOnly) throw new InvalidOperationException();
 
             int i = IndexOf(values);
             if (i < 0) {
@@ -139,8 +148,12 @@ namespace Meta.Numerics.Statistics {
         /// Removes all entries from the sample.
         /// </summary>
         public void Clear () {
-            for (int j = 0; j < Dimension; j++) {
-                storage[j].Clear();
+            if (isReadOnly) {
+                throw new InvalidOperationException();
+            } else {
+                for (int j = 0; j < Dimension; j++) {
+                    storage[j].Clear();
+                }
             }
         }
 
@@ -191,6 +204,48 @@ namespace Meta.Numerics.Statistics {
             if ((cx < 0) || (cx >= Dimension)) throw new ArgumentOutOfRangeException("cx");
             if ((cy < 0) || (cy >= Dimension)) throw new ArgumentOutOfRangeException("cy");
             return (new BivariateSample(storage[cx], storage[cy], true));
+        }
+
+        /// <summary>
+        /// Gets the indicated columns as a multivariate sample.
+        /// </summary>
+        /// <param name="columnIndexes">A list of column indexes.</param>
+        /// <returns>A read-only <see cref="MultivariateSample"/> consisting of the indicated columns.</returns>
+        /// <remarks>
+        /// <para>Use this method to perform multivariate analyses, such as regression and principal component analyis, using
+        /// only a subset of the variables in the original multivariate sample.</para>
+        /// <para>Note that this is a fast operation, which does not create independent copies of the columns.</para>
+        /// </remarks>
+        public MultivariateSample Columns (IList<int> columnIndexes) {
+            if (columnIndexes == null) throw new ArgumentNullException("columnIndexes");
+            SampleStorage[] columns = new SampleStorage[columnIndexes.Count];
+            for (int i = 0; i < columns.Length; i++) {
+                int ci = columnIndexes[i];
+                if ((ci < 0) || (ci >= Dimension)) throw new ArgumentOutOfRangeException();
+                columns[i] = storage[ci];
+            }
+            return new MultivariateSample(columns, true);
+        }
+
+        /// <summary>
+        /// Gets the indicated columns as a multivariate sample.
+        /// </summary>
+        /// <param name="columnIndexes">A list of columns indexes.</param>
+        /// <returns>A read-only <see cref="MultivariateSample"/> consisting of the indicated columns.</returns>
+        public MultivariateSample Columns (params int[] columnIndexes) {
+            return (Columns((IList<int>)columnIndexes));
+        }
+
+        /// <summary>
+        /// Copies the multivariate sample.
+        /// </summary>
+        /// <returns>An independent copy of the multivariate sample.</returns>
+        public MultivariateSample Copy () {
+            SampleStorage[] columnCopies = new SampleStorage[storage.Length];
+            for (int i = 0; i < columnCopies.Length; i++) {
+                columnCopies[i] = storage[i].Copy();
+            }
+            return (new MultivariateSample(columnCopies, false));
         }
 
         /// <summary>
@@ -253,6 +308,15 @@ namespace Meta.Numerics.Statistics {
 
             return (C);
 
+        }
+
+        /// <summary>
+        /// Computes the given sample central moment.
+        /// </summary>
+        /// <param name="powers">The power to which each component should be raised.</param>
+        /// <returns>The specified moment.</returns>
+        public double MomentAboutMean (params int[] powers) {
+            return (MomentAboutMean((IList<int>) powers));
         }
 
 #if PAST
@@ -474,35 +538,132 @@ namespace Meta.Numerics.Statistics {
         }
 #endif
 
+        private void CheckIndices (IList<int> indixes) {
+            for (int i = 0; i < indixes.Count; i++) {
+                if ((indixes[i] < 0) || (indixes[i] >= Dimension)) throw new ArgumentOutOfRangeException();
+                for (int j = 0; j < i; j++) {
+                    if (indixes[j] == indixes[i]) throw new InvalidOperationException();
+                }
+            }
+        }
+
+        // the internal linear regression routine, which assumes inputs are entirely valid
+
+        private FitResult LinearRegression_Internal (int outputIndex) {
+
+            // to do a fit, we need more data than parameters
+            if (Count < Dimension) throw new InsufficientDataException();
+
+            // construct the design matrix
+            SymmetricMatrix D = new SymmetricMatrix(Dimension);
+            for (int i = 0; i < Dimension; i++) {
+                for (int j = 0; j <= i; j++) {
+                    if (i == outputIndex) {
+                        if (j == outputIndex) {
+                            D[i, j] = Count;
+                        } else {
+                            D[i, j] = storage[j].Mean * Count;
+                        }
+                    } else {
+                        if (j == outputIndex) {
+                            D[i, j] = storage[i].Mean * Count;
+                        } else {
+                            double Dij = 0.0;
+                            for (int k = 0; k < Count; k++) {
+                                Dij += storage[i][k] * storage[j][k];
+                            }
+                            D[i, j] = Dij;
+                        }
+                    }
+                }
+            }
+
+            // construct the right hand side
+            ColumnVector b = new ColumnVector(Dimension);
+            for (int i = 0; i < Dimension; i++) {
+                if (i == outputIndex) {
+                    b[i] = storage[i].Mean * Count;
+                } else {
+                    double bi = 0.0;
+                    for (int k = 0; k < Count; k++) {
+                        bi += storage[outputIndex][k] * storage[i][k];
+                    }
+                    b[i] = bi;
+                }
+            }
+
+            // solve the system for the linear model parameters
+            CholeskyDecomposition CD = D.CholeskyDecomposition();
+            ColumnVector parameters = CD.Solve(b);
+
+            // find total sum of squares, with dof = # points - 1 (minus one for the variance-minimizing mean)
+            double totalSumOfSquares = storage[outputIndex].Variance * Count;
+
+            // find remaining unexplained sum of squares, with dof = # points - # parameters
+            double unexplainedSumOfSquares = 0.0;
+            for (int r = 0; r < Count; r++) {
+                double y = 0.0;
+                for (int c = 0; c < Dimension; c++) {
+                    if (c == outputIndex) {
+                        y += parameters[c];
+                    } else {
+                        y += parameters[c] * storage[c][r];
+                    }
+                }
+                unexplainedSumOfSquares += MoreMath.Pow2(y - storage[outputIndex][r]);
+            }
+            int unexplainedDegreesOfFreedom = Count - Dimension;
+            double unexplainedVariance = unexplainedSumOfSquares / unexplainedDegreesOfFreedom;
+
+            // find explained sum of squares, with dof = # parameters - 1
+            double explainedSumOfSquares = totalSumOfSquares - unexplainedSumOfSquares;
+            int explainedDegreesOfFreedom = Dimension - 1;
+            double explainedVariance = explainedSumOfSquares / explainedDegreesOfFreedom;
+
+            // compute F statistic from sums of squares
+            double F = explainedVariance / unexplainedVariance;
+            Distribution fDistribution = new FisherDistribution(explainedDegreesOfFreedom, unexplainedDegreesOfFreedom);
+
+            SymmetricMatrix covariance = unexplainedVariance * CD.Inverse();
+
+            return (new FitResult(parameters, covariance, new TestResult(F, fDistribution)));
+
+        }
+
+
         /// <summary>
-        /// Performs a linear regression analysis using the input variables to predict the output variable.
+        /// Performs a linear regression analysis.
         /// </summary>
-        /// <param name="inputIndexes">The indices of the input variables to use.</param>
-        /// <param name="outputIndex">The index of the variable to predict.</param>
+        /// <param name="outputIndex">The index of the variable to be predicted.</param>
         /// <returns>The result of the regression.</returns>
         /// <remarks>
-        /// <para>Linear regression finds the linear combination of the given input variables
-        /// that best predicts the given output variable.</para>
+        /// <para>In the returned fit result, the best-fit linear regression coefficients
+        /// are returned in the order of the columns, followed by the intercept parameter.
+        /// For example, if <paramref name="outputIndex"/>=2 in a 4-column multivariate
+        /// sample, the returned parameters are (&#x3B2;<sub>0</sub>, &#x3B2;<sub>1</sub>,
+        /// &#x3B2;<sub>3</sub>, &#x3B1;).</para>
+        /// <para>To limit the set of columns used for input variables, and for moreextensive
+        /// information on linear regression analysis, see <see cref="LinearRegression(IList&lt;int&gt;,int)" />.</para>
+        /// </remarks>
+        /// <returns>The result of the regression.</returns>
+        /// <remarks>
+        /// <para>Linear regression finds the linear combination of the other variables
+        /// that best predicts the output variable.</para>
         /// <img src="../images/LinearRegressionEquation.png" />
         /// <para>The noise term epsilon is assumed to be drawn from the same normal distribution
         /// for each data point. Note that the model makes no assumptions about the distribution
         /// of the x's; it merely asserts a particular underlying relationship between the x's and
         /// the y.</para>
         /// <h4>Inputs and Outputs</h4>
-        /// <para>The <paramref name="inputIndexes"/> array specifies the input variables
-        /// as particular columns of the multivariate sample. The <paramref name="outputIndex" />
-        /// specifies column containing the output variable to predict as a linear combination
-        /// of input variables. The <paramref name="outputIndex" /> may not appear in the
-        /// <paramref name="inputIndexes"/> array. By leaving other indices out of the
-        /// <paramref name="inputIndexes"/> array, you can perform a regression fit using a
-        /// reduced set of input variables. Of course, all indices must correspond to an
-        /// existing column and indices may not be repeated in the <paramref name="inputIndexes"/>
-        /// array.</para>
-        /// <para>The parameters of the returned fit result are the liklihood-maximizing values of
-        /// the coefficients, in the order specified by the <paramref name="inputIndexes"/> array,
-        /// followed by the intercept parameter. For example, given
-        /// <paramref name="inputIndexes"/> = (1, 4, 3), the fit result parameter list would
-        /// be (&#x3B2;<sub>1</sub>, &#x3B2;<sub>4</sub>, &#x3B2;<sub>3</sub>, &#x3B1;).</para>
+        /// <para>In the returned fit result, the indices of the parameters correspond to indices
+        /// of the coefficients. The intercept parameter has the index of the output variable.
+        /// Thus if a linear regression analaysis is done on a 4-dimensional multivariate sample
+        /// to predict variable number 2, the coefficients of variables 0, 1, and 3 will be
+        /// parameters 0, 1, and 3, of the returned fit result, and the intercept will be
+        /// parameter 2.</para>
+        /// <para>If you want to include fewer input variables in your regression, use the
+        /// <see cref="Columns"/> method to create a multivariate sample that includes only
+        /// the variables you want to use in your regression.</para>
         /// <para>The correlation matrix among fit parameters is also returned with the fit
         /// result, as is an F-test for the goodness of the fit. If the result of the F-test
         /// is not significant, no conclusions should be drawn from the regression
@@ -511,11 +672,11 @@ namespace Meta.Numerics.Statistics {
         /// <para>If a given coefficient is significantly positive, then a change in the value
         /// of the corresponding input variable, <i>holding all other input variables constant</i>,
         /// will tend to increase the output variable. Note that italicized condition means
-        /// that a linear regression coefficient measures something different than a linear
-        /// correlation coefficient.</para>
+        /// that, when there is more than one input variable, a linear regression coefficient measures
+        /// something different than a linear correlation coefficient.</para>
         /// <para>Suppose, for example, we take a large number of measurements
         /// of water temperature, plankton concentration, and fish density in a large number of
-        /// different locations. A correlation analysis might indicate that fish density is
+        /// different locations. A simple correlation analysis might indicate that fish density is
         /// positively correlated with both water temperature and plankton concentration. But
         /// a regression analysis might reveal that increasing water temperature actually
         /// decreases the fish density. This seeming paradoxical situation might occur
@@ -553,142 +714,32 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <seealso cref="LinearRegression(int)"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Linear_regression"/>
-        public FitResult LinearRegression (IList<int> inputIndexes, int outputIndex) {
-            // check inputs
-            if (inputIndexes == null) throw new ArgumentNullException("inputIndexes");
-            for (int i = 0; i < inputIndexes.Count; i++) {
-                if ((inputIndexes[i] < 0) || (inputIndexes[i] >= Dimension)) throw new ArgumentOutOfRangeException("inputIndexes");
-                if (inputIndexes[i] == outputIndex) throw new InvalidOperationException();
-                for (int j = 0; j < i; j++) {
-                    if (inputIndexes[j] == inputIndexes[i]) throw new InvalidOperationException();
-                }
-            }
-            if ((outputIndex < 0) || (outputIndex >= Dimension)) throw new ArgumentOutOfRangeException("outputIndex");
-            // do the fit
-            return (LinearRegression_Internal(inputIndexes, outputIndex));
-        }
-
-        // the internal linear regression routine, which assumes inputs are entirely valid
-
-        private FitResult LinearRegression_Internal (IList<int> inputIndices, int outputIndex) {
-
-            // to do a fit, we need more data than parameters
-            if (Count <= (inputIndices.Count + 1)) throw new InsufficientDataException();
-
-            // construct the design matrix
-            SymmetricMatrix D = new SymmetricMatrix(inputIndices.Count + 1);
-            for (int i = 0; i < inputIndices.Count; i++) {
-                for (int j = 0; j <= i; j++) {
-                    double Dij = 0.0;
-                    for (int k = 0; k < Count; k++) {
-                        Dij += storage[inputIndices[i]][k] * storage[inputIndices[j]][k];
-                        //Dij += data[k][inputIndices[i]] * data[k][inputIndices[j]];
-                    }
-                    D[i,j] = Dij;
-                }
-                D[inputIndices.Count, i] = storage[inputIndices[i]].Mean * Count;
-                //D[inputIndices.Count, i] = means[inputIndices[i]] * data.Count;
-            }
-            D[inputIndices.Count, inputIndices.Count] = Count;
-
-            // construct the right hand side
-            ColumnVector b = new ColumnVector(Dimension);
-            for (int i = 0; i < inputIndices.Count; i++) {
-                double bi = 0.0;
-                for (int k = 0; k < Count; k++) {
-                    bi += storage[outputIndex][k] * storage[inputIndices[i]][k];
-                    //bi += data[k][outputIndex] * data[k][inputIndices[i]];
-                }
-                b[i] = bi;
-            }
-            b[inputIndices.Count] = storage[outputIndex].Mean * Count;
-            //b[inputIndices.Count] = means[outputIndex] * data.Count;
-
-            // solve the system for the linear model parameters
-            CholeskyDecomposition CD = D.CholeskyDecomposition();
-            ColumnVector parameters = CD.Solve(b);
-
-            // determine total variance (variance before fit)
-            double m = storage[outputIndex].Mean;
-            double totalVarianceSum = 0.0;
-            for (int k = 0; k < Count; k++) {
-                double z = (storage[outputIndex][k] - m);
-                totalVarianceSum += z * z;
-            }
-            // associated dof = # points - 1 (the one is for the variance-minimizing mean)
-
-            // determine unexmplained remaining variance (variance after fit)
-            double unexplainedVarianceSum = 0.0;
-            for (int k = 0; k < Count; k++) {
-                double y = parameters[inputIndices.Count];
-                for (int i = 0; i < inputIndices.Count; i++) {
-                    y += parameters[i] * storage[inputIndices[i]][k];
-                }
-                double z = storage[outputIndex][k] - y;
-                unexplainedVarianceSum += z * z;
-            }
-            // associated dof = # points - # paramaters
-            int unexplainedVarianceDof = Count - (inputIndices.Count + 1);
-            // sigma-squared for the model error term is given by the unexplained variance
-            double unexplainedVariance = unexplainedVarianceSum / unexplainedVarianceDof;
-
-
-            // explained variance = total variance - unexplained variance
-            double explainedVarianceSum = totalVarianceSum - unexplainedVarianceSum;
-            // associated dof = (# points - 1) - (# points - # parameters) = # parameters - 1
-            int explainedVarianceDof = inputIndices.Count;
-            double explainedVariance = explainedVarianceSum / explainedVarianceDof;
-
-            // F statistic = explainedVariance / unexplainedVariance
-            double F = explainedVariance / unexplainedVariance;
-            Distribution FDistribution = new FisherDistribution(explainedVarianceDof, unexplainedVarianceDof);
-            TestResult test = new TestResult(F, FDistribution);
-
-            // covariance matrix is proportional to inverse of design matrix
-            SymmetricMatrix covariance = unexplainedVariance * CD.Inverse();
-
-            return (new FitResult(parameters, covariance, test));
-
-        }
-
-        /// <summary>
-        /// Performs a linear regression analysis.
-        /// </summary>
-        /// <param name="outputIndex">The index of the variable to be predicted.</param>
-        /// <returns>The result of the analysis.</returns>
-        /// <remarks>
-        /// <para>This method returns the parameter of a linear model which uses the values
-        /// of all other columns to predict the output column.</para>
-        /// <para>In the returned fit result, the best-fit linear regression coefficients
-        /// are returned in the order of the columns, followed by the intercept parameter.
-        /// For example, if <paramref name="outputIndex"/>=2 in a 4-column multivariate
-        /// sample, the returned parameters are (&#x3B2;<sub>0</sub>, &#x3B2;<sub>1</sub>,
-        /// &#x3B2;<sub>3</sub>, &#x3B1;).</para>
-        /// <para>To limit the set of columns used for input variables, and for moreextensive
-        /// information on linear regression analysis, see <see cref="LinearRegression(IList&lt;int&gt;,int)" />.</para>
-        /// </remarks>
-        /// <seealso cref="LinearRegression(IList&lt;int&gt;,int)" />
         public FitResult LinearRegression (int outputIndex) {
 
             if ((outputIndex < 0) || (outputIndex >= Dimension)) throw new ArgumentOutOfRangeException("outputIndex");
 
-            List<int> inputIndices = new List<int>(Dimension - 1);
-            for (int i = 0; i < Dimension; i++) {
-                if (i != outputIndex) inputIndices.Add(i);
-            }
-
-            return (LinearRegression_Internal(inputIndices, outputIndex));
+            return (LinearRegression_Internal(outputIndex));
 
         }
 
         // interface implementations
 
-        IEnumerator<double[]> IEnumerable<double[]>.GetEnumerator () {
-            return (data.GetEnumerator());
+        /// <summary>
+        /// Gets an enumerator over the sample entries.
+        /// </summary>
+        /// <returns>An iterator over the sample entries.</returns>
+        public IEnumerator<double[]> GetEnumerator () {
+            for (int r = 0; r < Count; r++) {
+                double[] entry = new double[Dimension];
+                for (int c = 0; c < Dimension; c++) {
+                    entry[c] = storage[c][r];
+                }
+                yield return(entry);
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator () {
-            return (data.GetEnumerator());
+            return(GetEnumerator());
         }
 
         void ICollection<double[]>.CopyTo (double[][] array, int start) {
@@ -700,8 +751,61 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public bool IsReadOnly {
             get {
-                return (false);
+                return (isReadOnly);
             }
+        }
+
+        /// <summary>
+        /// Performs a principal component analysis of the data.
+        /// </summary>
+        /// <returns>The result of the principal component analysis.</returns>
+        /// <seealso cref="PrincipalComponentAnalysis"/>
+        public PrincipalComponentAnalysis PrincipalComponentAnalysis () {
+
+            // construct a (Count X Dimension) matrix of mean-centered data
+            if (Count < Dimension) throw new InsufficientDataException();
+            double[] store = MatrixAlgorithms.AllocateStorage(Count, Dimension);
+            int i = 0;
+            for (int c = 0; c < Dimension; c++) {
+                double mu = storage[c].Mean;
+                for (int r = 0; r < Count; r++) {
+                    store[i] = storage[c][r] - mu;
+                    i++;
+                }
+            }
+
+            // bidiagonalize it
+            double[] a, b;
+            MatrixAlgorithms.Bidiagonalize(store, Count, Dimension, out a, out b);
+
+            // form the U and V matrices
+            double[] left = MatrixAlgorithms.AccumulateBidiagonalU(store, Count, Dimension);
+            double[] right = MatrixAlgorithms.AccumulateBidiagonalV(store, Count, Dimension);
+
+            // find the singular values of the bidiagonal matrix
+            MatrixAlgorithms.ExtractSingularValues(a, b, left, right, Count, Dimension);
+
+            // sort them
+            MatrixAlgorithms.SortValues(a, left, right, Count, Dimension);
+
+            PrincipalComponentAnalysis pca = new PrincipalComponentAnalysis(left, a, right, Count, Dimension);
+            //return (pca);
+
+            
+            RectangularMatrix X = new RectangularMatrix(Count, Dimension);
+            for (int r = 0; r < Count; r++) {
+                for (int c = 0; c < Dimension; c++) {
+                    X[r, c] = storage[c][r] - storage[c].Mean;
+                }
+            }
+            SingularValueDecomposition svd = X.SingularValueDecomposition();
+            for (int j = 0; i < svd.Dimension; i++) {
+                Console.WriteLine("{0} : {1}", j, svd.SingularValue(j));
+            }
+
+            return (pca);
+            
+
         }
 
     }

@@ -57,7 +57,7 @@ namespace Test {
         #endregion
 
 
-        public static void PrintMatrix (RectangularMatrixBase M) {
+        public static void PrintMatrix (AnyRectangularMatrix M) {
             for (int r = 0; r < M.RowCount; r++) {
                 for (int c = 0; c < M.ColumnCount; c++) {
                     Console.Write("{0,12:g8} ", M[r, c]);
@@ -198,10 +198,7 @@ namespace Test {
             for (int d = 1; d <= 100; d=d+11) {
                 SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
                 SquareMatrix M = CreateSquareRandomMatrix(d, 1);
-                DateTime start = DateTime.Now;
                 SquareMatrix MI = M.Inverse();
-                DateTime finish = DateTime.Now;
-                Console.WriteLine("d={0} t={1} ms", d, (finish - start).Milliseconds);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(M * MI, I));
             }
         }
@@ -463,7 +460,6 @@ namespace Test {
             Console.WriteLine();
         }
 
-        [TestMethod]
         public void TimedEigenvalues () {
 
             int n = 200;
@@ -536,247 +532,6 @@ namespace Test {
 
         }
 
-
-        /*
-        [TestMethod]
-        public void TimeMatrixMultiply () {
-
-            SquareMatrix M = new SquareMatrix(3);
-            M[0, 0] = -2;
-            M[0, 1] = -6;
-            M[0, 2] = 4;
-            M[1, 0] = -6;
-            M[1, 1] = -21;
-            M[1, 2] = 15;
-            M[2, 0] = 4;
-            M[2, 1] = 15;
-            M[2, 2] = -13;
-
-            SquareMatrix M1 = CreateSquareRandomMatrix(316, 1);
-            SquareMatrix M2 = CreateSquareRandomMatrix(1000, 2);
-
-            M = M2;
-
-            //M = CreateVandermondeMatrix(8);
-
-            Stopwatch s = Stopwatch.StartNew();
-            //SquareMatrix M12 = M1 * M2;
-            //SquareMatrix MI = M.Inverse();
-            SquareLUDecomposition LU = M.LUDecomposition();
-            s.Stop();
-            Console.WriteLine(s.ElapsedMilliseconds);
-
-            //double[] b = { 1, 2, 3 };
-            //IList<double> x = LU.Solve2(b);
-            //Console.WriteLine("{0} {1} {2}", x[0], x[1], x[2]);
-
-            Stopwatch s1 = Stopwatch.StartNew();
-            SquareMatrix MI = LU.Inverse();
-            s1.Stop();
-            Console.WriteLine(s1.ElapsedMilliseconds);
-
-            Stopwatch s2 = Stopwatch.StartNew();
-            SquareMatrix MI2 = M.Inverse();
-            s2.Stop();
-            Console.WriteLine(s2.ElapsedMilliseconds);
-
-
-            //PrintMatrix(M);
-            //PrintMatrix(MI);
-            //PrintMatrix(M * MI);
-            //PrintMatrix(MI * M);
-            SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(M.Dimension);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(M * MI, I));
-
-        }
-        */
-
-        /*
-        [TestMethod]
-        public void T1 () {
-
-            SquareMatrix A = new SquareMatrix(3);
-            A[0, 0] = 0;
-            A[1, 0] = 1;
-            A[2, 0] = 2;
-            A[0, 1] = 1;
-            A[1, 1] = 0;
-            A[2, 1] = 2;
-            A[0, 2] = 2;
-            A[1, 2] = 1;
-            A[2, 2] = 0;
-
-            A = CreateSquareRandomMatrix(4);
-
-            PrintMatrix(A);
-
-            SquareLUDecomposition LU = A.LUDecomposition();
-
-            Console.WriteLine("dim = {0}", LU.Dimension);
-            Console.WriteLine("det = {0}", LU.Determinant());
-
-            Console.WriteLine("P=");
-            SquareMatrix P = LU.PMatrix();
-            PrintMatrix(P);
-
-            Console.WriteLine("L =");
-            SquareMatrix L = LU.LMatrix();
-            PrintMatrix(L);
-
-            Console.WriteLine("U =");
-            SquareMatrix U = LU.UMatrix();
-            PrintMatrix(U);
-
-            Console.WriteLine("PA = ");
-            PrintMatrix(P * A);
-
-            Console.WriteLine("LU = ");
-            PrintMatrix(L * U);
-
-            Console.WriteLine("inv(A) = ");
-            SquareMatrix AI = LU.Inverse();
-            PrintMatrix(AI);
-
-            Console.WriteLine("inv(A) A = ");
-            PrintMatrix(AI * A);
-
-            Console.WriteLine("solve");
-            double[] x = new double[LU.Dimension];
-            for (int i = 0; i < x.Length; i++) {
-                x[i] = i;
-            }
-            ColumnVector y = LU.Solve(x);
-            PrintMatrix(A * y);
-
-        }
-        */
-
-        /*
-        [TestMethod]
-        public void TestAvova () {
-
-            int nRows = 2;
-            int nColumns = 3;
-
-            double[,][] samples = new double[nRows,nColumns][];
-            samples[0, 0] = new double[] { 1, 2, 3 };
-            samples[0, 1] = new double[] { 2, 3 };
-            samples[0, 2] = new double[] { 1, 2, 3, 4 };
-            samples[1, 0] = new double[] { 2, 4 };
-            samples[1, 1] = new double[] { 3, 4, 5 };
-            samples[1, 2] = new double[] { 1, 2, 3 };
-
-            int n0 = 0;
-            double m0 = 0.0;
-            SampleSummary[,] summaries = new SampleSummary[nRows, nColumns];
-            for (int r = 0; r < nRows; r++) {
-                for (int c = 0; c < nColumns; c++) {
-
-                    int n = samples[r,c].Length;
-                    n0 += n;
-
-                    double m = 0.0;
-                    for (int i = 0; i < n; i++) {
-                        m += samples[r, c][i];
-                    }
-                    m0 += m;
-                    m /= n;
-
-                    double v = 0.0;
-                    for (int i = 0; i < n; i++) {
-                        double z = samples[r, c][i] - m;
-                        v += z * z;
-                    }
-                    v /= n;
-
-                    summaries[r, c] = new SampleSummary(n, m, v);
-
-                    Console.WriteLine("[{0},{1}] n={2} m={3} v={4}", r, c, n, m, v);
-
-                }
-            }
-
-            m0 /= n0;
-            SampleSummary totalSummary = new SampleSummary(n0, m0, 0.0);
-            Console.WriteLine("total n={0} m={1} v={2}", n0, m0, 0.0);
-
-            SampleSummary[] rowSummaries = new SampleSummary[nRows];
-            for (int r = 0; r < nRows; r++) {
-
-                int n = 0;
-                double m = 0.0;
-
-                for (int c = 0; c < nColumns; c++) {
-                    n += summaries[r, c].Count;
-                    m += summaries[r, c].Count * summaries[r, c].SampleMean;
-                }
-                m /= n;
-
-                rowSummaries[r] = new SampleSummary(n, m, 0.0);
-
-                Console.WriteLine("row {0} n={1} m={2} v={3}", r, n, m, 0.0);
-            }
-
-            SampleSummary[] columnSummaries = new SampleSummary[nColumns];
-            for (int c = 0; c < nColumns; c++) {
-
-                int n = 0;
-                double m = 0.0;
-
-                for (int r = 0; r < nRows; r++) {
-                    n += summaries[r, c].Count;
-                    m += summaries[r, c].Count * summaries[r, c].SampleMean;
-                }
-                m /= n;
-
-                columnSummaries[c] = new SampleSummary(n, m, 0.0);
-
-                Console.WriteLine("column {0} n={1} m={2} v={3}", c, n, m, 0.0);
-            }
-
-            double SS_Within = 0.0;
-            double SS_Total = 0.0;
-            for (int r = 0; r < nRows; r++) {
-                for (int c = 0; c < nColumns; c++) {
-                    for (int i = 0; i < samples[r, c].Length; i++) {
-                        double z = samples[r, c][i] - summaries[r, c].SampleMean;
-                        SS_Within += z * z;
-                        double x = samples[r, c][i] - totalSummary.SampleMean;
-                        SS_Total += x * x;
-                    }
-                }
-            }
-            Console.WriteLine("SS_Total = {0}", SS_Total);
-            Console.WriteLine("SS_Within = {0}", SS_Within);
-
-            double SS_Rows = 0.0;
-            for (int r = 0; r < nRows; r++) {
-                double z = rowSummaries[r].SampleMean - totalSummary.SampleMean;
-                SS_Rows += rowSummaries[r].Count * z * z;
-            }
-            Console.WriteLine("SS_Rows = {0}", SS_Rows);
-
-            double SS_Columns = 0.0;
-            for (int c = 0; c < nColumns; c++) {
-                double z = columnSummaries[c].SampleMean - totalSummary.SampleMean;
-                SS_Columns += columnSummaries[c].Count * z * z;
-            }
-            Console.WriteLine("SS_Columns = {0}", SS_Columns);
-
-            double SS_Interaction = 0.0;
-            for (int r = 0; r < nRows; r++) {
-                for (int c = 0; c < nColumns; c++) {
-                    double z = summaries[r, c].SampleMean - rowSummaries[r].SampleMean - columnSummaries[c].SampleMean + totalSummary.SampleMean;
-                    SS_Interaction += summaries[r, c].Count * z * z;
-                }
-            }
-            Console.WriteLine("SS_Interaction = {0}", SS_Interaction);
-
-            Console.WriteLine("SS_Within + S_Rows + SS_Columns + SS_Interaction = {0}", SS_Within + SS_Rows + SS_Columns + SS_Interaction);
-        }
-        */
     }
-
-
 
 }

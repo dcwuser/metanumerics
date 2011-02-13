@@ -84,6 +84,7 @@
     <Compile Include="Functions\AdvancedMath_Polylog.cs" />
     <Compile Include="Functions\FunctionMath_Differentiate.cs" />
     <Compile Include="Matrices\SingularValueDecomposition.cs" />
+    <Compile Include="Matrices\SparseSquareMatrix.cs" />
     <Compile Include="Spin\Spin.cs" />
     <Compile Include="Functions\AdvancedMath_Harmonic.cs" />
     <Compile Include="Functions\AdvancedMath_Lambert.cs" />
@@ -110,12 +111,12 @@
     <Compile Include="Matrices\QRDecomposition.cs" />
     <Compile Include="Matrices\RealEigensystem.cs" />
     <Compile Include="Matrices\RectangularMatrix.cs" />
-    <Compile Include="Matrices\RectangularMatrixBase.cs" />
+    <Compile Include="Matrices\AnyRectangularMatrixBase.cs" />
     <Compile Include="Matrices\SquareLUDecomposition.cs" />
     <Compile Include="Matrices\Matrix.cs" />
-    <Compile Include="Matrices\MatrixBase.cs" />
+    <Compile Include="Matrices\AnyMatrix.cs" />
     <Compile Include="Matrices\SquareMatrix.cs" />
-    <Compile Include="Matrices\SquareMatrixBase.cs" />
+    <Compile Include="Matrices\AnySquareMatrix.cs" />
     <Compile Include="Matrices\SquareQRDecomposition.cs" />
     <Compile Include="Matrices\SymmetricMatrix.cs" />
     <Compile Include="Matrices\TridiagonalMatrix.cs" />
@@ -128,6 +129,8 @@
     <Compile Include="Statistics\BinaryContingencyTable.cs" />
     <Compile Include="Statistics\BivariateSample.cs" />
     <Compile Include="Statistics\ContingencyTable.cs" />
+    <Compile Include="Statistics\DiscreteHistogram.cs" />
+    <Compile Include="Statistics\PrincipalComponentAnalysis.cs" />
     <Compile Include="Statistics\UncertainMeasurement.cs" />
     <Compile Include="Statistics\Distributions\BernoulliDistribution.cs" />
     <Compile Include="Statistics\Distributions\BetaDistribution.cs" />
@@ -136,7 +139,7 @@
     <Compile Include="Statistics\Distributions\ChiSquaredDistribution.cs" />
     <Compile Include="Statistics\Distributions\DiscreteDistribution.cs" />
     <Compile Include="Statistics\Distributions\DiscreteUniformDistribution.cs" />
-    <Compile Include="Statistics\Distributions\Distributions.cs" />
+    <Compile Include="Statistics\Distributions\Distribution.cs" />
     <Compile Include="Statistics\Distributions\ExponentialDistribution.cs" />
     <Compile Include="Statistics\Distributions\FisherDistribution.cs" />
     <Compile Include="Statistics\Distributions\GammaDistribution.cs" />

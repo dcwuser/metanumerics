@@ -9,7 +9,7 @@ namespace Meta.Numerics.Matrices {
     /// </summary>
     /// <seealso cref="RowVector"/>
     /// <seealso cref="ColumnVector"/>
-    public abstract class VectorBase : RectangularMatrixBase, IEnumerable, IEnumerable<double>, ICollection<double>, IList<double> {
+    public abstract class VectorBase : AnyRectangularMatrix, IEnumerable, IEnumerable<double>, ICollection<double>, IList<double> {
 
         internal VectorBase (double[] store, int dimension) {
             if (dimension <= 0) throw new ArgumentOutOfRangeException("dimension");
@@ -18,6 +18,13 @@ namespace Meta.Numerics.Matrices {
         }
 
         internal VectorBase (int dimension) : this(new double[dimension], dimension) {
+        }
+
+        internal VectorBase (IList<double> list) {
+            if (list == null) throw new ArgumentNullException("list");
+            dimension = list.Count;
+            store = new double[dimension];
+            list.CopyTo(store, 0);
         }
 
         // this storage is internal so that other routines can access it for fast operations (e.g. multiplication)
@@ -178,12 +185,17 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Initializes a new column vector from the given array.
+        /// Initializes a new column vector from the given component list.
         /// </summary>
-        /// <param name="source">The array of vector components.</param>
-        public ColumnVector (double[] source) : base(source.Length) {
-            if (source == null) throw new ArgumentNullException("source");
-            Blas1.dCopy(source, 0, 1, store, 0, 1, dimension);
+        /// <param name="list">A list of vector components.</param>
+        public ColumnVector (IList<double> list) : base(list) {
+        }
+
+        /// <summary>
+        /// Initializes a new column vector with the given components.
+        /// </summary>
+        /// <param name="list">A list of vector components.</param>
+        public ColumnVector (params double[] list) : base(list) {
         }
 
         internal ColumnVector (double[] store, int dimension) : base(store, dimension) {
@@ -322,9 +334,18 @@ namespace Meta.Numerics.Matrices {
         public RowVector (int dimension) : base(dimension) {
         }
 
-        public RowVector (double[] source) : base(source.Length) {
-            if (source == null) throw new ArgumentNullException("source");
-            Blas1.dCopy(source, 0, 1, store, 0, 1, dimension);
+        /// <summary>
+        /// Initializes a new row vector from the given component list.
+        /// </summary>
+        /// <param name="list">A list of vector components.</param>
+        public RowVector (IList<double> list) : base(list) {
+        }
+
+        /// <summary>
+        /// Initializes a new row vector with the given components.
+        /// </summary>
+        /// <param name="list">A list of vector components.</param>
+        public RowVector (params double[] list) : base(list) {
         }
 
         internal RowVector (double[] store, int dim) : base(store, dim) {
@@ -433,8 +454,15 @@ namespace Meta.Numerics.Matrices {
             return (-1.0 * v);
         }
 
-        public static RowVector operator * (RowVector v, RectangularMatrixBase A) {
-
+        /// <summary>
+        /// Multiplies any real, rectangular matrix by a row vector.
+        /// </summary>
+        /// <param name="v">The row vector.</param>
+        /// <param name="A">The matrix.</param>
+        /// <returns>The product row vector.</returns>
+        public static RowVector operator * (RowVector v, AnyRectangularMatrix A) {
+            if (v == null) throw new ArgumentNullException("v");
+            if (A == null) throw new ArgumentNullException("A");
             if (v.Dimension != A.RowCount) throw new DimensionMismatchException();
             RowVector vA = new RowVector(A.ColumnCount);
 

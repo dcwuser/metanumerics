@@ -19,7 +19,7 @@ namespace Meta.Numerics.Matrices {
     /// square matrix.</para>
     /// </remarks>
     /// <seealso cref="SquareMatrix"/>
-    public class SquareLUDecomposition {
+    public sealed class SquareLUDecomposition {
 
         internal SquareLUDecomposition (double[] luStore, int[] permutation, int parity, int dimension) {
             this.luStore = luStore;

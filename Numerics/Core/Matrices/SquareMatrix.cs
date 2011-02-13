@@ -10,7 +10,7 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents a square matrix.
     /// </summary>
-    public sealed class SquareMatrix : SquareMatrixBase {
+    public sealed class SquareMatrix : AnySquareMatrix {
 
         private int dimension;
         private double[] store;

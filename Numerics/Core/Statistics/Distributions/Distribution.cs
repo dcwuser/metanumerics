@@ -31,7 +31,15 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <remarks>
         /// <para>The left probability function is commonly called the cumulative distribution function (CDF).</para>
         /// </remarks>
-		public abstract double LeftProbability (double x);
+        public virtual double LeftProbability (double x) {
+            if (x <= Support.LeftEndpoint) {
+                return (0.0);
+            } else if (x >= Support.RightEndpoint) {
+                return (1.0);
+            } else {
+                return (FunctionMath.Integrate(ProbabilityDensity, Interval.FromEndpoints(Support.LeftEndpoint, x)));
+            }
+        }
 
         /// <summary>
         /// Return the cumulative probability to the right of (above) the given point.
@@ -50,7 +58,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// Returns the point at which the cumulative distribution function attains a given value. 
         /// </summary>
         /// <param name="P">The left cumulative probability P, which must lie between 0 and 1.</param>
-        /// <returns>The point x1 at which the left cumulative probability attains the value P.</returns>
+        /// <returns>The value x at which <see cref="LeftProbability"/> equals P.</returns>
         /// <remarks>
         /// <para>The inverse left probability is commonly called the quantile function. Given a quantile,
         /// it tells which variable value is the lower border of that quantile.</para>
@@ -67,8 +75,18 @@ namespace Meta.Numerics.Statistics.Distributions {
             // since we have the PDF = CDF', change to a method using Newton's method
 		}
 
+        /// <summary>
+        /// Returns the point at which the right probability function attains the given value.
+        /// </summary>
+        /// <param name="Q">The right cumulative probability, which must lie between 0 and 1.</param>
+        /// <returns>The value x for which <see cref="RightProbability"/> equals Q.</returns>
         public virtual double InverseRightProbability (double Q) {
-            throw new NotImplementedException();
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            Func<double, double> f = delegate(double x) {
+                return (RightProbability(x) - Q);
+            };
+            double y = FunctionMath.FindZero(f, Mean);
+            return (y);
         }
 
         /// <summary>

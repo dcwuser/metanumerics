@@ -18,7 +18,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <seealso cref="BinomialDistribution"/>
     /// <seealso href="http://mathworld.wolfram.com/BinomialDistribution.html"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Bernoulli_distribution"/>
-    public class BernoulliDistribution : DiscreteDistribution {
+    public sealed class BernoulliDistribution : DiscreteDistribution {
 
         /// <summary>
         /// Initializes a new Bernoulli distribution.

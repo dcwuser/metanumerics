@@ -365,11 +365,14 @@ namespace Meta.Numerics.Functions {
 
 		// Compute GammaQ(a,x) for x > a+1
 		private static double GammaQ_ContinuedFraction (double a, double x) {
+            if (Double.IsPositiveInfinity(x)) return (0.0);
 			double aa = 1.0;			// a_1
 			double bb = x - a + 1.0;	// b_1
-			double D = 1.0/bb;		// D_1 = b_0/b_1
-			double Df = aa/bb;		// Df_1 = f_1 - f_0
+			double D = 1.0/bb;		    // D_1 = b_0/b_1
+			double Df = aa/bb;		    // Df_1 = f_1 - f_0
 			double f = 0.0 + Df;		// f_1 = f_0 + Df_1 = b_0 + Df_1
+            // entering this loop with bb infinite (as caused e.g. by infinite x) will cause a
+            // NonconvergenceException instead of the expected convergence to zero
 			for (int k=1; k<Global.SeriesMax; k++) {
 				double f_old = f;
 				aa = -k * (k-a);

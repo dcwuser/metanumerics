@@ -7,9 +7,17 @@ namespace Meta.Numerics.Matrices {
     /// Stores the singular value decomposition of a matrix.
     /// </summary>
     /// <remarks>
-    /// <para>The singular value decomposition.</para>
+    /// <para>The singular value decomposition of a matrix represents it as a product of a left orthogonal matrix, a diagonal
+    /// matrix, and a right orthogonal matrix:</para>
+    /// <img src="../images/SVDEquation.png" />
+    /// In more graphical form:
+    /// <img src="../images/SVDForm.png" />
+    /// The elements of the diagonal matrix are called the singular values of the original matrix.</para>
+    /// <para>If the orginal matrix is viewed as a linear transform, the rows of the right orthogonal matrix matrix form an
+    /// orthonormal basis for the domain of the transform, while the columns of the left orthogonal matrix form an orthonormal
+    /// basis for the range of the transform.</para>
     /// </remarks>
-    public class SingularValueDecomposition {
+    public sealed class SingularValueDecomposition {
 
         internal SingularValueDecomposition (double[] utStore, double[] wStore, double[] vStore, int rows, int cols) {
             this.utStore = utStore;

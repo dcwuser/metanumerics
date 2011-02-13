@@ -13,10 +13,12 @@ namespace Meta.Numerics.Matrices {
     /// <para>This is an abstract class that describes any real matrix. If you wish to create a concrete
     /// instance of a real, non-square matrix, use the <see cref="RectangularMatrix"/> class. If, on the
     /// other hand, you wish to write a function that can operate on any real matrix, it's probably a good
-    /// idea to accept a <see cref="RectangularMatrixBase"/>, so that any concrete implementation
+    /// idea to accept a <see cref="AnyRectangularMatrix"/>, so that any concrete implementation
     /// can also be passed into your function.</para>
     /// </remarks>
-    public abstract class RectangularMatrixBase {
+    public abstract class AnyRectangularMatrix : AnyMatrix<double> {
+
+#if TEMP
 
         /// <summary>
         /// Gets or sets the value of a matrix entry.
@@ -37,6 +39,8 @@ namespace Meta.Numerics.Matrices {
         /// Gets the number of matrix columns.
         /// </summary>
         public abstract int ColumnCount { get; }
+
+#endif
 
         // we an implement some operations, but many will be slow because they do not have access to the underlying storage
         // we will override them with faster implementations in implementing classes, but these ensure that the operations
@@ -123,7 +127,7 @@ namespace Meta.Numerics.Matrices {
         public virtual RowVector Row (int r) {
             if ((r < 0) || (r >= RowCount)) throw new ArgumentOutOfRangeException("r");
             RowVector v = new RowVector(ColumnCount);
-            for (int c = 0; r < ColumnCount; c++) {
+            for (int c = 0; c < ColumnCount; c++) {
                 v[c] = this[r, c];
             }
             return (v);
@@ -138,7 +142,7 @@ namespace Meta.Numerics.Matrices {
         /// <remarks>
         /// <para>Matrix addition is an O(N<sup>2</sup>) process.</para>
         /// </remarks>
-        public static RectangularMatrix operator + (RectangularMatrixBase A, RectangularMatrixBase B) {
+        public static RectangularMatrix operator + (AnyRectangularMatrix A, AnyRectangularMatrix B) {
             if (A == null) throw new ArgumentNullException("A");
             if (B == null) throw new ArgumentNullException("B");
             if (A.RowCount != B.RowCount) throw new DimensionMismatchException();
@@ -161,7 +165,7 @@ namespace Meta.Numerics.Matrices {
         /// <remarks>
         /// <para>Matrix subtraction is an O(N<sup>2</sup>) process.</para>
         /// </remarks>
-        public static RectangularMatrix operator - (RectangularMatrixBase A, RectangularMatrixBase B) {
+        public static RectangularMatrix operator - (AnyRectangularMatrix A, AnyRectangularMatrix B) {
             if (A == null) throw new ArgumentNullException("A");
             if (B == null) throw new ArgumentNullException("B");
             if (A.RowCount != B.RowCount) throw new DimensionMismatchException();
@@ -186,7 +190,7 @@ namespace Meta.Numerics.Matrices {
         /// matrix.</para>
         /// <para>Matrix multiplication is an O(N<sup>3</sup>) process.</para>
         /// </remarks>
-        public static RectangularMatrix operator * (RectangularMatrixBase A, RectangularMatrixBase B) {
+        public static RectangularMatrix operator * (AnyRectangularMatrix A, AnyRectangularMatrix B) {
             if (A == null) throw new ArgumentNullException("A");
             if (B == null) throw new ArgumentNullException("B");
             if (A.ColumnCount != B.RowCount) throw new DimensionMismatchException();
@@ -231,7 +235,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="alpha">The constant.</param>
         /// <param name="A">The matrix.</param>
         /// <returns>The product matrix.</returns>
-        public static RectangularMatrix operator * (double alpha, RectangularMatrixBase A) {
+        public static RectangularMatrix operator * (double alpha, AnyRectangularMatrix A) {
             if (A == null) throw new ArgumentNullException("A");
             RectangularMatrix B = new RectangularMatrix(A.RowCount, A.ColumnCount);
             for (int i = 0; i < A.RowCount; i++) {
@@ -242,7 +246,13 @@ namespace Meta.Numerics.Matrices {
             return (B);
         }
 
-        public static ColumnVector operator * (RectangularMatrixBase A, ColumnVector v) {
+        /// <summary>
+        /// Multiplies any real, rectangular matrix with a real column vector.
+        /// </summary>
+        /// <param name="A">The matrix.</param>
+        /// <param name="v">The column vector.</param>
+        /// <returns>The product column vector.</returns>
+        public static ColumnVector operator * (AnyRectangularMatrix A, ColumnVector v) {
             if (A == null) throw new ArgumentNullException("A");
             if (v == null) throw new ArgumentNullException("v");
             if (A.ColumnCount != v.Dimension) throw new DimensionMismatchException();
@@ -266,7 +276,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The first matrix.</param>
         /// <param name="B">The second matrix.</param>
         /// <returns>True if <paramref name="A"/> and <paramref name="B"/> are equal, otherwise false.</returns>
-        public static bool operator == (RectangularMatrixBase A, RectangularMatrixBase B) {
+        public static bool operator == (AnyRectangularMatrix A, AnyRectangularMatrix B) {
             if ((object) A == null) {
                 if ((object) B == null) {
                     return (true);
@@ -295,7 +305,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The first matrix.</param>
         /// <param name="B">The second matrix.</param>
         /// <returns>False if <paramref name="A"/> and <paramref name="B"/> are equal, otherwise true.</returns>
-        public static bool operator != (RectangularMatrixBase A, RectangularMatrixBase B) {
+        public static bool operator != (AnyRectangularMatrix A, AnyRectangularMatrix B) {
             return (!(A == B));
         }
 
@@ -305,7 +315,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="obj">The object to compare.</param>
         /// <returns>True if <paramref name="obj"/> is an equal matrix, otherwise false.</returns>
         public override bool Equals (object obj) {
-            RectangularMatrixBase M = obj as RectangularMatrix;
+            AnyRectangularMatrix M = obj as RectangularMatrix;
             if (obj == null) {
                 return (false);
             } else {

@@ -1389,13 +1389,56 @@ namespace Test
 
         }
 
+        [TestMethod]
+        public void EllipticESPecialCases () {
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticE(0.0), Math.PI / 2.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticE(1.0), 1.0));
+            
+            double g2 = Math.Pow(AdvancedMath.Gamma(1.0 / 4.0), 2.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                AdvancedMath.EllipticE(1.0 / Math.Sqrt(2.0)),
+                Math.Pow(Math.PI, 3.0 / 2.0) / g2 + g2 / 8.0 / Math.Sqrt(Math.PI)
+            ));
+             
+        }
 
         [TestMethod]
-        public void ETest () {
-            double k = 1.0E-4;
-            Console.WriteLine(AdvancedMath.EllipticK(k));
-            //Console.WriteLine(AdvancedMath.EllipticK_Series(0.5));
-            Console.WriteLine(AdvancedMath.CarlsonF(0.0, 1.0 - k * k, 1.0));
+        public void EllipticLegendreRelation () {
+            foreach (double k in TestUtilities.GenerateRealValues(0.01, 1.0, 8)) {
+                double kp = Math.Sqrt(1.0 - k * k);
+                double E = AdvancedMath.EllipticE(k);
+                double EP = AdvancedMath.EllipticE(kp);
+                double K = AdvancedMath.EllipticK(k);
+                double KP = AdvancedMath.EllipticK(kp);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(K * EP + KP * E, Math.PI / 2.0 + K * KP));
+            }
+        }
+
+        [TestMethod]
+        public void EllipticEIntegral () {
+
+            Interval i = Interval.FromEndpoints(0.0, Math.PI / 2.0);
+
+            foreach (double k in TestUtilities.GenerateRealValues(0.01, 1.0, 8)) {
+
+                Func<double, double> f = delegate(double t) {
+                    double z = k * Math.Sin(t);
+                    return (Math.Sqrt(1.0 - z * z));
+                };
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    FunctionMath.Integrate(f, i), AdvancedMath.EllipticE(k)
+                ));
+
+            }
+
+        }
+
+        [TestMethod]
+        public void ErfBug () {
+
+            double x = 200.0;
+            Console.WriteLine(AdvancedMath.RightRegularizedGamma(0.5, x));
 
         }
 

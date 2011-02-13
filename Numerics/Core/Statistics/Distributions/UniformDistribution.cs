@@ -10,18 +10,9 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents a uniform distribution over an interval.
     /// </summary>
     /// <seealso href="http://en.wikipedia.org/wiki/Uniform_distribution_(continuous)"/>
-    public class UniformDistribution : Distribution {
+    public sealed class UniformDistribution : Distribution {
 
         private Interval range;
-
-        /// <summary>
-        /// Gets the range of the uniform distribution.
-        /// </summary>
-        public Interval Range {
-            get {
-                return (range);
-            }
-        }
 
         /// <summary>
         /// Initializes a new uniform distribution on the given interval.
@@ -83,19 +74,19 @@ namespace Meta.Numerics.Statistics.Distributions {
 
                 if (Math.Abs(m) > w) {
 
-                    // the midpoint is greater than the width
-                    // start from the approximate value m^n and compute a correction factor in terms of (w/m)
+                    // the width is small compared to the midpoint
+                    // start from the approximate value m^n and compute corrections in powers of (w/m)
 
-                    double f = Math.Pow(m, n);
+                    double f = MoreMath.Pow(m, n);
 
-                    double r = w / m;
-                    double rr = 4.0 * r * r;
+                    double r = w / m / 2.0;
+                    double rr = r * r;
 
                     double dg = 1.0;
                     double g = dg;
                     for (int k = 2; k <= n; k += 2) {
                         dg = dg * rr;
-                        g += g * AdvancedIntegerMath.BinomialCoefficient(n, k) / (k + 1.0);
+                        g += dg * AdvancedIntegerMath.BinomialCoefficient(n, k) / (k + 1);
                     }
 
                     return (f * g);
@@ -104,7 +95,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                     // the width is large compared to the midpoint
                     // it should be safe to do a simple subtraction of endpoint powers
 
-                    return ((Math.Pow(range.RightEndpoint, n + 1) - Math.Pow(range.LeftEndpoint, n + 1)) / range.Width / (n + 1));
+                    return ((MoreMath.Pow(range.RightEndpoint, n + 1) - MoreMath.Pow(range.LeftEndpoint, n + 1)) / range.Width / (n + 1));
                 }
             }
         }
@@ -115,7 +106,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if ((n % 2) != 0) {
                 return (0.0);
             } else {
-                return (Math.Pow(range.Width / 2.0, n) / (n + 1));
+                return (MoreMath.Pow(range.Width / 2.0, n) / (n + 1));
             }
         }
 

@@ -523,6 +523,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value Ai(x).</returns>
         /// <remarks>
+        /// <para>Airy functions are solutions to the Airy differential equation:</para>
+        /// <img src="../images/AiryODE.png" />
         /// <para>The Airy functions appear in quantum mechanics in the semiclassical WKB solution to the wave functions in a potential.</para>
         /// <para>For negative arguments, Ai(x) is oscilatory. For positive arguments, it decreases exponentially with increasing x.</para>
         /// </remarks>

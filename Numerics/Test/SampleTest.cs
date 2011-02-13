@@ -83,6 +83,7 @@ namespace Test {
             Assert.IsTrue(sample.Remove(2.2));
             Assert.IsTrue(sample.Count == data.Length);
             Assert.IsFalse(sample.Contains(2.2));
+            Assert.IsFalse(sample.Remove(2.2));
 
             // clear the sample and check the length
             sample.Clear();

@@ -11,9 +11,9 @@ namespace Meta.Numerics.Matrices {
     /// <para>This is an abstract class that describes any real, square matrix. If you wish to create a concrete
     /// instance of a real, non-square matrix, use the <see cref="SquareMatrix"/> class. If, on the
     /// other hand, you wish to write a function that can operate on any real, square matrix, it's probably a good
-    /// idea to accept a <see cref="SquareMatrixBase"/>, so that your function could operate on any concrete implementation.</para>
+    /// idea to accept a <see cref="AnySquareMatrix"/>, so that your function could operate on any concrete implementation.</para>
     /// </remarks>
-    public abstract class SquareMatrixBase : RectangularMatrixBase {
+    public abstract class AnySquareMatrix : AnyRectangularMatrix {
 
         /// <summary>
         /// Gets or sets the dimension of the square matrix.
@@ -54,7 +54,7 @@ namespace Meta.Numerics.Matrices {
         /// <remarks>
         /// <para>Matrix addition is an O(N<sup>2</sup>) process.</para>
         /// </remarks>
-        public static SquareMatrix operator + (SquareMatrixBase A, SquareMatrixBase B) {
+        public static SquareMatrix operator + (AnySquareMatrix A, AnySquareMatrix B) {
             if (A == null) throw new ArgumentNullException("A");
             if (B == null) throw new ArgumentNullException("B");
             if (A.Dimension != B.Dimension) throw new DimensionMismatchException();
@@ -76,7 +76,7 @@ namespace Meta.Numerics.Matrices {
         /// <remarks>
         /// <para>Matrix addition is an O(N<sup>2</sup>) process.</para>
         /// </remarks>
-        public static SquareMatrix operator - (SquareMatrixBase A, SquareMatrixBase B) {
+        public static SquareMatrix operator - (AnySquareMatrix A, AnySquareMatrix B) {
             if (A == null) throw new ArgumentNullException("A");
             if (B == null) throw new ArgumentNullException("B");
             if (A.Dimension != B.Dimension) throw new DimensionMismatchException();
@@ -98,7 +98,7 @@ namespace Meta.Numerics.Matrices {
         /// <remarks>
         /// <para>Matrix multiplication is an O(N<sup>3</sup>) process.</para>
         /// </remarks>
-        public static SquareMatrix operator * (SquareMatrixBase A, SquareMatrixBase B) {
+        public static SquareMatrix operator * (AnySquareMatrix A, AnySquareMatrix B) {
             if (A == null) throw new ArgumentNullException("A");
             if (B == null) throw new ArgumentNullException("B");
             if (A.Dimension != B.Dimension) throw new DimensionMismatchException();

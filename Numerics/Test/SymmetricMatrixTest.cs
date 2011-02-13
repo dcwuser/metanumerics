@@ -70,22 +70,20 @@ namespace Test {
 
             SymmetricMatrix M = CreateSymmetricRandomMatrix(4, 1);
 
-            /*
             // check column
             ColumnVector c = M.Column(1);
             Assert.IsTrue(c.Dimension == M.Dimension);
             for (int i = 0; i < c.Dimension; i++) {
                 Assert.IsTrue(c[i] == M[i, 1]);
             }
-
+            
             // check row
             RowVector r = M.Row(1);
             Assert.IsTrue(r.Dimension == M.Dimension);
             for (int i = 0; i < r.Dimension; i++) {
                 Assert.IsTrue(r[i] == c[i]);
-            }
-            */
-
+            }            
+            
             // check clone
             SymmetricMatrix MC = M.Copy();
             Assert.IsTrue(MC == M);
@@ -148,12 +146,13 @@ namespace Test {
         public void SymmetricRandomMatrixEigenvectors () {
             for (int d = 1; d <= 100; d = d + 11) {
                 Console.WriteLine("d={0}", d);
+
                 SymmetricMatrix M = CreateSymmetricRandomMatrix(d, 1);
+
                 double tr = M.Trace();
-                DateTime start = DateTime.Now;
+
                 RealEigensystem E = M.Eigensystem();
-                DateTime finish = DateTime.Now;
-                Console.WriteLine("  {0} ms", (finish - start).Milliseconds);
+
                 Assert.IsTrue(E.Dimension == M.Dimension);
 
                 SquareMatrix D = new SquareMatrix(E.Dimension);
@@ -246,6 +245,35 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(CD.Determinant(), 1.0));
 
             }
+
+        }
+
+        [TestMethod]
+        public void SymmetricMatrixNorms () {
+
+            SymmetricMatrix Z = new SymmetricMatrix(3);
+            Assert.IsTrue(Z.OneNorm() == 0.0);
+            Assert.IsTrue(Z.InfinityNorm() == 0.0);
+            Assert.IsTrue(Z.FrobeniusNorm() == 0.0);
+
+            SymmetricMatrix A = CreateSymmetricRandomMatrix(4, 1);
+            Assert.IsTrue(A.OneNorm() > 0.0);
+            Assert.IsTrue(A.InfinityNorm() > 0.0);
+            Assert.IsTrue(A.FrobeniusNorm() > 0.0);
+
+            SymmetricMatrix B = CreateSymmetricRandomMatrix(4, 2);
+            Assert.IsTrue(B.OneNorm() > 0.0);
+            Assert.IsTrue(B.InfinityNorm() > 0.0);
+            Assert.IsTrue(B.FrobeniusNorm() > 0.0);
+
+            SymmetricMatrix S = A + B;
+            Assert.IsTrue(S.OneNorm() <= A.OneNorm() + B.OneNorm());
+            Assert.IsTrue(S.InfinityNorm() <= A.InfinityNorm() + B.InfinityNorm());
+            Assert.IsTrue(S.FrobeniusNorm() <= A.FrobeniusNorm() + B.FrobeniusNorm());
+
+            SquareMatrix P = A * B;
+            Assert.IsTrue(P.FrobeniusNorm() <= A.FrobeniusNorm() * B.FrobeniusNorm());
+            // Frobenium norm is sub-multiplicative
 
         }
 

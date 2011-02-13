@@ -14,7 +14,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// the shape parameter is one, the Gamma distribution reduces to the exponential distribution.</para>
     /// </remarks>
     /// <seealso cref="ExponentialDistribution"/>
-    public class GammaDistribution : Distribution {
+    public sealed class GammaDistribution : Distribution {
 
         /// <summary>
         /// Initializes a new instance of a Gamma distribution with the given parameters.

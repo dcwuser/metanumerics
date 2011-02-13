@@ -8,7 +8,7 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents a symmetric matrix.
     /// </summary>
-    public sealed class SymmetricMatrix : SquareMatrixBase {
+    public sealed class SymmetricMatrix : AnySquareMatrix {
 
         private int dimension;
         private double[][] values;
@@ -385,25 +385,7 @@ namespace Meta.Numerics.Matrices {
             double[] V = SquareMatrixAlgorithms.CreateUnitMatrix(dimension);
             SymmetricMatrixAlgorithms.JacobiEigensystem(A, V, dimension);
             return (new RealEigensystem(dimension, SymmetricMatrixAlgorithms.GetDiagonal(A, dimension), V));
-            //return (null);
-            
-            /*
-            SymmetricMatrix clone = this.Clone();
 
-            double[,] v = new double[dimension,dimension];
-            for (int i = 0; i < dimension; i++) {
-                v[i, i] = 1.0;
-            }
-
-            clone.Jacobi(v);
-
-            double[] e = new double[dimension];
-            for (int i = 0; i < dimension; i++) {
-                e[i] = clone.values[i][i];
-            }
-
-            return (new RealEigensystem(dimension, e, v));
-            */
         }
 
         /// <summary>
@@ -421,17 +403,6 @@ namespace Meta.Numerics.Matrices {
             SymmetricMatrixAlgorithms.JacobiEigensystem(A, null, dimension);
             return (SymmetricMatrixAlgorithms.GetDiagonal(A, dimension));
 
-            /*
-            SymmetricMatrix clone = this.Clone();
-            clone.Jacobi(null);
-
-            double[] e = new double[dimension];
-            for (int i = 0; i < dimension; i++) {
-                e[i] = clone.values[i][i];
-            }
-
-            return (e);
-            */
         }
 
 #if PAST

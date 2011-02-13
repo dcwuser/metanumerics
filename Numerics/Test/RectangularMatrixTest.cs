@@ -4,6 +4,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Meta.Numerics;
 using Meta.Numerics.Matrices;
 
+using Meta.Numerics.Statistics;
+
 namespace Test {
 
 
@@ -156,7 +158,7 @@ namespace Test {
 
         }
 
-        private void WriteMatrix (RectangularMatrixBase A) {
+        private void WriteMatrix (AnyRectangularMatrix A) {
             Console.WriteLine("--");
             for (int r = 0; r < A.RowCount; r++) {
                 for (int c = 0; c < A.ColumnCount; c++) {
@@ -223,6 +225,68 @@ namespace Test {
                 }
 
             }
+
+        }
+
+        [TestMethod]
+        public void PC () {
+
+            Random rng = new Random(1);
+            double s = 1.0 / Math.Sqrt(2.0);
+
+            MultivariateSample MS = new MultivariateSample(2);
+            RectangularMatrix R = new RectangularMatrix(1000, 2);
+            for (int i = 0; i < 1000; i++) {
+                double r1 = 2.0 * rng.NextDouble() - 1.0;
+                double r2 = 2.0 * rng.NextDouble() - 1.0;
+                double x = r1 * 4.0 * s - r2 * 9.0 * s;
+                double y = r1 * 4.0 * s + r2 * 9.0 * s;
+                R[i, 0] = x; R[i, 1] = y;
+                MS.Add(x, y);
+            }
+
+            Console.WriteLine("x {0} {1}", MS.Column(0).Mean, MS.Column(0).Variance);
+            Console.WriteLine("y {0} {1}", MS.Column(1).Mean, MS.Column(1).Variance);
+
+            Console.WriteLine("SVD");
+
+            SingularValueDecomposition SVD = R.SingularValueDecomposition();
+            for (int i = 0; i < SVD.Dimension; i++) {
+                Console.WriteLine("{0} {1}", i, SVD.SingularValue(i));
+                ColumnVector v = SVD.RightSingularVector(i);
+                Console.WriteLine("  {0} {1}", v[0], v[1]);
+            }
+
+            Console.WriteLine("PCA");
+
+            PrincipalComponentAnalysis PCA = MS.PrincipalComponentAnalysis();
+            Console.WriteLine("Dimension = {0} Count = {1}", PCA.Dimension, PCA.Count);
+            for (int i = 0; i < PCA.Dimension; i++) {
+                PrincipalComponent PC = PCA.Component(i);
+                Console.WriteLine("  {0} {1} {2} {3}", PC.Index, PC.Weight, PC.VarianceFraction, PC.CumulativeVarianceFraction);
+                RowVector v = PC.Vector;
+                Console.WriteLine("  {0} {1}", v[0], v[1]);
+            }
+
+            // reconstruct
+            SquareMatrix U = SVD.LeftTransformMatrix();
+            SquareMatrix V = SVD.RightTransformMatrix();
+            double x1 = U[0, 0] * SVD.SingularValue(0) * V[0, 0] + U[0, 1] * SVD.SingularValue(1) * V[0, 1];
+            Console.WriteLine("x1 = {0} {1}", x1, R[0, 0]);
+            double y1 = U[0, 0] * SVD.SingularValue(0) * V[1, 0] + U[0, 1] * SVD.SingularValue(1) * V[1, 1];
+            Console.WriteLine("y1 = {0} {1}", y1, R[0, 1]);
+            double x100 = U[100, 0] * SVD.SingularValue(0) * V[0, 0] + U[100, 1] * SVD.SingularValue(1) * V[0, 1];
+            Console.WriteLine("x100 = {0} {1}", x100, R[100, 0]);
+            double y100 = U[100, 0] * SVD.SingularValue(0) * V[1, 0] + U[100, 1] * SVD.SingularValue(1) * V[1, 1];
+            Console.WriteLine("y100 = {0} {1}", y100, R[100, 1]);
+
+            ColumnVector d1 = U[0,0] * SVD.SingularValue(0) * SVD.RightSingularVector(0) + 
+                U[0, 1] * SVD.SingularValue(1) * SVD.RightSingularVector(1);
+            Console.WriteLine("d1 = ({0} {1})", d1[0], d1[1]);
+            ColumnVector d100 = U[100, 0] * SVD.SingularValue(0) * SVD.RightSingularVector(0) +
+                U[100, 1] * SVD.SingularValue(1) * SVD.RightSingularVector(1);
+            Console.WriteLine("d100 = ({0} {1})", d100[0], d100[1]);
+
 
         }
 

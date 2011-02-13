@@ -39,7 +39,8 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value of erfc(<paramref name="x"/>) = 1 - erf(<paramref name="x"/>).</returns>
         /// <remarks>
         /// <para>The complementary error function can be used to express the area in the tails of a Bell curve beyond a given distance from its center.</para>
-        /// <para>It can be defined via an integral as erfc(x) = (2/&#x221A;&#x3C0;) <sub>x</sub>&#x222B;<sup>&#x221E;</sup>dt e<sup>-t<sup>2</sup></sup>.</para>
+        /// <para>It can be defined via an integral:</para>
+        /// <img src="../images/ErfcIntegral.png" />
         /// <para>For small values of x, erfc(x) &#x2248; 1 to within floating-point accuracy. To obtain accurate values of erfc(x) = 1 - erf(x)
         /// in this region, use the <see cref="Erf" /> function.</para></remarks>
         /// <seealso cref="Erf" />
@@ -54,8 +55,8 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Computes the inverse complementary error function.
         /// </summary>
-        /// <param name="y"></param>
-        /// <returns></returns>
+        /// <param name="y">The value of erfc(x), which must lie between 0 and 1.</param>
+        /// <returns>The corresponding argument x.</returns>
         /// <seealso cref="Erf"/>
         /// <seealso cref="Erfc" />
         /// <seealso cref="InverseErf" />
@@ -663,9 +664,9 @@ namespace Meta.Numerics.Functions {
 
         private static Complex Faddeeva_ContinuedFraction (Complex z) {
             Complex a = 1.0;			// a_1
-            Complex b = z;	// b_1
+            Complex b = z;	            // b_1
             Complex D = 1.0 / b;		// D_1 = b_0/b_1
-            Complex Df = a / b;		// Df_1 = f_1 - f_0
+            Complex Df = a / b;		    // Df_1 = f_1 - f_0
             Complex f = 0.0 + Df;		// f_1 = f_0 + Df_1 = b_0 + Df_1
             for (int k = 1; k < Global.SeriesMax; k++) {
                 Complex f_old = f;

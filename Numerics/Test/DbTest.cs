@@ -7,18 +7,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Meta.Numerics.Statistics;
 
 namespace Test {
+
     [TestClass]
     public class DbTest {
 
-        [TestMethod]
-        public void CastTest () {
-            int i = 32;
-            object o = (object) i;
-            double d = Convert.ToDouble(o);
-        }
-
-        [TestMethod]
-        public void SampleLoad () {
+        private static DataTable CreateTable () {
 
             DataTable table = new DataTable();
             table.Columns.Add("Name", typeof(string));
@@ -29,11 +22,31 @@ namespace Test {
             table.Rows.Add("B", 2, DayOfWeek.Tuesday, false);
             table.Rows.Add("C", 3, DayOfWeek.Wednesday, true);
             table.Rows.Add(null, null, null, null);
+            return (table);
+
+        }
+
+        [TestMethod]
+        public void LoadSample () {
+
+            DataTable table = CreateTable();
 
             Sample sample = new Sample();
             sample.Load(table.CreateDataReader(), 1);
             Console.Write("{0} {1} {2}", sample.Count, sample.Mean, sample.StandardDeviation);
+            Assert.IsTrue(sample.Count == table.Rows.Count - 1);
 
+
+        }
+
+        [TestMethod]
+        public void LoadBivariateSample () {
+
+            DataTable table = CreateTable();
+
+            BivariateSample sample = new BivariateSample();
+            sample.Load(table.CreateDataReader(), 1, 3);
+            Assert.IsTrue(sample.Count == table.Rows.Count - 1);
 
         }
 

@@ -130,6 +130,15 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        public int[] GetRanks () {
+            int[] order = GetSortOrder();
+            int[] ranks = new int[order.Length];
+            for (int i = 0; i < order.Length; i++) {
+                ranks[order[i]] = i;
+            }
+            return (ranks);
+        }
+
         public SampleStorage Copy () {
             SampleStorage copy = new SampleStorage();
             copy.data = new List<double>(this.data);
@@ -198,11 +207,7 @@ namespace Meta.Numerics.Statistics {
                 return (data.Name);
             }
             set {
-                if (isReadOnly) {
-                    throw new InvalidOperationException();
-                } else {
-                    data.Name = value;
-                }
+                data.Name = value;
             }
         }
 
@@ -680,10 +685,6 @@ namespace Meta.Numerics.Statistics {
         /// <param name="a">The first sample, which must contain at least two entries.</param>
         /// <param name="b">The second sample, which must contain at least two entries.</param>
         /// <returns>The result of an (equal-variance) Student t-test.</returns>
-        /// <remarks>
-        /// <para>Calling this method is equivilent to calling the instance method <see cref="StudentTTest(Sample)"/>
-        /// on the first sample with the second sample as argument.</para>
-        /// </remarks>
         public static TestResult StudentTTest (Sample a, Sample b) {
 
             if (a == null) throw new ArgumentNullException("a");

@@ -40,11 +40,13 @@ namespace Meta.Numerics.Functions {
             // factor for L=0
             double C = CoulombFactorZero(eta);
 
-            // use recurrsion to get factors for higher Ls
-            // best not to use this for really high L; is there another approximation we can use?
-            //double eta_squared = eta * eta;
-            double abseta = Math.Abs(eta);
+            // use the recurrsion
+            //   C_{L+1} = \frac{\sqrt{ L^2 + eta^2 }}{ L (2L + 1)} C_L
+            // it would be better not to use this for really high L; is there another approximation we can use?
+            //double abseta = Math.Abs(eta);
             for (int k = 1; k <= L; k++) {
+                C *= MoreMath.Hypot(k, eta) / k / (2 * k + 1);
+                /*
                 if (k > abseta) {
                     double x = abseta / k;
                     C = Math.Sqrt(1.0 + x * x) / (2 * k + 1) * C;
@@ -52,9 +54,9 @@ namespace Meta.Numerics.Functions {
                     double x = k / abseta;
                     C = Math.Sqrt(1.0 + x * x) / x / (2 * k + 1) * C;
                 }
+                */
                 //C = Math.Sqrt(k * k + eta_squared) / (k * (2 * k + 1)) * C;
             }
-            //Console.WriteLine("L={0} eta={1} C={2}", L, eta, C);
 
             return (C);
 
@@ -194,17 +196,14 @@ namespace Meta.Numerics.Functions {
             // compute CF1 (F'/F)
             int sign;
             double f = Coulomb_CF1(L, eta, rho, out sign);
-            //Console.WriteLine("f = {0}", f);
 
             // compute CF2 ((G' + iF')/(G + i F))
             Complex z = Coulomb_CF2(L, eta, rho);
             double p = z.Re;
             double q = z.Im;
-            //Console.WriteLine("p + i q = {0}", z);
 
             // use CF1, CF2, and Wronskian (FG' - GF' = 1) to solve for F, F', G, G' 
             double g = (f - p) / q;
-            //Console.WriteLine("g = {0}", g);
 
             SolutionPair result = new SolutionPair();
             result.Regular = sign / Math.Sqrt(g * g * q + q);
@@ -224,7 +223,6 @@ namespace Meta.Numerics.Functions {
             int nmax = Global.SeriesMax;
             double rho0 = CoulombTurningPoint(L, eta);
             if (rho > rho0) nmax += (int) Math.Floor(2.0 * (rho - rho0));
-            //Console.WriteLine(nmax);
 
             // use Wallis method of continued fraction evalution
 
@@ -252,8 +250,6 @@ namespace Meta.Numerics.Functions {
                 // note B1 = 1 always, A1 = f always
                 f = A2 / B2;
                 if (B2 < 0) sign = -sign;
-
-                //Console.WriteLine("{0} {1} ({2})", n, f, sign);
 
                 // check for convergence
                 if (f == f_old) {
@@ -310,7 +306,6 @@ namespace Meta.Numerics.Functions {
             // don't use Wallis algorithm for this continued fraction! it appears that sometimes noise in what
             // should be the last few iterations prevents convergence; Steed's method appears to do better
             // an example is L=0, eta=0.1, rho=14.0
-
 
         }
 
@@ -399,6 +394,7 @@ namespace Meta.Numerics.Functions {
         /// <para>The irregular Coulomb wave functions G<sub>L</sub>(&#x3B7;,&#x3C1;) are the complementary independent solutions
         /// of the same differential equation.</para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="L"/> or <paramref name="rho"/> is negative.</exception>
         /// <seealso cref="CoulombG"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Coulomb_wave_function" />
         /// <seealso href="http://mathworld.wolfram.com/CoulombWaveFunction.html" />
@@ -418,7 +414,7 @@ namespace Meta.Numerics.Functions {
                 Coulomb_Asymptotic(L, eta, rho, out F, out G);
                 return (F);
             } else {
-
+                // transition region
                 if (rho >= CoulombTurningPoint(L, eta)) {
                     // beyond the turning point, use Steed's method
                     SolutionPair result = Coulomb_Steed(L, eta, rho);
@@ -427,7 +423,6 @@ namespace Meta.Numerics.Functions {
                     // inside the turning point, integrate out from the series limit
                     return (CoulombF_Integrate(L, eta, rho));
                 }
-
             }
 
         }
@@ -442,6 +437,7 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>For information on the Coulomb wave functions, see the remarks on <see cref="CoulombF" />.</para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="L"/> or <paramref name="rho"/> is negative.</exception>
         /// <seealso cref="CoulombF"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Coulomb_wave_function" />
         /// <seealso href="http://mathworld.wolfram.com/CoulombWaveFunction.html" />
@@ -462,8 +458,9 @@ namespace Meta.Numerics.Functions {
                 Coulomb_Asymptotic(L, eta, rho, out F, out G);
                 return (G);
             } else {
-                // beyond the turning point, use Steed's method
+                // transition region
                 if (rho >= CoulombTurningPoint(L, eta)) {
+                    // beyond the turning point, use Steed's method
                     SolutionPair result = Coulomb_Steed(L, eta, rho);
                     return (result.Irregular);
                 } else {
@@ -713,7 +710,6 @@ namespace Meta.Numerics.Functions {
             if (Math.Abs(rho0 * eta) > 8.0 + 4.0 * L) rho0 = (8.0 + 4.0 * L) / Math.Abs(eta);
             double F, FP;
             CoulombF_Series(L, eta, rho0, out F, out FP);
-            //Console.WriteLine("rho0={0} F={1} FP={2}", rho0, F, FP);
 
             // TODO: switch so we integrate w/o the C factor, then apply it afterward
             if ((F == 0.0) && (FP == 0.0)) return (0.0);
@@ -899,8 +895,6 @@ namespace Meta.Numerics.Functions {
             double target_work_per_step = Double.MaxValue;
             double target_expansion_factor = 1.0;
 
-            //Console.WriteLine("{0} {1}", kMin, kMax);
-
             // try different substep sizes
             for (int k = 1; k <= kMax; k++) {
 
@@ -918,15 +912,6 @@ namespace Meta.Numerics.Functions {
                     U[j][k - j] = U[j - 1][k - j + 1] + (U[j - 1][k - j + 1] - U[j - 1][k - j]) / ((x + 1.0) * (x - 1.0));
                 }
 
-                /*
-                for (int r = 0; r <= k; r++) {
-                    for (int c = 0; c <= k-r; c++) {
-                        Console.Write("  {0}", T[r][c]);
-                    }
-                    Console.WriteLine();
-                }
-                */
-
                 // check for convergence and predict work in target window
                 if ((k >= kMin) && (k <= kMax)) {
 
@@ -935,48 +920,30 @@ namespace Meta.Numerics.Functions {
                     double expansion_factor = Math.Pow(Accuracy / relative_error, 1.0 / (2 * N[k]));
                     double work_per_step = A / expansion_factor;
 
-                    //Console.WriteLine("k={0} relative_error={1} H'/H={2} A/H'={3}", k, relative_error, expansion_factor, work_per_step);
-
                     if (work_per_step < target_work_per_step) {
                         target_k = k;
                         target_work_per_step = work_per_step;
                         target_expansion_factor = expansion_factor;
                     }
 
-                    //Console.WriteLine("{0} ({1})", T[k][0], error);
-                    /*
-                    if ((absolute_error <= Accuracy * Math.Abs(T[k][0])) && (k > 8)) {
-                        X = X + DeltaX;
-                        Y = T[k][0];
-                        YPrime = U[k][0];
-                        return;
-                    }
-                    */
-
                 }
 
             }
 
             if (Math.Abs(T[kMax][0] - T[kMax - 1][0]) <= Accuracy * Math.Abs(T[kMax][0])) {
-                //Console.WriteLine("converged");
+                // converged
                 X = X + DeltaX;
                 Y = T[kMax][0];
                 YPrime = U[kMax][0];
                 if (target_expansion_factor > 2.0) target_expansion_factor = 2.0;
                 if (target_expansion_factor < 0.25) target_expansion_factor = 0.25;
             } else {
-                //Console.WriteLine("didn't converge");
+                // didn't converge
                 if (target_expansion_factor > 0.5) target_expansion_factor = 0.5;
                 if (target_expansion_factor < 0.0625) target_expansion_factor = 0.0625;
             }
 
-            //Console.WriteLine("target_k = {0}", target_k);
-
             DeltaX = DeltaX * target_expansion_factor;
-
-            // the step did not converge; reduce it and try again
-            //DeltaX = DeltaX / 2.0;
-            //Step();
            
         }
 
@@ -998,7 +965,6 @@ namespace Meta.Numerics.Functions {
             for (int k = 1; k < n; k++) {
                 Y1 += D1;
                 D1 += h * h * Evaluate(X + k * h, Y1);
-                //Console.WriteLine("k={0} y1={1} D1={2}", k, y1, D1);
             }
 
             Y1 += D1;

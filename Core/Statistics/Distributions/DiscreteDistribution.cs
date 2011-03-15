@@ -96,8 +96,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             DiscreteInterval support = Support;
 
             // to avoid running over the whole support when it is large, we move out from the mean
-
             int i0 = (int) Math.Round(Mean);
+
             double s_left = 0.0;
             for (int i = i0 - 1; i >= support.LeftEndpoint; i--) {
                 double s_left_old = s_left;
@@ -121,10 +121,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public virtual double Mean {
             get {
-                Func<int, double> f = delegate (int k) {
-                    return (k);
-                };
-                return (ExpectationValue(f));
+                double mu = 0.0;
+                for (int k = Support.LeftEndpoint; k <= Support.RightEndpoint; k++) {
+                    mu += ProbabilityMass(k) * k;
+                }
+                return (mu);
             }
 
         }

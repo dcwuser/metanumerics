@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>Meta.Numerics</id>
+    <version>2.0.0</version> 
+    <authors>Meta.Numerics</authors>
+    <description>A library for numeric computing with support for statistics, matrix algebra, and advanced functions.</description>
+    <projectUrl>http://www.meta-numerics.net</projectUrl>
+    <licenseUrl>http://metanumerics.codeplex.com/license</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <tags>numeric scientific technical math statistics matrix</tags>
+  </metadata>
+  <files>
+    <file src="bin\Debug\Meta.Numerics.dll" target="lib" />
+    <file src="bin\Debug\Meta.Numerics.xml" target="lib" />
+  </files>
+</package>

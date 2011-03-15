@@ -96,7 +96,6 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The moment M<sub>n</sub> about the origin.</returns>
         /// <seealso cref="MomentAboutMean"/>
 		public virtual double Moment (int n) {
-			// inheritors may implement
             return (ExpectationValue(delegate(double x) { return (ProbabilityDensity(x) * MoreMath.Pow(x, n)); }));
 		}
 

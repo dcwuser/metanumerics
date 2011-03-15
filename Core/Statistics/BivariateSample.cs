@@ -110,6 +110,14 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
+        /// Copies the bivariate sample.
+        /// </summary>
+        /// <returns>An independent copy of the bivariate sample.</returns>
+        public BivariateSample Copy () {
+            return (new BivariateSample(xData.Copy(), yData.Copy(), false));
+        }
+
+        /// <summary>
         /// Swaps the X and Y variables in the bivariate sample.
         /// </summary>
         public void TransposeXY () {
@@ -235,26 +243,13 @@ namespace Meta.Numerics.Statistics {
         /// association.</para>
         /// <para>The Spearman rank-order test requires O(N log N) operations.</para>
         /// </remarks>
+        /// <exception>There are fewer than three data points.</exception>
         /// <seealso cref="PearsonRTest"/>
         /// <seealso cref="KendallTauTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient"/>
         public TestResult SpearmanRhoTest () {
 
             if (Count < 3) throw new InsufficientDataException();
-
-            /*
-            // compute the correlated ranks
-            double[] x1 = new double[Count];
-            double[] x2 = new double[Count];
-            for (int i = 0; i < Count; i++) {
-                x1[i] = xData[i];
-                x2[i] = yData[i];
-            }
-            Array.Sort(x1, x2);
-            for (int i = 0; i < Count; i++) x1[i] = i;
-            Array.Sort(x2, x1);
-            for (int i = 0; i < Count; i++) x2[i] = i;
-            */
 
             // analytic expressions for the mean and variance of ranks
             double M = (Count - 1) / 2.0;
@@ -266,7 +261,6 @@ namespace Meta.Numerics.Statistics {
             double C = 0.0;
             for (int i = 0; i < Count; i++) {
                 C += (rx[i] - M) * (ry[i] - M);
-                //C += (x1[i] - M) * (x2[i] - M);
             }
             C = C / Count;
 
@@ -349,6 +343,7 @@ namespace Meta.Numerics.Statistics {
         /// a paired t-test compares two samples to detect a difference in means.
         /// Unlike the unpaired version, the paired version assumes that each </para>
         /// </remarks>
+        /// <exception cref="InsufficientDataException">There are fewer than two data points.</exception>
         public TestResult PairedStudentTTest () {
 
             if (Count < 2) throw new InsufficientDataException();
@@ -386,6 +381,7 @@ namespace Meta.Numerics.Statistics {
         /// normally distributed noise, and determines the values of a and b that best fit the data. It also
         /// determines an error matrix on the parameters a and b, and does an F-test to</para>
         /// </remarks>
+        /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
         public FitResult LinearRegression () {
 
             int n = Count;
@@ -402,11 +398,10 @@ namespace Meta.Numerics.Statistics {
             for (int i = 0; i < n; i++) {
                 double z = a + b * xData[i] - yData[i];
                 SSR += z * z;
-                SXX += xData[i] * xData[i];
+                SXX += MoreMath.Pow2(xData[i]);
             }
 
             double cbb = SSR / xData.Variance / n / (n -2);
-            //Console.WriteLine(cbb);
             double cab = -xData.Mean * cbb;
             double caa = SXX / n * cbb;
 
@@ -427,7 +422,11 @@ namespace Meta.Numerics.Statistics {
         /// <returns></returns>
         /// <remarks>
         /// <para>Linear logistic regression is a way to fit binary outcome data to a linear model.</para>
+        /// <para>The method assumes that binary outcomes are encoded as 0 and 1. If any y-values other than
+        /// 0 and 1 are encountered, it throws an <see cref="InvalidOperationException"/>.</para>
         /// </remarks>
+        /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
+        /// <exception cref="InvalidOperationException">There is a y-value other than 0 or 1.</exception>
         public FitResult LinearLogisticRegression () {
 
             // check size of data set
@@ -480,6 +479,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="yIndex">The column number of the y-variable.</param>
         public void Load (IDataReader reader, int xIndex, int yIndex) {
             if (reader == null) throw new ArgumentNullException("reader");
+            if (isReadOnly) throw new InvalidOperationException();
             while (reader.Read()) {
                 if (reader.IsDBNull(xIndex) || reader.IsDBNull(yIndex)) continue;
                 object xValue = reader.GetValue(xIndex);

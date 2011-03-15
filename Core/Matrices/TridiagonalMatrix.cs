@@ -227,8 +227,6 @@ namespace Meta.Numerics.Matrices {
             // iterate across the columns
             for (int i = 0; i < (n - 1); i++) {
 
-                //Console.WriteLine("i = {0}", i);
-
                 if (Math.Abs(L[i]) > Math.Abs(D[i])) {
                     // the subdiagonal element is larger, so permute it onto the diagonal for use as a pivot
                     double t;
@@ -252,8 +250,6 @@ namespace Meta.Numerics.Matrices {
 
                 }
 
-                //Console.WriteLine("exchanged");
-
                 // Here is what we are working on...
                 // (     D_{i-1}  U_{i-1}  V_{i-1}                       )
                 // (     0        D_{i}    U_{i}    V_{i}                )  <- pivot row
@@ -270,33 +266,6 @@ namespace Meta.Numerics.Matrices {
 
                 // store the reduction factor
                 L[i] = f;
-
-                /*
-                for (int j = 0; j < n; j++) {
-                    Console.Write("  {0}", P[j]);
-                }
-                Console.WriteLine();
-
-                for (int j = 0; j < n - 2; j++) {
-                    Console.Write("  {0}", V[j]);
-                }
-                Console.WriteLine();
-
-                for (int j = 0; j < n - 1; j++) {
-                    Console.Write("  {0}", U[j]);
-                }
-                Console.WriteLine();
-
-                for (int j = 0; j < n; j++) {
-                    Console.Write("  {0}", D[j]);
-                }
-                Console.WriteLine();
-
-                for (int j = 0; j < n - 1; j++) {
-                    Console.Write("  {0}", L[j]);
-                }
-                Console.WriteLine();
-                */
 
             }
 
@@ -555,16 +524,12 @@ namespace Meta.Numerics.Matrices {
 
             if (rhs.Count != n) throw new DimensionMismatchException();
 
-            //Console.WriteLine("fill in");
-
             ColumnVector x = new ColumnVector(n);
             for (int i = 0; i < n; i++) {
                 x[i] = rhs[i];
             }
 
             //PrintVector(x);
-
-            //Console.WriteLine("forward sub");
 
             // forward-substitute to solve Ly=z
             for (int i = 0; i < (n-1); i++) {
@@ -578,9 +543,6 @@ namespace Meta.Numerics.Matrices {
             }
 
             //PrintVector(x);
-
-
-            //Console.WriteLine("back sub");
 
             // back-substitute to solve Ux=y
             x[n - 1] = x[n - 1] / D[n - 1];
@@ -597,15 +559,6 @@ namespace Meta.Numerics.Matrices {
             return (x);
 
         }
-
-        /*
-        private void PrintVector (IList<double> v) {
-            for (int i = 0; i < v.Count; i++) {
-                Console.Write("  {0}", v[i]);
-            }
-            Console.WriteLine();
-        }
-        */
 
         /// <summary>
         /// Computes the inverse of the original matrix.

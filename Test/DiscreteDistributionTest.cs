@@ -265,5 +265,38 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void DiscreteDistributionBase () {
+
+            DiscreteDistribution D = new DiscreteTestDistribution();
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(D.Mean, 5.0 / 3.0));
+
+        }
+
     }
+
+    // a minimal implementation to test base methods on abstract DiscreteDistribution class
+
+    public class DiscreteTestDistribution : DiscreteDistribution {
+
+        public override DiscreteInterval Support {
+            get { return DiscreteInterval.FromEndpoints(1, 3); }
+        }
+
+        public override double ProbabilityMass (int k) {
+            switch (k) {
+                case 1:
+                    return (1.0 / 6.0);
+                case 2:
+                    return (2.0 / 6.0);
+                case 3:
+                    return (3.0 / 6.0);
+                default:
+                    return (0.0);
+            }
+        }
+
+    }
+
 }

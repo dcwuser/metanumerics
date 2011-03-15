@@ -12,10 +12,10 @@ namespace Meta.Numerics.Matrices {
     /// <img src="../images/SVDEquation.png" />
     /// In more graphical form:
     /// <img src="../images/SVDForm.png" />
-    /// The elements of the diagonal matrix are called the singular values of the original matrix.</para>
-    /// <para>If the orginal matrix is viewed as a linear transform, the rows of the right orthogonal matrix matrix form an
-    /// orthonormal basis for the domain of the transform, while the columns of the left orthogonal matrix form an orthonormal
-    /// basis for the range of the transform.</para>
+    /// <para>The elements of the diagonal matrix are called the singular values of the original matrix.</para>
+    /// <para>If the orginal matrix is viewed as a linear transform operator, the rows of the right orthogonal matrix matrix form an
+    /// orthonormal basis for the domain of the operator, while the columns of the left orthogonal matrix form an orthonormal
+    /// basis for the range of the operator.</para>
     /// </remarks>
     public sealed class SingularValueDecomposition {
 

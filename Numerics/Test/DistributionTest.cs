@@ -621,6 +621,21 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void DistributionBase () {
+
+            // test that implementations on base Distribution classes function and agree with overridden implementations
+
+            Distribution d = new TestDistribution();
+            Distribution t = new TriangularDistribution(0.0, 1.0, 1.0);
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(d.Mean, t.Mean));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(d.StandardDeviation, t.StandardDeviation));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(d.Skewness, t.Skewness));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(d.Median, t.Median));
+
+        }
+
         public static double ApproximateProbit (double P) {
 
             if (P < 0.1) {
@@ -771,39 +786,30 @@ namespace Test {
             }
 
 
-        }
+        }        
 
-        [TestMethod]
-        public void Test2 () {
+    }
 
-            GammaDistribution G = new GammaDistribution(8.0);
-            Console.WriteLine(AdvancedMath.LeftRegularizedGamma(8.0, 0.1));
-            Console.WriteLine(G.LeftProbability(0.1));
-            double PS = Math.Pow(0.1, G.ShapeParameter) * Math.Exp(-0.1) / AdvancedMath.Gamma(G.ShapeParameter + 1.0);
-            double PSI = ApproximateLeftTailInverseGamma(G.ShapeParameter, PS);
-            Console.WriteLine("{0} {1}", PS, PSI);
+    // This is a very simple distribution we define in order to test the implementations of method on the
+    // Distribution base class. Most of these methods are not invoked by our "real" distribution classes,
+    // because we override them with better implementations.
 
-        }
+    public class TestDistribution : Distribution {
 
-        [TestMethod]
-        public void InverseErfSeries () {
-
-            int max = 20;
-            double[] c = new double[max];
-
-            c[0] = 1.0;
-            for (int i = 1; i < max; i++) {
-
-                double sum = 0.0;
-                for (int j = 0; j < i; j++) {
-                    sum += c[j] * c[i - 1 - j] / (j + 1) / (2 * j + 1);
-                }
-                c[i] = sum;
-
-                Console.WriteLine("{0} {1}", i, c[i] / (2 * i + 1));
+        public override Interval Support {
+            get {
+                return (Interval.FromEndpoints(0.0, 1.0));
             }
+        }
 
-
+        public override double ProbabilityDensity (double x) {
+            if (x < 0.0) {
+                return (0.0);
+            } else if (x > 1.0) {
+                return (1.0);
+            } else {
+                return (2.0 * x);
+            }
         }
 
     }

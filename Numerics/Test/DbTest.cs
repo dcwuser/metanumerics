@@ -50,5 +50,16 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void LoadMultivariateSample () {
+
+            DataTable table = CreateTable();
+
+            MultivariateSample sample = new MultivariateSample(3);
+            sample.Load(table.CreateDataReader(), 1, 2, 3);
+            Assert.IsTrue(sample.Count == table.Rows.Count - 1);
+
+        }
+
     }
 }

@@ -175,8 +175,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The fit result.</returns>
         /// <remarks>
         /// <para>Since an exponential distribution is determined completely by its mean, this is a one-parameter fit.</para>
-        /// <para>The goodness-of-fit test is a <see cref="Sample.KolmogorovSmirnovTest"/> which is not adjusted to reflect
-        /// the fit. It is therefore unreliable for very small sample sizes.</para>
+        /// <para>The goodness-of-fit test is a Kolmogorov-Smirnov test (<see cref="Sample.KolmogorovSmirnovTest(Distribution)"/>)
+        /// which is not adjusted to reflect the fit. It is therefore unreliable for very small sample sizes.</para>
         /// </remarks>
         public static FitResult FitToSample (Sample sample) {
 

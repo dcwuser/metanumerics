@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 
 using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics.Distributions;
@@ -637,16 +638,6 @@ namespace Meta.Numerics.Statistics {
         /// <param name="outputIndex">The index of the variable to be predicted.</param>
         /// <returns>The result of the regression.</returns>
         /// <remarks>
-        /// <para>In the returned fit result, the best-fit linear regression coefficients
-        /// are returned in the order of the columns, followed by the intercept parameter.
-        /// For example, if <paramref name="outputIndex"/>=2 in a 4-column multivariate
-        /// sample, the returned parameters are (&#x3B2;<sub>0</sub>, &#x3B2;<sub>1</sub>,
-        /// &#x3B2;<sub>3</sub>, &#x3B1;).</para>
-        /// <para>To limit the set of columns used for input variables, and for moreextensive
-        /// information on linear regression analysis, see <see cref="LinearRegression(IList&lt;int&gt;,int)" />.</para>
-        /// </remarks>
-        /// <returns>The result of the regression.</returns>
-        /// <remarks>
         /// <para>Linear regression finds the linear combination of the other variables
         /// that best predicts the output variable.</para>
         /// <img src="../images/LinearRegressionEquation.png" />
@@ -662,7 +653,7 @@ namespace Meta.Numerics.Statistics {
         /// parameters 0, 1, and 3, of the returned fit result, and the intercept will be
         /// parameter 2.</para>
         /// <para>If you want to include fewer input variables in your regression, use the
-        /// <see cref="Columns"/> method to create a multivariate sample that includes only
+        /// <see cref="Columns(IList{Int32})"/> method to create a multivariate sample that includes only
         /// the variables you want to use in your regression.</para>
         /// <para>The correlation matrix among fit parameters is also returned with the fit
         /// result, as is an F-test for the goodness of the fit. If the result of the F-test
@@ -712,6 +703,8 @@ namespace Meta.Numerics.Statistics {
         /// predictor of an output variable, but via a complex and non-linear relationship that
         /// a linear regression analysis will completely miss.</para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="outputIndex"/> is outside the range of allowed indexes.</exception>
+        /// <exception cref="InsufficientDataException">There are fewer entries than the dimension of the multivariate sample.</exception>
         /// <seealso cref="LinearRegression(int)"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Linear_regression"/>
         public FitResult LinearRegression (int outputIndex) {
@@ -759,11 +752,14 @@ namespace Meta.Numerics.Statistics {
         /// Performs a principal component analysis of the data.
         /// </summary>
         /// <returns>The result of the principal component analysis.</returns>
+        /// <exception cref="InsufficientDataException">The number of data entries (<see cref="Count"/>) is
+        /// less than the number of variables (<see cref="Dimension"/>).</exception>
         /// <seealso cref="PrincipalComponentAnalysis"/>
         public PrincipalComponentAnalysis PrincipalComponentAnalysis () {
 
-            // construct a (Count X Dimension) matrix of mean-centered data
             if (Count < Dimension) throw new InsufficientDataException();
+
+            // construct a (Count X Dimension) matrix of mean-centered data
             double[] store = MatrixAlgorithms.AllocateStorage(Count, Dimension);
             int i = 0;
             for (int c = 0; c < Dimension; c++) {
@@ -789,23 +785,51 @@ namespace Meta.Numerics.Statistics {
             MatrixAlgorithms.SortValues(a, left, right, Count, Dimension);
 
             PrincipalComponentAnalysis pca = new PrincipalComponentAnalysis(left, a, right, Count, Dimension);
-            //return (pca);
-
-            
-            RectangularMatrix X = new RectangularMatrix(Count, Dimension);
-            for (int r = 0; r < Count; r++) {
-                for (int c = 0; c < Dimension; c++) {
-                    X[r, c] = storage[c][r] - storage[c].Mean;
-                }
-            }
-            SingularValueDecomposition svd = X.SingularValueDecomposition();
-            for (int j = 0; i < svd.Dimension; i++) {
-                Console.WriteLine("{0} : {1}", j, svd.SingularValue(j));
-            }
 
             return (pca);
             
+        }
 
+        /// <summary>
+        /// Loads values from a data reader.
+        /// </summary>
+        /// <param name="reader">The data reader.</param>
+        /// <param name="dbIndexes">The database column indexes of the sample columns.</param>
+        public void Load (IDataReader reader, IList<int> dbIndexes) {
+            if (reader == null) throw new ArgumentNullException("reader");
+            if (dbIndexes == null) throw new ArgumentNullException("dbIndexes");
+            if (dbIndexes.Count != Dimension) throw new DimensionMismatchException();
+            if (isReadOnly) throw new InvalidOperationException();
+
+                // create an array to store values, which we will re-use as we move through the data
+                double[] entry = new double[Dimension];
+                // move through the data
+                while (reader.Read()) {
+                    // check each entry and, if value, add it to the sample
+                    if (ReadValues(reader, dbIndexes, entry)) Add(entry);
+                }
+
+        }
+
+        private bool ReadValues (IDataReader reader, IList<int> dbIndexes, double[] entry) {
+            for (int c = 0; c < Dimension; c++) {
+                int i = dbIndexes[c];
+                if (reader.IsDBNull(i)) {
+                    return (false);
+                } else {
+                    entry[c] = Convert.ToDouble(reader.GetValue(i));
+                }
+            }
+            return (true);
+        }
+
+        /// <summary>
+        /// Loads values from a data reader.
+        /// </summary>
+        /// <param name="reader">The data reader.</param>
+        /// <param name="dbIndexes">The database column indexes of the sample columns.</param>
+        public void Load (IDataReader reader, params int[] dbIndexes) {
+            Load(reader, (IList<int>)dbIndexes);
         }
 
     }

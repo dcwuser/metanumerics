@@ -289,22 +289,23 @@ namespace Test {
         }
 
         // returns n complex distributed logarithmicly between 10^a and 10^b in all four quadrants
-        public static Complex[] GenerateComplexValues (double a, double b, int n) {
+        public static Complex[] GenerateComplexValues (double a, double b, int n, Random rng) {
             if ((a <= 0.0) || (b <= 0.0)) throw new ArgumentException();
             double la = Math.Log(a);
             double lb = Math.Log(b);
             Complex[] result = new Complex[n];
-            Random rng = new Random(1);
             for (int i = 0; i < n; i++) {
-                //double re = Math.Pow(10.0, a + (b - a) * rng.NextDouble());
                 double re = Math.Exp(la + (lb - la) * rng.NextDouble());
-                //double im = Math.Pow(10.0, a + (b - a) * rng.NextDouble());
                 double im = Math.Exp(la + (lb - la) * rng.NextDouble());
                 if (rng.NextDouble() < 0.5) re = -re;
                 if (rng.NextDouble() < 0.5) im = -im;
                 result[i] = new Complex(re, im);
             }
             return (result);
+        }
+
+        public static Complex[] GenerateComplexValues (double a, double b, int n) {
+            return (GenerateComplexValues(a, b, n, new Random(1)));
         }
 
         // returns n positive integers distributed logarithmicly between a and b

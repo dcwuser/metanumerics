@@ -70,8 +70,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>An array containing the vector element values.</returns>
         public virtual double[] ToArray () {
-            double[] copy = VectorAlgorithms.Copy(store, dimension);
-            return (copy);
+            return(VectorAlgorithms.Copy(store, dimension));
         }
 
         // interface implementations

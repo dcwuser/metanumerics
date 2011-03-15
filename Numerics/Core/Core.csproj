@@ -85,7 +85,8 @@
     <Compile Include="Functions\FunctionMath_Differentiate.cs" />
     <Compile Include="Matrices\SingularValueDecomposition.cs" />
     <Compile Include="Matrices\SparseSquareMatrix.cs" />
-    <Compile Include="Spin\Spin.cs" />
+    <Compile Include="SignalProcessing\FourierAlgorithms.cs" />
+    <Compile Include="Special\Spin.cs" />
     <Compile Include="Functions\AdvancedMath_Harmonic.cs" />
     <Compile Include="Functions\AdvancedMath_Lambert.cs" />
     <Compile Include="Functions\AdvancedMath_ModifiedBessel.cs" />
@@ -113,7 +114,7 @@
     <Compile Include="Matrices\RectangularMatrix.cs" />
     <Compile Include="Matrices\AnyRectangularMatrixBase.cs" />
     <Compile Include="Matrices\SquareLUDecomposition.cs" />
-    <Compile Include="Matrices\Matrix.cs" />
+    <Compile Include="Matrices\RectangularMatrixAlgorithms.cs" />
     <Compile Include="Matrices\AnyMatrix.cs" />
     <Compile Include="Matrices\SquareMatrix.cs" />
     <Compile Include="Matrices\AnySquareMatrix.cs" />
@@ -123,8 +124,8 @@
     <Compile Include="Matrices\VectorBase.cs" />
     <Compile Include="Matrices\Vectors.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Spin\SpinMath.cs" />
-    <Compile Include="Spin\SpinState.cs" />
+    <Compile Include="Special\SpinMath.cs" />
+    <Compile Include="Special\SpinState.cs" />
     <Compile Include="Statistics\Anova.cs" />
     <Compile Include="Statistics\BinaryContingencyTable.cs" />
     <Compile Include="Statistics\BivariateSample.cs" />
@@ -165,10 +166,14 @@
     <Compile Include="Statistics\Sample.cs" />
     <Compile Include="Statistics\TestResult.cs" />
     <Compile Include="Statistics\UncertainMath.cs" />
+    <Compile Include="Statistics\UncertainMeasurementSample.cs" />
     <Compile Include="Statistics\UncertainValue.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="keypair.snk" />
+    <None Include="Meta.Numerics.nuspec">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Migrated rules for Core.ruleset" />
   </ItemGroup>
   <ItemGroup>

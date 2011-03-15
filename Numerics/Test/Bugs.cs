@@ -88,6 +88,42 @@ namespace Test {
         // 1 sqrt ~ 4 flops
         // 1 log ~ 12 flops
 
+        // Inverse CDF of F-distribution fails for d2 <= 2
+
+        [TestMethod]
+        public void Bug5886 () {
+
+            FisherDistribution F = new FisherDistribution(1.0, 0.1);
+            Console.WriteLine(F.Mean);
+            Console.WriteLine(F.StandardDeviation);
+            Console.WriteLine(F.Skewness);
+
+            Console.WriteLine(F.LeftProbability(0.25));
+            Console.WriteLine(F.LeftProbability(0.50));
+            Console.WriteLine(F.LeftProbability(0.75));
+
+            //double x = F.InverseLeftProbability(0.9);
+            double x = InverseFisherDistribution(F, 1.0E-5);
+            Console.WriteLine("{0} {1}", x, F.LeftProbability(x));
+
+        }
+
+        public static double InverseFisherDistribution(FisherDistribution F, double P) {
+            if (F == null) throw new ArgumentNullException("F");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+
+            double x0;
+            if (F.DenominatorDegreesOfFreedom < 3.0) {
+                x0 = 3.0;
+            } else {
+                x0 = F.Mean;
+            }
+
+            double x1 = FunctionMath.FindZero(delegate(double x) { return (F.LeftProbability(x) - P); }, x0);
+
+            return (x1);
+        }
+
     }
 
 }

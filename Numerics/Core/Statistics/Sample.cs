@@ -293,7 +293,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <returns>An independent copy of the sample.</returns>
         public Sample Copy () {
-            return (new Sample(data.Copy(), true));
+            return (new Sample(data.Copy(), false));
         }
 
         /// <summary>
@@ -910,15 +910,12 @@ namespace Meta.Numerics.Statistics {
             int dW = n - 1 - dB;
 
             // determine F statistic
-            //Console.WriteLine("SSB={0} dB={1} SSW={2} dW={3}", SSB, dB, SSW, dW);
             double F = (SSB / dB) / (SSW / dW);
 
             AnovaRow factor = new AnovaRow(SSB, dB);
             AnovaRow residual = new AnovaRow(SSW, dW);
             AnovaRow total = new AnovaRow(SSB + SSW, n - 1);
             return (new OneWayAnovaResult(factor, residual, total));
-
-            //return (new TestResult(F, new FisherDistribution(dB, dW)));
 
         }
 
@@ -1148,12 +1145,13 @@ namespace Meta.Numerics.Statistics {
         /// Loads values from a data reader.
         /// </summary>
         /// <param name="reader">The data reader.</param>
-        /// <param name="column">The column number.</param>
-        public void Load (IDataReader reader, int column) {
+        /// <param name="dbIndex">The column number.</param>
+        public void Load (IDataReader reader, int dbIndex) {
             if (reader == null) throw new ArgumentNullException("reader");
+            if (isReadOnly) throw new InvalidOperationException();
             while (reader.Read()) {
-                if (reader.IsDBNull(column)) continue;
-                object value = reader.GetValue(column);
+                if (reader.IsDBNull(dbIndex)) continue;
+                object value = reader.GetValue(dbIndex);
                 Add(Convert.ToDouble(value));
             }
         }

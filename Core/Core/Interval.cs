@@ -162,7 +162,10 @@ namespace Meta.Numerics {
         }
 
         // text representation
-        /// <inheritdoc />
+        /// <summary>
+        /// Produces a string representation of the interval.
+        /// </summary>
+        /// <returns>A string representation of the interval.</returns>
         public override string ToString () {
             return (String.Format(CultureInfo.CurrentCulture, "[{0},{1}]", a, b));
         }
@@ -177,6 +180,7 @@ namespace Meta.Numerics {
         }
 #endif
 
+#if FUTURE
         // get the integers within a given range; this is used for fitting histograms to discrete distributions
 
         internal IEnumerable<int> GetContainedIntegers () {
@@ -192,6 +196,7 @@ namespace Meta.Numerics {
             }
 
         }
+#endif
 
     }
 

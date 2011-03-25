@@ -13,15 +13,16 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>The beta distribution is defined on the interval [0,1]. Depending on its two shape parameters, it can take on a wide
     /// variety of forms on this interval.</para>
     /// <para>If the two shape parameters are equal, the distribution is symmetric. If the first shape parameter is less than one,
-    /// the distribution has a singularity at its left endpoint. If the second shape parameter is less than one, the distribution
-    /// has a singularity at its right endpoint.</para>
+    /// the distribution has a singularity at its left endpoint. If the first shape parameter is greater than one, the distribution
+    /// goes to zero at its left endpoint. The second shape parameter similarly governs the distribution's behavior at its right
+    /// endpoint.</para>
     /// <para>When both shape parameters are one, the beta distribution reduces to a standard uniform distribution.</para>
     /// <img src="../images/UniformFromBeta.png" />
     /// <para>Beta distributions describe the maximum and minimum values obtained from multiple, independent draws from a standard
     /// uniform distribution. For n draws, the maximum value is distributed as B(n,1).</para>
     /// <img src="../images/BetaFromUniform.png" />
     /// <para>Similiarly, the minimum value is distributed as B(1,n).</para>
-    /// <para>Because of the wide variety of distributions on the unit interval it can describe, the beta distribution is sometimes
+    /// <para>Because of the wide variety of shapes it can take, the beta distribution is sometimes
     /// used as an ad hoc model to describe any distribution observed on a finite interval.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Beta_distribution"/>
@@ -46,9 +47,12 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (beta <= 0.0) throw new ArgumentOutOfRangeException("beta");
             this.alpha = alpha;
             this.beta = beta;
+            // cache value of B(alpha, beta) to avoid having to re-calculate it whenever needed
+            this.bigB = AdvancedMath.Beta(alpha, beta);
         }
 
         double alpha, beta;
+        double bigB;
 
         /// <summary>
         /// Gets the left shape parameter.
@@ -80,7 +84,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if ((x < 0.0) || (x > 1.0)) {
                 return (0.0);
             } else {
-                return (Math.Pow(x, alpha - 1.0) * Math.Pow(1.0 - x, beta - 1.0) / AdvancedMath.Beta(alpha, beta));
+                return (Math.Pow(x, alpha - 1.0) * Math.Pow(1.0 - x, beta - 1.0) / bigB);
             }
         }
 
@@ -91,7 +95,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (x >= 1.0) {
                 return (1.0);
             } else {
-                return (AdvancedMath.Beta(alpha, beta, x) / AdvancedMath.Beta(alpha, beta));
+                return (AdvancedMath.Beta(alpha, beta, x) / bigB);
             }
         }
 
@@ -123,13 +127,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
             } else {
+                // this is just a recursive development of Beta(alpha + n, beta) / Beta(alpha, beta)
                 double sum = alpha + beta;
                 double M = 1.0;
                 for (int i = 0; i < n; i++) {
                     M = (alpha + i) / (sum + i) * M;
                 }
                 return (M);
-                //return (AdvancedMath.Beta(alpha + n, beta) / AdvancedMath.Beta(alpha, beta));
             }
         }
 
@@ -160,30 +164,101 @@ namespace Meta.Numerics.Statistics.Distributions {
                     C1 = C2;
                 }
                 return (C1);
-                //return (CentralMomentFromRawMoment(n));
+
             }
         }
 
-        // IParameterizedDistribution implementation
-        // can't make this IParameterized yet, because fitting routine doesn't respect limits
-        /*
+        // inverse CDF
 
-        double[] IParameterizedDistribution.GetParameters () {
-            return (new double[] { alpha, beta });
+        /// <inheritdoc />
+        public override double InverseLeftProbability (double P) {
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            // we invert I_x(a, b) = P by first approximating x from P, then refining the result by root polishing
+            double x0 = ApproximateInverseBeta(alpha, beta, P);
+            if ((x0 == 0.0) || (x0 == 1.0)) return (x0);
+            double x1 = RefineInverseBeta(x0, P);
+            return (x1);
         }
 
-        void IParameterizedDistribution.SetParameters(IList<double> parameters) {
-            if (parameters == null) throw new ArgumentNullException("parameters");
-            if (parameters.Count != 2) throw new InvalidOperationException();
-            //if ((parameters[0] <= 0.0) || (parameters[1] <= 0.0)) throw new InvalidOperationException();
-            alpha = parameters[0];
-            beta = parameters[1];
+        /// <inheritdoc />
+        public override double InverseRightProbability (double Q) {
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            // improve this to deal with small values of Q
+            return (InverseLeftProbability(1.0 - Q));
         }
 
-        double IParameterizedDistribution.Likelihood (double x) {
-            return (ProbabilityDensity(x));
+
+        private double ApproximateInverseBeta (double a, double b, double P) {
+
+            // try series from the left
+            double x0 = BetaInverseSeries(a, b, P);
+            if (x0 >= 0.0) return (x0);
+
+            // try series from the right
+            double x1 = BetaInverseSeries(b, a, 1.0 - P);
+            if (x1 >= 0.0) return (1.0 - x1);
+
+            // use the normal approximation
+            // the series cases above should take care of extreme values, so this will be used only sufficiently close to the peak
+            // that we do not overrun the [0,1] bounds; this appears to work but I have no proof that it always does
+            double z = AdvancedMath.ApproximateProbit(P);
+            return (Mean + StandardDeviation * z);
+            // can we apply a transformation to remove skew?
+
         }
-        */
+
+        // this series is documented at http://functions.wolfram.com/GammaBetaErf/InverseBetaRegularized/06/01/02/
+
+        private double BetaInverseSeries (double a, double b, double P) {
+
+            double w = a * P * bigB;
+            if (w < 1.0) {
+                double s = Math.Pow(w, 1.0 / a);
+                // in this series, the fiducial quantity is z when a ~ b or a >> b, and b z /a^2 when b >> a
+                double u = (b <= a) ? s : Math.Max(b, 1.0) * s / Math.Max(a, 1.0);
+                //double u = s;
+                //if (b > a) u = Math.Max(b, 1.0) * s / Math.Max(a, 1.0);
+                if (u < 0.25) {
+                    double ap1 = a + 1.0;
+                    double s2 = (b - 1.0) / ap1 * s;
+                    double s3 = (a * a + (3.0 * b - 1.0) * a + (5.0 * b - 4.0)) / ap1 / (a + 2.0) / 2.0 * s2 * s;
+                    double s4 = (a * a * a * a + (6.0 * b - 1.0) * a * a * a + (8.0 * b * b + 11.0 * b - 10.0) * a * a +
+                        (33.0 * b * b - 30.0 * b + 4.0) * a + (31.0 * b * b - 47.0 * b + 18.0)) / (ap1 * ap1) / (a + 2.0) / (a + 3.0) / 3.0 * s2 * s * s;
+                    return (s * (1.0 + s2 + s3 + s4));
+                    // including the s4 term more than doubles our operations count, but it is the only way we can get into the convergence
+                    // basin of our root polisher for high enough u that we can avoid using the normal approximation when it would return
+                    // an x out of bounds
+                }
+            }
+            // signal failure by returning a negative number
+            return (-1.0);
+
+        }
+
+        // refine an approximation to the inverse beta function by root polishing
+
+        private double RefineInverseBeta (double x, double P) {
+
+            double a1 = alpha - 1.0; double b1 = beta - 1.0;
+            for (int i = 0; i < 8; i++) {
+                double x_old = x;
+                // we actually find roots of B(a,b,x) - P B(a,b) rather than that I(a, b, x) - P
+                // this reduces the number of calculations of and divisions by B(a,b)
+                double y = AdvancedMath.Beta(alpha, beta, x) - P * bigB;
+                double yp = Math.Pow(x, a1) * Math.Pow(1.0 - x, b1);
+                // dx = -y / yp is Newton's method (1st derivative); improve this by using Halley's method (2nd derivative)
+                double dx = -y / (yp - y / 2.0 * (a1 / x - b1 / (1 - x)));
+                x += dx;
+                //if (x < 0.0) {
+                //    x = x_old / 2.0;
+                //} else if (x > 1.0) {
+                //    x = (x_old + 1.0) / 2.0;
+                //}
+                if (x == x_old) return (x);
+            }
+            return (x);
+
+        }
 
     }
 

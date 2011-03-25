@@ -11,17 +11,23 @@ namespace Meta.Numerics.Statistics {
     /// Represents a principal component analysis.
     /// </summary>
     /// <remarks>
-    /// <para>Principal component analysis represents multi-variate data set (<see cref="MultivariateSample"/>)...
+    /// <para>Principal component analysis constructs an alternative set of orthonormal basis vectors for a multi-variate data set. These  represents multi-variate data set (<see cref="MultivariateSample"/>) 
     /// It is a form of factor analysis, ...</para>
+    /// <para>Suppose, for example, that most of the data in a two-dimensional data set lies near the line y = -x. One way to explain
+    /// this state of affairs is to invoke a single underlying factor. The factor increases the value of y and decreases the value
+    /// of x. Other factors values of this
+    /// factor increases the value of y and decreases the value of x, and this is the most important factor  there is one underlying factor, which mostly determines the values of x and y. Increasing
+    /// values of this factor increase </para>
     /// </remarks>
     public class PrincipalComponentAnalysis {
 
-        internal PrincipalComponentAnalysis (double[] uStore, double[] wStore, double[] vStore, int rows, int cols) {
+        internal PrincipalComponentAnalysis (double[] utStore, double[] wStore, double[] vStore, int rows, int cols) {
             this.rows = rows;
             this.cols = cols;
-            this.uStore = uStore;
+            this.utStore = utStore;
             this.wStore = wStore;
             this.vStore = vStore;
+            // keep track of cumulative sum of squares, which is proportional to the cumulative explained variance
             wSquaredSum = new double[wStore.Length];
             wSquaredSum[0] = MoreMath.Pow2(wStore[0]);
             for (int i = 1; i < wSquaredSum.Length; i++) {
@@ -30,7 +36,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         internal int rows, cols;
-        internal double[] uStore, wStore, vStore;
+        internal double[] utStore, wStore, vStore;
         internal double[] wSquaredSum;
 
         /// <summary>
@@ -61,22 +67,44 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The required number of components.</returns>
         public int MinimumDimension (double P) {
             if ((P < 0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
-            throw new NotImplementedException();
+            // binary search would be faster, but linear search will do for now
+            double wss = P * wSquaredSum[wSquaredSum.Length-1];
+            for (int i = 0; i < wSquaredSum.Length - 1; i++) {
+                if (wSquaredSum[i] >= wss) return (i + 1);
+            }
+            return (wSquaredSum.Length);
         }
 
         /// <summary>
         /// Gets the requested principal component.
         /// </summary>
-        /// <param name="componentIndex">The index of the requested principal component.</param>
+        /// <param name="componentIndex">The (zero-based) index of the principal component.</param>
         /// <returns>The requested principal component.</returns>
         /// <remarks>
-        /// <para>Principal components are ordered by strength. The strongest component, i.e. the component which explains
-        /// the most variance, has index zero. The weakest component has the highest index.</para>
+        /// <para>Principal components are ordered by strength. The most principal component, i.e. the component which explains
+        /// the most variance, has index zero. The least principal component has the highest index.</para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="componentIndex"/> lies outside the range [0, <see cref="Dimension"/>-1].</exception>
         public PrincipalComponent Component (int componentIndex) {
             if ((componentIndex < 0) || (componentIndex >= Dimension)) throw new ArgumentOutOfRangeException("componentIndex");
             return(new PrincipalComponent(componentIndex, this));
         }
+
+        /// <summary>
+        /// Represents the original data in terms of principal components.
+        /// </summary>
+        /// <returns>A multivariate sample whose columns are the weights of each principal component in each entry of the
+        /// originally analyzed sample.</returns>
+        public MultivariateSample TransformedSample () {
+            double[] entry = new double[Dimension];
+            MultivariateSample scores = new MultivariateSample(Dimension);
+            for (int i = 0; i < rows; i++) {
+                Array.Copy(utStore, rows * i, entry, 0, entry.Length);
+                scores.Add(entry);
+            }
+            return (scores);
+        }
+
 
     }
 
@@ -142,11 +170,20 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the normalized component vector.
         /// </summary>
-        public RowVector Vector {
+        public RowVector NormalizedVector {
             get {
                 double[] pc = new double[analysis.cols];
                 Blas1.dCopy(analysis.vStore, analysis.cols * index, 1, pc, 0, 1, analysis.cols);
                 return (new RowVector(pc, pc.Length));
+            }
+        }
+
+        /// <summary>
+        /// Gets the scaled component vector.
+        /// </summary>
+        public RowVector ScaledVector {
+            get {
+                return (analysis.wStore[index] * NormalizedVector);
             }
         }
 

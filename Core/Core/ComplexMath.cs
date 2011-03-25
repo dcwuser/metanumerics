@@ -35,17 +35,6 @@ namespace Meta.Numerics {
         /// <seealso cref="Math.Abs(Double)"/>
         public static double Abs (Complex z) {
             return (MoreMath.Hypot(z.Re, z.Im));
-            /*
-			if (z.Im == 0.0) {
-				return(Math.Abs(z.Re));
-			} else if (Math.Abs(z.Re) > Math.Abs(z.Im)) {
-                double r = z.Im / z.Re;
-				return(Math.Abs(z.Re)*Math.Sqrt(1.0+r*r));
-			} else {
-                double r = z.Re / z.Im;
-				return(Math.Abs(z.Im)*Math.Sqrt(1.0+r*r));
-			}
-            */
         }
 
         /// <summary>
@@ -210,7 +199,7 @@ namespace Meta.Numerics {
         /// </summary>
         /// <param name="z">The argument.</param>
         /// <param name="n">The power.</param>
-        /// <returns>The value of z<sup>p</sup>.</returns>
+        /// <returns>The value of z<sup>n</sup>.</returns>
         public static Complex Pow (Complex z, int n) {
 
             // this is a straight-up copy of MoreMath.Pow with x -> z, double -> Complex

@@ -6,54 +6,10 @@ using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 using Meta.Numerics.Matrices;
 
-namespace Test
-{
+namespace Test {
 
-
-    [TestClass()]
+    [TestClass]
     public class MultivariateSampleTest {
-
-
-        private TestContext testContextInstance;
-
-        public TestContext TestContext {
-            get {
-                return testContextInstance;
-            }
-            set {
-                testContextInstance = value;
-            }
-        }
-
-        #region Additional test attributes
-        // 
-        //You can use the following additional attributes as you write your tests:
-        //
-        //Use ClassInitialize to run code before running the first test in the class
-        //[ClassInitialize()]
-        //public static void MyClassInitialize(TestContext testContext)
-        //{
-        //}
-        //
-        //Use ClassCleanup to run code after all tests in a class have run
-        //[ClassCleanup()]
-        //public static void MyClassCleanup()
-        //{
-        //}
-        //
-        //Use TestInitialize to run code before running each test
-        //[TestInitialize()]
-        //public void MyTestInitialize()
-        //{
-        //}
-        //
-        //Use TestCleanup to run code after each test has run
-        //[TestCleanup()]
-        //public void MyTestCleanup()
-        //{
-        //}
-        //
-        #endregion
 
         public MultivariateSample CreateMultivariateNormalSample (ColumnVector M, SymmetricMatrix C, int n) {
 
@@ -437,6 +393,81 @@ namespace Test
             Assert.IsTrue(TestUtilities.IsNearlyEqual(PA, PC));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(CA, CC));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(RA.GoodnessOfFit.Statistic, RC.GoodnessOfFit.Statistic));
+
+        }
+
+        private double GetTotalVariance (MultivariateSample sample) {
+            double total = 0.0;
+            for (int i = 0; i < sample.Dimension; i++) {
+                total += sample.Column(i).Variance;
+            }
+            return (total);
+        }
+
+        [TestMethod]
+        public void PrincipalComponentAnalysis () {
+
+            int D = 3;
+            int N = 10;
+
+            // construct a sample
+            Random rng = new Random(1);
+            MultivariateSample sample = new MultivariateSample(D);
+            for (int i = 0; i < N; i++) {
+                double x = 1.0 * rng.NextDouble() - 1.0;
+                double y = 4.0 * rng.NextDouble() - 2.0;
+                double z = 9.0 * rng.NextDouble() - 3.0;
+                sample.Add(x, y, z);
+            }
+
+            // get its column means
+            RowVector mu = new RowVector(D);
+            for (int i = 0; i < D; i++) {
+                mu[i] = sample.Column(i).Mean;
+            }
+
+            // get total variance
+            double tVariance = GetTotalVariance(sample);
+            Console.WriteLine(tVariance);
+
+            // do a principal component analysis
+            PrincipalComponentAnalysis pca = sample.PrincipalComponentAnalysis();
+            Assert.IsTrue(pca.Dimension == sample.Dimension);
+            Assert.IsTrue(pca.Count == sample.Count);
+
+            // check that the PCs behave as expected
+            for (int i = 0; i < pca.Dimension; i++) {
+                PrincipalComponent pc = pca.Component(i);
+                Assert.IsTrue(pc.Index == i);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(pc.Weight * pc.NormalizedVector, pc.ScaledVector));
+                Assert.IsTrue((0.0 <= pc.VarianceFraction) && (pc.VarianceFraction <= 1.0));
+                if (i == 0) {
+                    Assert.IsTrue(pc.VarianceFraction == pc.CumulativeVarianceFraction);
+                } else {
+                    PrincipalComponent ppc = pca.Component(i - 1);
+                    Assert.IsTrue(pc.VarianceFraction <= ppc.VarianceFraction);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(ppc.CumulativeVarianceFraction + pc.VarianceFraction, pc.CumulativeVarianceFraction));
+                }
+            }
+
+            // express the sample in terms of principal components
+            MultivariateSample csample = pca.TransformedSample();
+
+            // check that the explained variances are as claimed
+            for (int rD = 1; rD <= D; rD++) {
+                MultivariateSample rSample = new MultivariateSample(D);
+                foreach (double[] cEntry in csample) {
+                    RowVector x = mu.Copy();
+                    for (int i = 0; i < rD; i++) {
+                        PrincipalComponent pc = pca.Component(i);
+                        x += (cEntry[i] * pc.Weight) * pc.NormalizedVector;
+                    }
+                    rSample.Add(x);
+                }
+                double rVariance = GetTotalVariance(rSample);
+                Console.WriteLine("{0} {1}", rD, rVariance);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(rVariance / tVariance, pca.Component(rD-1).CumulativeVarianceFraction));
+            }
 
         }
 

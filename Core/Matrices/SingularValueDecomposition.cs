@@ -9,13 +9,18 @@ namespace Meta.Numerics.Matrices {
     /// <remarks>
     /// <para>The singular value decomposition of a matrix represents it as a product of a left orthogonal matrix, a diagonal
     /// matrix, and a right orthogonal matrix:</para>
-    /// <img src="../images/SVDEquation.png" />
-    /// In more graphical form:
     /// <img src="../images/SVDForm.png" />
     /// <para>The elements of the diagonal matrix are called the singular values of the original matrix.</para>
     /// <para>If the orginal matrix is viewed as a linear transform operator, the rows of the right orthogonal matrix matrix form an
     /// orthonormal basis for the domain of the operator, while the columns of the left orthogonal matrix form an orthonormal
-    /// basis for the range of the operator.</para>
+    /// basis for the range of the operator. These rows and columns are called, respectively, the right and left singular vectors
+    /// of the matrix.</para>
+    /// <para>The right singular vectors corresponding to zero singular values span the nullspace of the matrix, that is the
+    /// set of all x for which Ax = 0.</para>
+    /// <para>The SVD can be used to approximate the action of a high-dimensional matrix by a lower-rank one.</para>
+    /// <para>Use the <see cref="RectangularMatrix.SingularValueDecomposition"/> of the <see cref="RectangularMatrix"/> class
+    /// to obtain the SVD of an rectangular matrix, or the corresponding <see cref="SquareMatrix.SingularValueDecomposition"/>
+    /// method of the <see cref="SquareMatrix"/> class to obtain the SVD of a square matrix.</para>
     /// </remarks>
     public sealed class SingularValueDecomposition {
 
@@ -53,7 +58,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Returns the left transform matrix.
         /// </summary>
-        /// <returns>The matrix U, such that A = U S V^T.</returns>
+        /// <returns>The matrix U, such that A = U S V<sup>T</sup>.</returns>
         public SquareMatrix LeftTransformMatrix () {
             double[] left = MatrixAlgorithms.Transpose(utStore, rows, rows);
             return (new SquareMatrix(left, rows));
@@ -62,7 +67,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Returns the right transform matrix.
         /// </summary>
-        /// <returns>The matrix V, such that A = U S V^T.</returns>
+        /// <returns>The matrix V, such that A = U S V<sup>T</sup>.</returns>
         public SquareMatrix RightTransformMatrix () {
             double[] right = MatrixAlgorithms.Copy(vStore, cols, cols);
             return (new SquareMatrix(right, cols));
@@ -87,6 +92,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="n">The (zero-based) index.</param>
         /// <returns>The <paramref name="n"/>th singular value.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> lies outside the range [0, <see cref="Dimension"/> - 1].</exception>
         public double SingularValue (int n) {
             if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException("n");
             return (wStore[n]);
@@ -97,6 +103,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="n">The (zero-based) index.</param>
         /// <returns>The <paramref name="n"/>th left singular vector.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> lies outside the range [0, <see cref="Dimension"/> - 1].</exception>
         public ColumnVector LeftSingularVector (int n) {
             if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException("n");
             double[] vector = new double[rows];
@@ -109,6 +116,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="n">The (zero-based) index.</param>
         /// <returns>The <paramref name="n"/>th right singular vector.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> lies outside the range [0, <see cref="Dimension"/> - 1].</exception>
         public ColumnVector RightSingularVector (int n) {
             if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException("n");
             double[] vector = new double[cols];

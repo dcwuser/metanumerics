@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 
 using Meta.Numerics;
@@ -12,6 +13,8 @@ using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Statistics {
 
+    // the SampleStorage class is the internal representation of a sample
+    // it is used internally by the Sample, BivariateSample, and MultivariateSample classes
 
     internal class SampleStorage  {
 
@@ -155,14 +158,14 @@ namespace Meta.Numerics.Statistics {
     }
 
     /// <summary>
-    /// Represents a set of independent draws of real numbers.
+    /// Represents a set of data points, where each data point consists of a single real number.
     /// </summary>
     /// <remarks>
     /// <para>A univariate sample is a data set which records one number for each independent
     /// observation. For example, data from a study which measured the weight of each subject could be
     /// stored in the Sample class. The class offers descriptive statistics for the sample, estimates
     /// of descriptive statistics of the underlying population distribution, and statistical
-    /// tests to comare the sample distribution to other sample distributions or theoretical models.</para>
+    /// tests to compare the sample distribution to other sample distributions or theoretical models.</para>
     /// </remarks>
     public sealed class Sample : ICollection<double>, IEnumerable<double>, IEnumerable {
 
@@ -451,6 +454,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="P">The percentile, which must lie between zero and one.</param>
         /// <returns>The corresponding value.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="P"/> lies outside [0,1].</exception>
+        /// <exception cref="InsufficientDataException"><see cref="Sample.Count"/> is less than two.</exception>
         public double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
             if (data.Count < 2) throw new InsufficientDataException();
@@ -585,6 +589,7 @@ namespace Meta.Numerics.Statistics {
         /// You can use the z-test to determine how likely it is that the subpopulation mean really is lower than the population mean,
         /// that is that their slightly lower mean score in your sample is not merely a fluke.</para>
         /// </example>
+        /// <exception cref="InsufficientDataException"><see cref="Sample.Count"/> is zero.</exception>
         /// <seealso cref="StudentTTest(double)"/>
         public TestResult ZTest (double referenceMean, double referenceStandardDeviation) {
             if (this.Count < 1) throw new InsufficientDataException();
@@ -760,15 +765,12 @@ namespace Meta.Numerics.Statistics {
 
             while (true) {
 
-                //Console.WriteLine("a[{0}] = {1} <? b[{2}] = {3}", p1, this.data[p1], p2, sample.data[p2]);
                 if (a.data[aOrder[p1]] < b.data[bOrder[p2]]) {
-                    //Console.WriteLine("{0} a", r);
                     r1 += r;
                     p1++;
                     r++;
                     if (p1 >= a.Count) {
                         while (p2 < b.Count) {
-                            //Console.WriteLine("{0} b", r);
                             r2 += r;
                             p2++;
                             r++;
@@ -777,13 +779,11 @@ namespace Meta.Numerics.Statistics {
                     }
 
                 } else {
-                    //Console.WriteLine("{0} b", r);
                     r2 += r;
                     p2++;
                     r++;
                     if (p2 >= b.Count) {
                         while (p1 < a.Count) {
-                            //Console.WriteLine("{0} a", r);
                             r1 += r;
                             p1++;
                             r++;
@@ -918,6 +918,38 @@ namespace Meta.Numerics.Statistics {
             return (new OneWayAnovaResult(factor, residual, total));
 
         }
+
+        /// <summary>
+        /// Performs a Kruskal-Wallis test on the given samples.
+        /// </summary>
+        /// <param name="samples">The set of samples to compare.</param>
+        /// <returns>The result of the test.</returns>
+        /// <remarks>
+        /// <para>Kruskal-Wallis tests for differences between the samples. It is a non-parametric alternative to the
+        /// one-way ANOVA (<see cref="OneWayAnova(Sample[])"/>).</para>
+        /// <para>The test is essentially a one-way ANOVA performed on the <i>ranks</i> of sample values instead of the sample
+        /// values themselves.</para>
+        /// <para>A Kruskal-Wallis test on two samples is equivilent to a Mann-Whitney test (see <see cref="MannWhitneyTest"/>).</para>
+        /// </remarks>
+        public static TestResult KruskalWallisTest (IList<Sample> samples) {
+            if (samples == null) throw new ArgumentNullException("samples");
+            if (samples.Count < 2) throw new InvalidOperationException();
+
+
+            double K = 1.0;
+            return (new TestResult(K, new ChiSquaredDistribution(samples.Count - 1)));
+
+        }
+
+        /// <summary>
+        /// Performs a Kruskal-Wallis test on the given samples.
+        /// </summary>
+        /// <param name="samples">The set of samples to compare.</param>
+        /// <returns>The result of the test.</returns>
+        public static TestResult KruskalWallisTest (params Sample[] samples) {
+            return (KruskalWallisTest((IList<Sample>)samples));
+        }
+
 
         /// <summary>
         /// Tests whether the sample is compatible with the given distribution.
@@ -1152,7 +1184,7 @@ namespace Meta.Numerics.Statistics {
             while (reader.Read()) {
                 if (reader.IsDBNull(dbIndex)) continue;
                 object value = reader.GetValue(dbIndex);
-                Add(Convert.ToDouble(value));
+                Add(Convert.ToDouble(value, CultureInfo.InvariantCulture));
             }
         }
 

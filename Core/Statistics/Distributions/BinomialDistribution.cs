@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
@@ -112,7 +113,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (1.0);
             } else {
                 // use direct summation in tails
-                return (AdvancedMath.Beta(m - k, k + 1, q) / AdvancedMath.Beta(m - k, k + 1));
+                return (AdvancedMath.LeftRegularizedBeta(m - k, k + 1, q));
             }
         }
 
@@ -132,6 +133,38 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override int InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
             if (m < 16) {
+
+                // for small m, just add up probabilities directly
+                // here PP is p^k q^(m-k), PS is the sum of PPs up to k, and r = p / q is used to increment PP
+                double r = p / q;
+                double PP = MoreMath.Pow(q, m);
+                double PS = 0.0;
+                /*
+                using (IEnumerator<double> B = AdvancedIntegerMath.BinomialCoefficients(m).GetEnumerator()) {
+                    // by ending this loop at k = m - 1 instead of k = m, we not only avoid evaluating P(m), but we also
+                    // ensure that if PS = 0.999999 due to floating point noise, and we have P = 0.99999999, we dont
+                    // return m+1 when we should return m
+                    for (int k = 0; k < m; k++) {
+                        B.MoveNext();
+                        PS += B.Current * PP;
+                        if (PS >= P) return(k);
+                        PP *= r;
+                    }
+                    return (m);
+                }
+                */
+                
+                int k = -1;
+                foreach (double B in AdvancedIntegerMath.BinomialCoefficients(m)) {
+                    k++;
+                    PS += B * PP;
+                    if (PS >= P) return(k);
+                    PP *= r;
+                }
+                // we "shouldn't" reach here, but if floating point jitter makes all the values add up to 0.999999 instead of 1,
+                // and we have P = 0.99999999, it could happen, so in this case we return m
+                return (m);
+                /*
                 // for small distributions, just add probabilities directly
                 int k = 0;
                 double P0 = MoreMath.Pow(q, m);
@@ -143,6 +176,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                     PP += P0;
                 }
                 return (k);
+                */
             } else {
                 // for larger distributions, use bisection
                 // this will require log_{2}(m) CDF evaluations, which is at most 31
@@ -160,9 +194,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        public static FitResult FitToHistogram (Histogram histogram) {
-            throw new NotImplementedException();
-        }
 
     }
 

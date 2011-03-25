@@ -93,18 +93,31 @@ namespace Test {
         [TestMethod]
         public void Bug5886 () {
 
-            FisherDistribution F = new FisherDistribution(1.0, 0.1);
+            double nu1 = 1.0;
+            double nu2 = 0.1;
+
+            FisherDistribution F = new FisherDistribution(nu1, nu2);
+
+            /*
             Console.WriteLine(F.Mean);
             Console.WriteLine(F.StandardDeviation);
             Console.WriteLine(F.Skewness);
 
-            Console.WriteLine(F.LeftProbability(0.25));
-            Console.WriteLine(F.LeftProbability(0.50));
-            Console.WriteLine(F.LeftProbability(0.75));
+            Console.WriteLine(F.LeftProbability(0.1));
+            Console.WriteLine(F.LeftProbability(1.0));
+            Console.WriteLine(F.LeftProbability(1.0E9));
 
-            //double x = F.InverseLeftProbability(0.9);
-            double x = InverseFisherDistribution(F, 1.0E-5);
-            Console.WriteLine("{0} {1}", x, F.LeftProbability(x));
+            BetaDistribution B = new BetaDistribution(F.NumeratorDegreesOfFreedom / 2.0, F.DenominatorDegreesOfFreedom / 2.0);
+            double x = 1.3;
+            double y = nu1 * x / (nu2 + nu1 * x);
+            double u = nu1 * nu2 / MoreMath.Pow(nu2 + nu1 * x, 2);
+            Console.WriteLine("{0} v. {1}", F.ProbabilityDensity(x), u * B.ProbabilityDensity(y));
+            */
+
+            double x1 = F.InverseLeftProbability(0.6);
+            Console.WriteLine(x1);
+            double P = F.LeftProbability(x1);
+            Console.WriteLine(P);
 
         }
 

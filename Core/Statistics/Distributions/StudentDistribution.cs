@@ -24,7 +24,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="nu">The number of degrees of freedom, which must be positive.</param>
         public StudentDistribution (double nu) {
-            if (nu <= 0.0) throw new ArgumentOutOfRangeException("nu", nu, "Degrees of freedom must be positive.");
+            if (nu <= 0.0) throw new ArgumentOutOfRangeException("nu");
             this.nu = nu;
         }
 

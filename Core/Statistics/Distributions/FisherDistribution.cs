@@ -16,12 +16,30 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// the F-test (<see cref="Sample.FisherFTest"/>),
     /// the goodness-of-fit test for a multi-linear regression (<see cref="MultivariateSample.LinearRegression(int)"/>),
     /// and ANOVA tests (<see cref="Sample.OneWayAnovaTest(IList{Sample})"/>).</para>
+    /// <para>The Fisher distribution is related to the Beta distribution (<see cref="BetaDistribution"/>) by a simple
+    /// variable transformation.</para>
+    /// <img src="../images/BetaFromFisher.png" />
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/F_distribution"/>
     public sealed class FisherDistribution : Distribution {
 
+        /// <summary>
+        /// Instantiates a new Fisher distribution.
+        /// </summary>
+        /// <param name="nu1">The number of degrees of freedom in the numerator, which must be positive.</param>
+        /// <param name="nu2">The number of degrees of freedom in the denominator, which must be positive.</param>
+        /// <seealso cref="Sample.FisherFTest"/>
+        public FisherDistribution (double nu1, double nu2) {
+            if (nu1 <= 0.0) throw new ArgumentOutOfRangeException("nu1");
+            if (nu2 <= 0.0) throw new ArgumentOutOfRangeException("nu2");
+            this.nu1 = nu1;
+            this.nu2 = nu2;
+            this.beta = new BetaDistribution(nu1 / 2.0, nu2 / 2.0);
+        }
+
         private double nu1;
         private double nu2;
+        private BetaDistribution beta;
 
         /// <summary>
         /// Gets the number of degrees of freedom in the numerator.
@@ -41,28 +59,21 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-    
-        /// <summary>
-        /// Instantiates a new Fisher distribution.
-        /// </summary>
-        /// <param name="nu1">The number of degrees of freedom in the numerator, which must be positive.</param>
-        /// <param name="nu2">The number of degrees of freedom in the denominator, which must be positive.</param>
-        /// <seealso cref="Sample.FisherFTest"/>
-		public FisherDistribution (double nu1, double nu2) {
-			if (nu1 <= 0.0) throw new ArgumentOutOfRangeException("nu1");
-			if (nu2 <= 0.0) throw new ArgumentOutOfRangeException("nu2");
-			this.nu1 = nu1;
-			this.nu2 = nu2;
-		}
-
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             if (x <= 0.0) {
                 return (0.0);
             } else {
+                double p = nu1 * x;
+                double q = nu2 + p;
+                double y = p / q;
+                double u = nu1 * nu2 / (q * q);
+                return (u * beta.ProbabilityDensity(y));
+                /*
                 double N = Math.Pow(nu1, 0.5 * nu1) * Math.Pow(nu2, 0.5 * nu2) /
                     AdvancedMath.Beta(0.5 * nu1, 0.5 * nu2);
                 return (N * Math.Pow(x, 0.5 * nu1 - 1.0) * Math.Pow(nu2 + nu1 * x, -0.5 * (nu1 + nu2)));
+                 */
             }
 		}
 
@@ -71,7 +82,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (x <= 0.0) {
                 return (0.0);
             } else {
-                return (AdvancedMath.Beta(0.5 * nu1, 0.5 * nu2, nu1 * x / (nu2 + nu1 * x)) / AdvancedMath.Beta(0.5 * nu1, 0.5 * nu2));
+                double p = nu1 * x;
+                double q = nu2 + p;
+                double y = p / q;
+                return (beta.LeftProbability(y));
+                //return (AdvancedMath.Beta(nu1 / 2.0, nu2 / 2.0, nu1 * x / (nu2 + nu1 * x)) / AdvancedMath.Beta(0.5 * nu1, 0.5 * nu2));
             }
 		}
 
@@ -80,9 +95,16 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (x <= 0.0) {
                 return (1.0);
             } else {
-                return (AdvancedMath.Beta(0.5 * nu2, 0.5 * nu1, nu2 / (nu2 + nu1 * x)) / AdvancedMath.Beta(0.5 * nu2, 0.5 * nu1));
+                double p = nu1 * x;
+                double q = nu2 + p;
+                double y = p / q;
+                return (beta.RightProbability(y));
+                //return (AdvancedMath.Beta(0.5 * nu2, 0.5 * nu1, nu2 / (nu2 + nu1 * x)) / AdvancedMath.Beta(0.5 * nu2, 0.5 * nu1));
             }
 		}
+
+        // moments are not directly calculable from relationship to Beta distribution
+        // is there some way to do this that I don't know about?
 
         /// <inheritdoc />
         public override double Mean {
@@ -111,10 +133,6 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double Moment (int n) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
-                return (1.0);
-            } else if (n == 1) {
-                return (Mean);
             } else {
                 if (nu2 <= 2.0 * n) {
                     return (System.Double.PositiveInfinity);
@@ -163,6 +181,18 @@ namespace Meta.Numerics.Statistics.Distributions {
                 }
             }
 		}
+
+        /// <inheritdoc />
+        public override double InverseLeftProbability (double P) {
+            double y = beta.InverseLeftProbability(P);
+            return(nu2 / nu1 * y / (1.0 - y));
+        }
+
+        /// <inheritdoc />
+        public override double InverseRightProbability (double Q) {
+            double y = beta.InverseRightProbability(Q);
+            return (nu2 / nu1 * y / (1.0 - y));
+        }
 		
 	}
 

@@ -7,6 +7,8 @@ using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Statistics {
 
+#if FUTURE
+
     public class DiscreteHistogram {
 
         public DiscreteHistogram (DiscreteInterval interval) {
@@ -31,5 +33,7 @@ namespace Meta.Numerics.Statistics {
 
 
     }
+
+#endif
 
 }

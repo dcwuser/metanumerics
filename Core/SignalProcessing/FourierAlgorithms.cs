@@ -5,172 +5,7 @@ using Meta.Numerics;
 
 namespace Meta.Numerics.SignalProcessing {
 
-    /// <summary>
-    /// Specifies the normalization convention to be used in a Fourier transform.
-    /// </summary>
-    /// <remarks>
-    /// <para>The most common convention in signal processing applications is <see cref="FourierNormalization.None"/>.</para>
-    /// </remarks>
-    public enum FourierNormalization {
-        None, Unitary, Inverse
-    }
-
-    /// <summary>
-    /// Specifies the sign convention to be used in the exponent of a Fourier transform.
-    /// </summary>
-    /// <remarks>
-    /// <para>The most common convention in signal processing applications is <see cref="FourierSign.Negative"/>.</para>
-    /// </remarks>
-    public enum FourierSign {
-
-        /// <summary>
-        /// The exponent has positive imaginary values.
-        /// </summary>
-        Positive,
-
-        /// <summary>
-        /// The exponent has negative imaginary values.
-        /// </summary>
-        Negative
-    }
-
-    /// <summary>
-    /// An engine for performing Fourier transforms on complex series.
-    /// </summary>
-    /// <seealso href="http://en.wikipedia.org/wiki/Discrete-time_Fourier_transform"/>
-    public class FourierTransformer {
-
-        /// <summary>
-        /// Initializes a new instance of the Fourier transformer.
-        /// </summary>
-        /// <param name="size">The series length of the transformer, which must be positive.</param>
-        public FourierTransformer (int size) : this(size, FourierSign.Negative, FourierNormalization.None) {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the Fourier transformer with the given sign and normalization conventions.
-        /// </summary>
-        /// <param name="size">The series length of the transformer, which must be positive.</param>
-        /// <param name="signConvention">The sign convention of the transformer.</param>
-        /// <param name="normalizationConvention">The normalization convention of the transformer.</param>
-        public FourierTransformer (int size, FourierSign signConvention, FourierNormalization normalizationConvention) {
-            if (size < 1) throw new ArgumentOutOfRangeException("size");
-            this.size = size;
-            this.factors = Factor.Factorize(size);
-            this.signConvention = signConvention;
-            this.normalizationConvention = normalizationConvention;
-            this.roots = FourierAlgorithms.ComputeRoots(size, +1);
-        }
-
-        private int size;
-        private List<Factor> factors;
-        private FourierNormalization normalizationConvention;
-        private FourierSign signConvention;
-        private Complex[] roots;
-
-        /// <summary>
-        /// The series length for which the transformer is specialized.
-        /// </summary>
-        public int Length {
-            get {
-                return (size);
-            }
-        }
-
-        /// <summary>
-        /// Gets the normalization convention used by the transformer.
-        /// </summary>
-        public FourierNormalization NormalizationConvention {
-            get {
-                return (normalizationConvention);
-            }
-        }
-
-        /// <summary>
-        /// Gets the normalization convention used by the transformer.
-        /// </summary>
-        public FourierSign SignConvention {
-            get {
-                return (signConvention);
-            }
-        }
-
-        private int GetSign () {
-            if (signConvention == FourierSign.Positive) {
-                return (+1);
-            } else {
-                return (-1);
-            }
-        }
-
-        private static void Normalize (Complex[] x, double f) {
-            for (int i = 0; i < x.Length; i++) {
-                x[i] = new Complex(f * x[i].Re, f * x[i].Im);
-            }
-        }
-
-
-        /// <summary>
-        /// Computes the Fourier transform of the given series.
-        /// </summary>
-        /// <param name="values">The series to transform.</param>
-        /// <returns>The discrete Fourier transform of the series.</returns>
-        public Complex[] Transform (IList<Complex> values) {
-            if (values == null) throw new ArgumentNullException("values");
-            if (values.Count != size) throw new InvalidOperationException();
-
-            // copy the original values into a new array
-            Complex[] x = new Complex[size];
-            values.CopyTo(x, 0);
-
-            // normalize the copy appropriately
-            if (normalizationConvention == FourierNormalization.Unitary) {
-                Normalize(x, 1.0 / Math.Sqrt(size));
-            } else if (normalizationConvention == FourierNormalization.Inverse) {
-                Normalize(x, 1.0 / size);
-            }
-
-            // create a scratch array
-            Complex[] y = new Complex[size];
-
-            // do the FFT
-            FourierAlgorithms.Fft(values.Count, factors, ref x, ref y, roots, GetSign());
-
-            return (x);
-
-        }
-
-        /// <summary>
-        /// Computes the inverse Fourier transform of the given series.
-        /// </summary>
-        /// <param name="values">The series to invert.</param>
-        /// <returns>The inverse discrete Fourier transform of the series.</returns>
-        public Complex[] InverseTransform (IList<Complex> values) {
-            if (values == null) throw new ArgumentNullException("values");
-            if (values.Count != size) throw new InvalidOperationException();
-
-            // copy the original values into a new array
-            Complex[] x = new Complex[size];
-            values.CopyTo(x, 0);
-
-            // normalize the copy appropriately
-            if (normalizationConvention == FourierNormalization.None) {
-                Normalize(x, 1.0 / size);
-            } else if (normalizationConvention == FourierNormalization.Unitary) {
-                Normalize(x, 1.0 / Math.Sqrt(size));
-            }
-
-            // create a scratch array
-            Complex[] y = new Complex[size];
-
-            // do the FFT
-            FourierAlgorithms.Fft(values.Count, factors, ref x, ref y, roots, -GetSign());
-
-            return (x);
-
-        }
-
-    }
+    // the algorithms used in Fourier transforms
 
     internal static class FourierAlgorithms {
 
@@ -241,6 +76,10 @@ namespace Meta.Numerics.SignalProcessing {
                     break;
                 case 5:
                     FftKernel5(v, y, y0, dy, sign);
+                    break;
+                case 7:
+                    FftKernel7(v, y, y0, dy, sign);
+                    //FftKernel(R, v, y, y0, dy, sign);
                     break;
                 default:
                     FftKernel(R, v, y, y0, dy, sign);
@@ -325,6 +164,60 @@ namespace Meta.Numerics.SignalProcessing {
         private static readonly double S5 = Math.Sqrt(5.0);
         private static readonly Complex r51 = new Complex((S5 - 1.0) / 4.0, Math.Sqrt((5.0 + S5) / 8.0));
         private static readonly Complex r52 = new Complex(-(S5 + 1.0) / 4.0, Math.Sqrt((5.0 - S5) / 8.0));
+
+        // this length-7 kernel requires 92 ops, again about a third as many as naive evaluation
+
+        private static void FftKernel7 (Complex[] v, Complex[] y, int y0, int dy, int sign) {
+            // relevent sums and differences
+            double a16p = v[1].Re + v[6].Re;
+            double a16m = v[1].Re - v[6].Re;
+            double a25p = v[2].Re + v[5].Re;
+            double a25m = v[2].Re - v[5].Re;
+            double a34p = v[3].Re + v[4].Re;
+            double a34m = v[3].Re - v[4].Re;
+            double b16p = v[1].Im + v[6].Im;
+            double b16m = v[1].Im - v[6].Im;
+            double b25p = v[2].Im + v[5].Im;
+            double b25m = v[2].Im - v[5].Im;
+            double b34p = v[3].Im + v[4].Im;
+            double b34m = v[3].Im - v[4].Im;
+            // combinations used in y[1] and y[6]
+            double s16a = v[0].Re + r71.Re * a16p + r72.Re * a25p + r73.Re * a34p;
+            double s16b = v[0].Im + r71.Re * b16p + r72.Re * b25p + r73.Re * b34p;
+            double t16a = r71.Im * a16m + r72.Im * a25m + r73.Im * a34m;
+            double t16b = r71.Im * b16m + r72.Im * b25m + r73.Im * b34m;
+            // combinations used in y[2] and y[5]
+            double s25a = v[0].Re + r71.Re * a34p + r72.Re * a16p + r73.Re * a25p;
+            double s25b = v[0].Im + r71.Re * b34p + r72.Re * b16p + r73.Re * b25p;
+            double t25a = r71.Im * a34m - r72.Im * a16m + r73.Im * a25m;
+            double t25b = r71.Im * b34m - r72.Im * b16m + r73.Im * b25m;
+            // combinations used in y[3] and y[4]
+            double s34a = v[0].Re + r71.Re * a25p + r72.Re * a34p + r73.Re * a16p;
+            double s34b = v[0].Im + r71.Re * b25p + r72.Re * b34p + r73.Re * b16p;
+            double t34a = r71.Im * a25m - r72.Im * a34m - r73.Im * a16m;
+            double t34b = r71.Im * b25m - r72.Im * b34m - r73.Im * b16m;
+            // if sign is negative, invert t's
+            if (sign < 0) {
+                t16a = -t16a; t16b = -t16b;
+                t25a = -t25a; t25b = -t25b;
+                t34a = -t34a; t34b = -t34b;
+            }
+            // combine to get results
+            y[y0] = new Complex(v[0].Re + a16p + a25p + a34p, v[0].Im + b16p + b25p + b34p);
+            y[y0 + dy] = new Complex(s16a - t16b, s16b + t16a);
+            y[y0 + 2 * dy] = new Complex(s25a + t25b, s25b - t25a);
+            y[y0 + 3 * dy] = new Complex(s34a + t34b, s34b - t34a);
+            y[y0 + 4 * dy] = new Complex(s34a - t34b, s34b + t34a);
+            y[y0 + 5 * dy] = new Complex(s25a - t25b, s25b + t25a);
+            y[y0 + 6 * dy] = new Complex(s16a + t16b, s16b - t16a);
+        }
+
+        // seventh roots of unity
+        // a la Gauss, these are not expressible in closed form using rationals and rational roots
+
+        private static readonly Complex r71 = new Complex(0.62348980185873353053, 0.78183148246802980871);
+        private static readonly Complex r72 = new Complex(-0.22252093395631440429, 0.97492791218182360702);
+        private static readonly Complex r73 = new Complex(-0.90096886790241912624, 0.43388373911755812048);
 
         // this is an O(N^2) kernel which is used when no Winograd kernel is available
 

@@ -636,6 +636,36 @@ namespace Test {
 
         }
 
+        private double[] cs = new double[] { 0.02, 0.2, 2.0, 20.0, 200.0 };
+
+        [TestMethod]
+        public void BetaInversion () {
+
+            // test that beta distribution is accurately inverted over a wide range of a, b, P
+
+            foreach (double a in TestUtilities.GenerateRealValues(0.01, 100.0, 8)) {
+                foreach (double b in cs) {
+
+                    BetaDistribution B = new BetaDistribution(a, b);
+
+                    foreach (double P in probabilities) {
+                        Console.WriteLine("a={0} b={1} P={2}", a, b, P);
+                        double x = B.InverseLeftProbability(P);
+                        Console.WriteLine("  x={0} P(x)={1}", x, B.LeftProbability(x));
+                        // we would like to test that P(x) = P, but floating point limitations prevent us from meeting this standard
+                        // P(x) changes so fast at extremes that sometimes even the minimal change in x causes a change
+                        // in P(x) larger than our target precision; so instead we test that our routine gets us
+                        // as close as it can, by checking that P(x-e) < P < P(x+e)
+                        double Px = B.LeftProbability(x);
+                        double Pxm = B.LeftProbability(Math.Min(0.0, x * (1.0 - TestUtilities.TargetPrecision)));
+                        double Pxp = B.LeftProbability(Math.Max(x * (1.0 + TestUtilities.TargetPrecision), 1.0));
+                        Assert.IsTrue((Pxm <= P) && (P <= Pxp));
+                    }
+                }
+            }
+
+        }
+
         public static double ApproximateProbit (double P) {
 
             if (P < 0.1) {

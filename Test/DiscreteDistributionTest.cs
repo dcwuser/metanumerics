@@ -235,37 +235,6 @@ namespace Test {
         }
 
         [TestMethod]
-        public void DiscreteRandomValueDistribution () {
-
-            PoissonDistribution distribution = new PoissonDistribution(3.0);
-            Random rng = new Random(1);
-
-            //foreach (DiscreteDistribution distribution in distributions) {
-
-                Console.WriteLine(distribution.GetType().FullName);
-
-                Histogram h = new Histogram(10);
-            
-                for (int i = 0; i < 100; i++) {
-                    h.Add(distribution.GetRandomValue(rng));
-                }
-              
-                for (int i = 0; i < 10; i++) {
-                    Console.WriteLine(h[i].Counts);
-                }
-
-                TestResult test = h.ChiSquaredTest(distribution);
-                Console.WriteLine(test.Statistic);
-
-            
-
-
-            //}
-
-
-        }
-
-        [TestMethod]
         public void DiscreteDistributionBase () {
 
             DiscreteDistribution D = new DiscreteTestDistribution();

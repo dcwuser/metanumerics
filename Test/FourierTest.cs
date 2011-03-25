@@ -16,7 +16,7 @@ namespace Test {
         [TestMethod]
         public void FourierTiming () {
 
-            int n = 8 * 8 * 8 * 8 * 8 * 8;
+            int n = 10020;
 
             FourierTransformer ft = new FourierTransformer(n);
 
@@ -152,7 +152,7 @@ namespace Test {
         [TestMethod]
         public void TestMethod1 () {
 
-            int N = 21;
+            int N = 49 * 2;
             FourierTransformer ft = new FourierTransformer(N);
 
             Complex[] x = new Complex[N];

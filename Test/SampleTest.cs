@@ -10,59 +10,8 @@ using Meta.Numerics.Statistics.Distributions;
 
 namespace Test {
     
-    
-    /// <summary>
-    ///This is a test class for SampleTest and is intended
-    ///to contain all SampleTest Unit Tests
-    ///</summary>
-    [TestClass()]
+    [TestClass]
     public class SampleTest {
-
-
-        private TestContext testContextInstance;
-
-        /// <summary>
-        ///Gets or sets the test context which provides
-        ///information about and functionality for the current test run.
-        ///</summary>
-        public TestContext TestContext {
-            get {
-                return testContextInstance;
-            }
-            set {
-                testContextInstance = value;
-            }
-        }
-
-        #region Additional test attributes
-        // 
-        //You can use the following additional attributes as you write your tests:
-        //
-        //Use ClassInitialize to run code before running the first test in the class
-        //[ClassInitialize()]
-        //public static void MyClassInitialize(TestContext testContext)
-        //{
-        //}
-        //
-        //Use ClassCleanup to run code after all tests in a class have run
-        //[ClassCleanup()]
-        //public static void MyClassCleanup()
-        //{
-        //}
-        //
-        //Use TestInitialize to run code before running each test
-        //[TestInitialize()]
-        //public void MyTestInitialize()
-        //{
-        //}
-        //
-        //Use TestCleanup to run code after each test has run
-        //[TestCleanup()]
-        //public void MyTestCleanup()
-        //{
-        //}
-        //
-        #endregion
 
         [TestMethod]
         public void SampleManipulations () {
@@ -88,6 +37,22 @@ namespace Test {
             // clear the sample and check the length
             sample.Clear();
             Assert.IsTrue(sample.Count == 0);
+
+        }
+
+        [TestMethod]
+        public void SampleCopy () {
+
+            // test independency of copy
+
+            Sample sample1 = new Sample();
+            sample1.Add(1.0, 2.0);
+
+            Sample sample2 = sample1.Copy();
+            sample2.Add(3.0, 4.0);
+
+            Assert.IsTrue(sample1.Count == 2);
+            Assert.IsTrue(sample2.Count == 4);
 
         }
 

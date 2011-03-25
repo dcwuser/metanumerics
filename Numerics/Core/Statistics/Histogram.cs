@@ -5,6 +5,8 @@ using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Statistics {
 
+#if FUTURE
+
     /// <summary>
     /// A histogram.
     /// </summary>
@@ -205,5 +207,7 @@ namespace Meta.Numerics.Statistics {
         }
 
     }
+
+#endif
 
 }

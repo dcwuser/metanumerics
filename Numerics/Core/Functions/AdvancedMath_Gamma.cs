@@ -187,13 +187,13 @@ namespace Meta.Numerics.Functions {
         /// <param name="a">The left shape parameter, which must be non-negative.</param>
         /// <param name="b">The right shape paraemter, which must be non-negative.</param>
         /// <param name="x">The integral endpoint, which must lie in [0,1].</param>
-        /// <returns>The incomplete beta function, integrated up to <paramref name="x"/>.</returns>
+        /// <returns>The value of B<sub>x</sub>(a, b).</returns>
 		public static double Beta (double a, double b, double x) {
-			if (a<0.0) throw new ArgumentOutOfRangeException("a");
-			if (b<0.0) throw new ArgumentOutOfRangeException("b");
-			if ((x<0.0) || (x>1.0)) throw new ArgumentOutOfRangeException("x");
+            if (a < 0.0) throw new ArgumentOutOfRangeException("a");
+            if (b < 0.0) throw new ArgumentOutOfRangeException("b");
+            if ((x < 0.0) || (x > 1.0)) throw new ArgumentOutOfRangeException("x");
 			if (x == 0.0) return(0.0);
-			double xtp = (a+1.0)/(a+b+2.0);
+            double xtp = (a + 1.0) / (a + b + 2.0);
 			if (x > xtp) {
 				return(Beta(a,b) - Beta(b, a, 1.0-x));
 			}
@@ -219,7 +219,17 @@ namespace Meta.Numerics.Functions {
 			return( Math.Pow(x, a) * Math.Pow(1.0-x, b) / a * f );
 			
 		}
-        
+
+        /// <summary>
+        /// Computes the regularized incomplete Beta function.
+        /// </summary>
+        /// <param name="a">The left shape parameter, which must be non-negative.</param>
+        /// <param name="b">The right shape paraemter, which must be non-negative.</param>
+        /// <param name="x">The integral endpoint, which must lie in [0,1].</param>
+        /// <returns>The value of I<sub>x</sub>(a, b) = B<sub>x</sub>(a, b) / B(a, b).</returns>
+        public static double LeftRegularizedBeta (double a, double b, double x) {
+            return (Beta(a, b, x) / Beta(a, b));
+        }
 
 		// helper functions
 

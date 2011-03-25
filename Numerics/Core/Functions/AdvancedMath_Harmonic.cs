@@ -14,6 +14,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="theta">The azimuthal angle &#x3B8;. This angle is usually expressed as between -&#x3C0;/2 and +&#x3C0;/2, with positive values representing the upper hemisphere and negative values representing the lower hemisphere.</param>
         /// <param name="phi">The cylindrical angle &#x3C6;. This angle is usually expressed as between 0 and 2&#x3C0;, measured counter-clockwise (as seen from above) from the positive x-axis. It is also possible to use negative values to represent clockwise movement. </param>
         /// <returns>The value of Y<sub>l,m</sub>(&#x3B8;,&#x3C6;).</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="l"/> is negative, or <paramref name="m"/> lies outside the range [-l, l].</exception>
         public static Complex SphericalHarmonic (int l, int m, double theta, double phi) {
             if (l < 0) throw new ArgumentOutOfRangeException("l");
             if ((m > l) || (m < -l)) throw new ArgumentOutOfRangeException("m");

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 
 using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics.Distributions;
@@ -170,7 +171,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the indicated column.
         /// </summary>
-        /// <param name="c">The column number.</param>
+        /// <param name="c">The (zero-based) column index.</param>
         /// <returns>A read-only <see cref="Sample"/> containing all values in the indicated column.</returns>
         /// <remarks>
         /// <para>Use this method to obtain column-specific information, such as the <see cref="Sample.Median"/> or
@@ -189,8 +190,8 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the indicated columns.
         /// </summary>
-        /// <param name="cx">The column number of the X variable.</param>
-        /// <param name="cy">The column number of the Y variable.</param>
+        /// <param name="cx">The (zero-based) column index of the X variable.</param>
+        /// <param name="cy">The (zero-based) column index of the Y variable.</param>
         /// <returns>A read-only <see cref="BivariateSample"/> consisting of the indicated columns..</returns>
         /// <remarks>
         /// <para>Use this method to obtain information specific to the two columns, such as the <see cref="BivariateSample.Covariance"/>,
@@ -539,15 +540,6 @@ namespace Meta.Numerics.Statistics {
         }
 #endif
 
-        private void CheckIndices (IList<int> indixes) {
-            for (int i = 0; i < indixes.Count; i++) {
-                if ((indixes[i] < 0) || (indixes[i] >= Dimension)) throw new ArgumentOutOfRangeException();
-                for (int j = 0; j < i; j++) {
-                    if (indixes[j] == indixes[i]) throw new InvalidOperationException();
-                }
-            }
-        }
-
         // the internal linear regression routine, which assumes inputs are entirely valid
 
         private FitResult LinearRegression_Internal (int outputIndex) {
@@ -817,7 +809,7 @@ namespace Meta.Numerics.Statistics {
                 if (reader.IsDBNull(i)) {
                     return (false);
                 } else {
-                    entry[c] = Convert.ToDouble(reader.GetValue(i));
+                    entry[c] = Convert.ToDouble(reader.GetValue(i), CultureInfo.InvariantCulture);
                 }
             }
             return (true);

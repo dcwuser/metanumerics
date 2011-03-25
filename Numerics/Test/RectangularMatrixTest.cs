@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
@@ -264,7 +265,7 @@ namespace Test {
             for (int i = 0; i < PCA.Dimension; i++) {
                 PrincipalComponent PC = PCA.Component(i);
                 Console.WriteLine("  {0} {1} {2} {3}", PC.Index, PC.Weight, PC.VarianceFraction, PC.CumulativeVarianceFraction);
-                RowVector v = PC.Vector;
+                RowVector v = PC.NormalizedVector;
                 Console.WriteLine("  {0} {1}", v[0], v[1]);
             }
 
@@ -287,6 +288,14 @@ namespace Test {
                 U[100, 1] * SVD.SingularValue(1) * SVD.RightSingularVector(1);
             Console.WriteLine("d100 = ({0} {1})", d100[0], d100[1]);
 
+            Console.WriteLine("compare");
+            MultivariateSample RS = PCA.TransformedSample();
+            IEnumerator<double[]> RSE = RS.GetEnumerator();
+            RSE.MoveNext();
+            double[] dv1 = RSE.Current;
+            Console.WriteLine("{0} {1}", dv1[0], dv1[1]);
+            Console.WriteLine("{0} {1}", U[0, 0], U[0, 1]);
+            RSE.Dispose();
 
         }
 

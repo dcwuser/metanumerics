@@ -96,7 +96,7 @@ namespace Meta.Numerics.Functions {
         /// If you need a series of binomial coefficients, using a recursion will be more computationally efficient than
         /// calling this method for each one. The <see cref="BinomialCoefficients"/> method provides a fast enumeration of
         /// all the binomial coefficients in a given row of Pascal's triangle.</para>
-        /// <para>Binomial coefficients are always integers, but we return a the result as double because the value can exceed
+        /// <para>Binomial coefficients are always integers, but we return the result as double because the value can exceed
         /// the capacity of an int or even a long for even quite moderate values of n and m.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative, or <paramref name="m"/> lies outside [0,<paramref name="n"/>].</exception>
@@ -171,10 +171,11 @@ namespace Meta.Numerics.Functions {
 #endif
 
         /// <summary>
-        /// Evaluates a row of binomial coefficients.
+        /// Enumerates the binomial coefficients of a given order.
         /// </summary>
-        /// <param name="n">The upper argument.</param>
+        /// <param name="n">The upper argument, which must be non-negative.</param>
         /// <returns>An enumeration of the binomial coefficients in the nth row of Pascal's triangle.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         public static IEnumerable<double> BinomialCoefficients (int n) {
 
             if (n < 0) throw new ArgumentOutOfRangeException("n");
@@ -228,7 +229,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="n">The argument, which must be positive.</param>
         /// <returns>The double factorial n!!.</returns>
         /// <remarks>
-        /// <para>The double factorial of an integer is the product all integers of the same parity, up to an including the integer.
+        /// <para>The double factorial of an integer is the product all integers of the same parity, up to and including the integer.
         /// Thus 5! = 5 * 3 * 1 = 15 and 6! = 6 * 4 * 2 = 48.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>

@@ -4,7 +4,7 @@ using System.Globalization;
 
 using Meta.Numerics.Functions;
 
-namespace Meta.Numerics.Statistics {
+namespace Meta.Numerics {
 
     /// <summary>
     /// Represents a value with an associated uncertainty.

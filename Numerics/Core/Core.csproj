@@ -81,11 +81,13 @@
     <Compile Include="Functions\AdvancedMath_Constants.cs" />
     <Compile Include="Functions\AdvancedMath_Coulomb.cs" />
     <Compile Include="Functions\AdvancedMath_Elliptic.cs" />
+    <Compile Include="Functions\AdvancedMath_Inverse.cs" />
     <Compile Include="Functions\AdvancedMath_Polylog.cs" />
     <Compile Include="Functions\FunctionMath_Differentiate.cs" />
     <Compile Include="Matrices\SingularValueDecomposition.cs" />
     <Compile Include="Matrices\SparseSquareMatrix.cs" />
     <Compile Include="SignalProcessing\FourierAlgorithms.cs" />
+    <Compile Include="SignalProcessing\FourierTransformer.cs" />
     <Compile Include="Special\Spin.cs" />
     <Compile Include="Functions\AdvancedMath_Harmonic.cs" />
     <Compile Include="Functions\AdvancedMath_Lambert.cs" />
@@ -165,9 +167,9 @@
     <Compile Include="Statistics\MultivariateSample.cs" />
     <Compile Include="Statistics\Sample.cs" />
     <Compile Include="Statistics\TestResult.cs" />
-    <Compile Include="Statistics\UncertainMath.cs" />
+    <Compile Include="Core\UncertainMath.cs" />
     <Compile Include="Statistics\UncertainMeasurementSample.cs" />
-    <Compile Include="Statistics\UncertainValue.cs" />
+    <Compile Include="Core\UncertainValue.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="keypair.snk" />

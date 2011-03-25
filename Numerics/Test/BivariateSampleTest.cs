@@ -31,6 +31,23 @@ namespace Test {
 
         }
 
+
+        [TestMethod]
+        public void BivariateSampleCopy () {
+
+            // test independency of copy
+
+            BivariateSample sample1 = new BivariateSample();
+            sample1.Add(1.0, 2.0);
+
+            BivariateSample sample2 = sample1.Copy();
+            sample2.Add(3.0, 4.0);
+
+            Assert.IsTrue(sample1.Count == 1);
+            Assert.IsTrue(sample2.Count == 2);
+
+        }
+
         [TestMethod]
         public void PearsonRDistribution () {
 

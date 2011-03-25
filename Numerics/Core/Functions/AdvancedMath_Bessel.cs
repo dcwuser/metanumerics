@@ -17,7 +17,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="n">The order parameter.</param>
         /// <param name="x">The argument.</param>
-        /// <returns>The value of J<sub><paramref name="n"/></sub>(<paramref name="x"/>).</returns>
+        /// <returns>The value of J<sub>n</sub>(x).</returns>
         /// <remarks>
         /// <para>The Bessel functions of integral order occur in solutions to the wave equations with cylindrical symmetry. The
         /// regular Bessel functions are finite at the origin, and thus occur in situations where the wave equation is satisfied
@@ -715,6 +715,8 @@ namespace Meta.Numerics.Functions {
 
         }
 
+#if FUTURE
+
         /// <summary>
         /// Computes both Bessel functions and their derivatives.
         /// </summary>
@@ -734,6 +736,8 @@ namespace Meta.Numerics.Functions {
             }
 
         }
+
+#endif
 
         // large order expansion using Airy functions
         /*
@@ -1038,7 +1042,7 @@ namespace Meta.Numerics.Functions {
     }
 
 
-    public struct SolutionPair {
+    internal struct SolutionPair {
 
         private double j, jPrime, y, yPrime;
 

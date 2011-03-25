@@ -57,6 +57,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="y">The value of erfc(x), which must lie between 0 and 1.</param>
         /// <returns>The corresponding argument x.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="y"/> lies outside [0,1].</exception>
         /// <seealso cref="Erf"/>
         /// <seealso cref="Erfc" />
         /// <seealso cref="InverseErf" />

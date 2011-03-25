@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using System.Globalization;
 
 using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics.Distributions;
@@ -7,8 +8,15 @@ using Meta.Numerics.Statistics.Distributions;
 namespace Meta.Numerics.Statistics {
 
     /// <summary>
-    /// Represents a sample of data points, where each data point is described by a pair of real numbers.
+    /// Represents a set of data points, where each data point is described by a pair of real numbers.
     /// </summary>
+    /// <remarks>
+    /// <para>A bivariate sample consists of pairs of real numbers, where each pair is an independent
+    /// measurement. For example, if you measure the height and weight of a sample of people, the data
+    /// could be stored as a bivariate sample. The class can compute various descriptive statistics
+    /// for the sample, perform appropriate statistical tests on the sample data, and fit the sample
+    /// data to various models.</para>
+    /// </remarks>
     public sealed class BivariateSample {
 
         /// <summary>
@@ -129,8 +137,17 @@ namespace Meta.Numerics.Statistics {
         // marginals
 
         /// <summary>
-        /// Gets the univariate sample consisting of the x-values of the data points.
+        /// Gets a read-only univariate sample consisting of the x-values of the data points.
         /// </summary>
+        /// <remarks>
+        /// <para>Use this method to obtain sinformation specific to the x-vales, such as their <see cref="Sample.Median"/> or
+        /// <see cref="Sample.Variance"/>.</para>
+        /// <para>Note that this is a fast, O(1) operation, which does not create an independent copy of the data.
+        /// The advantage of this is that you can access x-data as a <see cref="Sample"/> as often as you like without
+        /// worying about performance. The disadvantage of this is that the returned sample cannot be altered. If you
+        /// need to alter x-data independent of the bivariate sample, use the <see cref="Sample.Copy"/>
+        /// method to obtain an independent copy.</para>
+        /// </remarks>
         public Sample X {
             get {
                 return (new Sample(xData, false));
@@ -138,8 +155,17 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets the univariate sample consisting of the y-values of the data points.
+        /// Gets a read-only univariate sample consisting of the y-values of the data points.
         /// </summary>
+        /// <remarks>
+        /// <para>Use this method to obtain sinformation specific to the y-vales, such as their <see cref="Sample.Median"/> or
+        /// <see cref="Sample.Variance"/>.</para>
+        /// <para>Note that this is a fast, O(1) operation, which does not create an independent copy of the data.
+        /// The advantage of this is that you can access y-data as a <see cref="Sample"/> as often as you like without
+        /// worying about performance. The disadvantage of this is that the returned sample cannot be altered. If you
+        /// need to alter y-data independent of the bivariate sample, use the <see cref="Sample.Copy"/>
+        /// method to obtain an independent copy.</para>
+        /// </remarks>
         public Sample Y {
             get {
                 return (new Sample(yData, false));
@@ -466,10 +492,6 @@ namespace Meta.Numerics.Statistics {
 
         }
 
-        public FitResult PolynomialRegression (int n) {
-            throw new NotImplementedException();
-        }
-
 
         /// <summary>
         /// Loads values from a data reader.
@@ -484,7 +506,7 @@ namespace Meta.Numerics.Statistics {
                 if (reader.IsDBNull(xIndex) || reader.IsDBNull(yIndex)) continue;
                 object xValue = reader.GetValue(xIndex);
                 object yValue = reader.GetValue(yIndex);
-                Add(Convert.ToDouble(xValue), Convert.ToDouble(yValue));
+                Add(Convert.ToDouble(xValue, CultureInfo.InvariantCulture), Convert.ToDouble(yValue, CultureInfo.InvariantCulture));
             }
         }
 

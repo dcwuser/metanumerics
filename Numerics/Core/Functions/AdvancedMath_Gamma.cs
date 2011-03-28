@@ -547,19 +547,15 @@ namespace Meta.Numerics.Functions {
 
         private static Complex StirlingLogGamma (Complex z) {
 
-            //Console.WriteLine("Stirling");
-
             // work in the upper complex plane
             if (z.Im < 0.0) return (StirlingLogGamma(z.Conjugate).Conjugate);
 
             Complex f = (z - 0.5) * ComplexMath.Log(z) - z + 0.5 * Math.Log(Global.TwoPI);
-            //Console.WriteLine("f={0}", f);
 
             // reduce f.Im modulo 2*PI
             // result is cyclic in f.Im modulo 2*PI, but if f.Im starts off too big, the corrections
             // applied below will be lost because they are being added to a big number
             f = new Complex(f.Re, AdvancedMath.Reduce(f.Im, 0.0));
-            //Console.WriteLine("f={0}", f);
 
             Complex zz = z * z;
             Complex fz = 1.0 / z;
@@ -567,7 +563,6 @@ namespace Meta.Numerics.Functions {
                 Complex df = fz * bernoulli[i] / (2 * i + 1) / (2 * i + 2);
                 Complex f_old = f;
                 f += df;
-                //Console.WriteLine("f={0}", f);
                 if (f == f_old) return (f);
                 fz = fz / zz;
             }

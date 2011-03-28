@@ -160,7 +160,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The result of the fit.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException">The <paramref name="sample"/> contains less than three data points.</exception>
-        /// <exception cref="InsufficientDataException">The <paramref name="sample"/> contains non-positive values.</exception>
+        /// <exception cref="InvalidOperationException">The <paramref name="sample"/> contains non-positive values.</exception>
         public static FitResult FitToSample (Sample sample) {
 
             if (sample == null) throw new ArgumentNullException("sample");

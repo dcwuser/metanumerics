@@ -31,9 +31,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         public abstract double ProbabilityMass (int k);
 
         /// <summary>
-        /// Gets the interval over which the distribution is nonvanishing.
+        /// Gets the smallest value in the distribution.
         /// </summary>
-        public abstract DiscreteInterval Support { get; }
+        public abstract int Minimum { get; }
+
+        /// <summary>
+        /// Gets the largest value in the distribution.
+        /// </summary>
+        public abstract int Maximum { get; }
 
         /// <summary>
         /// Computes the probability of obtaining a value less than or equal to the given value.
@@ -42,14 +47,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The total probability of obtaining a value less than or equal to <paramref name="k"/>.</returns>
         /// <seealso cref="RightProbability"/>
         public virtual double LeftProbability (int k) {
-            DiscreteInterval support = Support;
-            if (k < support.LeftEndpoint) {
+            if (k < Minimum) {
                 return (0.0);
-            } if (k >= support.RightEndpoint) {
+            } if (k >= Maximum) {
                 return (1.0);
             } else {
                 double P = 0.0;
-                for (int j = support.LeftEndpoint; j <= k; j++) {
+                for (int j =Minimum; j <= k; j++) {
                     P += ProbabilityMass(j);
                 }
                 return (P);
@@ -63,14 +67,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The total probability of obtaining a value greater than <paramref name="k"/>.</returns>
         /// <seealso cref="LeftProbability"/>
         public virtual double RightProbability (int k) {
-            DiscreteInterval support = Support;
-            if (k < support.LeftEndpoint) {
+            if (k < Minimum) {
                 return (1.0);
-            } else if (k >= support.RightEndpoint) {
+            } else if (k >= Maximum) {
                 return (0.0);
             } else {
                 double Q = 0.0;
-                for (int j = k + 1; j <= support.RightEndpoint; j++) {
+                for (int j = k + 1; j <= Maximum; j++) {
                     Q += ProbabilityMass(j);
                 }
                 return (Q);
@@ -83,7 +86,12 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="P">The percentile.</param>
         /// <returns>The value.</returns>
         public virtual int InverseLeftProbability (double P) {
-            throw new NotImplementedException();
+            double PP = 0.0;
+            for (int k = Minimum; k <= Maximum; k++) {
+                PP += ProbabilityMass(k);
+                if (PP >= P) return (k);
+            }
+            return (Maximum);
         }
 
         /// <summary>
@@ -93,20 +101,19 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The expectation value of the function.</returns>
         public virtual double ExpectationValue (Func<int, double> f) {
             if (f == null) throw new ArgumentNullException("f");
-            DiscreteInterval support = Support;
 
             // to avoid running over the whole support when it is large, we move out from the mean
             int i0 = (int) Math.Round(Mean);
 
             double s_left = 0.0;
-            for (int i = i0 - 1; i >= support.LeftEndpoint; i--) {
+            for (int i = i0 - 1; i >= Minimum; i--) {
                 double s_left_old = s_left;
                 double ds = f(i) * ProbabilityMass(i);
                 s_left += f(i) * ProbabilityMass(i);
                 if (s_left == s_left_old) break;
             }
             double s_right = 0.0;
-            for (int i = i0 + 1; i <= support.RightEndpoint; i++) {
+            for (int i = i0 + 1; i <= Maximum; i++) {
                 double s_right_old = s_right;
                 double ds = f(i) * ProbabilityMass(i);
                 s_right += f(i) * ProbabilityMass(i);
@@ -122,7 +129,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         public virtual double Mean {
             get {
                 double mu = 0.0;
-                for (int k = Support.LeftEndpoint; k <= Support.RightEndpoint; k++) {
+                for (int k = Minimum; k <= Maximum; k++) {
                     mu += ProbabilityMass(k) * k;
                 }
                 return (mu);
@@ -284,12 +291,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override Interval Support {
             get {
-                return ((Interval) d.Support);
+                return (Interval.FromEndpoints(d.Minimum, d.Maximum));
             }
         }
 
     }
 
+#if PAST
     /// <summary>
     /// Represents an interval on the integers.
     /// </summary>
@@ -418,5 +426,6 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
     }
+#endif
 
 }

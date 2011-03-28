@@ -8,7 +8,8 @@ namespace Meta.Numerics.Matrices {
     // we use the storage method described in Knuth
     // at five values per entry, this is not the most storage-efficient format
     // but it is conceptually straightforward and allows easy update
-    // other formats i have see, e.g. Boeing-Harwell, require that the matrix entries be supplied in a particular, non-random order
+    // other formats i have seen, e.g. Boeing-Harwell, require that the matrix entries be supplied in a particular, non-random order
+    // and do nog allow easy update
 
     internal class SparseMatrixElement {
 

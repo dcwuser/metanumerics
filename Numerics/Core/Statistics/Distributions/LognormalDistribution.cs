@@ -33,10 +33,22 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (sigma <= 0.0) throw new ArgumentOutOfRangeException("sigma");
             this.mu = mu;
             this.sigma = sigma;
+            this.normal = new NormalDistribution(mu, sigma);
+        }
+
+        /// <summary>
+        /// Initializes a standard log normal distribution.
+        /// </summary>
+        /// <remarks>
+        /// <para>A standard lognormal distribution has mu = 0 and sigma = 1. It is the log transform of the standard
+        /// normal distribution.</para>
+        /// </remarks>
+        public LognormalDistribution () : this(0, 1) {
         }
 
         private double mu = 0.0;
         private double sigma = 1.0;
+        private NormalDistribution normal;
 
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
@@ -60,22 +72,16 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double StandardDeviation {
+        public override double Variance {
             get {
-                return (Math.Sqrt(MoreMath.ExpMinusOne(sigma * sigma)) * Mean);
+                return (MoreMath.ExpMinusOne(sigma * sigma) * Math.Exp(2.0 * mu + sigma * sigma));
             }
         }
 
-        // compute e^(sigma^2) - 1, accounting for cancelation with sigma is small
-        // this expression appears in several contexts for this distribution
-        private double Es2m1 {
+        /// <inheritdoc />
+        public override double Skewness {
             get {
-                double sigma2 = sigma * sigma;
-                if (sigma2 < 1.0E-4) {
-                    return (sigma2 * (1.0 + sigma2 / 2.0 + sigma2 * sigma2 / 6.0 + sigma2 * sigma2 * sigma2 / 24.0));
-                } else {
-                    return (Math.Exp(sigma2) - 1.0);
-                }
+                return (Math.Sqrt(MoreMath.ExpMinusOne(sigma * sigma)) * (Math.Exp(sigma * sigma) + 2.0));
             }
         }
 
@@ -88,23 +94,50 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double LeftProbability (double x) {
-            if (x <= 0.0) return (0.0);
+            if (x <= 0.0) {
+                return (0.0);
+            } else {
+                return (normal.LeftProbability(Math.Log(x)));
+            }
+            /*
             double z = (Math.Log(x) - mu) / sigma;
             return (NormalDistribution.Phi(z));
+            */
         }
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
-            if (x <= 0.0) return (1.0);
+            if (x <= 0.0) {
+                return (1.0);
+            } else {
+                return (normal.RightProbability(Math.Log(x)));
+            }
+            /*
             double z = (Math.Log(x) - mu) / sigma;
             return (NormalDistribution.Phi(-z));
+            */
         }
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            return (Math.Exp(normal.InverseLeftProbability(P)));
+            /*
             double z = Global.SqrtTwo * AdvancedMath.InverseErf(2.0 * P - 1.0);
             return (Math.Exp(mu + sigma * z));
+             */
+        }
+
+        /// <inheritdoc />
+        public override double InverseRightProbability (double Q) {
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            return (Math.Exp(normal.InverseRightProbability(Q)));
+        }
+
+        /// <inheritdoc />
+        public override double GetRandomValue (Random rng) {
+            if (rng == null) throw new ArgumentNullException("rng");
+            return (Math.Exp(normal.GetRandomValue(rng)));
         }
 
         /// <inheritdoc />
@@ -125,7 +158,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (n == 1) {
                 return (0.0);
             } else if (n == 2) {
-                return (Es2m1 * Mean * Mean);
+                return (Variance);
             } else {
 
                 // This follows from a straightforward expansion of (x-m)^n and substitution of expressions for M_k.

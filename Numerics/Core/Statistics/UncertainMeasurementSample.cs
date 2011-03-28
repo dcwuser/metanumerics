@@ -183,6 +183,10 @@ namespace Meta.Numerics.Statistics {
         // can't expose this yet, because IEnumerable<DataPoint<double>> would conflict
         // with IEnumerable<DataPoint>; eliminating non-generic DataPoint would fix this
 
+        /// <summary>
+        /// Gets an enumerator over the measurements.
+        /// </summary>
+        /// <returns>An enumerator over the measurements.</returns>
         public IEnumerator<UncertainMeasurement<T>> GetEnumerator () {
             return (data.GetEnumerator());
         }

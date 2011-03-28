@@ -3,12 +3,10 @@ using System.Diagnostics;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
-
-
     /// <summary>
     /// Represents the distribution of the Mann-Whitney test statistic.
     /// </summary>
-    public class MannWhitneyExactDistribution : DiscreteDistribution {
+    internal sealed class MannWhitneyExactDistribution : DiscreteDistribution {
 
         /// <summary>
         /// Instantiates a new Mann-Whitney distribution.
@@ -92,10 +90,26 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         }
 
+#if PAST
         /// <inheritdoc />
         public override DiscreteInterval  Support {
 	        get {
                 return(DiscreteInterval.FromEndpoints(0, m * n));
+            }
+        }
+#endif
+
+        /// <inheritdoc />
+        public override int Minimum {
+            get {
+                return (0);
+            }
+        }
+
+        /// <inheritdoc />
+        public override int Maximum {
+            get {
+                return (m * n);
             }
         }
 

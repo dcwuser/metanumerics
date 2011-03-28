@@ -31,8 +31,8 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Initializes a new bivariate sample with the given variable names.
         /// </summary>
-        /// <param name="xName"></param>
-        /// <param name="yName"></param>
+        /// <param name="xName">The name of the x-variable.</param>
+        /// <param name="yName">The name of the y-variable.</param>
         public BivariateSample (string xName, string yName) : this () {
             xData.Name = xName;
             yData.Name = yName;
@@ -445,7 +445,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Computes the best-fit linear logistic regression from the data.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The fit result.</returns>
         /// <remarks>
         /// <para>Linear logistic regression is a way to fit binary outcome data to a linear model.</para>
         /// <para>The method assumes that binary outcomes are encoded as 0 and 1. If any y-values other than

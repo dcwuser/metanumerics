@@ -11,15 +11,20 @@ namespace Meta.Numerics.Statistics {
     /// Represents a principal component analysis.
     /// </summary>
     /// <remarks>
-    /// <para>Principal component analysis constructs an alternative set of orthonormal basis vectors for a multi-variate data set. These  represents multi-variate data set (<see cref="MultivariateSample"/>) 
-    /// It is a form of factor analysis, ...</para>
-    /// <para>Suppose, for example, that most of the data in a two-dimensional data set lies near the line y = -x. One way to explain
-    /// this state of affairs is to invoke a single underlying factor. The factor increases the value of y and decreases the value
-    /// of x. Other factors values of this
-    /// factor increases the value of y and decreases the value of x, and this is the most important factor  there is one underlying factor, which mostly determines the values of x and y. Increasing
-    /// values of this factor increase </para>
+    /// <para>Principal component analysis (PCA) is a form of factor analysis. It attempts to identify a small number number of factors
+    /// such that, by specifing only values of these few factors for each row, the value of each variable can be accurately
+    /// predicted.</para>
+    /// <para>Mathematically, PCA constructs an alternative set of orthonormal basis vectors for a multi-variate data set. These
+    /// basis vectors, called principal components, are ordered by the total variance explained by each.</para>
+    /// <para>Suppose, for example, you measure the value of different possessions possessions for a sample of people:
+    /// home value, car value, furniture value, etc. You might expect that much of the variation in these numbers can
+    /// be explained by one underlying factor, which you might call "richness". If this is true, then a PCA analysis will
+    /// show that the most principal component explains a very large faction of the total variance, and the other less
+    /// principal components will explain only small fractions of the total variance.</para>
+    /// <para>Note that PCA is not invariant with respect to the re-scaling of individual variables.</para>
+    /// <para>Note that PCA is an exploratory technique, not a hypothesis test.</para>
     /// </remarks>
-    public class PrincipalComponentAnalysis {
+    public sealed class PrincipalComponentAnalysis {
 
         internal PrincipalComponentAnalysis (double[] utStore, double[] wStore, double[] vStore, int rows, int cols) {
             this.rows = rows;
@@ -112,7 +117,7 @@ namespace Meta.Numerics.Statistics {
     /// Represents a component of a principal component analysis.
     /// </summary>
     /// <seealso cref="PrincipalComponentAnalysis"/>
-    public class PrincipalComponent {
+    public sealed class PrincipalComponent {
 
         internal PrincipalComponent (int index, PrincipalComponentAnalysis analysis) {
             this.index = index;

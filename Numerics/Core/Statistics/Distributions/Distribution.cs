@@ -240,6 +240,8 @@ namespace Meta.Numerics.Statistics.Distributions {
 
     }
 
+#if FUTURE
+
     internal static class MomentMath {
 
         public static double CentralMomentFromRawMoments (double[] rawMoments) {
@@ -260,6 +262,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
     }
+#endif
 
 #if FUTURE
     /// <summary>

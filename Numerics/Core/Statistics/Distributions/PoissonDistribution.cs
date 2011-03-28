@@ -36,10 +36,26 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+#if PAST
         /// <inheritdoc />
         public override DiscreteInterval Support {
             get {
                 return (DiscreteInterval.FromEndpoints(0, Int32.MaxValue));
+            }
+        }
+#endif
+
+        /// <inheritdoc />
+        public override int Minimum {
+            get {
+                return (0);
+            }
+        }
+
+        /// <inheritdoc />
+        public override int Maximum {
+            get {
+                return (Int32.MaxValue);
             }
         }
 

@@ -51,26 +51,42 @@ namespace Meta.Numerics.SignalProcessing {
     /// An engine for performing Fourier transforms on complex series.
     /// </summary>
     /// <remarks>
-    /// <para>The Fourier transform decomposes a function into a sum of different frequency components. This is
+    /// <para>A Fourier transform decomposes a function into a sum of different frequency components. This is
     /// useful for a wide array of applications.</para>
     /// <para>Mathematically, the DFT is an N-dimensional linear transfromation
     /// with coefficients that are the Nth complex roots of unity.</para>
     /// <img src="../images/Fourier.png" />
-    /// <para>Any given instance of the FourierTransformer class performs DFTs on series of a fixed length,
-    /// given by its <see cref="FourierTransformer.Length"/> property. This allows certain parts of the DFT
-    /// calculation which are indepdent of the transformed series, but dependent on the length of the series,
+    /// <para>An instance of the FourierTransformer class performs DFTs on series of a particular length,
+    /// given by its <see cref="FourierTransformer.Length"/> property. This specialization allows certain parts of the DFT
+    /// calculation, which are indepdent of the transformed series but dependent on the length of the series,
     /// to be performed only once and then used for all transforms of that length. This saves time and improves
     /// performance. If you need to perform DFTs on series with different lengths, simply create a seperate instance
     /// of the FourierTransform class for each required length.</para>
-    /// <para>Some DFT implementations (e.g. Numerical Recipies) require that the series length be a power of two (2, 4, 8, 16, etc.).
+    /// <para>Many simple DFT implementations require that the series length be a power of two (2, 4, 8, 16, etc.).
     /// Meta.Numerics supports DFTs of any length. Our DFT implementation is fast -- order O(N log N) -- for any length composed
     /// of small prime factors.
     /// This includes not only all powers of two, but also all powers of ten (10, 100, 1000, etc.) and many other
     /// lengths (e.g. 3600 = 2<sup>4</sup> 3<sup>2</sup> 5<sup>2</sup>). Our DFT implementation is slow -- O(N<sup>2</sup>) -- for
     /// lengths composed of large prime factors (e.g. 3571, which is prime).</para>
     /// </remarks>
+    /// <example>
+    /// <para>The following code performs a simple DFT and then inverts it to re-obtain the original data.</para>
+    /// <code lang="c#">
+    /// // Create a Fourier transformer for length-6 series
+    /// FourierTransformer ft = new FourierTransformer(6);
+    /// // Create a length-6 series and transform it
+    /// Complex[] x = new Complex[] { 0.0, 1.0, 0.0, 0.0, 0.0, 0.0 };
+    /// Complex[] xt = ft.Transform(x);
+    /// // Re-use the same transformer to transform a different  series
+    /// Complex[] y = new Complex[] { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+    /// Complex[] yt = ft.Transform(y);
+    /// // Transform them back
+    /// Complex[] xtt = ft.InverseTransform(xt);
+    /// Complex[] ytt = ft.InverseTransform(yt);
+    /// </code>
+    /// </example>
     /// <seealso href="http://en.wikipedia.org/wiki/Discrete-time_Fourier_transform"/>
-    public class FourierTransformer {
+    public sealed class FourierTransformer {
 
         /// <summary>
         /// Initializes a new instance of the Fourier transformer.
@@ -162,7 +178,7 @@ namespace Meta.Numerics.SignalProcessing {
         /// <returns>The discrete Fourier transform of the series.</returns>
         public Complex[] Transform (IList<Complex> values) {
             if (values == null) throw new ArgumentNullException("values");
-            if (values.Count != size) throw new InvalidOperationException();
+            if (values.Count != size) throw new DimensionMismatchException();
 
             // copy the original values into a new array
             Complex[] x = new Complex[size];
@@ -192,7 +208,7 @@ namespace Meta.Numerics.SignalProcessing {
         /// <returns>The inverse discrete Fourier transform of the series.</returns>
         public Complex[] InverseTransform (IList<Complex> values) {
             if (values == null) throw new ArgumentNullException("values");
-            if (values.Count != size) throw new InvalidOperationException();
+            if (values.Count != size) throw new DimensionMismatchException();
 
             // copy the original values into a new array
             Complex[] x = new Complex[size];

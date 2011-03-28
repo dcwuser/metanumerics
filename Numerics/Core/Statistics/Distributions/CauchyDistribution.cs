@@ -9,7 +9,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents a Cauchy distribution.
     /// </summary>
-    public class CauchyDistribution : Distribution {
+    public sealed class CauchyDistribution : Distribution {
 
         /// <summary>
         /// Initializes a new Cauchy distribution.

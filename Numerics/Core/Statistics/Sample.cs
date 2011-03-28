@@ -439,7 +439,7 @@ namespace Meta.Numerics.Statistics {
         /// Gets the fraction of values equal to or less than the given value.
         /// </summary>
         /// <param name="value">The reference value.</param>
-        /// <returns></returns>
+        /// <returns>The fraction of values in the sample that are less than or equal to the given reference value.</returns>
         public double LeftProbability (double value) {
             int[] order = data.GetSortOrder();
             for (int i = 0; i < data.Count; i++) {
@@ -631,7 +631,7 @@ namespace Meta.Numerics.Statistics {
         /// Sample values = new Sample();
         /// values.Add(81, 84, 93);
         /// TestResult result = values.StudentTTest(80);
-        /// Console.WriteLine(result.RightProbability);
+        /// return(result.RightProbability);
         /// </code>
         /// <para>What level of statistical confidence do you think should a court require in order to pronounce a defendant guilty?</para>
         /// </example>
@@ -671,7 +671,7 @@ namespace Meta.Numerics.Statistics {
         public TestResult SignTest (double referenceMedian) {
 
             // we need some data to do a sign test
-            if (this.Count < 1) throw new InvalidOperationException();
+            if (this.Count < 1) throw new InsufficientDataException();
 
             // count the number of entries that exceed the reference median
             int W = 0;
@@ -726,7 +726,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="a">The fisrt sample.</param>
         /// <param name="b">The second sample.</param>
-        /// <returns></returns>
+        /// <returns>The result of the test.</returns>
         /// <remarks>
         /// <para>The Mann-Whitney test is a non-parametric alternative to Student's t-test.
         /// Essentially, it supposes that the medians of the two samples are equal and tests
@@ -926,7 +926,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The result of the test.</returns>
         /// <remarks>
         /// <para>Kruskal-Wallis tests for differences between the samples. It is a non-parametric alternative to the
-        /// one-way ANOVA (<see cref="OneWayAnova(Sample[])"/>).</para>
+        /// one-way ANOVA (<see cref="Sample.OneWayAnova(Sample[])"/>).</para>
         /// <para>The test is essentially a one-way ANOVA performed on the <i>ranks</i> of sample values instead of the sample
         /// values themselves.</para>
         /// <para>A Kruskal-Wallis test on two samples is equivilent to a Mann-Whitney test (see <see cref="MannWhitneyTest"/>).</para>
@@ -935,9 +935,62 @@ namespace Meta.Numerics.Statistics {
             if (samples == null) throw new ArgumentNullException("samples");
             if (samples.Count < 2) throw new InvalidOperationException();
 
+            // sort each sample individually and compute count total from all samples
+            int N = 0;
+            int[][] orders = new int[samples.Count][];
+            for (int i = 0; i < samples.Count; i++) {
+                N += samples[i].data.Count;
+                orders[i] = samples[i].data.GetSortOrder();
+            }
 
-            double K = 1.0;
-            return (new TestResult(K, new ChiSquaredDistribution(samples.Count - 1)));
+            // do a multi-merge sort to determine ranks sums
+
+            // initialize a pointer to the current active index in each ordered list
+            int[] p = new int[samples.Count];
+
+            // keep track the current rank to be assigned
+            int r = 0;
+
+            // keep track of rank sums
+            // this is all that we need for KW
+            // the ranks of individual entries can be made to disappear from the final formula using sum identities
+            int[] rs = new int[samples.Count];
+
+            while (true) {
+
+                // increment the rank
+                // (programmers may think ranks start from 0, but in the definition of the KW test they start from 1)
+                r++;
+
+                // determine the smallest of current entries
+                int j = -1;
+                double f = Double.PositiveInfinity;
+                for (int k = 0; k < samples.Count; k++) {
+                    if ((p[k] < orders[k].Length) && (samples[k].data[orders[k][p[k]]] < f)) {
+                        j = k;
+                        f = samples[k].data[orders[k][p[k]]];
+                    }
+                }
+
+                // test for all lists complete
+                if (j < 0) break;
+
+                // increment the pointer and the rank sum for that column
+                p[j]++;
+                rs[j] += r;
+
+            }
+
+            // compute the KW statistic
+            double H = 0.0;
+            for (int i = 0; i < samples.Count; i++) {
+                double z = ((double)rs[i]) / orders[i].Length - (N + 1) / 2.0;
+                H += orders[i].Length * (z * z);
+            }
+            H = 12.0 / N / (N + 1) * H;
+
+            // use the chi-squared approximation to the null distribution
+            return (new TestResult(H, new ChiSquaredDistribution(samples.Count - 1)));
 
         }
 
@@ -969,7 +1022,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
         public TestResult KolmogorovSmirnovTest (Distribution distribution) {
             if (distribution == null) throw new ArgumentNullException("distribution");
-            if (this.Count < 1) throw new InvalidOperationException();
+            if (this.Count < 1) throw new InsufficientDataException();
 
             return (KolmogorovSmirnovTest(distribution, 0));
         }
@@ -1003,6 +1056,7 @@ namespace Meta.Numerics.Statistics {
         public TestResult KuiperTest (Distribution distribution) {
 
             if (distribution == null) throw new ArgumentNullException("distribution");
+            if (data.Count < 1) throw new InsufficientDataException();
 
             // compute the V statistic, which is the sum of the D+ and D- statistics
             double DP, DM;
@@ -1064,8 +1118,8 @@ namespace Meta.Numerics.Statistics {
             if (sample == null) throw new ArgumentNullException("sample");
 
             // we must have data to do the test
-            if (this.Count < 1) throw new InvalidOperationException();
-            if (sample.Count < 1) throw new InvalidOperationException();
+            if (this.Count < 1) throw new InsufficientDataException();
+            if (sample.Count < 1) throw new InsufficientDataException();
 
             // the samples must be sorted
             int[] aOrder = this.data.GetSortOrder();
@@ -1104,21 +1158,23 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Tests whether the sample variance is compatible with the variance of another sample.
+        /// Tests whether the variance of two samples is compatible.
         /// </summary>
-        /// <param name="sample"></param>
-        /// <returns></returns>
-        public TestResult FisherFTest (Sample sample) {
-            if (sample == null) throw new ArgumentNullException("sample");
+        /// <param name="a">The first sample.</param>
+        /// <param name="b">The second sample.</param>
+        /// <returns>The result of the test.</returns>
+        public static TestResult FisherFTest (Sample a, Sample b) {
+            if (a == null) throw new ArgumentNullException("a");
+            if (b == null) throw new ArgumentNullException("b");
 
             // compute population variances
-            double v1 = this.Count / (this.Count - 1.0) * this.Variance;
-            double v2 = sample.Count / (sample.Count - 1.0) * sample.Variance;
+            double v1 = a.Count / (a.Count - 1.0) * a.Variance;
+            double v2 = b.Count / (b.Count - 1.0) * b.Variance;
 
             // compute the ratio
             double F = v1 / v2;
 
-            return (new TestResult(F, new FisherDistribution(this.Count - 1, sample.Count - 1)));
+            return (new TestResult(F, new FisherDistribution(a.Count - 1, b.Count - 1)));
 
         }
 

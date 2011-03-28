@@ -9,8 +9,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents a Pareto or power law distribution.
     /// </summary>
     /// <seealso href="http://en.wikipedia.org/wiki/Pareto_distribution"/>
-    public class ParetoDistribution : Distribution {
-
+    public sealed class ParetoDistribution : Distribution {
 
         /// <summary>
         /// Initializes a new Pareto distribution.

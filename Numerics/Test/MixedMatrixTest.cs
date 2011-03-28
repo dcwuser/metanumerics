@@ -113,6 +113,19 @@ namespace Test
 
         }
 
+        [TestMethod]
+        public void AnyRectangularMatrixOperations () {
+
+            AnyRectangularMatrix M1 = R;
+            AnyRectangularMatrix M2 = -R;
+
+            RectangularMatrix MS = M1 + M2;
+            Assert.IsTrue(MS == 0.0 * M1);
+            RectangularMatrix MD = M1 - M2;
+            Assert.IsTrue(MD == 2.0 * M1);
+
+        }
+
     }
 
 }

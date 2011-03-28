@@ -169,7 +169,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets the indicated column.
+        /// Gets the indicated column as a univariate <see cref="Sample"/>.
         /// </summary>
         /// <param name="c">The (zero-based) column index.</param>
         /// <returns>A read-only <see cref="Sample"/> containing all values in the indicated column.</returns>
@@ -188,7 +188,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets the indicated columns.
+        /// Gets the indicated columns as a <see cref="BivariateSample"/>.
         /// </summary>
         /// <param name="cx">The (zero-based) column index of the X variable.</param>
         /// <param name="cy">The (zero-based) column index of the Y variable.</param>

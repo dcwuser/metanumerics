@@ -112,7 +112,7 @@ namespace Meta.Numerics.Statistics {
                 if (r < 0) throw new InvalidOperationException();
                 int c = columnNames.GetIndexForName(cName);
                 if (c < 0) throw new InvalidOperationException();
-                if (value < 0) throw new ArgumentOutOfRangeException();
+                if (value < 0) throw new ArgumentOutOfRangeException("value");
                 data[r, c] = value;
             }
         }

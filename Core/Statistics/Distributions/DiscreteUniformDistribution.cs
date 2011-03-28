@@ -10,7 +10,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>In a discrete uniform distribution, each integer in the allowed range is equally probable.</para>
     /// <para>For example, the distribution of results for one roll of a fair die is DiscreteUniformDistribution(1,6).</para>
     /// </remarks>
-    public class DiscreteUniformDistribution : DiscreteDistribution {
+    public sealed class DiscreteUniformDistribution : DiscreteDistribution {
 
         /// <summary>
         /// Instantiates a new discrete uniform distribution with the given endpoints.
@@ -26,9 +26,25 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         private int a, b, n;
 
+#if PAST
         /// <inheritdoc />
         public override DiscreteInterval Support {
             get { return (DiscreteInterval.FromEndpoints(a, b)); }
+        }
+#endif
+
+        /// <inheritdoc />
+        public override int Minimum {
+            get {
+                return (a);
+            }
+        }
+
+        /// <inheritdoc />
+        public override int Maximum {
+            get {
+                return (b);
+            }
         }
 
         /// <inheritdoc />

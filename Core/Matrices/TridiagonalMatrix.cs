@@ -14,7 +14,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Initializes a new tridiagonal matrix of the given dimension.
         /// </summary>
-        /// <param name="dimension"></param>
+        /// <param name="dimension">The dimension of the matrix, which must be positive.</param>
         public TridiagonalMatrix (int dimension) {
             if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
             this.dimension = dimension;
@@ -143,17 +143,6 @@ namespace Meta.Numerics.Matrices {
             return (T);
         }
 
-        /// <summary>
-        /// Computes the trace of the matrix.
-        /// </summary>
-        /// <returns>The trace tr M.</returns>
-        public override double Trace () {
-            double tr = 0.0;
-            for (int i = 0; i < Dimension; i++) {
-                tr += GetDiagonalElement(i);
-            }
-            return (tr);
-        }
 
         /// <summary>
         /// Computes the determinant of the matrxi.
@@ -188,11 +177,11 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Computes the LU decomposition of the matrix.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The LU decomposition of the matrix.</returns>
         /// <remarks>
         /// <para>Computiong the LU decomposition of a tridiagonal matrix is an O(N) operation.</para>
         /// </remarks>
-        public TridiagonalLUDecomposition LUDecompose () {
+        public TridiagonalLUDecomposition LUDecomposition () {
 
             double[] LC = (double[]) L.Clone();
             double[] DC = (double[]) D.Clone();

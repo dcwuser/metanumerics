@@ -201,7 +201,8 @@ namespace Test {
             Assert.IsTrue(cd.MomentAboutMean(5) == dd.MomentAboutMean(5));
 
             // this should cause an interval conversion
-            Assert.IsTrue(cd.Support == dd.Support);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(cd.Support.LeftEndpoint, dd.Minimum));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(cd.Support.RightEndpoint, dd.Maximum));
 
             Assert.IsTrue(cd.LeftProbability(4.5) == dd.LeftProbability(4));
             Assert.IsTrue(cd.RightProbability(4.5) == dd.RightProbability(4));
@@ -211,16 +212,15 @@ namespace Test {
         [TestMethod]
         public void OutsideDiscreteDistributionSupport () {
             foreach (DiscreteDistribution distribution in distributions) {
-                DiscreteInterval support = distribution.Support;
-                if (support.LeftEndpoint > Int32.MinValue) {
-                    Assert.IsTrue(distribution.ProbabilityMass(support.LeftEndpoint - 1) == 0.0);
-                    Assert.IsTrue(distribution.LeftProbability(support.LeftEndpoint - 1) == 0.0);
-                    Assert.IsTrue(distribution.RightProbability(support.LeftEndpoint - 1) == 1.0);
+                if (distribution.Minimum > Int32.MinValue) {
+                    Assert.IsTrue(distribution.ProbabilityMass(distribution.Minimum - 1) == 0.0);
+                    Assert.IsTrue(distribution.LeftProbability(distribution.Minimum - 1) == 0.0);
+                    Assert.IsTrue(distribution.RightProbability(distribution.Minimum - 1) == 1.0);
                 }
-                if (support.RightEndpoint < Int32.MaxValue) {
-                    Assert.IsTrue(distribution.ProbabilityMass(support.RightEndpoint + 1) == 0.0);
-                    Assert.IsTrue(distribution.LeftProbability(support.RightEndpoint + 1) == 1.0);
-                    Assert.IsTrue(distribution.RightProbability(support.RightEndpoint + 1) == 0.0);
+                if (distribution.Maximum < Int32.MaxValue) {
+                    Assert.IsTrue(distribution.ProbabilityMass(distribution.Maximum + 1) == 0.0);
+                    Assert.IsTrue(distribution.LeftProbability(distribution.Maximum + 1) == 1.0);
+                    Assert.IsTrue(distribution.RightProbability(distribution.Maximum + 1) == 0.0);
                 }
             }
         }
@@ -239,7 +239,25 @@ namespace Test {
 
             DiscreteDistribution D = new DiscreteTestDistribution();
 
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(D.Mean, 5.0 / 3.0));
+            double P = 0.0;
+            double M1 = 0.0;
+            double M2 = 0.0;
+            for (int k = 1; k <= 3; k++) {
+                P += D.ProbabilityMass(k);
+                M1 += k * D.ProbabilityMass(k);
+                M2 += k * k * D.ProbabilityMass(k);
+            }
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(P, 1.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(D.Moment(0), 1.0));
+
+            double C2 = M2 - M1 * M1;
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(M1, D.Mean));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(M1, D.Moment(1)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(M2, D.Moment(2)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(C2, D.Variance));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(C2, D.MomentAboutMean(2)));
+
+            Assert.IsTrue(D.InverseLeftProbability(D.LeftProbability(2)) == 2);
 
         }
 
@@ -249,8 +267,18 @@ namespace Test {
 
     public class DiscreteTestDistribution : DiscreteDistribution {
 
+#if PAST
         public override DiscreteInterval Support {
             get { return DiscreteInterval.FromEndpoints(1, 3); }
+        }
+#endif
+
+        public override int Minimum {
+            get { return (1); }
+        }
+
+        public override int Maximum {
+            get { return (3); }
         }
 
         public override double ProbabilityMass (int k) {

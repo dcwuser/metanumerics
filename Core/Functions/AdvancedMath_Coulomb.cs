@@ -555,9 +555,6 @@ namespace Meta.Numerics.Functions {
                 + AbromowitzB[3] / b[4] - AbromowitzB[4] / b[6] + AbromowitzB[5] / b[7] - AbromowitzB[6] / b[9]
                 + AbromowitzB[7] / b[10] );
 
-            Console.WriteLine("F={0} F'={1} G={2} G'={3}", F, FP, G, GP);
-            Console.WriteLine(FP * G - F * GP);
-
             BesselResult result = new BesselResult();
             result.Regular = F;
             result.RegularPrime = FP;
@@ -602,61 +599,6 @@ namespace Meta.Numerics.Functions {
         }
         */
 
-        
-        /*
-        private static BesselResult Coulomb_Zero_Integration (double eta, double rho) {
-
-            // find values at rho = 2 eta
-            BesselResult R0 = Coulomb_Zero_Turning_Expansion(eta);
-
-            // integrate G inward to desired value of rho
-            BulrischStoerStoermerStepper s = new BulrischStoerStoermerStepper();
-            s.RightHandSide = delegate(double x, double y) {
-                return ((2.0 * eta / x - 1.0) * y);
-            };
-            s.X = 2.0 * eta;
-            s.Y = R0.Irregular;
-            s.YPrime = R0.IrregularPrime;
-            s.DeltaX = -1.0;
-            s.Accuracy = 1.0E-12;
-            s.Integrate(rho);
-
-
-            // find F' / F at rho
-            int sign;
-            double f = Coulomb_CF1(0, eta, rho, out sign);
-
-            // use the Wronskian to determine F and F'
-            BesselResult R1 = new BesselResult();
-            R1.Irregular = s.Y;
-            R1.IrregularPrime = s.YPrime;
-
-            return (R1);
-
-        }
-
-        public static void CoulombG_Zero_Below_Turning (double eta, double rho) {
-
-
-            BesselResult R0 = Coulomb_Zero_Turning_Expansion(eta);
-
-            BulrischStoerStoermerStepper s = new BulrischStoerStoermerStepper();
-            s.RightHandSide = delegate(double x, double y) {
-                return ((2.0 * eta / x - 1.0) * y);
-            };
-            s.X = 2.0 * eta;
-            s.Y = R0.Irregular;
-            s.YPrime = R0.IrregularPrime;
-            s.DeltaX = -1.0;
-            s.Accuracy = 1.0E-12;
-
-            s.Integrate(rho);
-
-            Console.WriteLine(s.Y);
-
-        }
-        */
-
         private static void Coulomb_Recurse_Upward (int L1, int L2, double eta, double rho, ref double U, ref double UP) {
 
             Debug.Assert(L2 >= L1);
@@ -678,30 +620,6 @@ namespace Meta.Numerics.Functions {
             }
 
         }
-
-        /*
-        private static void Coulomb_Recurse_Downward (int L1, int L2, double eta, double rho, ref double U, ref double UP) {
-
-            Debug.Assert(L2 <= L1);
-
-            for (int K = L1; K > L2; K--) {
-
-                // compute some factors
-                double S = Math.Sqrt(K * K + eta * eta);
-                double T = K * K / rho + eta;
-
-                // compute next lower function and derivative
-                double U2 = (T * U + K * UP) / S;
-                double UP2 = (T * U2 - S * U) / K;
-
-                // prepare for next iteration
-                U = U2;
-                UP = UP2;
-
-            }
-
-        }
-        */
 
         private static double CoulombF_Integrate (int L, double eta, double rho) {
 
@@ -730,46 +648,6 @@ namespace Meta.Numerics.Functions {
             return (s.Y);
 
         }
-
-        /*
-        public static double Coulomb_Integrate (int L, double eta, double rho) {
-
-            // start on the rho = 2 eta line with L = 0
-            BesselResult r = Coulomb_Zero_Turning_Expansion(eta);
-            double G = r.Irregular;
-            double GP = r.IrregularPrime;
-            Console.WriteLine("G={0}, GP={1}", G, GP);
-
-            // integrate to desired rho
-            BulrischStoerStoermerStepper s = new BulrischStoerStoermerStepper();
-            s.RightHandSide = delegate(double x, double U) {
-                return ((2.0 * eta / x - 1) * U);
-            };
-            s.X = 2.0 * eta;
-            s.Y = G;
-            s.YPrime = GP;
-            s.DeltaX = -0.5;
-            s.Accuracy = 1.0E-10;
-            s.Integrate(rho);
-            G = s.Y;
-            GP = s.YPrime;
-            Console.WriteLine("G={0}, GP={1}", G, GP);
-
-            // recurse upward to desired L
-            Coulomb_Recurse_Upward(0, L, eta, rho, ref G, ref GP);
-            Console.WriteLine("G={0}, GP={1}", G, GP);
-
-            // use CF1 to determine FP/F and Wronskian to determine F and FP
-            int sign;
-            double f = Coulomb_CF1(L, eta, rho, out sign);
-            Console.WriteLine("f={0}", f);
-            double F = 1.0 / (f * G - GP);
-            double FP = f * F;
-            Console.WriteLine("F={0}, FP={1}", F, FP);
-
-            return (0.0);
-        }
-        */
 
     }
 

@@ -116,8 +116,6 @@ namespace Meta.Numerics.Functions {
                     x = ApproximateInverseErfc(1.0 - y);
                 }
 
-                //Console.WriteLine(" x0 = {0}, erf(x0) = {1}", x, Erf(x));
-
                 // refine it via 2nd order Newton's method (aka Halley's method)
 
                 // Newton dx = -f0 / f1
@@ -140,8 +138,6 @@ namespace Meta.Numerics.Functions {
                     // in the case error function case, the expression for dx can be written in terms of the ratio r
                     double r = z * Global.SqrtPI * Math.Exp(x * x) / 2.0;
                     double dx = -r / (1.0 + r * x);
-
-                    //Console.WriteLine(" x={0}, z={1}, rx={2}, dx={3}", x, z, r * x, dx);
 
                     x += dx;
 
@@ -261,7 +257,6 @@ namespace Meta.Numerics.Functions {
                 double df = Dawson_Rybicki_coefficients[k] * (b / (n0 + m) + 1.0 / b / (n0 - m));
                 f += df;
                 if (f == f_old) {
-                    //Console.WriteLine(k);
                     return (Math.Exp(-y * y) / Global.SqrtPI * f);
                 }
                 b = b * bb;
@@ -467,8 +462,6 @@ namespace Meta.Numerics.Functions {
             double px2 = Math.PI * x * x;
 
             Complex z = Global.SqrtPI * x / 2.0 * (1.0 - ComplexMath.I);
-            //Console.WriteLine("z = {0}", z);
-            //Console.WriteLine("z^2 = {0}", z * z);
 
             // investigate this carefully: it appears that (1) imaginary part of f doesn't change and
             // (2) real part of f merely increases at constant rate until "right" number is reached
@@ -494,9 +487,7 @@ namespace Meta.Numerics.Functions {
             Complex j = new Complex(1.0, -1.0);
             Complex e = new Complex(Cos(0.0, xx), Sin(0.0, xx));
             Complex erfc = j * e * f * x;
-            //Console.WriteLine("erfc={0}", erfc);
             Complex erf = 1.0 - erfc;
-            //Console.WriteLine("erf={0}", erf);
             return (erf * new Complex(1.0, 1.0) / 2);   
             
         }

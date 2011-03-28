@@ -4,6 +4,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Meta.Numerics.Statistics.Distributions;
 
 namespace Test {
+
+#if PAST
     [TestClass]
     public class DiscreteIntervalTest {
 
@@ -22,4 +24,5 @@ namespace Test {
         }
 
     }
+#endif
 }

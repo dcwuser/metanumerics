@@ -5,7 +5,7 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents a collection of complex eigenvalues and eigenvectors.
     /// </summary>
-    public class ComplexEigensystem {
+    public sealed class ComplexEigensystem {
 
         private int dimension;
 

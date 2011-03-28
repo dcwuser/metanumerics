@@ -469,20 +469,7 @@ namespace Meta.Numerics.Functions {
                 // check termination criteria
                 // we do this before minimizing in the net direction because if dx=0 it loops forever
                 if (2.0 * Math.Abs(y0 - y) <= (Math.Abs(y) + Math.Abs(y0)) * RelativePrecision) {
-                    //Console.WriteLine("Terminated");
                     SymmetricMatrix A = ComputeCurvature(f, x);
-                    //Console.WriteLine("A=");
-                    //WriteMatrix(A);
-                    /*
-                    SymmetricMatrix H = ComputeHessian(Q, r);
-                    Console.WriteLine("H=");
-                    WriteMatrix(H);
-                    CholeskyDecomposition CD = H.CholeskyDecomposition();
-                    if (CD == null) Console.WriteLine("not positive definite");
-                    SymmetricMatrix HI = CD.Inverse();
-                    Console.WriteLine("HI=");
-                    WriteMatrix(HI);
-                    */
                     return (new SpaceExtremum(x, y, A));
                 }
 
@@ -562,25 +549,6 @@ namespace Meta.Numerics.Functions {
 
             return (H);
         }
-
-        /*
-        private static void WriteVector (double[] x) {
-            for (int i = 0; i < x.Length; i++) {
-                Console.WriteLine("  {0}", x[i]);
-            }
-        }
-
-        private static void WriteMatrix (IMatrix M) {
-            int im = M.RowCount;
-            int jm = M.ColumnCount;
-            for (int i = 0; i < im; i++) {
-                for (int j = 0; j < jm; j++) {
-                    Console.Write("{0} ", M[i, j]);
-                }
-                Console.WriteLine();
-            }
-        }
-        */
 
     }
 

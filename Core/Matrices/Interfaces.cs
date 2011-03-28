@@ -4,6 +4,8 @@ using System.Text;
 
 namespace Meta.Numerics.Matrices {
 
+#if PAST
+
     /// <summary>
     /// The contract fufilled by any real matrix.
     /// </summary>
@@ -99,5 +101,7 @@ namespace Meta.Numerics.Matrices {
         double Determinant ();
 
     }
+
+#endif
 
 }

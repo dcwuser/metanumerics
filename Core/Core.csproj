@@ -84,8 +84,11 @@
     <Compile Include="Functions\AdvancedMath_Inverse.cs" />
     <Compile Include="Functions\AdvancedMath_Polylog.cs" />
     <Compile Include="Functions\FunctionMath_Differentiate.cs" />
+    <Compile Include="Matrices\ColumnVector.cs" />
+    <Compile Include="Matrices\RowVector.cs" />
     <Compile Include="Matrices\SingularValueDecomposition.cs" />
     <Compile Include="Matrices\SparseSquareMatrix.cs" />
+    <Compile Include="Matrices\SquareMatrixAlgorithms.cs" />
     <Compile Include="SignalProcessing\FourierAlgorithms.cs" />
     <Compile Include="SignalProcessing\FourierTransformer.cs" />
     <Compile Include="Special\Spin.cs" />
@@ -114,7 +117,7 @@
     <Compile Include="Matrices\QRDecomposition.cs" />
     <Compile Include="Matrices\RealEigensystem.cs" />
     <Compile Include="Matrices\RectangularMatrix.cs" />
-    <Compile Include="Matrices\AnyRectangularMatrixBase.cs" />
+    <Compile Include="Matrices\AnyRectangularMatrix.cs" />
     <Compile Include="Matrices\SquareLUDecomposition.cs" />
     <Compile Include="Matrices\RectangularMatrixAlgorithms.cs" />
     <Compile Include="Matrices\AnyMatrix.cs" />

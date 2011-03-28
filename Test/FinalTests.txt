@@ -1,0 +1,27 @@
+﻿Code:
+1. Search for Console.Write
+2. Search for NotImplementedExceptions
+3. Verify code coverage
+
+Documentation:
+1. Check sandcastle logs for errors/warnings
+
+Behavior:
+1. Check mono compatibility
+
+Installation:
+1. Fresh MSI install
+2. Upgrade MSI install
+3. Add reference via GAC in Visual Studio, compile
+4. Add DLL to SQL
+5. NuGet installation
+
+
+Whatsnew notes
+--------------
+Functions: complete EllipticE
+Matrix: SVD, sparse(?), norms
+Signal processing: FFT
+Statistics: PCA, Logistic Regression, Kruskal-Wallis test, loading from DB
+Distributions: Cauchy(?), Gamma, Pearson, discrete uniform, discrete geometric, various dedicated fits, improved rng
+

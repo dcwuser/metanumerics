@@ -41,7 +41,7 @@ namespace Meta.Numerics {
     /// The exception that is thrown when attempting an operation on objects with incompatible dimensions.
     /// </summary>
     [Serializable]
-    public class DimensionMismatchException : Exception {
+    public class DimensionMismatchException : InvalidOperationException {
 
         /// <summary>
         /// Initializes a new dimension mismatch exception.

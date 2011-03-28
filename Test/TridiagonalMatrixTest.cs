@@ -142,7 +142,7 @@ namespace Test {
                 Assert.IsTrue(T.Dimension == d);
 
 
-                TridiagonalLUDecomposition LU = T.LUDecompose();
+                TridiagonalLUDecomposition LU = T.LUDecomposition();
                 Assert.IsTrue(LU.Dimension == d);
 
                 // check determinant

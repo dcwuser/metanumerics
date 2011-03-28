@@ -38,14 +38,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double ProbabilityDensity (double t) {
-            return (Math.Pow(1.0 + t * t / nu, -0.5 * (nu + 1.0)) / AdvancedMath.Beta(0.5, 0.5 * nu) / Math.Sqrt(nu));
+        public override double ProbabilityDensity (double x) {
+            return (Math.Pow(1.0 + x * x / nu, -0.5 * (nu + 1.0)) / AdvancedMath.Beta(0.5, 0.5 * nu) / Math.Sqrt(nu));
         }
 
         /// <inheritdoc />
-        public override double LeftProbability (double t) {
-            double t2 = t * t;
-            if (t < 0.0) {
+        public override double LeftProbability (double x) {
+            double t2 = x * x;
+            if (x < 0.0) {
                 return (0.5 * AdvancedMath.Beta(0.5 * nu, 0.5, nu / (nu + t2)) / AdvancedMath.Beta(0.5, 0.5 * nu));
             } else {
                 return (0.5 * (1.0 + AdvancedMath.Beta(0.5, 0.5 * nu, t2 / (nu + t2)) / AdvancedMath.Beta(0.5, 0.5 * nu)));
@@ -53,9 +53,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double RightProbability (double t) {
-            double t2 = t * t;
-            if (t < 0.0) {
+        public override double RightProbability (double x) {
+            double t2 = x * x;
+            if (x < 0.0) {
                 return (0.5 * (1.0 + AdvancedMath.Beta(0.5, 0.5 * nu, t2 / (nu + t2)) / AdvancedMath.Beta(0.5, 0.5 * nu)));
             } else {
                 return (0.5 * AdvancedMath.Beta(0.5 * nu, 0.5, nu / (nu + t2)) / AdvancedMath.Beta(0.5, 0.5 * nu));

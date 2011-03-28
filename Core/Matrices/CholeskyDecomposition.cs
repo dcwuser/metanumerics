@@ -17,19 +17,19 @@ namespace Meta.Numerics.Matrices {
     /// <code lang="cs">
     /// // Solve Ax = b via Cholesky decomposition
     /// CholeskyDecomposition CD = A.CholsekyDecomposition();
-    /// ColumnVector b = new ColumnVector(new double[] {1, 4, 5});
+    /// ColumnVector b = new ColumnVector(1.0, 2.0, 3.0);
     /// ColumnVector x CD.Solve(b);
     /// </code>
     /// </example>
     /// <seealso cref="SymmetricMatrix.CholeskyDecomposition"/>
-    public class CholeskyDecomposition {
+    public sealed class CholeskyDecomposition {
 
         internal SymmetricMatrix sqrtM;
 
         /// <summary>
         /// Gets the dimension of the system.
         /// </summary>
-        public virtual int Dimension {
+        public int Dimension {
             get {
                 return (sqrtM.Dimension);
             }
@@ -39,7 +39,7 @@ namespace Meta.Numerics.Matrices {
         /// Returns the Cholesky square root matrix.
         /// </summary>
         /// <returns>A lower-left triangular matrix A, such that A A<sup>T</sup> = M.</returns>
-        public virtual SquareMatrix SquareRootMatrix () {
+        public SquareMatrix SquareRootMatrix () {
             SquareMatrix A = new SquareMatrix(Dimension);
             for (int r = 0; r < Dimension; r++) {
                 for (int c = 0; c <= r; c++) {
@@ -80,9 +80,9 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="rhs">The right-hand-side vector.</param>
         /// <returns>The left-hand-side (solution) vector.</returns>
-        public virtual ColumnVector Solve (IList<double> rhs) {
+        public ColumnVector Solve (IList<double> rhs) {
             if (rhs == null) throw new ArgumentNullException("rhs");
-            if (rhs.Count != Dimension) throw new InvalidOperationException();
+            if (rhs.Count != Dimension) throw new DimensionMismatchException();
 
             // Determine Ly = x
             double[] y = new double[Dimension];
@@ -112,7 +112,7 @@ namespace Meta.Numerics.Matrices {
         /// Computes the inverse of the original matrix.
         /// </summary>
         /// <returns>M<sup>-1</sup></returns>
-        public virtual SymmetricMatrix Inverse () {
+        public SymmetricMatrix Inverse () {
             SymmetricMatrix MI = new SymmetricMatrix(Dimension);
 
             // do each column as a RHS
@@ -145,7 +145,7 @@ namespace Meta.Numerics.Matrices {
         /// Computes the determinant of the original matrix.
         /// </summary>
         /// <returns>det M</returns>
-        public virtual double Determinant () {
+        public double Determinant () {
             double lnDet = 0.0;
             for (int i = 0; i < Dimension; i++) {
                 lnDet += 2.0 * Math.Log(sqrtM[i, i]);

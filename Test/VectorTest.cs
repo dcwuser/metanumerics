@@ -7,52 +7,8 @@ using Meta.Numerics.Matrices;
 
 namespace Test {
 
-
-    [TestClass()]
+    [TestClass]
     public class VectorTest {
-
-
-        private TestContext testContextInstance;
-
-        public TestContext TestContext {
-            get {
-                return testContextInstance;
-            }
-            set {
-                testContextInstance = value;
-            }
-        }
-
-        #region Additional test attributes
-        // 
-        //You can use the following additional attributes as you write your tests:
-        //
-        //Use ClassInitialize to run code before running the first test in the class
-        //[ClassInitialize()]
-        //public static void MyClassInitialize(TestContext testContext)
-        //{
-        //}
-        //
-        //Use ClassCleanup to run code after all tests in a class have run
-        //[ClassCleanup()]
-        //public static void MyClassCleanup()
-        //{
-        //}
-        //
-        //Use TestInitialize to run code before running each test
-        //[TestInitialize()]
-        //public void MyTestInitialize()
-        //{
-        //}
-        //
-        //Use TestCleanup to run code after each test has run
-        //[TestCleanup()]
-        //public void MyTestCleanup()
-        //{
-        //}
-        //
-        #endregion
-
 
         private RowVector R = new RowVector(new double[] { 1, 1 });
         private ColumnVector C = new ColumnVector(new double[] { 1, -1, 1 });
@@ -162,6 +118,17 @@ namespace Test {
 
             // inner product
             double x = R * M * C;
+
+        }
+
+        [TestMethod]
+        public void VectorNorm () {
+
+            RowVector nR = R / R.Norm();
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(nR.Norm(), 1.0));
+
+            ColumnVector nC = C / C.Norm();
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(nC.Norm(), 1.0));
 
         }
 

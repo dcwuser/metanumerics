@@ -741,9 +741,8 @@ namespace Test {
             Sample sample2 = CreateSample(new NormalDistribution(1.0, 2.0), 20, 2);
             Sample sample3 = CreateSample(new NormalDistribution(3.0, 1.0), 20, 3);
 
-            TestResult f12 = sample1.FisherFTest(sample2);
-            TestResult f21 = sample2.FisherFTest(sample1);
-
+            TestResult f12 = Sample.FisherFTest(sample1, sample2);
+            TestResult f21 = Sample.FisherFTest(sample2, sample1);
 
             // sample 1 has a smaller variance
             Console.WriteLine(f12.Statistic);
@@ -757,7 +756,7 @@ namespace Test {
             Assert.IsTrue(f12.RightProbability > 0.95);
 
             // the F test detects no difference between the variance of 1 and 3
-            TestResult f13 = sample1.FisherFTest(sample3);
+            TestResult f13 = Sample.FisherFTest(sample1, sample3);
             Console.WriteLine(f13.Statistic);
             Console.WriteLine(f13.LeftProbability);
             Assert.IsTrue((f13.LeftProbability > 0.05) && (f13.RightProbability > 0.05));
@@ -907,6 +906,28 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void KruskalWallis () {
+
+            // generate four samples drawn from the same distribution,
+            // and a replacement sample for the last one drawn from a different distribution
+            Sample s1 = CreateSample(new ExponentialDistribution(1.0), 20, 1);
+            Sample s2 = CreateSample(new ExponentialDistribution(1.0), 30, 2);
+            Sample s3 = CreateSample(new ExponentialDistribution(1.0), 50, 3);
+            Sample s4 = CreateSample(new ExponentialDistribution(1.0), 80, 4);
+            Sample t4 = CreateSample(new ExponentialDistribution(2.0), 80, 4);
+
+            // the test using the different sample should reject the null hypothesis
+            TestResult ssst = Sample.KruskalWallisTest(s1, s2, s3, t4);
+            Console.WriteLine(ssst.RightProbability);
+            Assert.IsTrue(ssst.RightProbability < 0.05);
+
+            // the test using the same samples should not reect the null hypothesis
+            TestResult ssss = Sample.KruskalWallisTest(s1, s2, s3, s4);
+            Console.WriteLine(ssss.RightProbability);
+            Assert.IsTrue(ssss.RightProbability > 0.05);
+
+        }
 
     }
 }

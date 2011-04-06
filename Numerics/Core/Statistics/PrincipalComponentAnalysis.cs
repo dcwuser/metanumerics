@@ -175,21 +175,21 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the normalized component vector.
         /// </summary>
-        public RowVector NormalizedVector {
-            get {
+        public RowVector NormalizedVector () {
+            //get {
                 double[] pc = new double[analysis.cols];
                 Blas1.dCopy(analysis.vStore, analysis.cols * index, 1, pc, 0, 1, analysis.cols);
                 return (new RowVector(pc, pc.Length));
-            }
+            //}
         }
 
         /// <summary>
         /// Gets the scaled component vector.
         /// </summary>
-        public RowVector ScaledVector {
-            get {
-                return (analysis.wStore[index] * NormalizedVector);
-            }
+        public RowVector ScaledVector () {
+            //get {
+                return (analysis.wStore[index] * NormalizedVector());
+            //}
         }
 
     }

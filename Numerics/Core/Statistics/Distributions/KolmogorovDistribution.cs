@@ -109,7 +109,6 @@ namespace Meta.Numerics.Statistics.Distributions {
                     double z = k * Math.PI / x / 2.0;
                     double dp = Math.Exp(-z * z / 2.0);
                     p += dp;
-                    //Console.WriteLine("{0} {1} {2} {3} {4}", k, z, Math.Exp(-z * z / 2.0), dp, p);
                     if (p == p_old) return (Global.SqrtTwoPI / x * p);
                 }
 

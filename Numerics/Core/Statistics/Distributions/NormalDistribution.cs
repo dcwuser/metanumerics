@@ -195,8 +195,12 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// Computes the normal distribution that best fits the given sample.
         /// </summary>
         /// <param name="sample">The sample to fit.</param>
-        /// <returns>A <see cref="FitResult"/> containg the mu and sigma parameters of the normal distribution that best fits the sample data,
-        /// and a Kolmogorov-Smirnov test of the quality of the fit.</returns>
+        /// <returns>The fit result.</returns>
+        /// <remarks>
+        /// <para>The fit result is two-dimensional. The first parameter is the mean of the best-fit normal distribution; the second
+        /// parameter is its standard deviation.</para>
+        /// <para>The goodness-of-fit test is a Kolmogorov-Smirnov test.</para>
+        /// </remarks>
         public static FitResult FitToSample (Sample sample) {
 
             if (sample == null) throw new ArgumentNullException("sample");

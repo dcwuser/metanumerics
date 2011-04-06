@@ -20,8 +20,8 @@ Installation:
 Whatsnew notes
 --------------
 Functions: complete EllipticE
-Matrix: SVD, sparse(?), norms
+Matrix: SVD, sparse, norms
 Signal processing: FFT
-Statistics: PCA, Logistic Regression, Kruskal-Wallis test, loading from DB
+Statistics: PCA, Logistic Regression, Kruskal-Wallis test, expanded contingency table functionality, loading from DB
 Distributions: Cauchy(?), Gamma, Pearson, discrete uniform, discrete geometric, various dedicated fits, improved rng
 

@@ -8,23 +8,24 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents a 2 X 2 contingency table.
     /// </summary>
+    /// <remarks>
+    /// <para>Binary contingency tables are the most common kind of contingency table. Any experiment with a treatment and
+    /// a control group, and binary measured outcome, can be represented by a binary contingency table.</para>
+    /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Contingency_table" />
     public class BinaryContingencyTable : ContingencyTable {
 
         /// <summary>
         /// Initializes a new binary contingency table.
         /// </summary>
-        public BinaryContingencyTable ()
-            : base(2, 2) {
+        public BinaryContingencyTable () : base(2, 2) {
         }
 
         /// <summary>
         /// Initializes a new binary contingency table with the given entries.
         /// </summary>
         /// <param name="data">A two-dimensional matrix of table entries.</param>
-        public BinaryContingencyTable (int[,] data)
-            : base(data) {
-            if (data == null) throw new ArgumentNullException("data");
+        public BinaryContingencyTable (int[,] data) : base(data) {
             if ((data.GetLength(0) != 2) || (data.GetLength(1) != 2)) throw new DimensionMismatchException();
         }
 

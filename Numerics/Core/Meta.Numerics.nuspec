@@ -11,7 +11,7 @@
     <tags>numeric scientific technical math statistics matrix</tags>
   </metadata>
   <files>
-    <file src="bin\Debug\Meta.Numerics.dll" target="lib" />
-    <file src="bin\Debug\Meta.Numerics.xml" target="lib" />
+    <file src="bin\Release\Meta.Numerics.dll" target="lib" />
+    <file src="bin\Release\Meta.Numerics.xml" target="lib" />
   </files>
 </package>

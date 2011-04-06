@@ -102,7 +102,7 @@ namespace FutureTest {
             Console.WriteLine(DH.RightProbability(H));
 
             Console.WriteLine("--");
-            TestResult ar = Sample.OneWayAnovaTest(s1, s2, s3, s4, s5).FTest;
+            TestResult ar = Sample.OneWayAnovaTest(s1, s2, s3, s4, s5).Result;
             Console.WriteLine(ar.Statistic);
             Console.WriteLine(ar.RightProbability);
 

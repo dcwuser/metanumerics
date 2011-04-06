@@ -47,8 +47,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="x">The reference point.</param>
         /// <returns>The integrated probability 1-P(x1) to obtain a result above the reference point.</returns>
         /// <remarks>
-        /// <para>In lifetime analysis, the right probability function is commonly called the survival function, because it gives the
-        /// fraction of the population that has attained at least the given lifetime.</para>
+        /// <para>In survival analysis, the right probability function is commonly called the survival function, because it gives the
+        /// fraction of the population remaining after the given time.</para>
         /// </remarks>
 		public virtual double RightProbability (double x) {
 			return( 1.0 - LeftProbability(x) );
@@ -1379,7 +1379,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Gets the parameter values of the distribution.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The parameter values characterizing the distribution.</returns>
         double[] GetParameters ();
 
         /// <summary>

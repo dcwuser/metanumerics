@@ -17,9 +17,14 @@ namespace Meta.Numerics.Statistics {
     public class ContingencyTable {
 
         private string name;
-        private NameCollection rowNames;
-        private NameCollection columnNames;
-        private int[,] data;
+        //private NameCollection rowNames;
+        //private NameCollection columnNames;
+
+        private int rows, cols;
+        private int[,] counts;
+        private int[] rCounts;
+        private int[] cCounts;
+        private int tCounts;
 
         /// <summary>
         /// Instantiates a new contingency table.
@@ -29,9 +34,13 @@ namespace Meta.Numerics.Statistics {
         public ContingencyTable (int rows, int columns) {
             if (rows < 1) throw new ArgumentOutOfRangeException("rows");
             if (columns < 1) throw new ArgumentOutOfRangeException("columns");
-            data = new int[rows,columns];
-            rowNames = new NameCollection(rows);
-            columnNames = new NameCollection(columns);
+            this.rows = rows;
+            this.cols = columns;
+            this.counts = new int[rows,columns];
+            this.rCounts = new int[rows];
+            this.cCounts = new int[columns];
+            //rowNames = new NameCollection(rows);
+            //columnNames = new NameCollection(columns);
         }
 
         /// <summary>
@@ -40,15 +49,19 @@ namespace Meta.Numerics.Statistics {
         /// <param name="data">A (zero-based) matrix of contingency table entries.</param>
         public ContingencyTable (int[,] data) {
             if (data == null) throw new ArgumentNullException("data");
-            this.data = new int[data.GetLength(0), data.GetLength(1)];
-            for (int r = 0; r < data.GetLength(0); r++) {
-                for (int c = 0; c < data.GetLength(1); c++) {
+            this.rows = data.GetLength(0);
+            this.cols = data.GetLength(1);
+            this.counts = new int[rows, cols];
+            this.rCounts = new int[rows];
+            this.cCounts = new int[cols];
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < cols; c++) {
                     if (data[r, c] < 0) throw new ArgumentOutOfRangeException("data");
-                    this.data[r, c] = data[r, c];
+                    this[r, c] = data[r, c];
                 }
             }
-            rowNames = new NameCollection(data.GetLength(0));
-            columnNames = new NameCollection(data.GetLength(1));
+            //rowNames = new NameCollection(rows);
+            //columnNames = new NameCollection(cols);
         }
 
         /// <summary>
@@ -63,122 +76,89 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        public NameCollection RowNames {
-            get {
-                return (rowNames);
-            }
-        }
-
-        public NameCollection ColumnNames {
-            get {
-                return (columnNames);
-            }
-        }
-
         /// <summary>
-        /// Gets or sets the count in the specified entry.
+        /// Gets or sets the count in the specified cell.
         /// </summary>
-        /// <param name="r">The entry row number.</param>
-        /// <param name="c">The entry column number.</param>
-        /// <returns>The count in the specified entry.</returns>
+        /// <param name="r">The (zero-based) row index.</param>
+        /// <param name="c">The (zero-based) column index.</param>
+        /// <returns>The count in the specified cell.</returns>
         public int this[int r, int c] {
             get {
-                if ((r < 0) || (r > data.GetLength(0))) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c > data.GetLength(1))) throw new ArgumentOutOfRangeException("c");
-                return (data[r,c]);
+                if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
+                if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
+                return (counts[r,c]);
             }
             set {
-                if ((r < 0) || (r > data.GetLength(0))) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c > data.GetLength(1))) throw new ArgumentOutOfRangeException("c");
+                if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
+                if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
                 if (value < 0) throw new InvalidOperationException();
-                data[r,c] = value;
+                rCounts[r] += (value - counts[r, c]);
+                cCounts[c] += (value - counts[r, c]);
+                tCounts += (value - counts[r, c]);
+                counts[r,c] = value;
             }
         }
 
-        public int this[string rName, string cName] {
-            get {
-                if (rName == null) throw new ArgumentNullException("rName");
-                if (cName == null) throw new ArgumentNullException("cName");
-                int r = rowNames.GetIndexForName(rName);
-                if (r < 0) throw new InvalidOperationException();
-                int c = columnNames.GetIndexForName(cName);
-                if (c < 0) throw new InvalidOperationException();
-                return (data[r, c]);
-            }
-            set {
-                if (rName == null) throw new ArgumentNullException("rName");
-                if (cName == null) throw new ArgumentNullException("cName");
-                int r = rowNames.GetIndexForName(rName);
-                if (r < 0) throw new InvalidOperationException();
-                int c = columnNames.GetIndexForName(cName);
-                if (c < 0) throw new InvalidOperationException();
-                if (value < 0) throw new ArgumentOutOfRangeException("value");
-                data[r, c] = value;
-            }
-        }
+        
 
+        /// <summary>
+        /// Increments the count in the specifed cel.
+        /// </summary>
+        /// <param name="r">The (zero-based) row index.</param>
+        /// <param name="c">The (zero-based) column index.</param>
+        public void Increment (int r, int c) {
+            if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
+            if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
+            rCounts[r]++;
+            cCounts[c]++;
+            tCounts++;
+            counts[r, c]++;
+        }
 
         /// <summary>
         /// Gets the number of rows in the table.
         /// </summary>
-        public int RowCount {
+        public virtual int RowCount {
             get {
-                return (data.GetLength(0));
+                return (rows);
             }
         }
 
         /// <summary>
         /// Gets the number of columns in the table.
         /// </summary>
-        public int ColumnCount {
+        public virtual int ColumnCount {
             get {
-                return (data.GetLength(1));
+                return (cols);
             }
         }
 
 
         /// <summary>
-        /// Gets the total counts in the given row.
+        /// Gets the total counts in the specified row.
         /// </summary>
-        /// <param name="r">The (zero-based) row number.</param>
-        /// <returns>The sum of counts in the row.</returns>
-        public int RowTotal (int r) {
-            if ((r < 0) || (r > data.GetLength(0))) throw new ArgumentOutOfRangeException("r");
-            int R = 0;
-            for (int c = 0; c < data.GetLength(1); c++) {
-                R += data[r,c];
-            }
-            return (R);
+        /// <param name="r">The (zero-based) row index.</param>
+        /// <returns>The sum of all counts in the specified row.</returns>
+        public virtual int RowTotal (int r) {
+            if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
+            return (rCounts[r]);
         }
 
-        /// <summary>
-        /// Gets the total counts in the row with the given name.
-        /// </summary>
-        /// <param name="rName">The name of the row.</param>
-        /// <returns>The sum of counts in the row.</returns>
-        public int RowTotal (string rName) {
-            if (rName == null) throw new ArgumentNullException("rName");
-            int r = rowNames.GetIndexForName(rName);
-            return (RowTotal(r));
-        }
+
 
         /// <summary>
-        /// Gets the total counts in a column.
+        /// Gets the total counts in the specified column.
         /// </summary>
-        /// <param name="c">The column number.</param>
-        /// <returns>The sum of counts in all entries in the column.</returns>
-        public int ColumnTotal (int c) {
-            if ((c < 0) || (c > data.GetLength(1))) throw new ArgumentOutOfRangeException("c");
-            int C = 0;
-            for (int r = 0; r < data.GetLength(0); r++) {
-                C += data[r,c];
-            }
-            return (C);
+        /// <param name="c">The (zero-based) column index.</param>
+        /// <returns>The sum of all counts in the specified column.</returns>
+        public virtual int ColumnTotal (int c) {
+            if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
+            return (cCounts[c]);
         }
 
         internal int[] RowTotals {
             get {
-                int[] R = new int[data.GetLength(0)];
+                int[] R = new int[counts.GetLength(0)];
                 for (int r = 0; r < R.Length; r++) {
                     R[r] = RowTotal(r);
                 }
@@ -188,7 +168,7 @@ namespace Meta.Numerics.Statistics {
 
         internal int[] ColumnTotals {
             get {
-                int[] C = new int[data.GetLength(1)];
+                int[] C = new int[counts.GetLength(1)];
                 for (int c = 0; c < C.Length; c++) {
                     C[c] = ColumnTotal(c);
                 }
@@ -199,48 +179,83 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the total counts in the table.
         /// </summary>
-        public int Total {
+        public virtual int Total {
             get {
-                int N = 0;
-                for (int r = 0; r < data.GetLength(0); r++) {
-                    for (int c = 0; c < data.GetLength(1); c++) {
-                        N += data[r, c];
-                    }
-                }
-                return (N);
+                return (tCounts);
             }
         }
 
-        /// <summary>
-        /// Computes the marginal probility of the given row.
-        /// </summary>
-        /// <param name="r">The (zero-based) row index.</param>
-        /// <returns>The probability of a random entry appearing in the given row.</returns>
-        public double ProbabilityOfRow (int r) {
-            if ((r < 0) || (r >= data.GetLength(0))) throw new ArgumentOutOfRangeException("r");
-            return (RowTotal(r) / Total);
-        }
+        // row and column probabilites are the fraction of total counts that a given row/column total represents
+        // conditional probablities are the fraction of row/column totals that a cell represents
+        // to get the uncertainties in these probabilities, use
+        //   (df)^2 = (df/da)^2 (da)^2 + (df/db)^2 (db)^2 + ...
+        // and use (dn)^2 = n for each cell count
+
 
         /// <summary>
-        /// Computes the marginal probility of the given column.
-        /// </summary>
-        /// <param name="c">The (zero-based) column index.</param>
-        /// <returns>The probability of a random entry appearing in the given column.</returns>
-        public double ProbabilityOfColumn (int c) {
-            if ((c < 0) || (c >= data.GetLength(1))) throw new ArgumentOutOfRangeException("c");
-            return (ColumnTotal(c) / Total);
-        }
-
-        /// <summary>
-        /// Computes the probability of the given row conditional on the given column.
+        /// Estimates the probability of the given cell in the underlying population. 
         /// </summary>
         /// <param name="r">The (zero-based) row index.</param>
         /// <param name="c">The (zero-based) column index.</param>
-        /// <returns>The probability of a random entry appearing in the given row, if it appears in the given column.</returns>
-        public double ProbibilityOfRowConditionalOnColumn (int r, int c) {
-            if ((r < 0) || (r >= data.GetLength(0))) throw new ArgumentOutOfRangeException("r");
-            if ((c < 0) || (c >= data.GetLength(1))) throw new ArgumentOutOfRangeException("c");
-            return (data[r, c] / ColumnTotal(c));
+        /// <returns>The probability for a random event to occur inthe given cell.</returns>
+        public virtual UncertainValue Probability (int r, int c) {
+            if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
+            if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
+            double p = ((double) counts[r, c]) / tCounts;
+            double dp = Math.Sqrt(p * (tCounts - counts[r, c])) / tCounts;
+            return (new UncertainValue(p, dp));
+        }
+
+        /// <summary>
+        /// Estimates the marginal probility of the given row in the underlying population.
+        /// </summary>
+        /// <param name="r">The (zero-based) row index.</param>
+        /// <returns>The probability for a random event to occur in the given row.</returns>
+        public virtual UncertainValue ProbabilityOfRow (int r) {
+            if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
+            double p = ((double) rCounts[r]) / tCounts;
+            double dp = Math.Sqrt(p * (Total - rCounts[r])) / tCounts;
+            return (new UncertainValue(p, dp));
+        }
+
+        /// <summary>
+        /// Estimates the marginal probility of the given column in the underlying population.
+        /// </summary>
+        /// <param name="c">The (zero-based) column index.</param>
+        /// <returns>The probability for a random envent to occur in the given column.</returns>
+        public virtual UncertainValue ProbabilityOfColumn (int c) {
+            if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
+            double p = ((double) cCounts[c]) / tCounts;
+            double dp = Math.Sqrt(p * (Total - cCounts[c])) / tCounts;
+            return (new UncertainValue(p, dp));
+        }
+
+        /// <summary>
+        /// Estimates the probability of the given row, conditional on the given column.
+        /// </summary>
+        /// <param name="r">The (zero-based) row index.</param>
+        /// <param name="c">The (zero-based) column index.</param>
+        /// <returns>The probability for a random event to occur in the given row, if it appears in the given column.</returns>
+        public virtual UncertainValue ProbabilityOfRowConditionalOnColumn (int r, int c) {
+            if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
+            if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
+            double p = ((double) counts[r, c]) / cCounts[c];
+            double dp = Math.Sqrt(p * (cCounts[c] - counts[r, c])) / cCounts[c];
+            return (new UncertainValue(p, dp));
+        }
+
+        /// <summary>
+        /// Estimates the probability of the given row, conditional on the given column.
+        /// </summary>
+        /// <param name="r">The (zero-based) row index.</param>
+        /// <param name="c">The (zero-based) column index.</param>
+        /// <returns>The probability for a random event to occur in the given row, if it appears in the given column.</returns>
+        public virtual UncertainValue ProbabilityOfColumnConditionalOnRow (int c, int r) {
+            if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
+            if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
+            double p = ((double) counts[r, c]) / rCounts[r];
+            double dp = Math.Sqrt(p * (rCounts[r] - counts[r, c])) / rCounts[r];
+            return (new UncertainValue(p, dp));
         }
 
         // suppose there are no correlations present; then the expected number of events in a given table entry is just the fraction
@@ -264,32 +279,80 @@ namespace Meta.Numerics.Statistics {
         /// Pearson &#x3C7;<sup>2</sup> test are violated and it should not be used. For 2 X 2 experiments, the
         /// <see cref="BinaryContingencyTable.FisherExactTest" /> is a viable alternative in these cases.</para></remarks>
         /// <seealso cref="ChiSquaredDistribution"/>
-        public TestResult PearsonChiSquaredTest () {
-
-            // get the totals needed to compute expected entries
-            int[] R = RowTotals;
-            int[] C = ColumnTotals;
-            int N = Total;
+        public virtual TestResult PearsonChiSquaredTest () {
 
             // compute chi squared
             double chi2 = 0.0;
-            for (int r = 0; r < R.Length; r++) {
-                for (int c = 0; c < C.Length; c++) {
-                    double n = ((double)R[r]) * ((double)C[c]) / N;
-                    double z = data[r, c] - n;
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < cols; c++) {
+                    double n = ((double) rCounts[r]) * cCounts[c] / tCounts;
+                    double z = counts[r, c] - n;
                     chi2 += z * z / n;
                 }
             }
 
             // the degrees of freedom is just the number of entries minus the number of constraints: R*C - R - (C - 1)
-            int nu = (R.Length - 1) * (C.Length - 1);
+            int nu = (rows - 1) * (cols - 1);
 
             // return the test result
             return (new TestResult(chi2, new ChiSquaredDistribution(nu)));
 
         }
 
+#if FUTURE
+
+        // name-based access methods
+
+        public NameCollection RowNames {
+            get {
+                return (rowNames);
+            }
+        }
+
+        public NameCollection ColumnNames {
+            get {
+                return (columnNames);
+            }
+        }
+
+        public int this[string rName, string cName] {
+            get {
+                if (rName == null) throw new ArgumentNullException("rName");
+                if (cName == null) throw new ArgumentNullException("cName");
+                int r = rowNames.GetIndexForName(rName);
+                if (r < 0) throw new InvalidOperationException();
+                int c = columnNames.GetIndexForName(cName);
+                if (c < 0) throw new InvalidOperationException();
+                return (counts[r, c]);
+            }
+            set {
+                if (rName == null) throw new ArgumentNullException("rName");
+                if (cName == null) throw new ArgumentNullException("cName");
+                int r = rowNames.GetIndexForName(rName);
+                if (r < 0) throw new InvalidOperationException();
+                int c = columnNames.GetIndexForName(cName);
+                if (c < 0) throw new InvalidOperationException();
+                if (value < 0) throw new ArgumentOutOfRangeException("value");
+                counts[r, c] = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets the total counts in the row with the given name.
+        /// </summary>
+        /// <param name="rName">The name of the row.</param>
+        /// <returns>The sum of counts in the specified row.</returns>
+        public int RowTotal (string rName) {
+            if (rName == null) throw new ArgumentNullException("rName");
+            int r = rowNames.GetIndexForName(rName);
+            return (RowTotal(r));
+        }
+
+#endif
+
     }
+
+#if FUTURE
 
     public class NameCollection {
 
@@ -323,5 +386,7 @@ namespace Meta.Numerics.Statistics {
         }
 
     }
+
+#endif
 
 }

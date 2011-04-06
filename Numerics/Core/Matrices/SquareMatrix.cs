@@ -71,22 +71,6 @@ namespace Meta.Numerics.Matrices {
             return (MatrixAlgorithms.InfinityNorm(store, dimension, dimension));
         }
 
-        // use for fast access
-        // this bypasses bounds checks, so make sure the bounds are right!
-        /*
-        internal double GetEntry (int r, int c) {
-            //Console.WriteLine("get from {0}", dimension * c + r);
-            return (store[dimension * c + r]);
-            //return (values[r * dimension + c]);
-        }
-
-        internal void SetEntry (int r, int c, double value) {
-            //Console.WriteLine("set {0} at {1}", value, dimension * c + r);
-            store[dimension * c + r] = value;
-            //values[r * dimension + c] = value;
-        }
-        */
-
         /// <summary>
         /// Returns a vector representing a given row of the matrix.
         /// </summary>
@@ -253,44 +237,6 @@ namespace Meta.Numerics.Matrices {
 
             SquareMatrix A = new SquareMatrix(aStore, dimension);
             SquareMatrix Q = new SquareMatrix(qStore, dimension);
-
-
-            //SquareMatrix A = this.Clone();
-            //Debug.WriteLine("Start A=");
-            //PrintMatrix(A);
-
-            // start with an identity matrix to track the transforms
-            //SquareMatrix Q = new SquareMatrix(dimension);
-            //for (int i = 0; i < dimension; i++) Q[i, i] = 1.0;
-
-            // balance the matrix
-            /*
-            Balance(A);
-            Debug.WriteLine("Balanced A=");
-            PrintMatrix(A);
-            Debug.WriteLine("Transform Q=");
-            PrintMatrix(Q);
-            Debug.WriteLine("Test Q^T M Q = A");
-            PrintMatrix(Q.Transpose() * this * Q);
-            */
-
-            // reduce to Hessenberg form
-            //ReduceToHessenberg(A, Q);
-            //Debug.WriteLine("Hessenberg A=");
-            //PrintMatrix(A);
-            //Debug.WriteLine("Transform Q=");
-            //PrintMatrix(Q);
-            //Debug.WriteLine("Test Q^T M Q = A");
-            //PrintMatrix(Q.Transpose() * this * Q);
-            
-            // reduce to Schur form, extracting eigenvalues as we go
-            //Complex[] eigenvalues = ExtractEigenvalues(A, Q);
-            //Debug.WriteLine("Schur A=");
-            //PrintMatrix(A);
-            //Debug.WriteLine("Transform Q=");
-            //PrintMatrix(Q);
-            //Debug.WriteLine("Test Q^T M Q = A");
-            //PrintMatrix(Q.Transpose() * this * Q);
 
             // get eigenvectors
             Complex[,] eigenvectors = ExtractEigenvectors(A, Q, eigenvalues);
@@ -513,95 +459,6 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
-        // a Householder reflection matrix is a rank-1 update to the identity.
-        //   P = I - b v v^T
-        // Unitarity requires b = 2 / |v|^2. To anihilate all but the first components of vector x,
-        //   P x = a e_1
-        // we must have
-        //   v = x +/- |x| e_1
-        // that is, all elements the same except the first, from which we have either added or subtracted |x|.
-        // (We choose the sign that avoids canelation.) This makes
-        //   a = -/+ |x|
-        // 
-
-        public static void GenerateHouseholderReflection (double[] store, int offset, int stride, int count, out double a) {
-            double xm = Blas1.dNrm2(store, offset, stride, count);
-            if (xm == 0.0) {
-                a = 0.0;
-            } else {
-                double x0 = store[offset];
-                double u0;
-                if (x0 < 0.0) {
-                    // subtract |x| from (negative) x_0, avoiding cancelation (and making it more negative)
-                    u0 = x0 - xm;
-                    a = xm;
-                } else {
-                    // add |x| to (positive) x_0, avoiding cancelation (and making it more positive)
-                    u0 = x0 + xm;
-                    a = -xm;
-                }
-                store[offset] = u0;
-                // rescale u to make |u|^2 = 2 and avoid having to multiply later
-                // this will not result in division by zero, because xm > 0 and u0 > xm
-                double um = Math.Sqrt(xm * Math.Abs(u0));
-                Blas1.dScal(1.0 / um, store, offset, stride, count);
-            }
-        }
-
-        public static double[] GenerateHouseholderReflection (double[] store, int offset, int stride, int count) {
-
-            // copy the vector, so we have seperate storage for the original column and the Householder vector
-            double[] v = new double[count];
-            Blas1.dCopy(store, offset, stride, v, 0, 1, count);
-
-            // replace v with the Householder vector, and the first element of the original column by the value produced
-            GenerateHouseholderReflection(v, 0, 1, count, out store[offset]);
-
-            // zero the other column elements
-            for (int i = 1; i < count; i++) {
-                offset += stride;
-                store[offset] = 0.0;
-            }
-
-            return (v);
-        }
-
-        public static void ApplyHouseholderReflection (
-            double[] uStore, int uOffset, int uStride,
-            double[] yStore, int yOffset, int yStride,
-            int count
-        ) {
-            // (1 - b v v^T) y = y - (b v^T y) v
-            double s = Blas1.dDot(uStore, uOffset, uStride, yStore, yOffset, yStride, count);
-            Blas1.dAxpy(-s, uStore, uOffset, uStride, yStore, yOffset, yStride, count);
-        }
-
-
-        // XXXXX    XXXXX
-        // XXXXX    XXXXX
-        // 00XXX -> X0XXX ->
-        // 000XX    X00XX
-        // 000XX    000XX
-
-        public static void Write (double[] store, int rows, int cols) {
-            Console.WriteLine("M");
-            for (int r = 0; r < rows; r++) {
-                for (int c = 0; c < cols; c++) {
-                    Console.Write("  {0}", store[rows * c + r]);
-                }
-                Console.WriteLine();
-            }
-        }
-
-        public static void Write (SquareMatrix A) {
-            Console.WriteLine("A");
-            for (int r = 0; r < A.Dimension; r++) {
-                for (int c = 0; c < A.Dimension; c++) {
-                    Console.Write("  {0}", A[r,c]);
-                }
-                Console.WriteLine();
-            }
-        }
 #endif
        
 #if FUTURE

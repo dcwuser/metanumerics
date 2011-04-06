@@ -439,7 +439,7 @@ namespace Test {
             for (int i = 0; i < pca.Dimension; i++) {
                 PrincipalComponent pc = pca.Component(i);
                 Assert.IsTrue(pc.Index == i);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(pc.Weight * pc.NormalizedVector, pc.ScaledVector));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(pc.Weight * pc.NormalizedVector(), pc.ScaledVector()));
                 Assert.IsTrue((0.0 <= pc.VarianceFraction) && (pc.VarianceFraction <= 1.0));
                 if (i == 0) {
                     Assert.IsTrue(pc.VarianceFraction == pc.CumulativeVarianceFraction);
@@ -460,7 +460,7 @@ namespace Test {
                     RowVector x = mu.Copy();
                     for (int i = 0; i < rD; i++) {
                         PrincipalComponent pc = pca.Component(i);
-                        x += (cEntry[i] * pc.Weight) * pc.NormalizedVector;
+                        x += (cEntry[i] * pc.Weight) * pc.NormalizedVector();
                     }
                     rSample.Add(x);
                 }

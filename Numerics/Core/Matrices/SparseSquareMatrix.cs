@@ -9,7 +9,7 @@ namespace Meta.Numerics.Matrices {
     // at five values per entry, this is not the most storage-efficient format
     // but it is conceptually straightforward and allows easy update
     // other formats i have seen, e.g. Boeing-Harwell, require that the matrix entries be supplied in a particular, non-random order
-    // and do nog allow easy update
+    // and do not allow easy update
 
     internal class SparseMatrixElement {
 
@@ -33,6 +33,8 @@ namespace Meta.Numerics.Matrices {
     /// </summary>
     /// <remarks>
     /// <para>Many applications give rise to very large matrices which consist mostly of zero elements.</para>
+    /// <para>When working with sparse matrices, it is important to keep in mind that many operations do not respect sparsity.
+    /// For example, the product of two sparse matrices is not necessarily sparse, nor is the inverse of a sparse matrix.</para>
     /// </remarks>
     public sealed class SparseSquareMatrix : AnySquareMatrix {
 
@@ -46,6 +48,13 @@ namespace Meta.Numerics.Matrices {
             rows = new SparseMatrixElement[dimension];
             columns = new SparseMatrixElement[dimension];
             fill = 0;
+        }
+
+        internal SparseSquareMatrix (int dimension, SparseMatrixElement[] rows, SparseMatrixElement[] columns, int fill) {
+            this.dimension = dimension;
+            this.rows = rows;
+            this.columns = columns;
+            this.fill = fill;
         }
 
         private int dimension;
@@ -177,6 +186,18 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <inheritdoc />
+        public override RowVector Row (int r) {
+            if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
+            double[] store = new double[dimension];
+            SparseMatrixElement element = rows[r];
+            while (element != null) {
+                store[element.Column] = element.Value;
+                element = element.NextInRow;
+            }
+            return (new RowVector(store, dimension));
+        }
+
+        /// <inheritdoc />
         public override ColumnVector Column (int c) {
             if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
             double[] store = new double[dimension];
@@ -193,29 +214,77 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>An independent copy of the matrix.</returns>
         public SparseSquareMatrix Copy () {
-            // this is not a very fast copy, it would be nice to improve it
-            SparseSquareMatrix copy = new SparseSquareMatrix(dimension);
+
+            // a simple, slow solution is to create an empty sparse matrix with the same dimension and call
+            // set element for each entry; but this moves along each linked list many times
+
+            // we would like to just move along, say, each row, just once, copying the elements we find
+            // but that isn't simple, because we need to store pointers to the next in row and next in column,
+            // which we don't have on hand as we create the element
+
+            // dealing with the next in row is easy: just keep a reference to the last one we do and
+            // set its pointer to the next in row when we create the next element in the row
+
+            // dealing with the next in column is harder; we need to know what is above it in the column,
+            // but that was created a long time ago when we were dealing with a previous row.
+            // to solve this problem, we use auxiluary storage: a N-element array that stores that last
+            // element created in each column. when we create a new element, we hook it up to the previous
+            // element stored in that array, then put the new element in the array
+
+
+            SparseMatrixElement[] copyRows = new SparseMatrixElement[dimension];
+            SparseMatrixElement[] copyColumns = new SparseMatrixElement[dimension];
+            SparseMatrixElement[] lastInColumn = new SparseMatrixElement[dimension];
+
             for (int r = 0; r < dimension; r++) {
                 SparseMatrixElement element = rows[r];
+                SparseMatrixElement lastInRow = null;
                 while (element != null) {
-                    copy[element.Row, element.Column] = element.Value;
+                    // create a copy of the element
+                    SparseMatrixElement copyElement = new SparseMatrixElement(element.Row, element.Column, element.Value);
+                    // hook it up to the previous one in the row (and store it for the next one)
+                    if (lastInRow != null) {
+                        lastInRow.NextInRow = copyElement;
+                    } else {
+                        copyRows[r] = copyElement;
+                    }
+                    lastInRow = copyElement;
+                    // hook it up to the previous one in the column (and store it for the next one)
+                    if (lastInColumn[element.Column] != null) {
+                        lastInColumn[element.Column].NextInColumn = copyElement;
+                    } else {
+                        copyColumns[element.Column] = copyElement;
+                    }
+                    lastInColumn[element.Column] = copyElement;
+                    // move to the next element in the row
                     element = element.NextInRow;
                 }
             }
+
+            SparseSquareMatrix copy = new SparseSquareMatrix(dimension, copyRows, copyColumns, fill);
             return (copy);
+
         }
 
+        /// <summary>
+        /// Multiplies a sparse matrix by a real scalar.
+        /// </summary>
+        /// <param name="alpha">The scalar value.</param>
+        /// <param name="A">The sparse matrix.</param>
+        /// <returns>The product sparse matrix.</returns>
         public static SparseSquareMatrix operator * (double alpha, SparseSquareMatrix A) {
-
             if (A == null) throw new ArgumentNullException("A");
-            SparseSquareMatrix aA = new SparseSquareMatrix(A.dimension);
-            for (int r = 0; r < A.dimension; r++) {
-                SparseMatrixElement element = A.rows[r];
+            SparseSquareMatrix aA = A.Copy();
+            if (alpha == 0.0) return (aA);
+            for (int r = 0; r < aA.dimension; r++) {
+                SparseMatrixElement element = aA.rows[r];
                 while (element != null) {
-
+                    element.Value = alpha * element.Value;
+                    // handle the case where alpha != 0, but alpha * element.Value underflows to zero
+                    element = element.NextInRow;
                 }
             }
-            throw new NotImplementedException();
+            return(aA);
         }
 
         /// <summary>
@@ -244,7 +313,7 @@ namespace Meta.Numerics.Matrices {
 
 
         /// <summary>
-        /// Multiplies a sparse matrix by a row vector..
+        /// Multiplies a sparse matrix by a row vector.
         /// </summary>
         /// <param name="A">The matrix.</param>
         /// <param name="v">The row vector.</param>

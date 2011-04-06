@@ -158,6 +158,10 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="sample">The sample to fit.</param>
         /// <returns>The result of the fit.</returns>
+        /// <remarks>
+        /// <para>The fit result is two-dimensional. The first parameter is the scale paramter of the best-fit Weibull distribtion.
+        /// The second parameter is its shape parameter. The goodness-of-fit test is a Kolmogorov-Smirnov test.</para>
+        /// </remarks>
         /// <exception cref="ArgumentNullException">The <paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException">The <paramref name="sample"/> contains less than three data points.</exception>
         /// <exception cref="InvalidOperationException">The <paramref name="sample"/> contains non-positive values.</exception>

@@ -233,6 +233,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Not valid for discrete distributions.
         /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>Throws an exception.</returns>
         /// <remarks>
         /// <para>Technically, the PDF of a discrete probability distribution consists of delta functions at the integers, each
         /// with a weight equal to the PMF at that integer. Since this is not representable in floating point arithmetic, calling

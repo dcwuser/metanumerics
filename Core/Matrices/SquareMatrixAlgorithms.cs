@@ -40,8 +40,6 @@ namespace Meta.Numerics.Matrices {
                         pivotValue = t;
                     }
                 }
-                //Console.WriteLine("pivot row = {0}, pivot value = {1}", pivotRow, pivotValue);
-                //pivotValue = aStore[dimension * d + d];
 
                 if (pivotValue == 0.0) throw new DivideByZeroException();
 

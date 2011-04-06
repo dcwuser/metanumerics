@@ -18,7 +18,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// and ANOVA tests (<see cref="Sample.OneWayAnovaTest(IList{Sample})"/>).</para>
     /// <para>The Fisher distribution is related to the Beta distribution (<see cref="BetaDistribution"/>) by a simple
     /// variable transformation.</para>
-    /// <img src="../images/BetaFromFisher.png" />
+    /// <img src="../images/FisherBeta.png" />
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/F_distribution"/>
     public sealed class FisherDistribution : Distribution {

@@ -11,7 +11,7 @@ namespace Meta.Numerics.Statistics {
     /// <para>A one way ANOVA test detects the influence of a categorical factor on the mean of a measured variable, which is assumed
     /// to be normally distributed.</para>
     /// <para>A one way ANOVA result is returned by the static <see cref="Sample.OneWayAnovaTest(System.Collections.Generic.IList{Sample})"/>
-    /// method of the <see cref="Sample"/> class.</para>
+    /// method.</para>
     /// <para>While, fundamentally, a one-way ANOVA is a simple statistical test like any other, with a single test statistic (F) and
     /// a single associated distribution (the F distribution), some ANOVA users like to examine and report some intermediate quantities
     /// used in the computation of the test. In particular, the sum of square deviations and corresponding degrees of freedom associated
@@ -19,17 +19,18 @@ namespace Meta.Numerics.Statistics {
     /// representation of an ANOVA test. To enable this, the class makes this information available as <see cref="AnovaRow"/> objects
     /// returned by the <see cref="Factor"/>, <see cref="Residual"/>, and <see cref="Total"/> properties. This has the unfortunate
     /// side-effect of making the AVOVA look more complicated than it really is. If you just want the test result, you can get it
-    /// from the <see cref="FTest"/> property.</para>
+    /// from the <see cref="Result"/> property.</para>
     /// </remarks>
     /// <example>
-    /// <para>Suppose you have sampled the heights of aliens from three planets. You want to know whether planet
-    /// of origin affects average height. You can do a one-way ANOVA to determine if the planet factor affects mean height.</para>
+    /// <para>Suppose you have sampled the heights of aliens from three planets. Heights are approximately normally distributed
+    /// on each planet. You want to know whether planet-of-origin affects average height. You can do a one-way ANOVA to determine
+    /// if the planet factor affects mean height.</para>
     /// <code lang="C#">
-    /// Sample group1 = new Sample(new double[] { 4, 5, 6});
-    /// Sample group2 = new Sample(new double[] { 3, 4, 5});
-    /// Sample group3 = new Sample(new double[] { 5, 6, 8, 9});
+    /// Sample group1 = new Sample(4, 5, 6);
+    /// Sample group2 = new Sample(3, 4, 5);
+    /// Sample group3 = new Sample(5, 6, 8, 9);
     /// OneWayAnovaResult result = Sample.OneWayAnovaTest(group1, group2, group3);
-    /// Console.WriteLine(result.FTest.RightProbability);
+    /// return(result.Result.RightProbability);
     /// </code>
     /// </example>
     /// <seealso cref="Sample.OneWayAnovaTest(System.Collections.Generic.IList{Sample})"/>
@@ -61,9 +62,9 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the result of the F test for the influence of the factor.
         /// </summary>
-        public TestResult FTest {
+        public TestResult Result {
             get {
-                return (Factor.FTest);
+                return (Factor.Result);
             }
         }
 
@@ -112,7 +113,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the result of an F-test measuring the significance of the row.
         /// </summary>
-        public TestResult FTest {
+        public TestResult Result {
             get {
                 double F = (this.SumOfSquares / this.DegreesOfFreedom) / (result.Residual.SumOfSquares / result.Residual.DegreesOfFreedom);
                 Distribution D = new FisherDistribution(this.DegreesOfFreedom, result.Residual.DegreesOfFreedom);

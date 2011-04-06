@@ -808,7 +808,7 @@ namespace Test {
 
             Assert.IsTrue(result.Total.DegreesOfFreedom == A.Count + B.Count + C.Count - 1);
 
-            Assert.IsTrue(result.FTest.Statistic == result.Factor.FTest.Statistic);
+            Assert.IsTrue(result.Result.Statistic == result.Factor.Result.Statistic);
 
         }
         
@@ -835,7 +835,7 @@ namespace Test {
                 }
 
                 OneWayAnovaResult result = Sample.OneWayAnovaTest(groups);
-                fSample.Add(result.Factor.FTest.Statistic);
+                fSample.Add(result.Factor.Result.Statistic);
 
             }
 
@@ -860,7 +860,7 @@ namespace Test {
             // do a Student t-test and a one-way ANOVA
             //TestResult ts = Sample.StudentTTest(A, B);
             TestResult ts = Sample.StudentTTest(A, B);
-            TestResult ta = Sample.OneWayAnovaTest(A, B).Factor.FTest;
+            TestResult ta = Sample.OneWayAnovaTest(A, B).Factor.Result;
 
 
             // the results should agree, with F = t^2 and same probability

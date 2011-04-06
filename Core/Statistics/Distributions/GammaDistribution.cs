@@ -245,8 +245,6 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             double y = AdvancedMath.LeftRegularizedGamma(a, x) - P;
             for (int i = 0; i < 16; i++) {
-
-                //Console.WriteLine("  x={0:g16} y={1}", x, y);
                 
                 double r;
                 if (ga > 0.0) {
@@ -256,7 +254,6 @@ namespace Meta.Numerics.Statistics.Distributions {
                 }
                 double dx = -r * x / (1.0 - r * (a - 1.0 - x) / 2.0);
                 x += dx;
-                //Console.WriteLine("  dx={0} x={1}", dx, x);
 
                 if (Math.Abs(dx) <= Global.Accuracy * Math.Abs(x)) return (x);
 

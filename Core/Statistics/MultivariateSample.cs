@@ -23,7 +23,7 @@ namespace Meta.Numerics.Statistics {
     public sealed class MultivariateSample : ICollection<double[]>, IEnumerable<double[]>, IEnumerable {
 
         /// <summary>
-        /// Initializes a multivariate sample.
+        /// Initializes a new multivariate sample.
         /// </summary>
         /// <param name="dimension">The dimension of the sample space, that is, the number of variables
         /// recorded for each sample entry.</param>
@@ -35,6 +35,16 @@ namespace Meta.Numerics.Statistics {
                 storage[j] = new SampleStorage();
             }
             isReadOnly = false;
+        }
+
+        /// <summary>
+        /// Initializes a new multivariate sample with the given variable names.
+        /// </summary>
+        /// <param name="names">The names of the variables.</param>
+        public MultivariateSample (params string[] names) : this(names.Length) {
+            for (int j = 0; j < storage.Length; j++) {
+                storage[j].Name = names[j];
+            }
         }
 
         internal MultivariateSample (SampleStorage[] columns, bool isReadOnly) {
@@ -223,7 +233,7 @@ namespace Meta.Numerics.Statistics {
             SampleStorage[] columns = new SampleStorage[columnIndexes.Count];
             for (int i = 0; i < columns.Length; i++) {
                 int ci = columnIndexes[i];
-                if ((ci < 0) || (ci >= Dimension)) throw new ArgumentOutOfRangeException();
+                if ((ci < 0) || (ci >= Dimension)) throw new ArgumentOutOfRangeException("columnIndexes");
                 columns[i] = storage[ci];
             }
             return new MultivariateSample(columns, true);

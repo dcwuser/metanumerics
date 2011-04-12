@@ -11,7 +11,9 @@ namespace Meta.Numerics {
     /// <para>Use the static methods <see cref="FromEndpoints"/>, <see cref="FromMidpointAndWidth"/>,
     /// and <see cref="FromEndpointAndWidth"/> to instantiate intervals.</para>
     /// </remarks>
+#if !SILVERLIGHT
     [Serializable]
+#endif
     public struct Interval {
 
         private double a, b, w;
@@ -175,6 +177,7 @@ namespace Meta.Numerics {
         /// Produces a representation of the interval for the Python interactive console.
         /// </summary>
         /// <returns>A string representation of the inverval.</returns>
+        [CLSCompliant(false)]
         public string __repr__ () {
             return(ToString());
         }

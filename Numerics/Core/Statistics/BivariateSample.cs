@@ -1,5 +1,7 @@
 ﻿using System;
+#if !SILVERLIGHT
 using System.Data;
+#endif
 using System.Globalization;
 
 using Meta.Numerics.Functions;
@@ -496,7 +498,7 @@ namespace Meta.Numerics.Statistics {
 
         }
 
-
+#if !SILVERLIGHT
         /// <summary>
         /// Loads values from a data reader.
         /// </summary>
@@ -513,6 +515,7 @@ namespace Meta.Numerics.Statistics {
                 Add(Convert.ToDouble(xValue, CultureInfo.InvariantCulture), Convert.ToDouble(yValue, CultureInfo.InvariantCulture));
             }
         }
+#endif
 
     }
 

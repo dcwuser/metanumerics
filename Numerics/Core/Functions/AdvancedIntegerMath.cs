@@ -219,7 +219,7 @@ namespace Meta.Numerics.Functions {
             } else {
                 // m = (n+1)/2, n!! = 2^m Gamma(m+1/2) / Sqrt(PI)
                 int m = (n + 1) / 2;
-                return (m * Global.LogTwo + AdvancedMath.LogGamma(m + 0.5) - 0.5 * Math.Log(Math.PI));
+                return (m * Global.LogTwo + AdvancedMath.LogGamma(m + 0.5) - Math.Log(Math.PI) / 2.0);
             }
         }
 
@@ -235,8 +235,9 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso href="http://mathworld.wolfram.com/DoubleFactorial.html"/>
         public static double DoubleFactorial (int n) {
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
-            if (n < 32) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n < 32) {
                 return ((double) DoubleFactorial_Multiply(n));
             } else {
                 return (Math.Round(Math.Exp(LogDoubleFactorial_Gamma(n))));
@@ -251,13 +252,54 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso cref="DoubleFactorial"/>
         public static double LogDoubleFactorial (int n) {
-            if (n < 0) throw new ArgumentOutOfRangeException("n"); 
-            if (n < 32) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n < 32) {
                 return (Math.Log((double) DoubleFactorial_Multiply(n)));
             } else {
                 return (LogDoubleFactorial_Gamma(n));
             }
         }
+
+
+        /// <summary>
+        /// Computes the given harmonic number.
+        /// </summary>
+        /// <param name="n">The index of the harmonic number to compute, which must be non-negative.</param>
+        /// <returns>The harmonic number H<sub>n</sub>.</returns>
+        /// <remarks>
+        /// <para>H<sub>n</sub> is the nth partial sum of the harmonic series.</para>
+        /// <para>Since the harmonic series diverges, H<sub>n</sub> grows without bound as n increases, but
+        /// it does so extremely slowly, approximately as log(n).</para>
+        /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Harmonic_series_(mathematics)"/>
+        public static double HarmonicNumber (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n < 32) {
+                // for small values, just add up the harmonic series
+                double H = 0.0;
+                for (int i = 1; i <= n; i++) {
+                    H += 1.0 / i;
+                }
+                return (H);
+            } else {
+                // for large values, use the digamma function
+                // this will route to the the Stirling asymptotic expansion
+                return (AdvancedMath.Psi(n+1) + AdvancedMath.EulerGamma);
+            }
+
+        }
+
+        // the even Bernoulli numbers B_2n = Bernoulli[n]
+        // the only nonvanishing odd Bernoulli number is B_1 = -1/2, which must be handled seperately if you
+        // use these numbers in any series expansion
+
+        internal static readonly double[] Bernoulli = new double[] {
+            1.0, 1.0 / 6.0, -1.0 / 30.0, 1.0 / 42.0, -1.0 / 30.0, 5.0 / 66.0, -691.0 / 2730.0, 7.0 / 6.0, -3617.0 / 510.0
+        };
+
+        // the expansions in which they appear are asymptotic; the numbers grow rapidly after ~B_16
 
         /*
 		public static long StirlingS1 (int n, int m) {
@@ -400,6 +442,67 @@ namespace Meta.Numerics.Functions {
                 yield return (p);
             }
 
+        }
+
+        /// <summary>
+        /// Determines whether the given integer is prime.
+        /// </summary>
+        /// <param name="n">The integer, which must be positive.</param>
+        /// <returns>True if the integer is prime, otherwise false.</returns>
+        /// <seealso href="http://en.wikipedia.org/wiki/Prime_number"/>
+        /// <seealso href="http://mathworld.wolfram.com/PrimeNumber.html"/>
+        public static bool IsPrime (int n) {
+            if (n <= 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } if (n < 8) {
+                return ((n == 2) || (n == 3) || (n == 5) || (n == 7));
+            } else {
+
+                // even numbers (larger than 2) aren't prime
+                if (n % 2 == 0) return (false);
+
+                // we will use the Miller-Rabin probabilistic prime testing; to do so we must write m = n - 1 = 2^s * d
+                int m = n - 1;
+                int d = m;
+                int s = 0;
+                while (d % 2 == 0) {
+                    s++;
+                    d = d / 2;
+                }
+
+                // according to articles quoted at http://primes.utm.edu/prove/prove2_3.html
+                // witnesses 2 and 3 are sufficient for all n < 1,373,653 
+                // witnesses 2, 3, and 5 are sufficient for all n < 25,326,001
+                // witnesses 2, 3, 5, and 7 are sufficient for all n < 118,670,087,467 except n = 3,215,031,751
+                // witnesses 2, 3, 5, 7, and 11 are sufficient for all n < 2,152,302,898,747
+                // witnesses 31 and 73 are sufficient for all n < 9,080,191
+                // witnesses 2, 7, and 61 are sufficient for all n < 4,759,123,141
+
+                if (n < 1373653) {
+                    return (IsProbablyPrime(n, m, s, d, 2) && IsProbablyPrime(n, m, s, d, 3));
+                } else {
+                    return (IsProbablyPrime(n, m, s, d, 2) && IsProbablyPrime(n, m, s, d, 7) && IsProbablyPrime(n, m, s, d, 61));
+                }
+
+            }
+        }
+
+        // The Miller-Rabin probable prime test http://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test
+
+        // The odd integer n = m + 1 = 2^s * d + 1
+        // The witness is w, which must be 2 <= w <= n - 2
+
+        // should loop be 0...(s-1) or 1...(s-1)?
+
+        private static bool IsProbablyPrime (int n, int m, int s, int d, int w) {
+            int x = PowMod(w, d, n);
+            if ((x == 1) || (x == m)) return (true);
+            for (int i = 0; i < s; i++) {
+                x = PowMod(x, 2, n);
+                if (x == 1) return (false);
+                if (x == m) return (true);
+            }
+            return (false);
         }
 
 #if FUTURE

@@ -65,6 +65,7 @@ namespace Test {
         #endregion
 
         private Distribution[] distributions = new Distribution[] {
+            new CauchyDistribution(1.0, 2.0),
             new UniformDistribution(Interval.FromEndpoints(-2.0,1.0)), new UniformDistribution(Interval.FromEndpoints(7.0, 9.0)),
             new NormalDistribution(3.0,2.0),
             new ExponentialDistribution(2.0),
@@ -99,10 +100,14 @@ namespace Test {
         public void DistributionMomentSpecialCases () {
             foreach (Distribution distribution in distributions) {
                 Assert.IsTrue(distribution.Moment(0) == 1.0);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Moment(1), distribution.Mean));
                 Assert.IsTrue(distribution.MomentAboutMean(0) == 1.0);
-                Assert.IsTrue(distribution.MomentAboutMean(1) == 0.0);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.MomentAboutMean(2), distribution.Variance));
+                if (!Double.IsNaN(distribution.Mean)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Moment(1), distribution.Mean));
+                    Assert.IsTrue(distribution.MomentAboutMean(1) == 0.0);
+                }
+                if (!Double.IsNaN(distribution.Variance)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.MomentAboutMean(2), distribution.Variance));
+                }
             }
         }
 
@@ -110,7 +115,7 @@ namespace Test {
         public void DistributionSkewness () {
             foreach (Distribution distribution in distributions) {
                 Console.WriteLine(distribution.GetType().FullName);
-                if (!Double.IsInfinity(distribution.Skewness)) {
+                if (!Double.IsNaN(distribution.Skewness)) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         distribution.Skewness, distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 3.0 / 2.0)
                     ));
@@ -126,12 +131,14 @@ namespace Test {
                 double M1 = distribution.Moment(1);
                 double M2 = distribution.Moment(2);
                 double C2 = distribution.MomentAboutMean(2);
+                if (Double.IsNaN(M1) || Double.IsNaN(M2)) continue;
                 if (!Double.IsInfinity(C2)) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(C2 + M1 * M1, M2));
                 }
                 // C3 = M3 - 3 M2 M1 + 2 M1^3
                 double M3 = distribution.Moment(3);
                 double C3 = distribution.MomentAboutMean(3);
+                if (Double.IsNaN(M3)) continue;
                 if (!Double.IsInfinity(C3)) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(C3 + 3.0 * M2 * M1, M3 + 2.0 * M1 * M1 * M1));
                 }
@@ -142,7 +149,11 @@ namespace Test {
         [TestMethod]
         public void DistributionCentralInequality () {
             foreach (Distribution distribution in distributions) {
-                Assert.IsTrue(Math.Abs(distribution.Mean - distribution.Median) <= distribution.StandardDeviation);
+                double mean = distribution.Mean;
+                if (Double.IsNaN(mean)) continue;
+                double median = distribution.Median;
+                double sigma = distribution.StandardDeviation;
+                Assert.IsTrue(Math.Abs(mean - median) <= sigma);
             }
         }
 
@@ -197,12 +208,14 @@ namespace Test {
         [TestMethod]
         public void DistributionMeanIntegral () {
             foreach (Distribution distribution in distributions) {
+                double mean = distribution.Mean;
+                if (Double.IsNaN(mean) || Double.IsInfinity(mean)) continue;
                 Func<double, double> f = delegate(double x) {
                     return (distribution.ProbabilityDensity(x) * x);
                 };
                 double M1 = FunctionMath.Integrate(f, distribution.Support);
-                Console.WriteLine("{0} {1} {2}", distribution.GetType().Name, distribution.Mean, M1);
-                if (distribution.Mean == 0.0) {
+                Console.WriteLine("{0} {1} {2}", distribution.GetType().Name, mean, M1);
+                if (mean == 0.0) {
                     Assert.IsTrue(Math.Abs(M1) <= TestUtilities.TargetPrecision);
                 } else {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(M1, distribution.Mean));
@@ -214,13 +227,14 @@ namespace Test {
         [TestMethod]
         public void DistributionVarianceIntegral () {
             foreach (Distribution distribution in distributions) {
+                if (Double.IsNaN(distribution.Variance) || Double.IsInfinity(distribution.Variance)) continue;
                 Func<double, double> f = delegate(double x) {
                     double z = x - distribution.Mean;
                     return (distribution.ProbabilityDensity(x) * z * z);
                 };
                 double C2 = FunctionMath.Integrate(f, distribution.Support);
-                Console.WriteLine("{0} {1} {2}", distribution.GetType().Name, distribution.StandardDeviation, Math.Sqrt(C2));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Sqrt(C2), distribution.StandardDeviation));
+                //Console.WriteLine("{0} {1} {2}", distribution.GetType().Name, distribution.StandardDeviation, Math.Sqrt(C2));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(C2, distribution.Variance));
             }
         }
 
@@ -232,7 +246,7 @@ namespace Test {
                 // range of moments is about 3 to 30
                 foreach (int n in TestUtilities.GenerateIntegerValues(3, 30, 10)) {
                     double M = distribution.Moment(n);
-                    if (Double.IsInfinity(M)) continue; // don't try to do a non-convergent integral
+                    if (Double.IsInfinity(M) || Double.IsNaN(M)) continue; // don't try to do a non-convergent integral
                     Func<double, double> f = delegate(double x) {
                         return (distribution.ProbabilityDensity(x) * Math.Pow(x, n));
                     };
@@ -255,10 +269,10 @@ namespace Test {
         [TestMethod]
         public void DistributionCentralMomentIntegral () {
             foreach (Distribution distribution in distributions) {
-                // range of moments is about 3 to 30
+                // range of moments tested is about 3 to 30
                 foreach (int n in TestUtilities.GenerateIntegerValues(3, 30, 10)) {
                     double C = distribution.MomentAboutMean(n);
-                    if (Double.IsInfinity(C)) continue; // don't try to integrate to infinity
+                    if (Double.IsInfinity(C) || Double.IsNaN(C)) continue; // don't try to integrate to infinity
                     double m = distribution.Mean;
                     Func<double, double> f = delegate(double x) {
                         return (distribution.ProbabilityDensity(x) * Math.Pow(x - m, n));
@@ -294,6 +308,9 @@ namespace Test {
         public void DistributionProbabilityIntegral () {
             Random rng = new Random(4);
             foreach (Distribution distribution in distributions) {
+
+                if (distribution is TriangularDistribution) continue;
+
                 for (int i = 0; i < 3; i++) {
                     double x;
                     if (Double.IsNegativeInfinity(distribution.Support.LeftEndpoint) && Double.IsPositiveInfinity(distribution.Support.RightEndpoint)) {
@@ -321,6 +338,7 @@ namespace Test {
                         Console.WriteLine("skip (P={0}, Q={1})", P, Q);
                         continue;
                     }
+
                     Console.WriteLine("  {0} v. {1}", P, distribution.LeftProbability(x));
                     Console.WriteLine("  {0} v. {1}", Q, distribution.RightProbability(x));
 
@@ -587,14 +605,33 @@ namespace Test {
         }
 
         [TestMethod]
+        public void CauchyStudentAgreement () {
+
+            StudentDistribution S = new StudentDistribution(1);
+            CauchyDistribution C = new CauchyDistribution();
+
+            // don't compare moments directly, because NaN != NaN
+
+            foreach (double P in probabilities) {
+                double xS = S.InverseLeftProbability(P);
+                double xC = C.InverseLeftProbability(P);
+                Console.WriteLine("{0} {1} {2}", P, xS, xC);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(xS, xC));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(S.ProbabilityDensity(xS), C.ProbabilityDensity(xC)));
+            }
+            
+
+
+        }
+
+        [TestMethod]
         public void ContinuousDistributionDeviates () {
 
-            //Distribution distribution = new WaldDistribution(3.5, 2.5);
             foreach (Distribution distribution in distributions) {
                 Console.Write(distribution.GetType().Name);
                 Sample s = new Sample();
                 Random rng = new Random(1000000);
-                for (int i = 0; i < 64; i++) {
+                for (int i = 0; i < 100; i++) {
                     s.Add(distribution.GetRandomValue(rng));
                 }
                 TestResult r = s.KolmogorovSmirnovTest(distribution);

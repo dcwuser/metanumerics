@@ -28,7 +28,7 @@ namespace Meta.Numerics.Spin {
 
             // 2M must be an integer
             double tm = 2.0 * m;
-            double tmt = Math.Truncate(tm);
+            double tmt = Math.Floor(tm);
             if (tmt != tm) throw new ArgumentOutOfRangeException("m");
 
             int tmti = (int)tmt;

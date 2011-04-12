@@ -56,10 +56,47 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double RightProbability (double x) {
             double t2 = x * x;
             if (x < 0.0) {
-                return (0.5 * (1.0 + AdvancedMath.Beta(0.5, 0.5 * nu, t2 / (nu + t2)) / AdvancedMath.Beta(0.5, 0.5 * nu)));
+                return ((1.0 + AdvancedMath.LeftRegularizedBeta(1.0 / 2.0, nu / 2.0, t2 / (nu + t2))) / 2.0);
+                //return (0.5 * (1.0 + AdvancedMath.Beta(0.5, 0.5 * nu, t2 / (nu + t2)) / AdvancedMath.Beta(0.5, 0.5 * nu)));
             } else {
-                return (0.5 * AdvancedMath.Beta(0.5 * nu, 0.5, nu / (nu + t2)) / AdvancedMath.Beta(0.5, 0.5 * nu));
+                return (AdvancedMath.LeftRegularizedBeta(nu / 2.0, 1.0 / 2.0, nu / (nu + t2)) / 2.0);
+                //return (0.5 * AdvancedMath.Beta(0.5 * nu, 0.5, nu / (nu + t2)) / AdvancedMath.Beta(0.5, 0.5 * nu));
             }
+        }
+
+        /// <inheritdoc />
+        public override double InverseLeftProbability (double P) {
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+
+            BetaDistribution b = new BetaDistribution(nu / 2.0, 1.0 / 2.0);
+            if (P <= 0.5) {
+                double x = b.InverseLeftProbability(2.0 * P);
+                return (-Math.Sqrt(nu * (1.0 - x) / x));
+            } else {
+                double Q = 1.0 - P;
+                double x = b.InverseLeftProbability(2.0 * Q);
+                return (Math.Sqrt(nu * (1.0 - x) / x));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double GetRandomValue (Random rng) {
+            if (rng == null) throw new ArgumentNullException("rng");
+
+            // this is a modified form of Box-Mueller due to Bailey
+
+            double u, v, w;
+            do {
+                u = 2.0 * rng.NextDouble() - 1.0;
+                v = 2.0 * rng.NextDouble() - 1.0;
+                w = u * u + v * v;
+            } while (w > 1.0);
+
+            return (u * Math.Sqrt(nu * (Math.Pow(w, -2.0 / nu) - 1.0) / w));
+
+            // the corresponding v-deviate is not independent of the u-deviate,
+            // so don't attempt store it and use it for the next call
+
         }
 
         /// <inheritdoc />
@@ -77,7 +114,11 @@ namespace Meta.Numerics.Statistics.Distributions {
                     return (Double.PositiveInfinity);
                 }
             } else {
-                return (0.0);
+                if (n < nu) {
+                    return (0.0);
+                } else {
+                    return (Double.NaN);
+                }
             }
 
         }
@@ -90,17 +131,21 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (0.0);
+                if (nu > 1.0) {
+                    return (0.0);
+                } else {
+                    return (Double.NaN);
+                }
             }
         }
 
         /// <inheritdoc />
-        public override double StandardDeviation {
+        public override double Variance {
             get {
-                if (nu <= 2.0) {
-                    return (Double.PositiveInfinity);
+                if (nu > 2.0) {
+                    return (nu / (nu - 2.0));
                 } else {
-                    return (Math.Sqrt(nu / (nu - 2.0)));
+                    return (Double.PositiveInfinity);
                 }
             }
         }
@@ -108,7 +153,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Skewness {
             get {
-                return (0.0);
+                if (nu > 3) {
+                    return (0.0);
+                } else {
+                    return (Double.NaN);
+                }
             }
         }
 

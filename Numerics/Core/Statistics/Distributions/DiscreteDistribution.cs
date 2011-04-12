@@ -277,12 +277,12 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double LeftProbability (double x) {
-            return (d.LeftProbability((int)Math.Truncate(x)));
+            return (d.LeftProbability((int)Math.Floor(x)));
         }
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
-            return (d.RightProbability((int)Math.Truncate(x)));
+            return (d.RightProbability((int)Math.Floor(x)));
         }
 
         /// <inheritdoc />

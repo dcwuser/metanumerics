@@ -17,17 +17,16 @@ namespace Meta.Numerics.Functions {
         /// work with its logarithm in order to avoid overflow. This function returns accurate
         /// values of ln(&#x393;(x)) even for values of x which would cause &#x393;(x) to overflow.</para>
         /// </remarks>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative or zero.</exception>
         /// <seealso cref="Gamma(double)" />
 		public static double LogGamma (double x) {
-			if (x <= 0.0) throw new ArgumentOutOfRangeException("x");
-            if (x > 15.0) {
-                return (StirlingLogGamma(x));
+            if (x <= 0.0) {
+                throw new ArgumentOutOfRangeException("x");
+            } else if (x > 16.0) {
+                // for large arguments, the asymptotic series is even faster than the Lanczos approximation
+                return (LogGamma_Stirling(x));
             } else {
                 return (LanczosLogGamma(x));
-                //return (LanczosLogGamma(Lanczos.Lanczos9_C, Lanczos.Lanczos9_G, Lanczos.SqrtTwoPi, x));
-                //return (LanczosLogGamma(Lanczos.Lanczos15_F, Lanczos.Lanczos15_G, Lanczos.SqrtTwoPi, x));
-                //return (LanczosLogGamma(Lanczos.LanczosF, Lanczos.LanczosG, x));
             }
 		}
 
@@ -51,7 +50,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/GammaFunction.html" />
         public static double Gamma (double x) {
 			if (x <= 0.0) {
-                if (x == Math.Truncate(x)) {
+                if (x == Math.Ceiling(x)) {
                     // poles at zero and negative integers
                     return (Double.NaN);
                 } else {
@@ -62,12 +61,12 @@ namespace Meta.Numerics.Functions {
 		}
 
         /// <summary>
-        /// Computes the Psi function.
+        /// Computes the digamma function.
         /// </summary>
         /// <param name="x">The argument.</param>
         /// <returns>The value of &#x3C8;(x).</returns>
         /// <remarks>
-        /// <para>The Psi function, also called the digamma function, is the logrithmic derivative of the &#x393; function.</para>
+        /// <para>The psi function, also called the digamma function, is the logrithmic derivative of the &#x393; function.</para>
         /// <img src="../images/DiGamma.png" />
         /// <para>To evaluate the Psi function for complex arguments, use <see cref="AdvancedComplexMath.Psi" />.</para>
         /// </remarks>
@@ -76,19 +75,161 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Digamma_function" />
         /// <seealso href="http://mathworld.wolfram.com/DigammaFunction.html" />
 		public static double Psi (double x) {
-            if (x < 0.0) {
-                return (Psi(1.0 - x) - Math.PI / Math.Tan(Math.PI * x));
+            if (x <= 0.0) {
+                if (x == Math.Ceiling(x)) {
+                    // there are poles at zero and negative integers
+                    return (Double.NaN);
+                } else {
+                    // use the reflection formula to change to a positive x
+                    return (Psi(1.0 - x) - Math.PI / Math.Tan(Math.PI * x));
+                }
+            } else if (x > 16.0) {
+                // for large arguments, the Stirling asymptotic expansion is faster than the Lanzcos approximation
+                return (Psi_Stirling(x));
+            } else {
+                return (LanczosPsi(x));
             }
-//			if (x < 1.0) {
-//				double y = 1.0 - x;
-//				return( Psi(y) + Math.PI / Math.Tan(Math.PI * y) );
-//			}
-            return (LanczosPsi(x));
-			//return( LanczosPsi(Lanczos.LanczosF, Lanczos.LanczosG, x) );
 		}
 
-		// need special handling of negative arguments
+        /// <summary>
+        /// Computes the polygamma function.
+        /// </summary>
+        /// <param name="n">The order, which must be non-negative.</param>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of &#968;<sub>n</sub>(x).</returns>
+        /// <remarks>
+        /// <para>The polygamma function gives higher logarithmic derivatives of the Gamma function.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
+        /// <seealso href="http://en.wikipedia.org/wiki/Polygamma_function"/>
+        /// <seealso href="http://mathworld.wolfram.com/PolygammaFunction.html"/>
+        public static double Psi (int n, double x) {
 
+            if (n < 0) throw new ArgumentNullException("n");
+
+            // for n=0, use normal digamma algorithm
+            if (n == 0) return (Psi(x));
+
+            // for small x, use the reflection formula
+            if (x <= 0.0) {
+                if (x == Math.Ceiling(x)) {
+                    return (Double.NaN);
+                } else {
+                    // use the reflection formula
+                    // this requires that we compute the nth derivative of cot(pi x)
+                    // i was able to do this, but my algorithm is O(n^2), so for large n and not-so-negative x this is probably sub-optimal
+                    double y = Math.PI * x;
+                    double d = -EvaluateCotDerivative(ComputeCotDerivative(n), y) * MoreMath.Pow(Math.PI, n + 1);
+                    if (n % 2 == 0) {
+                        return (d + Psi(n, 1.0 - x));
+                    } else {
+                        return (d - Psi(n, 1.0 - x));
+                    }
+                }
+            }
+
+            // compute the minimum x required for our asymptotic series to converge
+            // my original approximation was to say that, for 1 << k << n, the factorials approach e^(2k),
+            // so to achieve convergence to 10^(-16) at the 8'th term we should need x ~ 10 e ~ 27
+            // unfortunately this estimate is both crude and an underestimate; for now i use an emperical relationship instead
+            double xm = 16.0 + 2.0 * n;
+
+            // by repeatedly using \psi(n,z) = \psi(n,z+1) - (-1)^n n! / z^(n+1),
+            // increase x until it is large enough to use the asymptotic series
+            // keep track of the accumulated shifts in the variable s
+            double s = 0.0;
+            while (x < xm) {
+                s += 1.0 / MoreMath.Pow(x, n + 1);
+                x += 1.0;
+            }
+
+            // now that x is big enough, use the asymptotic series
+            // \psi(n,z) = - (-1)^n (n-1)! / z^n [ 1 + n / 2 z + \sum_{k=1}^{\infty} (2k+n-1)! / (2k)! / (n-1)! * B_{2k} / z^{2k} ]
+            double t = 1.0 + n / (2.0 * x);
+            double x2 = x * x;
+            double t1 = n * (n + 1) / 2.0 / x2;
+            for (int i = 1; i < AdvancedIntegerMath.Bernoulli.Length; i++) {
+                double t_old = t;
+                t += AdvancedIntegerMath.Bernoulli[i] * t1;
+                if (t == t_old) {
+                    double g = AdvancedIntegerMath.Factorial(n - 1) * (t / MoreMath.Pow(x, n) + n * s);
+                    if (n % 2 == 0) g = -g;
+                    return (g);
+                }
+                int i2 = 2 * i;
+                t1 *= 1.0 * (n + i2) * (n + i2 + 1) / (i2 + 2) / (i2 + 1) / x2;
+            }
+            throw new NonconvergenceException();
+
+            // for small x, the s-part strongly dominates the t-part, so it isn't actually necessary for us to determine t
+            // very accurately; in the future, we should modify this code to allow the t-series to converge when its overall
+            // contribution no longer matters, rather than requiring t to converge to full precision
+
+        }
+
+        // The nth derivative of cot(x) can be obtained by noting that cot(x) = cos(x) / sin(x)
+        // Define r_n = (c/s)^n. Then by explicit differentiation D_x r_n = - n (r_{n-1} + r_{n+1})
+        // Since the result is expressed in terms of r's, differentiation can be repeated using the same formula
+        // The next two methods simply implement this machinery. Is there a way we can turn this into a recursion formula so it is O(n) instead of O(n^2)?
+
+        private static double[] ComputeCotDerivative (int n) {
+
+            // make an array to hold coefficients of 1, r, r^2, ..., r_{n+1}
+            double[] p = new double[n + 2];
+
+            // start with one power of r
+            p[1] = 1.0;
+
+            // differentiate n times
+            for (int i = 1; i <= n; i++) {
+
+                // only even or odd powers of r appear at any given order; this fact allows us to use just one array:
+                // the entries of one parity are the source (and are set to zero after being used), the of the other parity are the target
+                for (int j = i; j >= 0; j -= 2) {
+                    // add -j times our coeffcient to the coefficient above
+                    p[j + 1] += -j * p[j];
+                    // same for the coefficient below; we need not add since no one else has addressed it yet (since we are moving down)
+                    if (j > 0) p[j - 1] = -j * p[j];
+                    // we are done with this coefficeint; make it zero for the next time
+                    p[j] = 0.0;
+                }
+
+            }
+
+            // return the resulting array coefficients
+            return (p);
+        }
+
+        private static double EvaluateCotDerivative (double[] p, double x) {
+
+            // compute cot(x), which is what our polynomial is in powers of
+            double r = 1.0 / Math.Tan(x);
+
+            // compute its square, which we will multiply by to move ahead by powers of two as we evaluate
+            double r2 = r * r;
+
+            // compute the first term and set the index of the next term
+            int i; double rp;
+            if (p.Length % 2 == 0) {
+                i = 1;
+                rp = r;
+            } else {
+                i = 0;
+                rp = 1.0;
+            }
+
+            double f = 0.0;
+            while (i < p.Length) {
+                // add the current term
+                f += p[i] * rp;
+                // prepare for next term
+                i += 2;
+                rp *= r2;
+            }
+
+            return (f);
+
+        }
 
         // two-argument functions
 
@@ -116,7 +257,7 @@ namespace Meta.Numerics.Functions {
         /// in this region, use the complementary function <see cref="RightRegularizedGamma"/>.</para>
         /// <para>For a=&#x3BD;/2 and x=&#x3C7;<sup>2</sup>/2, this function is the CDF of the &#x3C7;<sup>2</sup> distribution with &#x3BD; degrees of freedom.</para>
         /// </remarks>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> is negative.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> is negative or zero.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso cref="RightRegularizedGamma" />
         public static double LeftRegularizedGamma (double a, double x) {
@@ -139,8 +280,10 @@ namespace Meta.Numerics.Functions {
         /// <param name="a">The shape paraemter, which must be positive.</param>
         /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The value of &#x393;(a,x)/&#x393;(x).</returns>
-        /// <remarks>This function is the complement of the left incomplete Gamma function <see cref="LeftRegularizedGamma"/>. </remarks>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> is negative.</exception>
+        /// <remarks>
+        /// <para>This function is the complement of the left incomplete Gamma function <see cref="LeftRegularizedGamma"/>.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> is negative or zero.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso cref="LeftRegularizedGamma"/>
 		public static double RightRegularizedGamma (double a, double x) {
@@ -233,48 +376,45 @@ namespace Meta.Numerics.Functions {
 
 		// helper functions
 
-        // Sterling's asymptotic series, which does well for large x
+        // Stirling's asymptotic series, which does well for large x
+        //   \log \Gamma(z) = (z - 1/2) \log z - z + \log (2 \pi) / 2 +
+        //     \sum_{k=1}^{\infty} \frac{B_{2k}}{2k (2k-1) z^{2k-1}}
+        // this converges in ~8 terms for z > ~10
 
-        private static double StirlingLogGamma (double x) {
+        private static double LogGamma_Stirling (double x) {
 
-            double f = (x - 0.5) * Math.Log(x) - x + 0.5 * Math.Log(Global.TwoPI);
+            double f = (x - 0.5) * Math.Log(x) - x + Math.Log(Global.TwoPI) / 2.0;
 
-            double xx = x*x;
-            double fx = 1.0/x;
-            for (int i = 0; i < bernoulli.Length; i++) {
-                double df = fx * bernoulli[i] / (2*i+1) / (2*i+2);
+            double xx = x * x;
+            double xp = x;
+            for (int i = 1; i < AdvancedIntegerMath.Bernoulli.Length; i++) {
                 double f_old = f;
-                f += df;
+                f += AdvancedIntegerMath.Bernoulli[i] / (2 * i) / (2 * i - 1) / xp;
                 if (f == f_old) return(f);
-                fx = fx / xx;
+                xp *= xx;
             }
 
             throw new NonconvergenceException();
         }
 
-        private static readonly double[] bernoulli =
-            new double[] { 1.0 / 6, -1.0 / 30, 1.0 / 42, -1.0 / 30, 5.0 / 66, -691.0 / 2730, 7.0 / 6, -3617.0 / 510 };
+        // by differentiating the Stirling asymptotic series for log Gamma, we obtain an analogoug asymptotic serie for psi
+        //   \psi(x) = \log z - 1 / (2 z) - \sum_{k=1}^{\infty} \frac{B_{2k}{2k z^{2k}}
 
-        /*
-        private static double[] ComputeBernoulliNumbers (int n) {
-            double[] b = new double[n];
-            b[0] = 1.0;
-            for (int k = 1; k < n; k++) {
-                double s = 0;
-                for (int m = 0; m < k; m++) {
-                    s += AdvancedIntegerMath.BinomialCoefficient(k + 1, m) * b[m];
-                }
-                b[k] = -s / AdvancedIntegerMath.BinomialCoefficient(k + 1, k);
+        private static double Psi_Stirling (double x) {
+
+            double f = Math.Log(x) - 1.0 / (2.0 * x);
+
+            double x2 = x * x;
+            double xp = x2;
+            for (int i = 1; i < AdvancedIntegerMath.Bernoulli.Length; i++) {
+                double f_old = f;
+                f -= AdvancedIntegerMath.Bernoulli[i] / (2 * i) / xp;
+                if (f == f_old) return (f);
+                xp *= x2;
             }
-            return (b);
-        }
-        */
+            throw new NonconvergenceException();
 
-        /*
-        private static double LanczosLogGamma (double[] f, double g, double x) {
-            return (LanczosLogGamma(f, g, 1.0, x));
         }
-        */
 
         private static double LanczosLogGamma (double x) {
 
@@ -312,6 +452,10 @@ namespace Meta.Numerics.Functions {
             return (t - s1/s0);
 
         }
+
+        // These values are from Table 8.5 of Glendon Ralph Pugh's 2004 PhD thesis,
+        // available at http://web.viu.ca/pughg/phdThesis/phdThesis.pdf
+        // He claims that they "guarantee 16 digit floating point accuracy in the right-half plane"
 
         internal static readonly double[] LanczosD = new double[] {
              2.48574089138753565546e-5,
@@ -398,7 +542,7 @@ namespace Meta.Numerics.Functions {
 		}
 
         // For large a, for x ~ a, the convergence of both the series and the continued fraction for the incomplete gamma
-        // function is very slowl; the problem is that the kth term goes like x/(a+k), and for large a, adding k
+        // function is very slow; the problem is that the kth term goes like x/(a+k), and for large a, adding k
         // makes little difference until k ~ a.
 
         // In this region, NR uses ~15-point Gaussian quadrature of the peaked integrand, which should be about as good
@@ -535,22 +679,19 @@ namespace Meta.Numerics.Functions {
         public static Complex LogGamma (Complex z) {
             if (z.Re < 0.0) throw new ArgumentOutOfRangeException("z");
             if (ComplexMath.Abs(z) > 15.0) {
-                return (StirlingLogGamma(z));
+                return (LogGamma_Stirling(z));
             } else {
                 return (LanczosLogGamma(z));
-                //return (LanczosLogGamma(Lanczos.Lanczos9_C, Lanczos.Lanczos9_G, Lanczos.SqrtTwoPi, z));
-                //return (LanczosLogGamma(Lanczos.Lanczos15_F, Lanczos.Lanczos15_G, Lanczos.SqrtTwoPi, z));
-                //return (LanczosLogGamma(Lanczos.LanczosF, Lanczos.LanczosG, z));
             }
         }
 
 
-        private static Complex StirlingLogGamma (Complex z) {
+        private static Complex LogGamma_Stirling (Complex z) {
 
-            // work in the upper complex plane
-            if (z.Im < 0.0) return (StirlingLogGamma(z.Conjugate).Conjugate);
+            // work in the upper complex plane; i think this isn't actually necessary
+            if (z.Im < 0.0) return (LogGamma_Stirling(z.Conjugate).Conjugate);
 
-            Complex f = (z - 0.5) * ComplexMath.Log(z) - z + 0.5 * Math.Log(Global.TwoPI);
+            Complex f = (z - 0.5) * ComplexMath.Log(z) - z + Math.Log(Global.TwoPI) / 2.0;
 
             // reduce f.Im modulo 2*PI
             // result is cyclic in f.Im modulo 2*PI, but if f.Im starts off too big, the corrections
@@ -558,28 +699,15 @@ namespace Meta.Numerics.Functions {
             f = new Complex(f.Re, AdvancedMath.Reduce(f.Im, 0.0));
 
             Complex zz = z * z;
-            Complex fz = 1.0 / z;
-            for (int i = 0; i < bernoulli.Length; i++) {
-                Complex df = fz * bernoulli[i] / (2 * i + 1) / (2 * i + 2);
+            Complex zp = z;
+            for (int i = 1; i < AdvancedIntegerMath.Bernoulli.Length; i++) {
                 Complex f_old = f;
-                f += df;
+                f += AdvancedIntegerMath.Bernoulli[i] / (2 * i) / (2 * i - 1) / zp;
                 if (f == f_old) return (f);
-                fz = fz / zz;
+                zp *= zz;
             }
-
             throw new NonconvergenceException();
         }
-
-        private static readonly double[] bernoulli =
-            new double[] { 1.0 / 6, -1.0 / 30, 1.0 / 42, -1.0 / 30, 5.0 / 66, -691.0 / 2730, 7.0 / 6, -3617.0 / 510 };
-
-
-        /*
-        private static Complex LanczosLogGamma (double[] f, double g, Complex z) {
-            return (LanczosLogGamma(f, g, 1.0, z));
-        }
-        */
-
 
         private static Complex LanczosLogGamma (Complex z) {
 

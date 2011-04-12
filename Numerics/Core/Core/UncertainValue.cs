@@ -9,8 +9,10 @@ namespace Meta.Numerics {
     /// <summary>
     /// Represents a value with an associated uncertainty.
     /// </summary>
-	[Serializable]
-	public struct UncertainValue {
+#if !SILVERLIGHT
+    [Serializable]
+#endif
+    public struct UncertainValue {
 
 		private double v;
 		private double u;
@@ -88,6 +90,7 @@ namespace Meta.Numerics {
         /// Produces the representation of the uncertain value for the Python interactive console.
         /// </summary>
         /// <returns>A string representation of the uncertain value.</returns>
+        [CLSCompliant(false)]
         public string __repr__ () {
             return(ToString());
         }

@@ -59,6 +59,87 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void HarmonicSpecialCases () {
+
+            Assert.IsTrue(AdvancedIntegerMath.HarmonicNumber(0) == 0.0);
+            Assert.IsTrue(AdvancedIntegerMath.HarmonicNumber(1) == 1.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedIntegerMath.HarmonicNumber(2), 3.0 / 2.0));
+
+        }
+
+        [TestMethod]
+        public void HarmonicPsiAgreement () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 10)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedIntegerMath.HarmonicNumber(n - 1),
+                    AdvancedMath.Psi(n) + AdvancedMath.EulerGamma
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void PrimeSpecialCases () {
+
+            // small numbers
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(1));
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(2));
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(3));
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(4));
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(5));
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(6));
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(7));
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(8));
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(9));
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(10));
+
+            // Mersene prime candidates
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(3)); // 2^2 - 1
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(7)); // 2^3 - 1
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(31)); // 2^5 - 1
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(127)); // 2^7 - 1
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(2047)); // 2^11 - 1
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(8191)); // 2^13 - 1
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(131071)); // 2^17 - 1
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(524287)); // 2^19 - 1
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(8388607)); // 2^23 - 1
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(536870911)); // 2^29 - 1
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(2147483647)); // 2^31 - 1
+
+            // Pseudoprimes
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(2047));
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(3277));
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(4033));
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(121));
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(703));
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(1891));
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(781));
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(1541));
+
+            // Fermat primes
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(5)); // 2^2 + 1
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(17)); // 2^4 + 1
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(257)); // 2^8 + 1
+            Assert.IsTrue(AdvancedIntegerMath.IsPrime(65537)); // 2^16 + 1
+
+        }
+
+        [TestMethod]
+        public void PrimeCounts () {
+            Assert.IsTrue(CountPrimes(10) == 4);
+            Assert.IsTrue(CountPrimes(100) == 25);
+            Assert.IsTrue(CountPrimes(1000) == 168);
+            Assert.IsTrue(CountPrimes(10000) == 1229);
+        }
+
+        private int CountPrimes (int n) {
+            int count = 0;
+            for (int k = 1; k <= n; k++) {
+                if (AdvancedIntegerMath.IsPrime(k)) count++;
+            }
+            return (count);
+        }
+
         // Binomial coefficients
 
         [TestMethod]

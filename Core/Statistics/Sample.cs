@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+#if !SILVERLIGHT
 using System.Data;
+#endif
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -1240,6 +1242,7 @@ namespace Meta.Numerics.Statistics {
 
         }
 
+#if !SILVERLIGHT
         /// <summary>
         /// Loads values from a data reader.
         /// </summary>
@@ -1254,6 +1257,7 @@ namespace Meta.Numerics.Statistics {
                 Add(Convert.ToDouble(value, CultureInfo.InvariantCulture));
             }
         }
+#endif
 
     }
 

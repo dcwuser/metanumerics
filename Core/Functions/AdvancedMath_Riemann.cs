@@ -11,7 +11,9 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value &#x3B6;(s).</returns>
         /// <remarks>
         /// <para>The Riemann &#x3B6; function can be defined as the sum of the <paramref name="s"/>th inverse power of the natural numbers.</para>
+        /// <img src="../images/RiemannZeta.png" />
         /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Riemann_zeta_function"/>
         public static double RiemannZeta (double s) {
             if (s < 0.0) {
                 // for negative numbers, use the reflection formula
@@ -36,14 +38,21 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value of &#x3B7;(s).</returns>
         /// <remarks>
         /// <para>The Dirichlet eta function is the sum of the <paramref name="s"/>th inverse power of the natural numbers,
-        /// with alternating signs. It can be related to the Riemann &#x3B6; function.</para>
+        /// with alternating signs.</para>
+        /// <img src="../images/DirichletEta.png" />
+        /// <para>Because these are just the terms of the Riemann zeta function (<see cref="RiemannZeta"/>) with
+        /// alternating signs, it is also called the alternating zeta function.</para>
+        /// <para>It can be related to the Riemann &#x3B6; function.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="s"/> is negative.</exception>
         /// <seealso cref="RiemannZeta"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Dirichlet_eta_function"/>
         public static double DirichletEta (double s) {
             if (s < 0.0) throw new ArgumentOutOfRangeException("s");
             return (DirichletEta_Sequence(s));
         }
+
+        // Borwein's amazing method for computing eta is detailed at http://numbers.computation.free.fr/Constants/Miscellaneous/zetaevaluations.html
 
         // an amazing, fast, fixed-length sequence approximation to eta that is good to 1/8^(DirichletEta_Coefficients.Length) for all s > 0
         private static double DirichletEta_Sequence (double s) {
@@ -77,18 +86,26 @@ namespace Meta.Numerics.Functions {
 			return(e);
 		}
 
-        // an expansion near s=1 using Stieltjes constants; here x = s-1
+        // The Laurent expansion of zeta near s = 1 is
+        //   \zeta(s) = 1/(s-1) + \sum_{k=0}^{\infty} \gamma_k (s-1)^k / k!
+        // where \gamma_k are Stieltjes constants
+        // Note that the argument of this function is x = s - 1, not s
+
         private static double RiemannZeta_Series (double x) {
             double dz = 1.0;
             double z = 1.0 / x + StieltjesConstants[0];
             for (int i = 1; i < StieltjesConstants.Length; i++) {
                 double z_old = z;
                 dz = - dz * x / i;
-                z = z_old + StieltjesConstants[i] * dz;
+                z += StieltjesConstants[i] * dz;
                 if (z == z_old) return (z);
             }
             throw new NonconvergenceException();
         }
+
+        // Here are the first 16 Stieltjes constants, from http://pi.lacim.uqam.ca/piDATA/stieltjesgamma.txt
+        // Since the last term in the Laurent expansion of zeta goes like \gamma_n (s-1)^n / n!, this should
+        // be enough to allow us to use the expansion up to (s-1) ~ 1
 
         private static readonly double[] StieltjesConstants = new double[] {
             0.577215664901532860607,
@@ -104,7 +121,9 @@ namespace Meta.Numerics.Functions {
             0.000205332814909064795,
             0.000270184439543903527,
             0.000167272912105140193,
-           -0.000027463806603760159
+           -0.000027463806603760159,
+           -0.000209209262059299946,
+           -0.000283468655320241447
         };
 
     }

@@ -6,7 +6,9 @@ using Meta.Numerics.Functions;
 namespace Meta.Numerics {
 
     /// <summary>Represents a complex number.</summary>
+#if !SILVERLIGHT
     [Serializable]
+#endif
     public struct Complex : IEquatable<Complex> {
 
         private double re;
@@ -102,6 +104,7 @@ namespace Meta.Numerics {
         /// Produces the representation of the complex number for the Python interactive console.
         /// </summary>
         /// <returns>A string representation of the complex number.</returns>
+        [CLSCompliant(false)]
         public string __repr__ () {
             return(ToString());
         }

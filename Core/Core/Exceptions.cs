@@ -7,7 +7,9 @@ namespace Meta.Numerics {
     /// <summary>
     /// The exception that is thrown when an algorithm fails to converge.
     /// </summary>
+#if !SILVERLIGHT
     [Serializable]
+#endif
     public class NonconvergenceException : Exception {
 
         /// <summary>
@@ -28,19 +30,23 @@ namespace Meta.Numerics {
         /// <param name="innerException">The inner exception.</param>
         public NonconvergenceException (String message, Exception innerException) : base(message, innerException) { }
 
+#if !SILVERLIGHT
         /// <summary>
         /// Initalizes a new nonconvergence exception with the given serialization information and streaming context.
         /// </summary>
         /// <param name="info">The serialization information.</param>
         /// <param name="context">The streaming context.</param>
         protected NonconvergenceException (SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 
     }
 
     /// <summary>
     /// The exception that is thrown when attempting an operation on objects with incompatible dimensions.
     /// </summary>
+#if !SILVERLIGHT
     [Serializable]
+#endif
     public class DimensionMismatchException : InvalidOperationException {
 
         /// <summary>
@@ -61,12 +67,14 @@ namespace Meta.Numerics {
         /// <param name="innerException">The inner exception.</param>
         public DimensionMismatchException (String message, Exception innerException) : base(message, innerException) { }
 
+#if !SILVERLIGHT
         /// <summary>
         /// Initalizes a new dimension mismatch exception with the given serialization information and streaming context.
         /// </summary>
         /// <param name="info">The serialization information.</param>
         /// <param name="context">The streaming context.</param>
         protected DimensionMismatchException (SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 
     }
 

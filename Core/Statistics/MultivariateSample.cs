@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+#if !SILVERLIGHT
 using System.Data;
+#endif
 using System.Globalization;
 
 using Meta.Numerics.Matrices;
@@ -792,6 +794,7 @@ namespace Meta.Numerics.Statistics {
             
         }
 
+#if !SILVERLIGHT
         /// <summary>
         /// Loads values from a data reader.
         /// </summary>
@@ -833,6 +836,7 @@ namespace Meta.Numerics.Statistics {
         public void Load (IDataReader reader, params int[] dbIndexes) {
             Load(reader, (IList<int>)dbIndexes);
         }
+#endif
 
     }
 

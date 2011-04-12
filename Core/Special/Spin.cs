@@ -30,7 +30,7 @@ namespace Meta.Numerics.Spin {
             if ((tj < 0.0) || (tj > Int32.MaxValue)) throw new ArgumentOutOfRangeException("j");
 
             // spin must be integer or half-integer
-            double tjt = Math.Truncate(tj);
+            double tjt = Math.Floor(tj);
             if (tjt != tj) throw new ArgumentOutOfRangeException("j");
 
             // store 2*j

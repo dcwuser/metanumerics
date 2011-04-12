@@ -480,12 +480,13 @@ namespace Test {
 
         [TestMethod]
         public void PsiSpecialCaseTest () {
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(0.5), -AdvancedMath.EulerGamma - 2.0 * Math.Log(2.0)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0), -AdvancedMath.EulerGamma));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(2.0), -AdvancedMath.EulerGamma + 1.0));
 
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 2.0), -AdvancedMath.EulerGamma - 2.0 * Math.Log(2.0)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 3.0), -AdvancedMath.EulerGamma - 3.0 * Math.Log(3.0) / 2.0 - Math.PI / 2.0 / Math.Sqrt(3.0)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 4.0), -AdvancedMath.EulerGamma - 3.0 * Math.Log(2.0) - Math.PI / 2.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 6.0), -AdvancedMath.EulerGamma - 3.0 * Math.Log(3.0) / 2.0 - 2.0 * Math.Log(2.0) - Math.PI / 2.0 * Math.Sqrt(3.0)));
 
         }
 
@@ -507,7 +508,102 @@ namespace Test {
         [TestMethod]
         public void PsiDuplicationTest () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 20)) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(2 * x), AdvancedMath.Psi(x) / 2.0 + AdvancedMath.Psi(x + 0.5) / 2.0 + Math.Log(2.0)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.Psi(2 * x), AdvancedMath.Psi(x) / 2.0 + AdvancedMath.Psi(x + 0.5) / 2.0 + Math.Log(2.0)
+                ));
+            }
+        }
+
+
+        [TestMethod]
+        public void TriGammaSpecialCases () {
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1, 1.0 / 4.0), Math.PI * Math.PI + 8.0 * AdvancedMath.Catalan));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1, 1.0 / 2.0), Math.PI * Math.PI / 2.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1, 1.0), Math.PI * Math.PI / 6.0));
+        }
+
+        [TestMethod]
+        public void TriGammaReflection () {
+            // don't let x get too big, or the problem of trig functions with large arguments will occur
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 20)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.Psi(1, 1.0 - x) + AdvancedMath.Psi(1, x),
+                    MoreMath.Pow( Math.PI / Math.Sin(Math.PI * x), 2)
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void TetraGammaReflection () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 20)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.Psi(2, 1.0 - x) - AdvancedMath.Psi(2, x),
+                    2.0 * MoreMath.Pow(Math.PI / Math.Sin(Math.PI * x), 3) * Math.Cos(Math.PI * x)
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void PolyGammaRiemann () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 10)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.Psi(n, 1.0),
+                    -MoreMath.Pow(-1, n) * AdvancedIntegerMath.Factorial(n) * AdvancedMath.RiemannZeta(n + 1)
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void PolyGammaDuplication () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 15)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        MoreMath.Pow(2, n + 1) * AdvancedMath.Psi(n, 2.0 * x),
+                        AdvancedMath.Psi(n, x) + AdvancedMath.Psi(n, x + 0.5)
+                    ));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        MoreMath.Pow(3, n + 1) * AdvancedMath.Psi(n, 3.0 * x),
+                        AdvancedMath.Psi(n, x) + AdvancedMath.Psi(n, x + 1.0 / 3.0) + AdvancedMath.Psi(n, x + 2.0 / 3.0)
+                    ));
+                }
+            }
+        }
+
+        
+        [TestMethod]
+        public void PolyGammaIntegral () {
+            // don't let these n or x values get too extreme, or the very small result will make the integral return without full precision
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 10, 3)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 10)) {
+                    double F = FunctionMath.Integrate(t => {
+                        return (Math.Exp(-t * x) * MoreMath.Pow(t, n) / MoreMath.ExpMinusOne(-t));
+                    }, Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+                    if (n % 2 != 0) F = -F;
+                    //Console.WriteLine("{0} {1} {2} {3}", n, x, F, AdvancedMath.Psi(n, x));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(F, AdvancedMath.Psi(n, x)));
+                }
+            }
+        }
+        
+
+        [TestMethod]
+        public void PolyGammaRecurrence () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 15)) {
+                    Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                        AdvancedMath.Psi(n, x), MoreMath.Pow(-1, n) * AdvancedIntegerMath.Factorial(n) / MoreMath.Pow(x, n+1),
+                        AdvancedMath.Psi(n, x + 1.0)
+                    ));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void DigammaAgreement () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 20)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.Psi(0, x), AdvancedMath.Psi(x)
+                ));
             }
         }
 

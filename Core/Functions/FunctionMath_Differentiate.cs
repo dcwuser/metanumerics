@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Meta.Numerics.Statistics;
 
 namespace Meta.Numerics.Functions {
 

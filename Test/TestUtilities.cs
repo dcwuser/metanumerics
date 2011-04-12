@@ -22,6 +22,8 @@ namespace Test {
 
         public static bool IsNearlyEqual (double x, double y, double e) {
 
+            if (Double.IsPositiveInfinity(x) || Double.IsPositiveInfinity(y)) return (true);
+            if (Double.IsNegativeInfinity(x) || Double.IsNegativeInfinity(y)) return (true);
             if (2.0 * Math.Abs(x - y) <= e * (Math.Abs(x) + Math.Abs(y))) {
                 return (true);
             } else {

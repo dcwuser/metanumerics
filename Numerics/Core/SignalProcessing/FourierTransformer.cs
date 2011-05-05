@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using Meta.Numerics.Functions;
 
 namespace Meta.Numerics.SignalProcessing {
 
@@ -59,15 +60,12 @@ namespace Meta.Numerics.SignalProcessing {
     /// <para>An instance of the FourierTransformer class performs DFTs on series of a particular length,
     /// given by its <see cref="FourierTransformer.Length"/> property. This specialization allows certain parts of the DFT
     /// calculation, which are indepdent of the transformed series but dependent on the length of the series,
-    /// to be performed only once and then used for all transforms of that length. This saves time and improves
+    /// to be performed only once and then re-used for all transforms of that length. This saves time and improves
     /// performance. If you need to perform DFTs on series with different lengths, simply create a seperate instance
     /// of the FourierTransform class for each required length.</para>
     /// <para>Many simple DFT implementations require that the series length be a power of two (2, 4, 8, 16, etc.).
-    /// Meta.Numerics supports DFTs of any length. Our DFT implementation is fast -- order O(N log N) -- for any length composed
-    /// of small prime factors.
-    /// This includes not only all powers of two, but also all powers of ten (10, 100, 1000, etc.) and many other
-    /// lengths (e.g. 3600 = 2<sup>4</sup> 3<sup>2</sup> 5<sup>2</sup>). Our DFT implementation is slow -- O(N<sup>2</sup>) -- for
-    /// lengths composed of large prime factors (e.g. 3571, which is prime).</para>
+    /// Meta.Numerics supports DFTs of any length. Our DFT implementation is fast -- order O(N log N) -- for all lengths,
+    /// including lengths that have large prime factors.</para>
     /// </remarks>
     /// <example>
     /// <para>The following code performs a simple DFT and then inverts it to re-obtain the original data.</para>
@@ -115,16 +113,62 @@ namespace Meta.Numerics.SignalProcessing {
         /// </table>
         /// </remarks>
         public FourierTransformer (int size, FourierSign signConvention, FourierNormalization normalizationConvention) {
+            
             if (size < 1) throw new ArgumentOutOfRangeException("size");
+
             this.size = size;
-            this.factors = Factor.Factorize(size);
             this.signConvention = signConvention;
             this.normalizationConvention = normalizationConvention;
+
+            // pre-compute the Nth complex roots of unity
             this.roots = FourierAlgorithms.ComputeRoots(size, +1);
+
+            // decompose the size into prime factors
+            this.factors = AdvancedIntegerMath.Factor(size);
+
+            // store a plan for the transform based on the prime factorization
+            plan = new List<Transformlet>();
+            foreach (Factor factor in factors) {
+
+                Transformlet t;
+                switch (factor.Value) {
+                    // use a radix-specialized transformlet when available
+                    case 2:
+                        t = new RadixTwoTransformlet(size, roots);
+                        break;
+                    case 3:
+                        t = new RadixThreeTransformlet(size, roots);
+                        break;
+                    // eventually, we should make an optimized radix-4 transform
+                    case 5:
+                        t = new RadixFiveTransformlet(size, roots);
+                        break;
+                    case 7:
+                        t = new RadixSevenTransformlet(size, roots);
+                        break;
+                    case 11:
+                    case 13:
+                        // the base transformlet is R^2, but when R is small, this can still be faster than the Bluestein algorithm
+                        // timing measurements appear to indicate that this is the case for radix 11 and 13
+                        // eventually, we should make optimized Winograd transformlets for these factors
+                        t = new Transformlet(factor.Value, size, roots);
+                        break;
+                    default:
+                        // for large factors with no available specialized transformlet, use the Bluestein algorithm
+                        t = new BluesteinTransformlet(factor.Value, size, roots);
+                        break;
+                }
+
+                t.Multiplicity = factor.Multiplicity;
+                plan.Add(t);
+
+            }
+
         }
 
         private int size;
         private List<Factor> factors;
+        private List<Transformlet> plan;
         private FourierNormalization normalizationConvention;
         private FourierSign signConvention;
         private Complex[] roots;
@@ -170,6 +214,24 @@ namespace Meta.Numerics.SignalProcessing {
             }
         }
 
+        // This is an internal transform method that does not do checking, modifies the input array, and
+        // requires you to give it a scratch array. x is the input array, which is overwritten by the output
+        // array, and y is a scratch array of the same lenth. The transform works by carrying out each
+        // transformlet in the plan, with input from x and output to y, then switching y <-> x so that
+        // the input is in x for the next transformlet.
+
+        internal void Transform (ref Complex[] x, ref Complex[] y, int sign) {
+            int Ns = 1;
+            foreach (Transformlet t in plan) {
+                for (int k = 0; k < t.Multiplicity; k++) {
+                    t.FftPass(x, y, Ns, sign);
+                    // we avoid element-by-element copying by just switching the arrays referenced by x and y
+                    // this is why x and y must be passed in with the ref keyword
+                    Complex[] temp = x; x = y; y = temp;
+                    Ns *= t.Radix;
+                }
+            }
+        }
 
         /// <summary>
         /// Computes the Fourier transform of the given series.
@@ -195,7 +257,8 @@ namespace Meta.Numerics.SignalProcessing {
             Complex[] y = new Complex[size];
 
             // do the FFT
-            FourierAlgorithms.Fft(values.Count, factors, ref x, ref y, roots, GetSign());
+            Transform(ref x, ref y, GetSign());
+            //FourierAlgorithms.Fft(values.Count, factors, ref x, ref y, roots, GetSign());
 
             return (x);
 
@@ -225,7 +288,8 @@ namespace Meta.Numerics.SignalProcessing {
             Complex[] y = new Complex[size];
 
             // do the FFT
-            FourierAlgorithms.Fft(values.Count, factors, ref x, ref y, roots, -GetSign());
+            Transform(ref x, ref y, -GetSign());
+            //FourierAlgorithms.Fft(values.Count, factors, ref x, ref y, roots, -GetSign());
 
             return (x);
 

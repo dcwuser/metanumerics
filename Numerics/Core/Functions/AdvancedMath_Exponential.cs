@@ -20,8 +20,12 @@ namespace Meta.Numerics.Functions {
             throw new NonconvergenceException();
         }
 
-        // an asymptotic series useful for large x
-        // takes about 40 terms at x ~ 40 and fails to converge in double precision for x < 40
+        // An asymptotic series for Ei(x) useful for large x is
+        //   Ei(x) = \frac{e^x}{x} \sum_{k=0}^{\infty} \frac{k!}{x^k} =
+        //         = \frac{e^x}{x} \left( 1 + \frac{1}{x} + \frac{2!}{x^2} + \cdots \right) 
+        // x needs to be pretty large for this to be useful, though. It takes about 40 terms to achieve full precision
+        // at x ~ 40, and fails to converge to full precision for x <~ 40.
+
         private static double IntegralEi_Asymptotic (double x) {
             double dy = 1.0;
             double y = dy;
@@ -34,14 +38,11 @@ namespace Meta.Numerics.Functions {
             throw new NonconvergenceException();
         }
 
-        // to do: what about finding the root in Ei(x) near x~0.37; very close to this root we loose accuracy because of
-        // the finite number of digits we have for EulerGamma.
-
         /// <summary>
         /// Computes the principal value of the exponential integral.
         /// </summary>
         /// <param name="x">The argument, which must be non-negative.</param>
-        /// <returns>The value of Ei(<paramref name="x"/>).</returns>
+        /// <returns>The value of Ei(x).</returns>
         /// <remarks>
         /// <para>The function Ei(x) appears in the evaluation of some indefinite integrals involving exponents and in
         /// number theory in the approximation li(x) = Ei(ln x) to the cumulative distribution of primes.</para>
@@ -61,31 +62,36 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Computes the exponential integral.
         /// </summary>
-        /// <param name="n">The order parameter, which must be non-negative.</param>
+        /// <param name="n">The order parameter.</param>
         /// <param name="x">The argument, which must be non-negative.</param>
-        /// <returns>The value of Ei<sub><paramref name="n"/></sub>(<paramref name="x"/>).</returns>
+        /// <returns>The value of E<sub>n</sub>(x).</returns>
         /// <remarks>
         /// <para>The exponential integral is defined as:</para>
         /// <img src="../images/EIntegral.png" />
-        /// <para>It is related to the incomplete Gamma function for negative, integer shape parameters by &#x393;<sub>Q</sub>(-k, x) = Ei<sub>k+1</sub>(x) / x<sup>k</sup>.</para></remarks>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
+        /// <para>It is related to the incomplete Gamma function for negative, integer shape parameters by &#x393;(-k, x) = Ei<sub>k+1</sub>(x) / x<sup>k</sup>.</para>
+        /// <para>In hydrology, E<sub>1</sub>(x) is sometimes called the Well function.</para>
+        /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         public static double IntegralE (int n, double x) {
-            // should be possible to do n<0; this is just alpha(n,z)
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
+
             if (x < 0.0) throw new ArgumentOutOfRangeException("x");
 
-            if (n == 0) {
-                // special case n=0
-                return (Math.Exp(-x) / x);
-            } else if (x == 0.0) {
-                // special case x=0
-                if (n == 1) {
+            // special case x = 0
+            if (x == 0.0) {
+                if (n <= 1) {
                     return (Double.PositiveInfinity);
                 } else {
                     return (1.0 / (n - 1));
                 }
-            } else if (x < 1.0) {
+            }
+
+            if (n < 0) {
+                // negative n is expressible using incomplete Gamma
+                return (AdvancedMath.Gamma(1 - n, x) / MoreMath.Pow(x, 1 - n));
+            } else if (n == 0) {
+                // special case n=0
+                return (Math.Exp(-x) / x);
+            } else if (x < 2.0) {
                 // use series for x < 1
                 return (IntegralE_Series(n, x));
             } else {
@@ -241,9 +247,114 @@ namespace Meta.Numerics.Functions {
 
         }
 
+    }
 
-        // polylog
-        // Li_{n}(z) = \sum_{k=1}^{\infty} \frac{z^{k}}{k^{n}} = z 
+    public static partial class AdvancedComplexMath {
+
+        /// <summary>
+        /// Computes the entire complex exponential integral.
+        /// </summary>
+        /// <param name="z">The complex argument.</param>
+        /// <returns>The value of Ein(z).</returns>
+        /// <remarks>
+        /// <para>The entire exponential integral function can be defined by an integral or an equivalent series.</para>
+        /// <para>Both Ei(z) and E<sub>1</sub>(x) and be obtained from Ein(z).</para>
+        /// <para>Unlike either Ei(z) or E<sub>1</sub>(z), Ein(z) is entire, that is, it has no poles or cuts anywhere
+        /// in the complex plane.</para>
+        /// </remarks>
+        public static Complex Ein (Complex z) {
+
+            if (z.Re < -40.0) {
+                // For sufficiently negative z, use the asymptotic expansion for Ei
+                return (AdvancedMath.EulerGamma + ComplexMath.Log(-z) - IntegralEi_AsymptoticSeries(-z));
+            } else {
+                // Ideally, we would like to use the series within some simple radius of the origin and the continued fraction
+                // outside it. That works okay for the right half-plane, but for z.Re < 0 we have to contend with the fact that the
+                // continued fraction fails on or near the negative real axis. That makes us use the series in an oddly shaped
+                // region that extends much further from the origin than we would like into the left half-plane. It would be
+                // great if we could find an alternative approach in that region.
+                if (IsEinSeriesPrefered(z)) {
+                    return (Ein_Series(z));
+                } else {
+                    return (AdvancedMath.EulerGamma + ComplexMath.Log(z) + IntegeralE1_ContinuedFraction(z));
+                }
+            }
+
+        }
+
+        // We use it for |z| < 4 on the positive real axis, moving to |z| < 40 on the negative real axis.
+
+        private static Complex Ein_Series (Complex z) {
+
+            Complex zp = z;
+            Complex f = zp;
+
+            for (int k = 2; k < Global.SeriesMax; k++) {
+                Complex f_old = f;
+                zp *= -z / k;
+                f += zp / k;
+                if (f == f_old) return (f);
+            }
+
+            throw new NonconvergenceException();
+        }
+
+        // This continued fraction is valid for |z| >> 1, except close to the negative real axis.
+
+        private static Complex IntegeralE1_ContinuedFraction (Complex z) {
+            int a = 1;                  // a_1
+            Complex b = z + 1.0;        // b_1
+            Complex D = 1.0 / b;        // D_1 = 1 / b_1 (denominator of a_1 / b_1)
+            Complex Df = a / b;         // Df_1 = f_1 - f_0 = a_1 / b_1
+            Complex f = 0.0 + Df;       // f_1 = f_0 + Df_1 = b_0 + a_1 / b_1 (here b_0 = 0)
+            for (int k = 1; k < Global.SeriesMax; k++) {
+                Complex f_old = f;
+                a = -k * k;
+                b += 2.0;
+                D = 1.0 / (b + a * D);
+                Df = (b * D - 1.0) * Df;
+                f += Df;
+                if (f == f_old) {
+                    return (ComplexMath.Exp(-z) * f);
+                }
+            }
+            throw new NonconvergenceException();
+        }
+
+        private static Complex IntegralEi_AsymptoticSeries (Complex z) {
+
+            Complex dy = 1.0;
+            Complex y = dy;
+            for (int k = 1; k < Global.SeriesMax; k++) {
+                Complex y_old = y;
+                dy = dy * k / z;
+                y = y_old + dy;
+                if (y == y_old) return (ComplexMath.Exp(z) / z * y);
+            }
+            throw new NonconvergenceException();
+
+        }
+
+        // This defines the region where, empirically and approximately, the number of terms required by the Ein series is
+        // less than the number of terms required by the E1 continued fraction. We use piecewise linear and quadratic terms
+        // to define it. Basically, it says stay away from the negative real axis, particularly for small negative real parts.
+
+        private static bool IsEinSeriesPrefered (Complex z) {
+
+            if (z.Re > 4.0) {
+                return(false);
+            } else if (z.Re > 0.0) {
+                return (Math.Abs(z.Im) < 6.0 * (1.0 - MoreMath.Pow2(z.Re / 4.0)));
+            } else if (z.Re > -20.0) {
+                return (Math.Abs(z.Im) < 7.0 - Math.Abs(z.Re + 10.0) / 10.0);
+            } else if (z.Re > -50.0) {
+                return (Math.Abs(z.Im) < 10.0 + z.Re / 5.0);
+            } else {
+                return (false);
+            }
+
+        }
 
     }
+
 }

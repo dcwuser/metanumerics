@@ -12,6 +12,51 @@ namespace Test {
         // Complex error function
 
         [TestMethod]
+        public void ComplexErfSpecialCase () {
+            Assert.IsTrue(AdvancedComplexMath.Erf(0.0) == 0.0);
+        }
+
+        [TestMethod]
+        public void ComplexErfSymmetries () {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-1, 1.0E3, 16)) {
+                // for large imaginary parts, erf overflows, so don't try them
+                if (z.Im * z.Im > 500.0) continue;
+                //Console.WriteLine("{0} {1} {2} {3}", z, AdvancedComplexMath.Erf(z), AdvancedComplexMath.Erf(-z), AdvancedComplexMath.Erf(z.Conjugate));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.Erf(-z), -AdvancedComplexMath.Erf(z)
+                ));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.Erf(z.Conjugate), AdvancedComplexMath.Erf(z).Conjugate
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void ComplexErfFresnel () {
+            // don't let x get too big or we run into problem of accruacy for arguments of large trig-like functions
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 16)) {
+                Complex z = Math.Sqrt(Math.PI) * (1.0 - ComplexMath.I) * x / 2.0;
+                Complex w = (1.0 + ComplexMath.I) * AdvancedComplexMath.Erf(z) / 2.0;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(w.Re, AdvancedMath.FresnelC(x)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(w.Im, AdvancedMath.FresnelS(x)));
+            }
+        }
+
+        [TestMethod]
+        public void ComplexErfFaddevaAgreement () {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-1, 1.0E2, 16)) {
+                // for large imaginary parts, erf overflows, so don't try them
+                if (z.Im * z.Im > 500.0) continue;
+                Complex erf = AdvancedComplexMath.Erf(z);
+                Complex w = AdvancedComplexMath.Faddeeva(ComplexMath.I * z);
+                if (Double.IsNaN(w.Re)) continue;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    1.0 - ComplexMath.Exp(- z * z) * AdvancedComplexMath.Faddeeva(ComplexMath.I * z), AdvancedComplexMath.Erf(z)
+                ));
+            }
+        }
+
+        [TestMethod]
         public void ComplexFaddeevaSpecialCase () {
             Assert.IsTrue(AdvancedComplexMath.Faddeeva(0.0) == 1.0);
         }
@@ -20,7 +65,6 @@ namespace Test {
         public void ComplexFaddeevaConjugation () {
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4,1.0E4,50)) {
                 if (z.Im * z.Im > Math.Log(Double.MaxValue / 10.0)) continue; // large imaginary values blow up
-                Console.WriteLine("z={0}, w(z*)={1}, w*(-z)={2}", z, AdvancedComplexMath.Faddeeva(z.Conjugate), AdvancedComplexMath.Faddeeva(-z).Conjugate);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.Faddeeva(z.Conjugate), AdvancedComplexMath.Faddeeva(-z).Conjugate));
             }
         }
@@ -81,7 +125,7 @@ namespace Test {
         [TestMethod]
         public void ComplexGammaKnownLines () {
             // to avoid problems with trig functions of large arguments, don't let x get too big
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 100.0, 15)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E2, 16)) {
                 Console.WriteLine(x);
                 double px = Math.PI * x;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.Gamma(new Complex(0.0, x)) * AdvancedComplexMath.Gamma(new Complex(0.0, -x)), Math.PI / x / Math.Sinh(px)));
@@ -94,16 +138,19 @@ namespace Test {
 
         [TestMethod]
         public void ComplexLogGammaConjugation () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 20)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 24)) {
                 if (z.Re <= 0.0) continue;
                 Console.WriteLine("z={0} lnG(z*)={1} lnG*(z)={2}", z, AdvancedComplexMath.LogGamma(z.Conjugate), AdvancedComplexMath.LogGamma(z).Conjugate);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.LogGamma(z.Conjugate), AdvancedComplexMath.LogGamma(z).Conjugate));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.LogGamma(z.Conjugate),
+                    AdvancedComplexMath.LogGamma(z).Conjugate
+                ));
             }
         }
 
         [TestMethod]
         public void ComplexLogGammaAgreement () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 20)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 24)) {
                 //Console.WriteLine("{0} {1}", AdvancedComplexMath.LogGamma(x), AdvancedMath.LogGamma(x));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.LogGamma(x), AdvancedMath.LogGamma(x)));
             }
@@ -113,7 +160,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexPsiRecurrence () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 12)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 16)) {
                 //Complex z = new Complex(0.398612, 888.865);
                 //double t = Math.Exp(900.0);
                 //Console.WriteLine("{0} {1}", t, 1.0 / t);
@@ -252,6 +299,25 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(Dp.Im, -Dm.Im));
 
             }
+        }
+
+        [TestMethod]
+        public void ComplexEinAgreement () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 16)) {
+                Console.WriteLine("Ei {0} {1} {2}", x, AdvancedMath.IntegralEi(x), AdvancedMath.EulerGamma + Math.Log(x) - AdvancedComplexMath.Ein(-x));
+                if (x < Math.Log(Double.MaxValue / 10.0)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        AdvancedMath.IntegralEi(x),
+                        AdvancedMath.EulerGamma + Math.Log(x) - AdvancedComplexMath.Ein(-x)
+                    ));
+                }
+                Console.WriteLine("E1 {0} {1} {2}", x, AdvancedMath.IntegralE(1, x) + AdvancedMath.EulerGamma + Math.Log(x), AdvancedComplexMath.Ein(x));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.IntegralE(1, x) + AdvancedMath.EulerGamma + Math.Log(x),
+                    AdvancedComplexMath.Ein(x)
+                ));
+            }
+
         }
 
     }

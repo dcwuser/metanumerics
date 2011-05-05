@@ -8,7 +8,7 @@ namespace Meta.Numerics.Functions {
     /// Contains methods that compute the values of orthogonal polynomials.
     /// </summary>
     /// <remarks>
-    /// <para>Orthogonal polynomials are families of polynomials that are orthogonal on a given interval with
+    /// <para>Orthogonal polynomials are complete families of polynomials that are orthogonal on a given interval with
     /// a given integration weight. Because of this property, any function on the interval can be expanded
     /// in the polynomials in a unique way.</para>
     /// </remarks>

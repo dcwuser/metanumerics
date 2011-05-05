@@ -133,6 +133,7 @@
     <Compile Include="Statistics\Distributions\FisherDistribution.cs" />
     <Compile Include="Statistics\Distributions\GammaDistribution.cs" />
     <Compile Include="Statistics\Distributions\GeometricDistribution.cs" />
+    <Compile Include="Statistics\Distributions\GumbelDistribution.cs" />
     <Compile Include="Statistics\Distributions\KolmogorovDistribution.cs" />
     <Compile Include="Statistics\Distributions\KuiperDistribution.cs" />
     <Compile Include="Statistics\Distributions\LogisticDistribution.cs" />

@@ -65,7 +65,7 @@ namespace Test {
         [TestMethod]
         public void BesselJ0IntegralTest () {
             Interval r = Interval.FromEndpoints(0.0, Math.PI);
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
                 Func<double, double> f = delegate(double t) {
                     return (Math.Cos(x * Math.Sin(t)));
                 };
@@ -77,7 +77,7 @@ namespace Test {
         [TestMethod]
         public void BesselY0IntegralTest () {
             Interval r = Interval.FromEndpoints(0.0, Math.PI / 2.0);
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
                 Func<double, double> f = delegate(double t) {
                     double s = Math.Sin(t);
                     return (Math.Cos(x * Math.Cos(t)) * (AdvancedMath.EulerGamma + Math.Log(2.0 * x * s * s)));
@@ -90,7 +90,7 @@ namespace Test {
         [TestMethod]
         public void BesselJIntegralTest () {
             Interval r = Interval.FromEndpoints(0.0, Math.PI);
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 5)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 8)) {
                 foreach (int n in TestUtilities.GenerateIntegerValues(1, 10, 3)) {
                     Func<double, double> f = delegate(double t) {
                         return (Math.Cos(x * Math.Sin(t) - n * t));
@@ -104,7 +104,8 @@ namespace Test {
 
         [TestMethod]
         public void BesselKapteynIntegralTest () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
+            // don't pick x too big, so as not to have a problem with the inaccuracy of trig functions for large arguments
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
                 Func<double, double> f = delegate(double t) {
                     return (Math.Cos(x - t) * AdvancedMath.BesselJ(0, t));
                 };
@@ -132,13 +133,49 @@ namespace Test {
         }
 
         [TestMethod]
-        public void BesselAgreementTest () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1,100,5)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,15)) {
-                    Console.WriteLine("n={0},x={1}", n, x);
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselJ(n, x), AdvancedMath.BesselJ((double) n, x)));
+        public void IntegerBesselAgreementTest () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1,100,8)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,16)) {
+                    //Console.WriteLine("n={0},x={1}", n, x);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        AdvancedMath.BesselJ(n, x),
+                        AdvancedMath.BesselJ((double) n, x
+                    )));
                     if (!BesselYInRange(n, x)) continue; // don't try to evaluate Y if it's too big
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselY(n, x), AdvancedMath.BesselY((double) n, x)), String.Format("n={0}, x={1} YI={2} YR={3}", n, x, AdvancedMath.BesselY(n, x), AdvancedMath.BesselY((double) n, x)));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        AdvancedMath.BesselY(n, x),
+                        AdvancedMath.BesselY((double) n, x)
+                    ));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void FullBesselAgreementTest () {
+            foreach (double nu in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 8)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0E4, 16)) {
+                    if (!BesselYInRange(nu, x)) continue;
+                    SolutionPair s = AdvancedMath.Bessel(nu, x);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        s.FirstSolutionValue, AdvancedMath.BesselJ(nu, x)
+                    ));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        s.SecondSolutionValue, AdvancedMath.BesselY(nu, x)
+                    ));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void FullBesselWronskianTest () {
+            foreach (double nu in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 8)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0E4, 16)) {
+                    if (!BesselYInRange(nu, x)) continue;
+                    SolutionPair s = AdvancedMath.Bessel(nu, x);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        s.FirstSolutionValue * s.SecondSolutionDerivative - s.SecondSolutionValue * s.FirstSolutionDerivative,
+                        2.0 / Math.PI / x
+                    ));
                 }
             }
         }
@@ -148,7 +185,10 @@ namespace Test {
             foreach (double nu in orders) {
                 foreach (double x in arguments) {
                     if (BesselYInRange(nu, x)) {
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(2 / Math.PI / x, AdvancedMath.BesselJ(nu + 1.0, x) * AdvancedMath.BesselY(nu, x) - AdvancedMath.BesselJ(nu, x) * AdvancedMath.BesselY(nu + 1.0, x)), String.Format("n={0}, x={1}, J(n,x)={2}, J(n+1,x) = {3}, Y(n,x)={4}, Y(n+1,x)={5}", nu, x, AdvancedMath.BesselJ(nu, x), AdvancedMath.BesselJ(nu + 1, x), AdvancedMath.BesselY(nu, x), AdvancedMath.BesselY(nu + 1, x)));
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                            2 / Math.PI / x,
+                            AdvancedMath.BesselJ(nu + 1.0, x) * AdvancedMath.BesselY(nu, x) - AdvancedMath.BesselJ(nu, x) * AdvancedMath.BesselY(nu + 1.0, x)
+                        ));
                     }
                 }
             }
@@ -170,7 +210,7 @@ namespace Test {
 
         [TestMethod]
         public void RealBesselFresnelTest () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2,1.0E2,5)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2,1.0E2,8)) {
                 Console.WriteLine("x={0}", x);
                 double csum = 0.0;
                 double ssum = 0.0;
@@ -251,8 +291,8 @@ namespace Test {
 
         [TestMethod]
         public void RealBesselJIntegralTest () {
-            foreach (double nu in TestUtilities.GenerateRealValues(0.1, 10.0, 3)) {
-                foreach (double x in TestUtilities.GenerateRealValues(0.01, 100.0, 3)) {
+            foreach (double nu in TestUtilities.GenerateRealValues(0.1, 10.0, 4)) {
+                foreach (double x in TestUtilities.GenerateRealValues(0.01, 100.0, 4)) {
                     Func<double, double> f = delegate(double t) {
                         return (Math.Cos(x * Math.Cos(t)) * Math.Pow(Math.Sin(t), 2.0 * nu));
                     };
@@ -268,7 +308,7 @@ namespace Test {
         public void SphericalBesselSpecialCaseTest () {
             Assert.IsTrue(AdvancedMath.SphericalBesselJ(0, 0.0) == 1.0);
             Assert.IsTrue(AdvancedMath.SphericalBesselJ(1, 0.0) == 0.0);
-            //Assert.IsTrue(AdvancedMath.SphericalBesselY(0, 0.0) == Double.NegativeInfinity);
+            Assert.IsTrue(AdvancedMath.SphericalBesselY(0, 0.0) == Double.NegativeInfinity);
             Assert.IsTrue(AdvancedMath.SphericalBesselY(1, 0.0) == Double.NegativeInfinity);
         }
 

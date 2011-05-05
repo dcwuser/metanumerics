@@ -40,7 +40,9 @@ namespace Meta.Numerics.Functions {
             }
         }
 
-        // series definition of DiLog; this converges relably to full accuracy within a few tens of iterations below x~1/2; by x~1 it no longer converges
+        // series definition of DiLog
+        //   li_2(x) = \sum_{k=1}^{\infty} \frac{x^k}{k^2}
+        // this converges relably to full accuracy within a few tens of iterations below x~1/2; by x~1 it no longer converges
 
         private static double DiLog_Series_0 (double x) {
             double xx = x;

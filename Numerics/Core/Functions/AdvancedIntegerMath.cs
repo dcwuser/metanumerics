@@ -24,19 +24,20 @@ namespace Meta.Numerics.Functions {
         /// Computes the factorial of an integer.
         /// </summary>
         /// <param name="n">The argument, which must be non-negative.</param>
-        /// <returns>The factorial n!.</returns>
+        /// <returns>The value of n!.</returns>
         /// <remarks>
         /// <para>The factorial of an integer n is the product of all integers from 1 to n. For example, 4! = 4 * 3 * 2 * 1 = 24.</para>
         /// <para>n! also has a combinatorial intrepretation as the number of permutations of n objects. For example, a set of 3
         /// objects (abc) has 3! = 6 permutations: (abc), (bac), (cba), (acb), (cab), (bca).</para>
         /// <para>Because n! grows extremely quickly with increasing n, we return the result as a double, even though
-        /// the value is always an integer. (13! would overlow an int. 21! would overflow a long. 171! overflows even a double.)</para>
-        /// <para>In order to deal with factorials of larger runbers, you can use the <see cref="LogFactorial"/> method, which
+        /// the value is always an integer. (13! would overlow an int, 21! would overflow a long, 171! overflows even a double.)</para>
+        /// <para>In order to deal with factorials of larger numbers, you can use the <see cref="LogFactorial"/> method, which
         /// returns accurate values of ln(n!) even for values of n for which n! would overflow a double.</para>
         /// <para>The factorial is generalized to non-integer arguments by the &#x393; function (<see cref="AdvancedMath.Gamma(double)"/>).</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso cref="LogFactorial"/>
+        /// <seealso cref="AdvancedMath.Gamma(double)"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Factorial"/>
 		public static double Factorial (int n) {
 			if (n<0) throw new ArgumentOutOfRangeException("n");
@@ -51,7 +52,7 @@ namespace Meta.Numerics.Functions {
         /// Computes the logrithm of the factorial of an integer.
         /// </summary>
         /// <param name="n">The argument, which must be non-negative.</param>
-        /// <returns>The natrual logarithm of the factorial: ln(n!).</returns>
+        /// <returns>The value of ln(n!).</returns>
         /// <remarks>
         /// <para>This function provides accurate values of ln(n!) even for values of n which would cause n! to overflow.</para>
         /// </remarks>
@@ -224,10 +225,10 @@ namespace Meta.Numerics.Functions {
         }
 
         /// <summary>
-        /// Computes the double factorial of the given number.
+        /// Computes the double factorial of the given integer.
         /// </summary>
         /// <param name="n">The argument, which must be positive.</param>
-        /// <returns>The double factorial n!!.</returns>
+        /// <returns>The value of n!!.</returns>
         /// <remarks>
         /// <para>The double factorial of an integer is the product all integers of the same parity, up to and including the integer.
         /// Thus 5! = 5 * 3 * 1 = 15 and 6! = 6 * 4 * 2 = 48.</para>
@@ -337,6 +338,14 @@ namespace Meta.Numerics.Functions {
 			}
 			return(u);
 		}
+
+        internal static int GCD (int u, int v) {
+            while (v != 0) {
+                int t = u % v; u = v; v = t;
+            }
+            return (u);
+        }
+
 		// Knuth gives example GCD(40902,24140) = 34
 
         /// <summary>
@@ -371,7 +380,7 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="b"/>,  <paramref name="e"/>, or <paramref name="m"/> is not positive.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Modular_exponentiation"/>
         public static int PowMod (int b, int e, int m) {
-            if (b < 1) throw new ArgumentOutOfRangeException("b");
+            if (b < 0) throw new ArgumentOutOfRangeException("b");
             if (e < 1) throw new ArgumentOutOfRangeException("e");
             if (m < 1) throw new ArgumentOutOfRangeException("m");
 
@@ -505,53 +514,112 @@ namespace Meta.Numerics.Functions {
             return (false);
         }
 
-#if FUTURE
+        // Prime factorization. Leave this internal for now, until it is cleaned up.
 
-        private static readonly int[] primes = new int[] { 2, 3, 5, 7, 11, 13 };
+        // As currently implemented, it does not actually guarantee full prime factorization! Pollard's rho
+        // method can yield non-prime factors, and this appears to occur for about 0.25% of all integers under 1,000,000.
+        // For example, "factors" of 1681 = 41 * 41, 6751 = 43 * 157, and 9167 = 89 * 103 are claimed.
+        // These composite "factors" are, however, still co-prime to the other factors, so the almost-factorization
+        // will still work for reduction of Fourier transforms, which is how we are currently using it.
 
-        public static List<int> FactorByTrial (ref int n) {
+        internal static List<Factor> Factor (int n) {
+            if (n < 1) throw new ArgumentOutOfRangeException("n");
 
-            List<int> factors = new List<int>();
+            List<Factor> factors = new List<Factor>();
 
-            foreach (int p in primes) {
+            if (n > 1) FactorByTrialDivision(factors, ref n);
 
-                if (n % p == 0) {
+            if (n > 1) FactorByPollardsRhoMethod(factors, ref n);
+
+            if (n > 1) factors.Add(new Factor(n, 1));
+
+            return(factors);
+        }
+
+        internal static readonly int[] SmallPrimes = new int[] { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31 };
+
+        // Trial division is the simplest prime factorization method. It consists of attempted to divide by known primes.
+        // It is a good way to eliminate known small prime factors before proceeding on to bigger and more difficult prime factors.
+
+        private static void FactorByTrialDivision (List<Factor> factors, ref int n) {
+
+            foreach (int p in SmallPrimes) {
+
+                int m = 0;
+                while (n % p == 0) {
                     n = n / p;
-                    factors.Add(p);
-                    if (n < p) return (factors);
+                    m++;
                 }
+                if (m > 0) factors.Add(new Factor(p, m));
+
+                if (n == 1) return;
 
             }
 
-            return (factors);
-
         }
 
-        private static int pollardE = 360360;
-        // lcm(1...5) = 60
-        // lcm(1...10) = 2520
-        // lcm(1...15) = 360360
-        // lcm(1...20) = 232792560
+        private static void FactorByPollardsRhoMethod (List<Factor> factors, ref int n) {
 
-        public static List<int> FactorByPollard1 (ref int n) {
+            int x = 5; int y = 2; int k = 1; int l = 1;
 
-            List<int> factors = new List<int>();
-
-            while (true) {
-                int g = PowMod(2, pollardE, n) - 1;
-                g = (int) GCF(g, n);
-                if ((g > 1) && (g < n)) {
-                    factors.Add(g);
-                    n = n / g;
+            for (int c = 0; c < Global.SeriesMax; c++) {
+                //while (true) {
+                int g = AdvancedIntegerMath.GCD(Math.Abs(y - x), n);
+                if (g == n) {
+                    // the factor n will repeat itself indefinitely; either n is prime or the method has failed
+                    return;
+                } else if (g == 1) {
+                    k--;
+                    if (k == 0) {
+                        y = x;
+                        l = 2 * l;
+                        k = l;
+                    }
+                    // take x <- (x^2 + 1) mod n
+                    x = AdvancedIntegerMath.PowMod(x, 2, n) + 1;
+                    if (x == n) x = 0;
                 } else {
-                    return (factors);
+                    // g is a factor of n; in all likelyhood, it is prime, although this isn't guaranteed
+                    // for our current approximate-factoring purposes, we will assume it is prime
+                    // it is at least co-prime to all other recognized factors
+                    int m = 0;
+                    while (n % g == 0) {
+                        n = n / g;
+                        x = x % n;
+                        y = y % n;
+                        m++;
+                    }
+                    factors.Add(new Factor(g, m));
                 }
             }
 
         }
-
-#endif
 
 	}
+
+
+    internal struct Factor {
+
+        public Factor (int value, int multiplicity) {
+            this.value = value;
+            this.multiplicity = multiplicity;
+        }
+
+        private int value, multiplicity;
+
+        public int Value {
+            get {
+                return (value);
+            }
+        }
+
+        public int Multiplicity {
+            get {
+                return (multiplicity);
+            }
+        }
+
+    }
+
 
 }

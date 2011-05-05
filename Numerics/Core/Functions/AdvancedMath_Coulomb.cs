@@ -206,10 +206,10 @@ namespace Meta.Numerics.Functions {
             double g = (f - p) / q;
 
             SolutionPair result = new SolutionPair();
-            result.Regular = sign / Math.Sqrt(g * g * q + q);
-            result.RegularPrime = f * result.Regular;
-            result.Irregular = g * result.Regular;
-            result.IrregularPrime = (p * g - q) * result.Regular;
+            result.FirstSolutionValue = sign / Math.Sqrt(g * g * q + q);
+            result.FirstSolutionDerivative = f * result.FirstSolutionValue;
+            result.SecondSolutionValue = g * result.FirstSolutionValue;
+            result.SecondSolutionDerivative = (p * g - q) * result.FirstSolutionValue;
             return (result);
 
         }
@@ -418,7 +418,7 @@ namespace Meta.Numerics.Functions {
                 if (rho >= CoulombTurningPoint(L, eta)) {
                     // beyond the turning point, use Steed's method
                     SolutionPair result = Coulomb_Steed(L, eta, rho);
-                    return (result.Regular);
+                    return (result.FirstSolutionValue);
                 } else {
                     // inside the turning point, integrate out from the series limit
                     return (CoulombF_Integrate(L, eta, rho));
@@ -462,7 +462,7 @@ namespace Meta.Numerics.Functions {
                 if (rho >= CoulombTurningPoint(L, eta)) {
                     // beyond the turning point, use Steed's method
                     SolutionPair result = Coulomb_Steed(L, eta, rho);
-                    return (result.Irregular);
+                    return (result.SecondSolutionValue);
                 } else {
                     
                     // we will start at L=0 (which has a smaller turning point radius) and recurse up to the desired L
@@ -485,8 +485,8 @@ namespace Meta.Numerics.Functions {
                             result = Coulomb_Steed(0, eta, 2.0 * eta);
                         //}
 
-                        G = result.Irregular;
-                        GP = result.IrregularPrime;
+                        G = result.SecondSolutionValue;
+                        GP = result.SecondSolutionDerivative;
 
                         BulrischStoerStoermerStepper s = new BulrischStoerStoermerStepper();
                         s.RightHandSide = delegate(double x, double U) {
@@ -507,8 +507,8 @@ namespace Meta.Numerics.Functions {
                         // if beyond the turning point for L=0, just use Steeds method
 
                         SolutionPair result = Coulomb_Steed(0, eta, rho);
-                        G = result.Irregular;
-                        GP = result.IrregularPrime;
+                        G = result.SecondSolutionValue;
+                        GP = result.SecondSolutionDerivative;
 
                     }
 

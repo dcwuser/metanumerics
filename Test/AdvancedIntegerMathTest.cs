@@ -122,6 +122,9 @@ namespace Test {
             Assert.IsTrue(AdvancedIntegerMath.IsPrime(257)); // 2^8 + 1
             Assert.IsTrue(AdvancedIntegerMath.IsPrime(65537)); // 2^16 + 1
 
+            // Euler's nonprime
+            Assert.IsFalse(AdvancedIntegerMath.IsPrime(1000009)); // 1000009 = 293 * 3413
+
         }
 
         [TestMethod]

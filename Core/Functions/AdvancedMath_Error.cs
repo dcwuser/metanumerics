@@ -11,7 +11,7 @@ namespace Meta.Numerics.Functions {
         /// Computes the error function.
         /// </summary>
         /// <param name="x">The argument.</param>
-        /// <returns>The value of erf(<paramref name="x"/>).</returns>
+        /// <returns>The value of erf(x).</returns>
         /// <remarks>
         /// <para>The error can be defined via a Gaussian integral.</para>
         /// <img src="../images/ErfIntegral.png" />
@@ -19,7 +19,9 @@ namespace Meta.Numerics.Functions {
         /// standard deviations of the mean is given by erf(z/&#x221A;2).</para>
         /// <para>For large values of x, erf(x) &#x2248; 1 to within floating-point accuracy. To obtain accurate values of erfc(x) = 1 - erf(x)
         /// in this range, use the <see cref="Erfc" /> function.</para>
-        /// <para>The error function for complex arguments can be computed using <see cref="AdvancedComplexMath.Faddeeva"/>.</para>
+        /// <para>The inverse of the error function is implemented as <see cref="AdvancedMath.InverseErf"/>.</para>
+        /// <para>Values of the error function for complex arguments can be obtained using <see cref="AdvancedComplexMath.Erf"/> method, or using the
+        /// equivalent but re-parameterized <see cref="AdvancedComplexMath.Faddeeva"/> function.</para>
         /// </remarks>
         /// <seealso cref="Erfc"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Error_function" />
@@ -299,8 +301,9 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="Fresnel"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Fresnel_integral"/>
         public static double FresnelC (double x) {
-            if (x < 0.0) return (-FresnelC(-x));
-            if (x < 2.0) {
+            if (x < 0.0) {
+                return (-FresnelC(-x));
+            } else if (x < 2.0) {
                 return (FresnelC_Series(x));
             } if (x > 64.0) {
                 Complex f = Fresnel_Asymptotic(x);
@@ -325,8 +328,9 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="Fresnel"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Fresnel_integral"/>
         public static double FresnelS (double x) {
-            if (x < 0.0) return (-FresnelS(-x));
-            if (x < 2.0) {
+            if (x < 0.0) {
+                return (-FresnelS(-x));
+            } else if (x < 2.0) {
                 return (FresnelS_Series(x));
             } if (x > 64.0) {
                 Complex f = Fresnel_Asymptotic(x);
@@ -353,8 +357,9 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Fresnel_integral"/>
         /// <seealso href="http://mathworld.wolfram.com/CornuSpiral.html"/>
         public static Complex Fresnel (double x) {
-            if (x < 0.0) return (-Fresnel(-x));
-            if (x < 2.0) {
+            if (x < 0.0) {
+                return (-Fresnel(-x));
+            } else if (x < 2.0) {
                 return (new Complex(FresnelC_Series(x), FresnelS_Series(x)));
             } else if (x > 64.0) {
                 return (Fresnel_Asymptotic(x));
@@ -509,9 +514,15 @@ namespace Meta.Numerics.Functions {
         /// <img src="../images/FaddeevaErfcRelation.png" />
         /// <para>It also has an integral representation.</para>
         /// <img src="../images/FaddeevaIntegral.png" />
-        /// <para>For purely imaginary values, it can be reduced to the error function. For purely real values, it can be reduced to Dawson's integral.</para>
+        /// <para>For purely imaginary values, it reduces to the complementary error function (<see cref="AdvancedMath.Erfc"/>).
+        /// For purely real values, it reduces to Dawson's integral (<see cref="AdvancedMath.Dawson"/>).</para>
         /// <para>It appears in the computation of the Voigt line profile function V(x;&#x3C3;,&#x3B3;).</para>
+        /// <img src="../images/Voigt.png" />
+        /// <para>Near the origin, w(z) &#x2248; 1. To accurately determine w(z) - 1 in this region, use the <see cref="Erf"/>
+        /// function. Away from the origin near the large negative imaginary axis, the magnitude w(z) increases rapidly and
+        /// may overflow.</para>
         /// </remarks>
+        /// <seealso cref="AdvancedComplexMath.Erf"/>
         /// <seealso cref="AdvancedMath.Erf" />
         /// <seealso cref="AdvancedMath.Erfc" />
         /// <seealso cref="AdvancedMath.Dawson"/>
@@ -525,7 +536,8 @@ namespace Meta.Numerics.Functions {
             double r = ComplexMath.Abs(z);
             if (r < 2.0) {
                 // use series for small z
-                return (Faddeeva_Series(z));
+                return (ComplexMath.Exp(-z * z) * (1.0 - Erf_Series(-ComplexMath.I * z)));
+                //return (Faddeeva_Series(z));
             } else if ((z.Im < 0.1) && (z.Re < 30.0)) {
                 // this is a special, awkward region
                 // along the real axis, Re{w(x)} ~ e^{-x^2}; the Weideman algorthm doesen't compute this small number
@@ -633,22 +645,63 @@ namespace Meta.Numerics.Functions {
         };
         */
 
-        // requires about 15 terms at |z|~1, 30 terms at |z|~2, 45 terms at |z|~3
-        // converges at about the same rate along both real and imaginary axis
+        // The power series for the error function
+        //   erf(z) = \frac{2}{\sqrt{pi}} \sum_{k=0}^{\infty} \frac{ (-1)^k z^{2k + 1} }{(2k+1) k!}
+        // requires about 15 terms at |z| ~ 1, 30 terms at |z| ~ 2, 45 terms at |z| ~ 3
 
-        private static Complex Faddeeva_Series (Complex z) {
-            Complex df = 2.0 / Global.SqrtPI * ComplexMath.I * z;
-            Complex f = 1.0 + df;
-            Complex zz = z * z;
-            for (int i = 1; i < 250; i++) {
+        private static Complex Erf_Series (Complex z) {
+            Complex zp = 2.0 / Global.SqrtPI * z;
+            Complex zz = - z * z;
+            Complex f = zp;
+            for (int k = 1; k < Global.SeriesMax; k++) {
                 Complex f_old = f;
-                df = df * zz / i;
-                f += df / (2 * i + 1);
-                if (f == f_old) {
-                    return (ComplexMath.Exp(-zz) * f);
-                }
+                zp *= zz / k;
+                f += zp / (2 * k + 1);
+                if (f == f_old) return (f);
             }
             throw new NonconvergenceException();
+        }
+
+        /// <summary>
+        /// Computes the complex error function.
+        /// </summary>
+        /// <param name="z">The complex argument.</param>
+        /// <returns>The value of erf(z).</returns>
+        /// <remarks>
+        /// <para>This function is the analytic continuation of the error function (<see cref="AdvancedMath.Erf"/>) to the complex plane.</para>
+        /// <img src="../images/ComplexErfPlot.png" />
+        /// <para>The complex error function is entire: it has no poles, cuts, or discontinuities anywhere in the complex plane.</para>
+        /// <para>For pure imaginary arguments, erf(z) reduces to the Dawson integral (<see cref="AdvancedMath.Dawson"/>).</para>
+        /// <para>Away from the origin near the real axis, the real part of erf(z) quickly approaches &#x0b1;1. To accurately determine
+        /// the small difference erf(z) &#8723; 1 in this region, use the <see cref="Faddeeva"/> function. Away from the origin near
+        /// the imaginary axis, the magnitude of erf(z) increases very quickly. Although erf(z) may overflow in this region, you
+        /// can still accurately determine the value of the product erf(z) exp(z<sup>2</sup>) using the <see cref="Faddeeva"/>
+        /// function.</para>
+        /// </remarks>
+        /// <seealso cref="AdvancedMath.Erf"/>
+        /// <seealso cref="AdvancedMath.Dawson"/>
+        /// <seealso cref="AdvancedComplexMath.Faddeeva"/>
+        public static Complex Erf (Complex z) {
+
+            double r = ComplexMath.Abs(z);
+
+            if (r < 4.0) {
+                // near the origin, use the series
+                return (Erf_Series(z));
+            } else {
+                // otherwise, just compute from Faddeva
+                if (z.Re < 0.0) {
+                    // since Fadddeeva blows up for negative z.Re, use erf(z) = -erf(-z)
+                    return (ComplexMath.Exp(-z * z) * Faddeeva(-ComplexMath.I * z) - 1.0);
+                } else {
+                    return (1.0 - ComplexMath.Exp(-z * z) * Faddeeva(ComplexMath.I * z));
+                }
+                //Complex a = ComplexMath.Exp(-z * z); Complex b = Faddeeva(ComplexMath.I * z);
+                //Console.WriteLine("{0} {1} {2} {3} {4}", z, ComplexMath.I * z, a, b, a * b); 
+                //return (1.0 - ComplexMath.Exp(-z * z) * Faddeeva(ComplexMath.I * z));
+                // we don't do this near the origin beause we would loose accuracy in the very small real parts there by subtracting from 1
+            } 
+
         }
 
         // requires about 10 terms at |z|~10, 15 terms at |z|~7

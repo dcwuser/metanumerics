@@ -10,59 +10,51 @@ using Meta.Numerics.Matrices;
 
 namespace Test {
     
-    
-    /// <summary>
-    ///This is a test class for DistributionTest and is intended
-    ///to contain all DistributionTest Unit Tests
-    ///</summary>
-    [TestClass()]
+    [TestClass]
     public class DistributionTest {
 
-
-        private TestContext testContextInstance;
-
-        /// <summary>
-        ///Gets or sets the test context which provides
-        ///information about and functionality for the current test run.
-        ///</summary>
-        public TestContext TestContext {
-            get {
-                return testContextInstance;
+        private static int Fibonacci (int n) {
+            int a = 1;
+            int b = 0;
+            int p = 0;
+            int q = 1;
+            while (n > 0) {
+                if (n % 2 == 0) {
+                    int p1 = p * p + q * q;
+                    int q1 = q * (q + 2 * p);
+                    p = p1; q = q1;
+                    n = n / 2;
+                } else {
+                    int a1 = b * q + a * q + a * p;
+                    int b1 = b * p + a * q;
+                    a = a1; b = b1;
+                    n = n - 1;
+                }
             }
-            set {
-                testContextInstance = value;
-            }
+            return (b);
         }
 
-        #region Additional test attributes
-        // 
-        //You can use the following additional attributes as you write your tests:
-        //
-        //Use ClassInitialize to run code before running the first test in the class
-        //[ClassInitialize()]
-        //public static void MyClassInitialize(TestContext testContext)
-        //{
-        //}
-        //
-        //Use ClassCleanup to run code after all tests in a class have run
-        //[ClassCleanup()]
-        //public static void MyClassCleanup()
-        //{
-        //}
-        //
-        //Use TestInitialize to run code before running each test
-        //[TestInitialize()]
-        //public void MyTestInitialize()
-        //{
-        //}
-        //
-        //Use TestCleanup to run code after each test has run
-        //[TestCleanup()]
-        //public void MyTestCleanup()
-        //{
-        //}
-        //
-        #endregion
+        [TestMethod]
+        public void FibTest () {
+            Console.WriteLine(Fibonacci(2));
+            Console.WriteLine(Fibonacci(4));
+            Console.WriteLine(Fibonacci(8));
+            Console.WriteLine(Fibonacci(16));
+            Console.WriteLine(Fibonacci(32));
+            Console.WriteLine(Fibonacci(64));
+            Console.WriteLine(Fibonacci(128));
+        }
+
+        [TestMethod]
+        public void GumbelP () {
+
+            GumbelDistribution G = new GumbelDistribution();
+            double mu = G.Mean;
+            double C = FunctionMath.Integrate(x => { return (G.ProbabilityDensity(x) * MoreMath.Pow(x - mu, 4)); }, G.Support);
+            Console.WriteLine(C);
+            Console.WriteLine(G.MomentAboutMean(4));
+
+        }
 
         private Distribution[] distributions = new Distribution[] {
             new CauchyDistribution(1.0, 2.0),
@@ -82,7 +74,8 @@ namespace Test {
             new ParetoDistribution(1.0, 3.0),
             new WaldDistribution(3.0, 1.0),
             new PearsonRDistribution(7),
-            new GammaDistribution(5.0, 6.0), new GammaDistribution(78.9)
+            new GammaDistribution(5.0, 6.0), new GammaDistribution(78.9),
+            new GumbelDistribution(1.2, 2.3)
         };
 
         private double[] probabilities = new double[] {

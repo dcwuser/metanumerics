@@ -105,7 +105,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/PolygammaFunction.html"/>
         public static double Psi (int n, double x) {
 
-            if (n < 0) throw new ArgumentNullException("n");
+            if (n < 0) throw new ArgumentOutOfRangeException("n");
 
             // for n=0, use normal digamma algorithm
             if (n == 0) return (Psi(x));
@@ -343,12 +343,11 @@ namespace Meta.Numerics.Functions {
 			// evaluate via continued fraction via Steed's method
 			double aa = 1.0;			// a_1
 			double bb = 1.0;			// b_1
-			double D = 1.0;			// D_1 = b_0/b_1
-			double Df = aa/bb;		// Df_1 = f_1 - f_0
+			double D = 1.0;			    // D_1 = 1 / b_1
+			double Df = aa / bb;		// Df_1 = f_1 - f_0 = a_1 / b_1
 			double f = 0.0 + Df;		// f_1 = f_0 + Df_1 = b_0 + Df_1
-			int k = 0;
-			do {
-				k++;
+			for (int k = 1; k < Global.SeriesMax; k++) {
+                double f_old = f;
 				int m = k/2;
 				if ((k % 2) == 0) {
 					aa = x * m * (b - m) / ((a+k-1)*(a+k));
@@ -358,9 +357,11 @@ namespace Meta.Numerics.Functions {
 				D = 1.0 / (bb + aa * D);
 				Df = (bb * D - 1.0) * Df;
 				f += Df;
-			} while ((f+Df) != f);
-			return( Math.Pow(x, a) * Math.Pow(1.0-x, b) / a * f );
-			
+                if (f == f_old) {
+                    return (Math.Pow(x, a) * Math.Pow(1.0 - x, b) / a * f);
+                }
+			}
+            throw new NonconvergenceException();
 		}
 
         /// <summary>
@@ -397,7 +398,7 @@ namespace Meta.Numerics.Functions {
             throw new NonconvergenceException();
         }
 
-        // by differentiating the Stirling asymptotic series for log Gamma, we obtain an analogoug asymptotic serie for psi
+        // by differentiating the Stirling asymptotic series for log Gamma, we obtain an analogous asymptotic series for psi
         //   \psi(x) = \log z - 1 / (2 z) - \sum_{k=1}^{\infty} \frac{B_{2k}{2k z^{2k}}
 
         private static double Psi_Stirling (double x) {
@@ -735,7 +736,7 @@ namespace Meta.Numerics.Functions {
         /// <para>The image below shows the complex &#x3C8; function near the origin using domain coloring.</para>
         /// <img src="../images/ComplexPsiPlot.png" />
         /// </remarks>
-        /// <seealso cref="AdvancedMath.Psi" />
+        /// <seealso cref="AdvancedMath.Psi(double)" />
         public static Complex Psi (Complex z) {
             if (z.Re < 0.5) {
                 // reduce z.Re in order to handle large real values!

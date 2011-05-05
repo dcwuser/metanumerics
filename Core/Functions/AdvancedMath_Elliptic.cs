@@ -40,7 +40,8 @@ namespace Meta.Numerics.Functions {
             if (y < 0.0) throw new ArgumentOutOfRangeException("y");
             if (z < 0.0) throw new ArgumentOutOfRangeException("z");
 
-            // check that at most one is zero
+            // if more than one is zero, the result diverges
+            if (((x == 0.0) && ((y == 0.0) || (z == 0.0))) || ((y == 0.0) && (z == 0.0))) return (Double.NaN);
 
             for (int n = 0; n < Global.SeriesMax; n++) {
 
@@ -69,6 +70,41 @@ namespace Meta.Numerics.Functions {
                 // if we are not close enough, use the duplication theory to move us closer
 
                 double lambda = Math.Sqrt(x * y) + Math.Sqrt(x * z) + Math.Sqrt(y * z);
+
+                x = (x + lambda) / 4.0;
+                y = (y + lambda) / 4.0;
+                z = (z + lambda) / 4.0;
+
+            }
+
+            throw new NonconvergenceException();
+
+        }
+
+
+        public static double CarlsonD (double x, double y, double z) {
+
+            double s = 1.0;
+            double t = 0.0;
+
+            for (int n = 0; n < Global.SeriesMax; n++) {
+
+                // find out how close we are to the expansion point
+                double m = (x + y + 3.0 * z) / 5.0;
+                double dx = (x - m) / m;
+                double dy = (y - m) / m;
+                double dz = (z - m) / m;
+                double e = Math.Max(Math.Abs(dx), Math.Max(Math.Abs(dy), Math.Abs(dz)));
+
+                if (e < 0.01) {
+                }
+
+                // we are not close enough; use the duplication theory to move us closer
+
+                double lambda = Math.Sqrt(x * y) + Math.Sqrt(x * z) + Math.Sqrt(y * z);
+
+                s *= 4.0;
+                t += 3.0 / Math.Sqrt(z) / (z + lambda) / s;
 
                 x = (x + lambda) / 4.0;
                 y = (y + lambda) / 4.0;

@@ -11,6 +11,25 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents the result of a fit procedure.
     /// </summary>
+    /// <remarks>
+    /// <para>All fit methods in the Meta.Numerics library return their results as an instance of the FitResult class.
+    /// This includes methods that fit a sample to a distribution
+    /// (e.g. <see cref="Meta.Numerics.Statistics.Distributions.NormalDistribution.FitToSample"/>),
+    /// regression methods for bivariate and multivariate data (e.g. <see cref="BivariateSample.LinearLogisticRegression"/>),
+    /// and least-squares fits of data with error bars to a model function (e.g. <see cref="UncertainMeasurementSample{T}.FitToFunction"/>).
+    /// </para>
+    /// <para>A FitResult instance contains not only the parameter values, but also covariances and a goodness-of-fit test.</para> 
+    /// <para>The vector of best-fit parameter values can be obtained as an array using the <see cref="Parameters"/> method.
+    /// Individual parameter values can be obtained using the <see cref="Parameter"/> method; this method gives not only a best-fit
+    /// value but also an uncertainty by returning a <see cref="UncertainValue"/>.</para>
+    /// <para>The matrix of covariances can be obtained using the <see cref="CovarianceMatrix"/> method. Covariances between
+    /// specific pairs of parameters van be obtained using the <see cref="Covariance"/> method.</para>
+    /// <para>The goodness-of-fit test result stored in the <see cref="GoodnessOfFit"/> measures the quality of the fit.
+    /// For fits to distributions, it is a Kolmogorov-Smirnov test. For regressions, it is an F-test. For fits to
+    /// data with error bars, it is a chi-square test.</para>
+    /// <para>Fits are done using the maximum likelyhood method, with results corrected for any small-sample bias.</para>
+    /// </remarks>
+    /// <seealso href="http://en.wikipedia.org/wiki/Maximum_likelihood"/>
     public class FitResult {
 
         private IList<double> parameters;
@@ -66,9 +85,11 @@ namespace Meta.Numerics.Statistics {
         /// <param name="n">The (zero-based) number of the first parameter.</param>
         /// <param name="m">The (zero-based) number of the second parameter.</param>
         /// <returns>The correlation coefficient between the two parameters.</returns>
-        /// <remarks><para>The correlation coefficient between two parameters is a re-scaling of their covariance to a number
+        /// <remarks>
+        /// <para>The correlation coefficient between two parameters is a re-scaling of their covariance to a number
         /// between -1 and 1 that indicates the strength of their correlation.</para>
-        /// <para>The correlation coefficient is also called the Pearson R coefficient.</para></remarks>
+        /// <para>The correlation coefficient is also called the Pearson R coefficient.</para>
+        /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> or <paramref name="m"/> is not within [0,<see cref="Dimension"/>-1].</exception>
         public double CorrelationCoefficient (int n, int m) {
             if ((n < 0) || (n >= Dimension)) throw new ArgumentOutOfRangeException("n");
@@ -87,7 +108,10 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets a test of the quality of the fit.
         /// </summary>
-        /// <remarks><para>If no goodness-of-fit test was performed as a part of the fit, this property will be null.</para></remarks>
+        /// <remarks>
+        /// <para>Which test is used to evaluate goodness-of-fit depends on </para>
+        /// <para>If no goodness-of-fit test was performed as a part of the fit, this property will be null.</para>
+        /// </remarks>
         public TestResult GoodnessOfFit {
             get {
                 return (test);

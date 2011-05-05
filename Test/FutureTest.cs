@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
+using Meta.Numerics.Matrices;
 using Meta.Numerics.SignalProcessing;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
@@ -14,6 +15,177 @@ namespace FutureTest {
 
     [TestClass]
     public class FutureTest {
+
+        [TestMethod]
+        public void BesselTest () {
+
+            /*
+            double J, JP;
+            AdvancedMath.BesselJ_Series(10000.0, 204.0, out J, out JP);
+            Console.WriteLine("{0} {1}", J, JP);
+            */
+
+            //double x = 8.0;
+            //SolutionPair sp = AdvancedMath.Bessel(16.0, x);
+            //Console.WriteLine("{0} {1} {2} {3}", sp.Regular, sp.RegularPrime, sp.Irregular, sp.IrregularPrime);
+            //Console.WriteLine("{0} {1}", sp.Regular * sp.IrregularPrime - sp.RegularPrime * sp.Irregular, 2.0 / Math.PI / x);
+
+
+        }
+
+        private void FermatFactor (int n) {
+
+            int c = 0;
+            int s = (int)Math.Floor(Math.Sqrt(n));
+            int x = 2 * s + 1; int y = 1; int r = s * s - n;
+            while (r != 0) {
+                r += x; x += 2;
+                c++;
+                do {
+                    r -= y; y += 2;
+                    c++;
+                } while (r > 0);
+
+            }
+            int p = (x - y) / 2;
+            int q = (x + y - 2) / 2;
+            if (p == 1) {
+                //Console.WriteLine(q);
+            } else {
+                FermatFactor(p);
+                FermatFactor(q);
+            }
+        }
+
+        private void PollardRhoFactor (int n) {
+
+            int x = 5; int y = 2; int k = 1; int l = 1;
+
+            for (int c = 0; c < 10000; c++) {
+            //while (true) {
+                int g = (int) AdvancedIntegerMath.GCF(Math.Abs(y - x), n);
+                if (g == n) {
+                    Console.WriteLine("n={0}", n);
+                    return;
+                } else if (g == 1) {
+                    k--;
+                    if (k == 0) {
+                        y = x;
+                        l = 2 * l;
+                        k = l;
+                    }
+                    //Console.WriteLine("{0}^2 mod {1}", x, n);
+                    x = AdvancedIntegerMath.PowMod(x, 2, n) + 1;
+                    if (x == n) x = 0;
+                } else {
+                    //Console.WriteLine("g={0}", g);
+                    n = n / g;
+                    x = x % n;
+                    y = y % n;
+                }
+            }
+
+
+
+        }
+
+#if FUTURE
+        [TestMethod]
+        public void TestFactor () {
+            /*
+            Stopwatch s1 = Stopwatch.StartNew();
+            FermatFactor(1157625);
+            s1.Stop(); Console.WriteLine(s1.ElapsedMilliseconds);
+            
+            Stopwatch s2 = Stopwatch.StartNew();
+            PollardRhoFactor(37);
+            s2.Stop(); Console.WriteLine(s2.ElapsedMilliseconds);
+            */
+            // for (3*5*7)^3 = 1157625, Pollard's Rho fails to factor 125 = 5^3
+            
+            int c = 0;
+            Stopwatch s1 = Stopwatch.StartNew();
+
+            //for (int i = 1; i < 1000000; i+=2) {
+            int i = 220211;
+                List<Factor> factors = AdvancedIntegerMath.Factor(i);
+                //FermatFactor(i);
+                
+                int m = 1;
+                foreach (Factor factor in factors) {
+                    Console.WriteLine(factor);
+                    if (!AdvancedIntegerMath.IsPrime(factor.Value)) {
+                        c++;
+                        Console.WriteLine("for {0}, factor {1} is not prime", i, factor.Value);
+                    }
+                    //Console.WriteLine("{0} {1}", factor.Value, factor.Multiplicity);
+                    m *= (int)MoreMath.Pow(factor.Value, factor.Multiplicity);
+                }
+                if (m != i) {
+                    Console.WriteLine("for {0}, factors do not multiply to number", i);
+                }
+                //Assert.IsTrue(m == i);
+                //Console.WriteLine(m);
+                
+            // }
+            s1.Stop(); Console.WriteLine(s1.ElapsedMilliseconds);
+
+            Console.WriteLine(c);
+            
+        }
+#endif
+
+        [TestMethod]
+        public void BigAdd () {
+
+            BigFloat a = new BigFloat(new byte[] { 2, 2, 5 }, 0);
+            Console.WriteLine(a);
+            BigFloat b = new BigFloat(new byte[] { 3, 3, 3 }, 0);
+            Console.WriteLine(b);
+            BigFloat c = a + b;
+            Console.WriteLine(c);
+
+        }
+
+        [TestMethod]
+        public void EinTest () {
+
+            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 3.0)));
+            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 2.5)));
+            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 2.0)));
+            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 1.5)));
+            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 1.0)));
+            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 0.5)));
+            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 0.0)));
+            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, -0.5)));
+            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, -1.0)));
+            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, -1.5)));
+            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, -2.0)));
+            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, -2.5)));
+
+        }
+
+        [TestMethod]
+        public void ErfTest () {
+            Console.WriteLine(AdvancedComplexMath.Erf(new Complex(1.0E-10, 10.0)));
+
+        }
+
+        [TestMethod]
+        public void MultiRootTest () {
+
+            // here is a system with a zeros at (3,4) and (1,0)
+            Func<double[], double[]> f = delegate (double[] u) {
+                double x = u[0]; double y = u[1];
+                double a = 2.0 * y - x;
+                double b = (x * x + x * (y * y - 2.0) - 4.0 * y) / (x + 4.0);
+                double c = Math.Sqrt(x * x + y * y);
+                return (new double[] { b - a, c - a });
+            };
+
+            FunctionMath.FindZero(f, new double[] { 1.0, 1.0 });
+
+        }
 
         [TestMethod]
         public void KruskalWallis () {

@@ -12,10 +12,20 @@ namespace Meta.Numerics.Functions {
         // One-dimensional minimization
 
         /// <summary>
+        /// Maximizes a function in the vicinity of a given point.
+        /// </summary>
+        /// <param name="f">The function.</param>
+        /// <param name="x">A point suspected to be near the maximum. The search begins at this point.</param>
+        /// <returns>The maximum.</returns>
+        public static LineExtremum FindMaximum (Func<double, double> f, double x) {
+            return (FindMinimum(delegate(double t) { return (-f(t)); }, x));
+        }
+
+        /// <summary>
         /// Minimizes a function in the vicinity of a given point.
         /// </summary>
         /// <param name="f">The function.</param>
-        /// <param name="x">A point suspected to be near the minimum; the search begins at this point.</param>
+        /// <param name="x">A point suspected to be near the minimum. The search begins at this point.</param>
         /// <returns>The minimum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
         /// <remarks>
@@ -27,11 +37,12 @@ namespace Meta.Numerics.Functions {
         public static LineExtremum FindMinimum (Func<double, double> f, double x) {
             if (f == null) throw new ArgumentNullException("f");
             double fx = f(x);
-            double d = 0.1 * Math.Abs(x) + 0.01;
+            // take a small step away from x, ensuring that it is non-zero even when x is zero
+            double d = (Math.Abs(x) + 1.0 / 16.0) / 16.0;
             return (FindMinimum(f, x, fx, d));
         }
 
-        // finds a minimum given an initial step size
+        // finds a minimum given an initial step
 
         private static LineExtremum FindMinimum (Func<double,double> f, double x, double fx, double d) {
 
@@ -44,15 +55,8 @@ namespace Meta.Numerics.Functions {
             if (fy > fx) {
                 d = -d;
 
-                double t;
-
-                t = y;
-                y = x;
-                x = t;
-
-                t = fy;
-                fy = fx;
-                fx = t;
+                Global.Swap<double>(ref x, ref y);
+                Global.Swap<double>(ref fx, ref fy);
             }
 
             // keep stepping downhill...
@@ -112,7 +116,17 @@ namespace Meta.Numerics.Functions {
         }
 
         /// <summary>
-        /// Minimizes a function on a given interval.
+        /// Maximizes a function on the given interval.
+        /// </summary>
+        /// <param name="f">The function.</param>
+        /// <param name="r">The interval.</param>
+        /// <returns>The maximum.</returns>
+        public static LineExtremum FindMaximum (Func<double, double> f, Interval r) {
+            return (FindMinimum(delegate(double t) { return (-f(t)); }, r));
+        }
+
+        /// <summary>
+        /// Minimizes a function on the given interval.
         /// </summary>
         /// <param name="f">The function.</param>
         /// <param name="r">The interval.</param>
@@ -472,8 +486,6 @@ namespace Meta.Numerics.Functions {
                     SymmetricMatrix A = ComputeCurvature(f, x);
                     return (new SpaceExtremum(x, y, A));
                 }
-
-                //Console.WriteLine("i = P");
 
                 // attempt a minimization in the net direction
                 LineFunction f2 = new LineFunction(f, x, dx);

@@ -4,6 +4,7 @@ using System.Text;
 
 namespace Meta.Numerics {
 
+#if FUTURE
 
     public struct BigFloat {
 
@@ -75,5 +76,6 @@ namespace Meta.Numerics {
 
     }
 
+#endif
 
 }

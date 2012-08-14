@@ -5,7 +5,14 @@ using Meta.Numerics.Functions;
 
 namespace Meta.Numerics {
 
+    // In Debug mode, math operations (e.g. z1 + z2) are faster if we directly access the backing fields instead of using the
+    // property accessors. I suspect that in Release mode, this difference is optimized away, but i haven't checked.
+
     /// <summary>Represents a complex number.</summary>
+    /// <remarks>
+    /// <para>Version 4.0 of the .NET Framework introduced a Complex structure equivalent to this one. To maintain compatibility
+    /// with earlier versions of the .NET Framework, Meta.Numerics maintains its own Complex structure.</para>
+    /// </remarks>
 #if !SILVERLIGHT
     [Serializable]
 #endif
@@ -21,11 +28,6 @@ namespace Meta.Numerics {
             get {
                 return (re);
             }
-            /*
-            set {
-                re = value;
-            }
-            */
         }
 
         /// <summary>
@@ -35,11 +37,6 @@ namespace Meta.Numerics {
             get {
                 return (im);
             }
-            /*
-            set {
-                im = value;
-            }
-            */
         }
 
         /// <summary>
@@ -120,7 +117,7 @@ namespace Meta.Numerics {
         /// <param name="z">The argument.</param>
         /// <returns>The argument times -1.</returns>
 		public static Complex operator- (Complex z) {
-			return( new Complex(-z.Re,-z.Im) );
+			return( new Complex(-z.re, -z.im) );
 		}
 
 		// equality operators
@@ -132,7 +129,7 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>True if the two complex numbers are equal, otherwise false.</returns>
         public static bool operator == (Complex z1, Complex z2) {
-            return ((z1.Re == z2.Re) && (z1.Im == z2.Im));
+            return ((z1.re == z2.re) && (z1.im == z2.im));
         }
 
         /// <summary>
@@ -178,7 +175,7 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>The sum of the complex numbers.</returns>
 		public static Complex operator+ (Complex z1, Complex z2) {
-			return( new Complex(z1.Re+z2.Re, z1.Im+z2.Im) );
+            return (new Complex(z1.re + z2.re, z1.im + z2.im));
 		}
 
         /// <summary>
@@ -188,7 +185,7 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>The difference of the complex numbers.</returns>
 		public static Complex operator- (Complex z1, Complex z2) {
-			return( new Complex(z1.Re-z2.Re, z1.Im-z2.Im) );
+            return (new Complex(z1.re - z2.re, z1.im - z2.im));
 		}
 
         /// <summary>
@@ -198,7 +195,7 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>The product of the two complex numbers.</returns>
 		public static Complex operator* (Complex z1, Complex z2) {
-			return( new Complex(z1.Re*z2.Re - z1.Im*z2.Im, z1.Re*z2.Im + z1.Im*z2.Re) );
+            return (new Complex(z1.re * z2.re - z1.im * z2.im, z1.re * z2.im + z1.im * z2.re));
 		}
 
         /// <summary>
@@ -221,8 +218,8 @@ namespace Meta.Numerics {
 
 		// mixed double-complex binary operations
 		
-		// these are not strictly necessary, since we have
-		// defined an implicit double->Complex converter
+		// these are not strictly necessary, since we have defined an implicit double->Complex casr
+        // but they are presumably faster than doing a cast and then an operation with zero im parts
 
         /*
 		public static Complex operator+ (Complex z, double a) {
@@ -240,15 +237,29 @@ namespace Meta.Numerics {
 		public static Complex operator- (double a, Complex z) {
 			return( new Complex(a - z.Re, -z.Im) );
 		}
+        */
 
+        /// <summary>
+        /// Multiplies a complex number by a real number.
+        /// </summary>
+        /// <param name="a">The real number.</param>
+        /// <param name="z">The complex number.</param>
+        /// <returns>The product az.</returns>
 		public static Complex operator* (double a, Complex z) {
-			return( new Complex(a*z.Re, a*z.Im) );
+			return( new Complex(a * z.re, a * z.im) );
 		}
 
+        /// <summary>
+        /// Multiplies a real number by a complex number.
+        /// </summary>
+        /// <param name="z">The complex number.</param>
+        /// <param name="a">The real number.</param>
+        /// <returns>The product za.</returns>
 		public static Complex operator* (Complex z, double a) {
 			return( a * z );
 		}
 
+        /*
 		public static Complex operator/ (double a, Complex z) {
 			if (Math.Abs(z.Re)>Math.Abs(z.Im)) {
 				double x = z.Im/z.Re;

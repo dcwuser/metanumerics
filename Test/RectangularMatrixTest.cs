@@ -299,5 +299,34 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void SmallSVD () {
+
+            SquareMatrix A0 = new SquareMatrix(1);
+            A0[0, 0] = 0.0;
+            SingularValueDecomposition SVD0 = A0.SingularValueDecomposition();
+            Console.WriteLine(SVD0.SingularValue(0));
+            Assert.IsTrue(SVD0.SingularValue(0) == 0.0);
+
+            SquareMatrix A1 = new SquareMatrix(1);
+            A1[0, 0] = 1.0;
+            SingularValueDecomposition SVD1 = A1.SingularValueDecomposition();
+            Console.WriteLine(SVD1.SingularValue(0));
+            //Assert.IsTrue(SVD1.SingularValue(0) == 1.0);
+
+            SquareMatrix A2 = new SquareMatrix(2);
+            A2[0, 0] = 0.0; A2[0, 1] = 1.0;
+            A2[1, 0] = 0.0; A2[1, 1] = 1.0;
+            // Singular values Sqrt(2), 0
+            SingularValueDecomposition SVD2 = A2.SingularValueDecomposition();
+            SquareMatrix S2 = SVD2.LeftTransformMatrix().Transpose() * A2 * SVD2.RightTransformMatrix();
+            for (int i = 0; i < SVD2.Dimension; i++) {
+                Console.WriteLine("{0} {1}", S2[i, i], SVD2.SingularValue(i));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(S2[i, i], SVD2.SingularValue(i)));
+            }
+
+        }
+
     }
+
 }

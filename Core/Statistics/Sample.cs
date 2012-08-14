@@ -453,7 +453,7 @@ namespace Meta.Numerics.Statistics {
         public double LeftProbability (double value) {
             int[] order = data.GetSortOrder();
             for (int i = 0; i < data.Count; i++) {
-                if (data[order[i]] > value) return (i / data.Count);
+                if (data[order[i]] > value) return (((double) i) / data.Count);
             }
             return (1.0);
         }

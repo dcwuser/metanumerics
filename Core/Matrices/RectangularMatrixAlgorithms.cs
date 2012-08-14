@@ -93,6 +93,12 @@ namespace Meta.Numerics.Matrices {
             return (result);
         }
 
+        public static double[] Multiply (double[] aStore, double[] xStore, int nRows, int nCols) {
+            double[] yStore = new double[nCols];
+            Blas2.dGemv(aStore, 0, 1, nRows, xStore, 0, 1, yStore, 0, 1, nRows, nCols);
+            return (yStore);
+        }
+
         // multiplication: an O(N^3) algorithm
 
         public static double[] Multiply (double[] aStore, int aRows, int aCols, double[] bStore, int bRows, int bCols) {
@@ -116,6 +122,25 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+        public static void SolveUpperRightTriangular (double[] tStore, int tRows, int tCols, double[] xStore, int xOffset) {
+            Debug.Assert(tRows >= tCols);
+            // pre-calculate some useful quantities
+            int trp1 = tRows + 1;
+            int tcm1 = tCols - 1;
+            // initialize the x index (to its highest value) the the diagonal t index (to its highest value)
+            int xIndex = xOffset + tcm1;
+            int tIndex = trp1 * tcm1;
+            // do the first, trivial back-substitution
+            xStore[xIndex] /= tStore[tIndex];
+            // do the remaining back-substitutions, each of which requires subtracting n previously computed x-values
+            for (int n = 1; n <= tcm1; n++) {
+                xIndex -= 1;
+                tIndex -= trp1;
+                double t = Blas1.dDot(tStore, tIndex + tRows, tRows, xStore, xIndex + 1, 1, n);
+                xStore[xIndex] = (xStore[xIndex] - t) / tStore[tIndex];
+            }
+        }
+
         // more complicated operations: also O(N^3)
 
         // QR decomposition write A = Q R, where Q is orthogonal (Q^T = Q^{-1}) and R is upper-right triangular.
@@ -132,6 +157,8 @@ namespace Meta.Numerics.Matrices {
         // XXXXX    0BCDE    00BCD    000BC    0000B    0000A    
         // XXXXX    0BCDE    00BCD    000BC    0000B    00000
         // XXXXX    0BCDE    00BCD    000BC    0000B    00000
+
+        // This gives us (Q_N \cdots Q_2 Q_1) A = R, so A = (Q_N \cdots Q_2 Q_1)^T R = (Q_1^T Q_2^T \cdots Q_N^T) R
 
         public static void QRDecompose (double[] store, double[] qtStore, int rows, int cols) {
 
@@ -170,7 +197,7 @@ namespace Meta.Numerics.Matrices {
 
         public static void ExtractSingularValues (double[] a, double[] b, double[] uStore, double[] vStore, int rows, int cols) {
 
-            int p = 0;
+            // n is the upper limit index
             int n = cols - 1;
 
             int count = 0;
@@ -188,6 +215,22 @@ namespace Meta.Numerics.Matrices {
                 }
 
                 if (n == 0) return;
+
+                // p is the upper limit index
+                // find any zeros on the diagonal and reduce the problem
+                int p = n;
+                while (p > 0) {
+                    p--;
+                    // do we need a better zero test?
+                    if (a[p] == 0.0) {
+                        // 
+                        ChaseBidiagonalZero(a, b, p, n, uStore, rows);
+                        p++;
+                        break;
+                    }
+                }
+                // diagonal zeros will cause the Golulb-Kahn step to reproduce the same matrix,
+                // and eventually we will fail with non-convergence
 
                 GolubKahn(a, b, p, n, uStore, vStore, rows, cols);
                 count++;
@@ -214,18 +257,23 @@ namespace Meta.Numerics.Matrices {
         private static void GolubKahn (double[] a, double[] b, int p, int n, double[] uStore, double[] vStore, int rows, int cols) {
 
             //WriteBidiagonal(a, b, 0.0, n);
+            if (p == n) return;
 
             int m = n - 1;
 
-            // find the eigenvalues of the bottom 2 X 2 of the tridiagonal matrix B^T * B
-            // store the eigenvalue closer to the bottom value
-            double T_mm = MoreMath.Pow(a[m], 2);
-            if (m > p) T_mm += MoreMath.Pow(b[m - 1], 2);
-            double T_nn = MoreMath.Pow(a[n], 2) + MoreMath.Pow(b[m], 2);
+            // find the eigenvalues of the bottom 2 X 2 of the tridiagonal matrix B^T * B, which has the form
+            //   | a_m^2 + b_{m-1}^2      a_m b_m     |  =  | T_mm T_mn |
+            //   |     a_m b_m          a_n^2 + b_m^2 |     | T_mn T_nn |
+            // and pick the eigenvalue closer to the bottom value
+            double T_mm = MoreMath.Pow2(a[m]);
+            if (m > p) T_mm += MoreMath.Pow2(b[m - 1]);
+            double T_nn = MoreMath.Pow2(a[n]) + MoreMath.Pow2(b[m]);
             double T_mn = a[m] * b[m];
-            double dd = Math.Sqrt(Math.Pow(T_mm - T_nn, 2) + 4.0 * Math.Pow(T_mn, 2));
+            double dd = MoreMath.Hypot(T_mm - T_nn, 2.0 * T_mn);
+            //double dd = Math.Sqrt(Math.Pow(T_mm - T_nn, 2) + 4.0 * Math.Pow(T_mn, 2));
             double e1 = (T_mm + T_nn + dd) / 2.0;
             double e2 = (T_mm + T_nn - dd) / 2.0;
+            // shouldn't we compute e2 = T_mn / e1 instead?
             double e;
             if (Math.Abs(e1 - T_nn) < Math.Abs(e2 - T_nn)) {
                 e = e1;
@@ -238,7 +286,7 @@ namespace Meta.Numerics.Matrices {
             // variables for cosine and sine of rotation angles
             double c, s;
 
-            double u = MoreMath.Pow(a[p], 2) - e;
+            double u = MoreMath.Pow2(a[p]) - e;
             double v = a[p] * b[p];
             GenerateGivensRotation(ref u, ref v, out c, out s);
 
@@ -301,6 +349,55 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+        // If there is a diagonal zero, then a Golub-Kahn step will leave the matrix unchanged. To deal with this, we "chase" the zero away
+        // with a series of Givens rotations. Each rotation zeros a superdiagonal element on row with the diagonal zero by mixing with a lower row,
+        // moving the non-zero element over by one column.
+
+        // |XX   |    [XX   ]    [XX   ]    [XX   ]
+        // | 0X  |    [ 00B ]    [ 000B]    [ 0000]
+        // |  XX | -> [  AB ] -> [  XX ] -> [  XX ]
+        // |   XX|    [   XX]    [   AB]    [   XX]
+        // |    X|    [    X]    [    X]    [    A]
+
+        private static void ChaseBidiagonalZero (double[] a, double[] b, int p, int n, double[] uStore, int rows) {
+
+            Debug.Assert(a[p] == 0.0);
+
+            double s, c;
+            /*
+            GenerateGivensRotation(ref a[q], ref b[p], out c, out s);
+
+            // continue to chase the zero to the right by mixing with lower rows
+            while (q < n) {
+                double t = 0.0;
+                ApplyGivensRotation(c, s, ref b[q], ref t);
+                q++;
+                GenerateGivensRotation(ref a[q], ref t, out c, out s);
+            }
+            */
+
+            // a variable to hold the off-biadiagonal element
+            // it starts off as b[p], which gets zeroed by the first operation
+            double t = b[p]; b[p] = 0.0;
+
+            for (int q = p + 1; q <= n; q++) {
+                // t is non-zero
+                GenerateGivensRotation(ref a[q], ref t, out c, out s);
+                // t is zero
+                if (q < n) ApplyGivensRotation(c, s, ref b[q], ref t);
+                // t is non-zero
+
+                // keep track of rotations
+                if (uStore != null) {
+                    for (int j = 0; j < rows; j++) {
+                        ApplyGivensRotation(c, s, ref uStore[j * rows + q], ref uStore[j * rows + p]);
+                    }
+                }
+            }
+            
+
+        }
+
         // [  c  s ] [ u ] = [ u' ]
         // [ -s  c ] [ v ] = [ v' ]
 
@@ -310,7 +407,7 @@ namespace Meta.Numerics.Matrices {
             v = c * v - s * t;
         }
 
-        // A Givens rotation is a simple 2D rotation to make a vector horizonal, i.e. to zero one component.
+        // A Givens rotation is a simple 2D rotation to make a vector horizontal, i.e. to zero one component.
 
         // [  c  s ] [ a ] = [ r ]
         // [ -s  c ] [ b ] = [ 0 ]

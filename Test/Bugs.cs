@@ -15,6 +15,32 @@ namespace Test {
     public class BugTests {
 
         [TestMethod]
+        public void Bug6162 () {
+
+            //real data
+            double[] X_axis = new double[] { 40270.65625, 40270.6569444444, 40270.6576388888, 40270.6583333332, 40270.6590277776,
+                40270.659722222, 40270.6604166669, 40270.6611111113, 40270.6618055557, 40270.6625000001 };
+
+            double[] Y_axis = new double[] { 246.824996948242, 246.850006103516, 245.875, 246.225006103516, 246.975006103516,
+                247.024993896484, 246.949996948242, 246.875, 247.5, 247.100006103516 };
+
+            UncertainMeasurementSample DataSet = new UncertainMeasurementSample();
+
+            for (int i = 0; i < 10; i++) DataSet.Add(X_axis[i] - 40270.0, Y_axis[i] - 247.0, 1);
+
+            FitResult DataFit = DataSet.FitToPolynomial(3);
+ 
+            for (int i = 0; i < DataFit.Dimension; i++)
+                Console.WriteLine("a" + i.ToString() + " = " + DataFit.Parameter(i).Value);
+
+            BivariateSample bs = new BivariateSample();
+            for (int i = 0; i < 10; i++) bs.Add(X_axis[i], Y_axis[i]);
+            FitResult bsFit = bs.PolynomialRegression(3);
+            for (int i = 0; i < bsFit.Dimension; i++) Console.WriteLine(bsFit.Parameter(i));
+
+        }
+
+        [TestMethod]
         public void Bug2811 () {
 
             ChiSquaredDistribution d = new ChiSquaredDistribution(1798);
@@ -88,53 +114,55 @@ namespace Test {
         // 1 sqrt ~ 4 flops
         // 1 log ~ 12 flops
 
-        // Inverse CDF of F-distribution fails for d2 <= 2
-
         [TestMethod]
         public void Bug5886 () {
-
-            double nu1 = 1.0;
-            double nu2 = 0.1;
-
-            FisherDistribution F = new FisherDistribution(nu1, nu2);
-
-            /*
-            Console.WriteLine(F.Mean);
-            Console.WriteLine(F.StandardDeviation);
-            Console.WriteLine(F.Skewness);
-
-            Console.WriteLine(F.LeftProbability(0.1));
-            Console.WriteLine(F.LeftProbability(1.0));
-            Console.WriteLine(F.LeftProbability(1.0E9));
-
-            BetaDistribution B = new BetaDistribution(F.NumeratorDegreesOfFreedom / 2.0, F.DenominatorDegreesOfFreedom / 2.0);
-            double x = 1.3;
-            double y = nu1 * x / (nu2 + nu1 * x);
-            double u = nu1 * nu2 / MoreMath.Pow(nu2 + nu1 * x, 2);
-            Console.WriteLine("{0} v. {1}", F.ProbabilityDensity(x), u * B.ProbabilityDensity(y));
-            */
+            // the inverse CDF of hte F-distribution would fail for d2 <= 2
+            double d1 = 1.0;
+            double d2 = 0.1;
+            FisherDistribution F = new FisherDistribution(d1, d2);
 
             double x1 = F.InverseLeftProbability(0.6);
             Console.WriteLine(x1);
             double P = F.LeftProbability(x1);
             Console.WriteLine(P);
-
         }
 
-        public static double InverseFisherDistribution(FisherDistribution F, double P) {
-            if (F == null) throw new ArgumentNullException("F");
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+        [TestMethod]
+        public void Bug6392 () {
+            var biSample = new BivariateSample();
+            biSample.Add(0, 1);
+            biSample.Add(1, -1);
+            var fitResult = biSample.LinearRegression();
+        }
 
-            double x0;
-            if (F.DenominatorDegreesOfFreedom < 3.0) {
-                x0 = 3.0;
-            } else {
-                x0 = F.Mean;
-            }
 
-            double x1 = FunctionMath.FindZero(delegate(double x) { return (F.LeftProbability(x) - P); }, x0);
+        [TestMethod]
+        public void Bug6391 () {
+            // this simple PCA caused a NonConvergenceException
+            var mvSample = new MultivariateSample(2);
+            mvSample.Add(0, 1);
+            mvSample.Add(0, -1);
+            var pca = mvSample.PrincipalComponentAnalysis();
+        }
 
-            return (x1);
+ 
+        [TestMethod]
+        public void Bug6988 () {
+            // due to writing i / n instead of (double) i / n, Sample.LeftProbability was reported as 0 except for the last value
+            Sample s = new Sample(0.0, 1.0, 3.0, 4.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.LeftProbability(2.0), 0.5));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.InverseLeftProbability(0.5), 2.0));
+        }
+
+        [TestMethod]
+        public void TestCD () {
+
+            Distribution d = new BetaDistribution(0.5, 2.0);
+            Console.WriteLine(d.LeftProbability(0.996));
+            Console.WriteLine(d.RightProbability(0.996));
+
+            Console.WriteLine(AdvancedMath.LeftRegularizedBeta(2.0, 0.5, 1.0 - 0.996));
+
         }
 
     }

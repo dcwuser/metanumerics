@@ -95,7 +95,23 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (x >= 1.0) {
                 return (1.0);
             } else {
+                // the value is I_x(a,b), which is LeftRegularizedBeta
+                // since we have precomputed bigB, use it here instead of calling
+                // that method, which would recompute it
                 return (AdvancedMath.Beta(alpha, beta, x) / bigB);
+            }
+        }
+
+        /// <inheritdoc />
+        public override double RightProbability (double x) {
+            if (x <= 0.0) {
+                return (1.0);
+            } else if (x >= 1.0) {
+                return (0.0);
+            } else {
+                // use 1.0 - I_x(a, b) = I_{1-x}(b, a), which is essentially the symmetry of
+                // the beta distribution definition, to avoid calculating 1 - small number
+                return (AdvancedMath.LeftRegularizedBeta(beta, alpha, 1.0 - x));
             }
         }
 

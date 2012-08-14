@@ -526,6 +526,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The first matrix.</param>
         /// <param name="B">The second matrix.</param>
         /// <returns>The sum matrix <paramref name="A"/> + <paramref name="B"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is null.</exception>
+        /// <exception cref="DimensionMismatchException">The dimension of <paramref name="A"/> is not the same as the dimension of <paramref name="B"/>.</exception>
         public static SquareMatrix operator + (SquareMatrix A, SquareMatrix B) {
             if (A == null) throw new ArgumentNullException("A");
             if (B == null) throw new ArgumentNullException("B");
@@ -543,6 +545,8 @@ namespace Meta.Numerics.Matrices {
         /// <remarks>
         /// <para>Matrix subtraction is an O(N<sup>2</sup>) process.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is null.</exception>
+        /// <exception cref="DimensionMismatchException">The dimension of <paramref name="A"/> is not the same as the dimension of <paramref name="B"/>.</exception>
         public static SquareMatrix operator - (SquareMatrix A, SquareMatrix B) {
             if (A == null) throw new ArgumentNullException("A");
             if (B == null) throw new ArgumentNullException("B");
@@ -561,6 +565,8 @@ namespace Meta.Numerics.Matrices {
         /// <para>Note that matrix multiplication is not commutative, i.e. M1*M2 is generally not the same as M2*M1.</para>
         /// <para>Matrix multiplication is an O(N<sup>3</sup>) process.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is null.</exception>
+        /// <exception cref="DimensionMismatchException">The dimension of <paramref name="A"/> is not the same as the dimension of <paramref name="B"/>.</exception>
         public static SquareMatrix operator * (SquareMatrix A, SquareMatrix B) {
             // this is faster than the base operator, because it knows about the underlying structure
             if (A == null) throw new ArgumentNullException("A");
@@ -571,6 +577,23 @@ namespace Meta.Numerics.Matrices {
         }
 
         // mixed arithmetic
+
+        /// <summary>
+        /// Computes the product of a square matrix and a column vector.
+        /// </summary>
+        /// <param name="A">The matrix.</param>
+        /// <param name="v">The column vector.</param>
+        /// <returns>The column vector Av.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="v"/> is null.</exception>
+        /// <exception cref="DimensionMismatchException">The dimension of <paramref name="A"/> is not the same as the dimension of <paramref name="v"/>.</exception>
+        public static ColumnVector operator * (SquareMatrix A, ColumnVector v) {
+            if (A == null) throw new ArgumentNullException("A");
+            if (v == null) throw new ArgumentNullException("v");
+            if (A.dimension != v.dimension) throw new DimensionMismatchException();
+            double[] avStore = new double[A.dimension];
+            Blas2.dGemv(A.store, 0, 1, A.dimension, v.store, 0, 1, avStore, 0, 1, A.dimension, A.dimension);
+            return (new ColumnVector(avStore, A.dimension));
+        }
 
         /// <summary>
         /// Multiply a real, square matrix by a real constant.
@@ -585,10 +608,23 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
+        /// Divides a real, square matrix by a real constant.
+        /// </summary>
+        /// <param name="A">The matrix.</param>
+        /// <param name="alpha">The constant.</param>
+        /// <returns>The quotient A/a.</returns>
+        public static SquareMatrix operator * (SquareMatrix A, double alpha) {
+            if (A == null) throw new ArgumentNullException("A");
+            double[] store = MatrixAlgorithms.Multiply(1.0 / alpha, A.store, A.dimension, A.dimension);
+            return (new SquareMatrix(store, A.dimension));
+        }
+
+        /// <summary>
         /// Negates a real, square matrix.
         /// </summary>
         /// <param name="A">The matrix.</param>
         /// <returns>The matrix -A.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> is null.</exception>
         public static SquareMatrix operator - (SquareMatrix A) {
             if (A == null) throw new ArgumentNullException("A");
             double[] store = MatrixAlgorithms.Multiply(-1.0, A.store, A.dimension, A.dimension);

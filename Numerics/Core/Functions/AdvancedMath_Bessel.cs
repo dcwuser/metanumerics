@@ -149,7 +149,7 @@ namespace Meta.Numerics.Functions {
                 }
 
             } else if (x > (32.0 + n * n / 2.0)) {
-                // far enough out 
+                // far enough out, use the asymptotic series
                 return (Bessel_Asymptotic(n, x).SecondSolutionValue);
             } else {
 
@@ -358,10 +358,12 @@ namespace Meta.Numerics.Functions {
 
         // **** Real order Bessel functions ****
 
-        // works for z << Sqrt(nu), say z < Sqrt(nu)+1
-        // a series expansion in x, but works pretty well quite far out
-        // for nu=0, requires 10 terms at x~1.0, 25 terms at x~10.0, but accuracy in the last few digits suffers that far out
-        // gets better for higher nu (for nu=10, only 20 terms are required at x~10.0 and all digits are good), but only with Sqrt(nu)
+        // Series development of Bessel J
+        //   J_{\nu}(x) = \sum_{k=0}^{\infty} \frac{( )^{\nu + 2k}}{\Gamma(\nu + 2k + 1)}
+        // As can be seen by comparing leading term and first correction, this is good for z <~ \max(1 , \sqrt{\nu})
+
+        // For nu=0, it requires 10 terms at x~1.0, 25 terms at x~10.0, but accuracy in the last few digits suffers that far out
+        // Gets better for higher nu (for nu=10, only 20 terms are required at x~10.0 and all digits are good), but only with sqrt(nu)
 
         private static double BesselJ_Series (double nu, double x) {
             double z = x / 2.0;
@@ -398,7 +400,7 @@ namespace Meta.Numerics.Functions {
                     JP = Double.PositiveInfinity;
                 } else if (nu == 1.0) {
                     J = 0.0;
-                    JP = 1.0;
+                    JP = 0.5;
                 } else {
                     J = 0.0;
                     JP = 0.0;
@@ -667,7 +669,10 @@ namespace Meta.Numerics.Functions {
                 double Y = result.SecondSolutionValue;
                 double YP = result.SecondSolutionDerivative;
 
+
                 // recurr upward to nu
+                Bessel_RecurrUpward(mu, x, ref Y, ref YP, n);
+                /*
                 for (int i = 0; i < n; i++) {
                     // use recurrence on Y, Y':
                     //   Y_{mu+1} = (mu/x) Y_{mu} - Y_{mu}'
@@ -677,7 +682,7 @@ namespace Meta.Numerics.Functions {
                     mu += 1.0;
                     YP = t - (mu / x) * Y;
                 }
-
+                */
                 return (Y);
 
             }
@@ -689,10 +694,15 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="nu">The order, which must be non-negative.</param>
         /// <param name="x">The argument, which must be non-negative.</param>
-        /// <returns>The values of J<sub>nu</sub>(x) J'<sub>nu</sub>(x), Y<sub>nu</sub>(x), and Y'<sub>nu</sub>(x).</returns>
+        /// <returns>The values of J<sub>nu</sub>(x), J'<sub>nu</sub>(x), Y<sub>nu</sub>(x), and Y'<sub>nu</sub>(x).</returns>
         /// <remarks>
-        /// <para>If you need both J and Y, it is faster to call this method once than to call <see cref="BesselJ(double,double)"/>
-        /// and <see cref="BesselY(double,double)"/> seperately. If on, the other hand, you need only J or Y, it is faster to
+        /// <para>Bessel functions often occur in physical phenomenon with cylindrical symmetry. They satisfy the differential equation</para>
+        /// <img src="../images/BesselODE.png" />
+        /// <para>Since this is second order linear equation, is has two linearly independent solutions. The regular Bessel function
+        /// J<sub>nu</sub>(x), which is regular at the origin, and the irregular Bessel function Y<sub>nu</sub>(x), which diverges
+        /// at the origin.</para>
+        /// <para>This method simultaneously computes both Bessel functions and their derivatives. If you need both J and Y, it is faster to call this method once than to call
+        /// <see cref="BesselJ(double,double)"/> and <see cref="BesselY(double,double)"/> seperately. If on, the other hand, you need only J or only Y, it is faster to
         /// call the appropirate method to compute only the one you need.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="nu"/> or <paramref name="x"/> is negative.</exception>
@@ -733,7 +743,7 @@ namespace Meta.Numerics.Functions {
                 // if x < nu, we can't use Steed's method directly because CF2 does not converge
                 // so pick a mu ~ x < nu, offset from nu by an integer; use Steed's method there, then recurse up to nu
 
-                // this only occurs for 4 < x < nu, e.g. nu, x = 16,8
+                // this only occurs for 4 < x < nu, e.g. nu, x = 16, 8
 
                 int n = (int) Math.Ceiling(nu - x);
                 double mu = nu - n;
@@ -833,18 +843,18 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        // Hankel's asymptotic expansions for Bessel function
+        // Hankel's asymptotic expansions for Bessel function (A&S 9.2)
         //   J = \sqrt{\frac{2}{\pi x}} \left[ P \cos\phi - Q \sin\phi \right]
         //   Y = \sqrt{\frac{2}{\pi x}} \left[ P \sin\phi + Q \cos\phi \right]
-        // where \phi = x - \left( \nu / 2 + 1 / 4 \right) \pi and \mu = 4 \nu and
-        //   P = 1 - \frac{(\mu-1)(\mu-9)}{2! (8x)^2} + \frac{(\mu-1)(\mu-9)(\mu-25)(\mu-490}{4! (8x)^4} + \cdots
-        //   Q = \frac{(\mu-1)}{8x} - \frac{(\mu-1)(\mu-9)(\mu-25)}{3! (8x)^3 + \cdots
+        // where \phi = x - \left( \nu / 2 + 1 / 4 \right) \pi and \mu = 4 \nu^2 and
+        //   P = 1 - \frac{(\mu-1)(\mu-9)}{2! (8x)^2} + \frac{(\mu-1)(\mu-9)(\mu-25)(\mu-49}{4! (8x)^4} + \cdots
+        //   Q = \frac{(\mu-1)}{8x} - \frac{(\mu-1)(\mu-9)(\mu-25)}{3! (8x)^3} + \cdots
         // Derivatives have similiar expressions
         //   J' = - \sqrt{\frac{2}{\pi x}} \left[ R \sin\phi + S \cos\phi \right]
         //   Y' = \sqrt{\frac{2}{\pi x}} \left[ R \cos\phi - S \sin\phi \right]
         // where
         //   R = 1 - \frac{(\mu-1)(\mu+15)}{2! (8x)^2} + \cdots
-        //   S = 
+        //   S = \frac{(\mu+3)}{8x} - \frac{(\mu-1)(\mu - 9)(\mu+35)}{3! (8x)^3} + \cdots
 
         // For nu=0, this series converges to full precision in about 10 terms at x~100, and in about 25 terms even as low as x~25
         // It fails to converge at all for lower x <~ 25
@@ -868,6 +878,7 @@ namespace Meta.Numerics.Functions {
             while (true) {
 
                 double Q_old = Q; double P_old = P;
+                double R_old = R; double S_old = S;
 
                 k++; k2 += 2;
                 t /= k * xx;
@@ -881,8 +892,7 @@ namespace Meta.Numerics.Functions {
                 t *= (mu - k2 * k2);
                 P += t;
 
-                if ((Q == Q_old) && (P == P_old)) {
-                    Console.WriteLine(k);
+                if ((Q == Q_old) && (P == P_old) && (R == R_old) && (S == S_old)) {
                     break;
                 }
 
@@ -900,10 +910,7 @@ namespace Meta.Numerics.Functions {
 
             double N = Math.Sqrt(2.0 / Math.PI / x);
 
-            //Debug.WriteLine(String.Format("x={0} nu={1} ca={2} sb={3}", x, nu, c * a, s * b));
-            //SolutionPair result = new SolutionPair(nu, x, N * (c * a - s * b), 0.0, N * (s * a + c * b), 0.0);
             SolutionPair result = new SolutionPair(N * (c * P - s * Q), -N * (R * s + S * c), N * (s * P + c * Q), N * (R * c - S * s));
-            //BesselResult result = new BesselResult(nu, x, N * Math.Sin(t - p), 0.0, N * Math.Sin(t + p), 0.0);
 
             return (result);
 
@@ -1115,21 +1122,6 @@ namespace Meta.Numerics.Functions {
             throw new NonconvergenceException();
         }
 
-        /*
-        private static double DoubleFactorial (int n) {
-            if (n < 20) {
-                double f = 1.0;
-                for (int i = n; i > 1; i -= 2) {
-                    f = f * i;
-                }
-                return (f);
-            } else {
-                int n2 = n / 2;
-                return (Math.Exp(LogGamma(n + 1) - n2 * Math.Log(2.0) - LogGamma(n2 + 1)));
-            }
-        }
-        */
-
         private static double SphericalBesselY_SeriesZero (double x) {
             if (x == 0) return (Double.NegativeInfinity);
             double xx = x * x / 2.0;
@@ -1222,11 +1214,11 @@ namespace Meta.Numerics.Functions {
     /// <remarks>
     /// <para>Any linear second order differential equation has two independent solutions. For example,
     /// the Bessel differential equation (<see cref="AdvancedMath.Bessel"/>) has solutions J and Y,
-    /// the Coulomb wave equation () has solutions F and G,
-    /// and the Airy differential equation () has solutions Ai and Bi.</para>
-    /// <para>A solution pair contains values for both solutions and for their derivatives. It is useful to
+    /// the Coulomb wave equation has solutions F and G,
+    /// and the Airy differential equation has solutions Ai and Bi.</para>
+    /// <para>A solution pair structure contains values for both solutions and for their derivatives. It is often useful to
     /// have all this information together when fitting boundary conditions.</para>
-    /// <para>Which solution is considered the first and which is considered the second  is
+    /// <para>Which solution is considered the first and which is considered the second is
     /// a matter of convention. When one solution is regular (finite) at the origin and the other is not, we take the regular solution
     /// to be the first.</para>
     /// </remarks>

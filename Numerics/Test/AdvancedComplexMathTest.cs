@@ -45,13 +45,15 @@ namespace Test {
         [TestMethod]
         public void ComplexErfFaddevaAgreement () {
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-1, 1.0E2, 16)) {
-                // for large imaginary parts, erf overflows, so don't try them
-                if (z.Im * z.Im > 500.0) continue;
-                Complex erf = AdvancedComplexMath.Erf(z);
-                Complex w = AdvancedComplexMath.Faddeeva(ComplexMath.I * z);
-                if (Double.IsNaN(w.Re)) continue;
+                Complex w = AdvancedComplexMath.Faddeeva(z);
+                Complex erf = AdvancedComplexMath.Erf(-ComplexMath.I * z);
+                Complex erfc = 1.0 - erf;
+                Complex f = ComplexMath.Exp(z * z);
+                Console.WriteLine("z={0} w={1} erf={2} erfc={3} f={4} w'={5} erf'={6}", z, w, erf, erfc, f, erfc / f, 1.0 - f * w);
+                if (Double.IsInfinity(f.Re) || Double.IsInfinity(f.Im) || f == 0.0) continue;
+                //Console.WriteLine("{0} {1}", TestUtilities.IsNearlyEqual(w, erfc / f), TestUtilities.IsNearlyEqual(erf, 1.0 - f * w));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    1.0 - ComplexMath.Exp(- z * z) * AdvancedComplexMath.Faddeeva(ComplexMath.I * z), AdvancedComplexMath.Erf(z)
+                    erf, 1.0 - f * w
                 ));
             }
         }

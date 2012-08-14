@@ -114,4 +114,27 @@ namespace Meta.Numerics.Matrices {
 
     }
 
+    internal static class Blas2 {
+
+        // y <- A x + y
+
+        public static void dGemv (
+            double[] aStore, int aOffset, int aRowStride, int aColStride,
+            double[] xStore, int xOffset, int xStride,
+            double[] yStore, int yOffset, int yStride,
+            int rows, int cols
+        ) {
+
+            int aIndex = aOffset;
+            int yIndex = yOffset;
+            for (int n = 0; n < rows; n++) {
+                yStore[yIndex] += Blas1.dDot(aStore, aIndex, aColStride, xStore, xOffset, xStride, cols);
+                aIndex += aRowStride;
+                yIndex += yStride;
+            }
+
+        }
+
+    }
+
 }

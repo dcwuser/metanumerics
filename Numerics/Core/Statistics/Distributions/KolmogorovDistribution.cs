@@ -138,7 +138,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (Math.Sqrt(Math.PI / 2.0) * Global.LogTwo * scale);
+                return (Math.Sqrt(Global.HalfPI) * Global.LogTwo * scale);
             }
         }
 

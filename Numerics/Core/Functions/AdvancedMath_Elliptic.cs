@@ -5,17 +5,6 @@ namespace Meta.Numerics.Functions {
 
     public static partial class AdvancedMath {
 
-        /*
-        private static double Maximum (params double[] values) {
-            double max = 0.0;
-            foreach (double value in values) {
-                double abs = Math.Abs(value);
-                if (abs > max) max = abs;
-            }
-            return (max);
-        }
-        */
-
         /// <summary>
         /// Computes the Carslon elliptic integral R<sub>F</sub>.
         /// </summary>
@@ -41,7 +30,17 @@ namespace Meta.Numerics.Functions {
             if (z < 0.0) throw new ArgumentOutOfRangeException("z");
 
             // if more than one is zero, the result diverges
-            if (((x == 0.0) && ((y == 0.0) || (z == 0.0))) || ((y == 0.0) && (z == 0.0))) return (Double.NaN);
+            if (((x == 0.0) && ((y == 0.0) || (z == 0.0))) || ((y == 0.0) && (z == 0.0))) return (Double.PositiveInfinity);
+
+            // To compute CarlsonF, combine the shift identity
+            //   R_F(x, y, z) = 2 R_F(x+\lambda, y+\lambda, z+\lambda)
+            // where \lambda = \sqrt{xy} + \sqrt{yz} + \sqrt{xz}, and the homogeneity identity
+            //   R_F(a x, a y, a z) = R_F(x, y, z) / \sqrt{a}
+            // to obtain
+            //   R_F(x, y, z) = R_F(\frac{x+\lambda}{4}, \frac{y+\lambda}{4}, \frac{z+\lambda}{4})
+            // Applying this repeatedly moves the three arguments closer together. When they are all exactly equal (DLMF 19.20.1)
+            //   R_F(x, x, x) = 1/\sqrt{x}
+            // and when they are nearly equal, we can use an expansion around this point
 
             for (int n = 0; n < Global.SeriesMax; n++) {
 
@@ -51,23 +50,25 @@ namespace Meta.Numerics.Functions {
                 double dy = (y - m) / m;
                 double dz = (z - m) / m;
                 double e = Math.Max(Math.Abs(dx), Math.Max(Math.Abs(dy), Math.Abs(dz)));
-                //double e = Maximum(dx, dy, dz);
 
-                // if we are close enough, use the seventh order expansion
+                // If we are close enough, use the seventh order expansion (DLMF 19.36.1)
+                // Since the error is order e^8, this is good enough for e ~ (10^-16)^(1/8) = 0.01
 
-                if (e < 0.02) {
+                if (e < 0.01) {
  
                     double E2 = dx * dy + dx * dz + dy * dz;
                     double E3 = dx * dy * dz;
 
-                    //double F = 1.0 - E2 / 10.0 - E3 / 14.0 + E2 * E2 / 24.0 + 3.0 * E2 * E3 / 44.0;
                     double F = 1.0 - E2 / 10.0 - E3 / 14.0 + E2 * E2 / 24.0 + 3.0 * E2 * E3 / 44.0 - 5.0 / 208.0 * E2 * E2 * E2 + 3.0 / 104.0 * E3 * E3 - E2 * E2 * E3 / 16.0;
+
+                    // Rather unsymmetricly, Carlson defines dz = dx + dy which gives it the opposite sign, which gives E3 the opposite sign, which gives terms with odd powers
+                    // of E3 the opposite sign. So don't get confused when you look at Carlson's DLMF article and 1994 paper.
 
                     return (F / Math.Sqrt(m));
 
                 }
 
-                // if we are not close enough, use the duplication theory to move us closer
+                // if we are not close enough, use the duplication theorem (DLMF 19.26.18) to move us closer
 
                 double lambda = Math.Sqrt(x * y) + Math.Sqrt(x * z) + Math.Sqrt(y * z);
 
@@ -81,10 +82,44 @@ namespace Meta.Numerics.Functions {
 
         }
 
-
+       
+        /// <summary>
+        /// Computes the Carlson integral R<sub>D</sub>.
+        /// </summary>
+        /// <param name="x">The first parameter, which must be non-negative.</param>
+        /// <param name="y">The second parameter, which must be non-negative.</param>
+        /// <param name="z">The third parameter, which must be non-negative.</param>
+        /// <returns>The value of R<sub>D</sub>(x, y, z)</returns>
+        /// <remarks>
+        /// <para>The Carlson D integral is:</para>
+        /// <img src="../images/CarlsonDIntegral.png" />
+        /// <para>It is symmetric with respect to the interchange of the first two parameters, but not the third parameter.</para>
+        /// <para>The Carlson integrals can be used to express integrals of rational functions. In that sense, they are replacements for
+        /// the Legendre elliptic functions.</para>
+        /// </remarks>
         public static double CarlsonD (double x, double y, double z) {
 
-            double s = 1.0;
+            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
+            if (y < 0.0) throw new ArgumentOutOfRangeException("y");
+            if (z < 0.0) throw new ArgumentOutOfRangeException("z");
+
+            if ((x == 0.0) && (y == 0.0)) return (Double.PositiveInfinity);
+
+            // To compute CarlsonD, we use a similiar technique as we did for CarlsonF: use a shift identity
+            // to move the arguments closer together, then expand about the equal-arguments point
+
+            // The shift and homogeneity relationships are
+            //   R_D(x, y, z) = 2 R_D(x+\lambda, y+\lambda, z+\lambda) + \frac{3}{\sqrt{z}(z+\lambda)}
+            //   R_D(a x, a y, a z) = a^{-3/2} R_D(x, y, z)
+            // which combine to give
+            //   R_D(x, y, z) = R_D(\frac{x+\lambda}{c}, \frac{y+\lambda}{c}, \frac{z+\lambda}{c}) + \frac{3}{\sqrt{z}(z+\lambda)}
+            // where c is the cube root of 4.
+
+            // This is not quite as nice as the CarlsonF case, first because of the second term that we must track and sum,
+            // and second because c~1.4 is not as large a factor as 4, so the arguments tend to increase. (The second problem
+            // could be contained at the expense of keeping track of a factor, but don't do that here.)
+
+            // variable to hold the sum of the second terms
             double t = 0.0;
 
             for (int n = 0; n < Global.SeriesMax; n++) {
@@ -96,19 +131,35 @@ namespace Meta.Numerics.Functions {
                 double dz = (z - m) / m;
                 double e = Math.Max(Math.Abs(dx), Math.Max(Math.Abs(dy), Math.Abs(dz)));
 
-                if (e < 0.01) {
+                // Our series development (DLMF 19.36.2) goes up to O(e^6). In order that the neglected term e^7 <~ 1.0E-16, we need e <~ 0.005.
+
+                if (e < 0.005) {
+
+                    double xy = dx * dy; double zz = dz * dz;
+                    double E2 = xy - 6.0 * zz;
+                    double E3 = (3.0 * xy - 8.0 * zz) * dz;
+                    double E4 = 3.0 * (xy - zz) * zz;
+                    double E5 = xy * zz * dz;
+
+                    double F = 1.0 - 3.0 / 14.0 * E2 - E3 / 6.0 + 9.0 / 88.0 * E2 * E2 - 3.0 / 22.0 * E4 + 9.0 / 52.0 * E2 * E3 - 3.0 / 26.0 * E5
+                        - E2 * E2 * E2 / 16.0 + 3.0 / 40.0 * E3 * E3 + 3.0 / 20.0 * E2 * E4;
+
+                    // As in CarlsonF above, Carlson gives dz the opposite sign, which gives E3 and E5 the opposite sign,
+                    // which changes the sign of some terms in the series relative to his paper.
+
+                    return (F / Math.Pow(m, 3.0 / 2.0) + t);
+
                 }
 
                 // we are not close enough; use the duplication theory to move us closer
 
                 double lambda = Math.Sqrt(x * y) + Math.Sqrt(x * z) + Math.Sqrt(y * z);
 
-                s *= 4.0;
-                t += 3.0 / Math.Sqrt(z) / (z + lambda) / s;
+                t += 3.0 / Math.Sqrt(z) / (z + lambda);
 
-                x = (x + lambda) / 4.0;
-                y = (y + lambda) / 4.0;
-                z = (z + lambda) / 4.0;
+                x = (x + lambda) / c4;
+                y = (y + lambda) / c4;
+                z = (z + lambda) / c4;
 
             }
 
@@ -116,10 +167,13 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        // precompute the cube root of four, used by CarlsonD algorithm
+        private static readonly double c4 = Math.Pow(2.0, 2.0 / 3.0);
+
+        // Series for complete elliptic integral of the first kind (A&S 17.3.11):
+        //   K(k) = (pi/2) ( 1 + (1/2 k)^2 + (1/2 k 3/4 k)^2 + (1/2 k 3/4 k 5/6 k)^2 + ... )
+
         private static double EllipticK_Series (double k) {
-
-            // (Pi/2) ( 1 + (1/2 k)^2 + (1/2 k 3/4 k)^2 + (1/2 k 3/4 k 5/6 k)^2 + ... ) 
-
             double z = 1.0;
             double f = 1.0;
             for (int n = 1; n < Global.SeriesMax; n++) {
@@ -128,16 +182,14 @@ namespace Meta.Numerics.Functions {
                 f += z * z;
                 if (f == f_old) return (Global.HalfPI * f);
             }
-
             throw new NonconvergenceException();
-
         }
 
-        // Asymptotic expansion of Elliptic integral of first kind
-        // K = \sum_n [ (1/2)_n k' / n! ]^2 [ ln(1/k') + Psi(k+1) - Psi(k+1/2) ]
-        // This is good close to k=1 / k'=0 since it is a power series in k'
-        // 8 terms at k' = 0.1, 12 terms at k' = 0.25, 23 terms at k' = 0.5, 53 terms at k' = 0.75
-        // accurate even at k' = 0.75; because all terms are the same sign, no cancelations occur even when terms to not decrease rapidly
+        // Asymptotic expansion of Elliptic integral of first kind (DLMF 19.21.1)
+        //   K(k) = \sum_n [ (1/2)_n k' / n! ]^2 [ ln(1/k') + Psi(n+1) - Psi(n+1/2) ]
+        // Since this is a power series in k', it is good close to k = 1
+        // Converges in 8 terms at k' = 0.1, 12 terms at k' = 0.25, 23 terms at k' = 0.5, 53 terms at k' = 0.75
+        // Accurate even at k' = 0.75; because all terms are the same sign, no cancelations occur even when terms do not decrease rapidly
 
         private static double EllipticK_Asymptotic (double k1) {
             double p = 1.0;
@@ -154,18 +206,25 @@ namespace Meta.Numerics.Functions {
             throw new NonconvergenceException();
         }
 
-        // compute K via the arithmetic-geometric-mean algorithm
+        // K(k) can be expressed as an arithmetic-geometric mean (A&S 17.6)
+        //   K(k) = = \frac{\pi}{2 AGM(1-k, 1+k)} = \frac{\pi}{2 AGM(1,k')}
+        // AGM(a,b) is determined by taking the arithmetic mean (a+b)/2 and the geometric mean sqrt(ab) and re-inserting them as
+        // arguments until convergence is achieved.
 
         private static double Elliptic_AGM (double k) {
 
             double a = 1.0 - k;
             double b = 1.0 + k;
 
+            // starting from 1-k, 1+k, the first iteration will always take us to 1, k',
+            // so although it looks prettier (more symmetric) to start with 1-k, 1-k, it's computationally
+            // faster to start with 1, k'
+
             for (int n=0; n < Global.SeriesMax; n++) {
 
                 double am = (a + b) / 2.0;
 
-                // if a and b are seperated by a small e, the update only changes a and b by e^2
+                // if a and b are seperated by a small distance e, the update only changes a and b by e^2
                 // therefore we can stop as soon as a and b are within the square root of machine precision
                 // in fact, we must not use (a == b) as a termination criterion, because we can get into a loop
                 // where a and b dance around and never become precisely equal
@@ -198,16 +257,20 @@ namespace Meta.Numerics.Functions {
         /// <para>Be aware that some authors use the the parameter m = k<sup>2</sup> instead of the modulus k.</para>
         /// </remarks>
         /// <seealso cref="EllipticF"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Elliptic_integral"/>
         public static double EllipticK (double k) {
             if ((k < 0) || (k > 1.0)) throw new ArgumentOutOfRangeException("k");
             if (k < 0.25) {
+                // for small k, use the series near k~0
                 return (EllipticK_Series(k));
-            } if (k > 0.875) {
+            } else if (k > 0.875) {
+                // for large k, use the asymptotic expansion near k~1, k'~0
                 double k1 = Math.Sqrt(1.0 - k * k);
                 // k'=0.484 at k=0.875
                 if (k1 == 0.0) return (Double.PositiveInfinity);
                 return (EllipticK_Asymptotic(k1));
             } else {
+                // in between, use the AGM method
                 return (Elliptic_AGM(k));
             }
         }
@@ -236,7 +299,7 @@ namespace Meta.Numerics.Functions {
         }
 
         // Series for complete elliptic integral of the second kind
-        // 7 terms for k=0.1, 12 for k=0.25, 22 for k=0.5, 49 for k=0.75; accurate for all these cases
+        // Converges in 7 terms for k = 0.1, 12 for k = 0.25, 22 for k = 0.5, 49 for k = 0.75; accurate for all these cases
 
         private static double EllipticE_Series (double k) {
 
@@ -286,6 +349,8 @@ namespace Meta.Numerics.Functions {
         /// <para>The perimeter of an ellipse with major axis a and eccentricity e is 4 a E(e).</para>
         /// <para>Be aware that some authors use the the parameter m = k<sup>2</sup> instead of the modulus k.</para>
         /// </remarks>
+        /// <seealso cref="EllipticE(double,double)"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Elliptic_integral"/>
         public static double EllipticE (double k) {
             if ((k < 0.0) || (k > 1.0)) throw new ArgumentOutOfRangeException("k");
             // these expansions are accurate in the intermediate region, but require many terms
@@ -297,6 +362,38 @@ namespace Meta.Numerics.Functions {
                 if (k1 == 0.0) return (1.0);
                 return (EllipticE_Asymptotic(k1));
             }
+        }
+
+
+        /// <summary>
+        /// Computes the incomplete elliptic integral of the second kind.
+        /// </summary>
+        /// <param name="phi">The integration angle (in radians).</param>
+        /// <param name="k">The elliptic modulus, which must lie between zero and one.</param>
+        /// <returns>The value of E(phi,k).</returns>
+        /// <remarks>
+        /// <para>The incomplete elliptic integral of the second kind is:</para>
+        /// <img src="../images/EllipticEIntegralIncomplete.png" />
+        /// <para>It appears in the Legendre reduction of integrals of rational funtions.</para>
+        /// <para>Be aware that some authors use the the parameter m = k<sup>2</sup> instead of the modulus k.</para>
+        /// </remarks>
+        /// <seealso cref="EllipticE(double)"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Elliptic_integral"/>
+        public static double EllipticE (double phi, double k) {
+
+            if (Math.Abs(phi) > Global.HalfPI) throw new ArgumentOutOfRangeException("phi");
+            if ((k < 0.0) || (k > 1.0)) throw new ArgumentOutOfRangeException("k");
+
+            //  Arguments in Carlson F and D functions are x = \cos^2 \phi, y = 1 - k^2 \sin^2 \phi, z = 1, z = 1
+            double s = Math.Sin(phi);
+            double x = 1.0 - s * s;
+            double sk = s * k;
+            double sk2 = sk * sk;
+            double y = 1.0 - sk2;
+
+            // I am a little worried that there could be cases where the cancelation between these two terms is significant
+            return (s * (CarlsonF(x, y, 1.0) - sk2 / 3.0 * CarlsonD(x, y, 1.0)));
+
         }
 
     }

@@ -208,9 +208,13 @@ namespace Meta.Numerics.Matrices {
         //   v = x +/- |x| e_1
         // that is, all elements the same except the first, from which we have either added or subtracted |x|. This makes
         //   a = -/+ |x|
-        // There are two way to handle the sign. One is to choose the sign that avoids cancelation when calculating v_1,
-        // i.e. + for positive x and - for negative x. This works fine, but makes a negative for positive x, which is
-        // weird (even 1 0 0 gets turned into -1 0 0). An alternative is to write
+        // There are two way to handle the sign. One is to simply choose the sign that avoids cancelation when calculating v_1,
+        // i.e. + for positive x_1 and - for negative x_1. This works fine, but makes a negative for positive x_1, which is
+        // weird-looking (1 0 0 gets turned into -1 0 0). An alternative is to choose the negative sign even for positive x_1,
+        // but to avoid cancelation write
+        //   v_1 = x_1 - |x| = ( x_1 - |x| ) ( x_1 + |x|) / ( x_1 + |x|) = ( x_1^2 - |x|^2 ) / ( x_1 + |x| )
+        //       = ( x_2^2 + \cdots + x_n^2 ) / ( x_1 + |x| )
+        // We should move to the second method.
 
         public static void GenerateHouseholderReflection (double[] store, int offset, int stride, int count, out double a) {
             double xm = Blas1.dNrm2(store, offset, stride, count);

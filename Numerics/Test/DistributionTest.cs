@@ -92,6 +92,7 @@ namespace Test {
         [TestMethod]
         public void DistributionMomentSpecialCases () {
             foreach (Distribution distribution in distributions) {
+                Console.WriteLine(distribution.GetType().Name);
                 Assert.IsTrue(distribution.Moment(0) == 1.0);
                 Assert.IsTrue(distribution.MomentAboutMean(0) == 1.0);
                 if (!Double.IsNaN(distribution.Mean)) {
@@ -109,6 +110,7 @@ namespace Test {
             foreach (Distribution distribution in distributions) {
                 Console.WriteLine(distribution.GetType().FullName);
                 if (!Double.IsNaN(distribution.Skewness)) {
+                    //Console.WriteLine("{0} {1} {2} {3}", distribution.Skewness, distribution.MomentAboutMean(3), distribution.MomentAboutMean(2), distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 1.5));
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         distribution.Skewness, distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 3.0 / 2.0)
                     ));
@@ -300,6 +302,11 @@ namespace Test {
         [TestMethod]
         public void DistributionProbabilityIntegral () {
             Random rng = new Random(4);
+
+            // if integral is very small, we still want to get it very accurately
+            EvaluationSettings settings = new EvaluationSettings();
+            settings.AbsolutePrecision = 0.0;
+
             foreach (Distribution distribution in distributions) {
 
                 if (distribution is TriangularDistribution) continue;
@@ -320,8 +327,8 @@ namespace Test {
                         x = distribution.Support.LeftEndpoint + rng.NextDouble() * distribution.Support.Width;
                     }
                     Console.WriteLine("{0} {1}", distribution.GetType().Name, x);
-                    double P = FunctionMath.Integrate(distribution.ProbabilityDensity, Interval.FromEndpoints(distribution.Support.LeftEndpoint, x));
-                    double Q = FunctionMath.Integrate(distribution.ProbabilityDensity, Interval.FromEndpoints(x, distribution.Support.RightEndpoint));
+                    double P = FunctionMath.Integrate(distribution.ProbabilityDensity, Interval.FromEndpoints(distribution.Support.LeftEndpoint, x), settings);
+                    double Q = FunctionMath.Integrate(distribution.ProbabilityDensity, Interval.FromEndpoints(x, distribution.Support.RightEndpoint), settings);
                     if (!TestUtilities.IsNearlyEqual(P + Q, 1.0)) {
                         // the numerical integral for the triangular distribution can be innacurate, because
                         // its locally low-polynomial behavior fools the integration routine into thinking it need
@@ -694,7 +701,29 @@ namespace Test {
                 }
             }
 
-        }          
+        }
+
+        [TestMethod]
+        public void MomentMapTest () {
+
+            Distribution d = new NormalDistribution();
+
+            for (int n = 1; n < 11; n++) {
+
+                double[] K = new double[n+1];
+                K[0] = 1.0;
+                if (K.Length > 1) K[1] = 0.0;
+                if (K.Length > 2) K[2] = 1.0;
+                //for (int m = 1; m < K.Length; m++) {
+                //    K[m] = AdvancedIntegerMath.Factorial(m - 1);
+                //}
+
+                double M = MomentMath.RawMomentFromCumulants(K);
+                Console.WriteLine("{0} {1}", d.Moment(n), M);
+
+            }
+
+        }
 
     }
 

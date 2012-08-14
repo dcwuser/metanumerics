@@ -163,6 +163,18 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
+        /// Divides a real, rectangular matrix by a real constant.
+        /// </summary>
+        /// <param name="A">The matrix.</param>
+        /// <param name="alpha">The constant.</param>
+        /// <returns>The quotient A/a.</returns>
+        public static RectangularMatrix operator * (RectangularMatrix A, double alpha) {
+            if (A == null) throw new ArgumentNullException("A");
+            double[] store = MatrixAlgorithms.Multiply(1.0 / alpha, A.store, A.rows, A.cols);
+            return (new RectangularMatrix(store, A.rows, A.cols));
+        }
+
+        /// <summary>
         /// Negates a real, rectangular matrix.
         /// </summary>
         /// <param name="A">The matrix.</param>
@@ -246,6 +258,47 @@ namespace Meta.Numerics.Matrices {
             // package it all up
             return (new SingularValueDecomposition(left, a, right, rows, cols));
 
+        }
+
+        /// <summary>
+        /// Computes the product of a rectangular matrix and a column vector.
+        /// </summary>
+        /// <param name="A">The matrix.</param>
+        /// <param name="v">The column vector.</param>
+        /// <returns>The column vector Av.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="v"/> is null.</exception>
+        /// <exception cref="DimensionMismatchException">The column count of <paramref name="A"/> is not the same as the dimension of <paramref name="v"/>.</exception>
+        public static ColumnVector operator * (RectangularMatrix A, ColumnVector v) {
+            if (A == null) throw new ArgumentNullException("A");
+            if (v == null) throw new ArgumentNullException("v");
+            if (A.cols != v.dimension) throw new DimensionMismatchException();
+            double[] avStore = new double[A.rows];
+            Blas2.dGemv(A.store, 0, 1, A.rows, v.store, 0, 1, avStore, 0, 1, A.rows, A.cols);
+            return (new ColumnVector(avStore, A.rows));
+        }
+
+        /// <summary>
+        /// Casts a rectangular matrix to a square matrix.
+        /// </summary>
+        /// <param name="A">The matrix to cast, which must have an equal number of rows and columns.</param>
+        /// <returns>A square matrix, not independent of the original matrix.</returns>
+        /// <remarks>
+        /// <para>It can occur that the mode of construction of a RectangularMatrix guarantees that it is
+        /// actually square. For example, if you multiply an N X M rectangular matrix by an M X N rectangular matrix,
+        /// the result is an N X N square matrix. However, when determining the type of the product, the .NET
+        /// compiler considers only the types of the multiplicants. Since a RectangularMatrix times a RectangularMatrix
+        /// yields a RectangularMatrix, it will consider the type of the product to be RetangularMatrix, even though
+        /// its rows and column dimensions will be equal. You can use this explicit cast to obtain a SquareMatrix type.
+        /// </para>
+        /// <para>Note that the result of the cast is not independent of the original matrix. This makes the cast operation
+        /// fast, but changes to the resulting SquareMatrix will also change the original RectangularMatrix. To obtain
+        /// an independent matrix, use the <see cref="Copy"/> method.</para>
+        /// </remarks>
+        /// <exception cref="InvalidCastException">The row and column dimensions of the matrix are not equal.</exception>
+        public static explicit operator SquareMatrix (RectangularMatrix A) {
+            if (A == null) throw new ArgumentNullException("A");
+            if (A.RowCount != A.ColumnCount) throw new InvalidCastException();
+            return(new SquareMatrix(A.store, A.RowCount));
         }
 
     }

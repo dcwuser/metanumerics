@@ -96,7 +96,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double StandardDeviation {
             get {
-                return (Math.PI * s / Math.Sqrt(3.0));
+                return (Math.PI / Math.Sqrt(6.0) * s);
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Skewness {
+            get {
+                return (12.0 * Math.Sqrt(6.0) * AdvancedMath.RiemannZeta(3.0) / MoreMath.Pow(Math.PI, 3));
             }
         }
 
@@ -104,10 +111,23 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double MomentAboutMean (int n) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (1.0);
             } else if (n == 1) {
                 return (0.0);
             } else {
-                return (AdvancedIntegerMath.Factorial(n - 1) * AdvancedMath.RiemannZeta(n) * MoreMath.Pow(s, n));
+                return (base.MomentAboutMean(n));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Moment (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (1.0);
+            } else {
+                return (base.Moment(n));
             }
         }
 
@@ -117,7 +137,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (n == 1) {
                 return (0.0);
             } else {
-                return (AdvancedIntegerMath.Factorial(n - 1) * AdvancedMath.RiemannZeta(n) * MoreMath.Pow(s, n));
+                double C = AdvancedIntegerMath.Factorial(n - 1) * AdvancedMath.RiemannZeta(n) * MoreMath.Pow(s, n);
+                if (n % 2 != 0) C = -C;
+                return (C);
             }
         }
 

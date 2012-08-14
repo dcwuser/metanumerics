@@ -18,8 +18,8 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// can be converted to a standard exponential by reparameterizing the data into "fractions of the mean,"
     /// i.e. z = x / &#x3BC;.</para>
     /// <para>Processes resulting in events that are exponentially distributed in time are said to be "ageless" because the hazard function
-    /// of the exponential distribution is constant. The Weibull distribution is a generalization of the exponential distribution which the
-    /// hazard function changes (typically by increasing) with time.</para>
+    /// of the exponential distribution is constant. The Weibull distribution (<see cref="WeibullDisribution"/>) is a generalization
+    /// of the exponential distribution which the hazard function changes (typically by increasing) with time.</para>
     /// </remarks>
     /// <seealso href="WeibullDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Exponential_distribution"/>
@@ -98,6 +98,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (n == 1) {
                 return (0.0);
             } else {
+                // isn't this sum related to psi or a related function?
                 double f = 0.0;
                 double df = -1.0;
                 for (int k = 2; k <= n; k++) {

@@ -5,7 +5,10 @@ using System.Data;
 using System.Globalization;
 
 using Meta.Numerics.Functions;
+using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics.Distributions;
+
+using System.Diagnostics;
 
 namespace Meta.Numerics.Statistics {
 
@@ -432,7 +435,7 @@ namespace Meta.Numerics.Statistics {
                 SXX += MoreMath.Pow2(xData[i]);
             }
 
-            double cbb = SSR / xData.Variance / n / (n -2);
+            double cbb = SSR / xData.Variance / n / (n - 2);
             double cab = -xData.Mean * cbb;
             double caa = SXX / n * cbb;
 
@@ -446,6 +449,110 @@ namespace Meta.Numerics.Statistics {
 
             return (new FitResult(a, Math.Sqrt(caa), b, Math.Sqrt(cbb), cab, test));
         }
+
+        /// <summary>
+        /// Computes the polynomial of given degree which best fits the data.
+        /// </summary>
+        /// <param name="m">The degree, which must be non-negative.</param>
+        /// <returns>The fit result.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="m"/> is negative.</exception>
+        /// <exception cref="InsufficientDataException">There are fewer data points than coefficients to be fit.</exception>
+        public FitResult PolynomialRegression (int m) {
+
+            if (m < 0) throw new ArgumentOutOfRangeException("m");
+
+            int n = Count;
+            if (n < m + 1) throw new InsufficientDataException();
+
+            // Construct the n X m design matrix A_{ij} = x_{i}^{j}
+            RectangularMatrix A = new RectangularMatrix(n, m + 1);
+            ColumnVector y = new ColumnVector(n);
+            for (int i = 0; i < n; i++) {
+                double x = xData[i];
+                A[i, 0] = 1.0;
+                for (int j = 1; j <= m; j++) {
+                    A[i, j] = A[i, j - 1] * x;
+                }
+                y[i] = yData[i];
+            }
+
+            // Our problem is to solve A a = y, where a is the vector of coefficients. QR gives the least squares
+            // solution that minimizes | A a - y |.
+            QRDecomposition QR = A.QRDecomposition();
+            RectangularMatrix R = QR.RMatrix();
+            ColumnVector a = QR.Solve(y);
+
+            // Compute the residual vector r and s^2 = r^2 / dof
+            ColumnVector r = A * a - y;
+            double V = r.Transpose() * r;
+            double ss2 = V / (n - (m + 1));
+            Console.WriteLine("V={0} s2={1}", V, ss2);
+
+            /*
+            Console.WriteLine("R");
+            for (int i = 0; i < R.RowCount; i++) {
+                for (int j = 0; j < R.ColumnCount; j++) {
+                    Console.Write(" {0}", R[i, j]);
+                }
+                Console.WriteLine();
+            }
+            */
+
+            // Ake Bjorck, "Numerical Methods for Least Squares Problems", pp. 118-120
+
+            // The covariance matrix V = s^2 C, with C = (R^T R)^{-1}. This is a matrix multiplication plus an inversion.
+            
+            // A faster way is to use the direct solution
+            //   for k = n ... 1
+            //     C_{kk} = R_{kk}^{-1} \left[ R_{kk}^{-1} - \sum_{j=k+1}^{n} R_{kj} C_{kj} \right]
+            //     for i = k-1 ... 1
+            //       C_{ik} = -R_{ii}^{-1} \left[ \sum_{j=i+1}^{k} R_{ij} C_{jk} + \sum_{j=k+1}^{n} R_{ij} C_{kj} \right]
+            //     end
+            //   end
+            // This is detailed in Ake Bjorck, "Numerical Methods for Least Squares Problems", pp. 118-120
+
+            //Stopwatch s4 = Stopwatch.StartNew();
+            SymmetricMatrix C2 = new SymmetricMatrix(m + 1);
+            double c; // used for storage so we don't call bounds-checking accessors each time
+            for (int k = m; k >= 0; k--) {
+                c = 1.0 / R[k, k];;
+                for (int j = k + 1; j <= m; j++) {
+                    c -= R[k, j] * C2[k, j];
+                }
+                C2[k, k] = c / R[k, k];
+                for (int i = k - 1; i >= 0; i--) {
+                    c = 0.0;
+                    for (int j = i + 1; j <= k; j++) {
+                        c += R[i, j] * C2[j, k];
+                    }
+                    for (int j = k + 1; j <= m; j++) {
+                        c += R[i, j] * C2[k, j];
+                    }
+                    C2[i, k] = -c / R[i, i];
+                }
+            }
+            //s4.Stop();
+            //Console.WriteLine("C new {0}", s4.ElapsedMilliseconds);
+            for (int i = 0; i <= m; i++) {
+                for (int j = i; j <= m; j++) {
+                    C2[i, j] = C2[i, j] * ss2;
+                }
+            }
+
+
+            // compute F-statistic
+            // total variance dof = n - 1, explained variance dof = m, unexplained variance dof = n - (m + 1)
+            double totalVarianceSum = yData.Variance * n;
+            double unexplainedVarianceSum = V;
+            double explainedVarianceSum = totalVarianceSum - unexplainedVarianceSum;
+            double unexplainedVarianceDof = n - (m + 1);
+            double explainedVarianceDof = m;
+            double F = (explainedVarianceSum / explainedVarianceDof) / (unexplainedVarianceSum / unexplainedVarianceDof);
+            TestResult test = new TestResult(F, new FisherDistribution(explainedVarianceDof, unexplainedVarianceDof));
+
+            return (new FitResult(a, C2, test));
+        }
+
 
         /// <summary>
         /// Computes the best-fit linear logistic regression from the data.

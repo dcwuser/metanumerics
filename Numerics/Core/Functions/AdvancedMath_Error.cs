@@ -381,7 +381,7 @@ namespace Meta.Numerics.Functions {
             double df = x;
 
             // pre-compute the factor the series is in
-            double x4 = x * x * Math.PI / 2.0;
+            double x4 = Global.HalfPI * x * x;
             x4 = x4 * x4;
 
             // add corrections as needed
@@ -402,7 +402,7 @@ namespace Meta.Numerics.Functions {
             double df = x * x * x * Math.PI / 2.0;
 
             // pre-compute the factor the series is in
-            double x4 = x * x * Math.PI / 2.0;
+            double x4 = Global.HalfPI * x * x;
             x4 = x4 * x4;
 
             // add corrections as needed
@@ -645,8 +645,9 @@ namespace Meta.Numerics.Functions {
         };
         */
 
-        // The power series for the error function
-        //   erf(z) = \frac{2}{\sqrt{pi}} \sum_{k=0}^{\infty} \frac{ (-1)^k z^{2k + 1} }{(2k+1) k!}
+        // The power series for the error function (DLMF 7.6.1)
+        //   erf(z) = \frac{2}{\sqrt{\pi}} \sum_{k=0}^{\infty} \frac{ (-1)^k z^{2k + 1} }{(2k+1) k!}
+        //          = \frac{2}{\sqrt{\pi}} \left[ z - z^3 / 3 + z^5 / 10 - \cdots \right]
         // requires about 15 terms at |z| ~ 1, 30 terms at |z| ~ 2, 45 terms at |z| ~ 3
 
         private static Complex Erf_Series (Complex z) {
@@ -696,14 +697,13 @@ namespace Meta.Numerics.Functions {
                 } else {
                     return (1.0 - ComplexMath.Exp(-z * z) * Faddeeva(ComplexMath.I * z));
                 }
-                //Complex a = ComplexMath.Exp(-z * z); Complex b = Faddeeva(ComplexMath.I * z);
-                //Console.WriteLine("{0} {1} {2} {3} {4}", z, ComplexMath.I * z, a, b, a * b); 
-                //return (1.0 - ComplexMath.Exp(-z * z) * Faddeeva(ComplexMath.I * z));
                 // we don't do this near the origin beause we would loose accuracy in the very small real parts there by subtracting from 1
             } 
 
         }
 
+        // Continued fraction expansion (DLMF 7.9.3)
+        //   w(z) = \frac{i}{\sqrt{\pi}} \left[ \frac{1}{z -} \frac{1/2}{z -} \frac{1}{z -} \frac{3/2}{z -} \frac{2}{z -} \cdots \right]
         // requires about 10 terms at |z|~10, 15 terms at |z|~7
         // for smaller z, still converges off the real axis, but fails to converge on the real axis for z~6 and below
 

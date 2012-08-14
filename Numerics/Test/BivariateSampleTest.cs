@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
+using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 
@@ -175,17 +176,16 @@ namespace Test {
             // also keep track of test statistics
             Sample fs = new Sample();
 
-            // do 50 fits
-            for (int k = 0; k < 50; k++) {
+            // do 100 fits
+            for (int k = 0; k < 100; k++) {
 
                 // we should be able to draw x's from any distribution; noise should be drawn from a normal distribution
-                //Distribution xd = new ExponentialDistribution();
                 Distribution xd = new LogisticDistribution();
                 Distribution nd = new NormalDistribution(0.0, 2.0);
 
                 // generate a synthetic data set
                 BivariateSample s = new BivariateSample();
-                for (int i = 0; i < 50; i++) {
+                for (int i = 0; i < 25; i++) {
                     double x = xd.GetRandomValue(rng);
                     double y = a0 + b0 * x + nd.GetRandomValue(rng);
                     s.Add(x, y);
@@ -257,6 +257,104 @@ namespace Test {
             TestResult t = fs.KolmogorovSmirnovTest(fd);
             Console.WriteLine(t.LeftProbability);
             Assert.IsTrue(t.LeftProbability < 0.95);
+
+        }
+
+
+        [TestMethod]
+        public void BivariatePolynomialRegression () {
+
+            // do a set of polynomial regression fits
+            // make sure not only that the fit parameters are what they should be, but that their variances/covariances are as claimed
+
+            Random rng = new Random(271828);
+
+            // define logistic parameters
+            double[] a = new double[] { 0.0, -1.0, 2.0, -3.0 };
+
+            // keep track of sample of returned a and b fit parameters
+            MultivariateSample A = new MultivariateSample(a.Length);
+
+            // also keep track of returned covariance estimates
+            // since these vary slightly from fit to fit, we will average them
+            SymmetricMatrix C = new SymmetricMatrix(a.Length);
+
+            // also keep track of test statistics
+            Sample F = new Sample();
+
+            // do 100 fits
+            for (int k = 0; k < 100; k++) {
+
+                // we should be able to draw x's from any distribution; noise should be drawn from a normal distribution
+                Distribution xd = new CauchyDistribution();
+                Distribution nd = new NormalDistribution(0.0, 4.0);
+
+                // generate a synthetic data set
+                BivariateSample s = new BivariateSample();
+                for (int j = 0; j < 20; j++) {
+                    double x = xd.GetRandomValue(rng);
+                    double y = nd.GetRandomValue(rng);
+                    for (int i = 0; i < a.Length; i++) {
+                        y += a[i] * MoreMath.Pow(x, i);
+                    }
+                    s.Add(x, y);
+                }
+
+                // do the regression
+                FitResult r = s.PolynomialRegression(a.Length - 1);
+
+                double[] ps = r.Parameters();
+                //Console.WriteLine("{0} {1} {2}", ps[0], ps[1], ps[2]);
+
+                // record best fit parameters
+                A.Add(r.Parameters());
+
+                // record estimated covariances
+                C += r.CovarianceMatrix();
+
+                // record the fit statistic
+                F.Add(r.GoodnessOfFit.Statistic);
+                //Console.WriteLine("F={0}", r.GoodnessOfFit.Statistic);
+
+            }
+
+            C = (1.0 / A.Count) * C; // allow matrix division by real numbers
+
+            // check that mean parameter estimates are what they should be: the underlying population parameters
+            for (int i = 0; i < A.Dimension; i++) {
+                Console.WriteLine("{0} {1}", A.Column(i).PopulationMean, a[i]);
+                Assert.IsTrue(A.Column(i).PopulationMean.ConfidenceInterval(0.95).ClosedContains(a[i]));
+            }
+
+            // check that parameter covarainces are what they should be: the reported covariance estimates
+            for (int i = 0; i < A.Dimension; i++) {
+                for (int j = i; j < A.Dimension; j++) {
+                    Console.WriteLine("{0} {1} {2} {3}", i, j, C[i, j], A.TwoColumns(i, j).PopulationCovariance);
+                    Assert.IsTrue(A.TwoColumns(i, j).PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(C[i, j]));
+                }
+            }
+
+            // check that F is distributed as it should be
+            //Console.WriteLine(fs.KolmogorovSmirnovTest(new FisherDistribution(2, 48)).LeftProbability);
+
+        }
+
+        [TestMethod]
+        public void BivariateLinearPolynomialRegressionAgreement () {
+
+            // A degree-1 polynomial fit should give the same answer as a linear fit
+
+            BivariateSample B = new BivariateSample();
+            B.Add(0.0, 5.0);
+            B.Add(3.0, 6.0);
+            B.Add(1.0, 7.0);
+            B.Add(4.0, 8.0);
+            B.Add(2.0, 9.0);
+            FitResult PR = B.PolynomialRegression(1);
+            FitResult LR = B.LinearRegression();
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.Parameters(), LR.Parameters()));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.CovarianceMatrix(), LR.CovarianceMatrix()));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.GoodnessOfFit.Statistic, LR.GoodnessOfFit.Statistic));
 
         }
 

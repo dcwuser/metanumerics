@@ -18,13 +18,13 @@ namespace Meta.Numerics.Matrices {
 
         private double[] qtStore;
         private double[] rStore;
-        private int rows, columns;
+        private int rows, cols;
 
         internal QRDecomposition (double[] qtStore, double[] rStore, int rows, int columns) {
             this.qtStore = qtStore;
             this.rStore = rStore;
             this.rows = rows;
-            this.columns = columns;
+            this.cols = columns;
         }
 
         /// <summary>
@@ -46,25 +46,40 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>The upper-right triangular matrix R.</returns>
         public RectangularMatrix RMatrix () {
-            double[] store = new double[rows * columns];
+            double[] store = new double[rows * cols];
             Array.Copy(rStore, store, rStore.Length);
-            return (new RectangularMatrix(store, rows, columns));
+            return (new RectangularMatrix(store, rows, cols));
         }
 
-        /*
+        
+        /// <summary>
+        /// Solve the system Q x = b.
+        /// </summary>
+        /// <param name="rhs">The right-hand-side b.</param>
+        /// <returns>The column vector x for which Q x is closest to b.</returns>
         public ColumnVector Solve (IList<double> rhs) {
 
             if (rhs == null) throw new ArgumentNullException("rhs");
             if (rhs.Count != rows) throw new DimensionMismatchException();
 
-            double[] y = new double[rhs.Count];
-            rhs.CopyTo(y, 0);
+            // copy rhs into an array, if necessary
+            double[] x;
+            if (rhs is double[]) {
+                x = (double[]) rhs;
+            } else {
+                x = new double[rows];
+                rhs.CopyTo(x, 0);
+            }
 
-            y = MatrixAlgorithms.Multiply(qtStore, rows, rows, y, rows, 1);
+            // Q^T x is a row-length vector, but we only need the first cols entries
+            // so truncate Q^T to cols X rows, so that Q^T x is only of length cols
+            double[] y = new double[cols];
+            Blas2.dGemv(qtStore, 0, 1, rows, x, 0, 1, y, 0, 1, cols, rows);
+            MatrixAlgorithms.SolveUpperRightTriangular(rStore, rows, cols, y, 0);
 
-            return (new ColumnVector(y));
+            return (new ColumnVector(y, cols));
         }
-        */
+        
 
         /// <summary>
         /// Get the number of rows in the original matrix.
@@ -80,7 +95,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         public int ColumnCount {
             get {
-                return (columns);
+                return (cols);
             }
         }
 

@@ -109,7 +109,7 @@ namespace Meta.Numerics.Statistics {
         /// Gets a test of the quality of the fit.
         /// </summary>
         /// <remarks>
-        /// <para>Which test is used to evaluate goodness-of-fit depends on </para>
+        /// <para>Which test is used to evaluate goodness-of-fit depends on the type of fit that was performed.</para>
         /// <para>If no goodness-of-fit test was performed as a part of the fit, this property will be null.</para>
         /// </remarks>
         public TestResult GoodnessOfFit {

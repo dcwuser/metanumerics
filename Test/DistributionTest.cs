@@ -702,7 +702,7 @@ namespace Test {
             }
 
         }
-
+#if FUTURE
         [TestMethod]
         public void MomentMapTest () {
 
@@ -724,6 +724,52 @@ namespace Test {
             }
 
         }
+#endif
+#if FUTURE
+        [TestMethod]
+        public void GammaFitTest () {
+
+            double k0 = 0.05;
+            double t0 = 2.0;
+            GammaDistribution G = new GammaDistribution(k0, t0);
+            Random rng = new Random(1);
+
+            Sample S = new Sample();
+            for (int i = 0; i < 1000; i++) {
+                S.Add(G.GetRandomValue(rng));
+            }
+
+            Console.WriteLine("mean sample={0} distribution={1}", S.Mean, G.Mean);
+            Console.WriteLine("variance sample={0} distribution={1}", S.Variance, G.Variance);
+
+            Console.WriteLine("moment estimate k={0} t={1}", S.Mean * S.Mean / S.Variance, S.Variance / S.Mean);
+
+            double q = 0;
+            foreach (double x in S) {
+                q += Math.Log(x / S.Mean);
+            }
+            q /= S.Count;
+            q = -q;
+            Console.WriteLine("q = {0}, Log(k)-Psi(k)={1}", q, Math.Log(k0) - AdvancedMath.Psi(k0));
+
+            double ke0 = S.Mean * S.Mean / S.Variance;
+            Console.WriteLine("ke0={0} Log(ke0)-Psi(ke0)={1}", ke0, Math.Log(ke0) - AdvancedMath.Psi(ke0));
+            double ke1 = 1.0 / (2.0 * q - 2.0 / 3.0 * q * q + 4.0 / 9.0 * q * q * q - 14.0 / 135.0 * q * q * q * q);
+            Console.WriteLine("ke1={0} Log(ke1)-Psi(ke1)={1}", ke1, Math.Log(ke1) - AdvancedMath.Psi(ke1));
+            double ke2 = 1.0 / (q - AdvancedMath.EulerGamma);
+            Console.WriteLine("ke2={0} Log(ke2)-Psi(ke2)={1}", ke2, Math.Log(ke2) - AdvancedMath.Psi(ke2));
+
+        }
+
+        private double PsiDeficit (double x) {
+            if (x > 4.0) {
+                return ((1.0 / 2.0) / x + (1.0 / 12.0) / (x * x) - (1.0 / 120.0) * (x * x * x * x) + (1.0 / 252.0) * (x * x * x * x * x * x));
+            } else {
+                return (Math.Log(x) - AdvancedMath.Psi(x));
+            }
+        }
+
+#endif
 
     }
 

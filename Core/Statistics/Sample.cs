@@ -27,8 +27,17 @@ namespace Meta.Numerics.Statistics {
         }
 
         private string name;
+
+        // the actual values
         private List<double> data;
+
+        // the mean and standard deviation
         private double M, SS;
+
+        // the order array
+        // order[0] is index of lowest value, so data[order[0]] is lowest value
+        // order[1] is index of next lowest value, etc.
+        // order is null is the order has not been computed
         private int[] order;
 
         public string Name {
@@ -112,6 +121,18 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        public void Transform (Func<double, double> transformFunction) {
+            M = 0.0; SS = 0.0;
+            for (int i = 0; i < data.Count; i++) {
+                double value = transformFunction(data[i]);
+                double dM = (value - M);
+                M += dM / (i + 1);
+                SS += dM * dM * i / (i + 1);
+                data[i] = value;
+            }
+            order = null;
+        }
+
         public int[] GetSortOrder () {
             if (order == null) {
                 order = new int[data.Count];
@@ -172,6 +193,10 @@ namespace Meta.Numerics.Statistics {
     public sealed class Sample : ICollection<double>, IEnumerable<double>, IEnumerable {
 
         private SampleStorage data;
+
+        // isReadOnly is true for samples returned as columns of larger data sets
+        // values cannot be added to or deleted from such samples because that would
+        // distrub the correspondence with other columns
         private bool isReadOnly;
 
         /// <summary>
@@ -281,6 +306,22 @@ namespace Meta.Numerics.Statistics {
             } else {
                 data.Clear();
             }
+        }
+
+        /// <summary>
+        /// Transforms all values using a user-supplied function.
+        /// </summary>
+        /// <param name="transformFunction">The function used to transform the values, which must not be null.</param>
+        /// <remarks>
+        /// <para>For example, to replace all values with their logarithms, apply a transform using <see cref="Math.Log"/>.</para>
+        /// <para>If the supplied transform function throws an excaption, or returns infinite or NaN values, the transformation
+        /// may be incomplete or the data corrupted.</para>
+        /// </remarks>
+        public void Transform (Func<double, double> transformFunction) {
+            if (transformFunction == null) throw new ArgumentNullException("transformFunction");
+            data.Transform(transformFunction);
+            // it's okay to apply a transform even to a "read-only" sample because read-only is there to
+            // keep us from adding or removing entries, not from updating them
         }
 
         /// <summary>

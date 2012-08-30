@@ -335,6 +335,75 @@ namespace Meta.Numerics.Matrices {
             return (vA);
 
         }
+
+        /// <summary>
+        /// Solves Ax = b using iterative methods.
+        /// </summary>
+        /// <param name="b">The right-hand side.</param>
+        /// <returns>The solution vector x.</returns>
+        /// <remarks>
+        /// <para>In general, neither the inverse nor any decomposition of a sparse matrix is itself sparse. Therefore,
+        /// to solve large, sparse linear systems, iterative methods are employed. An iterative method begins with
+        /// an approximate or guessed solution vector and progresses toward an improved solution. Iterative methods
+        /// are often successful at converging to a sufficiently accurate solution vector, but this is not guaranteed.
+        /// If this method fails to converge, it throws a <see cref="NonconvergenceException"/>.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="b"/> is null.</exception>
+        /// <exception cref="DimensionMismatchException"><paramref name="b"/>'s dimension does not equal the matrix's dimension.</exception>
+        /// <exception cref="NonconvergenceException">The method did not converge to a solution.</exception>
+        public ColumnVector Solve (ColumnVector b) {
+
+            if (b == null) throw new ArgumentNullException("b");
+            if (b.Dimension != dimension) throw new DimensionMismatchException();
+
+            // accuracy and iteration limits are very huristic, revisit later
+            double accuracyGoal = Global.Accuracy * 128.0;
+            int iterationMax = 256 + dimension / 2;
+
+            // we use the stabilized biconjugate gradient algorithm
+
+            // choose an initial guess
+            ColumnVector x = new ColumnVector(dimension);
+            for (int i = 0; i < x.Dimension; i++) x[i] = 1.0;
+
+            // 
+            RowVector rt = x.Transpose();
+
+            // r is the deviation vector that we are trying to drive to zero
+            ColumnVector r = b - this * x;
+
+            double rho0 = 1.0;
+            double a = 1.0;
+            double omega = 1.0;
+
+            ColumnVector v = new ColumnVector(dimension);
+            ColumnVector p = new ColumnVector(dimension);
+
+            for (int i = 1; i < iterationMax; i++) {
+
+                double rho1 = rt * r;
+                double beta = (rho1 / rho0) * (a / omega);
+                p = r + beta * (p - omega * v);
+                v = this * p;
+                a = rho1 / (rt * v);
+                ColumnVector s = r - a * v;
+                ColumnVector t = this * s;
+
+                omega = (t.Transpose() * s) / (t.Transpose() * t);
+
+                x = x + a * p + omega * s;
+
+                r = s - omega * t;
+
+                if (r.FrobeniusNorm() <= accuracyGoal * b.FrobeniusNorm()) return (x);
+
+                // prepare for next iteration
+                rho0 = rho1;
+            }
+
+            throw new NonconvergenceException();
+
+        }
     }
 
 }

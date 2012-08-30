@@ -129,6 +129,8 @@ namespace Test {
 
         [TestMethod]
         public void Bug6392 () {
+            // bug requests that we support regression with number of points equal to number
+            // of fit parameters, i.e. polynomial fit
             var biSample = new BivariateSample();
             biSample.Add(0, 1);
             biSample.Add(1, -1);
@@ -152,17 +154,6 @@ namespace Test {
             Sample s = new Sample(0.0, 1.0, 3.0, 4.0);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(s.LeftProbability(2.0), 0.5));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(s.InverseLeftProbability(0.5), 2.0));
-        }
-
-        [TestMethod]
-        public void TestCD () {
-
-            Distribution d = new BetaDistribution(0.5, 2.0);
-            Console.WriteLine(d.LeftProbability(0.996));
-            Console.WriteLine(d.RightProbability(0.996));
-
-            Console.WriteLine(AdvancedMath.LeftRegularizedBeta(2.0, 0.5, 1.0 - 0.996));
-
         }
 
     }

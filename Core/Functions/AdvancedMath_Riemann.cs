@@ -11,7 +11,7 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value &#x3B6;(s).</returns>
         /// <remarks>
         /// <para>The Riemann &#x3B6; function can be defined as the sum of the <paramref name="s"/>th inverse power of the natural numbers.</para>
-        /// <img src="../images/RiemannZeta.png" />
+        /// <img src="../images/ZetaSeries.png" />
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Riemann_zeta_function"/>
         public static double RiemannZeta (double s) {
@@ -39,7 +39,7 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The Dirichlet eta function is the sum of the <paramref name="s"/>th inverse power of the natural numbers,
         /// with alternating signs.</para>
-        /// <img src="../images/DirichletEta.png" />
+        /// <img src="../images/DirichletEtaSeries.png" />
         /// <para>Because these are just the terms of the Riemann zeta function (<see cref="RiemannZeta"/>) with
         /// alternating signs, it is also called the alternating zeta function.</para>
         /// <para>It can be related to the Riemann &#x3B6; function.</para>

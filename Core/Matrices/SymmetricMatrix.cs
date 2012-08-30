@@ -706,11 +706,35 @@ namespace Meta.Numerics.Matrices {
             return (D);
         }
 
+
+        // Cholesky decomposition writes A = L L^T, where L is lower triangular
+
+        // [ L11         ][ L11 L21 L31 ]   
+        // [ L21 L22     ][     L22 L32 ] = 
+        // [ L31 L32 L33 ][         L33 ]   
+        // [ L11^2                                               ]   [ A11         ]
+        // [ L21 L11   L21^2 + L22^2                             ] = [ A21 A22     ]
+        // [ L31 L11   L21 L31 + L32 L22   L31^2 + L32^2 + L33^2 ]   [ A31 A32 A33 ]
+
+        // Proceed straightforwardly column-wise
+        //   L11 = \sqrt{ A11 }
+        //   L21 = A21 / L11
+        //   L31 = A31 / L11
+        //   L22 = \sqrt{ A22 - L21^2 }
+        //   L32 = (A32 - L21 L31) / L22
+        //   L33 = \sqrt{ A33 - L31^2 - L32^2 }
+        // Given this order, the required other entries have always already been computed.
+        // We never need the square root of a negative or need to divide by zero if A is positive definite.
+
         public static double[][] CholeskyDecomposition (double[][] A, int dimension) {
 
             double[][] CD = InitializeStorage(dimension);
 
             for (int i = 0; i < dimension; i++) {
+
+                // working on the ith column
+
+                // determine the ith diagonal element
                 double q = A[i][i];
                 for (int j = 0; j < i; j++) {
                     q -= MoreMath.Pow2(CD[i][j]);
@@ -721,6 +745,7 @@ namespace Meta.Numerics.Matrices {
 
                 CD[i][i] = q;
 
+                // determine lower entries
                 for (int j = i + 1; j < dimension; j++) {
                     double p = A[j][i];
                     for (int k=0; k < i; k++) {

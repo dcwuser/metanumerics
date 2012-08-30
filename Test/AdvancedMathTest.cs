@@ -1151,7 +1151,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void IntegralSiIntegralTest () {
+        public void IntegralSiDefinition () {
             Func<double, double> f = delegate(double t) {
                 return (Math.Sin(t) / t);
             };
@@ -1159,20 +1159,33 @@ namespace Test {
                 Interval r = Interval.FromEndpoints(0.0, x);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.IntegralSi(x), FunctionMath.Integrate(f, r)));
             }
+            // the corresponding defining integral of Ci does not converge numerically
         }
-        /*
-        // nonconvergent
+
         [TestMethod]
-        public void IntegralCiIntegralTest () {
-            Function<double, double> f = delegate(double t) {
-                return (Math.Cos(t) / t);
-            };
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
-                Interval r = Interval.FromEndpoints(x, Double.PositiveInfinity);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.IntegralCi(x), -FunctionMath.Integrate(f, r)));
-            }
+        public void IntegralCiSiIntegrals () {
+
+            // these integrals are from Oldham et al, An Atlas of Functions
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                FunctionMath.Integrate(t => AdvancedMath.IntegralCi(t) * Math.Exp(-t), Interval.FromEndpoints(0.0, Double.PositiveInfinity)),
+                -Math.Log(2.0) / 2.0
+            ));
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                FunctionMath.Integrate(t => AdvancedMath.IntegralSi(t) * Math.Exp(-t), Interval.FromEndpoints(0.0, Double.PositiveInfinity)),
+                Math.PI / 4.0
+            ));
+
+            // the integral of [Ci(t)]^2 does not converge numerically
+
+            /*
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                FunctionMath.Integrate(t => MoreMath.Pow(AdvancedMath.IntegralCi(t), 2), Interval.FromEndpoints(0.0, Double.PositiveInfinity)),
+                Math.PI / 2.0
+            ));
+            */
         }
-        */
 
         [TestMethod]
         public void LambertTest () {
@@ -1933,6 +1946,32 @@ namespace Test {
                     AdvancedMath.CarlsonF(0.0, 1.0 - k * k, 1.0)
                 ));
 
+            }
+
+        }
+
+        [TestMethod]
+        public void EllipticFBetaRelationship () {
+
+            foreach (double phi in TestUtilities.GenerateUniformRealValues(0.0, Math.PI / 2.0, 8)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.EllipticF(phi, 1.0 / Math.Sqrt(2.0)),
+                    AdvancedMath.Beta(1.0 / 2.0, 1.0 / 4.0, 1.0 - MoreMath.Pow(Math.Cos(phi), 4)) / Math.Sqrt(8.0)
+                ));
+            }
+
+        }
+
+        [TestMethod]
+        public void EllipticFIntegral () {
+
+            foreach (double k in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 8)) {
+                foreach (double phi in TestUtilities.GenerateUniformRealValues(0.0, Math.PI / 2.0, 4)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        FunctionMath.Integrate(t => AdvancedMath.EllipticF(t, k) / Math.Sqrt(1.0 - MoreMath.Pow(k * Math.Sin(t), 2)), Interval.FromEndpoints(0.0, phi)),
+                        MoreMath.Pow(AdvancedMath.EllipticF(phi, k), 2) / 2.0
+                    ));
+                }
             }
 
         }

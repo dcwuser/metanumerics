@@ -1,6 +1,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace Meta.Numerics.Functions {
 
@@ -14,9 +15,7 @@ namespace Meta.Numerics.Functions {
     /// </remarks>
 	public static class OrthogonalPolynomials {
 
-		// orthogonal on [-Infinity,Infinity] with weight e^{-x^2}
-		// use recurrance H_{n+1} = 2x H_n - 2n H_{n-1}
-		// the recurrence is unstable, but H is the dominant solution
+
         /// <summary>
         /// Computes the value of a (physicists') Hermite polynomial.
         /// </summary>
@@ -33,6 +32,7 @@ namespace Meta.Numerics.Functions {
         /// do not grow as quickly as physicists', and may therefore be preferable for large values of <paramref name="n"/>
         /// and <paramref name="x"/> which could overflow <see cref="System.Double"/>.</para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso cref="HermiteHe"/>
         /// <seealso href="http://mathworld.wolfram.com/HermitePolynomial.html" />
 		public static double HermiteH (int n, double x) {
@@ -41,6 +41,8 @@ namespace Meta.Numerics.Functions {
             } else if (n == 0) {
                 return (1.0);
             } else {
+                // use recurrance H_{n+1} = 2x H_n - 2n H_{n-1}
+                // the recurrence is unstable, but H is the dominant solution
                 double H0 = 1.0;
                 double H1 = 2.0 * x;
                 for (int k = 1; k < n; k++) {
@@ -51,7 +53,6 @@ namespace Meta.Numerics.Functions {
                 return (H1);
             }
 		}
-		// Use: simple harmonic oscilator wave functions in 1-D QM; perturbed Gaussian distributions
 
         /// <summary>
         /// Computes the value of a (statisticians') Hermite polynomial.
@@ -68,6 +69,7 @@ namespace Meta.Numerics.Functions {
         /// <para>Physicists' Hermite polynomials (see <see cref="HermiteH"/>) are related to statisticians' Hermite
         /// polynomials via H<sub>n</sub>(x) = 2<sup>n</sup>H<sub>n</sub>(x &#x221A;2).</para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso cref="HermiteH"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Hermite_polynomial" />
         public static double HermiteHe (int n, double x) {
@@ -88,7 +90,6 @@ namespace Meta.Numerics.Functions {
         }
 
 		// orthogonal on [0,Infinity] with weight e^{-x}
-		// use recurrence (n+1)L_{n+1} = (2n+1-x)L_{n} - nL_{n-1}
         /// <summary>
         /// Computes the value of a Laguerre polynomial.
         /// </summary>
@@ -99,14 +100,17 @@ namespace Meta.Numerics.Functions {
         /// <para>Laguerre functions are orthogonal on the interval [0,+&#8734;) with the weight e<sup>-x</sup>.</para>
         /// <img src="../images/LaguerreLOrthonormality.png" />
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> or <paramref name="x"/> is negative.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Laguerre_polynomial" />
         /// <seealso href="http://mathworld.wolfram.com/LaguerrePolynomial.html" />
         /// <seealso cref="LaguerreL(int,double,double)"/>
 		public static double LaguerreL (int n, double x) {
 			if (n<0) throw new ArgumentOutOfRangeException("n");
 			if (x<0.0) throw new ArgumentOutOfRangeException("x");
+
 			if (n==0) return(1.0);
-			double L0 = 1.0;
+            // use recurrence (n+1)L_{n+1} = (2n+1-x)L_{n} - nL_{n-1}
+            double L0 = 1.0;
 			double L1 = 1.0-x;
 			for (int k=1; k<n; k++) {
 				double L2 = ( (2*k+1-x)*L1 - k*L0 ) / (k+1);
@@ -150,8 +154,6 @@ namespace Meta.Numerics.Functions {
         // Radial hydrogenic wave functions in QM
 
 
-        // orthogonal on [-1,1] with weight 1
-        // use recurrence (n+1)P_{n+1} = (2n+1)xP_{n} - nP_{n-1}
         /// <summary>
         /// Computes the value of a Legendre polynomial.
         /// </summary>
@@ -162,6 +164,7 @@ namespace Meta.Numerics.Functions {
         /// <para>Legendre polynomials are orthogonal on the interval [-1,1].</para>
         /// <img src="../images/LegendrePOrthonormality.png" />
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> lies outside [-1,+1].</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Legendre_polynomial"/>
         /// <seealso href="http://mathworld.wolfram.com/LegendrePolynomial.html"/>
         public static double LegendreP (int l, double x) {
@@ -172,6 +175,7 @@ namespace Meta.Numerics.Functions {
             } else if (l == 0) {
                 return (1.0);
             } else {
+                // use recurrence (n+1) P_{n+1} = (2n+1) x P_{n} - n P_{n-1}
                 double P0 = 1.0;
                 double P1 = x;
                 for (int n = 1; n < l; n++) {
@@ -314,8 +318,10 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument, which must lie in the closed interval between -1 and +1.</param>
         /// <returns>The value of T<sub>n</sub>(x).</returns>
         /// <remarks>
-        /// <para>Chebyshev polynomials are orthogonal on the interval [-1,1] with the weight (1-x<sup>2</sup>)<sup>1/2</sup>.</para>
+        /// <para>Chebyshev polynomials are orthogonal on the interval [-1,1] with the weight (1-x<sup>2</sup>)<sup>-1/2</sup>.</para>
+        /// <img src="../images/ChebyshevOrthonormality.png" />
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative, or <paramref name="x"/> lies outside [-1,+1].</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Chebyshev_polynomials"/>
         /// <seealso href="http://mathworld.wolfram.com/ChebyshevPolynomialoftheFirstKind.html"/>
         public static double ChebyshevT (int n, double x) {
@@ -415,6 +421,26 @@ namespace Meta.Numerics.Functions {
 		}
         */
 
+#if FUTURE
+        public static double GegenbauerC (int n, double alpha, double x) {
+
+            if (n < 0) throw new ArgumentOutOfRangeException("n");
+            if (alpha <= 0) throw new ArgumentOutOfRangeException("alpha");
+            if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException("x");
+
+            double C0 = 1.0;
+            if (n == 0) return(C0);
+
+            double C1 = - 2.0 * alpha * x;
+            
+            for (int k = 1; k < n; k++) {
+                double C2 = (2.0 * x * (k + alpha) * C1 - (k - 1 + alpha) * C0) / (k + 1);
+                C0 = C1;
+                C1 = C2;
+            }
+            return(C1);
+        }
+#endif
         // associated Legendre, Laguerre
 
         //  R00

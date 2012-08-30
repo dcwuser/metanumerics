@@ -268,6 +268,54 @@ namespace Test {
         }
 
         [TestMethod]
+        public void BetaFit () {
+            // Create a beta distribution
+            BetaDistribution B = new BetaDistribution(0.25, 3.0);
+
+            // Sample from it
+            Sample S = CreateSample(B, 100);
+
+            // Fit the sample to a beta distribution
+            // The fit should agree with the population and the fit should be good
+            FitResult RB = BetaDistribution.FitToSample(S);
+            Assert.IsTrue(RB.Parameter(0).ConfidenceInterval(0.95).ClosedContains(B.Alpha));
+            Assert.IsTrue(RB.Parameter(1).ConfidenceInterval(0.95).ClosedContains(B.Beta));
+            Assert.IsTrue(RB.GoodnessOfFit.LeftProbability < 0.95);
+
+            // Fit to a normal distribution should be bad
+            FitResult RN = NormalDistribution.FitToSample(S);
+            Assert.IsTrue(RN.GoodnessOfFit.LeftProbability > 0.95);
+        }
+
+        [TestMethod]
+        public void BetaFitUncertainty () {
+
+            // check that the uncertainty in reported fit parameters is actually meaningful
+            // it should be the standard deviation of fit parameter values in a sample of many fits
+
+            // define a population distribution 
+            Distribution distribution = new BetaDistribution(1.0 / 3.0, 2.0);
+
+            // draw a lot of samples from it; fit each sample and
+            // record the reported parameter value and error of each
+            BivariateSample values = new BivariateSample();
+            BivariateSample uncertainties = new BivariateSample();
+            for (int i = 0; i < 50; i++) {
+                Sample sample = CreateSample(distribution, 10, i);
+                FitResult fit = BetaDistribution.FitToSample(sample);
+                UncertainValue a = fit.Parameter(0);
+                UncertainValue b = fit.Parameter(1);
+                values.Add(a.Value, b.Value);
+                uncertainties.Add(a.Uncertainty, b.Uncertainty);
+            }
+
+            // the reported errors should agree with the standard deviation of the reported parameters
+            Assert.IsTrue(values.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.X.Mean));
+            Assert.IsTrue(values.Y.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.Y.Mean));
+
+        }
+
+        [TestMethod]
         public void WaldFitUncertainties () {
 
             WaldDistribution wald = new WaldDistribution(3.5, 2.5);
@@ -922,10 +970,25 @@ namespace Test {
             Console.WriteLine(ssst.RightProbability);
             Assert.IsTrue(ssst.RightProbability < 0.05);
 
-            // the test using the same samples should not reect the null hypothesis
+            // the test using the same samples should not reject the null hypothesis
             TestResult ssss = Sample.KruskalWallisTest(s1, s2, s3, s4);
             Console.WriteLine(ssss.RightProbability);
             Assert.IsTrue(ssss.RightProbability > 0.05);
+
+        }
+
+        [TestMethod]
+        public void SampleTransform () {
+
+            Sample S1 = new Sample(1.0, 2.0, 3.0, 4.0);
+
+            Sample S2 = new Sample(1.0, 4.0, 9.0, 16.0);
+            S2.Transform(Math.Sqrt);
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(S1.Mean, S2.Mean));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(S1.Variance, S2.Variance));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(S1.Minimum, S2.Minimum));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(S1.Maximum, S2.Maximum));
 
         }
 

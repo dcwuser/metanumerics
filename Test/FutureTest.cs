@@ -16,25 +16,6 @@ namespace FutureTest {
     [TestClass]
     public class FutureTest {
 
-        [TestMethod]
-        public void MomentTest () {
-
-            List<double> K = new List<double>();
-            K.Add(0.0);
-
-            Distribution D = new ExponentialDistribution();
-
-            for (int n = 1; n < 10; n++) {
-                Console.WriteLine(n);
-                K.Add(AdvancedIntegerMath.Factorial(n - 1));
-                double M = MomentMath.RawMomentFromCumulants(K.ToArray());
-                Console.WriteLine("{0} {1}", M, D.Moment(n));
-            }
-
-
-
-        }
-
         private void FermatFactor (int n) {
 
             int c = 0;

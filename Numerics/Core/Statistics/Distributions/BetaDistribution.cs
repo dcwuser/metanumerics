@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
+using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
@@ -203,7 +204,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (InverseLeftProbability(1.0 - Q));
         }
 
-
         private double ApproximateInverseBeta (double a, double b, double P) {
 
             // try series from the left
@@ -273,6 +273,79 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (x == x_old) return (x);
             }
             return (x);
+
+        }
+
+        /// <summary>
+        /// Fits a beta distribution to the given sample.
+        /// </summary>
+        /// <param name="data">The data to fit.</param>
+        /// <returns>The result of the fit, containing the alpha parameter as the first entry and the beta parameter as the second.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="data"/> is null.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="data"/> contains fewer than three data points.</exception>
+        /// <exception cref="InvalidOperationException">Not all the entries in <paramref name="data" /> lie between zero and one.</exception>
+        public static FitResult FitToSample (Sample data) {
+            if (data == null) throw new ArgumentNullException("data");
+            if (data.Count < 3) throw new InsufficientDataException();
+
+            // maximum likelyhood calculation
+            //   \log L = \sum_i \left[ (\alpha-1) \log x_i + (\beta-1) \log (1-x_i) - \log B(\alpha,\beta) \right]
+            // using \frac{\partial B(a,b)}{\partial a} = \psi(a) - \psi(a+b), we have
+            //   \frac{\partial \log L}{\partial \alpha} = \sum_i \log x_i -     N \left[ \psi(\alpha) - \psi(\alpha+\beta) \right]
+            //   \frac{\partial \log L}{\partial \beta}  = \sum_i \log (1-x_i) - N \left[ \psi(\beta)  - \psi(\alpha+\beta) \right]
+            // set equal to zero to get equations for \alpha, \beta
+            //   \psi(\alpha) - \psi(\alpha+\beta) = <\log x>
+            //   \psi(\beta) - \psi(\alpha+\beta) = <\log (1-x)>
+
+            // compute the mean log of x and (1-x)
+            // these are the (logs of) the geometric means
+            double ga = 0.0; double gb = 0.0;
+            foreach (double value in data) {
+                if ((value <= 0.0) || (value >= 1.0)) throw new InvalidOperationException();
+                ga += Math.Log(value); gb += Math.Log(1.0 - value);
+            }
+            ga /= data.Count; gb /= data.Count;
+
+            // define the function to zero
+            Func<double[], double[]> f = delegate(double[] x) {
+                double pab = AdvancedMath.Psi(x[0] + x[1]);
+                return (new double[] {
+                    AdvancedMath.Psi(x[0]) - pab - ga,
+                    AdvancedMath.Psi(x[1]) - pab - gb
+                });
+            };
+
+            // guess initial values using the method of moments
+            //   M1 = \frac{\alpha}{\alpha+\beta} C2 = \frac{\alpha\beta}{(\alpha+\beta)^2 (\alpha+\beta+1)}
+            // implies
+            //   \alpha = M1 \left( \frac{M1 (1-M1)}{C2} - 1 \right)
+            //   \beta = (1 - M1) \left( \frac{M1 (1-M1)}{C2} -1 \right)
+            double m = data.Mean; double mm = 1.0 - m;
+            double q = m * mm / data.Variance - 1.0;
+            double[] x0 = new double[] { m * q, mm * q };
+
+            // find the parameter values that zero the two equations
+            double[] x1 = FunctionMath.FindZero(f, x0);
+            double a = x1[0]; double b = x1[1];
+
+            // take more derivatives of \log L to get curvature matrix
+            //   \frac{\partial^2 \log L}{\partial\alpha^2} = - N \left[ \psi'(\alpha) - \psi'(\alpha+\beta) \right]
+            //   \frac{\partial^2 \log L}{\partial\beta^2}  = - N \left[ \psi'(\beta)  - \psi'(\alpha+\beta) \right]
+            //   \frac{\partial^2 \log L}{\partial \alpha \partial \beta} = - N \psi'(\alpha+\beta)
+            // covariance matrix is inverse of curvature matrix
+            SymmetricMatrix CI = new SymmetricMatrix(2);
+            CI[0, 0] = data.Count * (AdvancedMath.Psi(1, a) - AdvancedMath.Psi(1, a + b));
+            CI[1, 1] = data.Count * (AdvancedMath.Psi(1, b) - AdvancedMath.Psi(1, a + b));
+            CI[0, 1] = data.Count * AdvancedMath.Psi(1, a + b);
+            CholeskyDecomposition CD = CI.CholeskyDecomposition();
+            SymmetricMatrix C = CD.Inverse();
+
+            // do a KS test on the result
+            TestResult test = data.KolmogorovSmirnovTest(new BetaDistribution(a, b));
+
+            // return the results
+            FitResult result = new FitResult(x1, C, test);
+            return (result);
 
         }
 

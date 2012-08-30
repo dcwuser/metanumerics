@@ -103,15 +103,15 @@ namespace Meta.Numerics.Spin {
             // keeping track of the sign induced by the permutation
             int s = 1;
             if (s1.TwoJ > s3.TwoJ) {
-                Exchange(ref s1, ref s3);
+                Swap(ref s1, ref s3);
                 s = s * P;
             }
             if (s1.TwoJ > s2.TwoJ) {
-                Exchange(ref s1, ref s2);
+                Swap(ref s1, ref s2);
                 s = s * P;
             }
             if (s2.TwoJ > s3.TwoJ) {
-                Exchange(ref s2, ref s3);
+                Swap(ref s2, ref s3);
                 s = s * P;
             }
 
@@ -146,12 +146,7 @@ namespace Meta.Numerics.Spin {
         }
 
         // exchange two references
-
-        private static void Exchange (ref SpinState s1, ref SpinState s2) {
-            SpinState t = s1;
-            s1 = s2;
-            s2 = t;
-        }
+        // todo: change this to use Global swap
 
         private static void Swap<T> (ref T a, ref T b) where T : struct {
             T t = a;
@@ -372,8 +367,6 @@ namespace Meta.Numerics.Spin {
                 int B = j - s2.TwoJ;
                 int C = j - s3.TwoJ;
 
-                //Console.WriteLine("A={0} B={1} C={2}", A, B, C);
-
                 // note that A >= B >= C, because of the ordering of js; therefore we eliminate factors involving C, which are largest
                 // note also that A, B, and C are even, because j is even and we subtract even numbers from j to get them
 
@@ -388,22 +381,15 @@ namespace Meta.Numerics.Spin {
                 int fq1 = A;
                 int fq2 = A + B / 2;
                 for (int i = 1; i <= hB; i++) {
-                    //fp1++; fp2++; fq1++; fq2++;
-                    //f = f * fp1 * fp2 * fp2 / fq1 / fq2 / i;
                     f = f * (hB + i) * (hA + i) * (hA + i) / (A + i) / (A + hB + i) / i;
                 }
                 f = Math.Sqrt(f);
 
                 // calculate second factor
                 double g = 1.0;
-                //int gp1 = C / 2;
-                //int gp2 = (A + B) / 2;
-                //int gq1 = A + B;
-                //int gq2 = A + B + C / 2;
                 for (int i = 1; i <= hC; i++) {
                     g = g * (hC + i) * (hA + hB + i) * (hA + hB + i) / (A + B + i) / (A + B + hC + i) / i;
                 }
-                //Console.WriteLine("g={0}", g);
                 g = Math.Sqrt(g);
 
                 if ((j / 2) % 2 != 0) f = -f;
@@ -537,15 +523,12 @@ namespace Meta.Numerics.Spin {
                     }
                 }
 
-
                 // compute required coefficients
                 b0 = ShultenGodron_B(s1.TwoJ, s2.TwoJ, tj, s1.TwoM, s2.TwoM, s3.TwoM);
                 a0 = ShultenGordon_A(s1.TwoJ, s2.TwoJ, tj, s3.TwoM);
 
                 // use recursion to compute the tj-2 symbol
                 cm = (-b0 * c0 - (tj / 2.0) * ap * cp) / ((tj + 2) / 2.0) / a0;
-
-                //Console.WriteLine("{0}: {1} {2} + {3} {4} + {5} {6}", tj, ap, cp, b0, c0, a0, cm);
 
                 // prepare for the next cycle
                 cp = c0;
@@ -606,8 +589,6 @@ namespace Meta.Numerics.Spin {
 
                 // use recursion relation to compute tj+2
                 cp = (-b0 * c0 - ((tj + 2) / 2.0) * a0 * cm) / (tj / 2.0) / ap;
-
-                //Console.WriteLine("{0}: {1} {2} + {3} {4} + {5} {6}", tj, ap, cp, b0, c0, a0, cm);
 
                 // prepare for next iteration
                 cm = c0;
@@ -776,8 +757,6 @@ namespace Meta.Numerics.Spin {
             int tk_mid = (tk_min + tk_max) / 2;
             if ((tk_mid % 2) != (tk_max % 2)) tk_mid++;
 
-            //Console.WriteLine("{0} <= {1} <= {2}", tk_min, tk_mid, tk_max);
-
             // variables to store recurrence coefficients and (unscaled) 6j values
             double ap, a0, b0;
             double cm, c0, cp;
@@ -826,8 +805,6 @@ namespace Meta.Numerics.Spin {
                 // use recursion to compute the tj-2 symbol
                 cm = -(b0 * c0 + (tj / 2.0) * ap * cp) / ((tj + 2) / 2.0) / a0;
 
-                //Console.WriteLine("{0}: {1} {2} + {3} {4} + {5} {6}", tj, a0, cm, b0, c0, ap, cp);
-
                 // prepare for the next cycle
                 cp = c0;
                 c0 = cm;
@@ -873,7 +850,6 @@ namespace Meta.Numerics.Spin {
                 // remember the desired (unscaled) value
                 if (tj == tj1) {
                     c = c0;
-                    //Console.WriteLine("{0}: {1}", tj1, c);
                 }
 
                 // add current value to normalization
@@ -886,14 +862,9 @@ namespace Meta.Numerics.Spin {
                 // compute required coeficients
                 b0 = ShultenGordon_F(tj, tj2, tj3, tj4, tj5, tj6);
                 ap = ShultenGordon_E(tj + 2, tj2, tj3, tj4, tj5, tj6);
-                //b0 = ShultenGodron_B(s1.TwoJ, s2.TwoJ, tj, s1.TwoM, s2.TwoM, s3.TwoM);
-                //ap = ShultenGordon_A(s1.TwoJ, s2.TwoJ, tj + 2, s3.TwoM);
 
                 // use recursion relation to compute tj+2
-                //cp = (-b0 * c0 - ((tj + 2) / 2.0) * a0 * cm) / (tj / 2.0) / ap;
                 cp = -(b0 * c0 + ((tj + 2) / 2.0) * a0 * cm) / (tj / 2.0) / ap;
-
-                //Console.WriteLine("{0}: {1} {2} + {3} {4} + {5} {6}", tj, a0, cm, b0, c0, ap, cp);
 
                 // prepare for next iteration
                 cm = c0;

@@ -175,7 +175,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        // the remainder of this code is all this is just to invert, which is a major pain!
+        //  Now comes a whole lot of code just to invert the Gamma CDF, which is a major pain!
+
+        // The probit function is the inverse CDF of the standard normal distribution
+        // Since Gamma becomes approximately normal for large shape parameters, this is useful
+        // in that regime
 
         private static double ApproximateProbit (double P) {
 
@@ -189,7 +193,6 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         }
        
-
         private double ApproximateInverseStandardGamma (double P, double Q) {
 
             if (P == 0.0) return (0.0);
@@ -238,11 +241,14 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         private double InverseLeftStandardGamma (double P) {
 
+            // start with an approximation
             double x = ApproximateInverseStandardGamma(P, 1.0 - P);
+
             // zero x or infinite x will cause problems with the iterative method below
             // near zero (and at infinity) the approximation becomes good to double precision anyway
             if ((x < Global.Accuracy) || Double.IsPositiveInfinity(x)) return (x);
 
+            // refine with Halley's method, i.e. second order Newton method
             double y = AdvancedMath.LeftRegularizedGamma(a, x) - P;
             for (int i = 0; i < 16; i++) {
                 
@@ -272,5 +278,52 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (s * InverseLeftStandardGamma(P));
         }
 
+
+        // routines for maximum likelyhood fitting
+#if FUTURE
+        private void PsiDeficitAndDerivative (double x, out double f, out double fp) {
+
+            // define the psi deficit function f = log(x) - psi(x)
+            // for large x, psi(x) ~ log(x), so f gets small
+            // f > 0 for all x > 0
+
+            f = 0.0;
+            fp = 0.0;
+
+            double x1 = 1.0 / x;
+            double x2 = x1 * x1;
+
+            // for small x, use f(x) = f(x+1) - 1/x, and therefore f'(x) = f'(x+1) + 1/x^2, to advance x
+            while (x < 16.0) {
+                f -= x1;
+                fp += x2;
+                x += 1.0;
+                x1 = 1.0 / x;
+                x2 = x1 * x1;
+            }
+
+            // once x is large enough, use asymptotic expansion
+            //   f = \frac{1}{2x} + \sum_{n=1}^{\infty} \frac{B_{2n}}{2n x^{2n}}
+            // and therefore
+            //   f' = \frac{-1}{x} \left[ \frac{1}{2x} + \sum_{n=1}^{\infty} \frac{B_{2n}}{x^{2n}}
+            // to compute f and f'
+
+            f += x1 / 2.0;
+            fp -= x2 / 2.0;
+
+            double xx = x2;
+            for (int n = 1; n < AdvancedIntegerMath.Bernoulli.Length; n++) {
+                double f_old = f; double fp_old = fp;
+                f += AdvancedIntegerMath.Bernoulli[n] / (2 * n) * xx;
+                fp -= AdvancedIntegerMath.Bernoulli[n] * xx / x;
+                if (f == f_old && fp == fp_old) {
+                    return;
+                }
+                xx *= x2;
+            }
+
+            throw new NonconvergenceException();
+        }
+#endif
     }
 }

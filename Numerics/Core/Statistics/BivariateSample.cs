@@ -205,6 +205,12 @@ namespace Meta.Numerics.Statistics {
                 C = C / n;
 
                 return (C);
+
+                // this is an O(N) operation, which really shouldn't be done in a property
+                // in the Sample class we maintain mean and variance as each value is
+                // added or removed; ideally we should do that with covariance in the
+                // bivariate sample, but Transforms, and maybe other operations, would
+                // screw that up
             }
         }
 
@@ -274,7 +280,7 @@ namespace Meta.Numerics.Statistics {
         /// association.</para>
         /// <para>The Spearman rank-order test requires O(N log N) operations.</para>
         /// </remarks>
-        /// <exception>There are fewer than three data points.</exception>
+        /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
         /// <seealso cref="PearsonRTest"/>
         /// <seealso cref="KendallTauTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient"/>
@@ -326,6 +332,7 @@ namespace Meta.Numerics.Statistics {
         /// O(N<sup>2</sup>) operations. It is thus impractical for very large data sets. While
         /// not quite as robust as the Kendall test, the Spearman test is a good fall-back in such cases.</para>
         /// </remarks>
+        /// <exception cref="InsufficientDataException"><see cref="Count"/> is less than two.</exception>
         /// <seealso cref="PearsonRTest"/>
         /// <seealso cref="SpearmanRhoTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Kendall_tau_test" />
@@ -486,17 +493,6 @@ namespace Meta.Numerics.Statistics {
             ColumnVector r = A * a - y;
             double V = r.Transpose() * r;
             double ss2 = V / (n - (m + 1));
-            Console.WriteLine("V={0} s2={1}", V, ss2);
-
-            /*
-            Console.WriteLine("R");
-            for (int i = 0; i < R.RowCount; i++) {
-                for (int j = 0; j < R.ColumnCount; j++) {
-                    Console.Write(" {0}", R[i, j]);
-                }
-                Console.WriteLine();
-            }
-            */
 
             // Ake Bjorck, "Numerical Methods for Least Squares Problems", pp. 118-120
 

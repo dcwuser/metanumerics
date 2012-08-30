@@ -373,7 +373,7 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value of E(phi,k).</returns>
         /// <remarks>
         /// <para>The incomplete elliptic integral of the second kind is:</para>
-        /// <img src="../images/EllipticEIntegralIncomplete.png" />
+        /// <img src="../images/EllipticEIncompleteIntegral.png" />
         /// <para>It appears in the Legendre reduction of integrals of rational funtions.</para>
         /// <para>Be aware that some authors use the the parameter m = k<sup>2</sup> instead of the modulus k.</para>
         /// </remarks>

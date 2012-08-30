@@ -15,6 +15,10 @@ namespace Meta.Numerics.Functions {
         /// <param name="nu">The order, which must be non-negative.</param>
         /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The values of I, I', K, and K' for the given order and argument.</returns>
+        /// <remarks>
+        /// <para>The modified bessel functions fufill a differential equation similiar to the bessel differential equation.</para>
+        /// <img src="../images/ModifiedBesselODE.png" />
+        /// </remarks>
         public static SolutionPair ModifiedBessel (double nu, double x) {
             if (nu < 0.0) throw new ArgumentOutOfRangeException("nu");
             if (x < 0.0) throw new ArgumentOutOfRangeException("x");
@@ -554,8 +558,6 @@ namespace Meta.Numerics.Functions {
 
                 K0 += cx * f;
                 K1 += cx * h;
-
-                // Console.WriteLine(String.Format("k = {0}, Y0={1}", k, -Y0));
 
                 if ((K0 == K0_old) && (K1 == K1_old)) {
                     K1 = 2.0 / x * K1;

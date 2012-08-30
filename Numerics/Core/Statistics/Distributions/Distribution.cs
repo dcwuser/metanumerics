@@ -247,7 +247,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     // ChiSquared               ?                   Safe Recurrence     Closed
     // Exponential              Closed              Closed              Sum
     // Normal                   Closed              Closed              Sum
-
+#if FUTURE
     public static class MomentMath {
 
         // C_n = \sum_{k=0}^{n} \binom{n}{k} M_{n-k} (-\mu)^k
@@ -342,7 +342,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
     }
-
+#endif
 #if FUTURE
     /// <summary>
     /// Represents the distribution of the Kolmogorov-Smirnov D statistic.

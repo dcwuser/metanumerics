@@ -18,7 +18,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// can be converted to a standard exponential by reparameterizing the data into "fractions of the mean,"
     /// i.e. z = x / &#x3BC;.</para>
     /// <para>Processes resulting in events that are exponentially distributed in time are said to be "ageless" because the hazard function
-    /// of the exponential distribution is constant. The Weibull distribution (<see cref="WeibullDisribution"/>) is a generalization
+    /// of the exponential distribution is constant. The Weibull distribution (<see cref="WeibullDistribution"/>) is a generalization
     /// of the exponential distribution which the hazard function changes (typically by increasing) with time.</para>
     /// </remarks>
     /// <seealso href="WeibullDistribution"/>
@@ -179,6 +179,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <para>The goodness-of-fit test is a Kolmogorov-Smirnov test (<see cref="Sample.KolmogorovSmirnovTest(Distribution)"/>)
         /// which is not adjusted to reflect the fit. It is therefore unreliable for very small sample sizes.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than two data points.</exception>
         public static FitResult FitToSample (Sample sample) {
 
             if (sample == null) throw new ArgumentNullException("sample");
@@ -189,7 +191,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (value < 0.0) throw new InvalidOperationException();
             }
 
-            // the best-fit exponential's mean sample mean, with corresponding uncertainly
+            // the best-fit exponential's mean is the sample mean, with corresponding uncertainly
 
             double lambda = sample.Mean;
             double dLambda = lambda / Math.Sqrt(sample.Count);

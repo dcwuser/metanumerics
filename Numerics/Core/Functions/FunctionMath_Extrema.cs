@@ -215,6 +215,9 @@ namespace Meta.Numerics.Functions {
 
         private static LineExtremum FindMinimum (Func<double,double> f, double a, double b, double u, double fu, double v, double fv, double w, double fw) {
 
+            // the bracket is [a, b] and the points are (u,fu), (v,fv), (w, fw)
+            // note that (u, v, w) may be a or b
+
             if (f == null) throw new ArgumentNullException("f");
             
             // keep track of previous step sizes
@@ -222,8 +225,6 @@ namespace Meta.Numerics.Functions {
             double ddd = (b-a);
 
             for (int n = 0; n < Global.SeriesMax; n++) {
-
-                //Console.WriteLine("(u,fu)=({0},{1}) (v,fv)=({2},{3}) (w,fw)=({4},{5})", u, fu, v, fv, w, fw);
 
                 // do a parameteric fit to the parabola:
                 //   f = f0 + 0.5 * f2 (x - x0)^2
@@ -243,20 +244,17 @@ namespace Meta.Numerics.Functions {
                 double d = 0.0;
                 double x = 0.0;
                 
-                // if denominator vanishes, prefer golden section
+                // if the denominator vanishes, prefer a golden section step
                 if (q != 0.0) {
 
                     d = - p / q;
 
-                    //double cu = q / (vu * uw * (w - v));
-                    //Console.WriteLine("cu = {0}", cu);
-
-                    // if step is not getting smaller, prefer golden section
+                    // if step is not getting smaller, prefer a golden section step
                     if (Math.Abs(d) < 0.5 * Math.Abs(ddd)) {
 
                         x = u + d;
 
-                        // if step takes us out of bounds, prefer golden section
+                        // if the step takes us out of bounds, prefer a golden section step
                         if ((x <= a) || (x >= b)) d = 0.0;
 
                     } else {
@@ -266,8 +264,6 @@ namespace Meta.Numerics.Functions {
                 }
 
                 if (d == 0.0) {
-
-                    //Console.WriteLine("GS");
 
                     // the parabolic fit didn't work out, so use golden section instead
 
@@ -284,12 +280,8 @@ namespace Meta.Numerics.Functions {
 
                 }
 
-                //Console.WriteLine("d={0}", d);
-
                 // evaluate the function
                 double fx = f(x);
-
-                //Console.WriteLine("(x,fx)=({0},{1})", x, fx);
 
                 // check for convergence
                 // check for change in f
@@ -297,14 +289,13 @@ namespace Meta.Numerics.Functions {
                 // note: the = part of <= is important, because the RHS can be zero
                 // note: by adding |f(x)| and |f(u)|, we eliminate the danger of a zero RHS
                 double df = fx - fu;
-                if (2.0*Math.Abs(df) <= RelativePrecision * (Math.Abs(fu) + Math.Abs(fx))) {
+                if (2.0 * Math.Abs(df) <= RelativePrecision * (Math.Abs(fu) + Math.Abs(fx))) {
 
-                    // compute curvature
+                    // compute the curvature from our best-fit parabola
                     double f2 = q / (vu * uw * (w - v));
-                    //Console.WriteLine("  f''={0}",f2);
 
                     LineExtremum minimum = new LineExtremum(x, fx, f2);
-                    // minimum.EvaluationCount = n;
+
                     return (minimum);
                 }
 
@@ -318,6 +309,7 @@ namespace Meta.Numerics.Functions {
                     } else {
                         a = u;
                     }
+
                     // adjust our set of three lowest points
                     w = v;
                     fw = fv;
@@ -348,7 +340,6 @@ namespace Meta.Numerics.Functions {
                     } else {
 
                         if (fx < fw) {
-
                             w = x;
                             fw = fx;
                         }

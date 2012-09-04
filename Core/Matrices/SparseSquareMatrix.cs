@@ -339,7 +339,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Solves Ax = b using iterative methods.
         /// </summary>
-        /// <param name="b">The right-hand side.</param>
+        /// <param name="rhs">The right-hand side vector b.</param>
         /// <returns>The solution vector x.</returns>
         /// <remarks>
         /// <para>In general, neither the inverse nor any decomposition of a sparse matrix is itself sparse. Therefore,
@@ -348,13 +348,13 @@ namespace Meta.Numerics.Matrices {
         /// are often successful at converging to a sufficiently accurate solution vector, but this is not guaranteed.
         /// If this method fails to converge, it throws a <see cref="NonconvergenceException"/>.</para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="b"/> is null.</exception>
-        /// <exception cref="DimensionMismatchException"><paramref name="b"/>'s dimension does not equal the matrix's dimension.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="rhs"/> is null.</exception>
+        /// <exception cref="DimensionMismatchException"><paramref name="rhs"/>'s dimension does not equal the matrix's dimension.</exception>
         /// <exception cref="NonconvergenceException">The method did not converge to a solution.</exception>
-        public ColumnVector Solve (ColumnVector b) {
+        public ColumnVector Solve (ColumnVector rhs) {
 
-            if (b == null) throw new ArgumentNullException("b");
-            if (b.Dimension != dimension) throw new DimensionMismatchException();
+            if (rhs == null) throw new ArgumentNullException("rhs");
+            if (rhs.Dimension != dimension) throw new DimensionMismatchException();
 
             // accuracy and iteration limits are very huristic, revisit later
             double accuracyGoal = Global.Accuracy * 128.0;
@@ -370,7 +370,7 @@ namespace Meta.Numerics.Matrices {
             RowVector rt = x.Transpose();
 
             // r is the deviation vector that we are trying to drive to zero
-            ColumnVector r = b - this * x;
+            ColumnVector r = rhs - this * x;
 
             double rho0 = 1.0;
             double a = 1.0;
@@ -395,7 +395,7 @@ namespace Meta.Numerics.Matrices {
 
                 r = s - omega * t;
 
-                if (r.FrobeniusNorm() <= accuracyGoal * b.FrobeniusNorm()) return (x);
+                if (r.FrobeniusNorm() <= accuracyGoal * rhs.FrobeniusNorm()) return (x);
 
                 // prepare for next iteration
                 rho0 = rho1;

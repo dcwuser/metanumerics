@@ -97,6 +97,7 @@ namespace Meta.Numerics.Functions {
         /// <para>The Carlson integrals can be used to express integrals of rational functions. In that sense, they are replacements for
         /// the Legendre elliptic functions.</para>
         /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Carlson_symmetric_form"/>
         public static double CarlsonD (double x, double y, double z) {
 
             if (x < 0.0) throw new ArgumentOutOfRangeException("x");

@@ -12,7 +12,7 @@ using System.Security.Permissions;
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Meta Numerics")]
-[assembly: AssemblyCopyright("Copyright © Meta Numerics 2008-2011")]
+[assembly: AssemblyCopyright("Copyright © Meta Numerics 2008-2012")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

@@ -279,14 +279,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Fits a beta distribution to the given sample.
         /// </summary>
-        /// <param name="data">The data to fit.</param>
+        /// <param name="sample">The data to fit.</param>
         /// <returns>The result of the fit, containing the alpha parameter as the first entry and the beta parameter as the second.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="data"/> is null.</exception>
-        /// <exception cref="InsufficientDataException"><paramref name="data"/> contains fewer than three data points.</exception>
-        /// <exception cref="InvalidOperationException">Not all the entries in <paramref name="data" /> lie between zero and one.</exception>
-        public static FitResult FitToSample (Sample data) {
-            if (data == null) throw new ArgumentNullException("data");
-            if (data.Count < 3) throw new InsufficientDataException();
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three data points.</exception>
+        /// <exception cref="InvalidOperationException">Not all the entries in <paramref name="sample" /> lie between zero and one.</exception>
+        public static FitResult FitToSample (Sample sample) {
+            if (sample == null) throw new ArgumentNullException("sample");
+            if (sample.Count < 3) throw new InsufficientDataException();
 
             // maximum likelyhood calculation
             //   \log L = \sum_i \left[ (\alpha-1) \log x_i + (\beta-1) \log (1-x_i) - \log B(\alpha,\beta) \right]
@@ -300,11 +300,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             // compute the mean log of x and (1-x)
             // these are the (logs of) the geometric means
             double ga = 0.0; double gb = 0.0;
-            foreach (double value in data) {
+            foreach (double value in sample) {
                 if ((value <= 0.0) || (value >= 1.0)) throw new InvalidOperationException();
                 ga += Math.Log(value); gb += Math.Log(1.0 - value);
             }
-            ga /= data.Count; gb /= data.Count;
+            ga /= sample.Count; gb /= sample.Count;
 
             // define the function to zero
             Func<double[], double[]> f = delegate(double[] x) {
@@ -320,8 +320,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             // implies
             //   \alpha = M1 \left( \frac{M1 (1-M1)}{C2} - 1 \right)
             //   \beta = (1 - M1) \left( \frac{M1 (1-M1)}{C2} -1 \right)
-            double m = data.Mean; double mm = 1.0 - m;
-            double q = m * mm / data.Variance - 1.0;
+            double m = sample.Mean; double mm = 1.0 - m;
+            double q = m * mm / sample.Variance - 1.0;
             double[] x0 = new double[] { m * q, mm * q };
 
             // find the parameter values that zero the two equations
@@ -334,14 +334,14 @@ namespace Meta.Numerics.Statistics.Distributions {
             //   \frac{\partial^2 \log L}{\partial \alpha \partial \beta} = - N \psi'(\alpha+\beta)
             // covariance matrix is inverse of curvature matrix
             SymmetricMatrix CI = new SymmetricMatrix(2);
-            CI[0, 0] = data.Count * (AdvancedMath.Psi(1, a) - AdvancedMath.Psi(1, a + b));
-            CI[1, 1] = data.Count * (AdvancedMath.Psi(1, b) - AdvancedMath.Psi(1, a + b));
-            CI[0, 1] = data.Count * AdvancedMath.Psi(1, a + b);
+            CI[0, 0] = sample.Count * (AdvancedMath.Psi(1, a) - AdvancedMath.Psi(1, a + b));
+            CI[1, 1] = sample.Count * (AdvancedMath.Psi(1, b) - AdvancedMath.Psi(1, a + b));
+            CI[0, 1] = sample.Count * AdvancedMath.Psi(1, a + b);
             CholeskyDecomposition CD = CI.CholeskyDecomposition();
             SymmetricMatrix C = CD.Inverse();
 
             // do a KS test on the result
-            TestResult test = data.KolmogorovSmirnovTest(new BetaDistribution(a, b));
+            TestResult test = sample.KolmogorovSmirnovTest(new BetaDistribution(a, b));
 
             // return the results
             FitResult result = new FitResult(x1, C, test);

@@ -219,6 +219,288 @@ namespace Meta.Numerics.Statistics.Distributions {
 
     }
 
+    // we will build this assuming n <~ 50, because it gets very ugly with increasing n
+
+    public class PolynomialFiniteKolmogorovDistribution : Distribution {
+
+        public PolynomialFiniteKolmogorovDistribution (int n) {
+            if (n < 1) throw new ArgumentOutOfRangeException("n");
+            this.n = n;
+        }
+
+        private int n;
+
+        // extreme left value for 1/2 < t < 1
+
+        private static double P0 (int n, double t) {
+            return (AdvancedIntegerMath.Factorial(n) * MoreMath.Pow((2.0 * t - 1.0) / n, n));
+        }
+
+        // extreme right value for n / 2 < t < n
+
+        private static double Q0 (int n, double t) {
+
+            double Q = 2.0 * MoreMath.Pow((n - t) / n, n);
+
+            if (t > n - 1) return (Q);
+
+            Q += 2.0 * t * MoreMath.Pow((n - 1 - t) / n, n - 1);
+
+            if (t > n - 2) return (Q);
+
+            for (int j = 2; n - j - t > 0.0; j++) {
+                Q += 2.0 * AdvancedIntegerMath.BinomialCoefficient(n, j) * (t / n) * MoreMath.Pow((t + j) / n, j - 1) * MoreMath.Pow((n - j - t) / n, n - j);
+            }
+
+            return (Q);
+
+        }
+
+        public override double ProbabilityDensity (double x) {
+            double t = x;
+            if (t < 0.5) {
+                return (0.0);
+            } else if (t < 1.0) {
+                throw new NotImplementedException();
+                // very easy, derivate of P0
+            } else if (t < n / 2) {
+                // hard
+                throw new NotImplementedException();
+            } else if (t < n) {
+                // easy, derivate of -Q0
+                throw new NotImplementedException();
+            } else {
+                return (0.0);
+            }
+        }
+
+        public override double LeftProbability (double x) {
+            double t = x;
+            if (t < 0.5) {
+                return (0.0);
+            } else if (t < 1.0) {
+                return (P0(n, t));
+            } else if (t < n / 2) {
+                // hard
+                throw new NotImplementedException();
+            } else if (t < n) {
+                return (1.0 - Q0(n, t));
+            } else {
+                return (1.0);
+            }
+        }
+
+        public override double RightProbability (double x) {
+            double t = x;
+            if (t < 0.5) {
+                return (1.0);
+            } else if (t < 1.0) {
+                return (1.0 - P0(n, t));
+            } else if (t < n / 2) {
+                // hard
+                throw new NotImplementedException();
+            } else if (t < n) {
+                return (Q0(n, t));
+            } else {
+                return (0.0);
+            }
+        }
+
+    }
+
+
+    public class AsymptoticFiniteKolmogorovDistribution : Distribution {
+
+        // This class uses an expansion of P(x) in powers of 1/\sqrt{n} that is explored in
+        //   Pelz and Good, Journal of the Royal Statistical Society. Series B (Methodological), Vol. 38, No. 2 (1976), pp. 152-156
+        //   Simard and L'Ecuyer, Journal of Statistical Software
+        // By differentiating the expressions, we obtain p(x). By integrating p(x) x^m, we obtain expressions for the moments.
+        // Thus the approximation is self-consistent.
+
+        // For very small n and very extreme values of x, it can give negative p(x), but in practice this is extremely unlikely.
+        // This is a problem well known for Edgeworth expansions, and is really unavoidable for any expansion of p(x). Since the
+        // leading term must integrate to one, and the whole series must also integrate to one, higher terms must integrate to zero.
+        // Hence they must have regions of negative values.
+
+        public AsymptoticFiniteKolmogorovDistribution (int n) {
+            if (n < 1) throw new ArgumentOutOfRangeException("n");
+            this.n = n;
+        }
+
+        int n;
+
+        // Asymptotic result as series useful for small x is
+        //   P(x) = \frac{\sqrt{2 \pi}}{x} \sum_{j=1}^{\infty} e^{-\frac{(2j-1)^2 \pi^2}{8x^2}}
+        // This can derived from the Q-result below by writing the series as a Jacobi theta function
+        // and using the \tau \rightarrow 1/\tau transformation for that function (see http://en.wikipedia.org/wiki/Theta_function)
+
+        private double P0 (double x) {
+            double a = MoreMath.Pow2(Math.PI / x) / 8.0;
+            double f = 0.0;
+            for (int k = 1; k < 100; k += 2) {
+                double f_old = f;
+                double df = Math.Exp(-a * (k * k));
+                f += df;
+                if (f == f_old) { return (Math.Sqrt(2.0 * Math.PI) / x * f); }
+            }
+            throw new NonconvergenceException();
+        }
+
+        // Asymptotic result as series useful for large x is
+        //  P = \sum_{k=-\infty}^{\infty} (-1)^k e^{-2 k^2 x^2}
+        //    = 1 - 2 \sum_{k=1}^{\infty} (-1)^{k-1} e^{-2 k^2 x^2}
+        // and since P = 1 - Q the second term is Q.
+
+        private double Q0 (double x) {
+            double a = 2.0 * x * x;
+            double f = 0.0;
+            for (int k = 1; k < 50; k++) {
+                double f_old = f;
+                double df = Math.Exp(-a * (k * k));
+                if (k % 2 == 0) df = -df;
+                f += df;
+                if (f == f_old) { return (2.0 * f); }
+            }
+            throw new NonconvergenceException();
+        }
+
+        // Derivative of P_0, which is leading term in p(x) = P'(x) useful for small x
+        //   P' = \frac{\sqrt{2\pi}}{x^2} \sum_{k=1}^{\infty} \left( \frac{(2k-1)^2 \pi^2}{4 x^2} - 1 \right) e^{-\frac{(2k-1)^2 \pi^2}{8 x^2}}
+        // This is derived straightforwardly by term-by-term differentiation of the P0 series
+
+        private double P0Prime (double x) {
+            double a = MoreMath.Pow2(Math.PI / x) / 8.0;
+            double f = 0.0;
+            for (int k = 1; k < 100; k += 2) {
+                double f_old = f;
+                double z = a * (k * k);
+                double df = (2.0 * z - 1.0) * Math.Exp(-z);
+                f += df;
+                if (f == f_old) return (Global.SqrtTwoPI / (x * x) * f);
+            }
+            throw new NonconvergenceException();
+        }
+
+        // Derivative of Q_0, which is the leading term in p(x) = -Q'(x) useful for large x
+        //   Q' = 8 x \sum_{k=1}^{\infty} (-1)^k k^2 e^{-2 k^2 x^2}
+        // This is derived straightforwardly by term-by-term differentiation of the Q_0 series
+
+        private double Q0Prime (double x) {
+            double a = 2.0 * x * x;
+            double f = 0.0;
+            for (int k = 1; k < 50; k++) {
+                double f_old = f;
+                int k2 = k * k;
+                double df = k2 * Math.Exp(-a * k2);
+                if (k % 2 != 0) df = -df;
+                f += df;
+                if (f == f_old) return (8.0 * x * f);
+            }
+            throw new NonconvergenceException();
+        }
+
+        // The next terms in the expansion give the 1/\sqrt{n} corrections
+        // It happens that P_1 = P_0' / 6, so use this to reduce the code
+        // we have to write and maintain
+
+        private double P1 (double x) {
+            return (P0Prime(x) / 6.0);
+        }
+
+        private double Q1 (double x) {
+            return (Q0Prime(x) / 6.0);
+        }
+
+        // Derivative of Q_1, which is the first correction term to p(x) = -Q'(x)
+        //    Q_1' = \frac{4}{3} \sum_{k=1}^{\infty} (-1)^k k^2 ( 1 - 4 k^2 x^2 ) e^{-2 k^2 x^2}
+        // This form, useful for large x, is obtained by straightforward differentiation of the expression
+        // for Q_1 = Q_0' / 6
+
+        private double Q1Prime (double x) {
+            double a = 2.0 * x * x;
+            double f = 0.0;
+            for (int k = 1; k < 50; k++) {
+                double f_old = f;
+                int k2 = k * k;
+                double z = a * k2;
+                double df = k2 * (1.0 - 2.0 * z) * Math.Exp(-z);
+                if (k % 2 != 0) df = - df;
+                f += df;
+                if (f == f_old) return (4.0 / 3.0 * f);
+            }
+            throw new NonconvergenceException();
+        }
+
+        private double P1Prime (double x) {
+            double f = 0.0;
+            for (int k = 1; k < 100; k += 2) {
+                double f_old = f;
+                double z = (k * k) * (Math.PI * Math.PI) / (x * x) / 8.0;
+                double df = (4.0 * z * z - 10 * z + 2.0) * Math.Exp(-z);
+                f += df;
+                if (f == f_old) return (Global.SqrtTwoPI / 6.0 / (x * x * x) * f);
+            }
+            throw new NotImplementedException();
+        }
+
+        public override double LeftProbability (double x) {
+            if (x <= 0.0) {
+                return (0.0);
+            } else if (x < 1.0) {
+                return (P0(x) + P1(x) / Math.Sqrt(n));
+            } else {
+                return (1.0 - Q0(x) - Q1(x) / Math.Sqrt(n));
+            }
+        }
+
+        public override double RightProbability (double x) {
+            if (x <= 0.0) {
+                return (1.0);
+            } else if (x < 1.0) {
+                return (1.0 - P0(x) - P1(x) / Math.Sqrt(n));
+            } else {
+                //return (KQ0(x));
+                return (Q0(x) + Q1(x) / Math.Sqrt(n));
+            }
+        }
+
+        public override double ProbabilityDensity (double x) {
+            if (x <= 0.0) {
+                return (0.0);
+            } else if (x < 1.0) {
+                return (P0Prime(x) + P1Prime(x) / Math.Sqrt(n));
+            } else {
+                return (-Q0Prime(x) - Q1Prime(x) / Math.Sqrt(n));
+            }
+        }
+
+        public override double Mean {
+            get {
+                return (Math.Sqrt(Global.HalfPI) * Global.LogTwo - 1.0 / 6.0 / Math.Sqrt(n));
+            }
+        }
+
+        public override double Variance {
+            get {
+                return (Math.PI / 2.0 * (Math.PI / 6.0 - Global.LogTwo * Global.LogTwo) - Math.Sqrt(Global.HalfPI) * Global.LogTwo / 12.0 / Math.Sqrt(n));
+            }
+        }
+
+        public override double Moment (int m) {
+            if (m < 0) {
+                throw new ArgumentOutOfRangeException("m");
+            } else if (m == 0) {
+                return (1.0);
+            } else {
+                // we can get these expressions just by integrating Q_0' and Q_1' term by term
+                double M0 = AdvancedMath.DirichletEta(m) * AdvancedMath.Gamma(m / 2.0 + 1.0) / Math.Pow(2.0, m / 2.0 - 1.0);
+                double M1 = -2.0 / 3.0 * AdvancedMath.DirichletEta(m - 1) * AdvancedMath.Gamma((m + 1) / 2.0) / Math.Pow(2.0, (m + 1) / 2.0) * m;
+                return (M0 + M1 / Math.Sqrt(n));
+            }
+        }
+
+    }
+
 #if FUTURE
     public class KolmogorovExactDistribution : Distribution {
 

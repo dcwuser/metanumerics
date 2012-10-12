@@ -160,6 +160,14 @@ namespace Meta.Numerics.SignalProcessing {
                 }
 
                 t.Multiplicity = factor.Multiplicity;
+
+                /*
+                if ((factor.Value == 2) && (factor.Multiplicity % 2 == 0)) {
+                    t = new RadixFourTransformlet(size, roots);
+                    t.Multiplicity = factor.Multiplicity / 2;
+                }
+                */
+
                 plan.Add(t);
 
             }

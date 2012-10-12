@@ -1,6 +1,8 @@
 ﻿using System;
 
 using Meta.Numerics.Functions;
+using Meta.Numerics.Matrices;
+
 
 namespace Meta.Numerics.Statistics.Distributions {
 
@@ -280,6 +282,76 @@ namespace Meta.Numerics.Statistics.Distributions {
 
 
         // routines for maximum likelyhood fitting
+
+        /// <summary>
+        /// Computes the Gamma distribution that best fits the given sample.
+        /// </summary>
+        /// <param name="sample">The sample to fit.</param>
+        /// <returns>The best fit parameters.</returns>
+        /// <remarks>
+        /// <para>The returned fit parameters are the <see cref="ShapeParameter"/> and <see cref="ScaleParameter"/>, in that order.
+        /// These are the same parameters, in the same order, that are required by the <see cref="GammaDistribution(double,double)"/> constructor to
+        /// specify a new Gamma distribution.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
+        /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
+        public static FitResult FitToSample (Sample sample) {
+
+            if (sample == null) throw new ArgumentNullException("sample");
+            if (sample.Count < 3) throw new InsufficientDataException();
+
+            // The log likelyhood of a sample given k and s is
+            //   \log L = (k-1) \sum_i \log x_i - \frac{1}{s} \sum_i x_i - N \log \Gamma(k) - N k \log s
+            // Differentiating,
+            //   \frac{\partial \log L}{\partial s} = \frac{1}{s^2} \sum_i x_i - \frac{Nk}{s}
+            //   \frac{\partial \log L}{\partial k} = \sum_i \log x_i - N \psi(k) - N \log s
+            // Setting the first equal to zero gives
+            //   k s = N^{-1} \sum_i x_i = <x>
+            //   \psi(k) + \log s = N^{-1} \sum_i \log x_i = <log x>
+            // Inserting the first into the second gives a single equation for k
+            //   \log k - \psi(k) = \log <x> - <\log x>
+            // Note the RHS need only be computed once.
+            // \log k > \psi(k) for all k, so the RHS had better be positive. They get
+            // closer for large k, so smaller RHS will produce a larger k.
+
+            double s = 0.0;
+            foreach (double x in sample) {
+                if (x <= 0.0) throw new InvalidOperationException();
+                s += Math.Log(x);
+            }
+            s = Math.Log(sample.Mean) - s / sample.Count;
+
+            // We can get an initial guess for k from the method of moments
+            //   \frac{\mu^2}{\sigma^2} = k
+
+            double k0 = MoreMath.Pow2(sample.Mean) / sample.Variance;
+
+            // Since 1/(2k) < \log(k) - \psi(k) < 1/k, we could get a bound; that
+            // might be better to avoid the solver running into k < 0 territory
+
+            double k1 = FunctionMath.FindZero(k => (Math.Log(k) - AdvancedMath.Psi(k) - s), k0);
+
+            double s1 = sample.Mean / k1;
+
+            // Curvature of the log likelyhood is straightforward
+            //   \frac{\partial^2 \log L}{\partial s^2} = -\frac{2}{s^3} \sum_i x_i + \frac{Nk}{s^2} = - \frac{Nk}{s^2}
+            //   \frac{\partial^2 \log L}{\partial k \partial s} = - \frac{N}{s}
+            //   \frac{\partial^2 \log L}{\partial k^2} = - N \psi'(k)
+            // This gives the curvature matrix and thus via inversion the covariance matrix.
+
+            SymmetricMatrix B = new SymmetricMatrix(2);
+            B[0, 0] = sample.Count * AdvancedMath.Psi(1, k1);
+            B[0, 1] = sample.Count / s1;
+            B[1, 1] = sample.Count * k1 / MoreMath.Pow2(s1);
+            SymmetricMatrix C = B.CholeskyDecomposition().Inverse();
+
+            // Do a KS test for goodness-of-fit
+            TestResult test = sample.KolmogorovSmirnovTest(new GammaDistribution(k1, s1));
+
+            return (new FitResult(new double[] { k1, s1 }, C, test));
+        }
+
 #if FUTURE
         private void PsiDeficitAndDerivative (double x, out double f, out double fp) {
 
@@ -290,26 +362,22 @@ namespace Meta.Numerics.Statistics.Distributions {
             f = 0.0;
             fp = 0.0;
 
-            double x1 = 1.0 / x;
-            double x2 = x1 * x1;
-
             // for small x, use f(x) = f(x+1) - 1/x, and therefore f'(x) = f'(x+1) + 1/x^2, to advance x
             while (x < 16.0) {
-                f -= x1;
-                fp += x2;
+                double xi = 1.0 / x;
+                f -= xi;
+                fp += xi * xi;
                 x += 1.0;
-                x1 = 1.0 / x;
-                x2 = x1 * x1;
             }
 
             // once x is large enough, use asymptotic expansion
             //   f = \frac{1}{2x} + \sum_{n=1}^{\infty} \frac{B_{2n}}{2n x^{2n}}
             // and therefore
-            //   f' = \frac{-1}{x} \left[ \frac{1}{2x} + \sum_{n=1}^{\infty} \frac{B_{2n}}{x^{2n}}
+            //   f' = \frac{-1}{2x^2} \left[ \frac{1}{2x} + \sum_{n=1}^{\infty} \frac{B_{2n}}{x^{2n}}
             // to compute f and f'
 
-            f += x1 / 2.0;
-            fp -= x2 / 2.0;
+            f += 1.0 / (2.0 * x);
+            fp -= 1.0 / (2.0 * x * x);
 
             double xx = x2;
             for (int n = 1; n < AdvancedIntegerMath.Bernoulli.Length; n++) {

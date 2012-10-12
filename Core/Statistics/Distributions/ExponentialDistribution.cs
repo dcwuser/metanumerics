@@ -173,14 +173,15 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// Computes the exponential distribution that best fits the given sample.
         /// </summary>
         /// <param name="sample">The sample to fit.</param>
-        /// <returns>The fit result.</returns>
+        /// <returns>The best fit parameter.</returns>
         /// <remarks>
-        /// <para>The fit result contains one parameter, which is the mean of the best-fit exponential distribution.</para>
-        /// <para>The goodness-of-fit test is a Kolmogorov-Smirnov test (<see cref="Sample.KolmogorovSmirnovTest(Distribution)"/>)
-        /// which is not adjusted to reflect the fit. It is therefore unreliable for very small sample sizes.</para>
+        /// <para>The returned fit parameter is &#x3BC; (the <see cref="Mean"/>).
+        /// These is the same parameter that is required by the <see cref="ExponentialDistribution(double)"/> constructor to
+        /// specify a new exponential distribution.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
-        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than two data points.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than two values.</exception>
+        /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
         public static FitResult FitToSample (Sample sample) {
 
             if (sample == null) throw new ArgumentNullException("sample");

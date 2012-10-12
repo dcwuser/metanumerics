@@ -18,10 +18,10 @@
     <SignAssembly>true</SignAssembly>
     <DelaySign>false</DelaySign>
     <AssemblyOriginatorKeyFile>keypair.snk</AssemblyOriginatorKeyFile>
-    <SccProjectName>SAK</SccProjectName>
-    <SccLocalPath>SAK</SccLocalPath>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccProvider>SAK</SccProvider>
+    <SccProjectName>%24/metanumerics/Numerics/Core</SccProjectName>
+    <SccLocalPath>.</SccLocalPath>
+    <SccAuxPath>https://tfs.codeplex.com/tfs/tfs10</SccAuxPath>
+    <SccProvider>{4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}</SccProvider>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
@@ -82,8 +82,10 @@
     <Compile Include="Functions\AdvancedMath_Coulomb.cs" />
     <Compile Include="Functions\AdvancedMath_Elliptic.cs" />
     <Compile Include="Functions\AdvancedMath_Inverse.cs" />
+    <Compile Include="Functions\AdvancedMath_Kelvin.cs" />
     <Compile Include="Functions\AdvancedMath_Polylog.cs" />
     <Compile Include="Functions\FunctionMath_Differentiate.cs" />
+    <Compile Include="Functions\FunctionMath_MultiIntegrate.cs" />
     <Compile Include="Matrices\ColumnVector.cs" />
     <Compile Include="Matrices\RowVector.cs" />
     <Compile Include="Matrices\SingularValueDecomposition.cs" />
@@ -137,6 +139,7 @@
     <Compile Include="Statistics\ContingencyTable.cs" />
     <Compile Include="Statistics\DiscreteHistogram.cs" />
     <Compile Include="Statistics\Distributions\GumbelDistribution.cs" />
+    <Compile Include="Statistics\Distributions\TruncatedNormalDistribution.cs" />
     <Compile Include="Statistics\PrincipalComponentAnalysis.cs" />
     <Compile Include="Statistics\UncertainMeasurement.cs" />
     <Compile Include="Statistics\Distributions\BernoulliDistribution.cs" />

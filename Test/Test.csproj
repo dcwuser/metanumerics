@@ -13,10 +13,10 @@
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <SccProjectName>SAK</SccProjectName>
-    <SccLocalPath>SAK</SccLocalPath>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccProvider>SAK</SccProvider>
+    <SccProjectName>%24/metanumerics/Numerics/Test</SccProjectName>
+    <SccLocalPath>.</SccLocalPath>
+    <SccAuxPath>https://tfs.codeplex.com/tfs/tfs10</SccAuxPath>
+    <SccProvider>{4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}</SccProvider>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>4.0</OldToolsVersion>
@@ -82,6 +82,7 @@
     <Compile Include="DistributionTest.cs" />
     <Compile Include="ExtremaTest.cs" />
     <Compile Include="DifferentiateTest.cs" />
+    <Compile Include="FitToSampleTest.cs" />
     <Compile Include="FourierTest.cs" />
     <Compile Include="FutureTest.cs" />
     <Compile Include="HistogramTest.cs" />
@@ -89,6 +90,7 @@
     <Compile Include="IntervalTest.cs" />
     <Compile Include="MixedMatrixTest.cs" />
     <Compile Include="LanczosTest.cs" />
+    <Compile Include="MultiIntegrateTest.cs" />
     <Compile Include="RandomTest.cs" />
     <Compile Include="RectangularMatrixTest.cs" />
     <Compile Include="MoreMathTest.cs" />

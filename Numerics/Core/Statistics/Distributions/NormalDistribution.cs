@@ -195,12 +195,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// Computes the normal distribution that best fits the given sample.
         /// </summary>
         /// <param name="sample">The sample to fit.</param>
-        /// <returns>The fit result.</returns>
+        /// <returns>The best fit parameters.</returns>
         /// <remarks>
-        /// <para>The fit result is two-dimensional. The first parameter is the mean of the best-fit normal distribution; the second
-        /// parameter is its standard deviation.</para>
-        /// <para>The goodness-of-fit test is a Kolmogorov-Smirnov test.</para>
+        /// <para>The returned fit parameters are the &#x3BC; (<see cref="Mean"/>) and &#x3C3; (<see cref="StandardDeviation"/>) parameters, in that order.
+        /// These are the same parameters, in the same order, that are required by the <see cref="NnormalDistribution(double,double)"/> constructor to
+        /// specify a new normal distribution.</para></para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><see cref="sample"/> is null.</exception>
+        /// <exception cref="InsufficientDataException"><see cref="sample"/> contains fewer than three values.</exception>
         public static FitResult FitToSample (Sample sample) {
 
             if (sample == null) throw new ArgumentNullException("sample");
@@ -218,6 +220,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
             // the best-fit sigma and mu are known to be uncorrelated
+            // you can prove this by writing down the log likelyhood function and
+            // computing its mixed second derivative, which you will see vanishes
+            // at the minimum
 
             return (new FitResult(mu.Value, mu.Uncertainty, sigma.Value, sigma.Uncertainty, 0.0, test));
 

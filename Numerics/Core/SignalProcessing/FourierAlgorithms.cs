@@ -41,7 +41,7 @@ namespace Meta.Numerics.SignalProcessing {
         }
 
         // we don't use the Multiplicity in any Transformlet methods, but it is used to execute the whole plan, and since 
-        // there is one per transformlet we save ourselves from creating an additonal class by adding it
+        // there is one per transformlet we save ourselves from creating an additonal container class by storing it in the Transformlet
 
         public int Multiplicity { get; internal set; }
 
@@ -81,11 +81,21 @@ namespace Meta.Numerics.SignalProcessing {
 
         public virtual void FftKernel (Complex[] x, Complex[] y, int y0, int dy, int sign) {
 
+            // x is the source vector, y is the target vector
+            // y0 is the initial y index, dy the stride
+            // sign gives the sign of the Fourier transform in the exponent
+
+            // yi is the y index we are currently computing; initialize it to y0
             int yi = y0;
+
+            // the first index is the zero frequency component that just adds all the x's
+            // encode this specially so we are not unnecessarily multiplying by complex 1 R times
             y[yi] = 0.0;
             for (int j = 0; j < R; j++) {
                 y[yi] += x[j];
             }
+
+            // now do the higher index entries
             for (int i = 1; i < R; i++) {
                 yi += dy;
                 y[yi] = x[0];
@@ -131,6 +141,14 @@ namespace Meta.Numerics.SignalProcessing {
             y0 = new Complex(a0 + a1, b0 + b1);
             y1 = new Complex(a0 - a1, b0 - b1);
             // for some reason, this looks to be faster than using the complex add and subtract; i don't see why
+
+            // this kernel has 4 flops, all adds/subs
+
+            // the naive R=2 kernel has 1 complex multiply and 2 complex adds
+            // a complex multiply requires 6 flops and complex add 2 ops
+            // so the naive kernel has 6 * 1 + 2 * 2 = 6 + 4 = 10 flops
+            // we have saved a factor 2.5
+
         }
 
     }
@@ -163,9 +181,36 @@ namespace Meta.Numerics.SignalProcessing {
             y0 = new Complex(x0.Re + a12p, x0.Im + b12p);
             y1 = new Complex(sa - tb, sb + ta);
             y2 = new Complex(sa + tb, sb - ta);
+
+            // this kernel has 16 flops
+
+            // the naive kernel for R=3 has 4 complex multiplies and 6 complex adds
+            // a complex multiply requires 6 flops and a complex add 2 flops
+            // so the naive kernel has 4 * 6 + 6 * 2 = 24 + 12 = 36 flops
+            // we have saved a factor 2.25, actually a bit more since we have also removed index loop accounting
         }
 
         private static readonly Complex r31 = new Complex(-1.0 / 2.0, Math.Sqrt(3.0) / 2.0);
+
+    }
+
+    internal class RadixFourTransformlet : Transformlet {
+
+        public RadixFourTransformlet (int N, Complex[] u) : base(4, N, u) { }
+
+        public override void FftKernel (Complex[] x, Complex[] y, int y0, int dy, int sign) {
+
+            double a02p = x[0].Re + x[2].Re; double b02p = x[0].Im + x[2].Im;
+            double a02m = x[0].Re - x[2].Re; double b02m = x[0].Im - x[2].Im;
+            double a13p = x[1].Re + x[3].Re; double b13p = x[1].Im + x[3].Im;
+            double a13m = x[1].Re - x[1].Re; double b13m = x[1].Im - x[3].Im;
+
+            y[y0] = new Complex(a02p + a13p, b02p + b13p);
+            y[y0 + dy] = new Complex(a02m - b13m, b02m + a13m);
+            y[y0 + 2 * dy] = new Complex(a02p - a13p, b02p - b13p);
+            y[y0 + 3 * dy] = new Complex(a02m + b13m, b02m - a13m);
+
+        }
 
     }
 

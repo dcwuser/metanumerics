@@ -180,6 +180,63 @@ namespace Meta.Numerics.Statistics {
 
     }
 
+    // Summaries the count, mean, and variance of a sample.
+    // These values are updatable, so that as we add values
+    // we can know how the summary statistics change without
+    // referencing past values. This enables "one pass" computation
+    // of the mean and standard deviation.
+    // See http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance and Knuth
+
+    internal class SampleSummary {
+
+        public SampleSummary () { }
+
+        public SampleSummary (IEnumerable<double> values) : this() {
+            Add(values);
+        }
+
+        int N;
+        double M1;
+        double M2;
+
+        public int Count {
+            get {
+                return (N);
+            }
+        }
+
+        public double Mean {
+            get {
+                return (M1);
+            }
+        }
+
+        public double Variance {
+            get {
+                // Note this is the sample variance, not the population variance
+                return (M2 / N);
+            }
+        }
+
+        public void Add (double value) {
+            N++;
+            double dM = value - M1;
+            M1 += dM / N;
+            M2 += (value - M1) * dM;
+            // note in M2 update, one factor is delta from old mean, the other the delta from new mean
+            // M2 can also be updated as dM * dM * (n-1) / n, but this requires an additional flop
+        }
+
+        public void Add (IEnumerable<double> values) {
+            if (values == null) throw new ArgumentNullException("values");
+            foreach (double value in values) {
+                Add(value);
+            }
+        }
+
+    }
+
+
     /// <summary>
     /// Represents a set of data points, where each data point consists of a single real number.
     /// </summary>

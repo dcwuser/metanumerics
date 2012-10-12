@@ -277,12 +277,17 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <summary>
-        /// Fits a beta distribution to the given sample.
+        /// Computes the Beta distribution that best fits the given sample.
         /// </summary>
-        /// <param name="sample">The data to fit.</param>
-        /// <returns>The result of the fit, containing the alpha parameter as the first entry and the beta parameter as the second.</returns>
+        /// <param name="sample">The sample to fit.</param>
+        /// <returns>The best fit parameters.</returns>
+        /// <remarks>
+        /// <para>The returned fit parameters are the &#x3B1; (<see cref="Alpha"/>) and  &#x3B2; (<see cref="Beta"/>) parameters, in that order.
+        /// These are the same parameters, in the same order, that are required by the <see cref="BetaDistribution(double,double)"/> constructor to
+        /// specify a new Beta distribution.</para>
+        /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
-        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three data points.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         /// <exception cref="InvalidOperationException">Not all the entries in <paramref name="sample" /> lie between zero and one.</exception>
         public static FitResult FitToSample (Sample sample) {
             if (sample == null) throw new ArgumentNullException("sample");

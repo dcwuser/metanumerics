@@ -90,7 +90,7 @@ namespace Test {
 
             Random rng = new Random(seed);
             for (int i = 0; i < count; i++) {
-                double x = distribution.InverseLeftProbability(rng.NextDouble());
+                double x = distribution.GetRandomValue(rng);
                 sample.Add(x);
             }
 
@@ -316,6 +316,52 @@ namespace Test {
         }
 
         [TestMethod]
+        public void GammaFit () {
+
+            // Create a gamma distribution
+            GammaDistribution B = new GammaDistribution(2.75, 2.0);
+
+            // Sample from it
+            Sample S = CreateSample(B, 100);
+
+            // Fit the sample to a gamma distribution
+            // The fit should agree with the population and the fit should be good
+            FitResult R = GammaDistribution.FitToSample(S);
+            Assert.IsTrue(R.Parameter(0).ConfidenceInterval(0.95).ClosedContains(B.ShapeParameter));
+            Assert.IsTrue(R.Parameter(1).ConfidenceInterval(0.95).ClosedContains(B.ScaleParameter));
+            Assert.IsTrue(R.GoodnessOfFit.LeftProbability < 0.95);
+
+        }
+
+        [TestMethod]
+        public void GammaFitUncertainty () {
+
+            // check that the uncertainty in reported fit parameters is actually meaningful
+            // it should be the standard deviation of fit parameter values in a sample of many fits
+
+            // define a population distribution 
+            Distribution distribution = new GammaDistribution(1.5, 2.0);
+
+            // draw a lot of samples from it; fit each sample and
+            // record the reported parameter value and error of each
+            BivariateSample values = new BivariateSample();
+            BivariateSample uncertainties = new BivariateSample();
+            for (int i = 0; i < 100; i++) {
+                Sample sample = CreateSample(distribution, 50, i);
+                FitResult fit = GammaDistribution.FitToSample(sample);
+                UncertainValue a = fit.Parameter(0);
+                UncertainValue b = fit.Parameter(1);
+                values.Add(a.Value, b.Value);
+                uncertainties.Add(a.Uncertainty, b.Uncertainty);
+            }
+
+            // the reported errors should agree with the standard deviation of the reported parameters
+            Assert.IsTrue(values.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.X.Mean));
+            Assert.IsTrue(values.Y.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.Y.Mean));
+
+        }
+
+        [TestMethod]
         public void WaldFitUncertainties () {
 
             WaldDistribution wald = new WaldDistribution(3.5, 2.5);
@@ -378,13 +424,43 @@ namespace Test {
         [TestMethod]
         public void WeibullFit () {
 
-            foreach (double alpha in new double[] { 0.3, 1.3, 2.3 }) {
-                WeibullDistribution W = new WeibullDistribution(1.0, alpha);
+            foreach (double alpha in new double[] { 0.03, 0.3, 1.3, 3.3 }) {
+                WeibullDistribution W = new WeibullDistribution(2.2, alpha);
                 Sample S = CreateSample(W, 50);
                 FitResult R = WeibullDistribution.FitToSample(S);
                 Assert.IsTrue(R.Parameter(0).ConfidenceInterval(0.95).ClosedContains(W.ScaleParameter));
                 Assert.IsTrue(R.Parameter(1).ConfidenceInterval(0.95).ClosedContains(W.ShapeParameter));
             }
+
+        }
+
+        [TestMethod]
+        public void WeibullFitUncertainties () {
+
+            // check that the uncertainty in reported fit parameters is actually meaningful
+            // it should be the standard deviation of fit parameter values in a sample of many fits
+
+            // define a population distribution 
+            Distribution distribution = new WeibullDistribution(2.5, 1.5);
+
+            // draw a lot of samples from it; fit each sample and
+            // record the reported parameter value and error of each
+            BivariateSample values = new BivariateSample();
+            MultivariateSample uncertainties = new MultivariateSample(3);
+            for (int i = 0; i < 50; i++) {
+                Sample sample = CreateSample(distribution, 10, i);
+                FitResult fit = WeibullDistribution.FitToSample(sample);
+                UncertainValue a = fit.Parameter(0);
+                UncertainValue b = fit.Parameter(1);
+                values.Add(a.Value, b.Value);
+                uncertainties.Add(a.Uncertainty, b.Uncertainty, fit.Covariance(0,1));
+            }
+
+            // the reported errors should agree with the standard deviation of the reported parameters
+            Assert.IsTrue(values.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.Column(0).Mean));
+            Assert.IsTrue(values.Y.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.Column(1).Mean));
+            //Console.WriteLine("{0} {1}", values.PopulationCovariance, uncertainties.Column(2).Mean);
+            //Assert.IsTrue(values.PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(uncertainties.Column(2).Mean));
 
         }
 

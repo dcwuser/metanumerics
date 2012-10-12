@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
+using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
@@ -20,14 +21,15 @@ namespace Meta.Numerics.Statistics.Distributions {
     public sealed class LognormalDistribution : Distribution, IParameterizedDistribution {
 
         /// <summary>
-        /// Initializes a log normal distribution.
+        /// Initializes a log-normal distribution.
         /// </summary>
         /// <param name="mu">The mean of the underlying normal distribution.</param>
         /// <param name="sigma">The standard deviation of the underlying normal distribution.</param>
         /// <remarks>
-        /// <para>Note that the <paramref name="mu"/> and <paramref name="sigma"/> parameters are
-        /// <em>not</em> the mean and standard deviation of the log-normal deviates; they are the
-        /// mean and standard deviation of their logrithms z = ln x.</para>
+        /// <para>Note that the values of &#x3BC; and  &#x3C3; parameters are
+        /// <em>not</em> the mean and standard deviation of the log-normal distribution.
+        /// They are the mean and standard deviation of their logrithms z = ln x. This is
+        /// the standard method of characterizing a log-normal distribution.</para>
         /// </remarks>
         public LognormalDistribution (double mu, double sigma) {
             if (sigma <= 0.0) throw new ArgumentOutOfRangeException("sigma");
@@ -37,11 +39,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <summary>
-        /// Initializes a standard log normal distribution.
+        /// Initializes a standard log-normal distribution.
         /// </summary>
         /// <remarks>
-        /// <para>A standard lognormal distribution has mu = 0 and sigma = 1. It is the log transform of the standard
-        /// normal distribution.</para>
+        /// <para>A standard log-normal distribution has &#x3BC; = 0 and &#x3C3; = 1.
+        /// It is the log transform of the standard normal distribution.</para>
         /// </remarks>
         public LognormalDistribution () : this(0, 1) {
         }
@@ -49,6 +51,33 @@ namespace Meta.Numerics.Statistics.Distributions {
         private double mu = 0.0;
         private double sigma = 1.0;
         private NormalDistribution normal;
+
+        /// <summary>
+        /// Gets the value of the &#x3BC; parameter.
+        /// </summary>
+        /// <remarks>
+        /// <para>Note that the value of this parameter is not the mean of the distribution.
+        /// It is the value given to the distribution constructor (<see cref="LognormalDistribution(double,double)"/>),
+        /// which is the mean of the underlying normal distribution.</para>
+        /// </remarks>
+        public double Mu {
+            get {
+                return (mu);
+            }
+        }
+
+        /// <summary>
+        /// Gets the value of the &#x3C3; parameter.
+        /// </summary>
+        /// <remarks>
+        /// <para>Note that the value of this parameter is not the standard deviation of the distribution.
+        /// It is the value given to the distribution constructor (<see cref="LognormalDistribution(double,double)"/>),
+        /// which is the sandard deviation of the underlying normal distribution.
+        public double Sigma {
+            get {
+                return (sigma);
+            }
+        }
 
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
@@ -186,6 +215,53 @@ namespace Meta.Numerics.Statistics.Distributions {
                 */
             }
 
+        }
+
+        /// <summary>
+        /// Computes the log-normal distribution that best fits the given sample.
+        /// </summary>
+        /// <param name="sample">The sample to fit.</param>
+        /// <returns>The best fit parameters.</returns>
+        /// <remarks>
+        /// <para>The returned fit parameters are the &#x3BC; (<see cref="Mu"/>) and &#x3C3; (<see cref="Sigma"/>) parameters, in that order.
+        /// These are the same parameters, in the same order, that are required by the <see cref="LognormalDistribution(double,double)"/> constructor to
+        /// specify a new log-normal distribution.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
+        /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
+        public static FitResult FitToSample (Sample sample) {
+            if (sample == null) throw new ArgumentNullException("sample");
+            if (sample.Count < 3) throw new InsufficientDataException();
+
+            // Writing out the log likelyhood from p(x), taking its
+            // derivatives wrt mu and sigma, and setting them equal
+            // to zero to find the minimizing values, you find that
+            // the results of the normal fit are reproduced exactly
+            // with x -> log x, i.e.
+
+            // \mu = < \log x >, \sigma^2 = < (\log x - \mu)^2 >
+            
+            // do a one-pass computation of these quantities
+            SampleSummary summary = new SampleSummary();
+            foreach (double value in sample) {
+                if (value <= 0.0) throw new InvalidOperationException();
+                summary.Add(Math.Log(value));
+            }
+
+            // the second derivatives are also just as in the normal
+            // case, including the vanishing of the mixed derivative
+            // this makes direct inversion trivial
+
+            SymmetricMatrix C = new SymmetricMatrix(2);
+            C[0, 0] = summary.Variance / summary.Count;
+            C[1, 1] = summary.Variance / summary.Count / 2;
+
+            // test the fit
+            Distribution d = new LognormalDistribution(summary.Mean, Math.Sqrt(summary.Variance));
+            TestResult r = sample.KolmogorovSmirnovTest(d);
+
+            return (new FitResult(new double[] { summary.Mean, Math.Sqrt(summary.Variance) }, C, r));
         }
 
         double[] IParameterizedDistribution.GetParameters () {

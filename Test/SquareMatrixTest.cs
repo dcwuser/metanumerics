@@ -4,6 +4,7 @@ using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
+using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
 
 namespace Test {    
@@ -359,6 +360,7 @@ namespace Test {
         [TestMethod]
         public void SquareMatrixDifficultEigensystem () {
             // this requires > 30 iterations to converge, looses more accuracy than it should
+            // this example throws a NonConvergenceException without the ad hoc shift but works once the ad hoc shift is included
             SquareMatrix M = new SquareMatrix(4);
             M[0,1] = 2;
             M[0,3] = -1;
@@ -368,7 +370,62 @@ namespace Test {
             ComplexEigensystem E = M.Eigensystem();
             for (int i = 0; i < E.Dimension; i++) {
                 Console.WriteLine(E.Eigenvalue(i));
+                for (int j = 0; j < E.Dimension; j++) {
+                    Console.Write("{0} ", E.Eigenvector(i)[j]);
+                }
+                Console.WriteLine();
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(M, E.Eigenvector(i), E.Eigenvalue(i)));
             }
+        }
+
+
+        [TestMethod]
+        public void KnownEigenvalues () {
+
+            // This example is presented in http://people.inf.ethz.ch/arbenz/ewp/Lnotes/chapter3.pdf
+            // It has eigenvalues 1 \pm 2i, 3, 4, 5 \pm 6i
+
+            double[,] souce = new double[,] {
+                { 7, 3, 4, -11, -9, -2},
+                {-6, 4, -5, 7, 1, 12},
+                {-1, -9, 2, 2, 9, 1},
+                {-8, 0, -1, 5, 0, 8},
+                {-4, 3, -5, 7, 2, 10},
+                {6, 1, 4, -11, -7, -1}
+            };
+
+            SquareMatrix A = new SquareMatrix(6);
+            for (int r = 0; r < souce.GetLength(0); r++) {
+                for (int c = 0; c < souce.GetLength(1); c++) {
+                    A[r, c] = souce[r, c];
+                }
+            }
+
+            Complex[] eigenvalues = A.Eigenvalues();
+
+            foreach (Complex eigenvalue in eigenvalues) {
+                Console.WriteLine(eigenvalue);
+            }
+        }
+
+        [TestMethod]
+        public void DegenerateEigenvalues () {
+
+            double[,] souce = new double[,] {
+                {1, 0, 1},
+                {0, 2, 0},
+                {1, 0, 1}
+            };
+            SquareMatrix A = new SquareMatrix(3);
+            for (int r = 0; r < souce.GetLength(0); r++) {
+                for (int c = 0; c < souce.GetLength(1); c++) {
+                    A[r, c] = souce[r, c];
+                }
+            }
+
+            ComplexEigensystem e = A.Eigensystem();
+
+
         }
 
         [TestMethod]
@@ -380,7 +437,7 @@ namespace Test {
             int n = 12;
             // originally failed for n=12 due to lack of 2x2 detection at top
             // now tested for n up to 40, but n=14 appears to still be a problem,
-            // probably due to a quadruplly degenerate eigenvalue
+            // probably due to a six-times degenerate eigenvalue
 
             SquareMatrix R = new SquareMatrix(n);
             for (int c = 0; c < n; c++) {
@@ -484,6 +541,44 @@ namespace Test {
             for (int i = 0; i < SVD.Dimension; i++) {
                 Console.WriteLine(S[i, i]);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(S[i, i], SVD.SingularValue(i)));
+            }
+
+        }
+
+        [TestMethod]
+        public void CompanionMatrixEigenvalues () {
+
+
+            SquareMatrix CM = new SquareMatrix(3);
+            CM[0, 2] = -1.0;
+            CM[1, 0] = 1.0;
+            CM[1, 2] = -3.0;
+            CM[2, 1] = 1.0;
+            CM[2, 2] = -3.0;
+            ComplexEigensystem EM = CM.Eigensystem();
+            for (int i = 0; i < EM.Dimension; i++) {
+                Console.WriteLine("! {0}", EM.Eigenvalue(i));
+            }
+
+
+            for (int d = 2; d <= 8; d++) {
+
+                Console.WriteLine(d);
+
+                SquareMatrix C = new SquareMatrix(d);
+                for (int r = 1; r < d; r++) {
+                    C[r, r - 1] = 1.0;
+                }
+                for (int r = 0; r < d; r++) {
+                    C[r, d - 1] = -AdvancedIntegerMath.BinomialCoefficient(d, r);
+                }
+
+                ComplexEigensystem e = C.Eigensystem();
+                for (int i = 0; i < e.Dimension; i++) {
+                    Console.WriteLine("!! {0}", e.Eigenvalue(i));
+                }
+
+
             }
 
         }

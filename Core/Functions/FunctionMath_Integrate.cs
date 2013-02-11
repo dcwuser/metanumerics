@@ -100,7 +100,7 @@ namespace Meta.Numerics.Functions {
                     double x = Math.Tan(t);
                     return (f0(x) * (1.0 + x * x));
                 };
-                Interval r1 = Interval.FromEndpoints(-Math.PI / 2.0, Math.PI / 2.0);
+                Interval r1 = Interval.FromEndpoints(-Global.HalfPI, Global.HalfPI);
 
                 return (Integrate(f1, r1, settings));
 

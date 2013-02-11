@@ -205,6 +205,42 @@ namespace Meta.Numerics.Matrices {
             return (M);
         }
 
+        /// <summary>
+        /// Computes the product of the matrix and its transpose.
+        /// </summary>
+        /// <returns>The product matrix A A<sup>T</sup>.</returns>
+        public virtual SymmetricMatrix MultiplySelfByTranspose () {
+            SymmetricMatrix AAT = new SymmetricMatrix(this.RowCount);
+            for (int r = 0; r < this.RowCount; r++) {
+                for (int c = 0; c <= r; c++) {
+                    double s = 0.0;
+                    for (int i = 0; i < this.ColumnCount; i++) {
+                        s += this[r, i] * this[c, i];
+                    }
+                    AAT[r, c] = s;
+                }
+            }
+            return (AAT);
+        }
+
+        /// <summary>
+        /// Computes the product of the matrix's transpose and itself.
+        /// </summary>
+        /// <returns>The product matrix A<sup>T</sup> A.</returns>
+        public virtual SymmetricMatrix MultiplyTransposeBySelf () {
+            SymmetricMatrix ATA = new SymmetricMatrix(this.ColumnCount);
+            for (int r = 0; r < this.ColumnCount; r++) {
+                for (int c = 0; c <= r; c++) {
+                    double s = 0.0;
+                    for (int i = 0; i < this.RowCount; i++) {
+                        s += this[i, r] * this[i, c];
+                    }
+                    ATA[r, c] = s;
+                }
+            }
+            return (ATA);
+        }
+
         /*
         /// <summary>
         /// Multiplies any real, rectangular matrix by a column vector.

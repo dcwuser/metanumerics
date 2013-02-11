@@ -18,7 +18,7 @@ namespace Meta.Numerics.Functions {
             if (s < 0.0) {
                 // for negative numbers, use the reflection formula
                 double t = 1.0 - s;
-                double z = 2.0 * Math.Pow(Global.TwoPI, -t) * Math.Cos(t * Math.PI / 2.0) * AdvancedMath.Gamma(t) * RiemannZeta(t);
+                double z = 2.0 * Math.Pow(Global.TwoPI, -t) * Math.Cos(Global.HalfPI * t) * AdvancedMath.Gamma(t) * RiemannZeta(t);
                 return (z);
             } else {
                 if (Math.Abs(s - 1.0) < 0.25) {

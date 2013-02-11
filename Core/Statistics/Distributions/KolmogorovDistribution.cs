@@ -138,15 +138,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (Math.Sqrt(Global.HalfPI) * Global.LogTwo * scale);
+                return (Global.SqrtHalfPI * Global.LogTwo * scale);
             }
         }
 
         /// <inheritdoc />
         public override double Variance {
             get {
-                double ln2 = Global.LogTwo;
-                return (Math.PI / 2.0 * (Math.PI / 6.0 - ln2 * ln2) * scale * scale);
+                return (Global.HalfPI * (Math.PI / 6.0 - Global.LogTwo * Global.LogTwo) * scale * scale);
 
             }
         }
@@ -476,13 +475,13 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         public override double Mean {
             get {
-                return (Math.Sqrt(Global.HalfPI) * Global.LogTwo - 1.0 / 6.0 / Math.Sqrt(n));
+                return (Global.SqrtHalfPI * Global.LogTwo - 1.0 / 6.0 / Math.Sqrt(n));
             }
         }
 
         public override double Variance {
             get {
-                return (Math.PI / 2.0 * (Math.PI / 6.0 - Global.LogTwo * Global.LogTwo) - Math.Sqrt(Global.HalfPI) * Global.LogTwo / 12.0 / Math.Sqrt(n));
+                return (Global.HalfPI * (Math.PI / 6.0 - Global.LogTwo * Global.LogTwo) - Global.SqrtHalfPI * Global.LogTwo / 12.0 / Math.Sqrt(n));
             }
         }
 

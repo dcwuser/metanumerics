@@ -11,9 +11,9 @@ namespace Meta.Numerics.Matrices {
 
         private Complex[] eigenvalues;
 
-        private Complex[,] eigenvectors;
+        private Complex[][] eigenvectors;
 
-        internal ComplexEigensystem (int dimension, Complex[] eigenvalues, Complex[,] eigenvectors) {
+        internal ComplexEigensystem (int dimension, Complex[] eigenvalues, Complex[][] eigenvectors) {
             this.dimension = dimension;
             this.eigenvalues = eigenvalues;
             this.eigenvectors = eigenvectors;
@@ -46,9 +46,7 @@ namespace Meta.Numerics.Matrices {
         public Complex[] Eigenvector (int n) {
             if ((n < 0) || (n >= dimension)) throw new ArgumentOutOfRangeException("n");
             Complex[] eigenvector = new Complex[dimension];
-            for (int i = 0; i < dimension; i++) {
-                eigenvector[i] = eigenvectors[i, n];
-            }
+            Array.Copy(eigenvectors[n], eigenvector, dimension);
             return (eigenvector);
         }
 

@@ -70,6 +70,16 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
+        /// <inheritdoc />
+        public override void Fill (Func<int, int, double> f) {
+            if (f == null) throw new ArgumentNullException("f");
+            for (int r = 0; r < dimension; r++) {
+                for (int c = 0; c <= r; c++) {
+                    values[r][c] = f(r, c);
+                }
+            }
+        }
+
         /// <summary>
         /// Copies the matrix.
         /// </summary>

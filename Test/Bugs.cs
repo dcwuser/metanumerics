@@ -15,6 +15,56 @@ namespace Test {
     public class BugTests {
 
         [TestMethod]
+        public void Bug7213 () {
+
+            Sample s = new Sample();
+            s.Add(0.00590056, 0.00654598, 0.0066506, 0.00679065, 0.008826);
+            FitResult r = WeibullDistribution.FitToSample(s);
+
+        }
+
+        [TestMethod]
+        public void Bug7208 () {
+            // this matrix has two eigenpairs with the same eigenvalue but distinct eigenvectors
+            // we would report the same eigenvector for both, making the matrix of eigenvectors
+            // non-invertible
+            int n = 4;
+            SquareMatrix matrix = new SquareMatrix(n + 1);
+            double d = (3 + 2 * Math.Cos(2 * Math.PI / n));
+            double w = (64 * n) / (40 - d * d) - n;
+            double w1 = w / (w + n);
+            double w2 = 1 / (w + n);
+            matrix[0, 0] = w1;
+            for (int i = 1; i < n; i++) {
+                matrix[0, i + 1] = w2;
+                matrix[i + 1, 0] = 3.0 / 8;
+                matrix[i + 1, i + 1] = 3.0 / 8;
+                matrix[i, i + 1] = 1.0 / 8;
+                matrix[i + 1, i] = 1.0 / 8;
+            }
+            matrix[0, 1] = w2;
+            matrix[1, 0] = 3.0 / 8;
+            matrix[1, 1] = 3.0 / 8;
+            matrix[1, n] = 1.0 / 8;
+            matrix[n, 1] = 1.0 / 8;
+
+            ComplexEigensystem ces = matrix.Eigensystem();
+
+            Console.WriteLine("output");
+            SquareMatrix V = new SquareMatrix(n + 1);
+            for (int i = 0; i < n + 1; i++) {
+                Console.WriteLine("#{0}: {1}", i, ces.Eigenvalue(i));
+                for (int j = 0; j < n + 1; j++) {
+                    V[i, j] = ces.Eigenvector(i)[j].Re;
+                    Console.WriteLine(V[i, j]);
+                }
+            }
+
+            SquareMatrix inv = V.Inverse();
+
+        }
+
+        [TestMethod]
         public void Bug6162 () {
 
             //real data

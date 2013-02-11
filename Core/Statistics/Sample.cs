@@ -61,6 +61,12 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        public double SumOfSquaredDeviations {
+            get {
+                return (SS);
+            }
+        }
+
         public double Variance {
             get {
                 return (SS / data.Count);
@@ -211,6 +217,12 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        public double SumOfSquaredDeviations {
+            get {
+                return (M2);
+            }
+        }
+
         public double Variance {
             get {
                 // Note this is the sample variance, not the population variance
@@ -232,6 +244,27 @@ namespace Meta.Numerics.Statistics {
             foreach (double value in values) {
                 Add(value);
             }
+        }
+
+        public void Remove (double value) {
+            if (N == 0) {
+                throw new InvalidOperationException();
+            } else if (N == 1) {
+                N = 0;
+                M1 = 0.0;
+                M2 = 0.0;
+            } else {
+                N--;
+                double dM = value - M1;
+                M1 -= dM / N;
+                M2 -= (value - M1) * dM;
+            }
+        }
+
+        public void Clear () {
+            N = 0;
+            M1 = 0.0;
+            M2 = 0.0;
         }
 
     }
@@ -428,6 +461,17 @@ namespace Meta.Numerics.Statistics {
                 return (data.Mean);
             }
         }
+
+        // in some cases (e.g. t-tests) its helpful to access the sum of squared deviations directly
+        // without this property, we would need to multiply by N or N-1 just to get back to the 
+        // number we divided by N or N-1 in order to return the sample or population variance
+
+        internal double SumOfSquareDeviations {
+            get {
+                return (data.SumOfSquaredDeviations);
+            }
+        }
+
 
         /// <summary>
         /// Gets the sample variance.
@@ -749,7 +793,8 @@ namespace Meta.Numerics.Statistics {
 
             // we need to be able to compute a mean and standard deviation in order to do this test; the standard deviation requires at least 2 data points
             if (this.Count < 2) throw new InsufficientDataException();
-            double sigma = Math.Sqrt(this.Count / (this.Count - 1.0)) * this.StandardDeviation;
+            double sigma = Math.Sqrt(this.SumOfSquareDeviations / (this.Count - 1.0));
+            //double sigma = Math.Sqrt(this.Count / (this.Count - 1.0)) * this.StandardDeviation;
             double se = sigma / Math.Sqrt(this.Count);
 
             double t = (this.Mean - referenceMean) / se;
@@ -814,12 +859,8 @@ namespace Meta.Numerics.Statistics {
             double ma = a.Mean;
             double mb = b.Mean;
 
-            // get variances
-            double va = a.Variance;
-            double vb = b.Variance;
-
             // get pooled variance and count
-            double v = (na * va + nb * vb) / (na + nb - 2);
+            double v = (a.SumOfSquareDeviations + b.SumOfSquareDeviations) / (na + nb - 2);
             double n = 1.0 / (1.0 / na + 1.0 / nb);
 
             // evaluate t

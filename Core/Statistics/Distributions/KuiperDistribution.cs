@@ -143,14 +143,21 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Mean {
             get {
-                // from numerical integral; would be nice to get an analytic result
-                return (1.2533141373155 * scale);
+                // originally we got this via numerical integration, later recognized it as \sqrt{\frac{\pi}{2}}
+                // this can be understood from moment formula by noting that \lim_{x \rightarrow 1} \zeta(x) (x-1) = 1
+                return (Global.SqrtHalfPI * scale);
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Variance {
+            get {
+                return (Global.HalfPI * (Math.PI / 3.0 - 1.0) * scale * scale);
             }
         }
 
         /// <inheritdoc />
         public override double Moment (int n) {
-
             if (n < 0) {
                 throw new ArgumentOutOfRangeException("n");
             } else if (n == 0) {
@@ -160,7 +167,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (n == 2) {
                 return (Math.PI * Math.PI / 6.0 * scale * scale);
             } else {
-                return (AdvancedMath.RiemannZeta(n) * AdvancedMath.Gamma(1 + n / 2.0) * (n - 1) / Math.Pow(2.0, n / 2.0 - 1) * Math.Pow(scale, n));
+                return (AdvancedMath.RiemannZeta(n) * AdvancedMath.Gamma(1 + n / 2.0) * (n - 1) / Math.Pow(2.0, n / 2.0 - 1) * MoreMath.Pow(scale, n));
             }
         }
 
@@ -172,6 +179,8 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (1.0);
             } else if (n == 1) {
                 return (0.0);
+            } else if (n == 2) {
+                return (Variance);
             } else {
                 return (CentralMomentFromRawMoment(n));
             }

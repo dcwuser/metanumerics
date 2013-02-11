@@ -194,11 +194,10 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The eigenvalues of the matrix.</returns>
         /// <seealso cref="Eigensystem"/>
         public Complex[] Eigenvalues () {
-
-            double[] scratch = MatrixAlgorithms.Copy(store, dimension, dimension);
-            SquareMatrixAlgorithms.ReduceToHessenberg(scratch, null, dimension);
-            Complex[] lambdas = SquareMatrixAlgorithms.ExtractEigenvalues(scratch, null, dimension);
-            return (lambdas);
+            double[] aStore = MatrixAlgorithms.Copy(store, dimension, dimension);
+            SquareMatrixAlgorithms.ReduceToHessenberg(aStore, null, dimension);
+            Complex[] eigenvalues = SquareMatrixAlgorithms.ReduceToRealSchurForm(aStore, null, dimension);
+            return (eigenvalues);
             
         }
 
@@ -232,15 +231,63 @@ namespace Meta.Numerics.Matrices {
 
             double[] aStore = MatrixAlgorithms.Copy(store, dimension, dimension);
             double[] qStore = SquareMatrixAlgorithms.CreateUnitMatrix(dimension);
+
+            // Reduce the original matrix to Hessenberg form
             SquareMatrixAlgorithms.ReduceToHessenberg(aStore, qStore, dimension);
+
+            // Reduce the Hessenberg matrix to real Schur form
+            SquareMatrixAlgorithms.ReduceToRealSchurForm(aStore, qStore, dimension);
+
+            //MatrixAlgorithms.PrintMatrix(aStore, dimension, dimension);
+
+            //SquareMatrix A = new SquareMatrix(aStore, dimension);
+            SquareMatrix Q = new SquareMatrix(qStore, dimension);
+
+            Complex[] eigenvalues; Complex[][] eigenvectors;
+
+            // Extract the eigenvalues and eigenvectors of the Schur form matrix
+            SquareMatrixAlgorithms.SchurEigensystem(aStore, dimension, out eigenvalues, out eigenvectors);
+
+            // transform eigenvectors of schur form into eigenvectors of original matrix
+            // while we are at it, normalize so largest component has value 1
+            for (int i = 0; i < dimension; i++) {
+                Complex[] v = new Complex[dimension];
+                double norm = 0.0;
+                for (int j = 0; j < dimension; j++) {
+                    for (int k = 0; k < dimension; k++) {
+                        v[j] += Q[j, k] * eigenvectors[i][k];
+                    }
+                    norm = Math.Max(norm, Math.Max(Math.Abs(v[j].Re), Math.Abs(v[j].Im)));
+                }
+                for (int j = 0; j < dimension; j++) {
+                    v[j] = v[j] / norm;
+                }
+                eigenvectors[i] = v;
+            }
+
+            ComplexEigensystem eigensystem = new ComplexEigensystem(dimension, eigenvalues, eigenvectors);
+            return (eigensystem);
+
+        }
+
+#if PAST
+
+        public ComplexEigensystem Eigensystem () {
+
+            double[] aStore = MatrixAlgorithms.Copy(store, dimension, dimension);
+            double[] qStore = SquareMatrixAlgorithms.CreateUnitMatrix(dimension);
+            SquareMatrixAlgorithms.ReduceToHessenberg(aStore, qStore, dimension);
+
             Complex[] eigenvalues = SquareMatrixAlgorithms.ExtractEigenvalues(aStore, qStore, dimension);
+
+            MatrixAlgorithms.PrintMatrix(aStore, dimension, dimension);
 
             SquareMatrix A = new SquareMatrix(aStore, dimension);
             SquareMatrix Q = new SquareMatrix(qStore, dimension);
 
             // get eigenvectors
-            Complex[,] eigenvectors = ExtractEigenvectors(A, Q, eigenvalues);
-            NormalizeEigenvectors(eigenvectors);
+            Complex[][] eigenvectors = ExtractEigenvectors(A, Q, eigenvalues);
+            //NormalizeEigenvectors(eigenvectors);
 
             ComplexEigensystem eigensystem = new ComplexEigensystem(dimension, eigenvalues, eigenvectors);
             return (eigensystem);
@@ -251,14 +298,14 @@ namespace Meta.Numerics.Matrices {
         // that got us there, extract eigenvectors of A and apply Q to transform them to the eigenvectors of the
         // original matrix
 
-        private static Complex[,] ExtractEigenvectors (SquareMatrix A, SquareMatrix Q, Complex[] e) {
+        private static Complex[][] ExtractEigenvectors (SquareMatrix A, SquareMatrix Q, Complex[] e) {
 
             // a store which will be used to store each eigenvalue of A
             int dim = A.Dimension;
 
             // a store for the eigenvectors of the the original matrix,
             // which are th
-            Complex[,] X = new Complex[dim, dim];
+            Complex[][] X = new Complex[dim][];
 
             // get eigenvectors of A
             for (int k = 0; k < dim; k++) {
@@ -326,12 +373,13 @@ namespace Meta.Numerics.Matrices {
                 }
 
                 // transform it to the original basis
+                X[k] = new Complex[dim];
                 for (int i = 0; i < dim; i++) {
                     Complex x = 0.0;
                     for (int j = 0; j < b.Length; j++) {
                         x += Q[i, j] * b[j];
                     }
-                    X[i,k] = x;
+                    X[k][i] = x;
                     //Console.Write("{0}  ", x);
                 }
                 //Console.WriteLine();
@@ -370,6 +418,8 @@ namespace Meta.Numerics.Matrices {
             }
 
         }
+
+#endif
 
         /// <summary>
         /// Computes the singular value decomposition of the square matrix.

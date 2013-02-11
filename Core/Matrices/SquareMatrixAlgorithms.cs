@@ -250,7 +250,153 @@ namespace Meta.Numerics.Matrices {
             Blas1.dAxpy(-s, uStore, uOffset, uStride, yStore, yOffset, yStride, count);
         }
 
-        // EIGENVALUE ALGORITHMS 
+        // EIGENVALUE ALGORITHMS
+ 
+        // 
+
+        public static Complex[] ReduceToRealSchurForm (double[] aStore, double[] qStore, int dimension) {
+
+            // keep track of eigenvalues
+            Complex[] eigenvalues = new Complex[dimension];
+
+            // keep track of interations
+            int count = 0;
+
+            // isolate the upper and lower boundaries of the curent subproblem
+            // p is the upper index, n the lower index
+
+            int n = dimension - 1;
+            while (n >= 0) {
+
+                // move up the matrix from endpoint n, looking for subdiagonal elements negligible compared to the neighboring diagonal elements
+                // if we find one, that reduces the problem to the submatrix between p and n
+                int p = n;
+                while (p > 0) {
+
+                    double d = Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, p, p)) + Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, p - 1, p - 1));
+                    double e = Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, p, p - 1));
+
+                    if (d + e == d) {
+
+                      //  double f = d * Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, p, p) - MatrixAlgorithms.GetEntry(aStore, dimension, dimension, p - 1, p - 1));
+                      //  double g = e * Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, p - 1, p));
+
+                      //  if (f + g == f) {
+                        Console.WriteLine(e);
+                            MatrixAlgorithms.SetEntry(aStore, dimension, dimension, p, p - 1, 0.0);
+                            break;
+                      //  }
+                    }
+
+                    p--;
+                }
+
+                /*
+                if (p == n) {
+                    // one eigenvalue
+                    // reduce n and re-set count
+                } else {
+                    // compute m, matrix elements
+                    // reduce n and re-set count
+                    if (p == m) {
+                        // two eigenvalues
+                    } else {
+                        // do step
+                    }
+                }
+                */
+
+                //Print(a, dimension, p, n);
+
+                // get the (indexes for) the entries in the trailing 2x2 matrix
+                int m = n - 1;
+                int ammi = MatrixAlgorithms.GetIndex(dimension, dimension, m, m);
+                int amni = MatrixAlgorithms.GetIndex(dimension, dimension, m, n);
+                int anmi = MatrixAlgorithms.GetIndex(dimension, dimension, n, m);
+                int anni = MatrixAlgorithms.GetIndex(dimension, dimension, n, n);
+
+                if (n - p > 1) {
+
+                    count++;
+                    if (count > 32) throw new NonconvergenceException();
+
+                    double tr = aStore[ammi] + aStore[anni];
+                    double det = aStore[ammi] * aStore[anni] - aStore[amni] * aStore[anmi];
+
+                    // ad hoc shift
+                    if ((count == 8) || (count == 16) || (count == 24)) {
+                        double w = Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, n, n - 1)) +
+                            Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, n - 1, n - 2));
+                        tr = 2.0 * w;
+                        det = w * w;
+                    }
+
+                    FrancisTwoStep(aStore, qStore, dimension, p, n, tr, det);
+                    
+                } else {
+
+                    if (p == n) {
+
+                        eigenvalues[n] = aStore[anni];
+                        Console.WriteLine("e_{0} = {1}", n, eigenvalues[n]);
+
+                    } else if (p == m) {
+
+                        //Console.WriteLine("2x2 p={0}", p);
+                        
+                        double sn, cn;
+                        TwoByTwoRealSchur(ref aStore[ammi], ref aStore[amni], ref aStore[anmi], ref aStore[anni], out sn, out cn, out eigenvalues[m], out eigenvalues[n]);
+                        Console.WriteLine("e_{0}={1} e_{2}={3}", m, eigenvalues[m], n, eigenvalues[n]);
+
+                        // Multiply A from left by the rotation matrix R
+                        for (int cc = p + 2; cc < dimension; cc++) {
+                            int i = MatrixAlgorithms.GetIndex(dimension, dimension, p, cc);
+                            int j = MatrixAlgorithms.GetIndex(dimension, dimension, p + 1, cc);
+                            double t = aStore[i];
+                            aStore[i] = cn * t + sn * aStore[j];
+                            aStore[j] = cn * aStore[j] - sn * t;
+                        }
+                        // Multiply A from the right by R^T
+                        for (int rr = 0; rr < p; rr++) {
+                            int i = MatrixAlgorithms.GetIndex(dimension, dimension, rr, p);
+                            int j = MatrixAlgorithms.GetIndex(dimension, dimension, rr, p + 1);
+                            double t = aStore[i];
+                            aStore[i] = cn * t + sn * aStore[j];
+                            aStore[j] = cn * aStore[j] - sn * t;
+                        }
+                        // Multiply Q^T from the left by R
+                        if (qStore != null) {
+                            for (int rr = 0; rr < dimension; rr++) {
+                                int i = MatrixAlgorithms.GetIndex(dimension, dimension, rr, p);
+                                int j = MatrixAlgorithms.GetIndex(dimension, dimension, rr, p + 1);
+                                double t = qStore[i];
+                                qStore[i] = cn * t + sn * qStore[j];
+                                qStore[j] = cn * qStore[j] - sn * t;
+                            }
+                        }
+                        
+                    }
+                    
+                    n = p - 1;
+                    count = 0;
+                }
+                /*
+                Console.WriteLine("count = {0}", count);
+                Console.WriteLine("A=");
+                MatrixAlgorithms.PrintMatrix(aStore, dimension, dimension);
+                Console.WriteLine("QAQ^T=");
+                double[] qt = MatrixAlgorithms.Transpose(qStore, dimension, dimension);
+                double[] qa = MatrixAlgorithms.Multiply(qStore, dimension, dimension, aStore, dimension, dimension);
+                double[] qaqt = MatrixAlgorithms.Multiply(qa, dimension, dimension, qt, dimension, dimension);
+                MatrixAlgorithms.PrintMatrix(qaqt, dimension, dimension);
+                */
+            }
+
+            return (eigenvalues);
+
+        }
+
+#if PAST
 
         public static Complex[] ExtractEigenvalues (double[] aStore, double[] qStore, int dimension) {
 
@@ -281,6 +427,14 @@ namespace Meta.Numerics.Matrices {
                     a--;
                 }
 
+                /*
+                Console.WriteLine("count = {0}", count);
+                double[] qt = MatrixAlgorithms.Transpose(qStore, dimension, dimension);
+                double[] qa = MatrixAlgorithms.Multiply(qStore, dimension, dimension, aStore, dimension, dimension);
+                double[] qaqt = MatrixAlgorithms.Multiply(qa, dimension, dimension, qt, dimension, dimension);
+                MatrixAlgorithms.PrintMatrix(qaqt, dimension, dimension);
+                */
+
                 // check for maximum numbers of iterations without finding an eigenvalue
                 if (count > 32) {
                     throw new NonconvergenceException();
@@ -303,10 +457,14 @@ namespace Meta.Numerics.Matrices {
                     double Aab = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a, a + 1);
                     double Abb = MatrixAlgorithms.GetEntry(aStore, dimension, dimension, a + 1, a + 1);
                     // eigenvalues are given by the quadratic formula
+                    //   e = \frac{a_11 + a22}{2} \pm q
+                    // descriminant q^2 = ( \frac{a_11 - a_22}{2} )^2 + a_21 a_1
                     double c = (Aaa + Abb) / 2.0;
                     double d = Aaa * Abb - Aba * Aab;
                     double q2 = c * c - d;
                     if (q2 >= 0.0) {
+                        // eigenvalues are real
+                        
                         double q = Math.Sqrt(q2);
                         if (c >= 0.0) {
                             lambdas[a] = c + q;
@@ -315,6 +473,45 @@ namespace Meta.Numerics.Matrices {
                         }
                         // i tried to do this as c + Math.Sign(c) * q, but when c = 0, Math.Sign(c) = 0, not 1 
                         lambdas[a + 1] = d / lambdas[a];
+                        
+                        /*
+                        double sn, cn;
+                        TwoByTwoSchur(ref Aaa, ref Aab, ref Aba, ref Abb, out sn, out cn);
+                        MatrixAlgorithms.SetEntry(aStore, dimension, dimension, a, a, Aaa);
+                        MatrixAlgorithms.SetEntry(aStore, dimension, dimension, a, a + 1, Aab);
+                        MatrixAlgorithms.SetEntry(aStore, dimension, dimension, a + 1, a, Aba);
+                        MatrixAlgorithms.SetEntry(aStore, dimension, dimension, a + 1, a + 1, Abb);
+
+                        // Multiply A from left by the rotation matrix R
+                        for (int cc = a + 2; cc < dimension; cc++) {
+                            int i = MatrixAlgorithms.GetIndex(dimension, dimension, a, cc);
+                            int j = MatrixAlgorithms.GetIndex(dimension, dimension, a + 1, cc);
+                            double t = aStore[i];
+                            aStore[i] = cn * t + sn * aStore[j];
+                            aStore[j] = cn * aStore[j] - sn * t;
+                        }
+                        // Multiply A from the right by R^T
+                        for (int rr = 0; rr < a; rr++) {
+                            int i = MatrixAlgorithms.GetIndex(dimension, dimension, rr, a);
+                            int j = MatrixAlgorithms.GetIndex(dimension, dimension, rr, a + 1);
+                            double t = aStore[i];
+                            aStore[i] = cn * t + sn * aStore[j];
+                            aStore[j] = cn * aStore[j] - sn * t;
+                        }
+                        // Multiply Q^T from the left by R
+                        if (qStore != null) {
+                            for (int cc = 0; cc < dimension; cc++) {
+                                int i = MatrixAlgorithms.GetIndex(dimension, dimension, a, cc);
+                                int j = MatrixAlgorithms.GetIndex(dimension, dimension, a + 1, cc);
+                                double t = qStore[i];
+                                qStore[i] = cn * t + sn * qStore[j];
+                                qStore[j] = cn * qStore[j] - sn * t;
+                            }
+                        }
+
+                        lambdas[a] = Aaa;
+                        lambdas[a + 1] = Abb;
+                        */
                     } else {
                         double q = Math.Sqrt(-q2);
                         lambdas[a] = new Complex(c, q);
@@ -358,6 +555,8 @@ namespace Meta.Numerics.Matrices {
 
 
         }
+
+#endif
 
         private static void FrancisTwoStep (double[] aStore, double[] qStore, int dimension, int a, int n, double sum, double product) {
 
@@ -483,7 +682,291 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+        // We want to find the rotation that brings a 2 X 2 matrix into triangular form.
+        //   (  c  s ) ( a11  a12 ) ( c  -s )
+        //   ( -s  c ) ( a21  a22 ) ( s   c )
+        // Multiplying out gives
+        //   ( c^2 a11 + cs a21 + cs a12 + s^2 a22  c^2 a12 - cs a11 + cs a22 - s^2 a21 )
+        //   ( c^2 a21 - cs a11 + cs a22 - s^2 a12  c^2 a22 - cs a21 - cs a12 + s^2 a11 )
+
+        // We want a21' = 0. Since the rotation must vanish when a21 = 0 and grow as a21 grows, make the Ansatz that s ~ a21, i.e.
+        //   s = \frac{a_{21}}{\sqrt{a_{21}^2 + b^2}}  c = \frac{b}{\sqrt{a_{21}^2 + b^2}}
+        // It is then straightforward to derive
+        //   b = \frac{a_{11} - a_{22} \pm q}{2}
+        // where q^2 = ( a_{11} - a_{22} )^2 + 4 a12 a21 is the same descriminant as appears in the eigenvalue problem, so this rotation
+        // exists iff the eigenvalues are real.
+
+        // A useful test case is
+        //   ( 1 4 )
+        //   ( 2 3 )
+        // with eigenvalues 5, -1 and s = -\sqrt{1/5}.
+
+        private static void TwoByTwoRealSchur (ref double a11, ref double a12, ref double a21, ref double a22, out double s, out double c, out Complex e1, out Complex e2) {
+
+            // compute some quantities we will use 
+            double u = a11 + a22;
+            double v = a11 - a22;
+            double w = a11 * a22 - a12 * a21;
+            double q2 = v * v + 4.0 * a12 * a21;
+            // note u is the trace and w is the determinant
+
+            Console.WriteLine("u={0} q2={1}", u, q2);
+
+            if (q2 >= 0.0) {
+
+                // the descriminant is positive so the eigenvalues are real
+                double q = Math.Sqrt(q2);
+
+                // find the rotation sets a21' = 0
+                // in the equation for b, choose the sign so as to minimize cancelation
+                double b = (v >= 0.0) ? (v + q) / 2.0 : (v - q) / 2.0;
+                double rho = MoreMath.Hypot(a21, b);
+                s = a21 / rho;
+                c = b / rho;
+
+                // Note that a12' - a21' = a12 - a21, and since a21' = 0, a12' = a12 - a21
+                a12 = a12 - a21;
+                a21 = 0.0;
+
+                // the eigenvalues are (u \pm q) / 2
+                // we avoid cancelation by computing the non-canceling one first and
+                // computing the other using the fact that their product equals the determinant
+                if (u >= 0.0) {
+                    a11 = (u + q) / 2.0;
+                    a22 = w / a11;
+                } else {
+                    a22 = (u - q) / 2.0;
+                    a11 = w / a22;
+                }
+                // we have placed the u + q eigenvalue in the a11 slot. if v >= 0, that is where the rotation puts it
+                // if v < 0, the u - q eigenvalue belongs these, so we need to swap them
+                if (v < 0) { double t = a11; a11 = a22; a22 = t; }
+
+                e1 = a11;
+                e2 = a22;
+
+            } else {
+
+                // In the q2 < 0 case, we can't zero a21. But we can rotate so a11' = a22'
+                /*
+                double r = -(a12 + a21) / v;
+                double t = Math.Sign(r) / (Math.Abs(r) + MoreMath.Hypot(1.0, r));
+                c = 1.0 / MoreMath.Hypot(1.0, t);
+                s = t * c;
+
+                // Since rotations preserve the trace, the equal diagonal elements must equal the average of the previous elements 
+                a11 = u / 2.0;
+                a22 = a11;
+                */
+                double q = Math.Sqrt(-q2);
+                e1 = new Complex(u / 2.0, q / 2.0);
+                e2 = e1.Conjugate;
+
+                s = 0.0;
+                c = 1.0;
+
+            }
+        }
+
+        public static void SchurEigensystem (double[] aStore, int n, out Complex[] eigenvalues, out Complex[][] eigenvectors) {
+
+            eigenvalues = new Complex[n];
+            eigenvectors = new Complex[n][];
+
+            int i = n - 1;
+            while (i >= 0) {
+                // find the eigenvector corresponding to the ith eigenvalue
+
+                if ((i == 0) || (MatrixAlgorithms.GetEntry(aStore, n, n, i, i-1) == 0.0)) {
+
+                    // We have no sub-diagonal element on the ith row. Since
+                    //  (XXXXX) ( X )   ( X )
+                    //  (XXXXX) ( X )   ( X )
+                    //  (  aXX) ( 1 ) = ( a )
+                    //  (   XX) ( 0 )   ( 0 )
+                    //  (   XX) ( 0 )   ( 0 )
+                    // a vector with v[i] = 1, v[j > i] = 0, and v[j < i] properly chosen will be an eigenvector.
+
+                    // the eigenvalue is the ith diagonal element
+                    double e = MatrixAlgorithms.GetEntry(aStore, n, n, i, i);
+
+                    // we take the ith component of the eigenvector to be one; higher components must be zero
+                    Complex[] v = new Complex[n];
+                    v[i] = 1.0;
+
+                    CompleteEigenvector(aStore, n, v, e, i, i - 1);
+                    //WriteTransformedEigenvector(i, e, v, n, Q);
+                    eigenvectors[i] = v;
+                    eigenvalues[i] = e;
+
+                    i--;
+
+                } else {
+
+                    // We have a 2x2 sub-block
+                    //   ( X X X )
+                    //   (  [X X])
+                    //   (  [X X])
+                    // Find its eigenvalues
+
+                    Complex e1, e2;
+                    TwoByTwoEigenvalues(
+                        MatrixAlgorithms.GetEntry(aStore, n, n, i - 1, i - 1),
+                        MatrixAlgorithms.GetEntry(aStore, n, n, i - 1, i),
+                        MatrixAlgorithms.GetEntry(aStore, n, n, i, i - 1),
+                        MatrixAlgorithms.GetEntry(aStore, n, n, i, i),
+                        out e1, out e2
+                    );
+                    //TwoByTwoEigenvalues(a[i - 1, i - 1], a[i - 1, i], a[i, i - 1], a[i, i], out e1, out e2);
+
+                    // For each eigenvalue, compute the trailing eigenvector components and then the remaining components.
+                    // For the trailing components, since 
+                    //   (a11 a12) ( v1 ) = \lambda ( v1 )
+                    //   (a21 a22) ( v2 )           ( v2 )
+                    // It follows that
+                    //   v1 = (\lambda - a22) / a21 * v2
+                    // and we normalize by choosing v2 = 1. Since we are only here if a21 != 0, there is no danger of
+                    // dividing by zero, but there may well be a danger that (\lambda - a22) looses significant
+                    // precision due to cancelation.
+
+                    Complex[] v = new Complex[n];
+                    v[i] = 1.0;
+                    //v[i - 1] = (e1 - a[i, i]) / a[i, i - 1];
+                    v[i - 1] = (e1 - MatrixAlgorithms.GetEntry(aStore, n, n, i, i)) / MatrixAlgorithms.GetEntry(aStore, n, n, i, i - 1);
+                    CompleteEigenvector(aStore, n, v, e1, i, i - 2);
+                    //WriteTransformedEigenvector(i, e1, v, n, Q);
+                    eigenvectors[i] = v;
+                    eigenvalues[i] = e1;
+
+                    v = new Complex[n];
+                    v[i] = 1.0;
+                    //v[i - 1] = (e2 - a[i, i]) / a[i, i - 1];
+                    v[i - 1] = (e2 - MatrixAlgorithms.GetEntry(aStore, n, n, i, i)) / MatrixAlgorithms.GetEntry(aStore, n, n, i, i - 1);
+                    CompleteEigenvector(aStore, n, v, e2, i, i - 2);
+                    //WriteTransformedEigenvector(i - 1, e2, v, n, Q);
+                    eigenvectors[i - 1] = v;
+                    eigenvalues[i - 1] = e2;
+
+                    i -= 2;
+
+                }
+
+            }
+
+        }
+
+
+         private static void WriteTransformedEigenvector (int i, Complex e, Complex[] v, int n, SquareMatrix Q) {
+             Console.WriteLine("#{0} {1}", i, e);
+             for (int g = 0; g < n; g++) {
+                 Complex ve = 0.0;
+                 for (int h = 0; h < n; h++) {
+                     ve += Q[g, h] * v[h];
+                 }
+                 Console.WriteLine("  {0}", v[g]);
+             }
+         }
+
+        // v is assumed to 
+
+        private static void CompleteEigenvector (double[] aStore, int n, Complex[] v, Complex e, int i, int j) {
+
+            //Console.WriteLine("{0} :", e);
+
+            while (j >= 0) {
+
+                if ((j == 0) || (MatrixAlgorithms.GetEntry(aStore, n, n, j, j - 1) == 0.0)) {
+                    Complex t = 0.0;
+                    for (int k = j + 1; k <= i; k++) {
+                        t += MatrixAlgorithms.GetEntry(aStore, n, n, j, k) * v[k];
+                        //t += a[j, k] * v[k];
+                    }
+
+                    if (t == 0.0) {
+                        // this branch exists to avoid undefined 0.0 / 0.0
+                        v[j] = 0.0;
+                    } else {
+                        //v[j] = t / (e - a[j, j]);
+                        v[j] = t / (e - MatrixAlgorithms.GetEntry(aStore, n, n, j, j));
+                    }
+
+                    j--;
+                } else {
+                    Complex t1 = 0.0;
+                    Complex t2 = 0.0;
+                    for (int k = j + 1; k <= i; k++) {
+                        t1 -= MatrixAlgorithms.GetEntry(aStore, n, n, j - 1, k) * v[k];
+                        t2 -= MatrixAlgorithms.GetEntry(aStore, n, n, j, k) * v[k];
+                        //t1 -= a[j - 1, k] * v[k];
+                        //t2 -= a[j, k] * v[k];
+                    }
+                    TwoByTwoSystem(
+                        MatrixAlgorithms.GetEntry(aStore, n, n, j - 1, j - 1) - e,
+                        MatrixAlgorithms.GetEntry(aStore, n, n, j - 1, j),
+                        MatrixAlgorithms.GetEntry(aStore, n, n, j, j - 1),
+                        MatrixAlgorithms.GetEntry(aStore, n, n, j, j) - e,
+                        ref t1, ref t2
+                    );
+                    //TwoByTwoSystem(a[j - 1, j - 1] - e, a[j - 1, j], a[j, j - 1], a[j, j] - e, ref t1, ref t2);
+                    v[j - 1] = t1;
+                    v[j] = t2;
+
+                    j -= 2;
+                }
+            }
+
+            //for (int k = 0; k < v.Length; k++) {
+            //    Console.WriteLine(v[k]);
+            //}
+
+        }
+
+
+        // The eigenvalues of a 2x2 matrix
+        //   (a11 a12)
+        //   (a21 a22)
+        // Are given by the quadratic equation \det(A - \lambda 1) = 0. To avoid cancelation, we do not use the +/-
+        // form of the quadratic formula, but instead take the root that does not involve cancelation, then use
+        // \lambda_1 \lambda_2 = \det A to determine the other root.
+
+        private static void TwoByTwoEigenvalues (double a11, double a12, double a21, double a22, out Complex e1, out Complex e2) {
+
+            double u = a11 + a22;
+            double v = a11 - a22;
+            double x = a12 * a21;
+            double q2 = v * v + 4.0 * x;
+            //double q2 = u * u - 4.0 * (a11 * a22 - a12 * a21);
+            if (q2 >= 0.0) {
+                double q = Math.Sqrt(q2);
+                double det = a11 * a22 - x;
+                e1 = (u >= 0) ? (u + q) / 2.0 : (u - q) / 2.0;
+                e2 = det / e1;
+                // because we compute e1 without cancelation, e1 can only be zero if u = 0 and q = 0
+            } else {
+                double q = Math.Sqrt(-q2);
+                e1 = new Complex(u, q) / 2.0;
+                e2 = new Complex(u, -q) / 2.0;
+            }
+        }
+
+        // Solve the 2 x 2 system
+        //   ( a11 a12 ) ( x1 ) = ( b1 )
+        //   ( a21 a22 ) ( x2 )   ( b2 )
+        // 
+
+        private static void TwoByTwoSystem (Complex a11, double a12, double a21, Complex a22, ref Complex x1, ref Complex x2) {
+
+            Complex det = a11 * a22 - a12 * a21;
+
+            Complex t = x1;
+            x1 = (a22 * t - a12 * x2) / det;
+            x2 = (a11 * x2 - a21 * t) / det;
+
+        }
+
     }
+
+
 
     /*
      * Some test Hessenberg and eigenvalue problems:

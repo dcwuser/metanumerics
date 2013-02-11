@@ -988,7 +988,7 @@ namespace Meta.Numerics.Functions {
                     return (SphericalBesselJ_Series(n, x));
                 } else if (x > (32.0 + n * n / 2.0)) {
                     // far enough from the origin, use the asymptotic expansion
-                    return (Math.Sqrt(Math.PI / 2.0 / x) * Bessel_Asymptotic(n+0.5, x).FirstSolutionValue);
+                    return (Math.Sqrt(Global.HalfPI / x) * Bessel_Asymptotic(n+0.5, x).FirstSolutionValue);
                 } else {
                     // in the transition region, use Miller's algorithm
                     return (SphericalBesselJ_Miller(n, x));
@@ -1029,7 +1029,7 @@ namespace Meta.Numerics.Functions {
                     return (SphericalBesselY_Series(n, x));
                 } else if (x > (30.0 + 0.5 * n * n)) {
                     // if x is large enough, use asymptotic expansion
-                    return (Math.Sqrt(Math.PI / 2.0 / x) * Bessel_Asymptotic(n + 0.5, x).SecondSolutionValue);
+                    return (Math.Sqrt(Global.HalfPI / x) * Bessel_Asymptotic(n + 0.5, x).SecondSolutionValue);
                 } else {
                     // move up using the recursion relation
                     double ym1 = SphericalBesselY_Zero(x);
@@ -1083,9 +1083,9 @@ namespace Meta.Numerics.Functions {
             if (Math.Abs(x) < 0.5) {
                 return(SphericalBesselJ_SeriesOne(x));
             } else if (Math.Abs(x) > 100.0) {
-                return (Math.Sqrt(Math.PI / 2.0 / x) * Bessel_Asymptotic(1.5, x).FirstSolutionValue);
+                return (Math.Sqrt(Global.HalfPI / x) * Bessel_Asymptotic(1.5, x).FirstSolutionValue);
             } else {
-                return((Math.Sin(x)/x - Math.Cos(x))/x);
+                return((Math.Sin(x) / x - Math.Cos(x)) / x);
             }
         }
 
@@ -1162,7 +1162,7 @@ namespace Meta.Numerics.Functions {
             if (Math.Abs(x) < 1.0) {
                 return (SphericalBesselY_SeriesOne(x));
             } else if (Math.Abs(x) > 100.0) {
-                return (Math.Sqrt(Math.PI / 2.0 / x) * Bessel_Asymptotic(1.5, x).SecondSolutionValue);
+                return (Math.Sqrt(Global.HalfPI / x) * Bessel_Asymptotic(1.5, x).SecondSolutionValue);
             } else {
                 return(-(Math.Cos(x)/x + Math.Sin(x))/x);
             }

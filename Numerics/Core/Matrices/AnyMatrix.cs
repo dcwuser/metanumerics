@@ -29,6 +29,19 @@ namespace Meta.Numerics.Matrices {
         /// outside the valid range.</exception>
         public abstract T this[int r, int c] { get; set; }
 
+        /// <summary>
+        /// Sets all matrix entries according to a supplied fill function.
+        /// </summary>
+        /// <param name="f">The fill function.</param>
+        public virtual void Fill (Func<int, int, T> f) {
+            if (f == null) throw new ArgumentNullException("f");
+            for (int r = 0; r < this.RowCount; r++) {
+                for (int c = 0; c < this.ColumnCount; c++) {
+                    this[r, c] = f(r, c);
+                }
+            }
+        }
+
     }
 
 }

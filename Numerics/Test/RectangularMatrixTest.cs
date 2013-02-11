@@ -10,7 +10,7 @@ using Meta.Numerics.Statistics;
 namespace Test {
 
 
-    [TestClass()]
+    [TestClass]
     public class RectangularMatrixTest {
 
         private TestContext testContextInstance;
@@ -324,6 +324,19 @@ namespace Test {
                 Console.WriteLine("{0} {1}", S2[i, i], SVD2.SingularValue(i));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(S2[i, i], SVD2.SingularValue(i)));
             }
+
+        }
+
+        [TestMethod]
+        public void MatrixSelfMultiplication () {
+
+            RectangularMatrix A = GenerateRandomMatrix(3, 4);
+
+            SymmetricMatrix AAT = A.MultiplySelfByTranspose();
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AAT, A * A.Transpose()));
+
+            SymmetricMatrix ATA = A.MultiplyTransposeBySelf();
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(ATA, A.Transpose() * A));
 
         }
 

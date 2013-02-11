@@ -139,6 +139,7 @@
     <Compile Include="Statistics\ContingencyTable.cs" />
     <Compile Include="Statistics\DiscreteHistogram.cs" />
     <Compile Include="Statistics\Distributions\GumbelDistribution.cs" />
+    <Compile Include="Statistics\Distributions\SpearmanDistribution.cs" />
     <Compile Include="Statistics\Distributions\TruncatedNormalDistribution.cs" />
     <Compile Include="Statistics\PrincipalComponentAnalysis.cs" />
     <Compile Include="Statistics\UncertainMeasurement.cs" />

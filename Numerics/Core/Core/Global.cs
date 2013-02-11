@@ -36,7 +36,9 @@ namespace Meta.Numerics {
 
         public static readonly double SqrtPI = Math.Sqrt(Math.PI);
 
-        public static readonly double SqrtTwoPI = Math.Sqrt(2.0 * Math.PI);
+        public static readonly double SqrtTwoPI = Math.Sqrt(TwoPI);
+
+        public static readonly double SqrtHalfPI = Math.Sqrt(HalfPI);
 
         // pre-calculate some often-used logs
 

@@ -106,6 +106,8 @@ namespace Test {
         [TestMethod]
         public void SampleMoments () {
             foreach (Distribution distribution in distributions) {
+
+                Console.WriteLine(distribution.GetType().Name);
                 
                 Sample sample = CreateSample(distribution, 100);
 
@@ -113,19 +115,23 @@ namespace Test {
 
                 UncertainValue m = sample.PopulationMean;
                 Interval mi = m.ConfidenceInterval(0.95);
+                Console.WriteLine("mean {0} {1}", mi, distribution.Mean);
                 Assert.IsTrue(mi.ClosedContains(distribution.Mean));
 
                 UncertainValue s = sample.PopulationStandardDeviation;
                 Interval si = s.ConfidenceInterval(0.95);
+                Console.WriteLine("stddev {0} {1}", si, distribution.StandardDeviation);
                 Assert.IsTrue(si.ClosedContains(distribution.StandardDeviation));
 
-                for (int n = 1; n <= 6; n++) {
+                for (int n = 1; n < 8; n++) {
                     UncertainValue c = sample.PopulationMomentAboutMean(n);
                     Interval ci = c.ConfidenceInterval(0.95);
+                    Console.WriteLine("C{0} {1} {2}", n, ci, distribution.MomentAboutMean(n));
                     Assert.IsTrue(ci.ClosedContains(distribution.MomentAboutMean(n)));
 
                     UncertainValue r = sample.PopulationMoment(n);
                     Interval ri = r.ConfidenceInterval(0.95);
+                    Console.WriteLine("M{0} {1} {2}", n, ri, distribution.Moment(n));
                     Assert.IsTrue(ri.ClosedContains(distribution.Moment(n)));
                 }
             }

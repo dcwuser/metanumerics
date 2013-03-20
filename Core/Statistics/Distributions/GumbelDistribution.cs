@@ -35,7 +35,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             this.s = width;
         }
 
-        private double m, s;
+        private readonly double m, s;
 
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {

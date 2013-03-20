@@ -144,6 +144,7 @@
     <Compile Include="Statistics\Distributions\PearsonRDistribution.cs" />
     <Compile Include="Statistics\Distributions\PoissonDistribution.cs" />
     <Compile Include="Statistics\Distributions\StudentDistribution.cs" />
+    <Compile Include="Statistics\Distributions\TransformedDistribution.cs" />
     <Compile Include="Statistics\Distributions\TriangularDistribution.cs" />
     <Compile Include="Statistics\Distributions\UniformDistribution.cs" />
     <Compile Include="Statistics\Distributions\WaldDistribution.cs" />

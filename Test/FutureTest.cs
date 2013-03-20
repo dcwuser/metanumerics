@@ -249,26 +249,12 @@ namespace FutureTest {
 
         }
 
-        [TestMethod]
-        public void KuiperMean () {
-            for (int n = 2; n <= 14; n++) {
-
-                double s = 0.0;
-                for (int k = 0; k < n; k++) {
-                    s += MoreMath.Pow(n, k) / AdvancedIntegerMath.Factorial(k);
-                }
-                s = s * AdvancedIntegerMath.Factorial(n) / MoreMath.Pow(n, n + 1);
-
-                Console.WriteLine("{0} {1} {2}", n, s, s * Math.Sqrt(n));
-            }
-        }
 
         [TestMethod]
         public void SpearmanTest () {
+            Stopwatch timer = Stopwatch.StartNew();
             SpearmanDistribution s = new SpearmanDistribution(5);
-            for (double rho = -1.0; rho <= 1.0; rho += 0.05) {
-                Console.WriteLine("{0} {1}", rho, s.LeftProbability(rho));
-            }
+            s.Summarize();
         }
 
         [TestMethod]
@@ -276,15 +262,182 @@ namespace FutureTest {
             Console.WriteLine(AdvancedMath.KelvinBer(0.0, 1.0));
         }
 
+        private static double[] inverfSeriesCoefficients = ComputeInverseErfSeriesCoefficients(24);
+
+        private static double[] ComputeInverseErfSeriesCoefficients (int n) {
+            double[] d = new double[n + 1];
+            d[0] = 1.0;
+            for (int k = 0; k < n; k++) {
+                for (int j = 0; j <= k; j++) {
+                    d[k + 1] += d[j] * d[k - j] / (j + 1) / (2 * j + 1);
+                }
+            }
+            for (int k = 1; k <= n; k++) {
+                d[k] /= (2 * k + 1);
+            }
+            return (d);
+        }
+
+        // There is no cancelation in this series, so accuracy is just a matter of how many terms we are willing to take
+        // For x ~ 0.1, 8 terms; for x ~ 0.25, 12 terms; for x ~ 0.5, 24 terms
+
+        public static double InverseErfSeries (double x) {
+
+            double z = Math.Sqrt(Math.PI) * x / 2.0;
+            double z2 = z * z;
+
+            double s = 1.0;
+            double z2k = 1.0;
+            for (int k = 1; k < inverfSeriesCoefficients.Length; k++) {
+                double s_old = s;
+                z2k *= z2;
+                s += inverfSeriesCoefficients[k] * z2k;
+                if (s == s_old) { return (z * s); }
+            }
+
+            throw new NonconvergenceException();
+        }
+
+        public static double InverseErfcAsymptotic (double x) {
+
+            double u = -2.0 / Math.Log(Math.PI * x * x * Math.Log(1 / x));
+            double v = Math.Log(Math.Log(1 / x)) - 2.0 + Math.Log(Math.PI);
+
+            double a2 = v / 8.0;
+            double a3 = - (v * v + 6.0 * v - 6.0) / 32.0;
+            double a4 = (4.0 * v * v * v + 27 * v * v + 100 * v - 300.0) / 384.0; 
+            double s = 1.0 / Math.Sqrt(u) * (1.0 + a2 * u * u + a3 * u * u * u + a4 * u * u * u * u);
+
+            Console.WriteLine("u={0} v={1}", u, v);
+
+            return (s);
+
+        }
+
+        public static double InverseErfcExpansion (double x) {
+
+            double y = -Math.Log(Math.Sqrt(Math.PI) * x);
+            double lny = Math.Log(y);
+
+            double s = y - lny / 2.0;
+            s += 1.0 / y * (lny / 4.0 - 1.0 / 2.0);
+            double y2 = y * y; double lny2 = lny * lny;
+            s += 1.0 / y2 * (lny2 / 16.0 - 3.0 / 8.0 * lny + 7.0 / 8.0);
+            double y3 = y2 * y; double lny3 = lny2 * lny;
+            s += 1.0 / y3 * (lny3 / 48.0 - 7.0 / 32.0 * lny2 + 17.0 / 16.0 * lny - 107.0 / 48.0);
+            double y4 = y3 * y; double lny4 = lny3 * lny;
+            s += 1.0 / y4 * (lny4 / 128.0 - 23.0 / 192.0 * lny3 + 29.0 / 32.0 * lny2 - 31.0 / 8.0 * lny + 1489.0 / 192.0);
+
+            return(Math.Sqrt(s));
+
+        }
+
+        internal static double InverseErfcApproximation (double y) {
+            double yy = y * y;
+            double log = Math.Log(2.0 / Math.PI / yy);
+            double S = log - Math.Log(log);
+            return (Math.Sqrt(S / 2.0));
+        }
+
+        // optimized for
+        public static double InverseErfcRationalApproximation (double x) {
+
+            // minimax (3,3) rational polynomial approximation
+            // in region 3/4 < y < 4, corresponding to about 0.00034 < x < 0.75
+            // with error less ~2 X 10^{-7} throughout
+
+            double y = Math.Sqrt(-2.0 * Math.Log(x));
+            //Console.WriteLine(y);
+
+            const double a0 = -0.008324567666653700;
+            const double a1 = 0.05375062568296482;
+            const double a2 = 0.2939210318507735;
+            const double a3 = 0.4968277531435653;
+
+            const double b1 = 0.6078259118472629;
+            const double b2 = 0.6875329233078894;
+            const double b3 = 0.0006730549538445328; 
+
+            return( (a0 + a1 * y + a2 * y * y + a3 * y * y * y) / (1.0 + b1 * y + b2 * y * y + b3 * y * y * y) );
+
+        }
+
+        private static readonly double k = Math.Sqrt(Math.PI) / 2.0;
+
+        public static double InverseErfcFromRationalApproximation (double x) {
+
+            double y = InverseErfcRationalApproximation(x);
+
+            for (int i = 0; i < 2; i++) {
+                double d = AdvancedMath.Erfc(y) - x;
+                double dy = k * Math.Exp(y * y) * d;
+                //Console.WriteLine("dy = {0}", dy);
+                y += dy;
+            }
+
+            return (y);
+
+        }
+
         [TestMethod]
-        public void TestFinitePQ () {
+        public void TestProbit1 () {
+            Debug.WriteLine("hi");
+            double r = 0.0;
+            Stopwatch s = Stopwatch.StartNew();
+            for (double x = 0.0; x < 0.25; x += 0.000001) {
+                r = InverseErfSeries(x);
+            }
+            s.Stop();
+            Debug.WriteLine(s.ElapsedMilliseconds);
+            s.Restart();
+            for (double x = 0.0; x < 0.25; x += 0.000001) {
+                r = AdvancedMath.InverseErf(x);
+            }
+            s.Stop();
+            Debug.WriteLine(s.ElapsedMilliseconds);
+            //Console.WriteLine(r);
 
-            int n = 25;
-            double t = 13.0;
+        }
 
-            //Console.WriteLine(FiniteQ(n, t));
-            Console.WriteLine(MatrixP(n, t));
+        [TestMethod]
+        public void TestProbit2 () {
+            //double x = 0.0003;
+            double r = 0.0;
+            Stopwatch s = Stopwatch.StartNew();
+            for (double x = 0.0003; x < 0.75; x += 0.00001) {
+                r = InverseErfcFromRationalApproximation(x);
+            }
+            s.Stop();
+            Debug.WriteLine(s.ElapsedMilliseconds);
+            s.Restart();
+            for (double x = 0.0003; x < 0.75; x += 0.00001) {
+                r = AdvancedMath.InverseErfc(x);
+            }
+            s.Stop();
+            Debug.WriteLine(s.ElapsedMilliseconds);
+            //Console.WriteLine(r);
 
+        }
+
+        [TestMethod]
+        public void TestProbit3 () {
+            double x = 0.0003;
+            //Console.WriteLine(InverseErfcApproximation(x));
+            Console.WriteLine(InverseErfcExpansion(x));
+            //Console.WriteLine(InverseErfcAsymptotic(x));
+            Console.WriteLine(AdvancedMath.InverseErfc(x));
+        }
+
+        [TestMethod]
+        public void CompareAsymptoticExact () {
+
+            int n = 64;
+            KuiperExactDistribution k1 = new KuiperExactDistribution(n);
+            KuiperAsymptoticDistribution k2 = new KuiperAsymptoticDistribution(n);
+
+            Console.WriteLine("M1 {0} v {1}", k1.Mean, k2.Mean * Math.Sqrt(n));
+            //Console.WriteLine("C2 {0} v {1}", k1.Variance, k2.Variance * n);
+            Console.WriteLine("P(n) {0} v {1}", k1.LeftProbability(Math.Sqrt(n)), k2.LeftProbability(1.0));
         }
 
         private double FiniteQ (int n, double t) {
@@ -304,244 +457,6 @@ namespace FutureTest {
             }
 
             return (Q);
-
-        }
-
-        private double K0Q (double x) {
-            if (x <= 0.0) {
-                return (0.0);
-            } else {
-                double p = 1.0;
-                for (int k = 1; k < 50; k++) {
-                    double p_old = p;
-                    double z = k * x;
-                    double dp = 2.0 * Math.Exp(-2.0 * z * z);
-                    if (k % 2 != 0) dp = -dp;
-                    p += dp;
-                    if (p == p_old) { Console.WriteLine("KQ {0}", k); return (p); }
-                }
-                throw new NonconvergenceException();
-            }
-        }
-
-        private double K0 (double x) {
-            if (x <= 0.0) {
-                return (0.0);
-            } else {
-
-                double p = 0.0;
-                for (int k = 1; k < 100; k += 2) {
-                    double p_old = p;
-                    double z = k * Math.PI / x / 2.0;
-                    double dp = Math.Exp(-z * z / 2.0);
-                    p += dp;
-                    if (p == p_old) { Console.WriteLine("KP {0}", k); return (Math.Sqrt(2.0 * Math.PI) / x * p); }
-                }
-
-                throw new NonconvergenceException();
-            }
-        }
-
-        private double K1Q (double x) {
-            double x2 = x * x;
-            double p = 0.0;
-            for (int k = 1; k < 100; k++) {
-                double p_old = p;
-                int k2 = k * k;
-                double dp = k2 * Math.Exp(-2.0 * k2 * x2);
-                if (k % 2 == 0) dp = -dp;
-                p += dp;
-                if (p == p_old) return (4.0 / 3.0 * x * p);
-            }
-            throw new NonconvergenceException();
-        }
-
-        private double K1 (double x) {
-            double p = 0.0;
-            for (int j = 0; j < 100; j++) {
-                double p_old = p;
-                int k = 2 * j + 1;
-                double z = k * Math.PI / x / 2.0;
-                double dp = Math.Exp(-z * z / 2.0) * (z * z - 1.0);
-                p += dp;
-                if (p == p_old) return (Math.Sqrt(2.0 * Math.PI) / 6.0 / (x * x) * p);
-            }
-            throw new NonconvergenceException();
-        }
-
-        public double K2 (double x) {
-            double p = 0.0;
-            for (int j = 0; j < 100; j++) {
-                double p_old = p;
-                int k = 2 * j + 1;
-                double z = k * Math.PI / x / 2.0;
-                double dp = Math.Exp(-z * z / 2.0) * (z * z * z * z * (1.0 - 2.0 * x * x) + z * z * (2.0 * x * x - 5.0) + (6.0 * x * x + 2.0));
-                p += dp;
-                if (p == p_old) return(Math.Sqrt(2.0 * Math.PI) * 72.0 / (x * x * x) * p );
-            }
-            throw new NonconvergenceException();
-        }
-
-
-
-        private double KP1Prime (double x) {
-            double f = 0.0;
-            for (int k = 1; k < 100; k += 2) {
-                double f_old = f;
-                double z = (k * k) * (Math.PI * Math.PI) / (x * x) / 8.0;
-                double df = (4.0 * z * z - 10 * z + 2.0) * Math.Exp(-z);
-                f += df;
-                if (f == f_old) return (Math.Sqrt(2.0 * Math.PI) / 6.0 / (x * x * x) * f);
-            }
-            throw new NotImplementedException();
-        }
-
-        private double KQ1Prime (double x) {
-            double a = 2.0 * x * x;
-            double f = 0.0;
-            for (int k = 1; k < 50; k++) {
-                double f_old = f;
-                int k2 = k * k;
-                double z = a * k2;
-                double df = k2 * (1.0 - 2.0 * z) * Math.Exp(-z);
-                if (k % 2 != 0) df = -df;
-                f += df;
-                if (f == f_old) return (4.0 / 3.0 * f);
-            }
-            throw new NonconvergenceException();
-        }
-
-        [TestMethod]
-        public void ComparePrimes () {
-            for (double x = 0.4; x < 2.0; x += 0.2) {
-                Console.WriteLine("{0} {1} {2}", x, KP1Prime(x), KQ1Prime(x));
-            }
-        }
-
-        [TestMethod]
-        public void TestKSSeries2 () {
-
-            for (double x = 0.2; x <= 2.0; x += 0.2) {
-
-                Console.WriteLine("x={0} {1} {2}", x, K1(x), K1Q(x));
-
-            }
-
-        }
-
-        [TestMethod]
-        public void TestFKDClass () {
-
-            int n = 10;
-
-            int m = 10;
-
-            AsymptoticFiniteKolmogorovDistribution D = new AsymptoticFiniteKolmogorovDistribution(n);
-            Interval i = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
-
-            //Console.WriteLine(D.ProbabilityDensity(1.1));
-
-            double Q = FunctionMath.Integrate(x => D.ProbabilityDensity(x) * MoreMath.Pow(x, m), i);
-            Console.WriteLine("{0} {1}", Q, D.Moment(m));
-
-
-        }
-
-        [TestMethod]
-        public void TestFKDClass2 () {
-            int n = 100;
-            AsymptoticFiniteKolmogorovDistribution D = new AsymptoticFiniteKolmogorovDistribution(n);
-            Console.WriteLine(D.LeftProbability(0.0874483967333 * Math.Sqrt(n)));
-        }
-
-        [TestMethod]
-        public void TestKSSeries () {
-
-            int n = 512;
-
-            KolmogorovDistribution KD = new KolmogorovDistribution();
-            AsymptoticFiniteKolmogorovDistribution FKD = new AsymptoticFiniteKolmogorovDistribution(n);
-
-            for (double x = 0.2; x < 2.0; x += 0.2) {
-
-                double t = Math.Sqrt(n) * x;
-
-                double P0 = K0(x);
-                double P1 = K0(x) + K1(x) / Math.Sqrt(n);
-                double P2 = K0(x) + K1(x) / Math.Sqrt(n) + K2(x) / n;
-                double PM = MatrixP(n, t);
-                Console.WriteLine("x={0} PK={1} P0={2} P1={3} P1'={4} PM={5}", x, KD.LeftProbability(x), P0, P1, FKD.LeftProbability(x), PM);
-
-            }
-
-        }
-
-        private static double MatrixP (int n, double t) {
-
-            // compute stuff used in matrix entries
-            int tp = (int) Math.Truncate(t) + 1;
-            double h = tp - t;
-            int p = 2 * tp - 1;
-
-
-            // construct the matrix
-            SquareMatrix H = new SquareMatrix(p);
-
-            // superdiagonal
-            for (int j = 1; j < p; j++) {
-                H[j - 1, j] = 1.0;
-            }
-
-            // diagonal and subdiagonals
-            double F = 1.0; // factorial
-            double hh = h; // power of h
-            for (int i = 1; i < p; i++) {
-                H[i - 1, 0] = (1.0 - hh) / F;
-                H[p - 1, p - i] = H[i - 1, 0];
-                for (int j = i + 1; j < p; j++) {
-                    H[j - 1, j - i] = 1.0 / F;
-                }
-                hh = hh * h;
-                F = F * (i + 1);
-            }
-
-            // lower-left element
-            double g = 1.0 - 2.0 * hh;
-            if (h > 0.5) g = g + Math.Pow(2.0 * h - 1.0, p);
-            g = g / F;
-            H[p - 1, 0] = g;
-
-            // raise the matrix to the nth power
-            SquareMatrix HN = MatrixPower(H, n);
-
-            // return the appropriate element
-            double hf = Math.Exp(AdvancedIntegerMath.LogFactorial(n) - n * Math.Log(n));
-            return (hf * HN[tp - 1, tp - 1]);
-
-
-        }
-
-        private static SquareMatrix MatrixPower (SquareMatrix A, int n) {
-
-            SquareMatrix B = null;
-
-            SquareMatrix D = A.Copy();
-
-            while (true) {
-                if (n % 2 != 0) {
-                    if (B == null) {
-                        B = D.Copy();
-                    } else {
-                        B = B * D;
-                    }
-                }
-                n = n / 2;
-                if (n == 0) break;
-                D = D * D;
-            }
-
-            return (B);
-
 
         }
 

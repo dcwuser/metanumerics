@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Meta.Numerics;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics;
+using Meta.Numerics.Statistics.Distributions;
 
 namespace Test {
 
@@ -331,6 +332,23 @@ namespace Test {
                 result[i] = rng.Next(a, b + 1);
             }
             return (result);
+        }
+
+        public static Sample CreateSample (Distribution distribution, int count) {
+            return (CreateSample(distribution, count, 1));
+        }
+
+        public static Sample CreateSample (Distribution distribution, int count, int seed) {
+
+            Sample sample = new Sample();
+
+            Random rng = new Random(seed);
+            for (int i = 0; i < count; i++) {
+                double x = distribution.GetRandomValue(rng);
+                sample.Add(x);
+            }
+
+            return (sample);
         }
 
     }

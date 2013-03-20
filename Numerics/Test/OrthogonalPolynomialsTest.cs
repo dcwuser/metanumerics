@@ -129,12 +129,13 @@ namespace Test {
                 foreach (double x in aArguments) {
                     foreach (double y in aArguments) {
                         double value = OrthogonalPolynomials.HermiteH(n, x + y);
-                        double sum = 0.0;
+                        double[] terms = new double[n + 1]; double sum = 0.0;
                         for (int k = 0; k <= n; k++) {
-                            sum += AdvancedIntegerMath.BinomialCoefficient(n, k) * OrthogonalPolynomials.HermiteH(k, x) * Math.Pow(2 * y, n-k);
+                            terms[k] = AdvancedIntegerMath.BinomialCoefficient(n, k) * OrthogonalPolynomials.HermiteH(k, x) * Math.Pow(2 * y, n-k);
+                            sum += terms[k];
                         }
                         Console.WriteLine("n={0}, x={1}, y={2}, H(x+y)={3}, sum={4}", n, x, y, value, sum);
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(value, sum));
+                        Assert.IsTrue(TestUtilities.IsSumNearlyEqual(terms, value));
                     }
                 }
             }

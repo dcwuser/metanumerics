@@ -264,16 +264,34 @@ namespace Test {
         [TestMethod]
         public void DistributionCentralMomentIntegral () {
             foreach (Distribution distribution in distributions) {
-                // range of moments tested is about 3 to 30
-                foreach (int n in TestUtilities.GenerateIntegerValues(3, 30, 10)) {
+                foreach (int n in TestUtilities.GenerateIntegerValues(2, 24, 8)) {
+
+                    // get the predicted central moment
                     double C = distribution.MomentAboutMean(n);
-                    if (Double.IsInfinity(C) || Double.IsNaN(C)) continue; // don't try to integrate to infinity
+
+                    // don't try to integrate infinite moments
+                    if (Double.IsInfinity(C) || Double.IsNaN(C)) continue;
+
+                    if (C == 0.0) continue;
+
+                    EvaluationSettings settings = new EvaluationSettings();
+                    if (C == 0.0) {
+                        // if moment is zero, use absolute precision
+                        settings.AbsolutePrecision = TestUtilities.TargetPrecision;
+                        settings.RelativePrecision = 0.0;
+                    } else {
+                        // if moment in non-zero, use relative precision
+                        settings.AbsolutePrecision = 0.0;
+                        settings.RelativePrecision = TestUtilities.TargetPrecision;
+                    }
+
+                    // do the integral
                     double m = distribution.Mean;
                     Func<double, double> f = delegate(double x) {
-                        return (distribution.ProbabilityDensity(x) * Math.Pow(x - m, n));
+                        return (distribution.ProbabilityDensity(x) * MoreMath.Pow(x - m, n));
                     };
                     try {
-                        double CI = FunctionMath.Integrate(f, distribution.Support);
+                        double CI = FunctionMath.Integrate(f, distribution.Support, settings);
                         Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, n, C, CI);
                         if (C == 0.0) {
                             Assert.IsTrue(Math.Abs(CI) < TestUtilities.TargetPrecision);
@@ -285,8 +303,7 @@ namespace Test {
                             // can we revisit this later?
                             if (distribution is WeibullDistribution) e = Math.Sqrt(Math.Sqrt(e));
                             if (distribution is KolmogorovDistribution) e = Math.Sqrt(e);
-                            if (distribution is KuiperDistribution) e = Math.Sqrt(e);
-                            if (distribution is BetaDistribution) e = Math.Sqrt(e);
+                            if (distribution is KuiperDistribution) e = Math.Sqrt(Math.Sqrt(e));
                             if (distribution is TriangularDistribution) e = Math.Sqrt(e);
                             Assert.IsTrue(TestUtilities.IsNearlyEqual(C, CI, e));
                         }

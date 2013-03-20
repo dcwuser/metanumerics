@@ -8,7 +8,8 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents the distribution of the Kolmogorov-Smirnov D statistic.
     /// </summary>
-    /// <remarks><para>The D statistic in a Kolmogorov-Smirnov test is distributed (under the null hypothesis) according to a Kolmogorov disribution.</para></remarks>
+    /// <remarks><para>The D statistic in a Kolmogorov-Smirnov test is distributed (under the null hypothesis) according to a Kolmogorov disribution, in
+    /// the limit of a large sample size.</para></remarks>
     /// <seealse cref="Sample.KolmogorovSmirnovTest(Meta.Numerics.Statistics.Distributions.Distribution)" />
     public class KolmogorovDistribution : Distribution {
 
@@ -17,21 +18,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public KolmogorovDistribution () { }
 
-        // the sample size; when N=0 we will report the asymptotic distribution
-
-        internal KolmogorovDistribution (double scale) {
-            this.scale = scale;
-        }
-
-        private double scale = 1.0;
-
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
-
-            if (x < scale) {
-                return (AsymptoticPPrime(x/scale)/scale);
+            if (x <= 0.0) {
+                return (0.0);
+            } else if (x < 1.2) {
+                return (AsymptoticPPrime(x));
             } else {
-                return (AsymptoticQPrime(x/scale)/scale);
+                return (AsymptoticQPrime(x));
             }
 
         }
@@ -74,22 +68,24 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double LeftProbability (double x) {
-
-            if (x < scale) {
-                return (AsymptoticP(x / scale));
+            if (x <= 0.0) {
+                return (0.0);
+            } else if (x < 1.2) {
+                return (AsymptoticP(x));
             } else {
-                return (1.0 - AsymptoticQ(x / scale));
+                return (1.0 - AsymptoticQ(x));
             }
 
         }
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
-
-            if (x < scale) {
-                return (1.0 - AsymptoticP(x / scale));
+            if (x <= 0.0) {
+                return (1.0);
+            } else if (x < 1.2) {
+                return (1.0 - AsymptoticP(x));
             } else {
-                return (AsymptoticQ(x / scale));
+                return (AsymptoticQ(x));
             }
 
         }
@@ -138,14 +134,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (Global.SqrtHalfPI * Global.LogTwo * scale);
+                return (Global.SqrtHalfPI * Global.LogTwo);
             }
         }
 
         /// <inheritdoc />
         public override double Variance {
             get {
-                return (Global.HalfPI * (Math.PI / 6.0 - Global.LogTwo * Global.LogTwo) * scale * scale);
+                return (Global.HalfPI * (Math.PI / 6.0 - Global.LogTwo * Global.LogTwo));
 
             }
         }
@@ -154,7 +150,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double Median {
             get {
                 // this constant was determined empiricaly
-                return (0.82757355518991 * scale);
+                return (0.82757355518991);
             }
         }
 
@@ -167,9 +163,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (n == 1) {
                 return (Mean);
             } else if (n == 2) {
-                return (Math.PI * Math.PI / 12.0 * scale * scale);
+                return (Math.PI * Math.PI / 12.0);
             } else {
-                return (AdvancedMath.Gamma(n / 2.0 + 1.0) * AdvancedMath.DirichletEta(n) / Math.Pow(2.0, n / 2.0 - 1.0) * Math.Pow(scale, n));
+                return (AdvancedMath.Gamma(n / 2.0 + 1.0) * AdvancedMath.DirichletEta(n) / Math.Pow(2.0, n / 2.0 - 1.0));
             }
         }
 
@@ -193,147 +189,128 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        /*
-
-        // an exact formula for 1/2 <= t <= 1
-
-        private static double Smallest_P (int n, double t) {
-
-            Debug.Assert((0.5 <= t) && (t <= 1.0));
-
-            return (Math.Exp(n * Math.Log((2.0 * t - 1.0) / n) + AdvancedIntegerMath.LogFactorial(n)));
-
-        }
-
-        // an exact formula for n-1 <= t <= n
-
-        private static double Smallest_Q (int n, double t) {
-
-            Debug.Assert((n - 1) <= t);
-
-            return (2.0 * Math.Pow(1.0 - t / n, n));
-
-        }
-        */
-
     }
 
-    // we will build this assuming n <~ 50, because it gets very ugly with increasing n
+    // This class uses an expansion of the Kolmogorov-Smirnov distribution in powers of 1/\sqrt{n} that is explored in
+    //   Pelz and Good, Journal of the Royal Statistical Society. Series B (Methodological), Vol. 38, No. 2 (1976), pp. 152-156
+    //   Simard and L'Ecuyer, Journal of Statistical Software
+    // By differentiating the expressions, we obtain p(x). By integrating p(x) x^m, we obtain expressions for the moments.
+    // Thus the approximation is self-consistent.
 
-    public class PolynomialFiniteKolmogorovDistribution : Distribution {
+    // The leading term is
+    //   P_0 = \sum_{k=-\infty}^{+\infty} (-1)^k e^{-2 k^2 x^2} = 1 - 2 \sum_{k=1}^{\infty} (-1)^{k-1} e^{-2 k^2 x^2}
+    // This form is useful for large x. To transform it into a form useful for small x, note that this is just the theta
+    // function (http://en.wikipedia.org/wiki/Theta_function) \vartheta(1/2; 2 i x^2 / \pi). A Jacobi transformation relates
+    // relates \vartheta(z; \tau) to \vartheta(z/\tau; -1/\tau). Apply this transformation to get
+    //   \sum_{k=-\infty}^{+\infty} (-1)^k e^{-2 k^2 x^2} =
+    //   \frac{1}{x} \sqrt{\frac{\pi}{2}} \sum_{k=-\infty}^{+\infty} \exp\left\{-\frac{(2k-1)^2 \pi^2}{8 x^2} \right\}
+    // a form useful to small x.
 
-        public PolynomialFiniteKolmogorovDistribution (int n) {
+    // The first correction is given by \frac{1}{n^{1/2}} times
+    //   P_1 = - 2 x / 3 \sum_{k=-\infty}{+\infty} (-1)^k k^2 e^{-2 k^2 x^2}
+    // To get a form of this useful for small-x, take derivatives of our previous theta relationship to obtain
+    //   \sum_{k=-\infty}^{+\infty} (-1)^k k^2 e^{-2 k^2 x^2} =
+    //     \frac{1}{4 x^3} \sqrt{\frac{\pi}{2}} \sum_{k=-\infty}^{+\infty} \left[ 1 - \frac{(2k-1)^2 \pi^2}{4 x^2} \right] \exp\left\{-\frac{(2k-1)^2 \pi^2}{8 x^2} \right\}
+    //   \sum_{k=-\infty}^{+\infty} (-1)^k k^4 e^{-2 k^2 x^2} = ?
+    // From the first it follows that
+    //   P_1 = - \frac{1}{6 x^2} \sqrt{\frac{\pi}{2}} \sum_{k=-\infty}^{+\infty} \left[ 1 - \frac{(2k-1)^2 \pi^2}{4 x^2} \right] \exp\left\{-\frac{(2k-1)^2 \pi^2}{8 x^2} \right\}
+
+    // To compute the PDF instead of the CDF we just take derivatives of the relevant expressions.
+    //   p_0 = P_0' = - 4 x \sum_{k=-\infty}^{+\infty} (-1)^k k^2 e^{-2 k^2 x^2} =
+    //   - \frac{1}{x^2} \sqrt{\frac{\pi}{2}} \sum_{k=-\infty}^{+\infty} \left[ 1 - \frac{(2k-1)^2 \pi^2}{4 x^2} \right] \exp\left\{-\frac{(2k-1)^2 \pi^2}{8 x^2} \right\}
+    //  and 
+    //   p_1 = 2 / 3 \sum_{k=-\infty}{+\infty} (-1)^k k^2 ( 4 k^2 x^2 - 1 ) e^{-2 k^2 x^2} = ?
+    // For very small n and very extreme values of x, we can obtain negative p(x), but in practice this is extremely unlikely.
+    // This is a problem well known for Edgeworth expansions, and is really unavoidable for any expansion of p(x). Since the
+    // leading term must integrate to one, and the whole series must also integrate to one, higher terms must integrate to zero.
+    // Hence they must have regions of negative values.
+
+    // To compute moments we use our expressions for the PDF plus two facts
+    //    \int_{0}^{\infty} x^m e^{-2 k^2 x^2} = \Gamma(m/2 + 1/2) / 2^{(m+3)/2} /  k^{m+1} 
+    //    \sum_{k=1}^{\infty} \frac{(-1)^k}{k^m} = \eta(m)
+    //  Together these imply that the limiting moments are
+    //     <x^m>_0 = \Gamma(m/2 + 1) / 2^{m/2 - 1} \eta(m)
+    //  and the first correction is
+    //     <x^m>_1 = -2/3 \Gamma((m+1)/2) / 2^{(m+1)/2} m \eta(m-1)
+
+    public class KolmogorovAsymptoticDistribution : Distribution {
+
+        public KolmogorovAsymptoticDistribution (int n) {
             if (n < 1) throw new ArgumentOutOfRangeException("n");
             this.n = n;
+            this.sqrt_n = Math.Sqrt(n);
         }
 
-        private int n;
+        private readonly int n;
+        private readonly double sqrt_n;
 
-        // extreme left value for 1/2 < t < 1
-
-        private static double P0 (int n, double t) {
-            return (AdvancedIntegerMath.Factorial(n) * MoreMath.Pow((2.0 * t - 1.0) / n, n));
-        }
-
-        // extreme right value for n / 2 < t < n
-
-        private static double Q0 (int n, double t) {
-
-            double Q = 2.0 * MoreMath.Pow((n - t) / n, n);
-
-            if (t > n - 1) return (Q);
-
-            Q += 2.0 * t * MoreMath.Pow((n - 1 - t) / n, n - 1);
-
-            if (t > n - 2) return (Q);
-
-            for (int j = 2; n - j - t > 0.0; j++) {
-                Q += 2.0 * AdvancedIntegerMath.BinomialCoefficient(n, j) * (t / n) * MoreMath.Pow((t + j) / n, j - 1) * MoreMath.Pow((n - j - t) / n, n - j);
-            }
-
-            return (Q);
-
-        }
-
-        public override double ProbabilityDensity (double x) {
-            double t = x;
-            if (t < 0.5) {
-                return (0.0);
-            } else if (t < 1.0) {
-                throw new NotImplementedException();
-                // very easy, derivate of P0
-            } else if (t < n / 2) {
-                // hard
-                throw new NotImplementedException();
-            } else if (t < n) {
-                // easy, derivate of -Q0
-                throw new NotImplementedException();
-            } else {
-                return (0.0);
+        public override Interval Support {
+            get {
+                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
             }
         }
 
         public override double LeftProbability (double x) {
-            double t = x;
-            if (t < 0.5) {
+            if (x <= 0.0) {
                 return (0.0);
-            } else if (t < 1.0) {
-                return (P0(n, t));
-            } else if (t < n / 2) {
-                // hard
-                throw new NotImplementedException();
-            } else if (t < n) {
-                return (1.0 - Q0(n, t));
+            } else if (x < 1.0) {
+                return (P0(x) + P1(x) / sqrt_n);
             } else {
-                return (1.0);
+                return (1.0 - Q0(x) - Q1(x) / sqrt_n);
             }
         }
 
         public override double RightProbability (double x) {
-            double t = x;
-            if (t < 0.5) {
+            if (x <= 0.0) {
                 return (1.0);
-            } else if (t < 1.0) {
-                return (1.0 - P0(n, t));
-            } else if (t < n / 2) {
-                // hard
-                throw new NotImplementedException();
-            } else if (t < n) {
-                return (Q0(n, t));
+            } else if (x < 1.0) {
+                return (1.0 - P0(x) - P1(x) / sqrt_n);
             } else {
-                return (0.0);
+                return (Q0(x) + Q1(x) / sqrt_n);
             }
         }
 
-    }
-
-
-    public class AsymptoticFiniteKolmogorovDistribution : Distribution {
-
-        // This class uses an expansion of P(x) in powers of 1/\sqrt{n} that is explored in
-        //   Pelz and Good, Journal of the Royal Statistical Society. Series B (Methodological), Vol. 38, No. 2 (1976), pp. 152-156
-        //   Simard and L'Ecuyer, Journal of Statistical Software
-        // By differentiating the expressions, we obtain p(x). By integrating p(x) x^m, we obtain expressions for the moments.
-        // Thus the approximation is self-consistent.
-
-        // For very small n and very extreme values of x, it can give negative p(x), but in practice this is extremely unlikely.
-        // This is a problem well known for Edgeworth expansions, and is really unavoidable for any expansion of p(x). Since the
-        // leading term must integrate to one, and the whole series must also integrate to one, higher terms must integrate to zero.
-        // Hence they must have regions of negative values.
-
-        public AsymptoticFiniteKolmogorovDistribution (int n) {
-            if (n < 1) throw new ArgumentOutOfRangeException("n");
-            this.n = n;
+        public override double ProbabilityDensity (double x) {
+            if (x <= 0.0) {
+                return (0.0);
+            } else if (x < 1.0) {
+                return (P0Prime(x) + P1Prime(x) / sqrt_n);
+            } else {
+                return (-Q0Prime(x) - Q1Prime(x) / sqrt_n);
+            }
         }
 
-        int n;
+        public override double Mean {
+            get {
+                return (Global.SqrtHalfPI * Global.LogTwo - 1.0 / 6.0 / sqrt_n);
+            }
+        }
 
-        // Asymptotic result as series useful for small x is
-        //   P(x) = \frac{\sqrt{2 \pi}}{x} \sum_{j=1}^{\infty} e^{-\frac{(2j-1)^2 \pi^2}{8x^2}}
-        // This can derived from the Q-result below by writing the series as a Jacobi theta function
-        // and using the \tau \rightarrow 1/\tau transformation for that function (see http://en.wikipedia.org/wiki/Theta_function)
+        /*
+        public override double Variance {
+            get {
+                return (Global.HalfPI * (Math.PI / 6.0 - Global.LogTwo * Global.LogTwo) - Global.SqrtHalfPI * Global.LogTwo / 12.0 / Math.Sqrt(n));
+            }
+        }
+        */
 
-        private double P0 (double x) {
+        public override double Moment (int m) {
+            if (m < 0) {
+                throw new ArgumentOutOfRangeException("m");
+            } else if (m == 0) {
+                return (1.0);
+            } else {
+                // we can get these expressions just by integrating Q_0' and Q_1' term by term
+                double M0 = AdvancedMath.DirichletEta(m) * AdvancedMath.Gamma(m / 2.0 + 1.0) / Math.Pow(2.0, m / 2.0 - 1.0);
+                double M1 = -2.0 / 3.0 * AdvancedMath.DirichletEta(m - 1) * AdvancedMath.Gamma((m + 1) / 2.0) / Math.Pow(2.0, (m + 1) / 2.0) * m;
+                return (M0 + M1 / Math.Sqrt(n));
+            }
+        }
+
+        private static double P0 (double x) {
+
+            if (x < 1.0 / Global.SqrtMax) return (0.0);
+
             double a = MoreMath.Pow2(Math.PI / x) / 8.0;
             double f = 0.0;
             for (int k = 1; k < 100; k += 2) {
@@ -343,14 +320,13 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (f == f_old) { return (Math.Sqrt(2.0 * Math.PI) / x * f); }
             }
             throw new NonconvergenceException();
+
         }
 
-        // Asymptotic result as series useful for large x is
-        //  P = \sum_{k=-\infty}^{\infty} (-1)^k e^{-2 k^2 x^2}
-        //    = 1 - 2 \sum_{k=1}^{\infty} (-1)^{k-1} e^{-2 k^2 x^2}
-        // and since P = 1 - Q the second term is Q.
+        private static double Q0 (double x) {
 
-        private double Q0 (double x) {
+            if (x > Global.SqrtMax) return (0.0);
+
             double a = 2.0 * x * x;
             double f = 0.0;
             for (int k = 1; k < 50; k++) {
@@ -361,13 +337,13 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (f == f_old) { return (2.0 * f); }
             }
             throw new NonconvergenceException();
+
         }
 
-        // Derivative of P_0, which is leading term in p(x) = P'(x) useful for small x
-        //   P' = \frac{\sqrt{2\pi}}{x^2} \sum_{k=1}^{\infty} \left( \frac{(2k-1)^2 \pi^2}{4 x^2} - 1 \right) e^{-\frac{(2k-1)^2 \pi^2}{8 x^2}}
-        // This is derived straightforwardly by term-by-term differentiation of the P0 series
+        private static double P0Prime (double x) {
 
-        private double P0Prime (double x) {
+            if (x < 1.0 / Global.SqrtMax) return (0.0);
+
             double a = MoreMath.Pow2(Math.PI / x) / 8.0;
             double f = 0.0;
             for (int k = 1; k < 100; k += 2) {
@@ -378,13 +354,13 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (f == f_old) return (Global.SqrtTwoPI / (x * x) * f);
             }
             throw new NonconvergenceException();
+
         }
 
-        // Derivative of Q_0, which is the leading term in p(x) = -Q'(x) useful for large x
-        //   Q' = 8 x \sum_{k=1}^{\infty} (-1)^k k^2 e^{-2 k^2 x^2}
-        // This is derived straightforwardly by term-by-term differentiation of the Q_0 series
+        private static double Q0Prime (double x) {
 
-        private double Q0Prime (double x) {
+            if (x > Global.SqrtMax) return (0.0);
+
             double a = 2.0 * x * x;
             double f = 0.0;
             for (int k = 1; k < 50; k++) {
@@ -402,11 +378,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         // It happens that P_1 = P_0' / 6, so use this to reduce the code
         // we have to write and maintain
 
-        private double P1 (double x) {
+        private static double P1 (double x) {
             return (P0Prime(x) / 6.0);
         }
 
-        private double Q1 (double x) {
+        private static double Q1 (double x) {
             return (Q0Prime(x) / 6.0);
         }
 
@@ -415,7 +391,10 @@ namespace Meta.Numerics.Statistics.Distributions {
         // This form, useful for large x, is obtained by straightforward differentiation of the expression
         // for Q_1 = Q_0' / 6
 
-        private double Q1Prime (double x) {
+        private static double Q1Prime (double x) {
+
+            if (x > Global.SqrtMax) return (0.0);
+
             double a = 2.0 * x * x;
             double f = 0.0;
             for (int k = 1; k < 50; k++) {
@@ -430,7 +409,10 @@ namespace Meta.Numerics.Statistics.Distributions {
             throw new NonconvergenceException();
         }
 
-        private double P1Prime (double x) {
+        private static double P1Prime (double x) {
+
+            if (x < 1.0 / Global.SqrtMax) return (0.0);
+
             double f = 0.0;
             for (int k = 1; k < 100; k += 2) {
                 double f_old = f;
@@ -442,228 +424,188 @@ namespace Meta.Numerics.Statistics.Distributions {
             throw new NotImplementedException();
         }
 
-        public override double LeftProbability (double x) {
-            if (x <= 0.0) {
-                return (0.0);
-            } else if (x < 1.0) {
-                return (P0(x) + P1(x) / Math.Sqrt(n));
-            } else {
-                return (1.0 - Q0(x) - Q1(x) / Math.Sqrt(n));
-            }
-        }
-
-        public override double RightProbability (double x) {
-            if (x <= 0.0) {
-                return (1.0);
-            } else if (x < 1.0) {
-                return (1.0 - P0(x) - P1(x) / Math.Sqrt(n));
-            } else {
-                //return (KQ0(x));
-                return (Q0(x) + Q1(x) / Math.Sqrt(n));
-            }
-        }
-
-        public override double ProbabilityDensity (double x) {
-            if (x <= 0.0) {
-                return (0.0);
-            } else if (x < 1.0) {
-                return (P0Prime(x) + P1Prime(x) / Math.Sqrt(n));
-            } else {
-                return (-Q0Prime(x) - Q1Prime(x) / Math.Sqrt(n));
-            }
-        }
-
-        public override double Mean {
-            get {
-                return (Global.SqrtHalfPI * Global.LogTwo - 1.0 / 6.0 / Math.Sqrt(n));
-            }
-        }
-
-        public override double Variance {
-            get {
-                return (Global.HalfPI * (Math.PI / 6.0 - Global.LogTwo * Global.LogTwo) - Global.SqrtHalfPI * Global.LogTwo / 12.0 / Math.Sqrt(n));
-            }
-        }
-
-        public override double Moment (int m) {
-            if (m < 0) {
-                throw new ArgumentOutOfRangeException("m");
-            } else if (m == 0) {
-                return (1.0);
-            } else {
-                // we can get these expressions just by integrating Q_0' and Q_1' term by term
-                double M0 = AdvancedMath.DirichletEta(m) * AdvancedMath.Gamma(m / 2.0 + 1.0) / Math.Pow(2.0, m / 2.0 - 1.0);
-                double M1 = -2.0 / 3.0 * AdvancedMath.DirichletEta(m - 1) * AdvancedMath.Gamma((m + 1) / 2.0) / Math.Pow(2.0, (m + 1) / 2.0) * m;
-                return (M0 + M1 / Math.Sqrt(n));
-            }
-        }
+        
 
     }
 
-#if FUTURE
+    // Useful to have some symbolic results for low orders. These can be derived in several ways. One is to form the Durbin matrix symbolicly, take powers, and expand
+    // the results into polynomials. The results in the region 1 < t < n/2 are all formed this way, are those for n/2 < t < 5, which could be obtained with our largest
+    // 7X7 symbolic Durbin matrix. The region 1/2 < t < 1 corresponds to a 1X1 Durbin matrix of which we can take trivial powers, or 
+
+    // For example, in the region 5/2 < t < 3, k = 3 and h = 3 - t and the Durbin matrix is:
+    //      { [1-(3-t)]       1              0              0              0         }
+    //      { [1-(3-t)^2]/2   1              1              0              0         }
+    //  H = { [1-(3-t)^3]/3!  1/2            1              1              0         }
+    //      { [1-(3-t)^4]/4!  1/3!           1/2            1              1         }
+    //      { [1-2(3-t)^5]/5! [1-(3-t)^4]/4! [1-(3-t)^3]/3! [1-(3-t)^2]/2  [1-(3-t)] }
+    // and P(t) = (n!/n^n) (H^n)_{3,3}.
+
+    // n = 1
+    // 1/2 < t < 1      P = 1 (2 t - 1) =  1 - 2 (1 - t) = 2 t - 1
+
+    // n = 2
+    // 1/2 < t < 1      P = 1/2 (2 t - 1)^2
+    //   1 < t < 2      P = 1 - 1/2 (2 - t)^2 = 1/2 (-2 + 4 t - t^2)
+
+    // n = 3
+    // 1/2 < t < 1      P = 2/9 (2 t - 1)^3
+    //   1 < t < 3/2    P = 2/9 (0 - 4 t + 7 t^2 - 2 t^3)
+    // 3/2 < t < 2      P = 1 - 2/27 (3 - t)^3 - 2/9 t (2 - t)^2 = 2/9 (-9/2 + 5 t + t^2 - 2/3 t^3)
+    //   2 < t < 3      P = 1 - 2/27 (3 - t)^3 = 2/9 (-9/2 + 9 t - 3 t^2 + 1/3 t^3)
+
+    // n = 4
+    // 1/2 < t < 1      P = 3/32 (2 t - 1)^4
+    //   1 < t < 3/2    P = 3/32 (4 - 12 t + 7 t^2 + 4 t^3 - 2 t^4)
+    // 3/2 < t < 2      P = 3/32 (4 - 21 t + 25 t^2 - 8 t + 2/3 t^4)
+    //   2 < t < 3      P = 1 - 1/128 (4 - t)^4 - 1/32 t (3 - t)^3 = 3/32 (-32/3 + 37/3 t + t^2 - 5/3 t^3 + 1/4 t^4)
+    //   3 < t < 4      P = 1 - 1/128 (4 - t)^4 = 3/32 (-32/3 + 64/3 t - 8 t^2 + 4/3 t^3 - 1/12 t^4)
+
+    // n = 5
+    // 1/2 < t < 1      P = 24/625 (2 t - 1)^5
+    //   1 < t < 3/2    P = 24/625 (-4 + 28 t - 61 t^2 + 50 t^3 - 12 t^4 + 0 t^5)
+    // 3/2 < t < 2      P = 24/625 (14 - 35 t + 25/2 t^2 + 53/3 t^3 - 10 t^4 + 4/3 t^5)
+    //   2 < t < 5/2    P = 24/625 (0 - 91/3 t + 140/3 t^2 - 19 t^3 + 37/12 t^4 - 1/6 t^5)
+    // 5/2 < t < 3      P = 1 - 2/3125 (5 - t)^5 - 2/625 t (4 - t)^4 - 4/625 t (t + 2) (3 - t)^3 = 24/625 (-625/24 + 87/4 t + 5 t^2 - 7/3 t^3 - 1/4 t^4 + 1/10 t^5)
+    //   3 < t < 4      P = 1 - 2/3125 (5 - t)^5 - 2/625 t (4 - t)^4 = 24/625 (-625/24 + 123/4 t + 1/2 t^2 - 23/6 t^3 + 11/12 t^4 - 1/15 t^5)
+    //   4 < t < 5      P = 1 - 2/3125 (5 - t)^5
+
+    // n = 6
+    // 1/2 < t < 1      P = 5/324 (2 t - 1)^6
+    //   1 < t < 3/2    P = 5/324 (-4 + 4 t + 47 t^2 - 128 t^3 + 118 t^4 - 40 t^5 + 4 t^6)
+    // 3/2 < t < 2      P = 5/324 (-7/4 + 58 t - 157 t^2 + 424/3 t^3 - 130/3 t^4 + 8/3 t^5 + 4/9 t^6)
+    //   2 < t < 5/2    P = 5/324 (81/4 - 226/3 t + 305/6 t^2 + 103/6 t^3 - 223/12 t^4 + 14/3 t^5 - 7/18 t^6)
+    // 5/2 < t < 3      P = 5/324 (81/4 - 1529/12 t + 155 t^2 - 397/6 t^3 + 59/4 t^4 - 2 t^5 + 13/90 t^6)
+    //   3 < t < 4      P = 1 - 1/23328 (6 - t)^6 - 1/3888 t (5 - t)^5 - 5/7776 t (t + 2) (4 - t)^4 = 5/324 (-324/5 + 3371/60 t + 35/4 t^2 - 37/6 t^3 + 4/15 t^5 - 1/36 t^6)
+    //   4 < t < 5      P = 1 - 1/23328 (6 - t)^6 - 1/3888 t (5 - t)^5
+    //   5 < t < 6      P = 1 - 1/23328 (6 - t)^6
+
+    // n = 7
+    // 1/2 < t < 1      P = 720/117649 (2 t - 1)^7
+    //   1 < t < 3/2    P = 720/117649 (12 - 84 t + 203 t^2 - 178 t^3 - 28 t^4 + 128 t^5 - 60 t^6 + 8 t^7)
+    // 3/2 < t < 2      P = 720/117649 (-177/4 + 195 t - 491/2 t^2 + 65/3 t^3 + 416/3 t^4 - 80 t^5 + 140/9 t^6 - 8/9 t^7)
+    //   2 < t < 5/2    P = 720/117649 (303/4 - 167 t + 151/3 t^2 + 563/9 t^3 - 1595/72 t^4 - 59/12 t^5 + 53/18 t^6 - 1/3 t^7)
+    // 5/2 < t < 3      P = 720/117649 (303/4 - 2629/12 t + 1229/12 t^2 + 1501/18 t^3 - 5195/72 t^4 + 87/4 t^5 - 287/90 t^6 + 1/5 t^7)
+    //   3 < t < 7/2    P = 720/117649 (0 - 12821/60 t + 9191/30 t^2 - 2575/18 t^3 + 2639/72 t^4 - 73/12 t^5 + 13/20 t^6 - 1/30 t^7)
+    // 7/2 < t < 4      P = 720/117649 (-117649/720 + 40723/360 t + 105/4 t^2 - 29/3 t^3 - 35/24 t^4 + 9/20 t^5 + 1/36 t^6 - 1/126 t^7)
+    //   4 < t < 5      P = 1 - 2/823543 (7 - t)^7 - 2/117649 t (6 - t)^6 - 6/117649 t (t + 2) (5 - t)^5
+    //   5 < t < 6      P = 1 - 2/823543 (7 - t)^7 - 2/117649 t (6 - t)^6
+    //   6 < t < 7      P = 1 - 2/823543 (7 - t)^7
+
+    // These results can be checked for consistency by verifying that P is continuous at the region boundaries, and by verifying that the matrix and Q-series results agree
+    // in the regions where they overlap.
+
+    // Differentiation wrt t gives piecewise expressions for the PDF p(t). Unlike the CDF P(t), p(t) is not continuous, although it appears to get quite close as n increases.
+    // (The largest discontinuity appears to be consistently at t=1.) By doing piecewise integration of p(t) * t^m, we can get raw moments, and from these we can get central moments.
+    // Checking that <1> = 1 provides a sanity check, as does verifying that the moments approach their asymptotic 
+
+    // n = 1: <t> = 3/4, <t^2> = 7/12, <t^3> = 15/32 => C2 = 1/48, C3 = 0
+    // n = 2: <t> = 13/12, <t^2> = 61/48, <t^3> = 257/160 => C2 = 7/72
+    // n = 3: <t> = 293/216, <t^2> = 2167/1080, <t^3> = 
+    // n = 4: <t> = 813/512, <t^2> = 4231/1536, <t^3> =
+    // n = 5: <t> = 134377/75000, <t^2> = 614267/175000, <t^3> = 524179/70000 => C2 = 11809828097/39375000000, C3 = 183803886921931/1476562500000000
+    // n = 6: <t> = 1290643/653184, <t^2> = 1594285/373248, <t^3> = 11686771/1161216 => C2 = 156623190071/426649337856, C3 = 24188301396000379/139340260549066752
+    // n = 7: <t> = 7067335/3294172, <t^2> = 298688525/59295096, <t^3> = 2039651983/158120256, => C2 = 42440671868125/97664122490256, C3 = 8138432234802217189/35746935301330176448
+
     public class KolmogorovExactDistribution : Distribution {
 
         public KolmogorovExactDistribution (int size) {
             if (size < 1) throw new ArgumentOutOfRangeException("size");
 
-            N = size;
-            sqrtN = Math.Sqrt(N);
+            n = size;
         }
 
-        int N;
-        double sqrtN;
-
-        int maxN = 256;
+        private readonly int n;
 
         public override Interval Support {
             get {
-                return (Interval.FromEndpoints(0.5 / N, 1.0));
+                return (Interval.FromEndpoints(0.5 , n));
             }
         }
 
-        public override double ProbabilityDensity (double d) {
-
-            double t = d * N;
-            if (2.0 * t < N) {
-                return (DurbinPPrime(N, t) * N);
+        /// <inheritdoc />
+        public override double ProbabilityDensity (double t) {
+            if (t <= 0.5) {
+                return (0.0);
+            } else if (t < n / 2.0) {
+                return (DurbinMatrixPPrime(t));
+            } else if (t < n) {
+                //return (N * DurbinMatrixPPrime(t));
+                return (DurbinSeriesQPrime(t));
             } else {
-                return (DurbinQPrime(N, t) * N);
+                return (0.0);
             }
 
         }
 
         /// <inheritdoc />
-        public override double LeftProbability (double d) {
-
-            if (d <= 0.5 / N) {
-                return (0.0);
-            } else if (d >= 1.0) {
-                return (1.0);
+        public override double LeftProbability (double t) {
+            if (t <= 0.5) {
+                return(0.0);
+            } else if (t < n / 2.0) {
+                //return (MatrixP(N, t));
+                return(DurbinMatrixP(t));
+            } else if (t < n ) {
+                return(1.0 - DurbinSeriesQ(t));
             } else {
-
-                // use Durbin formulas for small N
-
-                double t = d * N;
-                if (2.0 * t < N) {
-                    // the Durbin series formula is faster than the durbin matrix formula,
-                    // but it has alternating sign terms and and can suffer a catastrophic
-                    // loss of accuracy
-                    return (MatrixP(N, t));
-                    //return (DurbinP(N, t));
-                } else {
-                    return (1.0 - DurbinQ(N, t));
-                }
-
-
+                return(1.0);
             }
 
         }
 
         /// <inheritdoc />
-        public override double RightProbability (double d) {
-
-            if (d <= 0.5 / N) {
-                return (1.0);
-            } else if (d >= 1.0) {
-                return (0.0);
+        public override double RightProbability (double t) {
+            if (t <= 0.5) {
+                return(1.0);
+            } else if (t < n / 2.0) {
+                return(1.0 - DurbinMatrixP(t));
+            } else if (t < n ) {
+                return(DurbinSeriesQ(t));
             } else {
-
-                // use Durbin formulas for small N
-
-                double t = d * N;
-                if (2.0 * t < N) {
-                    return (1.0 - MatrixP(N, t));
-                    //return (1.0 - DurbinP(N, t));
-                } else {
-                    return (DurbinQ(N, t));
-                }
-
+                return(0.0);
             }
 
         }
 
-        // Durbin's formula for exact P_n(t) that holds for n > Truncate(2 t), i.e. small t
-        // we holding an array of P_m(t) for m < n; this keeps us having to reevaluate repeatedly
+        // Durbin generalized results of Massey to obtain a formula for the right tail that reads, in the t > n / 2 region:
+        //   Q = \frac{2t}{n} \sum_{k=0}^{\floor{n-t}} \frac{n!}{k! (n-k)!} \left( \frac{t+k}{n} \right)^{k-1} \left( \frac{n - k - t}{n} \right)^{n - k}
+        // This formula consists of a single term for n-1 < t < n, two terms for n-2 < t < n-1, etc. A new term appears for each integer step to the left.
+        //   Q = \frac{2}{n^n} \left( n - t \right)^n + \frac{2}{n^{n-1}} t \left( n - 1 - t \right)^{n-1} +
+        //       \frac{n-1}{n^{n-1}} \left( t + 2 \right) \left( n - 2 - t \right)^{n-2} + \cdots
+        // See Brown & Harvey, Journal of Statistical Software 26 (2008)
+        // Durbin, "Distribution Theory for Tests Based on the Sample Distribution Function", 1973, p. 12, equation 2.4.8
 
-        // the formula unfortunately involves canceling terms of increasing size;
-        // it breaks down when n gets large
+        // All terms in this series are positive, so it does not suffer from cancelation. A corresponding recurrsive series that holds for t < n / 2
+        // suffers from significant cancelation even for small n and is thus not useful for practical purposes.
 
-        private static double DurbinP (int n, double t) {
-
-            if (t <= 0.5) return (0.0);
-
-            int t2 = (int) Math.Truncate(2.0 * t);
-
-            //double s = 0.0;
-            //for (int j = 1; j <= t2; j++) {
-            //    double ds = Math.Exp(
-            //        j * Math.Log(2.0 * t - j) - AdvancedIntegerMath.LogFactorial(j) +
-            //        (n - j) * Math.Log(n - j) - AdvancedIntegerMath.LogFactorial(n - j)
-            //    ) * DurbinP1(n - j, t);
-            //    if (j % 2 == 0) ds = - ds;
-            //    s += ds;
-            //}
-            //s = Math.Exp(AdvancedIntegerMath.LogFactorial(n) - n * Math.Log(n)) * s;
-            //return (s);
-
-
-            // an array for P_m(t)
-            double[] P = new double[n+1];
-            P[0] = 1.0;
-
-            // populate up to m = t2 using the Durbin Q formula
-            for (int m = 1; m <= t2; m++) {
-                P[m] = 1.0 - DurbinQ(m, t);
-            }
-
-            // populate higher m using the recurrsion relation
-            for (int m = t2 + 1; m <= n; m++) {
-                double B = 1.0; // binomial coefficient (n j)
-                double s = 0.0;
-                for (int j = 1; j <= t2; j++) {
-                    B = B * (m - (j - 1)) / j;
-                    double C = Math.Pow((2.0 * t - j) / m, j) * Math.Pow(1.0 * (m - j) / m, m - j);
-                    double ds = B * C * P[m - j];
-                    if (j % 2 == 0) ds = -ds;
-                    s += ds;
-                }
-                P[m] = s;
-            }
-
-            /*
-            for (int i = 0; i <= n; i++) {
-                Console.WriteLine("p[{0}]={1}", i, P[i]);
-            }
-            */
-
-            return (P[n]);
-
-        }
-
-        // Durbin's formula for exact Q_n(t) that holds for 2t > n
-
-        private static double DurbinQ (int n, double t) {
+        private double DurbinSeriesQ (double t) {
 
             if (t >= n) return (0.0);
 
-            double s = Math.Pow(1.0 - t / n, n); // j = 0 term
-            int jmax = (int) Math.Truncate(n - t);
+            // first term
+            double s = MoreMath.Pow((n - t) / n, n);
+            
+            // higher terms
+            int jmax = (int) Math.Floor(n - t);
             double B = 1.0; // binomial coefficient ( n j )
             for (int j = 1; j <= jmax; j++) {
                 B = B * (n - (j-1)) / j;
                 double C = Math.Pow((t + j) / n, j - 1) * Math.Pow((n - j - t) / n, n - j) * t / n;
                 s += B * C;
             }
+
             return (2.0 * s);
 
         }
 
-        private static double DurbinQPrime (int n, double t) {
+        private double DurbinSeriesQPrime (double t) {
 
             if (t >= n) return (0.0);
 
-            double s = 2.0 * Math.Pow(1.0 - t / n, n - 1);
-            int jmax = (int) Math.Truncate(n - t);
+            // first term
+            double s = 2.0 * Math.Pow((n - t) / n, n - 1);
+
+            // higher terms
+            int jmax = (int) Math.Floor(n - t);
             if (jmax == (n - t)) jmax--;
             for (int j = 1; j <= jmax; j++) {
                 double B = Math.Exp(AdvancedIntegerMath.LogFactorial(n-1) - AdvancedIntegerMath.LogFactorial(j) - AdvancedIntegerMath.LogFactorial(n - j));
@@ -674,101 +616,164 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (s);
         }
 
-        private static double DurbinPPrime (int n, double t) {
+        // Durbin derived a matrix formulation, later programmed by Marsaglia, that gives P by taking matrix powers.
+        // If t = n D = k - h, where k is an integer and h is a fraction, the matrix is (2k - 1) X (2k - 1) and takes the form:
+        //        { (1-h)/1!    1           0           0           0        }
+        //        { (1-h^2)/2!  1/1!        1           0           0        }
+        //    H = { (1-h^3)/3!  1/2!        1/1!        1           0        }
+        //        { (1-h^4)/4!  1/3!        1/2!        1/1!        1        }
+        //        { *           (1-h^4)/4!  (1-h^3)/3!  (1-h^2)/2!  (1-h)/1! }
+        // The lower-left element is special and depends on the size of h:
+        //    0 < h < 1/2:  * = (1 - 2 h^m) / m!
+        //    1/2 < h < 1:  * = (1 - 2 h^m + (2h-1)^m)/ m!
+        // Note the factor 2 in the first case and the additional term in the second case. The left probability is then given by
+        // the middle element of H to the nth power:
+        //    P = \frac{n!}{n^n} \left( H^n \right)_{k,k}
+        // Note that, for a given value of t, the matrix H does not depend on n; n dependence only enters as the power to which H is taken.
 
-            int t2 = (int) Math.Truncate(2.0 * t);
+        // While astounding, the matrix method is clearly quite onerous. Because all the entries of H are positive, though, it is not subject to
+        // the cancelation errors that makes the series solution practically useless in the region t < n/2.
 
-            // arrays for PDF and CDF for m <= n
-            double[] p = new double[n+1];
-            double[] P = new double[n+1];
-            p[0] = 0.0;
-            P[0] = 1.0;
+        // See Durbin, "Distribution THeory for Tests Based on the Sample Distribution Function", 1973 and
+        // Marsaglia, Tsand, & Wang, "Evaluating Kolmogorov's Distribution", Journal of Statistical Software 8  (2003) 
 
-            // populate up to m = t2 using the Durbin Q formula
-            for (int m = 1; m <= t2; m++) {
-                P[m] = 1.0 - DurbinQ(m, t);
-                p[m] = DurbinQPrime(m, t);
-            }
+        private double DurbinMatrixP (double t) {
 
-            // compute higher p and P using the recursion formula
-            for (int m = t2 + 1; m <= n; m++) {
-                double B = 1.0; // binomial coefficient (m j)
-                double s = 0.0;
-                double sp = 0.0;
-                double jmax = t2;
-                if (t2 == 2.0 * t) jmax--;
-                for (int j = 1; j <= jmax; j++) {
-                    B = B * (m - (j - 1)) / j;
-                    double C = Math.Pow((2.0 * t - j) / m, j) * Math.Pow(1.0 * (m - j) / m, m - j);
-                    double ds = B * C * P[m - j];
-                    double dsp = B * C * (p[m - j] + 2.0 * j / (2.0 * t - j) * P[m - j]);
-                    if (j % 2 == 0) {
-                        ds = - ds;
-                        dsp = - dsp;
-                    }
-                    s += ds;
-                    sp += dsp;
-                }
-                P[m] = s;
-                p[m] = sp;
-            }
+            int k; double h;
+            DecomposeInteger(t, out k, out h);
 
-            /*
-            for (int i = 0; i <= n; i++) {
-                Console.WriteLine("P[{0}]={1} p[{0}]={2}", i, P[i], p[i]);
-            }
-            */
+            SquareMatrix H = GetDurbinMatrix(k, h);
 
-            // return the desired PDF value
-            return (p[n]);
+            SquareMatrix Hn = NewMatrixPower(H, n);
+
+            double f = AdvancedIntegerMath.Factorial(n) / MoreMath.Pow(n, n);
+            return (f * Hn[k - 1, k - 1]);
 
         }
 
-        // Durbin's matrix form, also programed by Marsaglia
-        // all number are positive, so this does not suffer from the cancelation probmlems of Durbin's recursion
+        private void DecomposeInteger (double t, out int k, out double h) {
+            
+            // decompose t into an integer minus a fraction
+            k = (int) Math.Ceiling(t);
+            h = k - t;
 
-        private static double MatrixP (int n, double t) {
+        }
 
-            // compute stuff used in matrix entries
-            int tp = (int) Math.Truncate(t) + 1;
-            double h = tp - t;
-            int p = 2 * tp - 1;
+        private static SquareMatrix GetDurbinMatrix (int k, double h) {
 
+            // dimension of matrix
+            int m = 2 * k - 1;
+            SquareMatrix H = new SquareMatrix(m);
 
-            // construct the matrix
-            SquareMatrix H = new SquareMatrix(p);
-
-            // superdiagonal
-            for (int j = 1; j < p; j++) {
-                H[j-1,j] = 1.0;
+            // populate the matrix along diagonals, since they share factorial factors
+          
+            // superdiagonal is all 1s
+            for (int j = 1; j < m; j++) {
+                H[j - 1, j] = 1.0;
             }
 
             // diagonal and subdiagonals
-            double F = 1.0; // factorial
-            double hh = h; // power of h
-            for (int i = 1; i < p; i++) {
-                H[i - 1, 0] = (1.0 - hh) / F;
-                H[p-1, p-i] = H[i-1,0];
-                for (int j = i+1; j < p; j++) {
-                    H[j - 1, j - i] = 1.0 / F;
+            double Fi = 1.0; // variable for 1/i!
+            double hi = h; // variable for h^i
+            for (int i = 1; i < m; i++) {
+                // elements and ends of diagonal
+                H[i - 1, 0] = Fi * (1.0 - hi);
+                H[m - 1, m - i] = H[i - 1, 0];
+                // elements in between
+                for (int j = i+1; j < m; j++) {
+                    H[j - 1, j - i] = Fi;
                 }
-                hh = hh * h;
-                F = F * (i+1);
+                // prepare for the next recurrsion
+                hi = hi * h;
+                Fi = Fi / (i + 1);
             }
 
-            // lower-left element
-            double g = 1.0 - 2.0 * hh;
-            if (h > 0.5) g = g + Math.Pow(2.0 * h - 1.0, p);
-            g = g / F;
-            H[p-1,0] = g;
+            // lower left element
+            double e = 1.0 - 2.0 * hi;
+            if (h > 0.5) e += MoreMath.Pow(2.0 * h - 1.0, m);
+            H[m - 1, 0] = Fi * e;
 
-            // raise the matrix to the nth power
-            SquareMatrix HN = MatrixPower(H, n);
+            return(H);
 
-            // return the appropriate element
-            double hf = Math.Exp(AdvancedIntegerMath.LogFactorial(n) - n * Math.Log(n));
-            return (hf * HN[tp-1, tp-1]);
+        }
 
+        private static SquareMatrix GetDurbinMatrixPrime (int k, double h) {
+
+            // dimension of matrix
+            int m = 2 * k - 1;
+            SquareMatrix H = new SquareMatrix(m);
+
+            // left column and bottom row
+            double Fi = 1.0;
+            double hi = 1.0;
+            for (int i = 1; i < m; i++) {
+                H[i - 1, 0] = Fi * hi;
+                H[m - 1, m - i] = H[i - 1, 0];
+                Fi /= i;
+                hi *= h;
+            }
+
+            // lower left element
+            double e = 2.0 * hi;
+            if (h > 0.5) e -= 2.0 * MoreMath.Pow(2.0 * h - 1.0, m - 1);
+            H[m - 1, 0] = Fi * e;
+
+            return (H);
+
+        }
+
+        private double DurbinMatrixPPrime (double t) {
+
+            int k; double h;
+            DecomposeInteger(t, out k, out h);
+
+            // compute derivative of H
+            SquareMatrix DH = GetDurbinMatrixPrime(k, h);
+
+            //PrintMatrix(DH);
+
+            // compute powers of H
+            SquareMatrix[] PowerH = new SquareMatrix[n];
+            PowerH[1] = GetDurbinMatrix(k, h);
+            for (int i = 2; i < n; i++) {
+                PowerH[i] = PowerH[1] * PowerH[i - 1];
+            }
+
+            // use D(H^n) = (DH) H^(n-1) + H (DH) H^(n-2) + H^2 (DH) H^(n-3) + \cdots + H^(n-2) (DH) H + H^(n-1) (DH)
+            SquareMatrix HnP = DH * PowerH[n - 1];
+            for (int i = 1; i < (n - 1); i++) {
+                HnP += PowerH[i] * DH * PowerH[n - 1 - i];
+            }
+            HnP += PowerH[n - 1] * DH;
+
+            double f = AdvancedIntegerMath.Factorial(n) / MoreMath.Pow(n, n);
+            return (f * HnP[k - 1, k - 1]);
+        }
+
+        private static void PrintMatrix (AnyRectangularMatrix A) {
+            for (int r = 0; r < A.RowCount; r++) {
+                for (int c = 0; c < A.ColumnCount; c++) {
+                    Console.Write("  {0}", A[r, c]);
+                }
+                Console.WriteLine();
+            }
+        }
+
+        // We take powers via the exponentiation-by-squaring algorithm.
+        // This is not strictly optimal, but it is very simple, is optimal in most cases (e.g. all n<15),
+        // and is nearly optimal (e.g. 6 multiplies instead of 5 for n=15) even when it is not perfectly optimal.
+
+        private static SquareMatrix NewMatrixPower (SquareMatrix A, int n) {
+
+            if (n == 1) {
+                return (A);
+            } else {
+                if (n % 2 == 0) {
+                    return (NewMatrixPower(A * A, n / 2));
+                } else {
+                    return (A * NewMatrixPower(A * A, (n - 1) / 2));
+                }
+            }
 
         }
 
@@ -776,12 +781,12 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             SquareMatrix B = null;
 
-            SquareMatrix D = A.Clone();
+            SquareMatrix D = A.Copy();
 
             while (true) {
                 if (n % 2 != 0) {
                     if (B == null) {
-                        B = D.Clone();
+                        B = D.Copy();
                     } else {
                         B = B * D;
                     }
@@ -796,22 +801,38 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         }
 
+        // We have pre-computed the mean, variance, and third central moment of t = n d for n < 8
+        // by symbolic integration of the piece-wise polynomial expressions
+
         ///<inheritdoc />
         public override double Mean {
             get {
-                if (N < maxN) {
-
-                    if (N == 1) {
-                        return ((3.0 / 4.0) / N);
-                    } else if (N == 2) {
-                        return ((13.0 / 12.0) / N);
-                    } else if (N == 3) {
-                        return ((293.0 / 216.0) / N);
-                    }
-
-                    throw new NotImplementedException();
-                } else {
-                    return (base.Mean / sqrtN);
+                switch (n) {
+                    case 1:
+                        // 3/4 = 0.750000 * sqrt(1)
+                        return (3.0 / 4.0);
+                    case 2:
+                        // 13/12 = 0.766932 * sqrt(2)
+                        return (13.0 / 12.0);
+                    case 3:
+                        // 293/216 = 0.783165 * sqrt(3)
+                        return (293.0 / 216.0);
+                    case 4:
+                        // 813/512 = 0.793945 * sqrt(4)
+                        return (813.0 / 512.0);
+                    case 5:
+                        // 134377/75000 = 0.801270 * sqrt(5)
+                        return (134377.0 / 75000.0);
+                    case 6:
+                        // 1290643/653184 = 0.806668 * sqrt(6)
+                        return (1290643.0 / 653184.0);
+                    case 7:
+                        // 7067335/3294172 = 0.810887 * sqrt(7)
+                        return (7067335.0 / 3294172.0);
+                    default:
+                        // value tends toward \sqrt{\pi/2} \log(2) = 0.868731
+                        // this will perform numerical integration, which will be very slow
+                        return (base.Moment(1));
                 }
             }
         }
@@ -819,30 +840,66 @@ namespace Meta.Numerics.Statistics.Distributions {
         ///<inheritdoc />
         public override double Variance {
             get {
-                if (N < maxN) {
-                    if (N == 1) {
-                        return (1.0 / 48.0 / N);
-                    } else if (N == 2) {
-                        return ((7.0 / 72.0) / N);
-                    }
-                    throw new NotImplementedException();
-                } else {
-                    return (base.Variance / N);
+                switch (n) {
+                    case 1:
+                        // 0.020833 * 1
+                        return (1.0 / 48.0);
+                    case 2:
+                        // 0.047611 * 2
+                        return (7.0 / 72.0);
+                    case 3:
+                        // 0.055480 * 3
+                        return (38827.0 / 233280.0);
+                    case 4:
+                        // 0.058290 * 4
+                        return (183365.0 / 786432.0);
+                    case 5:
+                        // 11809828097/39375000000 = 0.059986 * 5
+                        return (11809828097.0 / 39375000000.0);
+                    case 6:
+                        // 156623190071/426649337856 = 0.061183 * 6
+                        return (156623190071.0 / 426649337856.0);
+                    case 7:
+                        // 42440671868125/97664122490256 = 0.062080 * 7
+                        return (42440671868125.0 / 97664122490256.0);
+                    default:
+                        // value tends toward \pi/2 (\pi/6 - (log(2))^2) = 0.0677732
+                        // this will perform numerical integration twice
+                        // once to find the mean and again to find the variance
+                        // this will be very slow
+                        return (base.MomentAboutMean(2));
                 }
             }
         }
 
         ///<inheritdoc />
-        public override double Moment (int n) {
-            throw new NotImplementedException();
+        public override double Moment (int m) {
+            if (m < 0) {
+                throw new ArgumentOutOfRangeException("m");
+            } else if (m == 0) {
+                return (1.0);
+            } else if (m == 1) {
+                return (Mean);
+            } else {
+                return(base.Moment(m));
+            }
         }
 
         ///<inheritdoc />
-        public override double MomentAboutMean (int n) {
-            throw new NotImplementedException();
+        public override double MomentAboutMean (int m) {
+            if (m < 0) {
+                throw new ArgumentOutOfRangeException("m");
+            } else if (m == 0) {
+                return (1.0);
+            } else if (m == 1) {
+                return (0.0);
+            } else if (m == 2) {
+                return (Variance);
+            } else {
+                return (base.MomentAboutMean(m));
+            }
         }
 
     }
 
-#endif
 }

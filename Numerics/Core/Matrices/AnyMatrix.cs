@@ -42,6 +42,24 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
+        /// <summary>
+        /// Copies the matrix into an array.
+        /// </summary>
+        /// <returns>A two-dimensional .NET array containing the matrix entries.</returns>
+        /// <remarks>
+        /// <para>The output array is independent of the matrix. Changes to its elements will not change
+        /// the elements of the matrix, and changes to the matrix elements will not be reflected in the array.</para>
+        /// </remarks>
+        public virtual T[,] ToArray () {
+            T[,] result = new T[this.RowCount, this.ColumnCount];
+            for (int r = 0; r < this.RowCount; r++) {
+                for (int c = 0; c < this.ColumnCount; c++) {
+                    result[r, c] = this[r, c];
+                }
+            }
+            return (result);
+        }
+
     }
 
 }

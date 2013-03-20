@@ -45,66 +45,149 @@ namespace Meta.Numerics.Statistics.Distributions {
     //   110   -     (x^2 + x^3) * (x^4 + x^6) * (x^6 + x^9) = x^12 + x^13 + x^14 + 2 x^15 + x^16 + x^17 + x^18
     //   111   +     (x + x^2 + x^3) * (x^2 + x^4 + x^6) * (x^3 + x^6 + x^9) =
     //                 x^6 + x^7 + 2 x^8 + 2 x^9 + 3 x^10 + 3 x^11 + 3 x^12 + 3 x^13 + 3 x^14 + 2 x^15 + 2 x^16 + x^17 + x^18
-    // Adding all gives x^10 + 2 x^11 + 0 x^12 + 2 x^13 + x^14, same as above. (Yeah, for n=3 this is more work then enumeration, but
-    // for higher n it's better. Enumeration work grows like n! while work for Ryser's permanent grows like 2^n.)
-    // Note some things:
-    //    1. We know from the start that coefficients of powers below S_min will vanish, so we needn't compute this if we can avoid it.
+    // Adding all gives x^10 + 2 x^11 + 0 x^12 + 2 x^13 + x^14, same as above. (Yeah, for n=3 this is more work than enumeration, but
+    // for higher n it's less. Enumeration work grows like n! while work for Ryser's permanent grows like 2^n.)
+    // Note some things that help us:
+    //    1. We know from the start that coefficients of powers below S_min will vanish, so we needn't compute them if we can avoid it.
     //    2. We know from the start that coefficients of powers above S_mid will mirror those below, so we needn't compute them either.
-    //    3. Contributions of left-shifted bitmasks just add n(n+1)/2 powers for each shift. For example, compare 001 to 010 to 100 and 011 to 110.
+    //    3. Contributions of left-shifted bitmasks just add n(n+1)/2 powers for each shift. In our example, compare 001 to 010 to 100 and 011 to 110.
     //       So after we compute the contribution of each odd bitmask we can get the contributions of higher members trivially.
     // This method was summarized by Luke Gustafson at http://www.luke-g.com/math/spearman/index.html, referencing
     //   van de Wiel and Bucchianico, "Fast Computation of the Exact Null Distribution of Spearman's rho and Page's L Statistic
     //   for Samples with and without Ties", 1998
 
-    public class SpearmanDistribution {
+    public class SpearmanDistribution : Distribution {
 
         public SpearmanDistribution (int n) {
             if (n < 2) throw new ArgumentOutOfRangeException("n");
             this.n = n;
-            this.totalCounts = AdvancedIntegerMath.Factorial(n);
+
+            // n = 20 is maximum n for which n! fits in long
+            this.totalCounts = 1;
+            for (long i = 2; i <= n; i++) this.totalCounts *= i;
+
             ComputeCounts();
         }
 
-
-        int n;
+        private readonly int n;
 
         int sMin, sMax, sMid;
         long[] counts;
-        double totalCounts;
+        long totalCounts;
 
-        private long Sum (int i) {
+
+
+        private long ExclusiveSum (int i) {
             long sum = 0;
-            for (int j = 0; j <=i; j++) {
+            for (int j = 0; j <i; j++) {
                 sum += counts[j];
             }
             return(sum);
         }
 
-        public double LeftSum (int s) {
-            if (s < sMin) {
-                return (0);
-            } else if (s <= sMid) {
-                return (Sum(s - sMin));
-            } else if (s < sMax) {
-                return (totalCounts - Sum(sMax - s - 1));
+        private long GetCount (int s) {
+            if (s <= sMid) {
+                return (counts[s - sMin]);
             } else {
-                return (totalCounts);
+                return (counts[sMax - s]);
             }
         }
 
-        public double LeftProbability (double rho) {
-            if (rho < -1.0) {
-                return(0.0);
-            } else if (rho < 0.0) {
-                int i = (int) Math.Round(n * (n + 1) * (n - 1) / 12.0 * (rho + 1.0));
-                //Console.WriteLine(" {0} {1}", rho, i);
-                return(Sum(i) / totalCounts);
-            } else if (rho < 1.0) {
-                int i = (int) Math.Round(n * (n + 1) * (n - 1) / 12.0 * (1.0 - rho));
-                //Console.WriteLine(" {0} {1}", rho, i);
-                return(1.0 - Sum(i - 1) / totalCounts);
+        public long GetLeftExclusiveCountSum (int s) {
+            if (s <= sMin) {
+                return (0);
+            } else if (s <= sMid) {
+                long sum = 0;
+                for (int i = 0; i < (s - sMin); i++) sum += counts[i];
+                return (sum);
+            } else if (s <= sMax) {
+                long sum = totalCounts;
+                for (int i = 0; i <= (sMax - s); i++) sum -= counts[i];
+                return (sum);
             } else {
-                return(1.0);
+                throw new InvalidOperationException();
+            }
+        }
+
+        // We expect to get P = 0 at left boundary and P = 1 at right boundary
+        // If we use exclusive summation, we get P = 0 at left boundary but P < 1 at right boundary
+        // If we use inclusive summation, we get P = 1 at right bountary but P > 1 at left boundary
+
+        public override double LeftProbability (double rho) {
+            if (rho <= 1.0) {
+                return (0.0);
+            } else if (rho >= 1.0) {
+                return (1.0);
+            } else {
+                double s = sMin * (1.0 - rho) / 2.0 + (sMax + 1) * (1.0 + rho) / 2.0;
+                int k = (int) Math.Floor(s); double h = s - k;
+                return ((GetLeftExclusiveCountSum(k) + h * GetCount(k)) / totalCounts);
+            }
+        }
+
+        public override double RightProbability (double rho) {
+            if (rho <= 1.0) {
+                return (1.0);
+            } else if (rho >= 1.0) {
+                return (0.0);
+            } else {
+                double s = sMin * (1.0 - rho) / 2.0 + (sMax + 1) * (1.0 + rho) / 2.0;
+                // give same answer as for left probability of s reflected through midpoint
+                s = sMin + sMax - s;
+                int k = (int) Math.Floor(s); double h = s - k;
+                return ((GetLeftExclusiveCountSum(k) + h * GetCount(k)) / totalCounts);
+            }
+        }
+
+        public override double ProbabilityDensity (double x) {
+            throw new NotImplementedException();
+        }
+
+        public override double Mean {
+            get {
+                return (0.0);
+            }
+        }
+
+        public override double Median {
+            get {
+                return (0.0);
+            }
+        }
+
+        public override double Variance {
+            get {
+                // V(S) = n^2 (n + 1)^2 (n - 1) / 144
+                // Since V(S) / DS^2 = V(\rho) / 2^2 and DS = n (n + 1) (n - 1) / 6, V(\rho) = 1 / (n - 1)
+                return (1.0 / (n - 1));
+            }
+        }
+
+        public void Summarize () {
+
+            Console.WriteLine("min = {0}  max = {1}", sMin, sMax);
+
+            double sm = 0.0;
+            for (int s = sMin; s <= sMax; s++) {
+                sm += GetCount(s) * s;
+            }
+            sm /= totalCounts;
+            Console.WriteLine("mean = {0}", sm);
+
+            double sv = 0.0;
+            for (int s = sMin; s <= sMax; s++) {
+                double z = s - sm;
+                sv += GetCount(s) * z * z;
+            }
+            sv /= totalCounts;
+            Console.WriteLine("variance = {0}", sv);
+
+
+        }
+
+        public override double Skewness {
+            get {
+                return (0.0);
             }
         }
 
@@ -117,7 +200,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             int shiftIncrement = n * (n + 1) / 2;
             sMin = n * (n + 1) * (n + 2) / 6;
             sMax = n * (n + 1) * (2 * n + 1) / 6;
-            // to improve performance, we calculate counts only up to the middle bin and use symmetry 
+            //Console.WriteLine("sMin = {0} sMax = {1}", sMin, sMax);
+
+            // to improve performance, we calculate counts only up to the middle bin and use symmetry to obtain the higher ones
             // the midpoint is of course (sMin+sMax)/2, but for even n this is a half-integer
             // since we want to include the middle bin but integer arithmetic rounds down, we
             // add one before halving; this gives the right maximum bin to compute for both even and odd n
@@ -137,10 +222,10 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             // skip even b values as we will compute their contributions by using (3) above
 
-            // do the k=1 case specially
+            // do the b=1 case specially
             // when only one column enters, the product over all rows is a simply the monomial x^{(c+1) n n(+1) / 2}
             // knowing this, we can avoid all the multiplication to get us there
-            // all the one column cases are produced by left-shifting the k=1 case
+            // all the one column cases are produced by left-shifting the b=1 case
             // only those for which the power lies in [sMin,sMax] need be recorded
             int p = shiftIncrement;
             while (p < sMin) p += shiftIncrement;
@@ -205,12 +290,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             //}
 
             counts = new long[sMid - sMin + 1];
-            for (int i = 0; i < counts.Length; i++) {
-                counts[i] = totalP[sMin + i];
-            }
-            for (int i = sMin; i <= sMid; i++) {
-                Console.WriteLine("{0} {1}", i, totalP[i]);
-            }
+            Array.Copy(totalP, sMin, counts, 0, counts.Length);
+            //for (int i = 0; i < counts.Length; i++) {
+            //    counts[i] = totalP[sMin + i];
+            //}
+            //for (int i = sMin; i <= sMid; i++) {
+            //    Console.WriteLine("{0} {1}", i, totalP[i]);
+            //}
 
         }
 

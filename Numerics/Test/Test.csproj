@@ -91,6 +91,7 @@
     <Compile Include="MixedMatrixTest.cs" />
     <Compile Include="LanczosTest.cs" />
     <Compile Include="MultiIntegrateTest.cs" />
+    <Compile Include="NullDistributionTests.cs" />
     <Compile Include="RandomTest.cs" />
     <Compile Include="RectangularMatrixTest.cs" />
     <Compile Include="MoreMathTest.cs" />
@@ -104,6 +105,7 @@
     <Compile Include="SquareMatrixTest.cs" />
     <Compile Include="SymmetricMatrixTest.cs" />
     <Compile Include="TestUtilities.cs" />
+    <Compile Include="TransformedDistributionTest.cs" />
     <Compile Include="TridiagonalMatrixTest.cs" />
     <Compile Include="UncertainMathTest.cs" />
     <Compile Include="UncertainValueTest.cs" />

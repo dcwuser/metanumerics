@@ -38,42 +38,56 @@ namespace Meta.Numerics {
                     // 2 multiplies
                     return (x * x * x);
                 case 4: {
-                        // 2 multiplies
-                        double x2 = x * x;
-                        return (x2 * x2);
-                    }
+                    // 2 multiplies
+                    double x2 = x * x;
+                    return (x2 * x2);
+                }
                 case 5: {
-                        // 3 multiplies
-                        double x2 = x * x;
-                        return (x2 * x2 * x);
-                    }
+                    // 3 multiplies
+                    double x2 = x * x;
+                    return (x2 * x2 * x);
+                }
                 case 6: {
-                        // 3 multiplies
-                        double x2 = x * x;
-                        return (x2 * x2 * x2);
-                    }
+                    // 3 multiplies
+                    double x2 = x * x;
+                    return (x2 * x2 * x2);
+                }
                 case 7: {
-                        // 4 multiplies
-                        double x3 = x * x * x;
-                        return (x3 * x3 * x);
-                    }
+                    // 4 multiplies
+                    double x3 = x * x * x;
+                    return (x3 * x3 * x);
+                }
                 case 8: {
-                        // 3 multiplies
-                        double x2 = x * x;
-                        double x4 = x2 * x2;
-                        return (x4 * x4);
-                    }
+                    // 3 multiplies
+                    double x2 = x * x;
+                    double x4 = x2 * x2;
+                    return (x4 * x4);
+                }
                 case 9: {
-                        // 4 multiplies
-                        double x3 = x * x * x;
-                        return (x3 * x3 * x3);
-                    }
+                    // 4 multiplies
+                    double x3 = x * x * x;
+                    return (x3 * x3 * x3);
+                }
                 case 10: {
-                        // 4 multiplies
-                        double x2 = x * x;
-                        double x4 = x2 * x2;
-                        return (x4 * x4 * x2);
-                    }
+                    // 4 multiplies
+                    double x2 = x * x;
+                    double x4 = x2 * x2;
+                    return (x4 * x4 * x2);
+                }
+                case 12: {
+                    // 4 multiplies
+                    double x3 = x * x * x;
+                    double x6 = x3 * x3;
+                    return (x6 * x6);
+                }
+                case 16: {
+                    // 4 multiplies
+                    double x2 = x * x;
+                    double x4 = x2 * x2;
+                    double x8 = x4 * x4;
+                    return (x8 * x8);
+                }
+                // that's all the cases do-able in 4 or fewer multiplies
                 default:
                     return (Math.Pow(x, n));
             }

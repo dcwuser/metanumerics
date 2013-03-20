@@ -190,4 +190,12 @@ namespace Meta.Numerics.Statistics.Distributions {
 
     }
 
+
+    // Froda & van Eeden, Canadian Journal of Statistics 28 (2000) quote a closed formula for cumulants
+    // from a dutch manuscript van Dantzig, "Kader cursus Mathematische Statistiek" (1947-1950)
+    //   K_{2\nu} = \frac{B_{2\nu}{2\nu} \sum_{j=1}^{m} \left[ (n + j)^{2v} - j^{2v} \right]
+    // Using values for the Bernoulli numbers and formulas for sums of powers, this implies
+    //   K_2 = \frac{1}{12} m n ( m + n + 1 )
+    //   K_4 = -\frac{1}{60} m n ( m + n + 1 ) ( m + m^2 + m n + n^2 + n )
+    // Testing against our distrubtion, these appear to be correct.
 }

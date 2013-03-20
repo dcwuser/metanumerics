@@ -1179,20 +1179,22 @@ namespace Meta.Numerics.Statistics {
         private TestResult KolmogorovSmirnovTest (Distribution distribution, int count) {
 
             // compute the D statistic, which is the maximum of the D+ and D- statistics
-            double D, DP, DM;
+            double DP, DM;
             ComputeDStatistics(distribution, out DP, out DM);
-            if (DP > DM) {
-                D = DP;
-            } else {
-                D = DM;
-            }
+            double D = Math.Max(DP, DM);
 
             // reduce n by the number of fit parameters, if any
             // this is heuristic and needs to be changed to deal with specific fits
             int n = data.Count - count;
-
-            //return (new TestResult(D, new FiniteKolmogorovDistribution(n)));
-            return (new TestResult(D, new KolmogorovDistribution(1.0 / Math.Sqrt(n))));
+            
+            Distribution DDistribution;
+            if (n < 32) {
+                DDistribution = new TransformedDistribution(new KolmogorovExactDistribution(n), 0.0, 1.0 / n);
+            } else {
+                DDistribution = new TransformedDistribution(new KolmogorovAsymptoticDistribution(n), 0.0, 1.0 / Math.Sqrt(n));
+            }
+            return (new TestResult(D, DDistribution));
+            
         }
 
         /// <summary>
@@ -1212,7 +1214,13 @@ namespace Meta.Numerics.Statistics {
             ComputeDStatistics(distribution, out DP, out DM);
             double V = DP + DM;
 
-            return (new TestResult(V, new KuiperDistribution(1.0 / Math.Sqrt(data.Count))));
+            Distribution VDistribution;
+            if (this.Count < 32) {
+                VDistribution = new TransformedDistribution(new KuiperExactDistribution(this.Count), 0.0, 1.0 / this.Count);
+            } else {
+                VDistribution = new TransformedDistribution(new KuiperAsymptoticDistribution(this.Count), 0.0, 1.0 / Math.Sqrt(this.Count));
+            }
+            return (new TestResult(V, VDistribution));
 
         }
 
@@ -1298,11 +1306,12 @@ namespace Meta.Numerics.Statistics {
                 if (dd > d) d = dd;
             }
 
-            // compute the effective degrees of freedom;
-            double ne = 1.0 / (1.0 / this.Count + 1.0 / sample.Count);
-
             // return the result
-            return (new TestResult(d, new KolmogorovDistribution(1.0 / Math.Sqrt(ne))));
+            // currently we use the fast that, asymptotically, \sqrt{\frac{n m}{n + m}} D goes to the limiting Kolmogorov distribution
+            // but this limit is known to be approached slowly; we should look into the exact distribution
+            // the exact distribution is actually discrete (since steps are guaranteed to be 1/n or 1/m, D will always be an integer times 1/LCM(n,m))
+            // the exact distribution is known and fairly simple in the n=m case (and in that case D will always be an integer times 1/n)
+            return (new TestResult(d, new TransformedDistribution(new KolmogorovDistribution(), 0.0, Math.Sqrt(1.0 * (this.Count + sample.Count) / this.Count / sample.Count))));
 
         }
 

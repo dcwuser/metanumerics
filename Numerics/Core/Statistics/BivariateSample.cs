@@ -304,7 +304,21 @@ namespace Meta.Numerics.Statistics {
             // compute rho
             double rho = C / V;
 
-            return (new TestResult(rho, new NormalDistribution(0.0, 1.0 / Math.Sqrt(Count))));
+            // for small enough sample, use the exact distribution
+            Distribution rhoDistribution;
+            if (Count <= 10) {
+                // for small enough sample, use the exact distribution
+                // it would be nice to do this for at least slightly higher n, but computation time grows dramatically
+                // would like to ensure return in less than 100ms; current timings n=10 35ms, n=11 72ms, n=12 190ms
+                rhoDistribution = new SpearmanDistribution(Count);
+            } else {
+                // for larger samples, use the normal approximation
+                // would like to fit support and C_4 too; look into logit-normal
+                // i was not happy with Edgeworth expansion, which can fit C_4 but screws up tails badly, even giving negative probabilities
+                rhoDistribution = new NormalDistribution(0.0, 1.0 / Math.Sqrt(Count - 1));
+            }
+
+            return (new TestResult(rho, rhoDistribution));
 
         }
 

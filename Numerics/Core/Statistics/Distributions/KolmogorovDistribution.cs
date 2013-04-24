@@ -233,7 +233,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     //  and the first correction is
     //     <x^m>_1 = -2/3 \Gamma((m+1)/2) / 2^{(m+1)/2} m \eta(m-1)
 
-    public class KolmogorovAsymptoticDistribution : Distribution {
+    internal class KolmogorovAsymptoticDistribution : Distribution {
 
         public KolmogorovAsymptoticDistribution (int n) {
             if (n < 1) throw new ArgumentOutOfRangeException("n");
@@ -506,7 +506,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     // n = 6: <t> = 1290643/653184, <t^2> = 1594285/373248, <t^3> = 11686771/1161216 => C2 = 156623190071/426649337856, C3 = 24188301396000379/139340260549066752
     // n = 7: <t> = 7067335/3294172, <t^2> = 298688525/59295096, <t^3> = 2039651983/158120256, => C2 = 42440671868125/97664122490256, C3 = 8138432234802217189/35746935301330176448
 
-    public class KolmogorovExactDistribution : Distribution {
+    internal class KolmogorovExactDistribution : Distribution {
 
         public KolmogorovExactDistribution (int size) {
             if (size < 1) throw new ArgumentOutOfRangeException("size");
@@ -644,7 +644,8 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             SquareMatrix H = GetDurbinMatrix(k, h);
 
-            SquareMatrix Hn = NewMatrixPower(H, n);
+            SquareMatrix Hn = H.Power(n);
+            //SquareMatrix Hn = NewMatrixPower(H, n);
 
             double f = AdvancedIntegerMath.Factorial(n) / MoreMath.Pow(n, n);
             return (f * Hn[k - 1, k - 1]);
@@ -750,6 +751,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (f * HnP[k - 1, k - 1]);
         }
 
+        /*
         private static void PrintMatrix (AnyRectangularMatrix A) {
             for (int r = 0; r < A.RowCount; r++) {
                 for (int c = 0; c < A.ColumnCount; c++) {
@@ -762,7 +764,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         // We take powers via the exponentiation-by-squaring algorithm.
         // This is not strictly optimal, but it is very simple, is optimal in most cases (e.g. all n<15),
         // and is nearly optimal (e.g. 6 multiplies instead of 5 for n=15) even when it is not perfectly optimal.
-
+        
         private static SquareMatrix NewMatrixPower (SquareMatrix A, int n) {
 
             if (n == 1) {
@@ -776,7 +778,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
 
         }
-
+        
         private static SquareMatrix MatrixPower (SquareMatrix A, int n) {
 
             SquareMatrix B = null;
@@ -800,6 +802,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
 
         }
+        */
 
         // We have pre-computed the mean, variance, and third central moment of t = n d for n < 8
         // by symbolic integration of the piece-wise polynomial expressions

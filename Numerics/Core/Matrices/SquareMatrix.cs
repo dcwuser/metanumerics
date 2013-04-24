@@ -568,6 +568,24 @@ namespace Meta.Numerics.Matrices {
             return (new SquareQRDecomposition(qtStore, rStore, dimension));
         }
 
+        /// <summary>
+        /// Computes the matrix raised to the given power.
+        /// </summary>
+        /// <param name="n">The power to which to raise the matrix, which must be positive.</param>
+        /// <returns>The matrix A<sup>n</sup>.</returns>
+        public SquareMatrix Power (int n) {
+            if (n < 1) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n == 0) {
+                return (new SquareMatrix(SquareMatrixAlgorithms.CreateUnitMatrix(dimension), dimension));
+            } else if (n == 1) {
+                return (this.Copy());
+            } else {
+                double[] pStore = SquareMatrixAlgorithms.Power(store, dimension, n);
+                return (new SquareMatrix(pStore, dimension));
+            }
+        }
+
         // operators
 
         /// <summary>

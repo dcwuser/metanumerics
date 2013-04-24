@@ -626,11 +626,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public UncertainValue PopulationMean {
             get {
-                // population mean is estimated by sample mean
-                // population standard deviation is estimated by Sqrt(N/(N-1)) * sample standard deviation
-                // standard deviation of sample mean is population standard deviation / Sqrt(N)
-                if (Count < 2) throw new InsufficientDataException();
-                return (new UncertainValue(Mean, Math.Sqrt(Variance / (Count - 1))));
+                return (EstimateFirstCumulant());
             }
         }
 
@@ -639,12 +635,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public UncertainValue PopulationVariance {
             get {
-                // the best estimate of the population variance is the sample variance C2 increased by the standard (N-1)/N correction factor
-                // the uncertainty in the estimate can be computed exactly in terms of the C2 and C4 sample moments 
-                int n = data.Count;
-                double C2 = MomentAboutMean(2);
-                double C4 = MomentAboutMean(4);
-                return (new UncertainValue(C2 * n / (n - 1.0), Math.Sqrt((C4 - C2 * C2) / n)));
+                return (EstimateSecondCumulant());
             }
         }
 
@@ -671,7 +662,7 @@ namespace Meta.Numerics.Statistics {
                 return (new UncertainValue(1.0, 0.0));
             } else if (n == 1) {
                 // the first momemt is just the mean
-                return (PopulationMean);
+                return (EstimateFirstCumulant());
             } else {
                 // moments of order two and higher
                 double M_n = Moment(n);
@@ -698,28 +689,73 @@ namespace Meta.Numerics.Statistics {
                 // the first moment about the mean is exactly zero by the defintion of the mean
                 return (new UncertainValue(0.0, 0.0));
             } else if (n == 2) {
-                return (PopulationVariance);
+                return (EstimateSecondCumulant());
+            } else if (n == 3) {
+                return (EstimateThirdCumulant());
             } else {
-                // moments of order three and higher
-                // in these cases we use formulas that include only the leading and first subleading term in a 1/N expansion
-
-                // the formula for the best estimate of the n'th population moment involves C_n, C_{n-2}, and C_2
-                // the formula for the uncertainty in this estimate involves C_{2n}, C_{n+1}, C_{n-1}, and C_2
-                // we need all these sample moments
-                int N = data.Count;
-                double C_2 = MomentAboutMean(2);
-                double C_nm2 = MomentAboutMean(n - 2);
-                double C_nm1 = MomentAboutMean(n - 1);
-                double C_n = MomentAboutMean(n);
-                double C_np1 = MomentAboutMean(n + 1);
-                double C_2n = MomentAboutMean(2 * n);
-
-                // now that we have the moments, compute the estimate and its uncertainty.
-                double C = C_n - (1.0 * n / N) * (0.5 * (n - 1) * C_2 * C_nm2 - C_n);
-                double V = (C_2n - 2 * n * C_nm1 * C_np1 - C_n * C_n + C_2 * C_nm1 * C_nm1 * n * n) / N;
-                return (new UncertainValue(C, Math.Sqrt(V)));
+                return (EstimateCentralMoment(n));
             }
 
+        }
+
+        // First three cumulants are M1, C2, and C3. Unbiased estimators of these are called k-statistics.
+        // See http://mathworld.wolfram.com/k-Statistic.html for k-statistic formulas in terms of sample central moments and expressions for their variances in terms of population cumulants.
+        // By substituting the k-statistics in place of the population cumulants, the formulas for variances can be re-expressed in terms of sample central moments.
+        // These formulas are also found in Dodge & Rousson, "The Complications of the Fourth Central Moment", The American Statistician 53 (1999) 267.
+
+        private UncertainValue EstimateFirstCumulant () {
+            int n = this.Count;
+            if (n < 2) throw new InsufficientDataException();
+            double m1 = this.Mean;
+            double c2 = this.Variance;
+            return (new UncertainValue(m1, Math.Sqrt(c2 / (n - 1))));
+        }
+
+        private UncertainValue EstimateSecondCumulant () {
+            int n = this.Count;
+            if (n < 2) throw new InsufficientDataException();
+            double c2 = this.Variance;
+            double c4 = this.MomentAboutMean(4);
+            return (new UncertainValue(c2 * n / (n - 1), Math.Sqrt((c4 - c2 * c2 * (n - 3) / (n - 1)) / n)));
+        }
+
+        private UncertainValue EstimateThirdCumulant () {
+            int n = this.Count;
+            if (n < 3) throw new InsufficientDataException();
+            double c2 = this.Variance;
+            double c3 = this.MomentAboutMean(3);
+            double c4 = this.MomentAboutMean(4);
+            double c6 = this.MomentAboutMean(6);
+            return (new UncertainValue(
+                c3 * n * n / (n - 1) / (n - 2),
+                Math.Sqrt((c6 - c4 * c2 * 3 * (2 * n - 5) / (n - 1) - c3 * c3 * (n - 10) / (n - 1) + c2 * c2 * c2 * 3 * (3 * n * n - 12 * n + 20) / (n - 1) / (n - 2)) / n)
+            )); 
+        }
+
+        // For higher moments, Kendall derives estimators and their variances in a series in 1/n.
+        // We include the leading term and the first (1/n) correction for the estimator, and the leading term for its variance.
+        // We have verified that these agree, to these orders, with the exact expressions for M1, C2, and C3 above.
+
+        private UncertainValue EstimateCentralMoment (int r) {
+
+            Debug.Assert(r >= 2);
+
+            // the formula for the best estimate of the r'th population moment involves C_r, C_{r-2}, and C_2
+            // the formula for the uncertainty in this estimate involves C_{2r}, C_{r+1}, C_{r-1}, and C_2
+            // we need all these sample moments
+            int n = data.Count;
+            if (n < 3) throw new InsufficientDataException();
+            double c_2 = MomentAboutMean(2);
+            double c_rm2 = MomentAboutMean(r - 2);
+            double c_rm1 = MomentAboutMean(r - 1);
+            double c_r = MomentAboutMean(r);
+            double c_rp1 = MomentAboutMean(r + 1);
+            double c_2r = MomentAboutMean(2 * r);
+
+            return (new UncertainValue(
+                c_r - r * (c_2 * c_rm2 * (r - 1) / 2 - c_r) / n,
+                Math.Sqrt((c_2r - c_rm1 * c_rp1 * 2 * r - c_r * c_r + c_2 * c_rm1 * c_rm1 * r * r) / n)
+            ));
         }
 
         // statistical tests

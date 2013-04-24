@@ -85,6 +85,7 @@
     <Compile Include="Functions\AdvancedMath_Kelvin.cs" />
     <Compile Include="Functions\AdvancedMath_Polylog.cs" />
     <Compile Include="Functions\FunctionMath_Differentiate.cs" />
+    <Compile Include="Functions\FunctionMath_MultiExtrema.cs" />
     <Compile Include="Functions\FunctionMath_MultiIntegrate.cs" />
     <Compile Include="Matrices\ColumnVector.cs" />
     <Compile Include="Matrices\RowVector.cs" />
@@ -138,7 +139,10 @@
     <Compile Include="Statistics\BivariateSample.cs" />
     <Compile Include="Statistics\ContingencyTable.cs" />
     <Compile Include="Statistics\DiscreteHistogram.cs" />
+    <Compile Include="Statistics\Distributions\DiscreteAsContinuousDistribution.cs" />
     <Compile Include="Statistics\Distributions\GumbelDistribution.cs" />
+    <Compile Include="Statistics\Distributions\IDeviateGenerator.cs" />
+    <Compile Include="Statistics\Distributions\KendallDistribution.cs" />
     <Compile Include="Statistics\Distributions\SpearmanDistribution.cs" />
     <Compile Include="Statistics\Distributions\TransformedDistribution.cs" />
     <Compile Include="Statistics\Distributions\TruncatedNormalDistribution.cs" />

@@ -142,6 +142,7 @@ namespace FutureTest {
             //A.Eigenvalues();
         }
 
+        /* ORDER STATISTICS */
 
         // 24-point Gauss-Hermite integration
         // We chose this because the smallest weight is 10^{-16}
@@ -226,7 +227,7 @@ namespace FutureTest {
 
             int n = 100;
             //int r = 3 * n / 4;
-            int r = 100;
+            int r = 52;
             Distribution d = new NormalDistribution();
 
             double C = Math.Exp(AdvancedIntegerMath.LogFactorial(n) - AdvancedIntegerMath.LogFactorial(r - 1) - AdvancedIntegerMath.LogFactorial(n - r));
@@ -249,54 +250,77 @@ namespace FutureTest {
 
         }
 
+        /* INVERSE KS CDF */
 
-        [TestMethod]
-        public void SpearmanTest () {
-            Stopwatch timer = Stopwatch.StartNew();
-            SpearmanDistribution s = new SpearmanDistribution(5);
-            s.Summarize();
-        }
+        public static double InverseQ (double Q) {
 
-        [TestMethod]
-        public void KelvinTest () {
-            Console.WriteLine(AdvancedMath.KelvinBer(0.0, 1.0));
-        }
+            if (Q == 0.0) return (Double.PositiveInfinity);
 
-        private static double[] inverfSeriesCoefficients = ComputeInverseErfSeriesCoefficients(24);
+            // This is an inversion technique suggested in Numerical Recipies, 3rd Edition, Section 6.14.12
+            // Write the Q expansion as
+            //   Q = 2 (y - y^4 + y^9 - y^{16} + y^{25} + \cdots)
+            // where y = e^{-2 x^2}.  Rewrite this as
+            //   y = \frac{Q}{2} + y^4 - y^9 + y^{16} - y^{25} + \cdots
+            // and use this iteratively to generate y starting from y = \frac{Q}{2}. When you have y,
+            //   x = \sqrt{-\log(x) / 2}
+            // The next term, y^36, is below floating point accuracy for all y <~ 1/3, corresponding to Q <~ 2/3.
+            // For Q <~ 1/2, 12 or fewer iterations are required for y to converge.
 
-        private static double[] ComputeInverseErfSeriesCoefficients (int n) {
-            double[] d = new double[n + 1];
-            d[0] = 1.0;
-            for (int k = 0; k < n; k++) {
-                for (int j = 0; j <= k; j++) {
-                    d[k + 1] += d[j] * d[k - j] / (j + 1) / (2 * j + 1);
+            double halfQ = Q / 2.0;
+            double y = halfQ;
+            for (int i = 0; i < 256; i++) {
+                double y_old = y;
+                double y4, y9, y16, y25;
+                ComputePowerSet(y, out y4, out y9, out y16, out y25);
+                y = halfQ + y4 - y9 + y16 - y25;
+                if (y == y_old) {
+                    return (Math.Sqrt(-Math.Log(y) / 2.0));
                 }
-            }
-            for (int k = 1; k <= n; k++) {
-                d[k] /= (2 * k + 1);
-            }
-            return (d);
-        }
-
-        // There is no cancelation in this series, so accuracy is just a matter of how many terms we are willing to take
-        // For x ~ 0.1, 8 terms; for x ~ 0.25, 12 terms; for x ~ 0.5, 24 terms
-
-        public static double InverseErfSeries (double x) {
-
-            double z = Math.Sqrt(Math.PI) * x / 2.0;
-            double z2 = z * z;
-
-            double s = 1.0;
-            double z2k = 1.0;
-            for (int k = 1; k < inverfSeriesCoefficients.Length; k++) {
-                double s_old = s;
-                z2k *= z2;
-                s += inverfSeriesCoefficients[k] * z2k;
-                if (s == s_old) { return (z * s); }
             }
 
             throw new NonconvergenceException();
+
         }
+
+        // This gives all the powers of y required in the Q series with the minimum number of operations.
+
+        private static void ComputePowerSet (double y, out double y4, out double y9, out double y16, out double y25) {
+            double y2, y8;
+            y2 = y * y;
+            y4 = y2 * y2;
+            y8 = y4 * y4;
+            y9 = y8 * y;
+            y16 = y8 * y8;
+            y25 = y16 * y9;
+        }
+
+        [TestMethod]
+        public void TestInverseKS () {
+
+            KolmogorovDistribution d = new KolmogorovDistribution();
+            
+            double x;
+            
+            Stopwatch s = Stopwatch.StartNew();
+            for (double Q = 0.00001; Q <= 0.5; Q += 0.00001) {
+                x = InverseQ(Q);
+            }
+            s.Stop();
+            Console.WriteLine(s.ElapsedMilliseconds);
+
+            s.Restart();
+            for (double Q = 0.00001; Q <= 0.5; Q += 0.00001) {
+                x = d.InverseRightProbability(Q);
+            }
+            s.Stop();
+            Console.WriteLine(s.ElapsedMilliseconds);
+            
+
+            Console.WriteLine(InverseQ(0.5));
+            Console.WriteLine(d.InverseRightProbability(0.5));
+
+        }
+
 
         public static double InverseErfcAsymptotic (double x) {
 
@@ -313,6 +337,8 @@ namespace FutureTest {
             return (s);
 
         }
+
+        /* INVERSE ERROR FUNCTION */
 
         public static double InverseErfcExpansion (double x) {
 
@@ -380,26 +406,6 @@ namespace FutureTest {
         }
 
         [TestMethod]
-        public void TestProbit1 () {
-            Debug.WriteLine("hi");
-            double r = 0.0;
-            Stopwatch s = Stopwatch.StartNew();
-            for (double x = 0.0; x < 0.25; x += 0.000001) {
-                r = InverseErfSeries(x);
-            }
-            s.Stop();
-            Debug.WriteLine(s.ElapsedMilliseconds);
-            s.Restart();
-            for (double x = 0.0; x < 0.25; x += 0.000001) {
-                r = AdvancedMath.InverseErf(x);
-            }
-            s.Stop();
-            Debug.WriteLine(s.ElapsedMilliseconds);
-            //Console.WriteLine(r);
-
-        }
-
-        [TestMethod]
         public void TestProbit2 () {
             //double x = 0.0003;
             double r = 0.0;
@@ -428,81 +434,623 @@ namespace FutureTest {
             Console.WriteLine(AdvancedMath.InverseErfc(x));
         }
 
+        /* MINIMIZATION */
+
+        private static void ParabolicFit (
+            double x1, double f1, double x2, double f2, double x3, double f3,
+            out double x0, out double fpp
+        ) {
+
+            // We want to find the parabola
+            //   f = f0 + (f'' / 2) (x - x0)^2
+            // that passes throught the points (x1,f1), (x2,f2), (x3,f3)
+
+            // The solution, after much algebra is:
+            //   x0 = x1 - \frac{1}{2} \frac{(f3-f1)(x1-x2)^2 - (f2-f1)(x3-x1)^2}{(f3-f1)(x1-x2) + (f2-f1)(x3-x1)}
+            //   f0 = ?
+            //   f'' = 2 \frac{(x1-x2)(f3-f1) + (x3-x1)(f2-f1)}{(x1-x2)(x3-x1)(x3-x2)}
+
+            // compute the differences that appear in our expressions
+            double x12 = x1 - x2; double f21 = f2 - f1;
+            double x31 = x3 - x1; double f31 = f3 - f1;
+            double x32 = x3 - x2;
+
+            // compute the numerator and denominator in the expression for x0
+            double t1 = f31 * x12;
+            double t2 = f21 * x31;
+            double p = t1 * x12 - t2 * x31;
+            double q = 2.0 * (t1 + t2);
+
+            if (q == 0.0) {
+                // the denominator vanishes when the points are colinear; there is no parabolic fit
+                x0 = Double.NaN;
+                fpp = Double.NaN;
+            } else {
+                x0 = x1 - p / q;
+                fpp = q / (x12 * x31 * x32);
+            }
+
+        }
+
+        private static void CubicHermiteMinimum (double x0, double f0, double m0, double x1, double f1, double m1, out double x, out double fpp) {
+            double dx = x1 - x0;
+            double t;  CubicHermiteMinimum(f0, m0 * dx, f1, m1 * dx, out t, out fpp);
+            x = x0 + dx * t;
+            fpp = fpp / (dx * dx);
+        }
+
+        private static void CubicHermiteMinimum (double f0, double m0, double f1, double m1, out double t, out double fpp) {
+
+            // Given f,f' = f0,m0 at t = 0 and f,f' = f1,m1 at t = 1, the cubic Hermite interpolating polynomial
+            // (http://en.wikipedia.org/wiki/Cubic_Hermite_spline) is
+            //   f = (2 t^3 - 3 t^2 + 1) f0 + (t^3 - 2 t^2 + t) m0 + (-2 t^3 + 3 t^2) f1 + (t^3 - t^2) m1
+            //     = (1 + 2 t) (1 - t)^2 f0 + t (1 - t)^2 m0 + t^2 (3 - 2 t) f1 + t^2 (t - 1) m1
+            //     = [2 (f0 - f1) + (m0 + m1)] t^3 - [3 (f0 - f1) + 2 m0 + m1] t^2 + m0 t + p0
+
+            // The derivative of this function is
+            //   f' = 3 [2 (f0 - f1) + (m0 + m1)] t^2 - 2 [3 (f0 - f1) + 2 m0 + m1] t + m0 = a t^2 - b t + c
+            // Set this equal to zero to get a quadratic equation a t^2 - b t + c = 0 for minimum (and maximum).
+            // The descriminant q^2 = b^2 - 4 a c = ?
+            // If a > 0 the cubic is upward sloping, so minimum is rightmost solution. If a < 0, minimum is leftmost solution.
+
+            // The second derivative is f'' = 2 a t - b.
+
+            double df = f0 - f1;
+            double sm = m0 + m1;
+            double q2 = 4.0 * MoreMath.Pow(3.0 * df + sm, 2) - 4.0 * m0 * m1;
+
+            // If q^2 < 0, there is no minimum
+
+            if (q2 < 0.0) {
+                t = Double.NaN;
+                fpp = Double.NaN;
+                return;
+            }
+
+            double q = Math.Sqrt(q2);
+
+            double a = 3.0 * (2.0 * df + sm);
+            double b = 2.0 * (3.0 * df + 2.0 * m0 + m1);
+            double c = m0;
+
+            Console.WriteLine("a={0} b={1} c={2}", a, b, c);
+
+            // If a is very small or zero, our cubic becomes a parabola.
+            // This happens, for example, given two points with equal function values and opposite slopes.
+            if (Math.Abs(a) <= 1.0E-7 * Math.Abs(b) && Math.Abs(a * c) <= 1.0E-14 * b * b) {
+                Console.WriteLine("parabola");
+                if (b < 0.0) {
+                    t = c / b;
+                    fpp = -b;
+                } else {
+                    t = Double.NaN;
+                    fpp = Double.NaN;
+                }
+                return;
+            }
+
+            double t1, t2;
+            if (b > 0) {
+                t1 = (b + q) / (2.0 * a);
+                t2 = (2.0 * c) / (b + q);
+            } else {
+                t1 = (b - q) / (2.0 * a);
+                t2 = (2.0 * c) / (b - q);
+            }
+            if (a > 0) {
+                t = Math.Max(t1, t2);
+            } else {
+                t = Math.Min(t1, t2);
+            }
+
+            fpp = 2.0 * a * t - b;
+
+
+            /*
+            if (a > 0) {
+                // rightmost solution is minimum
+                // use expression with no cancelation
+                if (b > 0) {
+                    return ((b + q) / (2.0 * a));
+                } else {
+                    return ((2.0 * c) / (b - q));
+                }
+            } else {
+                // leftmost solution is minimum
+                // again, use expression with no cancelation
+                if (b > 0) {
+                    return ((2.0 * c) / (b + q));
+                } else {
+                    return ((b - q) / (2.0 * a));
+                }
+            }
+            */
+        }
+
         [TestMethod]
-        public void CompareAsymptoticExact () {
+        public void TestCubicHermite () {
 
-            int n = 64;
-            KuiperExactDistribution k1 = new KuiperExactDistribution(n);
-            KuiperAsymptoticDistribution k2 = new KuiperAsymptoticDistribution(n);
+            double x, fpp; CubicHermiteMinimum(3.1428858, -0.99999916, 0.0012931460, 3.2067118, -0.997880, 0.0650731, out x, out fpp);
 
-            Console.WriteLine("M1 {0} v {1}", k1.Mean, k2.Mean * Math.Sqrt(n));
-            //Console.WriteLine("C2 {0} v {1}", k1.Variance, k2.Variance * n);
-            Console.WriteLine("P(n) {0} v {1}", k1.LeftProbability(Math.Sqrt(n)), k2.LeftProbability(1.0));
-        }
-
-        private double FiniteQ (int n, double t) {
-
-            if (t < n / 2.0) throw new ArgumentOutOfRangeException();
-
-            double Q = 2.0 * MoreMath.Pow((n - t) / n, n);
-
-            if (t > n - 1) return (Q);
-
-            Q += 2.0 * t * MoreMath.Pow((n - 1 - t) / n, n - 1);
-
-            if (t > n - 2) return (Q);
-
-            for (int j = 2; n - j - t > 0.0; j++) {
-                Q += 2.0 * AdvancedIntegerMath.BinomialCoefficient(n, j) * (t / n) * MoreMath.Pow((t + j) / n, j - 1) * MoreMath.Pow((n - j - t) / n, n - j);
-            }
-
-            return (Q);
+            //double x = CubicHermiteMinimum(1.0, -1.0, 1.0, +1.0);
+            Console.WriteLine(x);
 
         }
 
         [TestMethod]
-        public void FftTimer2 () {
+        public void TestParabolicFit () {
 
-            int n = 65536;
+            double x0, fpp;
+            ParabolicFit(2, 2, 1, 5, 0, 10, out x0, out fpp);
 
-            FourierTransformer t = new FourierTransformer(n);
+            Console.WriteLine(x0);
+            Console.WriteLine(fpp);
 
-            Complex[] x = new Complex[n];
-            for (int i = 0; i < n; i++) {
-                x[i] = new Complex(2.0, -2.0);
+        }
+
+        private static double FindMinimum (
+            Func<double, double> f,
+            double a, double b
+        ) {
+
+            // evaluate three points within the bracket
+            double u = (3.0 * a + b) / 4.0;
+            double v = (a + b) / 2.0;
+            double w = (a + 3.0 * b) / 4.0;
+
+            double fu = f(u); double fv = f(v); double fw = f(w);
+
+            Console.WriteLine("f({0})={1}  f({2})={3}  f({4})={5}", u, fu, v, fv, w, fw);
+
+            // move in the bracket boundaries, if possible
+            if (fv < fu) { a = u; if (fw < fv) a = v; }
+            if (fv < fw) { b = w; if (fu < fv) b = v; }
+
+            Console.WriteLine("a={0} b={1}", a, b);
+
+            // sort u, v, w by fu, fv, fw values
+            // these three comparisons are the most efficient three-item sort
+            if (fv < fu) { double t = v; v = u; u = t; t = fv; fv = fu; fu = t; }
+            if (fw < fu) { double t = w; w = u; u = t; t = fw; fw = fu; fu = t; }
+            if (fw < fv) { double t = w; w = v; v = t; t = fw; fw = fv; fv = t; }
+
+            // An evaluation budget of 32 is sufficient for all our test cases except for |x|, which requires 82 (!) evaluations to converge. Parabolic fitting just does a very poor job
+            // for this function (at all scales, since it is scale invariant). We should look into cubic fitting.
+
+            EvaluationSettings settings = new EvaluationSettings() { EvaluationBudget = 128, AbsolutePrecision = 0.0, RelativePrecision = 0.0 };
+            return (FindMinimum(f, a, b, u, fu, v, fv, w, fw, settings, 3));
+
+        }
+
+        private static double FindMinimum (
+            Func<double,double> f,
+            double a, double b,
+            double u, double fu, double v, double fv, double w, double fw,
+            EvaluationSettings settings, int count
+        ) {
+
+            double tol = 0.0;
+
+            while (count < settings.EvaluationBudget) {
+
+                Console.WriteLine("n={0} tol={1}", count, tol);
+                Console.WriteLine("[{0}  f({1})={2}  f({3})={4}  f({5})={6}  {7}]", a, u, fu, v, fv, w, fw, b);
+
+                Debug.Assert(a < b);
+                Debug.Assert((a <= u) && (u <= b));
+                Debug.Assert((fu <= fv) && (fv <= fw));
+
+                // Expected final situation is a<tol><tol>u<tol><tol>b, leaving no point left to evaluate that is not within tol of an existing point.
+
+                if ((b - a) <= 4.0 * tol) return (u);
+
+                // While a < u < b is guaranteed, a < v, w < b is not guaranteed, since the bracket can sometimes be made tight enough to exclude v or w.
+                // For example, if u < v < w, then we can set b = v, placing w outside the bracket.
+
+                double x, fpp;
+                ParabolicFit(u, fu, v, fv, w, fw, out x, out fpp);
+                Console.WriteLine("parabolic x={0} f''={1}", x, fpp);
+ 
+                if (Double.IsNaN(fpp) || (fpp <= 0.0) || (x < a) || (x > b)) {
+
+                    // the parabolic fit didn't work out, so do a golden section reduction instead
+
+                    // to get the most reduction of the bracket, pick the larger of au and ub
+                    // for self-similarity, pick a point inside it that divides it into two segments in the golden section ratio,
+                    // i.e. 0.3820 = \frac{1}{\phi + 1} and 0.6180 = \frac{\phi}{\phi+1}
+                    // put the smaller segment closer to u so that x is closer to u, the best minimum so far
+
+                    double au = u - a;
+                    double ub = b - u;
+
+                    if (au > ub) {
+                        x = u - au / (AdvancedMath.GoldenRatio + 1.0);
+                    } else {
+                        x = u + ub / (AdvancedMath.GoldenRatio + 1.0);
+                    }
+
+                    Console.WriteLine("golden section x={0}", x);
+
+                }
+
+                // ensure we don't evaluate within tolerance of an existing point
+                if (Math.Abs(x - u) < tol) { Console.WriteLine("shift from u (x={0})", x); x = (x > u) ? u + tol : u - tol; }
+                if ((x - a) < tol) { Console.WriteLine("shift from a (x={0})", x); x = a + tol; }
+                if ((b - x) < tol) { Console.WriteLine("shift from b (x={0})", x); x = b - tol; }
+
+                count++;
+                double fx = f(x);
+                Console.WriteLine("f({0}) = {1}", x, fx);
+
+                Console.WriteLine("delta={0}", fu - fx);
+
+                if (fx < fu) {
+
+                    // the new point is lower than all the others; this is success 
+
+                    // u now becomes a bracket point
+                    if (u < x) {
+                        a = u;
+                    } else {
+                        b = u;
+                    }
+
+                    // x -> u -> v -> w
+                    w = v; fw = fv;
+                    v = u; fv = fu;
+                    u = x; fu = fx;
+
+                } else {
+
+                    // x now becomes a bracket point
+                    if (x < u) {
+                        a = x;
+                    } else {
+                        b = x;
+                    }
+
+                    if (fx < fv) {
+
+                        // the new point is higher than u, but still lower than v and w
+                        // this isn't what we expected, but we have lower points that before
+
+                        // x -> v -> w
+                        w = v; fw = fv;
+                        v = x; fv = fx;
+
+                    } else if (fx < fw) {
+
+                        // x -> w
+                        w = x; fw = fx;
+
+                    } else {
+
+                        // the new point is higher than all our other points; this is the worst case
+                        // we might still want to replace w with x because
+                        // (i) otherwise a parabolic fit will reproduce the same x and
+                        // (ii) w is quite likely far outside the new bracket and not telling us much about the behavior near u
+
+                        Console.WriteLine("bad point");
+                        //throw new NotImplementedException();
+                    }
+
+                }
+
+                // if the user has specified a tollerance, use it
+                if ((settings.RelativePrecision > 0.0 || settings.AbsolutePrecision > 0.0)) {
+                    tol = Math.Max(Math.Abs(u) * settings.RelativePrecision, settings.AbsolutePrecision);
+                } else {
+                    // otherwise, try to get the tollerance from the curvature
+                    if (fpp > 0.0) {
+                        tol = Math.Sqrt(2.0 * (Math.Abs(fu) * 1.0E-14 + 1.0E-28) / fpp);
+                    } else {
+                        // but if we don't have a useable curvature either, wing it
+                    }
+                }
+
             }
 
-            Stopwatch s = Stopwatch.StartNew();
-            Complex[] y = t.Transform(x);
-            s.Stop();
+            throw new NonconvergenceException();
 
-            Console.WriteLine(s.ElapsedMilliseconds);
+        }
+
+        public delegate void FuncWithDerivative (double x, out double f, out double fp);
+
+        private double FindMinimumWithDerivative (
+            FuncWithDerivative f,
+            double a, double b
+        ) {
+
+            // pick two points in the interval
+            double u = 2.0 / 3.0 * a + 1.0 / 3.0 * b;
+            double v = 1.0 / 3.0 * a + 2.0 / 3.0 * b;
+
+            // evalue the function there
+            double fu, fpu, fv, fpv;
+            f(u, out fu, out fpu);
+            f(v, out fv, out fpv);
+
+            // move in the bound at the higher side
+            if (fu > fv) {
+                a = u;
+            } else {
+                b = v;
+            }
+
+            // if f(v) < f(u), swap the points to ensure that u and v are ordered as required
+            if (fv < fu) {
+                double t;
+                t = u; u = v; v = t;
+                t = fu; fu = fv; fv = t;
+                t = fpu; fpu = fpv; fpv = t;
+            }
+
+            // An evaluation budget of 32 is sufficient for all our test cases except for |x|, which requires 82 (!) evaluations to converge. Parabolic fitting just does a very poor job
+            // for this function (at all scales, since it is scale invariant). We should look into cubic fitting.
+
+            return (FindMinimumWithDerivative(f, a, b, u, fu, fpu, v, fv, fpv, new EvaluationSettings() { EvaluationBudget = 64, AbsolutePrecision = 0.0, RelativePrecision = 0.0 }));
+        }
+
+        private double FindMinimumWithDerivative (
+            FuncWithDerivative f,
+            double a, double b,
+            double u, double fu, double fpu,
+            double v, double fv, double fpv,
+            EvaluationSettings settings
+        ) {
+
+            double tol = 0.0;
+
+            int count = 0;
+            while (count < settings.EvaluationBudget) {
+
+                Console.WriteLine("n = {0}, tol = {1}", count, tol);
+                Console.WriteLine("[{0} f({1})={2}({3}) f({4})={5}({6}) {7}]", a, u, fu, fpu, v, fv, fpv, b);
+
+                // a, b bracket minimum a < u, v < b and f(u), f(v) <= f(a), f(b)
+                Debug.Assert(a < b);
+                Debug.Assert((a <= u) && (u <= b));
+                //Debug.Assert((a <= v) && (v <= b));
+                Debug.Assert(fu <= fv);
+
+                if ((b - a) <= 4.0 * tol) return (u);
+
+                // compute the minimum of the interpolating Hermite cubic
+                double x, fpp; CubicHermiteMinimum(u, fu, fpu, v, fv, fpv, out x, out fpp);
+
+                Console.WriteLine("cubic x = {0}, fpp = {1}", x, fpp);
+
+                // if the cubic had no minimum, or the minimum lies outside our bounds, fall back to bisection
+                if (Double.IsNaN(x) || (x <= a) || (x >= b)) {
+
+                    // the derivative tells us which side to choose
+                    if (fpu > 0.0) {
+                        x = (a + u) / 2.0;
+                    } else {
+                        x = (u + b) / 2.0;
+                    }
+
+                    Console.WriteLine("bisection x = {0}", x);
+
+                }
+
+                // ensure we don't evaluate within tolerance of an existing point
+                if (Math.Abs(x - u) < tol) { Console.WriteLine("shift from u (x={0})", x); x = (x > u) ? u + tol : u - tol; }
+                if ((x - a) < tol) { Console.WriteLine("shift from a (x={0})", x); x = a + tol; }
+                if ((b - x) < tol) { Console.WriteLine("shift from b (x={0})", x); x = b - tol; }
+
+                // evaluate the function plus derivative at the predicted minimum
+                double fx, fpx;
+                f(x, out fx, out fpx);
+                count++;
+
+                Console.WriteLine("f({0}) = {1}({2})", x, fx, fpx);
+
+                // check if we have converged
+                double df = fu - fx;
+                Console.WriteLine("df={0}", df);
+                if ((Math.Abs(df) < settings.AbsolutePrecision) || (2.0 * Math.Abs(df) < settings.RelativePrecision * (Math.Abs(fu) + Math.Abs(fx)))) {
+                    Console.WriteLine("count = {0}", count);
+                    return (x);
+                }
+
+                if (fx < fu) {
+
+                    // x is the new lowest point: f(x) < f(u) < f(v)
+                    // this is the expected outcome
+
+                    // move the bracket
+                    if (x < u) {
+                        b = u;
+                    } else {
+                        a = u;
+                    }
+
+                    // x -> u -> v
+                    v = u; fv = fu; fpv = fpu;
+                    u = x; fu = fx; fpu = fpx;
+
+                } else {
+
+                    // move the bracket
+                    if (x < u) {
+                        a = x;
+                    } else {
+                        b = x;
+                    }
+
+                    if (fx < fv) {
+
+                        // x lies between other two known points: f(u) < f(x) < f(v)
+
+                        // x -> v
+                        v = x; fv = fx; fpv = fpx;
+
+                    } else {
+
+                        // x is higher than both other points: f(u) < f(v) < f(x)
+                        // this is a really poor outcome; we expected to get a point lower than our other two and we got a point higher than both
+                        // next time we should bisect
+                        Console.WriteLine("bad point");
+                        //throw new NotImplementedException();
+
+                        //v = x; fv = fx; fpv = fpx;
+
+                    }
+
+                }
+
+                // if the user has specified a tollerance, use it
+                if ((settings.RelativePrecision > 0.0 || settings.AbsolutePrecision > 0.0)) {
+                    tol = Math.Max(Math.Abs(u) * settings.RelativePrecision, settings.AbsolutePrecision);
+                } else {
+                    // otherwise, try to get the tollerance from the curvature
+                    if (fpp > 0.0) {
+                        tol = Math.Sqrt(2.0 * 1.0E-14 * (Math.Abs(fu) + 1.0E-14) / fpp);
+                    } else {
+                        // but if we don't have a useable curvature either, wing it
+                        if (tol == 0.0) tol = 1.0E-7;
+                    }
+                }
+
+
+            }
+
+            throw new NonconvergenceException();
+
+        }
+
+        public double FindMinimum (Func<double, double> f, double x, double d, EvaluationSettings settings) {
+
+            // evaluate at x and x + d
+            double fx = f(x);
+            double y = x + d;
+            double fy = f(y);
+            int count = 2;
+
+            // if we stepped uphill, reverse direction of steps and exchange x & y
+            if (fy > fx) {
+                double t = x; x = y; y = t;
+                t = fx; fx = fy; fy = t;
+                d = -d;
+            }
+
+            // we now know f(x) >= f(y) and we are stepping downhill
+            // continue stepping until we step uphill
+            double z, fz;
+            while (true) {
+
+                if (count >= settings.EvaluationBudget) throw new NonconvergenceException();
+
+                z = y + d;
+                fz = f(z);
+                count++;
+
+                Console.WriteLine("f({0})={1} f({2})={3} f({4})={5} d={6}", x, fx, y, fy, z, fz, d);
+
+                if (fz > fy) break;
+
+                // increase the step size each time
+                d = AdvancedMath.GoldenRatio * d;
+
+                // x <- y <- z
+                x = y; fx = fy; y = z; fy = fz;
+
+
+            }
+
+            // we x and z now bracket a local minimum, with y the lowest point evaluated so far
+            double a = Math.Min(x, z); double b = Math.Max(x, z);
+            if (fz < fx) { double t = x; x = z; z = t; t = fx; fx = fz; fz = t; }
+
+            return (FindMinimum(f, a, b, y, fy, x, fx, z, fz, settings, count));
 
         }
 
         [TestMethod]
-        public void FftTimer () {
+        public void TestMinimizationWithoutDerivative () {
 
-            int nmax = 4000;
+            //double t = FindMinimum(x => x * Math.Log(x), 0.1, 10.0); // 13
+            //double t = FindMinimum(x => Math.Cos(x), 0.0, 5.0); // 7
+            //double t = FindMinimum(x => AdvancedMath.Gamma(x), 0.0, 2.0); // 8
+            //double t = FindMinimum(x => Math.Exp(-x), 0.0, 1.0); // 29 (not a minimum)
+            //double t = FindMinimum(x => Math.Abs(x), -2.0, 3.0); // 82!
+            //double t = FindMinimum(x => Math.Cosh(x), -4.0, 3.0); // 7
+            //double t = FindMinimum(x => -1.0 / Math.Cosh(x), -1.5, 2.5); // 3
+            //double t = FindMinimum(x => Math.Pow(x, 4.0), -2.0, 1.0); // 19
 
-            FourierTransformer[] t = new FourierTransformer[nmax];
-            for (int n = 2; n < nmax; n++) {
-                t[n] = new FourierTransformer(n);
-            }
-
-            Stopwatch s = Stopwatch.StartNew();
-
-            for (int n = 2; n < nmax; n++) {
-                if (n % 4 != 0) continue;
-                Complex[] y = new Complex[n];
-                for (int i = 0; i < n; i++) y[i] = i;
-                Complex[] yt = t[n].Transform(y);
-
-            }
-
-            s.Stop();
-            Console.WriteLine(s.ElapsedMilliseconds);
+            //double t = FindMinimum(x => x * Math.Log(x), 1.0, -0.03125, new EvaluationSettings() { EvaluationBudget = 128, AbsolutePrecision = 0.0, RelativePrecision = 0.0 });
+            double t = FindMinimum(AdvancedMath.Gamma, 1.0, 0.03125, new EvaluationSettings() { EvaluationBudget = 128, AbsolutePrecision = 0.0, RelativePrecision = 0.0 });
+            Console.WriteLine(t);
         }
+
+        [TestMethod]
+        public void TestOldMinimization () {
+            //FunctionMath.FindMinimum(x => { Console.WriteLine(x); return (x * Math.Log(x)); }, Interval.FromEndpoints(0.1, 10.0));
+            //FunctionMath.FindMinimum(x => { Console.WriteLine(x); return (Math.Cos(x)); }, Interval.FromEndpoints(0.0, 5.0));
+            //FunctionMath.FindMinimum(x => { Console.WriteLine(x); return (AdvancedMath.Gamma(x)); }, Interval.FromEndpoints(0.0, 2.0));
+            //FunctionMath.FindMinimum(x => { Console.WriteLine(x); return (Math.Exp(-x)); }, Interval.FromEndpoints(0.0, 1.0));
+            //FunctionMath.FindMinimum(x => { Console.WriteLine(x); return (Math.Abs(x)); }, Interval.FromEndpoints(-2.0, 3.0));
+            FunctionMath.FindMinimum(x => { Console.WriteLine(x); return (Math.Pow(x,4)); }, Interval.FromEndpoints(-2.0, 1.0));
+
+        }
+
+        [TestMethod]
+        public void TestMinimizationWithDerivative () {
+
+            //double x = FindMinimumWithDerivative(XLogXWithDerivative, 0.1, 10.0); // 9
+            //double x = FindMinimumWithDerivative(CosineWithDerivative, 0.0, 5.0); // 5
+            //double x = FindMinimumWithDerivative(GammaWithDerivative, 0.0, 2.0); // 9
+            //double x = FindMinimumWithDerivative(ExponentialDecayWithDerivative, 0.0, 1.0); // 29 (not a minimum)
+            //double x = FindMinimumWithDerivative(AbsoluteValueWithDerivative,-2.0, 3.0); // 19
+            double x = FindMinimumWithDerivative(CoshWithDerivative, -4.0, 3.0); // 7
+            //double x = FindMinimumWithDerivative(SechWithDerivative, -1.5, 2.5); // 5
+            //double x = FindMinimumWithDerivative(FourthPowerWithDerivative, -2.0, 1.0); // 17
+            Console.WriteLine(x);
+
+        }
+
+        private void CosineWithDerivative (double x, out double f, out double fp) {
+            f = Math.Cos(x);
+            fp = -Math.Sin(x);
+        }
+
+        private void GammaWithDerivative (double x, out double f, out double fp) {
+            f = AdvancedMath.Gamma(x);
+            fp = f * AdvancedMath.Psi(x);
+        }
+
+        private void XLogXWithDerivative (double x, out double f, out double fp) {
+            f = x * Math.Log(x);
+            fp = 1.0 + Math.Log(x);
+        }
+
+        private void ExponentialDecayWithDerivative (double x, out double f, out double fp) {
+            f = Math.Exp(-x);
+            fp = -f;
+        }
+
+        private void AbsoluteValueWithDerivative (double x, out double f, out double fp) {
+            f = Math.Abs(x);
+            fp = Math.Sign(x);
+        }
+
+        private void CoshWithDerivative (double x, out double f, out double fp) {
+            f = Math.Cosh(x);
+            fp = Math.Sinh(x);
+        }
+
+        private void SechWithDerivative (double x, out double f, out double fp) {
+            f = -1.0 / Math.Cosh(x);
+            fp = Math.Tanh(x) / Math.Cosh(x);
+        }
+
+        private void FourthPowerWithDerivative (double x, out double f, out double fp) {
+            f = Math.Pow(x, 4);
+            fp = 4.0 * Math.Pow(x, 3);
+        }
+
+        /* PRIME FACTORIZATION */
 
         private void FermatFactor (int n) {
 
@@ -637,12 +1185,6 @@ namespace FutureTest {
         }
 
         [TestMethod]
-        public void ErfTest () {
-            Console.WriteLine(AdvancedComplexMath.Erf(new Complex(1.0E-10, 10.0)));
-
-        }
-
-        [TestMethod]
         public void MultiRootTest () {
 
             // here is a system with a zeros at (3,4) and (1,0)
@@ -658,141 +1200,7 @@ namespace FutureTest {
 
         }
 
-        [TestMethod]
-        public void KruskalWallis () {
-
-            // start with some data lists
-            double[][] data = new double[5][];
-            data[0] = new double[] { 13, 4, 12, 1 };
-            data[1] = new double[] { 19, 7, 9, 17 };
-            data[2] = new double[] { 8, 20, 18, 5 };
-            data[3] = new double[] { 15, 14, 16, 2 };
-            data[4] = new double[] { 6, 10, 3, 11 };
-
-            // sort each sample individually and compute count total from all samples
-            int N = 0;
-            for (int i = 0; i < data.Length; i++) {
-                N += data[i].Length;
-                Array.Sort<double>(data[i]);
-            }
-            Console.WriteLine("N={0}", N);
-
-            // do a multi-merge sort to determine ranks sums
-
-            // initialize a pointer to the current active index in each ordered list
-            int[] p = new int[data.Length];
-
-            // keep track the current rank to be assigned
-            int r = 0;
-
-            // keep track of rank sums
-            // this is all that we need for KW
-            // the ranks of individual entries can be made to disappear from the final formula using sum identities
-            int[] rs = new int[data.Length];
-
-            while (true) {
-                
-                // increment the rank
-                // (programmers may think ranks start from 0, but in the definition of the KW test they start from 1)
-                r++;
-
-                // determine the smallest of current entries
-                int j = -1;
-                double f = Double.PositiveInfinity;
-                for (int k = 0; k < data.Length; k++) {
-                    if ((p[k] < data[k].Length) && (data[k][p[k]] < f)) {
-                        j = k;
-                        f = data[k][p[k]];
-                    }
-                }
-
-                // test for all lists complete
-                if (j < 0) break;
-
-                // increment the pointer and the rank sum for that column
-                p[j]++;
-                rs[j] += r;
-
-            }
-
-            double H0 = 0.0;
-            for (int i = 0; i < data.Length; i++) {
-                double z = ((double) rs[i]) / data[i].Length - (N + 1) / 2.0;
-                Console.WriteLine("{0} {1}", rs[i], z);
-                H0 += data[i].Length * (z * z);
-            }
-            H0 = 12.0 / N / (N + 1) * H0;
-            Console.WriteLine("H={0}", H0);
-
-            Sample s1 = new Sample(data[0]);
-            Sample s2 = new Sample(data[1]);
-            Sample s3 = new Sample(data[2]);
-            Sample s4 = new Sample(data[3]);
-            Sample s5 = new Sample(data[4]);
-
-            // total ranks
-            Console.WriteLine("{0} {1} {2} {3} {4}", s1.Mean * s1.Count, s2.Mean * s2.Count, s3.Mean * s3.Count, s4.Mean * s4.Count, s5.Mean * s5.Count);
-
-            // statistic
-            N = 20;
-            double H = 12.0 / N / (N + 1) * (s1.Count * MoreMath.Pow(s1.Mean, 2) + s2.Count * MoreMath.Pow(s2.Mean, 2) +
-                s3.Count * MoreMath.Pow(s3.Mean, 2) + s4.Count * MoreMath.Pow(s4.Mean, 2) + s5.Count * MoreMath.Pow(s5.Mean, 2))
-                - 3.0 * (N + 1);
-            Console.WriteLine("H={0}", H);
-
-            Distribution DH = new ChiSquaredDistribution(4);
-            //Console.WriteLine(DH.InverseRightProbability(0.05));
-            Console.WriteLine(DH.RightProbability(H));
-
-            Console.WriteLine("--");
-            TestResult ar = Sample.OneWayAnovaTest(s1, s2, s3, s4, s5).Result;
-            Console.WriteLine(ar.Statistic);
-            Console.WriteLine(ar.RightProbability);
-
-            Console.WriteLine("---");
-            TestResult kw = Sample.KruskalWallisTest(s1, s2, s3, s4, s5);
-            Console.WriteLine(kw.Statistic);
-            Console.WriteLine(kw.RightProbability);
-
-        }
-
-
-        [TestMethod]
-        public void RealFourier () {
-            double[] x = new double[6];
-            for (int i = 0; i < x.Length; i++) {
-                x[i] = i;
-            }
-
-            Complex[] xc = new Complex[x.Length];
-            for (int i = 0; i < x.Length; i++) {
-                xc[i] = x[i];
-            }
-            FourierTransformer xft = new FourierTransformer(x.Length);
-            Complex[] xct = xft.Transform(xc);
-            for (int i = 0; i < x.Length; i++) {
-                Console.WriteLine("{0} {1}", i, xct[i]);
-            }
-
-            Assert.IsTrue(x.Length % 2 == 0);
-            Complex[] z = new Complex[x.Length / 2];
-            for (int i = 0; i < z.Length; i++) {
-                z[i] = new Complex(x[2 * i], x[2 * i + 1]);
-                Console.WriteLine("  {0} {1}", i, z[i]);
-            }
-            FourierTransformer zft = new FourierTransformer(z.Length);
-            Complex[] zt = zft.Transform(z);
-            for (int i = 0; i < z.Length; i++) {
-                Console.WriteLine("  {0} {1}", i, zt[i]);
-            }
-            for (int i = 1; i < z.Length; i++) {
-                Complex p = (zt[i] + zt[z.Length-i].Conjugate) / 2.0;
-                Complex q = -ComplexMath.I * (zt[i] - zt[z.Length-i].Conjugate) / 2.0;
-                double t = -2.0 * Math.PI * i / x.Length;
-                Console.WriteLine("{0} {1}", i, p + q * new Complex(Math.Cos(t), Math.Sin(t)));
-            }
-
-        }
+        /* INVERSE BETA */
 
         public static double ApproximateInverseBetaSeries (double a, double b, double P) {
 

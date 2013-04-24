@@ -109,9 +109,9 @@ namespace Test {
 
                 Console.WriteLine(distribution.GetType().Name);
                 
-                Sample sample = CreateSample(distribution, 100);
+                Sample sample = CreateSample(distribution, 128);
 
-                Assert.IsTrue(sample.Count == 100);
+                Assert.IsTrue(sample.Count == 128);
 
                 UncertainValue m = sample.PopulationMean;
                 Interval mi = m.ConfidenceInterval(0.95);
@@ -134,6 +134,45 @@ namespace Test {
                     Console.WriteLine("M{0} {1} {2}", n, ri, distribution.Moment(n));
                     Assert.IsTrue(ri.ClosedContains(distribution.Moment(n)));
                 }
+            }
+
+        }
+
+
+        [TestMethod]
+        public void SamplePopulationMomentEstimateVariances () {
+
+            Distribution d = new LognormalDistribution();
+
+            // for various sample sizes...
+            foreach (int n in TestUtilities.GenerateIntegerValues(4, 32, 8)) {
+
+                Console.WriteLine("n={0}", n);
+
+                // we are going to store values for a bunch of estimators and their uncertainties
+                MultivariateSample estimates = new MultivariateSample("M1", "C2", "C3", "C4");
+                MultivariateSample variances = new MultivariateSample("M1", "C2", "C3", "C4");
+
+                // create a bunch of samples
+                for (int i = 0; i < 256; i++) {
+
+                    Sample s = TestUtilities.CreateSample(d, n, 512 * n + i + 1);
+
+                    UncertainValue M1 = s.PopulationMean;
+                    UncertainValue C2 = s.PopulationVariance;
+                    UncertainValue C3 = s.PopulationMomentAboutMean(3);
+                    UncertainValue C4 = s.PopulationMomentAboutMean(4);
+                    estimates.Add(M1.Value, C2.Value, C3.Value, C4.Value);
+                    variances.Add(MoreMath.Pow(M1.Uncertainty, 2), MoreMath.Pow(C2.Uncertainty, 2), MoreMath.Pow(C3.Uncertainty, 2), MoreMath.Pow(C4.Uncertainty, 2));
+
+                }
+
+                // the claimed variance should agree with the measured variance of the estimators
+                for (int c = 0; c < estimates.Dimension; c++) {
+                    Console.WriteLine("{0} {1} {2}", estimates.Column(c).Name, estimates.Column(c).PopulationVariance, variances.Column(c).Mean);
+                    Assert.IsTrue(estimates.Column(c).PopulationVariance.ConfidenceInterval(0.95).ClosedContains(variances.Column(c).Mean));
+                }
+
             }
 
         }
@@ -194,6 +233,47 @@ namespace Test {
 
             NormalDistribution N = new NormalDistribution(-1.0, 2.0);
 
+            // Create a bivariate sample to hold our fitted best mu and sigma values
+            // so we can determine their covariance as well as their means and variances
+            BivariateSample fits = new BivariateSample();
+
+            double cmm = 0.0, css = 0.0, cms = 0.0;
+
+            // A bunch of times, create a normal sample
+            for (int i = 0; i < 64; i++) {
+
+                // we will use small samples so the variation in mu and sigma will be more substantial
+                Sample s = TestUtilities.CreateSample(N, 16, i);
+
+                // fit each sample to a normal distribution
+                FitResult fit = NormalDistribution.FitToSample(s);
+
+                // and record the mu and sigma values from the fit into our bivariate sample
+                fits.Add(fit.Parameter(0).Value, fit.Parameter(1).Value);
+
+                // also record the claimed covariances among these parameters
+                cmm += fit.Covariance(0, 0); css += fit.Covariance(1, 1); cms += fit.Covariance(0, 1);
+
+            }
+
+            cmm /= fits.Count; css /= fits.Count; cms /= fits.Count;
+
+
+            // the mean fit values should agree with the population distribution
+            Console.WriteLine("{0} {1}", fits.X.PopulationMean, N.Mean);
+            Assert.IsTrue(fits.X.PopulationMean.ConfidenceInterval(0.95).ClosedContains(N.Mean));
+            Console.WriteLine("{0} {1}", fits.Y.PopulationMean, N.StandardDeviation);
+            Assert.IsTrue(fits.Y.PopulationMean.ConfidenceInterval(0.95).ClosedContains(N.StandardDeviation));
+
+            // but also the covariances of those fit values should agree with the claimed covariances
+            Console.WriteLine("{0} {1}", fits.X.PopulationVariance, cmm);
+            Assert.IsTrue(fits.X.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(cmm));
+            Console.WriteLine("{0} {1}", fits.Y.PopulationVariance, css);
+            Assert.IsTrue(fits.Y.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(css));
+            Console.WriteLine("{0} {1}", fits.PopulationCovariance, cms);
+            Assert.IsTrue(fits.PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(cms));
+
+            /*
             Random rng = new Random(2718281);
             BivariateSample P = new BivariateSample();
             double cmm = 0.0;
@@ -222,6 +302,7 @@ namespace Test {
             Assert.IsTrue(P.X.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(cmm));
             Assert.IsTrue(P.Y.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(css));
             Assert.IsTrue(P.PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(cms));
+            */
 
         }
 

@@ -7,9 +7,27 @@ using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Functions {
 
+    // The basic public 1D extrema seach methods are
+    //   Min(f, x), Min(f, x, settings), Min(f, interval), Min(f, interval, settings)
+    // and the corresponding methods for maxima. The flow of control from these to private methods is as follows.
+    // For the point methods:
+    //   Min(f, x) -> Min(f, x, settings) -> Min(functor, x, settings) <- Max(f, x, settings) <- Max(f, x)
+    // then
+    //   Min(functor, start, settings) -> Min(functor, x, fx, step, settings) -> Min(functor, a, b, u, fu, v, fv, w, fw, settings)
+    // For the interval methods:
+    //   Min(f, interval) -> Min(f, interval, settings) -> Min(functor, a, b, settings) <- Max(f, interval, settings) <- Max(f, interval)
+    // then
+    //   Min(functor, a, b, settings) -> Min(functor, a, b, u, fu, v, fv, w, fw, settings)
+    // So in the end, they all flow into the Brent algorithm.
+
     public static partial class FunctionMath {
 
         // One-dimensional minimization
+
+        // An evaluation budget of 32 is sufficient for all our test cases except for |x|, which requires 82 (!) evaluations to converge. Parabolic fitting just does a very poor job
+        // for this function (at all scales, since it is scale invariant).
+
+        private static readonly EvaluationSettings DefaultExtremaSettings = new EvaluationSettings() { EvaluationBudget = 128, RelativePrecision = 0.0, AbsolutePrecision = 0.0 };
 
         /// <summary>
         /// Maximizes a function in the vicinity of a given point.
@@ -17,8 +35,34 @@ namespace Meta.Numerics.Functions {
         /// <param name="f">The function.</param>
         /// <param name="x">A point suspected to be near the maximum. The search begins at this point.</param>
         /// <returns>The maximum.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a maximum being determined.</exception>
         public static LineExtremum FindMaximum (Func<double, double> f, double x) {
-            return (FindMinimum(delegate(double t) { return (-f(t)); }, x));
+            return (FindMaximum(f, x, DefaultExtremaSettings));
+        }
+
+
+        /// <summary>
+        /// Maximizes a function in the vicinity of a given point, subject to the given evaluation settings.
+        /// </summary>
+        /// <param name="f">The function.</param>
+        /// <param name="x">A point suspected to be near the maximum. The search begins at this point.</param>
+        /// <param name="settings">The settings to use when searching for the maximum.</param>
+        /// <returns>The maximum.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="f"/> is null or <param name="settings"/> is null.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a maximum being determined to the prescribed precision.</exception>
+        /// <remarks>
+        /// <para>When you supply <paramref name="settings"/>, note that the supplied <see cref="EvaluationSettings.RelativePrecision"/> and <see cref="EvaluationSettings.AbsolutePrecision"/>
+        /// values refer to argument (i.e. x) values, not function (i.e. f) values. Note also that, for typical functions, the best attainable relative precision is of the order of the
+        /// square root of machine precision (about 10<sup>-7</sup>), i.e. half the number of digits in a <see cref="Double"/>. This is because to identify an extremum we need to resolve changes
+        /// in the function value, and near an extremum  &#x3B4;f &#x223C; (&#x3B4;x)<sup>2</sup>, so changes in the function value &#x3B4;f &#x223C; &#x3B5; correspond to changes in the
+        /// argument value &#x3B4;x &#x223C; &#x221A;&#x3B5;. If you supply zero values for both precision settings, the method will adaptively approximate the best attainable precision for
+        /// the supplied function and locate the extremum to that resolution. This is our suggested practice unless you know that you require a less precise determination.</para>
+        /// </remarks>
+        public static LineExtremum FindMaximum (Func<double, double> f, double x, EvaluationSettings settings) {
+            if (f == null) throw new ArgumentNullException("f");
+            if (settings == null) throw new ArgumentNullException("settings");
+            return (FindMinimum(new Functor(f, true), x, settings).Negate());
         }
 
         /// <summary>
@@ -28,90 +72,100 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">A point suspected to be near the minimum. The search begins at this point.</param>
         /// <returns>The minimum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
-        /// <remarks>
-        /// <para>Since the search algorithm begins by evaluating <paramref name="f"/> near <paramref name="x"/>,
-        /// it can fail if <paramref name="x"/> is near a singularity or other point at which the evaluation
-        /// of <paramref name="f"/> could fail. If you can reliably bracket a minimum, the other
-        /// overload of this method is safer and, if your bracket is any good, slightly faster.</para>
-        /// </remarks>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a minimum being determined.</exception>
         public static LineExtremum FindMinimum (Func<double, double> f, double x) {
-            if (f == null) throw new ArgumentNullException("f");
-            double fx = f(x);
-            // take a small step away from x, ensuring that it is non-zero even when x is zero
-            double d = (Math.Abs(x) + 1.0 / 16.0) / 16.0;
-            return (FindMinimum(f, x, fx, d));
+            return (FindMinimum(f, x, DefaultExtremaSettings));
         }
 
-        // finds a minimum given an initial step
+        /// <summary>
+        /// Minimizes a function in the vicinity of a given point subject to the given evaluation settings.
+        /// </summary>
+        /// <param name="f">The function.</param>
+        /// <param name="x">A point suspected to be near the minimum. The search begins at this point.</param>
+        /// <param name="settings">The settings to use when searching for the minimum.</param>
+        /// <returns>The minimum.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="f"/> is null or <paramref name="settings"/> is null.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a minimum being determined to the prescribed precision.</exception>
+        /// <remarks>
+        /// <para>When you supply <paramref name="settings"/>, note that the supplied <see cref="EvaluationSettings.RelativePrecision"/> and <see cref="EvaluationSettings.AbsolutePrecision"/>
+        /// values refer to argument (i.e. x) values, not function (i.e. f) values. Note also that, for typical functions, the best attainable relative precision is of the order of the
+        /// square root of machine precision (about 10<sup>-7</sup>), i.e. half the number of digits in a <see cref="Double"/>. This is because to identify an extremum we need to resolve changes
+        /// in the function value, and near an extremum  &#x3B4;f &#x223C; (&#x3B4;x)<sup>2</sup>, so changes in the function value &#x3B4;f &#x223C; &#x3B5; correspond to changes in the
+        /// argument value &#x3B4;x &#x223C; &#x221A;&#x3B5;. If you supply zero values for both precision settings, the method will adaptively approximate the best attainable precision for
+        /// the supplied function and locate the extremum to that resolution. This is our suggested practice unless you know that you require a less precise determination.</para>
+        /// <para>Since the search algorithm begins by evaluating <paramref name="f"/> at points near <paramref name="x"/>, it can fail if <paramref name="x"/> is near a singularity
+        /// or other point at which the evaluation of <paramref name="f"/> could fail. If you can reliably bracket an extremum, the <see cref="FindMinimum(Func{Double,Double},Interval,EvaluationSettings)"/>
+        /// overload of this method is safer and, if your bracket is any good, usually slightly faster.</para>
+        /// </remarks>
+        public static LineExtremum FindMinimum (Func<double, double> f, double x, EvaluationSettings settings) {
+            
+            if (f == null) throw new ArgumentNullException("f");
+            if (settings == null) throw new ArgumentNullException("settings");
 
-        private static LineExtremum FindMinimum (Func<double,double> f, double x, double fx, double d) {
+            return (FindMinimum(new Functor(f), x, settings));
+        }
 
-            // take a step
-            // add a while loop to make sure we have moved enough that fy != fx
+        private static LineExtremum FindMinimum (Functor f, double x, EvaluationSettings settings) {
+
+            Debug.Assert(f != null); Debug.Assert(settings != null);
+
+            // To call the bracketing function, we need an initial value and an initial step.
+            double fx = f.Evaluate(x);
+            // Pick a relatively small initial value to try to avoid running into any nearly singularities.
+            double d = (Math.Abs(x) + 1.0 / 32.0) / 32.0;
+
+            return(FindMinimum(f, x, fx, d, settings));
+
+        }
+
+        private static LineExtremum FindMinimum (Functor f, double x, double fx, double d, EvaluationSettings settings) {
+
+            // This function brackets a minimum by starting from x and taking increasing steps downhill until it moves uphill again.
+
+            // We write this function assuming f(x) has already been evaluated because when it is called
+            // to do a line fit for Powell's multi-dimensional minimization routine, that is the case and
+            // we don't want to do a superfluous evaluation.
+
+            Debug.Assert(f != null); Debug.Assert(d > 0.0); Debug.Assert(settings != null);
+
+            // evaluate at x + d
             double y = x + d;
-            double fy = f(y);
+            double fy = f.Evaluate(y);
 
-            // if the step was uphill, reverse
+            // if we stepped uphill, reverse direction of steps and exchange x & y
             if (fy > fx) {
+                Global.Swap(ref x, ref y); Global.Swap(ref fx, ref fy);
                 d = -d;
-
-                Global.Swap<double>(ref x, ref y);
-                Global.Swap<double>(ref fx, ref fy);
             }
 
-            // keep stepping downhill...
+            // we now know f(x) >= f(y) and we are stepping downhill
+            // continue stepping until we step uphill
+            double z, fz;
             while (true) {
 
-                double z = y + d;
-                double fz = f(z);
+                if (f.EvaluationCount >= settings.EvaluationBudget) throw new NonconvergenceException();
 
-                if (fz > fy) {
+                z = y + d;
+                fz = f.Evaluate(z);
 
-                    // ...until we go uphill
+                Debug.WriteLine(String.Format("f({0})={1} f({2})={3} f({4})={5} d={6}", x, fx, y, fy, z, fz, d));
 
-                    // that means we have bracketed a minimum
-                    double a, b;
-                    if (x < z) {
-                        a = x;
-                        b = z;
-                    } else {
-                        a = z;
-                        b = x;
-                    }
+                if (fz > fy) break;
 
-                    // organize our three points in order from lowest to highest values
-                    double u, v, w, fu, fv, fw;
-                    u = y;
-                    fu = fy;
-                    if (fx < fz) {
-                        v = x;
-                        fv = fx;
-                        w = z;
-                        fw = fz;
-                    } else {
-                        v = z;
-                        fv = fz;
-                        w = x;
-                        fw = fx;
-                    }
+                // increase the step size each time
+                d = AdvancedMath.GoldenRatio * d;
 
-                    // hand the brackets and the three lowest points to Brent's algorithm
-                    LineExtremum min = FindMinimum(f, a, b, u, fu, v, fv, w, fw);
-                    return (min);
+                // x <- y <- z
+                x = y; fx = fy; y = z; fy = fz;
 
-                }
-
-                // ...still going downhill, so shuffle our points
-                x = y;
-                fx = fy;
-
-                y = z;
-                fy = fz;
-
-                // and double the step size 
-                d = 2.0 * d;
 
             }
+
+            // we x and z now bracket a local minimum, with y the lowest point evaluated so far
+            double a = Math.Min(x, z); double b = Math.Max(x, z);
+            if (fz < fx) { Global.Swap(ref x, ref z); Global.Swap(ref fx, ref fz);}
+
+            return (FindMinimum(f, a, b, y, fy, x, fx, z, fz, settings));
 
         }
 
@@ -121,8 +175,33 @@ namespace Meta.Numerics.Functions {
         /// <param name="f">The function.</param>
         /// <param name="r">The interval.</param>
         /// <returns>The maximum.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a minimum being determined.</exception>
         public static LineExtremum FindMaximum (Func<double, double> f, Interval r) {
-            return (FindMinimum(delegate(double t) { return (-f(t)); }, r));
+            return (FindMaximum(f, r, DefaultExtremaSettings));
+        }
+
+        /// <summary>
+        /// Maximizes a function on the given interval, subject to the given evaluation settings.
+        /// </summary>
+        /// <param name="f">The function.</param>
+        /// <param name="r">The interval.</param>
+        /// <param name="settings">The settings used when searching for the maximum.</param>
+        /// <returns>The maximum.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="f"/> is null or <paramref name="settings"/> is null.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a maximum being determined to the prescribed precision.</exception>
+        /// <remarks>
+        /// <para>When you supply <paramref name="settings"/>, note that the supplied <see cref="EvaluationSettings.RelativePrecision"/> and <see cref="EvaluationSettings.AbsolutePrecision"/>
+        /// values refer to argument (i.e. x) values, not function (i.e. f) values. Note also that, for typical functions, the best attainable relative precision is of the order of the
+        /// square root of machine precision (about 10<sup>-7</sup>), i.e. half the number of digits in a <see cref="Double"/>. This is because to identify an extremum we need to resolve changes
+        /// in the function value, and near an extremum  &#x3B4;f &#x223C; (&#x3B4;x)<sup>2</sup>, so changes in the function value &#x3B4;f &#x223C; &#x3B5; correspond to changes in the
+        /// argument value &#x3B4;x &#x223C; &#x221A;&#x3B5;. If you supply zero values for both precision settings, the method will adaptively approximate the best attainable precision for
+        /// the supplied function and locate the extremum to that resolution. This is our suggested practice unless you know that you require a less precise determination.</para>
+        /// </remarks>
+        public static LineExtremum FindMaximum (Func<double, double> f, Interval r, EvaluationSettings settings) {
+            if (f == null) throw new ArgumentNullException("f");
+            if (settings == null) throw new ArgumentNullException("settings");
+            return (FindMinimum(new Functor(f, true), r.LeftEndpoint, r.RightEndpoint, settings).Negate());
         }
 
         /// <summary>
@@ -132,80 +211,63 @@ namespace Meta.Numerics.Functions {
         /// <param name="r">The interval.</param>
         /// <returns>The minimum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a minimum being determined.</exception>
         public static LineExtremum FindMinimum (Func<double, double> f, Interval r) {
+            return (FindMinimum(f, r, DefaultExtremaSettings));
+        }
 
+        /// <summary>
+        /// Minimizes a function on the given interval, subject to the given evaluation settings.
+        /// </summary>
+        /// <param name="f">The function.</param>
+        /// <param name="r">The interval.</param>
+        /// <param name="settings">The settings used when searching for the minimum.</param>
+        /// <returns>The minimum.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="f"/> is null or <paramref name="settings"/> is null.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a minimum being determined to the prescribed precision.</exception>
+        /// <remarks>
+        /// <para>When you supply <paramref name="settings"/>, note that the supplied <see cref="EvaluationSettings.RelativePrecision"/> and <see cref="EvaluationSettings.AbsolutePrecision"/>
+        /// values refer to argument (i.e. x) values, not function (i.e. f) values. Note also that, for typical functions, the best attainable relative precision is of the order of the
+        /// square root of machine precision (about 10<sup>-7</sup>), i.e. half the number of digits in a <see cref="Double"/>. This is because to identify an extremum we need to resolve changes
+        /// in the function value, and near an extremum  &#x3B4;f &#x223C; (&#x3B4;x)<sup>2</sup>, so changes in the function value &#x3B4;f &#x223C; &#x3B5; correspond to changes in the
+        /// argument value &#x3B4;x &#x223C; &#x221A;&#x3B5;. If you supply zero values for both precision settings, the method will adaptively approximate the best attainable precision for
+        /// the supplied function and locate the extremum to that resolution. This is our suggested practice unless you know that you require a less precise determination.</para>
+        /// </remarks>
+        public static LineExtremum FindMinimum (Func<double, double> f, Interval r, EvaluationSettings settings) {
             if (f == null) throw new ArgumentNullException("f");
+            if (settings == null) throw new ArgumentNullException("settings");
+            return (FindMinimum(new Functor(f), r.LeftEndpoint, r.RightEndpoint, settings));
+        }
 
-            // sample three points within the interval
+        private static LineExtremum FindMinimum (
+            Functor f,
+            double a, double b,
+            EvaluationSettings settings
+        ) {
 
-            double x1 = (3.0 * r.LeftEndpoint + r.RightEndpoint) / 4.0;
-            double x2 = (r.LeftEndpoint + r.RightEndpoint) / 2.0;
-            double x3 = (r.LeftEndpoint + 3.0 * r.RightEndpoint) / 4.0;
+            // evaluate three points within the bracket
+            double u = (3.0 * a + b) / 4.0;
+            double v = (a + b) / 2.0;
+            double w = (a + 3.0 * b) / 4.0;
 
-            double f1 = f(x1);
-            double f2 = f(x2);
-            double f3 = f(x3);
+            double fu = f.Evaluate(u); double fv = f.Evaluate(v); double fw = f.Evaluate(w);
 
-            // order them
+            Debug.WriteLine(String.Format("f({0})={1}  f({2})={3}  f({4})={5}", u, fu, v, fv, w, fw));
 
-            double u, v, w, fu, fv, fw, a, b;
-            if ((f1 < f2) && (f1 < f3)) {
-                // x1 is minimum
-                u = x1;
-                fu = f1;
-                if (f2 < f3) {
-                    v = x2;
-                    fv = f2;
-                    w = x3;
-                    fw = f3;
-                } else {
-                    v = x3;
-                    fv = f3;
-                    w = x2;
-                    fw = f2;
-                }
-                a = r.LeftEndpoint;
-                b = x3;
-            } else if ((f2 < f1) && (f2 < f3)) {
-                // x2 is minimum
-                u = x2;
-                fu = f2;
-                if (f1 < f3) {
-                    v = x1;
-                    fv = f1;
-                    w = x3;
-                    fw = f3;
-                } else {
-                    v = x3;
-                    fv = f3;
-                    w = x1;
-                    fw = f1;
-                }
-                a = x1;
-                b = x3;
-            } else {
-                // x3 is minimum
-                u = x3;
-                fu = f3;
-                if (f1 < f2) {
-                    v = x1;
-                    fv = f1;
-                    w = f2;
-                    fw = f2;
-                } else {
-                    v = x2;
-                    fv = f2;
-                    w = x1;
-                    fw = f1;
-                }
-                a = x1;
-                b = r.RightEndpoint;
-            }
+            // move in the bracket boundaries, if possible
+            if (fv < fu) { a = u; if (fw < fv) a = v; }
+            if (fv < fw) { b = w; if (fu < fv) b = v; }
 
-            // pass them to Brent's algorithm
+            Debug.WriteLine(String.Format("[{0} {1}]", a, b));
 
-            LineExtremum min = FindMinimum(f, a, b, u, fu, v, fv, w, fw);
-            return(min);
+            // sort u, v, w by fu, fv, fw values
+            // these three comparisons are the most efficient three-item sort
+            if (fv < fu) { Global.Swap(ref v, ref u); Global.Swap(ref fv, ref fu); }
+            if (fw < fu) { Global.Swap(ref w, ref u); Global.Swap(ref fw, ref fu); }
+            if (fw < fv) { Global.Swap(ref w, ref v); Global.Swap(ref fw, ref fv); }
+
+            // pass to Brent's algorithm to shrink bracket
+            return (FindMinimum(f, a, b, u, fu, v, fv, w, fw, settings));
 
         }
 
@@ -213,143 +275,138 @@ namespace Meta.Numerics.Functions {
         // switching to golden section if interval does not shrink fast enough
         // see Richard Brent, "Algorithms for Minimization Without Derivatives"
 
-        private static LineExtremum FindMinimum (Func<double,double> f, double a, double b, double u, double fu, double v, double fv, double w, double fw) {
+        // The bracket is [a, b] and the three lowest points are (u,fu), (v,fv), (w, fw)
+        // Note that a or b may be u, v, or w.
 
-            // the bracket is [a, b] and the points are (u,fu), (v,fv), (w, fw)
-            // note that (u, v, w) may be a or b
+        private static LineExtremum FindMinimum (
+            Functor f,
+            double a, double b,
+            double u, double fu, double v, double fv, double w, double fw,
+            EvaluationSettings settings
+        ) {
 
-            if (f == null) throw new ArgumentNullException("f");
-            
-            // keep track of previous step sizes
-            double dd = 0.5*(b-a);
-            double ddd = (b-a);
+            double tol = 0.0; double fpp = Double.NaN;
 
-            for (int n = 0; n < Global.SeriesMax; n++) {
+            while (f.EvaluationCount < settings.EvaluationBudget) {
 
-                // do a parameteric fit to the parabola:
-                //   f = f0 + 0.5 * f2 (x - x0)^2
-                // through the points (u,fu) (v,fv) (w,fw)
+                Debug.WriteLine(String.Format("n={0} tol={1}", f.EvaluationCount, tol));
+                Debug.WriteLine(String.Format("[{0}  f({1})={2}  f({3})={4}  f({5})={6}  {7}]", a, u, fu, v, fv, w, fw, b));
 
-                // the solution is:
-                //   f2 = (x1-x2)(f3-f1) + (x3-x1)(f2-f1) / (x1-x2)(x3-x1)(x3-x2)
-                //   x0 = x1 - 0.5 * [ (f3-f1)(x1-x2)^2 - (f2-f1)(x3-x1)^2 ] / [ (f3-f1)(x1-x2) + (f2-f1)(x3-x1) ]
+                // While a < u < b is guaranteed, a < v, w < b is not guaranteed, since the bracket can sometimes be made tight enough to exclude v or w.
+                // For example, if u < v < w, then we can set b = v, placing w outside the bracket.
 
-                double vu = u - v;
-                double uw = w - u;
-                double t1 = (fw - fu) * vu;
-                double t2 = (fv - fu) * uw;
-                double p = t1 * vu - t2 * uw;
-                double q = 2.0 * (t1 + t2);
+                Debug.Assert(a < b);
+                Debug.Assert((a <= u) && (u <= b));
+                Debug.Assert((fu <= fv) && (fv <= fw));
 
-                double d = 0.0;
-                double x = 0.0;
-                
-                // if the denominator vanishes, prefer a golden section step
-                if (q != 0.0) {
+                // Expected final situation is a<tol><tol>u<tol><tol>b, leaving no point left to evaluate that is not within tol of an existing point.
 
-                    d = - p / q;
+                if ((b - a) <= 4.0 * tol) return (new LineExtremum(u, fu, fpp));
 
-                    // if step is not getting smaller, prefer a golden section step
-                    if (Math.Abs(d) < 0.5 * Math.Abs(ddd)) {
+                double x; ParabolicFit(u, fu, v, fv, w, fw, out x, out fpp);
+                Debug.WriteLine(String.Format("parabolic x={0} f''={1}", x, fpp));
 
-                        x = u + d;
+                if (Double.IsNaN(fpp) || (fpp <= 0.0) || (x < a) || (x > b)) {
 
-                        // if the step takes us out of bounds, prefer a golden section step
-                        if ((x <= a) || (x >= b)) d = 0.0;
+                    // the parabolic fit didn't work out, so do a golden section reduction instead
 
-                    } else {
-
-                        d = 0.0;
-                    }
-                }
-
-                if (d == 0.0) {
-
-                    // the parabolic fit didn't work out, so use golden section instead
+                    // to get the most reduction of the bracket, pick the larger of au and ub
+                    // for self-similarity, pick a point inside it that divides it into two segments in the golden section ratio,
+                    // i.e. 0.3820 = \frac{1}{\phi + 1} and 0.6180 = \frac{\phi}{\phi+1}
+                    // put the smaller segment closer to u so that x is closer to u, the best minimum so far
 
                     double au = u - a;
                     double ub = b - u;
 
                     if (au > ub) {
-                        d = - au * Gold;
+                        x = u - au / (AdvancedMath.GoldenRatio + 1.0);
                     } else {
-                        d = ub * Gold;
+                        x = u + ub / (AdvancedMath.GoldenRatio + 1.0);
                     }
 
-                    x = u + d;
+                    Debug.WriteLine(String.Format("golden section x={0}", x));
 
                 }
 
-                // evaluate the function
-                double fx = f(x);
+                // ensure we don't evaluate within tolerance of an existing point
+                if (Math.Abs(x - u) < tol) { Debug.WriteLine(String.Format("shift from u (x={0})", x)); x = (x > u) ? u + tol : u - tol; }
+                if ((x - a) < tol) { Debug.WriteLine(String.Format("shift from a (x={0})", x)); x = a + tol; }
+                if ((b - x) < tol) { Debug.WriteLine(String.Format("shift from b (x={0})", x)); x = b - tol; }
 
-                // check for convergence
-                // check for change in f
-                // to do: add check change in x given an input precision target
-                // note: the = part of <= is important, because the RHS can be zero
-                // note: by adding |f(x)| and |f(u)|, we eliminate the danger of a zero RHS
-                double df = fx - fu;
-                if (2.0 * Math.Abs(df) <= RelativePrecision * (Math.Abs(fu) + Math.Abs(fx))) {
+                // evaluate the function at the new point x
+                double fx = f.Evaluate(x);
+                Debug.WriteLine(String.Format("f({0}) = {1}", x, fx));
+                Debug.WriteLine(String.Format("delta={0}", fu - fx));
 
-                    // compute the curvature from our best-fit parabola
-                    double f2 = q / (vu * uw * (w - v));
-
-                    LineExtremum minimum = new LineExtremum(x, fx, f2);
-
-                    return (minimum);
-                }
+                // update a, b and u, v, w based on new point x
 
                 if (fx < fu) {
 
-                    // we have a new lowest point
+                    // the new point is lower than all the others; this is success 
 
-                    // adjust the bracket
-                    if (x < u) {
-                        b = u;
-                    } else {
+                    // u now becomes a bracket point
+                    if (u < x) {
                         a = u;
+                    } else {
+                        b = u;
                     }
 
-                    // adjust our set of three lowest points
-                    w = v;
-                    fw = fv;
-                    v = u;
-                    fv = fu;
-                    u = x;
-                    fu = fx;
+                    // x -> u -> v -> w
+                    w = v; fw = fv;
+                    v = u; fv = fu;
+                    u = x; fu = fx;
 
                 } else {
 
-                    // our candidate point was higher
-
-                    // adjust the bracket
+                    // x now becomes a bracket point
                     if (x < u) {
                         a = x;
                     } else {
                         b = x;
                     }
 
-                    // adjust our set of three lowest points
                     if (fx < fv) {
 
-                        w = v;
-                        fw = fv;
-                        v = x;
-                        fv = fx;
+                        // the new point is higher than u, but still lower than v and w
+                        // this isn't what we expected, but we have lower points that before
+
+                        // x -> v -> w
+                        w = v; fw = fv;
+                        v = x; fv = fx;
+
+                    } else if (fx < fw) {
+
+                        // x -> w
+                        w = x; fw = fx;
 
                     } else {
 
-                        if (fx < fw) {
-                            w = x;
-                            fw = fx;
-                        }
+                        // the new point is higher than all our other points; this is the worst case
+
+                        // we might still want to replace w with x because
+                        // (i) otherwise a parabolic fit will reproduce the same x and
+                        // (ii) w is quite likely far outside the new bracket and not telling us much about the behavior near u
+                        // w = x; fw = fx;
+                        // but tests with Rosenbrock function indicate this increases evaluation count
+
+                        Debug.WriteLine("bad point");
+
                     }
 
                 }
 
-                // remember our step size
-                ddd = dd;
-                dd = d;
+                // if the user has specified a tollerance, use it
+                if ((settings.RelativePrecision > 0.0 || settings.AbsolutePrecision > 0.0)) {
+                    tol = Math.Max(Math.Abs(u) * settings.RelativePrecision, settings.AbsolutePrecision);
+                } else {
+                    // otherwise, try to get the tollerance from the curvature
+                    if (fpp > 0.0) {
+                        tol = Math.Sqrt(2.0 * Global.Accuracy * (Math.Abs(fu) + Global.Accuracy) / fpp);
+                    } else {
+                        // but if we don't have a useable curvature either, wing it
+                        if (tol == 0.0) tol = Math.Sqrt(Global.Accuracy);
+                    }
+                }
 
             }
 
@@ -357,239 +414,76 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        // golden ratio ~0.3819660;
-        private static readonly double Gold = (3.0 - Math.Sqrt(5.0)) / 2.0;
+        private static void ParabolicFit (
+           double x1, double f1, double x2, double f2, double x3, double f3,
+           out double x0, out double fpp
+       ) {
 
-        //private static readonly double AbsolutePrecision = Math.Pow(2.0, -512);
+            // We want to find the parabola
+            //   f = f0 + (f'' / 2) (x - x0)^2
+            // that passes throught the points (x1,f1), (x2,f2), (x3,f3)
 
+            // The solution, after much algebra is:
+            //   x0 = x1 - \frac{1}{2} \frac{(f3-f1)(x1-x2)^2 - (f2-f1)(x3-x1)^2}{(f3-f1)(x1-x2) + (f2-f1)(x3-x1)}
+            //   f0 = ?
+            //   f'' = 2 \frac{(x1-x2)(f3-f1) + (x3-x1)(f2-f1)}{(x1-x2)(x3-x1)(x3-x2)}
 
-        // Multidimensional minimization
+            // compute the differences that appear in our expressions
+            double x12 = x1 - x2; double f21 = f2 - f1;
+            double x31 = x3 - x1; double f31 = f3 - f1;
+            double x32 = x3 - x2;
 
-        // 1. Iterate on axes
-        // 2. Powell's method with reset
-        // 3. Powell's heuristic method
-        // 4. Powell's method with Brent modification
+            // compute the numerator and denominator in the expression for x0
+            double t1 = f31 * x12;
+            double t2 = f21 * x31;
+            double p = t1 * x12 - t2 * x31;
+            double q = 2.0 * (t1 + t2);
 
-        /// <summary>
-        /// Minimizes a function on a multi-dimensional space in the vicinity of a given point. 
-        /// </summary>
-        /// <param name="f">The function.</param>
-        /// <param name="x">The starting point for the search.</param>
-        /// <returns>The minimum.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
-        /// <exception cref="ArgumentNullException"><paramref name="x"/> is null.</exception>
-        public static SpaceExtremum FindMinimum (Func<double[], double> f, double[] x) {
-
-            if (f == null) throw new ArgumentNullException("f");
-            if (x == null) throw new ArgumentNullException("x");
-
-            int d = x.Length;
-
-            // keep track of the (conjugate) minimization directions
-            double[][] Q = new double[d][];
-            for (int i = 0; i < d; i++) {
-                Q[i] = new double[d];
-                for (int j = 0; j < d; j++) {
-                    Q[i][j] = 0.0;
-                }
-                // pick a step size in each direction that represents a fraction of the input value
-                Q[i][i] = 0.075 * (Math.Abs(x[i]) + 0.0001);
+            if (q == 0.0) {
+                // the denominator vanishes when the points are colinear; there is no parabolic fit
+                x0 = Double.NaN;
+                fpp = Double.NaN;
+            } else {
+                x0 = x1 - p / q;
+                fpp = q / (x12 * x31 * x32);
             }
-            // keep track of the curvature in these directions
-            double[] r = new double[d];
-
-            // keep track of the function value
-            double y = f(x);
-
-            bool skip = false;
-
-            // interate until convergence
-            for (int n = 0; n < 33; n++ ) {
-
-                //Console.WriteLine("N = {0}", n);
-
-                // remember our starting position
-                double[] x0 = new double[d];
-                Array.Copy(x, x0, d);
-                //Console.WriteLine("Start:");
-                //WriteVector(x0);
-                double y0 = y;
-
-                // keep track of direction of largest decrease
-                double max_dy = 0.0;
-                int max_i = 0;
-
-                // now minimize in each direction
-                for (int i = 0; i < d; i++) {
-
-                    // if we placed the net direction in the first slot last time,
-                    // we are already at the minimum along that direction, so don't
-                    // minimize along it
-                    if (skip) {
-                        skip = false;
-                        continue;
-                    }
-                    //if ((n > 0) && (i == 0) && (max_i == 0)) continue;
-
-                    //Console.WriteLine("i = {0}", i);
-                    //WriteVector(Q[i]);
-
-                    // form a line function
-                    LineFunction f1 = new LineFunction(f, x, Q[i]);
-
-                    // minimize it
-                    LineExtremum m = FindMinimum(new Func<double,double>(f1.Evaluate), 0.0, y, 1.0);
-
-                    // update the current position
-                    x = f1.Position(m.Location);
-                    //WriteVector(x);
-                    r[i] = m.Curvature;
-
-                    // keep track of how much the function dropped, and
-                    // if this is the direction of largest decrease
-                    double dy = y - m.Value;
-                    //Console.WriteLine("dy = {0}", dy);
-                    if (dy > max_dy) {
-                        max_dy = dy;
-                        max_i = i;
-                    }
-                    y = m.Value;
-
-
-                }
-
-                //Console.WriteLine("max_i = {0}, max_dy = {1}", max_i, max_dy);
-                //Console.WriteLine("y0 = {0}, y = {1}", y0, y);
-
-                // figure out the net direction we have moved
-                double[] dx = new double[d];
-                for (int i = 0; i < d; i++) {
-                    dx[i] = x[i] - x0[i];
-                }
-                //Console.WriteLine("Finish:");
-                //WriteVector(x);
-                //Console.WriteLine("Net direction:");
-                //WriteVector(dx);
-
-                // check termination criteria
-                // we do this before minimizing in the net direction because if dx=0 it loops forever
-                if (2.0 * Math.Abs(y0 - y) <= (Math.Abs(y) + Math.Abs(y0)) * RelativePrecision) {
-                    SymmetricMatrix A = ComputeCurvature(f, x);
-                    return (new SpaceExtremum(x, y, A));
-                }
-
-                // attempt a minimization in the net direction
-                LineFunction f2 = new LineFunction(f, x, dx);
-                LineExtremum mm = FindMinimum(new Func<double,double>(f2.Evaluate), 0.0, y, 1.0);
-                x = f2.Position(mm.Location);
-                y = mm.Value;
-
-                // rotate this direction into the direction set
-                /*
-                for (int i = 0; i < (d - 1); i++) {
-                    Q[i] = Q[i + 1];
-                    r[i] = r[i + 1];
-                }
-                Q[d - 1] = dx;
-                r[d - 1] = mm.Curvature;
-                */
-                // this is the basic Powell procedure, and it leads to linear dependence
-
-                // replace the direction of largest decrease with the net direction
-                Q[max_i] = dx;
-                r[max_i] = mm.Curvature;
-                if (max_i == 0) skip = true;
-                // this is powell's modification to avoid linear dependence
-
-                // reset
-
-            }
-
-            throw new NonconvergenceException();
-
-        }
-
-        // numerical approximation of Hessian
-        // requires 3 evaluations for diagonals, there are d of those
-        // requires 4 evaluations for off-diagonals; there are d(d-1)/2 of those
-        // total of 2d^2 + d evaluations required
-
-        private static SymmetricMatrix ComputeCurvature (Func<double[], double> f, double[] x) {
-
-            int d = x.Length;
-
-            double e = Math.Pow(2.0, -15.0);
-            double[] dx = new double[d];
-            for (int i = 0; i < d; i++) {
-                double h = e * (Math.Abs(x[i]) + 1.0);
-                // ensure that step is exactly representable
-                double xh = x[i] + h;
-                h = xh - x[i];
-                // record d
-                dx[i] = h;
-            }
-
-            SymmetricMatrix H = new SymmetricMatrix(d);
-            for (int i = 0; i < d; i++) {
-                double[] xp = (double[]) x.Clone(); xp[i] += dx[i];
-                double[] xm = (double[]) x.Clone(); xm[i] -= dx[i];
-                double f0 = f(x);
-                double fp = f(xp);
-                double fm = f(xm);
-                H[i, i] = (fm - 2.0 * f0 + fp) / (dx[i]*dx[i]);
-                for (int j = 0; j < i; j++) {
-                    double[] xpp = (double[]) x.Clone(); xpp[i] += dx[i]; xpp[j] += dx[j];
-                    double[] xpm = (double[]) x.Clone(); xpm[i] += dx[i]; xpm[j] -= dx[j];
-                    double[] xmm = (double[]) x.Clone(); xmm[i] -= dx[i]; xmm[j] -= dx[j];
-                    double[] xmp = (double[]) x.Clone(); xmp[i] -= dx[i]; xmp[j] += dx[j];
-                    double fpp = f(xpp);
-                    double fpm = f(xpm);
-                    double fmm = f(xmm);
-                    double fmp = f(xmp);
-                    H[i, j] = (fpp - fpm - fmp + fmm) / dx[i] / dx[j] / 4.0; ;
-                }
-            }
-
-            return (H);
-        }
-
-    }
-
-    internal class LineFunction {
-
-        public LineFunction (Func<double[],double> f, double[] x, double[] dx) {
-
-            if (x.Length != dx.Length) throw new DimensionMismatchException();
-
-            this.f = f;
-            this.x = x;
-            this.dx = dx;
-            this.d = x.Length;
-        }
-
-        private Func<double[],double> f;
-
-        private double[] x;
-
-        private double[] dx;
-
-        private int d;
-
-        public double[] Position (double s) {
-            double[] y = new double[d];
-            for (int i = 0; i < d; i++) {
-                y[i] = x[i] + dx[i] * s;
-            }
-            return (y);
-        }
-
-        public double Evaluate (double s) {
-
-            return (f(Position(s)));
 
         }
 
     }
+        
+
+    // This class is used to wrap a function, storing some associated state such as the evaluation count.
+    // It isn't truely a functor in the C++ sense, since .NET doesn't allow () to be overloaded, but
+    // it is a functor in the sense that it is a class used to represent a function.
+
+    internal class Functor {
+
+        public Functor (Func<double, double> f) : this(f, false) {}
+
+        public Functor (Func<double, double> f, bool negate) {
+            Function = f;
+            Negate = negate;
+        }
+
+        public Func<double, double> Function { get; protected set; }
+
+        public int EvaluationCount { get; protected set; }
+
+        public bool Negate { get; set; }
+
+        public virtual double Evaluate (double x) {
+
+            double f = Function(x);
+            if (Negate) f = -f;
+            EvaluationCount++;
+            return (f);
+
+        }
+
+    }
+
+   
 
     // one-dimensional minimum
 
@@ -653,6 +547,10 @@ namespace Meta.Numerics.Functions {
             }
         }
 
+        internal LineExtremum Negate () {
+            return (new LineExtremum(x, -f, f2));
+        }
+
         /// <summary>
         /// Converts a line extremum to a one-dimensional space extremum.
         /// </summary>
@@ -669,102 +567,6 @@ namespace Meta.Numerics.Functions {
                 return (new SpaceExtremum(s_x, s_f, s_f2));
             }
         }
-
-        // keep track of iterations
-
-        /*
-        private int count;
-
-        public int EvaluationCount {
-            get {
-                return (count);
-            }
-            internal set {
-                count = value;
-            }
-        }
-        */
-
     }
-
-    // multi-dimensional minimum
-
-    /// <summary>
-    /// Represents a maximum or minimum of a function on a multi-dimensional space.
-    /// </summary>
-    public class SpaceExtremum {
-
-        internal SpaceExtremum (double[] x, double f, SymmetricMatrix f2) {
-            this.x = x;
-            this.f= f;
-            this.f2 = f2;
-        }
-
-        private double[] x;
-        private double f;
-        private SymmetricMatrix f2;
-
-        /// <summary>
-        /// Gets the location of the extremum.
-        /// </summary>
-        /// <returns>The coordinates of the extremum.</returns>
-        public double[] Location () {
-            return ((double[]) x.Clone());
-        }
-
-        /// <summary>
-        /// Gets the value of the function at the extremum.
-        /// </summary>
-        public double Value {
-            get {
-                return (f);
-            }
-        }
-
-        /// <summary>
-        /// Gets the curvature matrix at the extremum.
-        /// </summary>
-        /// <returns>The curvature matrix.</returns>
-        public SymmetricMatrix Curvature () {
-            return (f2.Copy());
-        }
-
-        /// <summary>
-        /// Gets the dimension of the space on which the function is defined. 
-        /// </summary>
-        public int Dimension {
-            get {
-                return (x.Length);
-            }
-        }
-
-    }
-
-    /*
-    public class Minimum : FunctionPoint<double> {
-
-        internal Minimum (double x, double y, double d2xdy2) : base(x, y) {
-            this.f2 = d2xdy2;
-        }
-
-        private double f2;
-
-        /// <summary>
-        /// The curvatre (second derivative) at the minimum.
-        /// </summary>
-        /// <remarks>
-        /// <para>The curvature is the second derivative at the minimum.</para>
-        /// <para>A atypical minima (e.g. an interval end-point or for a non-smooth function),
-        /// this value may not be meaningful. Even for a typical minimum, the value may be
-        /// accurate only to a few significant digits.</para>
-        /// </remarks>
-        public double Curvature {
-            get {
-                return (f2);
-            }
-        }
-
-    }
-    */ 
 
 }

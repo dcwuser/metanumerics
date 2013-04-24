@@ -310,7 +310,7 @@ namespace Meta.Numerics.Statistics {
                 // for small enough sample, use the exact distribution
                 // it would be nice to do this for at least slightly higher n, but computation time grows dramatically
                 // would like to ensure return in less than 100ms; current timings n=10 35ms, n=11 72ms, n=12 190ms
-                rhoDistribution = new SpearmanDistribution(Count);
+                rhoDistribution = new DiscreteAsContinuousDistribution(new SpearmanExactDistribution(Count), Interval.FromEndpoints(-1.0, 1.0));
             } else {
                 // for larger samples, use the normal approximation
                 // would like to fit support and C_4 too; look into logit-normal
@@ -379,10 +379,16 @@ namespace Meta.Numerics.Statistics {
             // compute tau
             double t = 1.0 * (C - D) / (C + D);
 
-            // analytic expression for variance of tau
-            double dt = Math.Sqrt((4 * n + 10) / 9.0 / n / (n - 1));
+            // compute tau distribution
+            Distribution tauDistribution;
+            if (n <= 20) {
+                tauDistribution = new DiscreteAsContinuousDistribution(new KendallExactDistribution(n), Interval.FromEndpoints(-1.0, 1.0));
+            } else {
+                double dt = Math.Sqrt((4 * n + 10) / 9.0 / n / (n - 1));
+                tauDistribution = new NormalDistribution(0.0, dt);
+            }
 
-            return (new TestResult(t, new NormalDistribution(0.0, dt)));
+            return (new TestResult(t, tauDistribution));
 
         }
 

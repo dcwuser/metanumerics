@@ -72,7 +72,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <remarks>
         /// <para>Note that the value of this parameter is not the standard deviation of the distribution.
         /// It is the value given to the distribution constructor (<see cref="LognormalDistribution(double,double)"/>),
-        /// which is the sandard deviation of the underlying normal distribution.
+        /// which is the sandard deviation of the underlying normal distribution.</para>
+        /// </remarks>
         public double Sigma {
             get {
                 return (sigma);

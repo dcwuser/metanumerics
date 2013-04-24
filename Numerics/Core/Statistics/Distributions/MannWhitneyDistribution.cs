@@ -151,7 +151,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (1.0);
             } else {
                 double P = 0;
-                for (int i = 0; i <= k; i++) {
+                for (int i = 0; i < k; i++) {
                     P += (double) counts[i];
                 }
                 return (P / total);

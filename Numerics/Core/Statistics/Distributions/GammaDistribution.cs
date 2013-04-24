@@ -36,6 +36,8 @@ namespace Meta.Numerics.Statistics.Distributions {
                 ga = -AdvancedMath.LogGamma(a);
             }
 
+            gammaRng = DeviateGeneratorFactory.GetGammaGenerator(a);
+
         }
 
         /// <summary>
@@ -45,8 +47,15 @@ namespace Meta.Numerics.Statistics.Distributions {
         public GammaDistribution (double shape) : this(shape, 1.0) {
         }
 
-        double a, s;
-        double ga;
+        // the shape and scale parameters
+        private readonly double a, s;
+
+        // Gamma(a), or -Ln(Gamma(a)) for large a
+        private readonly double ga;
+
+        // a gamma deviate generator
+        // note this generator has the appropriate shape parameter, but is not scaled
+        private readonly IDeviateGenerator gammaRng;
 
         /// <summary>
         /// Gets the shape parameter for the distribution.
@@ -280,6 +289,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (s * InverseLeftStandardGamma(P));
         }
 
+        /// <inheritdoc />
+        public override double GetRandomValue (Random rng) {
+            if (rng == null) throw new ArgumentNullException("rng");
+            return (s * gammaRng.GetNext(rng));
+        }
 
         // routines for maximum likelyhood fitting
 

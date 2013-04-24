@@ -19,9 +19,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Initializes a new standard Cauchy distribution.
         /// </summary>
-        public CauchyDistribution () {
-            this.mu = 0.0;
-            this.gamma = 1.0;
+        public CauchyDistribution () : this(0.0, 1.0) {
         }
 
         /// <summary>
@@ -33,10 +31,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (gamma <= 0.0) throw new ArgumentNullException("gamma");
             this.mu = mu;
             this.gamma = gamma;
+            this.cauchyRng = DeviateGeneratorFactory.GetCauchyGenerator();
         }
 
-        private double mu;
-        private double gamma;
+        private readonly double mu;
+        private readonly double gamma;
+
+        private readonly IDeviateGenerator cauchyRng;
 
         /// <summary>
         /// Gets the full width at half maximum (FWHM) of the Cauchy distribution.
@@ -197,6 +198,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
             throw new NonconvergenceException();
 
+        }
+
+        /// <inheritdoc />
+        public override double GetRandomValue (Random rng) {
+            if (rng == null) throw new ArgumentNullException("rng");
+            double z = cauchyRng.GetNext(rng);
+            return (mu + z * gamma);
         }
 
     }

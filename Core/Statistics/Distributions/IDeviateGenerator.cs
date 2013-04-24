@@ -1,21 +1,98 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
-using System.Diagnostics;
-using System.IO;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using Meta.Numerics;
-using Meta.Numerics.Statistics;
-using Meta.Numerics.Statistics.Distributions;
+namespace Meta.Numerics.Statistics.Distributions {
 
-namespace Test {
-
-    public interface IDeviateGenerator {
+    internal interface IDeviateGenerator {
 
         double GetNext (Random rng);
 
     }
-    
+
+    internal static class DeviateGeneratorFactory {
+
+        public static IDeviateGenerator GetNormalGenerator () {
+            return(new BoxMullerRejectionNormalDeviateGenerator());
+        }
+
+        public static IDeviateGenerator GetCauchyGenerator () {
+            return(new CauchyGenerator());
+        }
+
+        public static IDeviateGenerator GetGammaGenerator (double alpha) {
+            // choose a gamma generator depending on whether the shape parameter is less than one or greater than one
+            if (alpha <= 1.0) {
+                return(new AhrensDieterLowAlphaGammaGenerator(alpha));
+            } else {
+                return(new MarsagliaTsangGammaGenerator(GetNormalGenerator(), alpha));
+            }
+        }
+
+        public static IDeviateGenerator GetBetaGenerator (double alpha, double beta) {
+            return (new BetaFromGammaGenerator(GetGammaGenerator(alpha), GetGammaGenerator(beta)));
+        }
+
+    }
+
+    // Many normal generators are described and compared in Thomas, et al., "Gaussian Random Number Generators", ACM Computing Surveys 39 (2007)
+    // Most of our normal generators are written based on the description there.
+
+    // Timing for generating 10^7 deviates in ms:
+    //   Inverse CDF            12600 ms
+    //   Box-Muller             1060 ms
+    //   Box-Muller Rejection   920 ms
+    //   Ratio of Uniforms      1210 ms
+    //   Leva's R of U          1130 ms
+    // Our measurements indicate that simple Box-Muller with rejection is slightly faster than Leva's ratio of uniforms algorithm, and
+    // the review article indicates that they are equally good, so we stick with Box-Muller for now. We have not yet attempted to implement
+    // the Zigurraut algorithm.
+
+    // One problem with Box-Muller is that the saving of the next value makes it stateful and therefore not thread-safe (at least not without adding
+    // locking logic that would slow it down considerable). On the other hand the Random class itself isn't thread-safe, so this seems pretty minor.
+
+    internal class BoxMullerRejectionNormalDeviateGenerator : IDeviateGenerator {
+
+        private bool haveNextDeviate = false;
+        private double nextDeviate;
+
+        public double GetNext (Random rng) {
+
+            if (haveNextDeviate) {
+                haveNextDeviate = false;
+                return (nextDeviate);
+            } else {
+
+                // just as in Box-Mueller we need a point in the unit disc
+                // but in order to avoid trig functions, we find it by
+                // picking a point in the circumscribing square, then
+                // rejecting it if it lies outside the unit circle
+                double x, y, r2;
+                do {
+                    // pick a point in the square (-1,1)^2
+                    x = 2.0 * rng.NextDouble() - 1.0;
+                    y = 2.0 * rng.NextDouble() - 1.0;
+                    // determine if it lies in the unit disc
+                    r2 = x * x + y * y;
+                } while ((r2 > 1.0) || (r2 == 0.0));
+
+                double f = Math.Sqrt(-2.0 * Math.Log(r2) / r2);
+
+                // store one deviate
+                nextDeviate = f * x;
+                haveNextDeviate = true;
+
+                // return the other
+                return (f * y);
+
+            }
+
+        }
+
+    }
+
+#if PAST
 
     public class BoxMullerNormalGenerator : IDeviateGenerator {
 
@@ -49,47 +126,6 @@ namespace Test {
         }
     }
 
-    public class PolarRejectionNormalDeviateGenerator : IDeviateGenerator {
-
-        private bool haveNextDeviate = false;
-        private double nextDeviate;
-
-        public double GetNext (Random rng) {
-
-            if (haveNextDeviate) {
-                haveNextDeviate = false;
-                return (nextDeviate);
-            } else {
-
-                // just as in Box-Mueller we need a point in the unit disc
-                // but in order to avoid trig functions, we find it by
-                // picking a point in the circumscribing square, then
-                // rejecting it if it lies outside the unit circle
-                double x, y, r2;
-                do {
-                    // pick a point in the square (-1,1)^2
-                    x = 2.0 * rng.NextDouble() - 1.0;
-                    y = 2.0 * rng.NextDouble() - 1.0;
-                    // determine if it lies in the unit disc
-                    r2 = x * x + y * y;
-                } while ((r2 > 1.0) || (r2 == 0.0));
-
-                double f = Math.Sqrt(-2.0 * Math.Log(r2)/r2);
-
-                // store one deviate
-                nextDeviate = f * x;
-                haveNextDeviate = true;
-
-                // return the other
-                return (f * y);
-
-            }
-
-        }
-
-    }
-
-
     public class RatioOfUniformsNormalGenerator : IDeviateGenerator {
 
         private static readonly double c0 = Math.Sqrt(2.0 / Math.E);
@@ -110,15 +146,15 @@ namespace Test {
                 // determine if the candidate is in acceptance or rejection region
                 double x2 = x * x;
                 if (x2 < 5.0 - c1 * u) {
-                   // inside squeeze, accept immediately
-                    return(x);
+                    // inside squeeze, accept immediately
+                    return (x);
                 } else if (x2 > c2 / u + 1.4) {
                     // outside squeeze, reject immediately
                     continue;
                 }
 
                 // between squeezes, do costly border evaluation
-                if (v * v < - 4.0 * u * u * Math.Log(u)) return(x);
+                if (v * v < -4.0 * u * u * Math.Log(u)) return (x);
             }
         }
     }
@@ -144,7 +180,7 @@ namespace Test {
 
                 if (q < r1) {
                     // inside squeeze, accept
-                    return(v / u);
+                    return (v / u);
                 } else if (q > r2) {
                     // outside squeeze, reject
                     continue;
@@ -159,7 +195,12 @@ namespace Test {
 
     }
 
-    public class CauchyGenerator : IDeviateGenerator {
+#endif
+
+    // This Cauchy generator uses the same basic idea as Box-Muller with rejection. It is suggested in Numerical Recipies.
+    // Our timing indicates that it is about 25% faster than simply evaluating the inverse tangent function of the inverse CDF.
+
+    internal class CauchyGenerator : IDeviateGenerator {
 
         public double GetNext (Random rng) {
 
@@ -177,7 +218,12 @@ namespace Test {
 
     }
 
-    public class AhrensDieterLowAlphaGammaGenerator : IDeviateGenerator {
+    // Using these rejection-based gamma generators is about six times faster than evaluating the inverse CDF.
+
+    // The Ahrens-Dieter generator for \alpha < 1 is very well described by Best
+    // Best also describes two improvements
+
+    internal class AhrensDieterLowAlphaGammaGenerator : IDeviateGenerator {
 
         public AhrensDieterLowAlphaGammaGenerator (double alpha) {
             if (alpha > 1.0) throw new ArgumentOutOfRangeException("alpha");
@@ -209,7 +255,7 @@ namespace Test {
 
     }
 
-    public class MarsagliaTsangGammaGenerator : IDeviateGenerator {
+    internal class MarsagliaTsangGammaGenerator : IDeviateGenerator {
 
         public MarsagliaTsangGammaGenerator (IDeviateGenerator normalGenerator, double alpha) {
             if (alpha < 1.0) throw new ArgumentOutOfRangeException("alpha");
@@ -251,102 +297,20 @@ namespace Test {
         }
     }
 
+    internal class BetaFromGammaGenerator : IDeviateGenerator {
 
-    [TestClass]
-    public class RandomTest {
-
-        [TestMethod]
-        public void TimeNormalGenerators () {
-
-            Random rng = new Random(1);
-            //IDeviateGenerator nRng = new BoxMullerNormalGenerator();
-            //IDeviateGenerator nRng = new PolarRejectionNormalDeviateGenerator();
-            //IDeviateGenerator nRng = new RatioOfUniformsNormalGenerator();
-            IDeviateGenerator nRng = new LevaNormalGenerator();
-
-            //Sample sample = new Sample();
-            Distribution nrm = new NormalDistribution();
-
-            Stopwatch timer = Stopwatch.StartNew();
-            double sum = 0.0;
-            for (int i = 0; i < 10000000; i++) {
-                sum += nrm.InverseLeftProbability(rng.NextDouble());
-                //sum += nRng.GetNext(rng);
-                //sample.Add(nRng.GetNext(rng));
-            }
-            timer.Stop();
-
-            //Console.WriteLine(sample.KolmogorovSmirnovTest(new NormalDistribution()).RightProbability);
-            Console.WriteLine(sum);
-            Console.WriteLine(timer.ElapsedMilliseconds);
+        public BetaFromGammaGenerator (IDeviateGenerator alphaGenerator, IDeviateGenerator betaGenerator) {
+            this.alphaGenerator = alphaGenerator;
+            this.betaGenerator = betaGenerator;
         }
 
-        [TestMethod]
-        public void TimeCauchyGenerators () {
+        private readonly IDeviateGenerator alphaGenerator, betaGenerator;
 
-            Random rng = new Random(1);
-            IDeviateGenerator nRng = new CauchyGenerator();
-            Distribution d = new CauchyDistribution();
-
-            Sample sample = new Sample();
-
-            Stopwatch timer = Stopwatch.StartNew();
-            double sum = 0.0;
-            for (int i = 0; i < 10000000; i++) {
-                sum += nRng.GetNext(rng);
-                //sum += d.InverseLeftProbability(rng.NextDouble());
-                //sample.Add(nRng.GetNext(rng));
-            }
-            timer.Stop();
-
-            //Console.WriteLine(sample.KolmogorovSmirnovTest(d).RightProbability);
-            Console.WriteLine(sum);
-            Console.WriteLine(timer.ElapsedMilliseconds);
-
+        public double GetNext (Random rng) {
+            double x = alphaGenerator.GetNext(rng);
+            double y = betaGenerator.GetNext(rng);
+            return (x / (x + y));
         }
-
-        [TestMethod]
-        public void TimeGammaGenerators () {
-
-            double alpha = 1.0;
-
-            Random rng = new Random(1);
-            //IDeviateGenerator nRng = new AhrensDieterGammaGenerator(alpha);
-            IDeviateGenerator nRng = new MarsagliaTsangGammaGenerator(new PolarRejectionNormalDeviateGenerator(), alpha);
-            Distribution d = new GammaDistribution(alpha);
-
-            //double sum = 0.0;
-            Sample sample = new Sample();
-
-            Stopwatch timer = Stopwatch.StartNew();
-            for (int i = 0; i < 1000000; i++) {
-                //double x = nRng.GetNext(rng);
-                double x = d.InverseLeftProbability(rng.NextDouble());
-                //sum += x;
-                sample.Add(x);
-            }
-            timer.Stop();
-
-            Console.WriteLine(sample.KolmogorovSmirnovTest(d).RightProbability);
-            //Console.WriteLine(sum);
-            Console.WriteLine(timer.ElapsedMilliseconds);
-
-        }
-
-        //[TestMethod]
-        public void TestMethod1 () {
-
-            FileStream s = File.OpenWrite(@"C:\Users\dawright\downloads\diehard\random.bin");
-
-            Random rng = new Random(1);
-            byte[] buffer = new byte[1024];
-            for (int i = 0; i < 16384; i++) {
-                rng.NextBytes(buffer);
-                s.Write(buffer, 0, buffer.Length);
-            }
-
-            s.Close();
-        }
-
     }
+
 }

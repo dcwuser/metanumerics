@@ -84,6 +84,8 @@
     <Compile Include="Functions\FunctionMath_Differentiate.cs" />
     <Compile Include="Functions\FunctionMath_Extrema.cs" />
     <Compile Include="Functions\FunctionMath_Integrate.cs" />
+    <Compile Include="Functions\FunctionMath_MultiExtrema.cs" />
+    <Compile Include="Functions\FunctionMath_MultiIntegrate.cs" />
     <Compile Include="Functions\FunctionMath_Roots.cs" />
     <Compile Include="Functions\OrthogonalPolynomials.cs" />
     <Compile Include="Matrices\AnyMatrix.cs" />
@@ -126,6 +128,7 @@
     <Compile Include="Statistics\Distributions\BinomialDistribution.cs" />
     <Compile Include="Statistics\Distributions\CauchyDistribution.cs" />
     <Compile Include="Statistics\Distributions\ChiSquaredDistribution.cs" />
+    <Compile Include="Statistics\Distributions\DiscreteAsContinuousDistribution.cs" />
     <Compile Include="Statistics\Distributions\DiscreteDistribution.cs" />
     <Compile Include="Statistics\Distributions\DiscreteUniformDistribution.cs" />
     <Compile Include="Statistics\Distributions\Distribution.cs" />
@@ -134,6 +137,8 @@
     <Compile Include="Statistics\Distributions\GammaDistribution.cs" />
     <Compile Include="Statistics\Distributions\GeometricDistribution.cs" />
     <Compile Include="Statistics\Distributions\GumbelDistribution.cs" />
+    <Compile Include="Statistics\Distributions\IDeviateGenerator.cs" />
+    <Compile Include="Statistics\Distributions\KendallDistribution.cs" />
     <Compile Include="Statistics\Distributions\KolmogorovDistribution.cs" />
     <Compile Include="Statistics\Distributions\KuiperDistribution.cs" />
     <Compile Include="Statistics\Distributions\LogisticDistribution.cs" />
@@ -143,6 +148,7 @@
     <Compile Include="Statistics\Distributions\ParetoDistribution.cs" />
     <Compile Include="Statistics\Distributions\PearsonRDistribution.cs" />
     <Compile Include="Statistics\Distributions\PoissonDistribution.cs" />
+    <Compile Include="Statistics\Distributions\SpearmanDistribution.cs" />
     <Compile Include="Statistics\Distributions\StudentDistribution.cs" />
     <Compile Include="Statistics\Distributions\TransformedDistribution.cs" />
     <Compile Include="Statistics\Distributions\TriangularDistribution.cs" />

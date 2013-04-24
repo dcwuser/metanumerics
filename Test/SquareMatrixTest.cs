@@ -583,6 +583,35 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void MatrixPeriodTest () {
+
+            // Period 1 (idempotent) matrix
+            SquareMatrix A = new SquareMatrix(2);
+            A[0, 0] = 1.0; A[0, 1] = 1.0;
+            A[1, 0] = 0.0; A[1, 1] = 0.0;
+
+            SquareMatrix A2 = A.Power(2);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(A2, A));
+
+            // Period 2 (self-inverse) matrix
+            SquareMatrix B = new SquareMatrix(2);
+            B[0, 0] = 0.0; B[0, 1] = 1.0;
+            B[1, 0] = 1.0; B[1, 1] = 0.0;
+
+            SquareMatrix B3 = B.Power(3);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(B3, B));
+
+            // Period 3 matrix
+            // Use the cyclic permutation matrix of order 3
+            SquareMatrix C = new SquareMatrix(3);
+            C[0, 1] = 1.0; C[1, 2] = 1.0; C[2, 0] = 1.0;
+
+            SquareMatrix C4 = C.Power(4);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(C4, C));
+
+        }
+
     }
 
 }

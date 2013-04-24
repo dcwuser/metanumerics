@@ -50,10 +50,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             this.beta = beta;
             // cache value of B(alpha, beta) to avoid having to re-calculate it whenever needed
             this.bigB = AdvancedMath.Beta(alpha, beta);
+            // get a beta generator
+            this.betaRng = DeviateGeneratorFactory.GetBetaGenerator(alpha, beta);
         }
 
-        double alpha, beta;
-        double bigB;
+        private readonly double alpha, beta;
+        private readonly double bigB;
+        private readonly IDeviateGenerator betaRng;
 
         /// <summary>
         /// Gets the left shape parameter.
@@ -154,8 +157,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        // C_n = (-a/(a+b))^n 2F1(a,-n;a+b;(a+b)/a); this fact, plus the recurence relation for the hypergeometric function,
-        // gives the recurrence: C_{n+1} = n / (a+b+n) / (a+b) * ( (b-a) * C_{n} _ a * b / (a+b) * C_{n-1} )
+        // According to http://mathworld.wolfram.com/BetaDistribution.html, central moments are given by
+        //   C_n = \left( -\frac{\alpha}{\alpha+\beta} \right)^n 2F1(\alpha, -n; \alpha + \beta; \frac{\alpha+\beta}{\alpha})
+        // where 2F1 is a hypergeometric function. The Gauss recurrence for hypergeometric functions (Abromowitz and Stegun 15.2.22)
+        //   [c - 2 b + (b - a) z] 2F1(a, b; c; z) + b (1 - z) 2F1(a, b + 1; c; z) - (c - b) 2F1(a, b - 1; c; z) = 0
+        // implies
+        //   C_{n+1} = \frac{n}{(\alpha + \beta + n) (\alpha + \beta)} \left[ (\beta - \alpha) C_{n} + \frac{\alpha \beta}{\alpha + \beta} C_{n - 1} \right]
+        // This recurrence appears to work and not suffer from the cancelation errors that computation from the raw moments does.
 
         /// <inheritdoc />
         public override double MomentAboutMean (int n) {
@@ -275,6 +283,14 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (x);
 
         }
+
+        /*
+        /// <inheritdoc />
+        public override double GetRandomValue (Random rng) {
+            if (rng == null) throw new ArgumentNullException("rng");
+            return (betaRng.GetNext(rng));
+        }
+        */
 
         /// <summary>
         /// Computes the Beta distribution that best fits the given sample.

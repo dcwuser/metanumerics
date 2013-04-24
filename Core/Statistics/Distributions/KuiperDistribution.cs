@@ -229,7 +229,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     //    <x^m>_1 = - \Gamma(m/2 + 1) (m - 3) / 2^{m/2 - 1} \zeta(m - 2)
 
 
-    public class KuiperAsymptoticDistribution : Distribution {
+    internal class KuiperAsymptoticDistribution : Distribution {
 
         public KuiperAsymptoticDistribution (int n) {
             if (n < 2) throw new ArgumentOutOfRangeException("n");
@@ -469,7 +469,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     // Moments provide an additional check. We should have <1> = 1 and <w> = \frac{n!}{n^n} \sum_{k=0}^{n-1} \frac{n^k}{k!}.
     // So far so good.
 
-    public class KuiperExactDistribution : Distribution {
+    internal class KuiperExactDistribution : Distribution {
 
         public KuiperExactDistribution (int n) {
             if (n < 2) throw new ArgumentOutOfRangeException("n");
@@ -614,7 +614,8 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             SquareMatrix H = GetDurbinMatrix(k, h);
 
-            SquareMatrix Hn = MatrixPower(H, n);
+            SquareMatrix Hn = H.Power(n);
+            //SquareMatrix Hn = MatrixPower(H, n);
 
             double f = AdvancedIntegerMath.Factorial(n - 1) / MoreMath.Pow(n, n - 2);
             return (f * Hn[0, 1]);
@@ -702,6 +703,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         }
 
+        /*
         private static SquareMatrix MatrixPower (SquareMatrix A, int n) {
 
             if (n == 1) {
@@ -715,6 +717,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
 
         }
+        */
 
     }
 

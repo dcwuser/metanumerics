@@ -128,6 +128,8 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        // See http://web.maths.unsw.edu.au/~fkuo/sobol/ for lists of suggested parameters
+
         private static readonly SobolSequenceParameters[] sobolParameters = new SobolSequenceParameters[] {
             new SobolSequenceParameters(1, 0, new ulong[] { 1 }),
             new SobolSequenceParameters(2, 1, new ulong[] { 1, 3 }),

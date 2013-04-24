@@ -92,6 +92,7 @@
     <Compile Include="LanczosTest.cs" />
     <Compile Include="MultiIntegrateTest.cs" />
     <Compile Include="NullDistributionTests.cs" />
+    <Compile Include="PolynomialTest.cs" />
     <Compile Include="RandomTest.cs" />
     <Compile Include="RectangularMatrixTest.cs" />
     <Compile Include="MoreMathTest.cs" />

@@ -964,6 +964,34 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+        public static double[] Power (double[] aStore, int dimension, int power) {
+
+            // We take powers via the exponentiation-by-squaring algorithm.
+            // This is not strictly optimal, but it is very simple, is optimal in most cases (e.g. all n<15),
+            // and is nearly optimal (e.g. 6 multiplies instead of 5 for n=15) even when it is not perfectly optimal.
+
+            if (power == 1) {
+                return (aStore);
+                // Returning the given storage for A^1 instead of copying it saves space and time and works fine when this point is reached via recursion,
+                // since that storage will just be read for a multiply, not returned to the calling user. But it would be bad to do so when the user requests
+                // A^1, since the returned matrix would not be independent of the original. So don't call this method to compute A^1 for the user.
+            } else {
+                if (power % 2 == 0) {
+                    // return (A * A)^{n/2}
+                    double[] bStore = MatrixAlgorithms.Multiply(aStore, dimension, dimension, aStore, dimension, dimension);
+                    double[] cStore = Power(bStore, dimension, power / 2);
+                    return (cStore);
+                } else {
+                    // return A * (A * A)^{(n-1)/2}
+                    double[] bStore = MatrixAlgorithms.Multiply(aStore, dimension, dimension, aStore, dimension, dimension);
+                    double[] cStore = Power(bStore, dimension, (power - 1) / 2);
+                    double[] dStore = MatrixAlgorithms.Multiply(aStore, dimension, dimension, cStore, dimension, dimension);
+                    return (dStore);
+                }
+            }
+
+        }
+
     }
 
 

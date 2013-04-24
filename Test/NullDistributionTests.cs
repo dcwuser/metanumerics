@@ -30,7 +30,7 @@ namespace Test {
                 for (int i = 0; i < 256; i++) {
 
                     // Just use n+i as a seed in order to get different points each time
-                    Sample sample = TestUtilities.CreateSample(sampleDistribution, n, n + i);
+                    Sample sample = TestUtilities.CreateSample(sampleDistribution, n, 512 * n + i + 1);
 
                     // Do a KS test of the sample against the distribution each time
                     TestResult r1 = sample.KolmogorovSmirnovTest(sampleDistribution);
@@ -48,8 +48,10 @@ namespace Test {
                 Assert.IsTrue(r2.RightProbability > 0.05);
 
                 // Test moment matches, too
-                Assert.IsTrue(testStatistics.PopulationMean.ConfidenceInterval(0.95).ClosedContains(nullDistribution.Mean));
-                Assert.IsTrue(testStatistics.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(nullDistribution.Variance));
+                Console.WriteLine(" {0} {1}", testStatistics.PopulationMean, nullDistribution.Mean);
+                Console.WriteLine(" {0} {1}", testStatistics.PopulationVariance, nullDistribution.Variance);
+                Assert.IsTrue(testStatistics.PopulationMean.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Mean));
+                Assert.IsTrue(testStatistics.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Variance));
 
             }
 
@@ -71,10 +73,10 @@ namespace Test {
 
                 // Create a bunch of samples, each with n+1 data points
                 // We pick n+1 instead of n just to have different sample size values than in the KS test case
-                for (int i = 0; i < 512; i++) {
+                for (int i = 0; i < 256; i++) {
 
                     // Just use n+i as a seed in order to get different points each time
-                    Sample sample = TestUtilities.CreateSample(sampleDistribution, n + 1, n + i);
+                    Sample sample = TestUtilities.CreateSample(sampleDistribution, n + 1, 512 * n + i + 2);
 
                     // Do a Kuiper test of the sample against the distribution each time
                     TestResult r1 = sample.KuiperTest(sampleDistribution);
@@ -89,11 +91,13 @@ namespace Test {
                 // We could use a Kuiper test here instead, which would be way cool and meta, but we picked KS instead for variety
                 TestResult r2 = testStatistics.KolmogorovSmirnovTest(nullDistribution);
                 Console.WriteLine("{0} {1} {2}", n, r2.Statistic, r2.LeftProbability);
-                Assert.IsTrue(r2.RightProbability > 0.05);
+                Assert.IsTrue(r2.RightProbability > 0.01);
 
                 // Test moment matches, too
-                Assert.IsTrue(testStatistics.PopulationMean.ConfidenceInterval(0.95).ClosedContains(nullDistribution.Mean));
-                Assert.IsTrue(testStatistics.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(nullDistribution.Variance));
+                Console.WriteLine(" {0} {1}", testStatistics.PopulationMean, nullDistribution.Mean);
+                Console.WriteLine(" {0} {1}", testStatistics.PopulationVariance, nullDistribution.Variance);
+                Assert.IsTrue(testStatistics.PopulationMean.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Mean));
+                Assert.IsTrue(testStatistics.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Variance));
 
             }
 
@@ -102,13 +106,14 @@ namespace Test {
         [TestMethod]
         public void SpearmanNullDistributionTest () {
 
+            // pick independent distributions for x and y, which needn't be normal and needn't be related
             Distribution xDistrubtion = new UniformDistribution();
             Distribution yDistribution = new CauchyDistribution();
             Random rng = new Random(1);
 
-            int n = 64; {
-            //foreach (int n in TestUtilities.GenerateIntegerValues(4, 32, 8)) {
-
+            // generate bivariate samples of various sizes
+            foreach (int n in TestUtilities.GenerateIntegerValues(4, 64, 8)) {
+ 
                 Sample testStatistics = new Sample();
                 Distribution testDistribution = null;
 
@@ -126,6 +131,41 @@ namespace Test {
 
                 TestResult r2 = testStatistics.KuiperTest(testDistribution);
                 Console.WriteLine("n={0} P={1}", n, r2.LeftProbability);
+                Assert.IsTrue(r2.RightProbability > 0.05);
+            }
+
+        }
+
+        [TestMethod]
+        public void KendallNullDistributionTest () {
+
+            // pick independent distributions for x and y, which needn't be normal and needn't be related
+            Distribution xDistrubtion = new LogisticDistribution();
+            Distribution yDistribution = new ExponentialDistribution();
+            Random rng = new Random(1000000000);
+
+            // generate bivariate samples of various sizes
+            //int n = 64; {
+            foreach (int n in TestUtilities.GenerateIntegerValues(4, 64, 8)) {
+
+                Sample testStatistics = new Sample();
+                Distribution testDistribution = null;
+
+                for (int i = 0; i < 128; i++) {
+
+                    BivariateSample sample = new BivariateSample();
+                    for (int j = 0; j < n; j++) {
+                        sample.Add(xDistrubtion.GetRandomValue(rng), yDistribution.GetRandomValue(rng));
+                    }
+
+                    TestResult result = sample.KendallTauTest();
+                    testStatistics.Add(result.Statistic);
+                    testDistribution = result.Distribution;
+                }
+
+                TestResult r2 = testStatistics.KolmogorovSmirnovTest(testDistribution);
+                Console.WriteLine("n={0} P={1}", n, r2.LeftProbability);
+                //Assert.IsTrue(r2.RightProbability > 0.05);
             }
 
         }

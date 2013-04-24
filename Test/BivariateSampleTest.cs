@@ -60,12 +60,12 @@ namespace Test {
 
             // try this for several sample sizes, all low so that we see the difference from the normal distribution
             // n = 3 maxima at ends; n = 4 uniform; n = 5 semi-circular "mound"; n = 6 parabolic "mound"
-            foreach (int n in new int[] { 3, 4, 5, 8 }) {
+            foreach (int n in new int[] { 3, 4, 5, 6, 8 }) {
                 Console.WriteLine("n={0}", n);
 
                 // find r values
                 Sample rSample = new Sample();
-                for (int i = 0; i < 50; i++) {
+                for (int i = 0; i < 100; i++) {
 
                     // to get each r value, construct a bivariate sample of the given size with no cross-correlation
                     BivariateSample xySample = new BivariateSample();

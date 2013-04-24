@@ -28,6 +28,9 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         private double mu, sigma;
 
+        // a standard normal generator to be used by GetRandomValue()
+        private readonly IDeviateGenerator normalRng;
+
         /// <summary>
         /// Initializes a new normal distribution with the given mean and standard deviation.
         /// </summary>
@@ -38,6 +41,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (sigma <= 0.0) throw new ArgumentOutOfRangeException("sigma");
             this.mu = mu;
             this.sigma = sigma;
+            this.normalRng = DeviateGeneratorFactory.GetNormalGenerator();
         }
 
         /// <summary>
@@ -164,14 +168,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double GetRandomValue (Random rng) {
             if (rng == null) throw new ArgumentNullException("rng");
-            // this is the Box-Mueller method, and it is much faster than using the inverse CDF
-            double x, y, r2;
-            do {
-                x = 2.0 * rng.NextDouble() - 1.0;
-                y = 2.0 * rng.NextDouble() - 1.0;
-                r2 = x * x + y * y;
-            } while ((r2 >= 1.0) || (r2 == 0.0));
-            double z = x * Math.Sqrt(-2.0 * Math.Log(r2) / r2);
+            double z = normalRng.GetNext(rng);
             return (mu + sigma * z);
         }
 
@@ -199,7 +196,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <remarks>
         /// <para>The returned fit parameters are the &#x3BC; (<see cref="Mean"/>) and &#x3C3; (<see cref="StandardDeviation"/>) parameters, in that order.
         /// These are the same parameters, in the same order, that are required by the <see cref="NnormalDistribution(double,double)"/> constructor to
-        /// specify a new normal distribution.</para></para>
+        /// specify a new normal distribution.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><see cref="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><see cref="sample"/> contains fewer than three values.</exception>

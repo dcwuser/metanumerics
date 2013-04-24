@@ -108,6 +108,8 @@ namespace Meta.Numerics.Functions {
 
                 if (y == 1.0) return (Double.PositiveInfinity);
 
+                if (y < 0.5) return (InverseErfSeries(y));
+
                 // make an initial guess; these get us there within about 10%
                 double x;
                 if (y < 0.8) {
@@ -155,6 +157,43 @@ namespace Meta.Numerics.Functions {
                 throw new NonconvergenceException();
 
             }
+        }
+
+
+        // There is no cancelation in this series, so accuracy is just a matter of how many terms we are willing to take.
+        // For x ~ 0.1, 8 terms; for x ~ 0.25, 12 terms; for x ~ 0.5, 24 terms.
+
+        private static double InverseErfSeries (double x) {
+
+            double z = Global.SqrtPI * x / 2.0;
+            double z2 = z * z;
+
+            double s = 1.0;
+            double z2k = 1.0;
+            for (int k = 1; k < inverfSeriesCoefficients.Length; k++) {
+                double s_old = s;
+                z2k *= z2;
+                s += inverfSeriesCoefficients[k] * z2k;
+                if (s == s_old) { return (z * s); }
+            }
+
+            throw new NonconvergenceException();
+        }
+
+        private static readonly double[] inverfSeriesCoefficients = ComputeInverseErfSeriesCoefficients(24);
+
+        private static double[] ComputeInverseErfSeriesCoefficients (int n) {
+            double[] d = new double[n + 1];
+            d[0] = 1.0;
+            for (int k = 0; k < n; k++) {
+                for (int j = 0; j <= k; j++) {
+                    d[k + 1] += d[j] * d[k - j] / (j + 1) / (2 * j + 1);
+                }
+            }
+            for (int k = 1; k <= n; k++) {
+                d[k] /= (2 * k + 1);
+            }
+            return (d);
         }
 
 

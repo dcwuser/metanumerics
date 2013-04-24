@@ -22,7 +22,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     // Note the midpoint of S is not an integer for even n.
 
     // Under null hypothesis of independence, all relative orderings are equally likely. To compute null distribution, enumerate
-    // all orderings, i.e. all permutations of n integers. E.g. n=3 has 3!=6 permutations
+    // all orderings, i.e. all n! permutations of n integers. E.g. n=3 has 3!=6 permutations
     //   1 2 3   S = 1*1 + 2*2 + 3*3 = 14
     //   1 3 2   S = 1*1 + 2*3 + 3*2 = 13
     //   2 1 3   S = 1*2 + 2*1 + 3*3 = 13
@@ -56,9 +56,9 @@ namespace Meta.Numerics.Statistics.Distributions {
     //   van de Wiel and Bucchianico, "Fast Computation of the Exact Null Distribution of Spearman's rho and Page's L Statistic
     //   for Samples with and without Ties", 1998
 
-    public class SpearmanDistribution : Distribution {
+    internal sealed class SpearmanExactDistribution : DiscreteDistribution {
 
-        public SpearmanDistribution (int n) {
+        public SpearmanExactDistribution (int n) {
             if (n < 2) throw new ArgumentOutOfRangeException("n");
             this.n = n;
 
@@ -74,16 +74,6 @@ namespace Meta.Numerics.Statistics.Distributions {
         int sMin, sMax, sMid;
         long[] counts;
         long totalCounts;
-
-
-
-        private long ExclusiveSum (int i) {
-            long sum = 0;
-            for (int j = 0; j <i; j++) {
-                sum += counts[j];
-            }
-            return(sum);
-        }
 
         private long GetCount (int s) {
             if (s <= sMid) {
@@ -113,45 +103,49 @@ namespace Meta.Numerics.Statistics.Distributions {
         // If we use exclusive summation, we get P = 0 at left boundary but P < 1 at right boundary
         // If we use inclusive summation, we get P = 1 at right bountary but P > 1 at left boundary
 
-        public override double LeftProbability (double rho) {
-            if (rho <= 1.0) {
+        public override double LeftProbability (int k) {
+            if (k < sMin) {
                 return (0.0);
-            } else if (rho >= 1.0) {
+            } else if (k > sMax) {
                 return (1.0);
             } else {
-                double s = sMin * (1.0 - rho) / 2.0 + (sMax + 1) * (1.0 + rho) / 2.0;
-                int k = (int) Math.Floor(s); double h = s - k;
-                return ((GetLeftExclusiveCountSum(k) + h * GetCount(k)) / totalCounts);
+                return ((double) GetLeftExclusiveCountSum(k) / totalCounts);
             }
         }
 
-        public override double RightProbability (double rho) {
-            if (rho <= 1.0) {
+        public override double RightProbability (int k) {
+            if (k < sMin) {
                 return (1.0);
-            } else if (rho >= 1.0) {
+            } else if (k > sMax) {
                 return (0.0);
             } else {
-                double s = sMin * (1.0 - rho) / 2.0 + (sMax + 1) * (1.0 + rho) / 2.0;
-                // give same answer as for left probability of s reflected through midpoint
-                s = sMin + sMax - s;
-                int k = (int) Math.Floor(s); double h = s - k;
-                return ((GetLeftExclusiveCountSum(k) + h * GetCount(k)) / totalCounts);
+                return ((double) GetLeftExclusiveCountSum(sMax - (k - sMin)) / totalCounts);
             }
         }
 
-        public override double ProbabilityDensity (double x) {
-            throw new NotImplementedException();
+        public override double ProbabilityMass (int k) {
+            if ((k < sMin) || (k > sMax)) {
+                return(0.0);
+            } else {
+                return((double) GetCount(k) / totalCounts);
+            }
+        }
+
+        public override int Minimum {
+            get {
+                return (sMin);
+            }
+        }
+
+        public override int Maximum {
+            get {
+                return (sMax);
+            }
         }
 
         public override double Mean {
             get {
-                return (0.0);
-            }
-        }
-
-        public override double Median {
-            get {
-                return (0.0);
+                return (n * (n + 1) * (n + 1) / 4.0);
             }
         }
 
@@ -159,31 +153,10 @@ namespace Meta.Numerics.Statistics.Distributions {
             get {
                 // V(S) = n^2 (n + 1)^2 (n - 1) / 144
                 // Since V(S) / DS^2 = V(\rho) / 2^2 and DS = n (n + 1) (n - 1) / 6, V(\rho) = 1 / (n - 1)
-                return (1.0 / (n - 1));
+                return ((double) n * n * (n + 1) * (n + 1) * (n - 1) / 144.0);
             }
         }
 
-        public void Summarize () {
-
-            Console.WriteLine("min = {0}  max = {1}", sMin, sMax);
-
-            double sm = 0.0;
-            for (int s = sMin; s <= sMax; s++) {
-                sm += GetCount(s) * s;
-            }
-            sm /= totalCounts;
-            Console.WriteLine("mean = {0}", sm);
-
-            double sv = 0.0;
-            for (int s = sMin; s <= sMax; s++) {
-                double z = s - sm;
-                sv += GetCount(s) * z * z;
-            }
-            sv /= totalCounts;
-            Console.WriteLine("variance = {0}", sv);
-
-
-        }
 
         public override double Skewness {
             get {

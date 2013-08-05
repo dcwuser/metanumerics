@@ -52,7 +52,7 @@
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <CodeAnalysisRules>
     </CodeAnalysisRules>
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <CodeAnalysisRuleSet>Migrated rules for Core.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -77,7 +77,9 @@
     <Compile Include="Core\Exceptions.cs" />
     <Compile Include="Core\Functions.cs" />
     <Compile Include="Core\MoreMath.cs" />
+    <Compile Include="Core\Point.cs" />
     <Compile Include="Core\Polynomial.cs" />
+    <Compile Include="Core\PolynomialInterpolation.cs" />
     <Compile Include="Functions\AdvancedMath_Constants.cs" />
     <Compile Include="Functions\AdvancedMath_Coulomb.cs" />
     <Compile Include="Functions\AdvancedMath_Elliptic.cs" />

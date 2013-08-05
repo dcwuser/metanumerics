@@ -31,7 +31,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     public sealed class BetaDistribution : Distribution {
 
         /// <summary>
-        /// Instantiates a new &#x3B2; distribution.
+        /// Initializes a new &#x3B2; distribution.
         /// </summary>
         /// <param name="alpha">The left shape parameter, which controls the form of the distribution near x=0.</param>
         /// <param name="beta">The right shape parameter, which controls the form of the distribution near x=1.</param>

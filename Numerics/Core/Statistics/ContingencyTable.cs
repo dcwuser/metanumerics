@@ -27,7 +27,7 @@ namespace Meta.Numerics.Statistics {
         private int tCounts;
 
         /// <summary>
-        /// Instantiates a new contingency table.
+        /// Initializes a new contingency table.
         /// </summary>
         /// <param name="rows">The number of rows, which must be positive.</param>
         /// <param name="columns">The number of columns, which must be positive.</param>
@@ -44,7 +44,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Instantiates a new contingency table with the given data set.
+        /// Initializes a new contingency table with the given data set.
         /// </summary>
         /// <param name="data">A (zero-based) matrix of contingency table entries.</param>
         public ContingencyTable (int[,] data) {

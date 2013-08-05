@@ -177,7 +177,8 @@ namespace Test {
             Console.WriteLine(P);
         }
 
-        [TestMethod]
+        // Not fixing this bug; use Polynomial interpolation for this scenario instead
+        //[TestMethod]
         public void Bug6392 () {
             // bug requests that we support regression with number of points equal to number
             // of fit parameters, i.e. polynomial fit

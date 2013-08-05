@@ -1090,15 +1090,12 @@ namespace Meta.Numerics.Functions {
         }
 
         private static double SphericalBesselJ_Series (int n, double x) {
-            //Console.WriteLine("Series n={0} x={1}", n, x);
-            double xx = x*x/2.0;
+            double xx = x * x / 2.0;
             double df = Math.Exp(n * Math.Log(x) - AdvancedIntegerMath.LogDoubleFactorial(2 * n + 1));
-            //double df = Math.Pow(x, n) / AdvancedIntegerMath.DoubleFactorial(2*n+1);
             double f = df;
             for (int i = 1; i < Global.SeriesMax; i++) {
                 double f_old = f;
                 df = -df * xx / i / (2 * (n + i) + 1);
-                //Console.WriteLine("f={0}, df={1}", f, df);
                 f += df;
                 if (f == f_old) {
                     return (f);
@@ -1188,19 +1185,16 @@ namespace Meta.Numerics.Functions {
                 double jm1 = (2 * k + 1) / x * j - jp1;
                 jp1 = j;
                 j = jm1;
-                //Console.WriteLine("{0} {1}", k, j);
             }
             double jn = j;
             for (int k = n; k > 0; k--) {
                 double jm1 = (2 * k + 1) / x * j - jp1;
                 jp1 = j;
                 j = jm1;
-                //Console.WriteLine("{0} {1}", k, j);
             }
 
             // compute the value we should have got and use it to normalize our result
             double j0 = SphericalBesselJ_Zero(x);
-            //Console.WriteLine("j0={0}", j0);
             return ((j0 / j) * jn);
 
         }

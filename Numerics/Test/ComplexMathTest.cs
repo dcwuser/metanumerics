@@ -231,5 +231,18 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void ComplexRealAgreement () {
+
+            foreach (double x in TestUtilities.GenerateRealValues(0.01, 1000.0, 8)) {
+
+                Assert.IsTrue(ComplexMath.Exp(x) == Math.Exp(x));
+                Assert.IsTrue(ComplexMath.Log(x) == Math.Log(x));
+                Assert.IsTrue(ComplexMath.Sqrt(x) == Math.Sqrt(x));
+
+            }
+
+        }
+
     }
 }

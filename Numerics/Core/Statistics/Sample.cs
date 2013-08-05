@@ -403,7 +403,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="transformFunction">The function used to transform the values, which must not be null.</param>
         /// <remarks>
-        /// <para>For example, to replace all values with their logarithms, apply a transform using <see cref="Math.Log"/>.</para>
+        /// <para>For example, to replace all values with their logarithms, apply a transform using <see cref="Math.Log(double)"/>.</para>
         /// <para>If the supplied transform function throws an excaption, or returns infinite or NaN values, the transformation
         /// may be incomplete or the data corrupted.</para>
         /// </remarks>

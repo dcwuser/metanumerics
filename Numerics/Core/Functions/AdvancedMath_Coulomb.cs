@@ -293,8 +293,6 @@ namespace Meta.Numerics.Functions {
                 Df = (q * D - 1.0) * Df;
                 f += Df;
 
-                //Console.WriteLine("{0} {1} {2}", n, Df, f);
-
                 if (f == f_old) {
                     return (ComplexMath.I * f / rho + new Complex(0.0, 1.0 - eta / rho));
                 }

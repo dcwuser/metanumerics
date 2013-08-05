@@ -12,7 +12,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     public class KuiperDistribution : Distribution {
 
         /// <summary>
-        /// Instantiates a new Kuiper distribution.
+        /// Initializes a new Kuiper distribution.
         /// </summary>
         public KuiperDistribution () {
         }
@@ -702,22 +702,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (DH);
 
         }
-
-        /*
-        private static SquareMatrix MatrixPower (SquareMatrix A, int n) {
-
-            if (n == 1) {
-                return (A);
-            } else {
-                if (n % 2 == 0) {
-                    return (MatrixPower(A * A, n / 2));
-                } else {
-                    return (A * MatrixPower(A * A, (n - 1) / 2));
-                }
-            }
-
-        }
-        */
 
     }
 

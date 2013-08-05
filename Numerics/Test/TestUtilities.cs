@@ -182,11 +182,7 @@ namespace Test {
 
         public static SymmetricMatrix CreateSymmetricHilbertMatrix (int n) {
             SymmetricMatrix H = new SymmetricMatrix(n);
-            for (int r = 0; r < n; r++) {
-                for (int c = 0; c <= r; c++) {
-                    H[r, c] = 1.0 / (r + c + 1);
-                }
-            }
+            H.Fill((r, c) => 1.0 / (r + c + 1));
             return (H);
         }
 

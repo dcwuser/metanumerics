@@ -31,7 +31,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>Bin\Debug</OutputPath>
     <DefineConstants>DEBUG;TRACE;SILVERLIGHT</DefineConstants>
     <NoStdLib>true</NoStdLib>
@@ -62,7 +62,9 @@
     <Compile Include="Core\Global.cs" />
     <Compile Include="Core\Interval.cs" />
     <Compile Include="Core\MoreMath.cs" />
+    <Compile Include="Core\Point.cs" />
     <Compile Include="Core\Polynomial.cs" />
+    <Compile Include="Core\PolynomialInterpolation.cs" />
     <Compile Include="Core\UncertainMath.cs" />
     <Compile Include="Core\UncertainValue.cs" />
     <Compile Include="Functions\AdvancedIntegerMath.cs" />

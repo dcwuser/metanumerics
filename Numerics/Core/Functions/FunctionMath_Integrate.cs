@@ -9,7 +9,7 @@ namespace Meta.Numerics.Functions {
     public class EvaluationSettings {
 
         /// <summary>
-        /// Instantiates a new set of default evaulation settings.
+        /// Initializes a new set of default evaulation settings.
         /// </summary>
         public EvaluationSettings () {
             EvaluationBudget = 5000;

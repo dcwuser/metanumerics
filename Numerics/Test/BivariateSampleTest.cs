@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
@@ -32,6 +33,22 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void BivariateSampleEnumerations () {
+
+            List<XY> points = new List<XY>(new XY[] { new XY(1.0, 2.0), new XY(2.0, 3.0), new XY(3.0, 4.0) });
+
+            BivariateSample sample = new BivariateSample();
+            sample.Add(points);
+
+            Assert.IsTrue(sample.Count == points.Count);
+
+            foreach (XY point in sample) {
+                Assert.IsTrue(points.Remove(point));
+            }
+
+            Assert.IsTrue(points.Count == 0);
+        }
 
         [TestMethod]
         public void BivariateSampleCopy () {

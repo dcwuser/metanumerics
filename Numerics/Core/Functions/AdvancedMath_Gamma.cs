@@ -43,7 +43,7 @@ namespace Meta.Numerics.Functions {
         /// moderate values of x, you may find it useful to work with the <see cref="LogGamma" /> method, which returns ln(&#x393;(x)).</para>
         /// <para>To evaluate the Gamma function for a complex argument, use <see cref="AdvancedComplexMath.Gamma" />.</para>
         /// <h2>Domain, Range, and Accuracy</h2>
-        /// <para>The function is defined for all x. It has poles at all negative integers and at zero; the method returns <see cref="Double.Infinity"/> for these arguments. For positive
+        /// <para>The function is defined for all x. It has poles at all negative integers and at zero; the method returns <see cref="Double.NaN"/> for these arguments. For positive
         /// arguments, the value of the function increases rapidly with increasing argument. For values of x greater than about 170, the value of the function exceeds
         /// <see cref="Double.MaxValue"/>; for these arguments the method returns <see cref="Double.PositiveInfinity"/>. The method is accurate to full precision over its entire
         /// domain.</para>

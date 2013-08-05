@@ -300,6 +300,8 @@ namespace Meta.Numerics.Statistics.Distributions {
     internal class BetaFromGammaGenerator : IDeviateGenerator {
 
         public BetaFromGammaGenerator (IDeviateGenerator alphaGenerator, IDeviateGenerator betaGenerator) {
+            if (alphaGenerator == null) throw new ArgumentNullException("alphaGenerator");
+            if (betaGenerator == null) throw new ArgumentNullException("betaGenerator");
             this.alphaGenerator = alphaGenerator;
             this.betaGenerator = betaGenerator;
         }

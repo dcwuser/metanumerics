@@ -9,7 +9,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     internal sealed class MannWhitneyExactDistribution : DiscreteDistribution {
 
         /// <summary>
-        /// Instantiates a new Mann-Whitney distribution.
+        /// Initializes a new Mann-Whitney distribution.
         /// </summary>
         /// <param name="m">The number of elements in the first sample.</param>
         /// <param name="n">The number of elements in the second sample.</param>

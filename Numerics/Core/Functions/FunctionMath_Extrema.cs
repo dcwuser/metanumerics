@@ -49,7 +49,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">A point suspected to be near the maximum. The search begins at this point.</param>
         /// <param name="settings">The settings to use when searching for the maximum.</param>
         /// <returns>The maximum.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="f"/> is null or <param name="settings"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="f"/> is null or <paramref name="settings"/> is null.</exception>
         /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a maximum being determined to the prescribed precision.</exception>
         /// <remarks>
         /// <para>When you supply <paramref name="settings"/>, note that the supplied <see cref="EvaluationSettings.RelativePrecision"/> and <see cref="EvaluationSettings.AbsolutePrecision"/>

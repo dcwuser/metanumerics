@@ -2,7 +2,7 @@
 
 namespace Meta.Numerics.Statistics.Distributions {
 
-    public class TransformedDistribution : Distribution {
+    internal class TransformedDistribution : Distribution {
 
         public TransformedDistribution (Distribution baseDistribution, double shift, double scale) {
             if (baseDistribution == null) throw new ArgumentNullException("baseDistribution");
@@ -11,9 +11,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             this.scale = scale;
         }
 
-        private Distribution baseDistribution;
-        private double shift;
-        private double scale;
+        private readonly Distribution baseDistribution;
+        private readonly double shift;
+        private readonly double scale;
 
         private double TransformXtoY (double x) {
             return ((x - shift) / scale);

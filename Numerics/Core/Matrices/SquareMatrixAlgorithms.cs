@@ -282,7 +282,6 @@ namespace Meta.Numerics.Matrices {
                       //  double g = e * Math.Abs(MatrixAlgorithms.GetEntry(aStore, dimension, dimension, p - 1, p));
 
                       //  if (f + g == f) {
-                        Console.WriteLine(e);
                             MatrixAlgorithms.SetEntry(aStore, dimension, dimension, p, p - 1, 0.0);
                             break;
                       //  }
@@ -338,15 +337,11 @@ namespace Meta.Numerics.Matrices {
                     if (p == n) {
 
                         eigenvalues[n] = aStore[anni];
-                        Console.WriteLine("e_{0} = {1}", n, eigenvalues[n]);
-
+ 
                     } else if (p == m) {
-
-                        //Console.WriteLine("2x2 p={0}", p);
                         
                         double sn, cn;
                         TwoByTwoRealSchur(ref aStore[ammi], ref aStore[amni], ref aStore[anmi], ref aStore[anni], out sn, out cn, out eigenvalues[m], out eigenvalues[n]);
-                        Console.WriteLine("e_{0}={1} e_{2}={3}", m, eigenvalues[m], n, eigenvalues[n]);
 
                         // Multiply A from left by the rotation matrix R
                         for (int cc = p + 2; cc < dimension; cc++) {
@@ -380,16 +375,6 @@ namespace Meta.Numerics.Matrices {
                     n = p - 1;
                     count = 0;
                 }
-                /*
-                Console.WriteLine("count = {0}", count);
-                Console.WriteLine("A=");
-                MatrixAlgorithms.PrintMatrix(aStore, dimension, dimension);
-                Console.WriteLine("QAQ^T=");
-                double[] qt = MatrixAlgorithms.Transpose(qStore, dimension, dimension);
-                double[] qa = MatrixAlgorithms.Multiply(qStore, dimension, dimension, aStore, dimension, dimension);
-                double[] qaqt = MatrixAlgorithms.Multiply(qa, dimension, dimension, qt, dimension, dimension);
-                MatrixAlgorithms.PrintMatrix(qaqt, dimension, dimension);
-                */
             }
 
             return (eigenvalues);
@@ -710,8 +695,6 @@ namespace Meta.Numerics.Matrices {
             double q2 = v * v + 4.0 * a12 * a21;
             // note u is the trace and w is the determinant
 
-            Console.WriteLine("u={0} q2={1}", u, q2);
-
             if (q2 >= 0.0) {
 
                 // the descriminant is positive so the eigenvalues are real
@@ -855,23 +838,9 @@ namespace Meta.Numerics.Matrices {
 
         }
 
-
-         private static void WriteTransformedEigenvector (int i, Complex e, Complex[] v, int n, SquareMatrix Q) {
-             Console.WriteLine("#{0} {1}", i, e);
-             for (int g = 0; g < n; g++) {
-                 Complex ve = 0.0;
-                 for (int h = 0; h < n; h++) {
-                     ve += Q[g, h] * v[h];
-                 }
-                 Console.WriteLine("  {0}", v[g]);
-             }
-         }
-
         // v is assumed to 
 
         private static void CompleteEigenvector (double[] aStore, int n, Complex[] v, Complex e, int i, int j) {
-
-            //Console.WriteLine("{0} :", e);
 
             while (j >= 0) {
 
@@ -914,10 +883,6 @@ namespace Meta.Numerics.Matrices {
                     j -= 2;
                 }
             }
-
-            //for (int k = 0; k < v.Length; k++) {
-            //    Console.WriteLine(v[k]);
-            //}
 
         }
 

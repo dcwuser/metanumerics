@@ -14,7 +14,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     public class KolmogorovDistribution : Distribution {
 
         /// <summary>
-        /// Instantiates a new asymptotic Kolmogorov distribution.
+        /// Initializes a new asymptotic Kolmogorov distribution.
         /// </summary>
         public KolmogorovDistribution () { }
 
@@ -529,12 +529,10 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (t < n / 2.0) {
                 return (DurbinMatrixPPrime(t));
             } else if (t < n) {
-                //return (N * DurbinMatrixPPrime(t));
                 return (DurbinSeriesQPrime(t));
             } else {
                 return (0.0);
             }
-
         }
 
         /// <inheritdoc />
@@ -542,14 +540,12 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (t <= 0.5) {
                 return(0.0);
             } else if (t < n / 2.0) {
-                //return (MatrixP(N, t));
                 return(DurbinMatrixP(t));
             } else if (t < n ) {
                 return(1.0 - DurbinSeriesQ(t));
             } else {
                 return(1.0);
             }
-
         }
 
         /// <inheritdoc />
@@ -563,7 +559,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else {
                 return(0.0);
             }
-
         }
 
         // Durbin generalized results of Massey to obtain a formula for the right tail that reads, in the t > n / 2 region:
@@ -652,7 +647,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         }
 
-        private void DecomposeInteger (double t, out int k, out double h) {
+        private static void DecomposeInteger (double t, out int k, out double h) {
             
             // decompose t into an integer minus a fraction
             k = (int) Math.Ceiling(t);
@@ -750,59 +745,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             double f = AdvancedIntegerMath.Factorial(n) / MoreMath.Pow(n, n);
             return (f * HnP[k - 1, k - 1]);
         }
-
-        /*
-        private static void PrintMatrix (AnyRectangularMatrix A) {
-            for (int r = 0; r < A.RowCount; r++) {
-                for (int c = 0; c < A.ColumnCount; c++) {
-                    Console.Write("  {0}", A[r, c]);
-                }
-                Console.WriteLine();
-            }
-        }
-
-        // We take powers via the exponentiation-by-squaring algorithm.
-        // This is not strictly optimal, but it is very simple, is optimal in most cases (e.g. all n<15),
-        // and is nearly optimal (e.g. 6 multiplies instead of 5 for n=15) even when it is not perfectly optimal.
-        
-        private static SquareMatrix NewMatrixPower (SquareMatrix A, int n) {
-
-            if (n == 1) {
-                return (A);
-            } else {
-                if (n % 2 == 0) {
-                    return (NewMatrixPower(A * A, n / 2));
-                } else {
-                    return (A * NewMatrixPower(A * A, (n - 1) / 2));
-                }
-            }
-
-        }
-        
-        private static SquareMatrix MatrixPower (SquareMatrix A, int n) {
-
-            SquareMatrix B = null;
-
-            SquareMatrix D = A.Copy();
-
-            while (true) {
-                if (n % 2 != 0) {
-                    if (B == null) {
-                        B = D.Copy();
-                    } else {
-                        B = B * D;
-                    }
-                }
-                n = n / 2;
-                if (n == 0) break;
-                D = D * D;
-            }
-
-            return (B);
-
-
-        }
-        */
 
         // We have pre-computed the mean, variance, and third central moment of t = n d for n < 8
         // by symbolic integration of the piece-wise polynomial expressions

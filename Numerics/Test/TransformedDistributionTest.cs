@@ -5,6 +5,8 @@ using Meta.Numerics.Statistics.Distributions;
 
 namespace Test {
 
+#if FUTURE
+
     [TestClass]
     public class TransformedDistributionTest {
 
@@ -37,4 +39,7 @@ namespace Test {
 
         }
     }
+
+#endif
+
 }

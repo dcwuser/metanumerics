@@ -8,7 +8,7 @@ namespace Meta.Numerics.Functions {
     public static partial class FunctionMath {
 
         /// <summary>
-        /// Integrate the given function over the given volume.
+        /// Integrates the given function over the given volume.
         /// </summary>
         /// <param name="integrand">The function to integrate, which maps R<sup>d</sup> to R.</param>
         /// <param name="volume">The box defining the volume over with to integrate.</param>
@@ -35,7 +35,7 @@ namespace Meta.Numerics.Functions {
         }
 
         /// <summary>
-        /// Integrate the given function over the given volume.
+        /// Integrates the given function over the given volume.
         /// </summary>
         /// <param name="integrand">The function to integrate, which maps R<sup>d</sup> to R.</param>
         /// <param name="volume">The box defining the volume over with to integrate.</param>

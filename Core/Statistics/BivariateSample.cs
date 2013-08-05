@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 #if !SILVERLIGHT
 using System.Data;
 #endif
 using System.Globalization;
 
+using Meta.Numerics;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics.Distributions;
@@ -22,7 +25,7 @@ namespace Meta.Numerics.Statistics {
     /// for the sample, perform appropriate statistical tests on the sample data, and fit the sample
     /// data to various models.</para>
     /// </remarks>
-    public sealed class BivariateSample {
+    public sealed class BivariateSample : ICollection<XY> {
 
         /// <summary>
         /// Initializes a new bivariate sample.
@@ -69,6 +72,23 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /// <summary>
+        /// Adds a data point to the sample.
+        /// </summary>
+        /// <param name="point">The data point.</param>
+        public void Add (XY point) {
+            Add(point.X, point.Y);
+        }
+
+        /// <summary>
+        /// Adds multiple data points to the sample.
+        /// </summary>
+        /// <param name="points">The data points.</param>
+        public void Add (IEnumerable<XY> points) {
+            if (points == null) throw new ArgumentNullException("points");
+            foreach (XY point in points) Add(point);
+        }
+
         private int IndexOf (double x, double y) {
             for (int i = 0; i < Count; i++) {
                 if ((xData[i] == x) && (yData[i] == y)) {
@@ -100,6 +120,15 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
+        /// Removes a data point from the sample.
+        /// </summary>
+        /// <param name="point">The point to remove.</param>
+        /// <returns>True if the given data point was found and removed, otherwise false.</returns>
+        public bool Remove (XY point) {
+            return(Remove(point.X, point.Y));
+        }
+
+        /// <summary>
         /// Removes all data points from the sample.
         /// </summary>
         public void Clear () {
@@ -123,11 +152,54 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
+        /// Determines whether the sample contains a given data point.
+        /// </summary>
+        /// <param name="xy">The data point.</param>
+        /// <returns>True if the sample contains the given data point, otherwise false.</returns>
+        public bool Contains (XY xy) {
+            return (Contains(xy.X, xy.Y));
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the bivariate sample is read-only.
+        /// </summary>
+        public bool IsReadOnly {
+            get {
+                return (isReadOnly);
+            }
+        }
+
+        /// <summary>
         /// Copies the bivariate sample.
         /// </summary>
         /// <returns>An independent copy of the bivariate sample.</returns>
         public BivariateSample Copy () {
             return (new BivariateSample(xData.Copy(), yData.Copy(), false));
+        }
+
+
+        /// <summary>
+        /// Gets an enumerator of sample values.
+        /// </summary>
+        /// <returns>An enumerator of sample values.</returns>
+        public IEnumerator<XY> GetEnumerator () {
+            int i = 0;
+            while (i < this.Count) {
+                yield return (new XY(xData[i], yData[i]));
+                i++;
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator () {
+            return (this.GetEnumerator());
+        }
+
+        void ICollection<XY>.CopyTo (XY[] array, int start) {
+            if (array == null) throw new ArgumentNullException("array");
+            // this is not fast; move implementation to SampleStorage and use CopyTo for underlying List
+            for (int i = 0; i < this.Count; i++) {
+                array[start + i] = new XY(xData[i], yData[i]);
+            }
         }
 
         /// <summary>
@@ -211,6 +283,15 @@ namespace Meta.Numerics.Statistics {
                 // added or removed; ideally we should do that with covariance in the
                 // bivariate sample, but Transforms, and maybe other operations, would
                 // screw that up
+            }
+        }
+
+        /// <summary>
+        /// Gets the correlation coefficient between the two variables.
+        /// </summary>
+        public double CorrelationCoefficient {
+            get {
+                return (this.Covariance / Math.Sqrt(xData.Variance * yData.Variance));
             }
         }
 
@@ -527,7 +608,6 @@ namespace Meta.Numerics.Statistics {
             //   end
             // This is detailed in Ake Bjorck, "Numerical Methods for Least Squares Problems", pp. 118-120
 
-            //Stopwatch s4 = Stopwatch.StartNew();
             SymmetricMatrix C2 = new SymmetricMatrix(m + 1);
             double c; // used for storage so we don't call bounds-checking accessors each time
             for (int k = m; k >= 0; k--) {
@@ -547,8 +627,6 @@ namespace Meta.Numerics.Statistics {
                     C2[i, k] = -c / R[i, i];
                 }
             }
-            //s4.Stop();
-            //Console.WriteLine("C new {0}", s4.ElapsedMilliseconds);
             for (int i = 0; i <= m; i++) {
                 for (int j = i; j <= m; j++) {
                     C2[i, j] = C2[i, j] * ss2;

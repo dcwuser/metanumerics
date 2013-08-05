@@ -313,13 +313,6 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
 
-        private static void LongPolynomialNegate (long[] c, int min, int max) {
-            for (int i = min; i <= max; i++) {
-                c[i] = -c[i];
-            }
-        }
-
-
     }
 
 }

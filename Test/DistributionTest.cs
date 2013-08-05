@@ -13,48 +13,9 @@ namespace Test {
     [TestClass]
     public class DistributionTest {
 
-        private static int Fibonacci (int n) {
-            int a = 1;
-            int b = 0;
-            int p = 0;
-            int q = 1;
-            while (n > 0) {
-                if (n % 2 == 0) {
-                    int p1 = p * p + q * q;
-                    int q1 = q * (q + 2 * p);
-                    p = p1; q = q1;
-                    n = n / 2;
-                } else {
-                    int a1 = b * q + a * q + a * p;
-                    int b1 = b * p + a * q;
-                    a = a1; b = b1;
-                    n = n - 1;
-                }
-            }
-            return (b);
-        }
-
-        [TestMethod]
-        public void FibTest () {
-            Console.WriteLine(Fibonacci(2));
-            Console.WriteLine(Fibonacci(4));
-            Console.WriteLine(Fibonacci(8));
-            Console.WriteLine(Fibonacci(16));
-            Console.WriteLine(Fibonacci(32));
-            Console.WriteLine(Fibonacci(64));
-            Console.WriteLine(Fibonacci(128));
-        }
-
-        [TestMethod]
-        public void GumbelP () {
-
-            GumbelDistribution G = new GumbelDistribution();
-            double mu = G.Mean;
-            double C = FunctionMath.Integrate(x => { return (G.ProbabilityDensity(x) * MoreMath.Pow(x - mu, 4)); }, G.Support);
-            Console.WriteLine(C);
-            Console.WriteLine(G.MomentAboutMean(4));
-
-        }
+        // We see a reliabile failure of KS or Kuiper tests for Beta distribution with small parameters, e.g. Beta(0.01,0.01).
+        // This appears to occur whether we use inverse CDF or x/(x+y) to generate beta deviates.
+        // Perhaps it indicates a problem with P computation for beta in this region?
 
         private Distribution[] distributions = new Distribution[] {
             new CauchyDistribution(1.0, 2.0),
@@ -655,6 +616,7 @@ namespace Test {
                 Console.WriteLine(distribution.GetType().Name);
                 Sample s = TestUtilities.CreateSample(distribution, 128);
                 TestResult r = s.KolmogorovSmirnovTest(distribution);
+                Console.WriteLine(r.LeftProbability);
                 Assert.IsTrue(r.LeftProbability < 0.95);
 
             }

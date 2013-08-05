@@ -132,6 +132,10 @@ namespace Test {
                 TestResult r2 = testStatistics.KuiperTest(testDistribution);
                 Console.WriteLine("n={0} P={1}", n, r2.LeftProbability);
                 Assert.IsTrue(r2.RightProbability > 0.05);
+
+                Assert.IsTrue(testStatistics.PopulationMean.ConfidenceInterval(0.99).ClosedContains(testDistribution.Mean));
+                Assert.IsTrue(testStatistics.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(testDistribution.Variance));
+
             }
 
         }
@@ -142,7 +146,7 @@ namespace Test {
             // pick independent distributions for x and y, which needn't be normal and needn't be related
             Distribution xDistrubtion = new LogisticDistribution();
             Distribution yDistribution = new ExponentialDistribution();
-            Random rng = new Random(1000000000);
+            Random rng = new Random(314159265);
 
             // generate bivariate samples of various sizes
             //int n = 64; {
@@ -163,9 +167,13 @@ namespace Test {
                     testDistribution = result.Distribution;
                 }
 
-                TestResult r2 = testStatistics.KolmogorovSmirnovTest(testDistribution);
-                Console.WriteLine("n={0} P={1}", n, r2.LeftProbability);
+                //TestResult r2 = testStatistics.KolmogorovSmirnovTest(testDistribution);
+                //Console.WriteLine("n={0} P={1}", n, r2.LeftProbability);
                 //Assert.IsTrue(r2.RightProbability > 0.05);
+
+                Console.WriteLine("{0} {1}", testStatistics.PopulationVariance, testDistribution.Variance);
+                Assert.IsTrue(testStatistics.PopulationMean.ConfidenceInterval(0.95).ClosedContains(testDistribution.Mean));
+                Assert.IsTrue(testStatistics.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(testDistribution.Variance));
             }
 
         }

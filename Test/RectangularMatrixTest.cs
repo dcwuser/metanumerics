@@ -340,6 +340,43 @@ namespace Test {
 
         }
 
+
+        [TestMethod]
+        public void MatrixArrayConversion () {
+
+            // start with a .NET Array
+            double[,] A = new double[,] {
+                { 0, 1, 2 },
+                { 3, 4, 5 }
+            };
+
+            // Convert it to a Matrix
+            RectangularMatrix B = new RectangularMatrix(A);
+
+            Assert.IsTrue(B.RowCount == A.GetLength(0));
+            Assert.IsTrue(B.ColumnCount == A.GetLength(1));
+
+            for (int r = 0; r < B.RowCount; r++) {
+                for (int c = 0; c < B.ColumnCount; c++) {
+                    Assert.IsTrue(B[r, c] == A[r, c]);
+                }
+            }
+
+            // Convert that Matrix back to an Array
+            double[,] C = B.ToArray();
+
+            Assert.IsTrue(C.Rank == 2);
+            Assert.IsTrue(C.GetLength(0) == B.RowCount);
+            Assert.IsTrue(C.GetLength(1) == B.ColumnCount);
+
+            for (int r = 0; r < B.RowCount; r++) {
+                for (int c = 0; c < B.ColumnCount; c++) {
+                    Assert.IsTrue(C[r, c] == A[r, c]);
+                }
+            }
+
+        }
+
     }
 
 }

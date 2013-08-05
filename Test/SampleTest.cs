@@ -354,6 +354,27 @@ namespace Test {
 
         }
 
+
+        [TestMethod]
+        public void LognormalFit () {
+
+            LognormalDistribution distribution = new LognormalDistribution(1.0, 2.0);
+            Sample sample = CreateSample(distribution, 100);
+
+            // fit to normal should be bad
+            FitResult nfit = NormalDistribution.FitToSample(sample);
+            Console.WriteLine("P_n = {0}", nfit.GoodnessOfFit.LeftProbability);
+            Assert.IsTrue(nfit.GoodnessOfFit.LeftProbability > 0.95);
+
+            // fit to lognormal should be good
+            FitResult efit = LognormalDistribution.FitToSample(sample);
+            Console.WriteLine("P_e = {0}", efit.GoodnessOfFit.LeftProbability);
+            Assert.IsTrue(efit.GoodnessOfFit.LeftProbability < 0.95);
+            Assert.IsTrue(efit.Parameter(0).ConfidenceInterval(0.95).ClosedContains(distribution.Mu));
+            Assert.IsTrue(efit.Parameter(1).ConfidenceInterval(0.95).ClosedContains(distribution.Sigma));
+
+        }
+
         [TestMethod]
         public void BetaFit () {
             // Create a beta distribution

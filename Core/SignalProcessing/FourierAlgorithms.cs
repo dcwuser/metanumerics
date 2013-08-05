@@ -194,6 +194,7 @@ namespace Meta.Numerics.SignalProcessing {
 
     }
 
+    /*
     internal class RadixFourTransformlet : Transformlet {
 
         public RadixFourTransformlet (int N, Complex[] u) : base(4, N, u) { }
@@ -213,6 +214,7 @@ namespace Meta.Numerics.SignalProcessing {
         }
 
     }
+    */
 
     internal class RadixFiveTransformlet : Transformlet {
 

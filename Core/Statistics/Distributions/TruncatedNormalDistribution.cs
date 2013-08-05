@@ -4,6 +4,8 @@ using Meta.Numerics.Functions;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
+#if FUTURE
+
     // Start with a standard normal distribution with p(x) ~ e^{-x^2 / 2}, and truncate it at \pm D.
     // You can determine its required normalization from
     //   \int_{-D}^{+D} e^{-x^2 / 2} = \sqrt{2\pi} \erf(D/\sqrt{2})
@@ -110,5 +112,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
     }
+
+#endif
 
 }

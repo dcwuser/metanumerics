@@ -24,7 +24,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     public sealed class FisherDistribution : Distribution {
 
         /// <summary>
-        /// Instantiates a new Fisher distribution.
+        /// Initializes a new Fisher distribution.
         /// </summary>
         /// <param name="nu1">The number of degrees of freedom in the numerator, which must be positive.</param>
         /// <param name="nu2">The number of degrees of freedom in the denominator, which must be positive.</param>

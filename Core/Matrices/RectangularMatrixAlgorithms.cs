@@ -15,6 +15,7 @@ namespace Meta.Numerics.Matrices {
 
     internal static class MatrixAlgorithms {
 
+        /*
         public static void PrintMatrix (double[] store, int nRows, int nCols) {
             for (int r = 0; r < nRows; r++) {
                 for (int c = 0; c < nCols; c++) {
@@ -23,6 +24,7 @@ namespace Meta.Numerics.Matrices {
                 Console.WriteLine();
             }
         }
+        */
 
         public static double[] AllocateStorage (int nRows, int nCols) {
             return (new double[nRows * nCols]);

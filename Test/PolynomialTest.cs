@@ -21,6 +21,18 @@ namespace Test {
         }
 
         [TestMethod]
+        public void PolynomialNegation () {
+
+            Polynomial p = Polynomial.FromCoefficients(-1.0, 0.0, 1.0);
+
+            Polynomial np = -p;
+
+            Assert.IsTrue(p.Degree == np.Degree);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(p.Evaluate(2.0), -np.Evaluate(2.0)));
+
+        }
+
+        [TestMethod]
         public void PolynomialArithmetic () {
 
             Polynomial p1 = Polynomial.FromCoefficients(1.0, 2.0, 0.0, 3.0);
@@ -103,6 +115,33 @@ namespace Test {
 
             Polynomial id = i.Differentiate();
 
+
+        }
+
+        [TestMethod]
+        public void PolynomialFit () {
+
+            Polynomial p0 = Polynomial.FromCoefficients(5.0, -6.0, 7.0, -8.0);
+            Console.WriteLine(p0);
+
+            double[,] xy = new double[p0.Degree + 1, 2];
+            double[] x = TestUtilities.GenerateUniformRealValues(-1.0, 2.0, p0.Degree + 1);
+            for (int i = 0; i < x.Length; i++) {
+                xy[i, 0] = x[i];
+                xy[i, 1] = p0.Evaluate(x[i]);
+            }
+
+            Polynomial p1 = Polynomial.FromPoints(xy);
+            Console.WriteLine(p1);
+
+            Assert.IsTrue(p1.Degree == p0.Degree);
+
+            for (int i = 0; i < p0.Degree; i++) {
+                Console.WriteLine("{0} {1}", p0.Coefficient(i), p1.Coefficient(i));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(p0.Coefficient(i), p1.Coefficient(i)));
+            }
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(p0.Evaluate(-1.0), p1.Evaluate(-1.0)));
 
         }
 

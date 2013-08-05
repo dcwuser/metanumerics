@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Meta.Numerics {
@@ -10,7 +11,7 @@ namespace Meta.Numerics {
     public class Polynomial {
 
         /// <summary>
-        /// Instantiates a polynomial with the given coefficients.
+        /// Initializes a new polynomial with the given coefficients.
         /// </summary>
         /// <param name="coefficients">The coefficients of the polynomial.</param>
         /// <returns>The specified polynomial.</returns>
@@ -24,22 +25,45 @@ namespace Meta.Numerics {
             return (new Polynomial(coefficients));
         }
 
-        /*
+        
         /// <summary>
-        /// Instantiates a polynomial that passes through the given points.
+        /// Initializes a new polynomial that passes through the given points.
         /// </summary>
         /// <param name="points">An N X 2 array whose first column contains the x values of points and whose second column contains the corresponding y values.</param>
-        /// <returns>The specified polynomial.</returns>
+        /// <returns>A polynomial of degree N-1 that passes through all the given points.</returns>
         public static Polynomial FromPoints (double[,] points) {
             if (points == null) throw new ArgumentNullException("points");
+            if (points.GetLength(0) == 0) throw new InvalidOperationException();
             if (points.GetLength(1) != 2) throw new InvalidOperationException();
-            PolynomialInterpolator interpolator = new PolynomialInterpolator(points.GetLength(0));
+            double[] x = new double[points.GetLength(0)];
+            double[] y = new double[points.GetLength(0)];
             for (int i = 0; i < points.GetLength(0); i++) {
-                interpolator.AddPoint(points[i, 0], points[i, 1]);
+                x[i] = points[i, 0];
+                y[i] = points[i, 1];
             }
+            PolynomialInterpolator interpolator = new PolynomialInterpolator(x, y);
             return (new InterpolatingPolynomial(interpolator));
         }
-        */
+
+        /// <summary>
+        /// Initializes a new polynomial that passes through the given points.
+        /// </summary>
+        /// <param name="points">A collection of points.</param>
+        /// <returns>A polynomial that passes through all the given points.</returns>
+        public static Polynomial FromPoints (ICollection<XY> points) {
+            if (points == null) throw new ArgumentNullException("points");
+            if (points.Count == 0) throw new InvalidOperationException();
+            double[] x = new double[points.Count];
+            double[] y = new double[points.Count];
+            int i = 0;
+            foreach (XY point in points) {
+                x[i] = point.X;
+                y[i] = point.Y;
+                i++;
+            }
+            PolynomialInterpolator interpolator = new PolynomialInterpolator(x, y);
+            return (new InterpolatingPolynomial(interpolator));
+        }
 
         internal Polynomial (double[] coefficients) {
             this.coefficients = coefficients;
@@ -144,6 +168,12 @@ namespace Meta.Numerics {
             return text.ToString();
         }
 
+        /// <summary>
+        /// Negates a polynomial.
+        /// </summary>
+        /// <param name="p">The polynomial.</param>
+        /// <returns>The addative inverse of the polynomial.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="p"/> is null.</exception>
         public static Polynomial operator - (Polynomial p) {
             if (p == null) throw new ArgumentNullException("p");
             double[] coefficients = new double[p.Degree + 1];
@@ -202,20 +232,6 @@ namespace Meta.Numerics {
             return (new Polynomial(coefficients));
         }
 
-        /*
-        private static double[] Divide (double[] u, int m, double[] v, int n) {
-            double[] q = new double[m - n + 1];
-            for (int k = m - n; k >= 0; k--) {
-                q[k] = u[n + k] / v[n];
-                u[n + k] = 0.0;
-                for (int j = n + k - 1; j >= k; j--) {
-                    u[j] = u[j] - q[k] * v[j - k];
-                }
-            }
-            return (q);
-        }
-        */
-
         /// <summary>
         /// Computes the quotient of two polynomials.
         /// </summary>
@@ -258,7 +274,7 @@ namespace Meta.Numerics {
                 }
             }
 
-            // form the remainer and quotient polynomials from the arrays
+            // form the remainder and quotient polynomials from the arrays
             remainder = new Polynomial(r);
             return (new Polynomial(q));
 

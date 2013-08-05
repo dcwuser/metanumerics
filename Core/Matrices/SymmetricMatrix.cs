@@ -16,7 +16,7 @@ namespace Meta.Numerics.Matrices {
         // storage is in lower triangular form, i.e. values[r][c] with c <= r
 
         /// <summary>
-        /// Instantiates a new symmetric matrix.
+        /// Initializes a new symmetric matrix.
         /// </summary>
         /// <param name="dimension">The dimension of the matrix, which must be positive.</param>
         public SymmetricMatrix (int dimension) {

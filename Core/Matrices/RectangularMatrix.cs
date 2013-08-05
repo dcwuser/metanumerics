@@ -290,7 +290,7 @@ namespace Meta.Numerics.Matrices {
         /// yields a RectangularMatrix, it will consider the type of the product to be RetangularMatrix, even though
         /// its rows and column dimensions will be equal. You can use this explicit cast to obtain a SquareMatrix type.
         /// </para>
-        /// <para>Note that the result of the cast is not independent of the original matrix. This makes the cast operation
+        /// <para>Note that the output of the cast is not independent of the original matrix. This makes the cast operation
         /// fast, but changes to the resulting SquareMatrix will also change the original RectangularMatrix. To obtain
         /// an independent matrix, use the <see cref="Copy"/> method.</para>
         /// </remarks>

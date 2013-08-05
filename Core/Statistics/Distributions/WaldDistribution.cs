@@ -17,7 +17,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     public sealed class WaldDistribution : Distribution {
 
         /// <summary>
-        /// Instantiates a new Wald distribution.
+        /// Initializes a new Wald distribution.
         /// </summary>
         /// <param name="mean">The mean value, which must be positive.</param>
         /// <param name="shape">The shape parameter, which must be positive.</param>

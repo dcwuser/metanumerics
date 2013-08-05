@@ -204,8 +204,11 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(cd.Support.LeftEndpoint, dd.Minimum));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(cd.Support.RightEndpoint, dd.Maximum));
 
-            Assert.IsTrue(cd.LeftProbability(4.5) == dd.LeftProbability(4));
-            Assert.IsTrue(cd.RightProbability(4.5) == dd.RightProbability(4));
+            //Assert.IsTrue(cd.LeftProbability(4.5) == dd.LeftProbability(4));
+            //Assert.IsTrue(cd.RightProbability(4.5) == dd.RightProbability(4));
+
+            // Switch LeftProbablity for discrete distributions to be exclusive.
+            // This is already the case for internal distributions used for exact null distributions, but not for public discrete distributions.
 
         }
 

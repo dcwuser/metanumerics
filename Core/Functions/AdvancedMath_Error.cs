@@ -64,31 +64,17 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="Erfc" />
         /// <seealso cref="InverseErf" />
         public static double InverseErfc (double y) {
+
             if ((y < 0.0) || (y > 1.0)) throw new ArgumentOutOfRangeException("y");
-            
-            // make an initial guess
-            double x;
-            if (y < 0.25) {
-                x = ApproximateInverseErfc(y);
+
+            if (y == 0.0) {
+                return (Double.PositiveInfinity);
+            } else if (y < 0.5) {
+                return (InverseErfcByRefinement(y));
             } else {
-                double y1 = 1.0 - y;
-                if (y1 == 0.0) return (0.0);
-                x = ApproximateInverseErf(y1);
+                return (InverseErfSeries(1.0 - y));
             }
-
-            double z_old = Double.PositiveInfinity;
-            for (int i = 1; i < 8; i++) {
-                double z = Erfc(x) - y;
-                if (Math.Abs(z) >= Math.Abs(z_old)) return (x);
-                double r = z * Global.SqrtPI * Math.Exp(x * x) / 2.0;
-                double dx = r / (1.0 - r * x);
-                x += dx;
-                if (Math.Abs(dx) <= Global.Accuracy * Math.Abs(x)) return (x);
-                z_old = z;
-            }
-
-            throw new NonconvergenceException();
-
+            
         }
 
         /// <summary>
@@ -101,67 +87,27 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="Erfc" />
         /// <seealso cref="InverseErfc" />
         public static double InverseErf (double y) {
-            if (Math.Abs(y) > 1.0) throw new ArgumentOutOfRangeException("y");
+
             if (y < 0.0) {
-                return (-InverseErf(-y));
+                return(-InverseErf(-y));
+            } else if (y < 0.5) {
+                return(InverseErfSeries(y));
+            } else if (y < 1.0) {
+                return(InverseErfcByRefinement(1.0 - y));
+            } else if (y == 1.0) {
+                return(Double.PositiveInfinity);
             } else {
-
-                if (y == 1.0) return (Double.PositiveInfinity);
-
-                if (y < 0.5) return (InverseErfSeries(y));
-
-                // make an initial guess; these get us there within about 10%
-                double x;
-                if (y < 0.8) {
-                    // for small values, use series inversion
-                    x = ApproximateInverseErf(y);
-                } else {
-                    // for large values, use the (very limited) asymptotic expression
-                    x = ApproximateInverseErfc(1.0 - y);
-                }
-
-                // refine it via 2nd order Newton's method (aka Halley's method)
-
-                // Newton dx = -f0 / f1
-                // Halley dx = - f0 / f1 / ( 1 - f0 f2 / 2 f1^2 )
-
-                // for f0 = erf(x), f1 = 2/sqrt(pi) e^(-x^2), f2 = -4x/sqrt(pi) e^(-x^2)
-                // Newton simplies to dx = -r and Halley to dx = -r/(1+rt)
-
-                // this typically takes just 2-3 cycles to converge to full precision
-                //double dx_old = Double.PositiveInfinity;
-                double z_old = Double.PositiveInfinity;
-                for (int i = 1; i < 8; i++) {
-
-                    double z = Erf(x) - y;
-
-                    // check for thrashing; this would be dangerous if we didn't know we were already in the basin of convergence
-                    // but since we do know that, we can take any increase as an indication we are about to enter a cycle
-                    if (Math.Abs(z) >= Math.Abs(z_old)) return (x);
-
-                    // in the case error function case, the expression for dx can be written in terms of the ratio r
-                    double r = z * Global.SqrtPI * Math.Exp(x * x) / 2.0;
-                    double dx = -r / (1.0 + r * x);
-
-                    x += dx;
-
-                    // check for convergence
-                    if (Math.Abs(dx) <= Global.Accuracy * Math.Abs(x)) return (x);
-
-                    // return if we are thrashing
-                    //if (Math.Abs(dx) >= Math.Abs(dx_old)) return (x);
-                    //dx_old = dx;
-                    z_old = z;
-                }
-
-                throw new NonconvergenceException();
-
+                throw new ArgumentOutOfRangeException("y");
             }
-        }
 
+        }
 
         // There is no cancelation in this series, so accuracy is just a matter of how many terms we are willing to take.
         // For x ~ 0.1, 8 terms; for x ~ 0.25, 12 terms; for x ~ 0.5, 24 terms.
+
+        // \erf^{-1}(x) = \sum_{k=0}^{\infty} \frac{c_k}{2k+1} \left( \frac{\sqrt{\pi}{2} x \right)^{2k+1}
+
+        // c_k = \sum_{j=0}^{k-1} \frac{c_{j} c_{k-1-k}}{(j+1)(2j+1)}
 
         private static double InverseErfSeries (double x) {
 
@@ -196,6 +142,96 @@ namespace Meta.Numerics.Functions {
             return (d);
         }
 
+        private static double InverseErfcByRefinement (double y) {
+
+            // First we get an approximation to x using either the asymptotic expansion (good only for very small values)
+            // or via a rational approximation. In either case, the cost is one log, plus one square root, plus a handfull of additional flops,
+            // and the result is accurate to about 10^{-6}.
+
+            double x;
+            if (y < 1.0E-5) {
+                x = InverseErfcAsymptoticExpansion(y);
+            } else if (y < 0.55) {
+                x = InverseErfcRationalApproximation(y);
+            } else {
+                throw new InvalidOperationException();
+            }
+
+            // Then we refine via Halley's method (http://en.wikipedia.org/wiki/Halley%27s_method), an extension of Newton's method.
+
+            // Given f(x) = f0 + f1 x, Netwon's method sets f(x) = 0 to obtain x = - f0 / f1.
+
+            // Given f(x) = f0 + f1 x + 1/2 f2 x^2, Halley's method sets f(x) = 0 to obtain x = - f0 / (f1 + 1/2 f2 x) and uses the Netwon result
+            // for x in the RHS to obtain x = - f0 / (f1 - 1/2 f2 f0 / f1).
+
+            // Sufficiently close to the root, Newton's method is quadratic (significant digits double each iteration) and Halley's method is cubic (significant
+            // digits tripple each iteration). So an initial estimate with precision 10^{-4} should get us to full precision in two iterations.
+
+            // For f_0 = erfc(x) - y, f_1 = - \frac{2}{\sqrt{\pi}} e^{-x^2}, and f_2 = \frac{4 x}{\sqrt{\pi}} e^{-x^2} = -2 x f_1.
+            // Defining r = - f0 / f1 as the Newton estimate, the Halley estimate is simply r / (1 - x r). Since the second
+            // derivative is so simple to compute from the first derivative, a Halley step is only trivially more costly than a Newton step.
+
+            for (int i = 0; i < 2; i++) {
+                double z = Erfc(x) - y;
+                double r = z * Global.SqrtPI * Math.Exp(x * x) / 2.0;
+                double dx = r / (1.0 - x * r);
+                x += dx;
+             }
+
+            // We hard-code exactly two steps instead of testing for convergence because the interation can get into loops of tiny changes instead
+            // of producing a zero change, and we know that two iterations will be sufficient.
+
+            return (x);
+
+        }
+
+        // Blair et al., Mathematics of Computation 30 (1976) 827 write that "by inverting the standard asymptotic series" for erf x in terms of 1/x
+        // "we can derive am asymptotic expansion for inverf" and then give the expansion encoded here. Their expansion is the most accurate I've
+        // found, and I would love to derive more terms, but I can't figure out how they derived it. The DLMF (http://dlmf.nist.gov/7.17) says
+        // their expansion 7.17.3 "follows from Blair et al. (1976), after modifications" but they must have made an error in their modifications
+        // because their accuracy sucks compared to Blair et al.
+
+        private static double InverseErfcAsymptoticExpansion (double x) {
+
+            double y = -Math.Log( Global.SqrtPI * x);
+            double lny = Math.Log(y);
+
+            double s = y - lny / 2.0;
+            s += 1.0 / y * (lny / 4.0 - 1.0 / 2.0);
+            double y2 = y * y;
+            double lny2 = lny * lny;
+            s += 1.0 / y2 * (lny2 / 16.0 - 3.0 / 8.0 * lny + 7.0 / 8.0);
+            double y3 = y2 * y;
+            double lny3 = lny2 * lny;
+            s += 1.0 / y3 * (lny3 / 48.0 - 7.0 / 32.0 * lny2 + 17.0 / 16.0 * lny - 107.0 / 48.0);
+            double y4 = y3 * y;
+            double lny4 = lny3 * lny;
+            s += 1.0 / y4 * (lny4 / 128.0 - 23.0 / 192.0 * lny3 + 29.0 / 32.0 * lny2 - 31.0 / 8.0 * lny + 1489.0 / 192.0);
+
+            return (Math.Sqrt(s));
+
+        }
+
+        private static double InverseErfcRationalApproximation (double x) {
+
+            // minimax (3,3) rational polynomial approximation
+            // in region 3/4 < y < 5, corresponding to about 3.7E-6 < x < 0.75
+            // with error less ~9E-7 throughout
+
+            double y = Math.Sqrt(-2.0 * Math.Log(x));
+
+            const double a0 = -0.0071034591712238851203;
+            const double a1 = 0.047920059819193711592;
+            const double a2 = 0.30517720195408962758;
+            const double a3 = 0.48856023932132526440;
+
+            const double b1 = 0.61364516662581878617;
+            const double b2 = 0.67737432169146905075;
+            const double b3 = 0.00056224293678634100951;
+
+            return ((a0 + (a1 + (a2 + a3 * y) * y) * y) / (1.0 + (b1 + (b2 + b3 * y) * y) * y));
+
+        }
 
         internal static double ApproximateInverseErf (double y) {
             double x = Global.SqrtPI * y / 2.0;

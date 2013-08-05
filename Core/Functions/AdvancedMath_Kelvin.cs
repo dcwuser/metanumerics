@@ -5,6 +5,8 @@ using System.Text;
 
 namespace Meta.Numerics.Functions {
 
+#if FUTURE
+
     public static partial class AdvancedMath {
 
         public static double KelvinBei (double nu, double x) {
@@ -67,5 +69,7 @@ namespace Meta.Numerics.Functions {
         }
 
     }
+
+#endif
 
 }

@@ -884,10 +884,18 @@ namespace Test {
         }
 
         [TestMethod]
+        public void InverseErfSpecialCasesTest () {
+            Assert.IsTrue(AdvancedMath.InverseErf(0.0) == 0.0);
+            Assert.IsTrue(AdvancedMath.InverseErf(1.0) == Double.PositiveInfinity);
+            Assert.IsTrue(AdvancedMath.InverseErfc(0.0) == Double.PositiveInfinity);
+            Assert.IsTrue(AdvancedMath.InverseErfc(1.0) == 0.0);
+        }
+
+        [TestMethod]
         public void InverseErfTest () {
-            //double[] probabilities = new double[] { 0.00005, 0.05, 0.5, 0.95, 0.99995 };
-            foreach (double P in TestUtilities.GenerateRealValues(1.0E-5,1,10)) {
+            foreach (double P in TestUtilities.GenerateRealValues(1.0E-8, 1.0, 16)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Erf(AdvancedMath.InverseErf(P)), P));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Erfc(AdvancedMath.InverseErfc(P)), P));
             }
         }
 

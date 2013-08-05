@@ -69,7 +69,7 @@ namespace Meta.Numerics.Matrices {
         /// Returns the vector elements in an independent array.
         /// </summary>
         /// <returns>An array containing the vector element values.</returns>
-        public virtual double[] ToArray () {
+        public virtual new double[] ToArray () {
             return(VectorAlgorithms.Copy(store, dimension));
         }
 

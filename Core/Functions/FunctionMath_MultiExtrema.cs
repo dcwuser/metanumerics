@@ -21,8 +21,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="f">The function.</param>
         /// <param name="x">The starting point for the search.</param>
         /// <returns>The minimum.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
-        /// <exception cref="ArgumentNullException"><paramref name="x"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="f"/> or <paramref name="x"/> is null</exception>
+        /// <exception cref="NonconvergenceException">The minimum was not found to the required precision within the budgeted number of function evaluations.</exception>
         public static SpaceExtremum FindMinimum (Func<double[], double> f, double[] x) {
 
             return (FindMinimum(f, x, new EvaluationSettings() {
@@ -33,6 +33,15 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        /// <summary>
+        /// Minimizes a function on a multi-dimensional space in the vicinity of a given point, subject to the given settings. 
+        /// </summary>
+        /// <param name="f">The function.</param>
+        /// <param name="x">The starting point for the search.</param>
+        /// <param name="settings">The evaluation settings.</param>
+        /// <returns>The minimum.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="f"/>, <paramref name="x"/>, or <paramref name="settings"/> is null.</exception>
+        /// <exception cref="NonconvergenceException">The minimum was not found to the required precision within the budgeted number of function evaluations.</exception>
         public static SpaceExtremum FindMinimum (Func<double[], double> f, double[] x, EvaluationSettings settings) {
 
             if (f == null) throw new ArgumentNullException("f");
@@ -67,15 +76,10 @@ namespace Meta.Numerics.Functions {
 
             // interate until convergence
             while (fo.EvaluationCount < settings.EvaluationBudget) {
-            //for (int n = 0; n < 33; n++ ) {
-
-                //Console.WriteLine("N = {0}", n);
 
                 // remember our starting position
                 double[] x0 = new double[d];
                 Array.Copy(x, x0, d);
-                //Console.WriteLine("Start:");
-                //WriteVector(x0);
                 double y0 = y;
 
                 // keep track of direction of largest decrease
@@ -229,6 +233,15 @@ namespace Meta.Numerics.Functions {
             return (H);
         }
 
+        /// <summary>
+        /// Maximizes a function on a multi-dimensional space in the vicinity of a given point, subject to the given settings. 
+        /// </summary>
+        /// <param name="f">The function.</param>
+        /// <param name="x">The starting point for the search.</param>
+        /// <param name="settings">The evaluation settings.</param>
+        /// <returns>The maximum.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="f"/>, <paramref name="x"/>, or <paramref name="settings"/> is null.</exception>
+        /// <exception cref="NonconvergenceException">The maximum was not found to the required precision within the budgeted number of function evaluations.</exception>
         public static SpaceExtremum FindMaximum (Func<double[], double> f, double[] x, EvaluationSettings settings) {
             return (FindMinimum((double[] p) => -f(p), x, settings));
         }

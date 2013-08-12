@@ -86,6 +86,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="z">The complex argument.</param>
         /// <returns>The value Li<sub>2</sub>(z).</returns>
         /// <remarks>
+        /// <para>This function is the analyic continuation of the dilogarithm function (<see cref="AdvancedMath.DiLog"/>) into the complex plane.</para>
         /// <para>The image below shows the complex dilogarithm function near the origin, using domain coloring.</para>
         /// <img src="../images/ComplexDiLogPlot.png" />
         /// </remarks>

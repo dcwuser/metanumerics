@@ -16,9 +16,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value of J<sub>n</sub>(x).</returns>
         /// <remarks>
-        /// <para>The Bessel functions of integral order occur in solutions to the wave equations with cylindrical symmetry. The
-        /// regular Bessel functions are finite at the origin, and thus occur in situations where the wave equation is satisfied
-        /// at the origin.</para>
+        /// <para>For information on the cylindrical Bessel functions, see <see cref="AdvancedMath.Bessel"/>.</para>
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
         public static double BesselJ (int n, double x) {
@@ -97,9 +95,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value of Y<sub>n</sub>(x).</returns>
         /// <remarks>
-        /// <para>The Bessel functions of integral order occur in solutions to the wave equations with cylindrical symmetry. The
-        /// irregular Bessel functions diverge at the origin, and thus occur in situations where the region in which the wave
-        /// equation is satisfied not not include the origin.</para>
+        /// <para>For information on the cylindrical Bessel functions, see <see cref="AdvancedMath.Bessel"/>.</para>
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
         public static double BesselY (int n, double x) {
@@ -535,6 +531,9 @@ namespace Meta.Numerics.Functions {
         /// <param name="nu">The order parameter.</param>
         /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The value of J<sub>&#x3BD;</sub>(x).</returns>
+        /// <remarks>
+        /// <para>For information on the cylindrical Bessel functions, see <see cref="AdvancedMath.Bessel"/>.</para>
+        /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
         public static double BesselJ (double nu, double x) {
@@ -600,7 +599,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The value of Y<sub>&#x3BD;</sub>(x).</returns>
         /// <remarks>
-        /// <para>For information on Bessel functions, see <see cref="Bessel"/>.</para>
+        /// <para>For information on the cylindrical Bessel functions, see <see cref="AdvancedMath.Bessel"/>.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso cref="Bessel"/>
@@ -699,11 +698,11 @@ namespace Meta.Numerics.Functions {
         /// <para>Bessel functions often occur in physical phenomenon with cylindrical symmetry. They satisfy the differential equation</para>
         /// <img src="../images/BesselODE.png" />
         /// <para>Since this is second order linear equation, is has two linearly independent solutions. The regular Bessel function
-        /// J<sub>nu</sub>(x), which is regular at the origin, and the irregular Bessel function Y<sub>nu</sub>(x), which diverges
-        /// at the origin.</para>
+        /// J<sub>&#x3BD;</sub>(x), which is regular at the origin, and the irregular Bessel function Y<sub>&#x3BD;</sub>(x), which diverges
+        /// at the origin. Far from the origin, both functions are oscilatory.</para>
         /// <para>This method simultaneously computes both Bessel functions and their derivatives. If you need both J and Y, it is faster to call this method once than to call
         /// <see cref="BesselJ(double,double)"/> and <see cref="BesselY(double,double)"/> seperately. If on, the other hand, you need only J or only Y, it is faster to
-        /// call the appropirate method to compute only the one you need.</para>
+        /// call the appropriate method to compute the one you need.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="nu"/> or <paramref name="x"/> is negative.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>

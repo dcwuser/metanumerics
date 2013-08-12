@@ -421,7 +421,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 f += df;
                 if (f == f_old) return (Global.SqrtTwoPI / 6.0 / (x * x * x) * f);
             }
-            throw new NotImplementedException();
+            throw new NonconvergenceException();
         }
 
         

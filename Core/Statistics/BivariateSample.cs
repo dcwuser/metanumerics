@@ -584,55 +584,21 @@ namespace Meta.Numerics.Statistics {
                 y[i] = yData[i];
             }
 
-            // Our problem is to solve A a = y, where a is the vector of coefficients. QR gives the least squares
-            // solution that minimizes | A a - y |.
-            QRDecomposition QR = A.QRDecomposition();
-            RectangularMatrix R = QR.RMatrix();
-            ColumnVector a = QR.Solve(y);
+            ColumnVector a;
+            SymmetricMatrix C;
+            QRDecomposition.SolveLinearSystem(A, y, out a, out C);
 
             // Compute the residual vector r and s^2 = r^2 / dof
             ColumnVector r = A * a - y;
             double V = r.Transpose() * r;
             double ss2 = V / (n - (m + 1));
 
-            // Ake Bjorck, "Numerical Methods for Least Squares Problems", pp. 118-120
-
-            // The covariance matrix V = s^2 C, with C = (R^T R)^{-1}. This is a matrix multiplication plus an inversion.
-            
-            // A faster way is to use the direct solution
-            //   for k = n ... 1
-            //     C_{kk} = R_{kk}^{-1} \left[ R_{kk}^{-1} - \sum_{j=k+1}^{n} R_{kj} C_{kj} \right]
-            //     for i = k-1 ... 1
-            //       C_{ik} = -R_{ii}^{-1} \left[ \sum_{j=i+1}^{k} R_{ij} C_{jk} + \sum_{j=k+1}^{n} R_{ij} C_{kj} \right]
-            //     end
-            //   end
-            // This is detailed in Ake Bjorck, "Numerical Methods for Least Squares Problems", pp. 118-120
-
-            SymmetricMatrix C2 = new SymmetricMatrix(m + 1);
-            double c; // used for storage so we don't call bounds-checking accessors each time
-            for (int k = m; k >= 0; k--) {
-                c = 1.0 / R[k, k];;
-                for (int j = k + 1; j <= m; j++) {
-                    c -= R[k, j] * C2[k, j];
-                }
-                C2[k, k] = c / R[k, k];
-                for (int i = k - 1; i >= 0; i--) {
-                    c = 0.0;
-                    for (int j = i + 1; j <= k; j++) {
-                        c += R[i, j] * C2[j, k];
-                    }
-                    for (int j = k + 1; j <= m; j++) {
-                        c += R[i, j] * C2[k, j];
-                    }
-                    C2[i, k] = -c / R[i, i];
-                }
-            }
+            // Scale up the covariance by s^2
             for (int i = 0; i <= m; i++) {
                 for (int j = i; j <= m; j++) {
-                    C2[i, j] = C2[i, j] * ss2;
+                    C[i, j] = C[i, j] * ss2;
                 }
             }
-
 
             // compute F-statistic
             // total variance dof = n - 1, explained variance dof = m, unexplained variance dof = n - (m + 1)
@@ -644,7 +610,7 @@ namespace Meta.Numerics.Statistics {
             double F = (explainedVarianceSum / explainedVarianceDof) / (unexplainedVarianceSum / unexplainedVarianceDof);
             TestResult test = new TestResult(F, new FisherDistribution(explainedVarianceDof, unexplainedVarianceDof));
 
-            return (new FitResult(a, C2, test));
+            return (new FitResult(a, C, test));
         }
 
 

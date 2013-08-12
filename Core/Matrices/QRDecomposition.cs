@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace Meta.Numerics.Matrices {
@@ -96,6 +97,54 @@ namespace Meta.Numerics.Matrices {
         public int ColumnCount {
             get {
                 return (cols);
+            }
+        }
+
+        // Solve a linear system using QR decomposition. This isn't really the obvious place for this algorithm, but since
+        // it's used by both BivariableSample and UncertainMeasurementSample, it needs to be centralized somewhere and here
+        // is as good a place as any. Probably it should be moved in to RectangularMatrixAlgorithms and it should
+        // work directly on the underlying array storage for increased performance.
+
+        internal static void SolveLinearSystem (RectangularMatrix A, ColumnVector b, out ColumnVector a, out SymmetricMatrix C) {
+
+            Debug.Assert(A.RowCount == b.Dimension);
+            Debug.Assert(A.ColumnCount <= A.RowCount);
+
+            // Our problem is to "solve" A a = b, where a is the vector of coefficients. QR gives the least squares
+            // solution that minimizes | A a - y |.
+            QRDecomposition QR = A.QRDecomposition();
+            a = QR.Solve(b);
+
+            // The covariance matrix C = (A^T A)^{-1} = (R^T R)^{-1}. This is a matrix multiplication plus an inversion.
+
+            // A faster way is to use the direct solution
+            //   for k = n ... 1
+            //     C_{kk} = R_{kk}^{-1} \left[ R_{kk}^{-1} - \sum_{j=k+1}^{n} R_{kj} C_{kj} \right]
+            //     for i = k-1 ... 1
+            //       C_{ik} = -R_{ii}^{-1} \left[ \sum_{j=i+1}^{k} R_{ij} C_{jk} + \sum_{j=k+1}^{n} R_{ij} C_{kj} \right]
+            //     end
+            //   end
+            // This is detailed in Ake Bjorck, "Numerical Methods for Least Squares Problems", pp. 118-120
+
+            C = new SymmetricMatrix(a.Dimension);
+            RectangularMatrix R = QR.RMatrix();
+            double c; // used for storage so we don't call bounds-checking accessors each time
+            for (int k = C.Dimension - 1; k >= 0; k--) {
+                c = 1.0 / R[k, k]; ;
+                for (int j = k + 1; j < C.Dimension; j++) {
+                    c -= R[k, j] * C[k, j];
+                }
+                C[k, k] = c / R[k, k];
+                for (int i = k - 1; i >= 0; i--) {
+                    c = 0.0;
+                    for (int j = i + 1; j <= k; j++) {
+                        c += R[i, j] * C[j, k];
+                    }
+                    for (int j = k + 1; j < C.Dimension; j++) {
+                        c += R[i, j] * C[k, j];
+                    }
+                    C[i, k] = -c / R[i, i];
+                }
             }
         }
 

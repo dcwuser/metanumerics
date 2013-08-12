@@ -796,11 +796,10 @@ namespace Meta.Numerics.Statistics {
         /// a t-value as far or farther from zero as the value obtained is just twice the one-sided likelyhood.</returns>
         /// <remarks>
         /// <para>The test statistic of Student's t-test is the difference between the sample mean and the reference mean,
-        /// measured in units of the sample mean uncertainty. For samples drawn from a normally
+        /// measured in units of the sample mean uncertainty. Under the null hypothesis that the sample was drawn from a normally
         /// distributed population with the given reference mean, this statistic can be shown to follow a Student distribution
-        /// (<see cref="StudentDistribution"/>). If t is
-        /// far from zero, then the sample is unlikely to have been drawn from a population with the given reference
-        /// mean.</para>
+        /// (<see cref="StudentDistribution"/>). If t is far from zero, with correspondingly small left or right tail probability,
+        /// then the sample is unlikely to have been drawn from a population with the given reference mean.</para>
         /// <para>Because the distribution of a t-statistic assumes a normally distributed population, this
         /// test should only be used only on sample data compatible with a normal distribution. The sign test (<see cref="SignTest"/>)
         /// is a non-parametric alternative that can be used to test the compatibility of the sample median with an assumed population median.</para>
@@ -1195,12 +1194,14 @@ namespace Meta.Numerics.Statistics {
         /// <param name="distribution">The test distribution.</param>
         /// <returns>The test result. The test statistic is the D statistic and the likelyhood is the right probability
         /// to obtain a value of D as large or larger than the one obtained.</returns>
-        /// <remarks><para>The Kolmogorov-Smirnov test measures the departure of a sample from a hypothesized population
-        /// distribution by comparing the cumulative probability function of the data to the cumulative probability function
-        /// of the hypothesized population distribution. The test statistic D is the maximum seperation between the two curves.</para>
-        /// <para>Under the null hypothesis N<sup>1/2</sup>D is known to be distributed according to the Kolomogorov distribution
-        /// in the large-N limit. Because of the large-N assumption, this test should not be used with small (less than ~50)
-        /// data sets.</para>
+        /// <remarks>
+        /// <para>The null hypothesis of the KS test is that the sample is drawn from the given continuous distribution.
+        /// The test statsitic D is the maximum deviation of the sample's emperical distribution function (EDF) from
+        /// the distribution's cumulative distribution function (CDF). A high value of the test statistic, corresponding
+        /// to a low right tail probability, indicates that the sample distribution disagrees with the given distribution
+        /// to a degree unlikely to arise from statistical fluctuations.</para>
+        /// <para>For small sample sizes, we compute the null distribution of D exactly. For large sample sizes, we use an accurate
+        /// asympotitc approximation. Therefore it is safe to use this method for all sample sizes.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="distribution"/> is null.</exception>
         /// <seealso cref="KolmogorovDistribution"/>

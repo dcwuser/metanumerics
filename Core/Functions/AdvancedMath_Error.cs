@@ -745,6 +745,7 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value of erf(z).</returns>
         /// <remarks>
         /// <para>This function is the analytic continuation of the error function (<see cref="AdvancedMath.Erf"/>) to the complex plane.</para>
+        /// <para>The image below shows the complex error function near the origin, using domain coloring.</para>
         /// <img src="../images/ComplexErfPlot.png" />
         /// <para>The complex error function is entire: it has no poles, cuts, or discontinuities anywhere in the complex plane.</para>
         /// <para>For pure imaginary arguments, erf(z) reduces to the Dawson integral (<see cref="AdvancedMath.Dawson"/>).</para>

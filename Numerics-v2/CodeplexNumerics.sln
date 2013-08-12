@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{91B917CA-01FF-422B-96F0-2A2D610575DD}"
+	ProjectSection(SolutionItems) = preProject
+		localtestrun.testrunconfig = localtestrun.testrunconfig
+		Numerics1.vsmdi = Numerics1.vsmdi
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", "{1CAF1461-33A0-4792-BF02-9B837E06E76A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{7D0311C9-EEA3-4DCF-AC9E-25A20B0901F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SilverlightCore", "Core\SilverlightCore.csproj", "{A52CA167-831B-47CB-828F-366C01CB3838}"
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 4
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://tfs.codeplex.com/tfs/tfs10
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = Core\\Core.csproj
+		SccProjectName1 = Core
+		SccLocalPath1 = Core
+		SccProjectUniqueName2 = Test\\Test.csproj
+		SccProjectName2 = Test
+		SccLocalPath2 = Test
+		SccProjectUniqueName3 = Core\\SilverlightCore.csproj
+		SccProjectName3 = Core
+		SccLocalPath3 = Core
+	EndGlobalSection
+	GlobalSection(TestCaseManagementSettings) = postSolution
+		CategoryFile = Numerics1.vsmdi
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1CAF1461-33A0-4792-BF02-9B837E06E76A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1CAF1461-33A0-4792-BF02-9B837E06E76A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1CAF1461-33A0-4792-BF02-9B837E06E76A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CAF1461-33A0-4792-BF02-9B837E06E76A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D0311C9-EEA3-4DCF-AC9E-25A20B0901F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D0311C9-EEA3-4DCF-AC9E-25A20B0901F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D0311C9-EEA3-4DCF-AC9E-25A20B0901F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D0311C9-EEA3-4DCF-AC9E-25A20B0901F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A52CA167-831B-47CB-828F-366C01CB3838}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A52CA167-831B-47CB-828F-366C01CB3838}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A52CA167-831B-47CB-828F-366C01CB3838}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A52CA167-831B-47CB-828F-366C01CB3838}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

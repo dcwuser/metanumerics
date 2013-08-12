@@ -1,0 +1,29 @@
+﻿Versioning:
+1. Bump version number in AssemblyInfo.cs
+2. Bump version number in Installer (also change PackageCode but not UpgradeCode)
+3. Bump version in Meta.Numerics.nuspec
+
+Code:
+1. Search for Console.Write
+2. Search for NotImplementedExceptions
+3. Verify code coverage
+
+Documentation:
+1. Check sandcastle logs for errors/warnings
+
+Behavior:
+1. Check mono compatibility
+2. Check SqlClr compatibility
+
+Installation:
+1. Fresh MSI install
+2. Upgrade MSI install
+3. Add reference via GAC in Visual Studio, compile
+4. Add DLL to SQL
+5. NuGet installation
+
+
+Whatsnew notes
+--------------
+
+

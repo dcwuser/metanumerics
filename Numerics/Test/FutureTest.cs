@@ -1168,6 +1168,15 @@ namespace FutureTest {
             //Console.WriteLine(AdvancedMath.Beta(a, b, 0.45) / AdvancedMath.Beta(a, b));
 
         }
+        
+        private static void WriteMatrix (AnyRectangularMatrix A) {
+            for (int r = 0; r < A.RowCount; r++) {
+                for (int c = 0; c < A.ColumnCount; c++) {
+                    Console.Write("{0} ", A[r, c]);
+                }
+                Console.WriteLine();
+            }
+        }
 
     }
 

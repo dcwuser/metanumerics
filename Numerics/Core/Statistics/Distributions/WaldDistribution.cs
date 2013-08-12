@@ -129,6 +129,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="sample">The sample to fit.</param>
         /// <returns>The fit.</returns>
+        /// <remarks>
+        /// <para>The returned fit parameters are the <see cref="Mean"/> and <see cref="ShapeParameter"/>, in that order.
+        /// These are the same parameters, in the same order, that are required by the <see cref="WaldDistribution(double,double)"/> constructor to
+        /// specify a new Wald distribution.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
+        /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         public static FitResult FitToSample (Sample sample) {
 
             if (sample == null) throw new ArgumentNullException("sample");

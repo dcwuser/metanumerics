@@ -278,7 +278,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         public override double Moment (int m) {
             if (m < 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException("m");
             } else if (m == 0) {
                 return (1.0);
             } else if (m == 1) {

@@ -103,6 +103,26 @@ namespace Meta.Numerics.Statistics {
             if (functions == null) throw new ArgumentNullException("functions");
             if (functions.Length > data.Count) throw new InsufficientDataException();
 
+            // construct the design matrix
+            RectangularMatrix A = new RectangularMatrix(data.Count, functions.Length);
+            for (int r = 0; r < data.Count; r++) {
+                for (int c = 0; c < functions.Length; c++) {
+                    A[r, c] = functions[c](data[r].X) / data[r].Y.Uncertainty;
+                }
+            }
+
+            // construct the right-hand-side
+            ColumnVector b = new ColumnVector(data.Count);
+            for (int r = 0; r < data.Count; r++) {
+                b[r] = data[r].Y.Value / data[r].Y.Uncertainty;
+            }
+
+            // Solve the system via QR
+            ColumnVector a;
+            SymmetricMatrix C;
+            QRDecomposition.SolveLinearSystem(A, b, out a, out C);
+
+            /*
             // construct the data matrix
             SymmetricMatrix A = new SymmetricMatrix(functions.Length);
             for (int i = 0; i < A.Dimension; i++) {
@@ -130,6 +150,7 @@ namespace Meta.Numerics.Statistics {
             Debug.Assert(CD != null);
             SymmetricMatrix C = CD.Inverse();
             ColumnVector a = CD.Solve(b);
+            */
 
             // do a chi^2 test
             double chi2 = 0.0;

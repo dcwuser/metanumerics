@@ -1,4 +1,9 @@
-﻿Code:
+﻿Versioning:
+1. Bump version number in AssemblyInfo.cs
+2. Bump version number in Installer (also change PackageCode but not UpgradeCode)
+3. Bump version in Meta.Numerics.nuspec
+
+Code:
 1. Search for Console.Write
 2. Search for NotImplementedExceptions
 3. Verify code coverage
@@ -8,6 +13,7 @@ Documentation:
 
 Behavior:
 1. Check mono compatibility
+2. Check SqlClr compatibility
 
 Installation:
 1. Fresh MSI install
@@ -19,9 +25,5 @@ Installation:
 
 Whatsnew notes
 --------------
-Functions: complete EllipticE
-Matrix: SVD, sparse, norms
-Signal processing: FFT
-Statistics: PCA, Logistic Regression, Kruskal-Wallis test, expanded contingency table functionality, loading from DB
-Distributions: Cauchy(?), Gamma, Pearson, discrete uniform, discrete geometric, various dedicated fits, improved rng
+
 

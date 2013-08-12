@@ -176,7 +176,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The best fit parameter.</returns>
         /// <remarks>
         /// <para>The returned fit parameter is &#x3BC; (the <see cref="Mean"/>).
-        /// These is the same parameter that is required by the <see cref="ExponentialDistribution(double)"/> constructor to
+        /// This is the same parameter that is required by the <see cref="ExponentialDistribution(double)"/> constructor to
         /// specify a new exponential distribution.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>

@@ -67,6 +67,10 @@ namespace Test {
         [TestMethod]
         public void Bug6162 () {
 
+            // When UncertianMeasurementSample.FitToPolynomial used Cholesky inversion of (A^T A), this inversion
+            // would fail when roundoff errors would made the matrix non-positive-definite. We have now changed
+            // to QR decomposition, which is more robust.
+
             //real data
             double[] X_axis = new double[] { 40270.65625, 40270.6569444444, 40270.6576388888, 40270.6583333332, 40270.6590277776,
                 40270.659722222, 40270.6604166669, 40270.6611111113, 40270.6618055557, 40270.6625000001 };
@@ -75,8 +79,9 @@ namespace Test {
                 247.024993896484, 246.949996948242, 246.875, 247.5, 247.100006103516 };
 
             UncertainMeasurementSample DataSet = new UncertainMeasurementSample();
-
-            for (int i = 0; i < 10; i++) DataSet.Add(X_axis[i] - 40270.0, Y_axis[i] - 247.0, 1);
+            
+            for (int i = 0; i < 10; i++) DataSet.Add(X_axis[i], Y_axis[i], 1);
+            //for (int i = 0; i < 10; i++) DataSet.Add(X_axis[i] - 40270.0, Y_axis[i] - 247.0, 1);
 
             FitResult DataFit = DataSet.FitToPolynomial(3);
  

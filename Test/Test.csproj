@@ -116,9 +116,9 @@
     <Content Include="FinalTests.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.csproj">
-      <Project>{1CAF1461-33A0-4792-BF02-9B837E06E76A}</Project>
-      <Name>Core</Name>
+    <ProjectReference Include="..\Numerics\Numerics.csproj">
+      <Project>{C93BE2CF-4153-4230-8CD4-D0F6C5018121}</Project>
+      <Name>Numerics</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

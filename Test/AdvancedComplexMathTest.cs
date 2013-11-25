@@ -278,7 +278,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexDiLogConjugation () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-1, 1.0E1, 10)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-1, 1.0E1, 8)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedComplexMath.DiLog(z.Conjugate), AdvancedComplexMath.DiLog(z).Conjugate
                 ));
@@ -287,7 +287,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexDiLogBranchCut () {
-            foreach (double z in TestUtilities.GenerateRealValues(1.0, 8.0, 10)) {
+            foreach (double z in TestUtilities.GenerateRealValues(1.0, 1.0E1, 8)) {
 
                 // Imaginary part should be positive just above the cut, negative just below the cut
 
@@ -301,6 +301,20 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(Dp.Im, -Dm.Im));
 
             }
+        }
+
+        [TestMethod]
+        public void ComplexDiLogClausen () {
+
+            foreach (double t in TestUtilities.GenerateUniformRealValues(0.0, 2.0 * Math.PI, 4)) {
+
+                Complex z = AdvancedComplexMath.DiLog(ComplexMath.Exp(ComplexMath.I * t));
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(z.Re, Math.PI * Math.PI / 6.0 - t * (2.0 * Math.PI - t) / 4.0));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(z.Im, AdvancedMath.Clausen(t)));
+
+            }
+
         }
 
         [TestMethod]

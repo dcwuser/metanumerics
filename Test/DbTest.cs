@@ -26,6 +26,7 @@ namespace Test {
 
         }
 
+        /*
         [TestMethod]
         public void LoadSample () {
 
@@ -38,7 +39,9 @@ namespace Test {
 
 
         }
+        */
 
+        /*
         [TestMethod]
         public void LoadBivariateSample () {
 
@@ -49,7 +52,9 @@ namespace Test {
             Assert.IsTrue(sample.Count == table.Rows.Count - 1);
 
         }
+        */
 
+        /*
         [TestMethod]
         public void LoadMultivariateSample () {
 
@@ -60,6 +65,7 @@ namespace Test {
             Assert.IsTrue(sample.Count == table.Rows.Count - 1);
 
         }
+        */
 
     }
 }

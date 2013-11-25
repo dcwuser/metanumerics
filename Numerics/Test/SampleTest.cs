@@ -163,7 +163,7 @@ namespace Test {
                     UncertainValue C3 = s.PopulationMomentAboutMean(3);
                     UncertainValue C4 = s.PopulationMomentAboutMean(4);
                     estimates.Add(M1.Value, C2.Value, C3.Value, C4.Value);
-                    variances.Add(MoreMath.Pow(M1.Uncertainty, 2), MoreMath.Pow(C2.Uncertainty, 2), MoreMath.Pow(C3.Uncertainty, 2), MoreMath.Pow(C4.Uncertainty, 2));
+                    variances.Add(MoreMath.Sqr(M1.Uncertainty), MoreMath.Sqr(C2.Uncertainty), MoreMath.Sqr(C3.Uncertainty), MoreMath.Sqr(C4.Uncertainty));
 
                 }
 
@@ -377,22 +377,22 @@ namespace Test {
 
         [TestMethod]
         public void BetaFit () {
-            // Create a beta distribution
+            // Create a very non-normal Beta distribution
             BetaDistribution B = new BetaDistribution(0.25, 3.0);
 
             // Sample from it
-            Sample S = CreateSample(B, 100);
+            Sample S = CreateSample(B, 128);
 
             // Fit the sample to a beta distribution
             // The fit should agree with the population and the fit should be good
             FitResult RB = BetaDistribution.FitToSample(S);
-            Assert.IsTrue(RB.Parameter(0).ConfidenceInterval(0.95).ClosedContains(B.Alpha));
-            Assert.IsTrue(RB.Parameter(1).ConfidenceInterval(0.95).ClosedContains(B.Beta));
-            Assert.IsTrue(RB.GoodnessOfFit.LeftProbability < 0.95);
+            Assert.IsTrue(RB.Parameter(0).ConfidenceInterval(0.99).ClosedContains(B.Alpha));
+            Assert.IsTrue(RB.Parameter(1).ConfidenceInterval(0.99).ClosedContains(B.Beta));
+            Assert.IsTrue(RB.GoodnessOfFit.LeftProbability < 0.99);
 
             // Fit to a normal distribution should be bad
             FitResult RN = NormalDistribution.FitToSample(S);
-            Assert.IsTrue(RN.GoodnessOfFit.LeftProbability > 0.95);
+            Assert.IsTrue(RN.GoodnessOfFit.LeftProbability > 0.99);
         }
 
         [TestMethod]

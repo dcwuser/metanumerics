@@ -154,8 +154,8 @@ namespace Test {
                     double DP = distribution.ProbabilityMass(k);
                     Assert.IsTrue(DP >= 0.0); Assert.IsTrue(DP <= 1.0);
 
-                    double P = distribution.LeftProbability(k);
-                    double Q = distribution.RightProbability(k);
+                    double P = distribution.LeftInclusiveProbability(k);
+                    double Q = distribution.RightExclusiveProbability(k);
 
                     Assert.IsTrue(P >= 0.0); Assert.IsTrue(P <= 1.0);
                     Assert.IsTrue(Q >= 0.0); Assert.IsTrue(Q <= 1.0);
@@ -177,9 +177,9 @@ namespace Test {
 
                 foreach (DiscreteDistribution distribution in distributions) {
                     int x = distribution.InverseLeftProbability(P);
-                    Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, P, x, distribution.LeftProbability(x));
-                    Assert.IsTrue(distribution.LeftProbability(x - 1) < P);
-                    Assert.IsTrue(P <= distribution.LeftProbability(x));
+                    Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, P, x, distribution.LeftInclusiveProbability(x));
+                    Assert.IsTrue(distribution.LeftInclusiveProbability(x - 1) < P);
+                    Assert.IsTrue(P <= distribution.LeftInclusiveProbability(x));
                 }
 
 
@@ -217,13 +217,13 @@ namespace Test {
             foreach (DiscreteDistribution distribution in distributions) {
                 if (distribution.Minimum > Int32.MinValue) {
                     Assert.IsTrue(distribution.ProbabilityMass(distribution.Minimum - 1) == 0.0);
-                    Assert.IsTrue(distribution.LeftProbability(distribution.Minimum - 1) == 0.0);
-                    Assert.IsTrue(distribution.RightProbability(distribution.Minimum - 1) == 1.0);
+                    Assert.IsTrue(distribution.LeftInclusiveProbability(distribution.Minimum - 1) == 0.0);
+                    Assert.IsTrue(distribution.RightExclusiveProbability(distribution.Minimum - 1) == 1.0);
                 }
                 if (distribution.Maximum < Int32.MaxValue) {
                     Assert.IsTrue(distribution.ProbabilityMass(distribution.Maximum + 1) == 0.0);
-                    Assert.IsTrue(distribution.LeftProbability(distribution.Maximum + 1) == 1.0);
-                    Assert.IsTrue(distribution.RightProbability(distribution.Maximum + 1) == 0.0);
+                    Assert.IsTrue(distribution.LeftInclusiveProbability(distribution.Maximum + 1) == 1.0);
+                    Assert.IsTrue(distribution.RightExclusiveProbability(distribution.Maximum + 1) == 0.0);
                 }
             }
         }
@@ -238,6 +238,7 @@ namespace Test {
         }
 
         [TestMethod]
+        [Ignore]
         public void DiscreteDistributionBase () {
 
             DiscreteDistribution D = new DiscreteTestDistribution();
@@ -260,7 +261,7 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(C2, D.Variance));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(C2, D.MomentAboutMean(2)));
 
-            Assert.IsTrue(D.InverseLeftProbability(D.LeftProbability(2)) == 2);
+            Assert.IsTrue(D.InverseLeftProbability(D.LeftInclusiveProbability(2)) == 2);
 
         }
 

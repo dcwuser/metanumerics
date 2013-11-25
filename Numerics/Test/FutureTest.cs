@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.ObjectModel;
+using System.Text;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
@@ -13,8 +14,1255 @@ using Meta.Numerics.Statistics.Distributions;
 
 namespace FutureTest {
 
+    internal static class RangeReduction {
+
+        // The number of bits to keep in each part when doing Veltkamp splitting
+
+        private const int bitsPerPart = 26;
+
+        // The corresponding constant used in the Veltkamp splitting algorithm
+
+        private const int K = (1 << bitsPerPart) + 1;
+
+        // The binary represenation of 2/\pi. We will use this to find z = (2\pi) x.
+
+        // The largest double value is 2^1024 = 1.7E308. Since we need to get around
+        // 54 bits after the decimal point in order to get full precision, we need
+        // 2/\pi to 1024+54 = 1078 bits, at least.
+
+        private const string twoOverPi =
+            "101000101111100110000011011011100100111001000100000101010010100111111100001001110" +
+            "1010111110100011111010100110100110111011100000011011011011000101001010110011" +
+            "0010011110001000011100100000100000111111110010100010110001110101011110111101" +
+            "0111011110001010110000110110111001001000110111000111010010000100100110111010" +
+            "0101110000000000110010010010010111011101010000010011101000110010010000111001" +
+            "1111110000111011110101100011100101100010010100110100111001111101110100010000" +
+            "0100011010111110101001011101011101101000100100001001110100110011100011100000" +
+            "0100110101101000101111101111110010000010011100110010001110101100011100110000" +
+            "0110101001100111001111101001001110010000100010111111000101110111101111110010" +
+            "0101000001110110001111111111000100101111111111111011110000001011001100000001" +
+            "1111110111100101111000100011000101101011010000010100110110100011111011011010" +
+            "0110110011111101100111100100111110010110000100110110111010011110100011000111" +
+            "1110110011010011110010111111110101000101101011101010010011110111010110001111" +
+            "1101011111001011111000101111011001111010000011100111001111101111000101001010" +
+            "010100100101110101001101100";
+
+        // go a bit longer
+
+        private static double[] ParseBinaryString (string text) {
+
+            List<double> parts = new List<double>();
+
+            double value = 1.0;
+            double part = 0.0;
+            int bits = 0;
+            
+            for (int i = 0; i < text.Length; i++) {
+                value = value / 2.0;
+                if (text[i] == '1') {
+                    part += value;
+                }
+                if ((part != 0.0) || (parts.Count > 0)) bits++;
+                if (bits == bitsPerPart) {
+                    parts.Add(part);
+                    part = 0.0;
+                    bits = 0;
+                }
+            }
+            if (part != 0.0) parts.Add(part);
+
+            return (parts.ToArray());
+
+        }
+
+        private static readonly double[] twoOverPiParts = ParseBinaryString(twoOverPi);
+
+        public static double[] Decompose (double x) {
+            double hi, lo;
+            Decompose(x, out hi, out lo);
+            return (new double[] { hi, lo });
+        }
+
+        public static void Decompose (double x, out double hi, out double lo) {
+            double p = K * x;
+            double q = x - p;
+            hi = p + q;
+            lo = x - hi;
+        }
+
+        // This is the Dekker multiplication algorithm.
+
+        public static void Multiply (double[] a, double[] b, out long z0, out double z1) {
+
+            z0 = 0;
+            z1 = 0.0;
+
+            for (int i = 0; i < a.Length + b.Length - 1; i++) {
+
+                long z0_old = z0; double z1_old = z1;
+
+                double ab = 0.0;
+                for (int j = Math.Max(0, i - b.Length + 1); j < Math.Min(a.Length, i + 1); j++) {
+                    ab += a[j] * b[i - j];
+                }
+
+                double zr = Math.Round(ab);
+
+                if (Math.Abs(zr) > Int64.MaxValue / 4) continue;
+
+                z0 += (long) zr;
+                double dz = ab - zr;
+                z1 += dz;
+
+                //if (z1 > 0.5) { z1 -= 1.0; z0++; } else if (z1 < -0.5) { z1 += 1.0; z0--; }
+
+                if ((z0 == z0_old) && (z1 == z1_old)) return;
+             }
+
+            throw new NonconvergenceException();
+
+        }
+
+        public static double Sin (long z0, double z1) {
+
+            switch (z0 % 4) {
+                case 0:
+                    return (Math.Sin(z1 * Math.PI / 2.0));
+                case 1:
+                    return (Math.Cos(z1 * Math.PI / 2.0));
+                case 2:
+                    return (-Math.Sin(z1 * Math.PI / 2.0));
+                case 3:
+                    return (-Math.Cos(z1 * Math.PI / 2.0));
+                default:
+                    throw new NotImplementedException();
+            }
+
+        }
+
+        public static double Cos (long z0, double z1) {
+            switch (z0 % 4) {
+                case 0:
+                    return(Math.Cos(z1 * Math.PI / 2.0));
+                case 1:
+                    return (-Math.Sin(z1 * Math.PI / 2.0));
+                case 2:
+                    return (-Math.Cos(z1 * Math.PI / 2.0));
+                case 3:
+                    return (Math.Sin(z1 * Math.PI / 2.0));
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        public static double Sin (double x) {
+            double[] xParts = Decompose(x);
+            long z0; double z1;
+            Multiply(xParts, twoOverPiParts, out z0, out z1);
+            return (Sin(z0, z1));
+        }
+
+        public static double Cos (double x) {
+            double[] xParts = Decompose(x);
+            long z0; double z1;
+            Multiply(xParts, twoOverPiParts, out z0, out z1);
+            return (Cos(z0, z1));
+        }
+
+    }
+
+    // Uniform asymptotic exansion for Bessel functions of large order is summarized in A&S 9.3 and DLMF 
+    
+    // The basic form is:
+    //    J_{\nu}(\nu z) = \left(\frac{4 \zeta}{1 - z^2}\right)^{1/4}
+
+    // Here \zeta is determined from z via a complicated expression that maps 0->\infinity, 1->0, and \infinity->-\infinity.
+    
+    // What makes this difficult is that the expressions for \zeta and a_k(\zeta) and b_k(\zeta) have canceling singularities
+    // at z = 1 (\zeta = 0). While the functions are ultimimately analytic, the singularities that must cancel are quite
+    // strong. (E.g. for b_0(\zeta) singularities of order \zeta^{-3} and \zeta^{-3/2} cancel near \zeta = 0, leaving a constant
+    // value. The degree of cancelation gets higher with increasing k.) This makes the practical evaluation of these functions
+    // very much more difficult than a cursory inspection leads one to expect.
+
+    // We follow N. M. Temme, "Numerical algorithms for Airy-type asymptotic expansions", Numerical Algorithms 15 (1997) 207
+    // (available at http://oai.cwi.nl/oai/asset/2178/2178A.pdf)
+
+    internal static class BesselUae {
+
+        private static readonly double CbrtTwo = Math.Pow(2.0, 1.0 / 3.0);
+
+        private static readonly double[] c = new double[] {
+            0.0,
+            -1.0,
+            3.0 / 10.0,
+            -32.0 / 175.0,
+            1037.0 / 7875.0,
+            -103727.0 / 1010625.0,
+            33060241.0 / 394143750.0,
+            -4393499056.0 / 62077640625.0,
+            15356175508.0 / 251266640625.0,
+            -296160295945538.0 / 5514046428515625.0,
+            2095680660298957.0 / 43788015755859375.0,
+            -1178774779896086224.0 / 27333708572091796875.0,
+            305517380952020655742.0 / 7790106943046162109375.0,
+            -970178984722577536907354.0 / 26992720557654951708984375.0,
+            43257635097401811452791703.0 / 1304648160286655999267578125.0,
+            -1413145527493419079807132911728.0 / 45940812876930433457845458984375.0,
+            8477921788590209817825424263485828.0 / 295629130863047339301235528564453125.0,
+            -19355768761912897160895124453273481957.0 / 720842364087730428996179297149658203125.0
+        };
+
+        // Zeta is given by A&S 9.3.38 and 9.3.39:
+        
+        //
+
+        public static void EvaluateZeta (double z, out double zeta, out double phi) {
+
+            double e = z - 1.0;
+            if (Math.Abs(e) < 0.125) {
+                double ek = e;
+                zeta = c[1] * e;
+                phi = c[1];
+                for (int k = 2; k < c.Length; k++) {
+                    phi += c[k] * ek;
+                    ek *= e;
+                    zeta += c[k] * ek;
+                }
+                zeta = CbrtTwo * zeta;
+                phi = CbrtTwo * Math.Pow(-phi / (1.0 + e / 2.0), 1.0 / 4.0);
+            } else {
+                if (z < 1.0) {
+                    double s = Math.Sqrt(1.0 - z * z);
+                    zeta = Math.Pow(3.0 / 2.0 * (Math.Log((1.0 + s) / z) - s), 2.0 / 3.0);
+                } else {
+                    zeta = -Math.Pow(3.0 / 2.0 * (Math.Sqrt(z * z - 1.0) - Math.Acos(1.0 / z)), 2.0 / 3.0);
+                }
+                phi = Math.Pow(4.0 * zeta / (1.0 - z * z), 1.0 / 4.0);
+            }
+
+        }
+
+        // A & S give expressions for a_k(\zeta) and b_k(\zeta). They start out
+
+        //   a_0 = 1
+
+        //   b_0 = 
+
+        // For general k,
+
+        //   a_k = \sum_{j=0}^{2k} \mu_j \zeta^{-3j/2} u_{2k-j}
+        //   b_k = - \sum_{j=0}^{2k+1} \lambda_j \zeta^{-3(j+1)/2} u_{2k+1-j}
+
+        // Here u_j is a polynomial of order 3j, even for even j and odd for odd j. The argument of u is t=1/\sqrt{1-z^2}. For even j, this
+        // means u is actually a polynomial of order 3j/2 in t^2=1/(1-z^2), which is no problem. For odd j and z > 1 (\zeta < 0), the argument of
+        // u is actually pure imaginary, but the result is multiplied by \zeta to a half-power, which is also pure imaginary, giving a real
+        // product. We deal with this situation by taking out one power of t and writing \zeta^{1/2} t = \phi^2 / 2.
+
+        // Finally, the coefficients \mu_j and \lambda_j are pure numbers, given by A&S 9.3.41
+        //   \mu_j = -\frac{6j+1}{6j-1} \lambda_j
+        // So
+        //   \lambda_0 = 1, \lambda_1 = 5/48, \lambda_2 = 385/4608, \lambda_3 = 85085/663552, \lambda_4 = 37182145/127401984
+        //   \mu_0 = 1, \mu_1 = -7/48, \mu_2 = -455/4608, \mu_3 = -95095/663552, \mu_4 = -40415375/127401984
+
+        // All these expressions have canceling singularities at \zeta = 0 (z = 1), and therefore cannot be used near \zeta ~ 0.
+
+        // Temme's paper derives a systematic approach for producing the power series for these quantities near \zeta ~ 0.
+        // Actually, he uses the trivially re-scaled parameter \eta where \zeta = 2^{1/3} \eta.
+
+        // All Temme's series are derived from the series for
+        //   \psi = \frac{5}{16 \zeta^2} + \frac{\zeta z^2 (z^2 + 4)}{4 (z^2 - 1)^3}
+        //        = \sum_{k=0}^{\infty} \psi^{(k)} \eta^k = 2^{1/3} \left[ \frac{1}{70} + \frac{2}{75} \eta + \frac{138}{13475} \eta^2 + \cdots \right]
+        // He shows that
+        //   b_0 = \sum_{k=0}^{\infty} b_0^{(k)} \eta^k  b_0^{(k)} = \frac{\psi^{(k)}}{2k + 1}
+        // and 
+
+        private static readonly double[] PsiCoefficients = {
+            1.0 / 70.0,
+            2.0 / 75.0,
+            138.0 / 13475.0,
+            -296.0 / 73125.0,
+            -38464.0 / 7074375.0,
+            -117472.0 / 72515625.0,
+            4835327648.0 / 6986122171875.0,
+            196235264.0 / 251266640625.0,
+            1660313255231104.0 / 7920224923939453125.0, 
+            -66399236608.0 / 712340926171875.0,
+            -3601874963621281792.0 / 37027051519416943359375.0,
+            -31198440677844992.0 / 1259270353112255859375.0,
+            339118989445333019205632.0 / 30305783606970600781787109375.0,
+            1778526038024190427136.0 / 158627254804774859619140625.0,
+            40948053418677371831115518818104241381.0 / 14820745152267765143433288288000000000000000.0,
+            -28685174387749486839072824921671801053073.0 / 22675740082969680669452931080640000000000000000.0,
+            -27122073903808716897938907648268793696783.0 / 21978025003493690495008225508928000000000000000.0
+        };
+
+        private static readonly double[] b0 = ComputeBZeroCoefficients();
+
+        private static readonly double[] a1 = ComputeACoefficients(-1.0 / 225.0, b0);
+
+        private static readonly double[] b1 = ComputeBCoefficients(a1);
+
+        private static readonly double[] a2 = ComputeACoefficients(151439.0 / 218295000.0, b1);
+
+        public static double[] ComputeBZeroCoefficients () {
+            double[] bCoefficients = new double[PsiCoefficients.Length];
+            for (int i = 0; i < bCoefficients.Length; i++) {
+                bCoefficients[i] = PsiCoefficients[i] / (2 * i + 1);
+            }
+            return (bCoefficients);
+        }
+
+        public static double[] ComputeACoefficients (double aZeroCoefficient, double[] bCoefficients) {
+            double[] aCoefficients = new double[bCoefficients.Length - 2];
+            aCoefficients[0] = aZeroCoefficient;
+            for (int i = 0; i < aCoefficients.Length - 1; i++) {
+                double t = 0.0;
+                for (int j = 0; j <= i; j++) {
+                    t += PsiCoefficients[j] * bCoefficients[i - j];
+                }
+                t /= (i + 1);
+                t -= (i + 2) * bCoefficients[i + 2] / 2.0;
+                aCoefficients[i + 1] = t;
+                Console.WriteLine("a {0} {1:R}", i + 1, t);
+            }
+            return (aCoefficients);
+        }
+
+        public static double[] ComputeBCoefficients (double[] aCoefficients) {
+            double[] bCoefficients = new double[aCoefficients.Length - 2];
+            for (int i = 0; i < bCoefficients.Length; i++) {
+                double t = 0.0;
+                for (int j = 0; j <= i; j++) {
+                    t += PsiCoefficients[j] * aCoefficients[i - j];
+                }
+                t -= (i + 1) * (i + 2) * aCoefficients[i + 2] / 2.0;
+                t /= (2 * i + 1);
+                bCoefficients[i] = t;
+                Console.WriteLine("b {0} {1:R}", i, t);
+            }
+            return (bCoefficients);
+        }
+
+        private static double U0 (double t2) { return(1.0); }
+
+        private static double U1 (double t2) { return ((3.0 - 5.0 * t2) / 24.0); }
+
+        private static double U2 (double t2) { return(t2 * (81.0 - 462.0 * t2 + 385.0 * t2 * t2) / 1152.0); }
+
+        private static double U3 (double t2) { return (t2 * (30375.0 - 369603.0 * t2 + 765765.0 * t2 * t2 - 425425.0 * t2 * t2 * t2) / 414720.0); }
+
+        private static double U4 (double t2) { return (t2 * t2 * (4465125.0 - 94121676.0 * t2 + 349922430.0 * t2 * t2 - 446185740.0 * t2 * t2 * t2 + 185910725.0 * t2 * t2 * t2 * t2) / 39813120.0); }
+
+        public static double EvaluateB0 (double zeta, double z, double phi) {
+            double eta = zeta / CbrtTwo;
+            if (Math.Abs(eta) < 0.25) {
+                double etak = eta;
+                double f = b0[0] + b0[1] * eta;
+                for (int k = 2; k < b0.Length; k++) {
+                    etak *= eta;
+                    f += b0[k] * etak;
+                }
+                return (CbrtTwo * f);
+            } else {
+                double t2 = 1.0 / (1.0 - z * z);
+                return (-((phi * phi / 2.0) / zeta * U1(t2) + 5.0 / 48.0 / (zeta * zeta)));
+            }
+
+        }
+
+        public static double EvaluateA1 (double zeta, double z, double phi) {
+            double eta = zeta / CbrtTwo;
+            if (Math.Abs(eta) < 0.25) {
+                double etak = eta;
+                double f = a1[0] + a1[1] * eta;
+                for (int k = 2; k < a1.Length; k++) {
+                    etak *= eta;
+                    f += a1[k] * etak;
+                }
+                return (f);
+            } else {
+                double t2 = 1.0 / (1.0 - z * z);
+                double result = U2(t2) - 7.0 / 48.0 * (phi * phi / (zeta * zeta) / 2.0) * U1(t2) - 455.0 / 4608.0 / (zeta * zeta * zeta);
+                return (result);
+            }
+        }
+
+        public static double EvaluateB1 (double zeta, double z, double phi) {
+            double eta = zeta / CbrtTwo;
+            if (Math.Abs(eta) < 0.25) {
+                double etak = eta;
+                double f = b1[0] + b1[1] * eta;
+                for (int k = 2; k < b1.Length; k++) {
+                    etak *= eta;
+                    f += b1[k] * etak;
+                }
+                return (CbrtTwo * f);
+            } else {
+                double t2 = 1.0 / (1.0 - z * z);
+                double result = -(
+                    (phi * phi / 2.0) / zeta  * U3(t2) +
+                    5.0 / 48.0 / (zeta * zeta) * U2(t2) +
+                    385.0 / 4608.0 * (phi * phi / 2.0) / (zeta * zeta * zeta * zeta) * U1(t2) +
+                    85085.0 / 663552.0 / (zeta * zeta * zeta * zeta * zeta)
+                );
+                return (result);
+            }
+        }
+
+        public static double EvaluateA2 (double zeta, double z, double phi) {
+            double eta = zeta / CbrtTwo;
+            if (Math.Abs(eta) < 0.25) {
+                double etak = eta;
+                double f = a2[0] + a2[1] * eta;
+                for (int k = 2; k < a2.Length; k++) {
+                    etak *= eta;
+                    f += a2[k] * etak;
+                }
+                return (f);
+            } else {
+                return (0.0);
+            }
+        }
+
+        public static double Evaluate (double nu, double x) {
+
+            // Write argument as x = \nu z.
+            double z = x / nu;
+
+            // Compute \zeta and \phi.
+            double zeta, phi;
+            EvaluateZeta(z, out zeta, out phi);
+            Console.WriteLine("z'={0:R} zeta'={1:R} phi'={2:R}", z, zeta, phi);
+
+            // Compute Airy functions.
+            double nu23 = Math.Pow(nu, 2.0 / 3.0);
+            SolutionPair airy = AdvancedMath.Airy(nu23 * zeta);
+            Console.WriteLine("arg'={0:R} Ai={1:R} Ai'={2:R}", nu23 * zeta, airy.FirstSolutionValue, airy.FirstSolutionDerivative);
+
+            // Compute a and b coefficients.
+            const double a0 = 1.0;
+            double b0 = EvaluateB0(zeta, z, phi);
+            double a1 = EvaluateA1(zeta, z, phi);
+            double b1 = EvaluateB1(zeta, z, phi);
+            double a2 = EvaluateA2(zeta, z, phi);
+
+            // Combine to compute Bessel functions.
+            double nu2 = nu * nu;
+            double nu13 = Math.Pow(nu, 1.0 / 3.0);
+            double nu43 = nu23 * nu23;
+            double a = a0 + a1 / nu2 + a2 / (nu2 * nu2);
+            double b = b0 + b1 / nu2;
+            double J = (phi / nu13) * (airy.FirstSolutionValue * a + airy.FirstSolutionDerivative / nu43 * b);
+            double Y = (phi / nu13) * (airy.SecondSolutionValue * a + airy.SecondSolutionDerivative / nu43 * b);
+
+            return (J);
+
+        }
+
+    }
+
+    
+
+    
+
     [TestClass]
     public class FutureTest {
+
+        [TestMethod]
+        public void TestNormal () {
+            NormalDistribution n = new NormalDistribution();
+            Console.WriteLine(n.InverseLeftProbability(1.0E-10));
+            Console.WriteLine(n.InverseRightProbability(1.0E-10));
+            Console.WriteLine(n.InverseLeftProbability(1.0E-300));
+            Console.WriteLine(n.InverseRightProbability(1.0E-300));
+            Console.WriteLine(n.InverseLeftProbability(1.0));
+            //Console.WriteLine(n.InverseLeftProbability(0.26));
+        }
+      
+
+        [TestMethod]
+        public void Repro () {
+            double I = 0.9998063099306;
+            double a = 0.00034509911609819255;
+            double b = 6.8453983996634218;
+            var bd = new BetaDistribution(a, b);
+            double x = bd.InverseLeftProbability(I);
+            Console.WriteLine(x);
+            Console.WriteLine(bd.LeftProbability(x));
+            Console.WriteLine(I);
+        }
+
+        [TestMethod]
+        public void BetaExercise () {
+
+            double[] c = new double[] { 1.0 / 32768.0, 1.0 / 1024.0, 1.0 / 64.0, 1.0 / 8.0, 1.0 / 2.0, 1.0, 2.0, 8.0, 64.0, 1024.0, 32768.0 };
+
+            double[] p = new double[] { 1.0 / 65536.0, 1.0 / 256.0, 1.0 / 16.0, 1.0 / 4.0, 1.0 - 1.0 / 4.0, 1.0 - 1.0 / 16.0, 1.0 - 1.0 / 256.0 };
+
+            Stopwatch s = Stopwatch.StartNew();
+            double sum = 0.0;
+            foreach (double a in c) {
+                foreach (double b in c) {
+                    BetaDistribution BD = new BetaDistribution(a, b);
+                    foreach (double x in p) {
+                        //Console.WriteLine("a={0} b={1} P={2}", a, b, x);
+                        //Console.WriteLine(BD.InverseLeftProbability(x));
+                        sum += BD.InverseLeftProbability(x);
+                    }
+                }
+            }
+            s.Stop();
+            Console.WriteLine(sum);
+            Console.WriteLine(s.ElapsedMilliseconds);
+
+        }
+
+        /*
+        [TestMethod]
+        public void TestSin () {
+            Console.WriteLine(Math.Sin(Math.Pow(2, 20)));
+            Console.WriteLine(Math.Sin(Math.Pow(2, 30)));
+            Console.WriteLine(Math.Sin(Math.Pow(2, 62)));
+            Console.WriteLine(Math.Sin(Math.Pow(2, 63)));
+            Console.WriteLine(Math.Sin(Math.Pow(2, 64)));
+            Console.WriteLine(Math.Sin(Math.Pow(2, 65)));
+        }
+
+        [TestMethod]
+        public void TestSplitting () {
+
+            long granularity = 65536;
+            //long granularity = 1048576;
+            //long granularity = 16777216;
+
+            double dsMax = 0.0; long ksMax = 0L;
+            double dcMax = 0.0; long kcMax = 0L;
+
+            double ym = Math.Pow(2.0, -6);
+
+            for (long k = 30000L * granularity; k < 32768L * granularity; k++) {
+
+                double x = k / ((double) granularity);
+
+                double s0 = Math.Sin(x);
+                double c0 = Math.Cos(x);
+
+                if ((Math.Abs(s0) > 4.0 * ym) && (Math.Abs(c0) > 4.0 * ym)) continue;
+                if ((Math.Abs(s0) < ym) || (Math.Abs(c0) < ym)) continue;
+                //if ((Math.Abs(s0) < 0.0000152587890625) || (Math.Abs(c0) < 0.0000152587890625)) continue;
+
+                double s1 = RangeReduction.Sin(x);
+                double c1 = RangeReduction.Cos(x);
+
+                double ds = Math.Abs((s0 - s1) / s0);
+                double dc = Math.Abs((c0 - c1) / c0);
+
+                if (ds > dsMax) { dsMax = ds; ksMax = k; }
+                if (dc > dcMax) { dcMax = dc; kcMax = k; }  
+
+            }
+
+            double xsMax = ksMax / ((double) granularity);
+            Console.WriteLine("Sin({0}/{1} = {2}) = {3:R} v {4:R} ({5})", ksMax, granularity, xsMax, Math.Sin(xsMax), RangeReduction.Sin(xsMax), dsMax);
+
+            double xcMax = kcMax / ((double) granularity);
+            Console.WriteLine("Cos({0}/{1} = {2}) = {3:R} v {4:R} ({5})", kcMax, granularity, xcMax, Math.Cos(xcMax), RangeReduction.Cos(xcMax), dcMax);
+
+        }
+        */
+
+        [TestMethod]
+        public void BesselExactTest () {
+
+            double y;
+
+            y = 2.0 / Math.PI;
+            Console.WriteLine("{0:R}", (AdvancedMath.BesselJ(0.5, Math.PI / 2.0) - y) / y);
+
+            y = MoreMath.Sqr(2.0 / Math.PI);
+            Console.WriteLine("{0:R}", (AdvancedMath.BesselJ(1.5, Math.PI / 2.0) - y) / y);
+
+            y = (2.0 / Math.PI) * (3.0 * MoreMath.Sqr(2.0 / Math.PI) - 1.0);
+            Console.WriteLine("{0:R}", (AdvancedMath.BesselJ(2.5, Math.PI / 2.0) - y) / y);
+
+            y = 0.0;
+            Console.WriteLine("{0:R}", AdvancedMath.BesselJ(0.5, Math.PI) - y);
+
+            y = Math.Sqrt(2.0) / Math.PI;
+            Console.WriteLine("{0:R}", (AdvancedMath.BesselJ(1.5, Math.PI) - y) / y);
+
+            y = 3.0 * Math.Sqrt(2.0) / MoreMath.Sqr(Math.PI);
+            Console.WriteLine("{0:R}", (AdvancedMath.BesselJ(2.5, Math.PI) - y) / y);
+        }
+
+        [TestMethod]
+        public void TestGammaValues () {
+
+            Console.WriteLine((AdvancedMath.Gamma(0.5) - Math.Sqrt(Math.PI)) / Math.Sqrt(Math.PI));
+            Console.WriteLine(AdvancedMath.Gamma(1) - 1.0);
+            Console.WriteLine(AdvancedMath.Gamma(2) - 1.0);
+            Console.WriteLine((AdvancedMath.Gamma(3) - 2.0) / 2.0);
+            Console.WriteLine((AdvancedMath.Gamma(4) - 6.0) / 6.0);
+            Console.WriteLine((AdvancedMath.Gamma(5) - 24.0) / 24.0);
+            Console.WriteLine((AdvancedMath.Gamma(6) - 120.0) / 120.0);
+            Console.WriteLine((AdvancedMath.Gamma(7) - 720.0) / 720.0);
+            Console.WriteLine((AdvancedMath.Gamma(8) - 5040.0) / 5040.0);
+        }
+
+        [TestMethod]
+        public void TestConstants () {
+
+            double tp0 = 6.2831853071795864769;
+            double tp1 = 2.0 * Math.PI;
+            Console.WriteLine("{0:R} {1:R} {2:R}", tp0, tp1, (tp1 - tp0) / tp0);
+
+            double stp0 = 2.5066282746310005024;
+            double stp1 = Math.Sqrt(2.0 * Math.PI);
+            Console.WriteLine("{0:R} {1:R} {2:R}", stp0, stp1, (stp1-stp0) / stp0);
+
+            double sp0 = 1.7724538509055160273;
+            double sp1 = Math.Sqrt(Math.PI);
+            Console.WriteLine("{0:R} {1:R} {2:R}", sp0, sp1, (sp1 - sp0) / sp0);
+
+            double spt0 = 1.2533141373155002512;
+            double spt1 = Math.Sqrt(Math.PI / 2.0);
+            Console.WriteLine("{0:R} {1:R} {2:R}", spt0, spt1, (spt1 - spt0) / spt0);
+
+            double st0 = 1.7320508075688772935;
+            double st1 = Math.Sqrt(3.0);
+            Console.WriteLine("{0:R} {1:R} {2:R}", st0, st1, (st1-st0) / st0);
+
+            double lt0 = 0.69314718055994530942;
+            double lt1 = Math.Log(2.0);
+            Console.WriteLine("{0:R} {1:R} {2:R}", lt0, lt1, (lt1 - lt0) / lt0);
+
+
+        }
+
+        [TestMethod]
+        public void AiryTest () {
+            Console.WriteLine("{0:R}", AdvancedMath.AiryAi(5.125));
+            Console.WriteLine("{0:R}", AdvancedMath.Airy(5.125).FirstSolutionValue);
+        }
+
+        [TestMethod]
+        public void ComputeChiTest () {
+            foreach (double z in new double[] { 1.0E-4, 1.0E-2, 0.5, 0.75, 0.90, 0.95, 0.99, 1.0, 1.01, 1.05, 1.10, 1.15, 1.25, 1.5, 2.0, 10.0, 1.0E2, 1.0E4 }) {
+                double zeta, phi;
+                BesselUae.EvaluateZeta(z, out zeta, out phi);
+                double a0 = 1.0;
+                double b0 = BesselUae.EvaluateB0(zeta, z, phi);
+                double a1 = BesselUae.EvaluateA1(zeta, z, phi);
+                double b1 = BesselUae.EvaluateB1(zeta, z, phi);
+                Console.WriteLine("z={0:R} zeta={1:R} phi={2:R} b0={3} a1={4} b1={5}", z, zeta, phi, b0, a1, b1);
+
+                double nu = 1024.0;
+                double nu3 = Math.Pow(nu, 1.0 / 3.0);
+                SolutionPair p = AdvancedMath.Airy(nu3 * nu3 * zeta);
+                Console.WriteLine("arg={0:R} Ai={1:R} Ai'={2:R}", nu3 * nu3 * zeta, p.FirstSolutionValue, p.FirstSolutionDerivative);
+                double J0 = phi * (p.FirstSolutionValue / nu3 * a0);
+                double J1 = phi * (p.FirstSolutionValue / nu3 * a0 + p.FirstSolutionDerivative / MoreMath.Pow(nu3, 5) * b0);
+                double J2 = phi * (p.FirstSolutionValue / nu3 * (a0 + a1 / (nu * nu)) + p.FirstSolutionDerivative / MoreMath.Pow(nu3, 5) * b0);
+                double J3 = phi * (p.FirstSolutionValue / nu3 * (a0 + a1 / (nu * nu)) + p.FirstSolutionDerivative / MoreMath.Pow(nu3, 5) * (b0 + b1 / (nu * nu)));
+                Console.WriteLine("J0={0:R} J1={1:R} J2={2:R} J3={3:R}", J0, J1, J2, J3);
+                Console.WriteLine("J'={0:R}", BesselUae.Evaluate(nu, nu * z));
+                //try {
+                    Console.WriteLine("old J={0}", AdvancedMath.BesselJ(nu, nu * z));
+                //} catch (NonconvergenceException) { }
+            }
+        }
+
+        public void ComputeBesselExpansionParameter (double z, out double xi, out double phi, out double[] a, out double[] b) {
+            a = new double[] { 1.0, 0.0 };
+            b = new double[2];
+            double e = 1.0 - z;
+            if (Math.Abs(e) < 1.0 / 32.0) {
+                double[] xi_c = new double[] { 0.0, 1.0, 3.0 / 10.0, 32.0 / 175.0, 1037.0 / 7875.0, 103727.0 / 1010635.0, 33060241.0 / 394143750.0 };
+                double[] phi_c = new double[] { 1.0, 1.0 / 5.0, 3.0 / 35.0, 73.0 / 1575.0, 35209.0 / 1212750.0, 380069.0 / 18768750.0, 1897703867.0 / 124155281250.0 };
+                double[] b0_c = new double[] { 1.0 / 70.0, 2.0 / 225.0, 953.0 / 202125.0, 17942.0 / 7882875.0, 694817.0 / 709458750.0, 16629512.0 / 50253328125.0, 9633362212.0 / 367603095234375.0 };
+                double[] a1_c = new double[] { -1.0 / 225.0, -71.0 / 38500.0, 25591.0 / 45045000.0, 2982172.0 / 1773646875.0, 25025359.0 / 13400887500.0, 5379178799.0 / 3334268437500.0, 23287042920833.0 / 18905302040625000.0 };
+                double ek = 1.0;
+                xi = xi_c[0];
+                phi = phi_c[0];
+                b[0] = b0_c[0];
+                a[1] = a1_c[0];
+                for (int i = 1; i < xi_c.Length; i++) {
+                    ek *= e;
+                    xi += xi_c[i] * ek;
+                    phi += phi_c[i] * ek;
+                    b[0] += b0_c[i] * ek;
+                    a[1] += a1_c[i] * ek;
+                }
+                xi = Math.Pow(2.0, 1.0 / 3.0) * xi;
+                phi = Math.Pow(2.0, 1.0 / 3.0) * phi;
+                b[0] = Math.Pow(2.0, 1.0 / 3.0) * b[0];
+                b[1] = Math.Pow(2.0, 1.0 / 3.0) * 1213.0 / 1023750.0;
+            } else {
+                if (z < 1.0) {
+                    double w = Math.Sqrt((1.0 - z) * (1.0 + z));
+                    xi = Math.Pow(3.0 / 2.0 * (Math.Log((1.0 + w) / z) - w), 2.0 / 3.0);
+                } else {
+                    double w = Math.Sqrt((z - 1.0) * (z + 1.0));
+                    xi = -Math.Pow(3.0 / 2.0 * (w - Math.Acos(1.0 / z)), 2.0 / 3.0);
+                }
+                phi = Math.Pow(4.0 * xi / (1.0 - z) / (1.0 + z), 1.0 / 4.0);
+                b[0] = -5.0 / 48.0 / (xi * xi) + phi * phi / 48.0 / xi * (5.0 / (1.0 - z * z) - 3.0);
+            }
+        }
+
+        [TestMethod]
+        public void BesselUAE () {
+
+            double nu = 4000.0;
+            double x = 4000.0;
+
+            double z = x / nu;
+            double xi, phi;
+            double[] a, b;
+            ComputeBesselExpansionParameter(z, out xi, out phi, out a, out b);
+            Console.WriteLine("z={0} xi={1} phi={2}", z, xi, phi);
+            Console.WriteLine("a0={0} b0={1} a1={2} b1={3}", a[0], b[0], a[1], b[1]);
+
+            double y = Math.Pow(nu, 2.0 / 3.0) * xi;
+            SolutionPair p = AdvancedMath.Airy(y);
+            Console.WriteLine("y={0} A={1} A'={2} B={3} B'={4}", y, p.FirstSolutionValue, p.FirstSolutionDerivative, p.SecondSolutionValue, p.SecondSolutionDerivative);
+
+            double J0 = phi * (a[0] * p.FirstSolutionValue / Math.Pow(nu, 1.0 / 3.0));
+            double J1 = phi * (a[0] * p.FirstSolutionValue / Math.Pow(nu, 1.0 / 3.0) + b[0] * p.FirstSolutionDerivative / Math.Pow(nu, 5.0 / 3.0));
+            double J2 = phi * (p.FirstSolutionValue * (a[0] / Math.Pow(nu, 1.0 / 3.0) + a[1] / Math.Pow(nu, 7.0 / 3.0)) + p.FirstSolutionDerivative * b[0] / Math.Pow(nu, 5.0 / 3.0));
+            double J3 = phi * (p.FirstSolutionValue * (a[0] / Math.Pow(nu, 1.0 / 3.0) + a[1] / Math.Pow(nu, 7.0 / 3.0)) + p.FirstSolutionDerivative * (b[0] / Math.Pow(nu, 5.0 / 3.0) + b[1] / Math.Pow(nu, 11.0 / 3.0)));
+            double Y0 = -phi * (a[0] * p.SecondSolutionValue / Math.Pow(nu, 1.0 / 30));
+            double Y1 = -phi * (a[0] * p.SecondSolutionValue / Math.Pow(nu, 1.0 / 3.0) + b[0] * p.SecondSolutionDerivative / Math.Pow(nu, 5.0 / 3.0));
+            double Y2 = -phi * (p.SecondSolutionValue * (a[0] / Math.Pow(nu, 1.0 / 3.0) + a[1] / Math.Pow(nu, 7.0 / 3.0)) + p.SecondSolutionDerivative * b[0] / Math.Pow(nu, 5.0 / 3.0));
+            double Y3 = -phi * (p.SecondSolutionValue * (a[0] / Math.Pow(nu, 1.0 / 3.0) + a[1] / Math.Pow(nu, 7.0 / 3.0)) + p.SecondSolutionDerivative * (b[0] / Math.Pow(nu, 5.0 / 3.0) + b[1] / Math.Pow(nu, 11.0 / 3.0)));
+
+            Console.WriteLine("{0} {1} {2} {3}", J0, J1, J2, J3);
+            Console.WriteLine("{0} {1} {2} {3}", Y0, Y1, Y2, Y3);
+
+
+        }
+
+        [TestMethod]
+        public void BesselFix () {
+
+            SolutionPair p = AdvancedMath.Airy(-3.0 / 2.0);
+            Console.WriteLine("{0:R} {1:R} {2:R} {3:R}", p.FirstSolutionValue, p.FirstSolutionDerivative, p.SecondSolutionValue, p.SecondSolutionDerivative);
+            Console.WriteLine(p.FirstSolutionValue * p.SecondSolutionDerivative - p.SecondSolutionValue * p.FirstSolutionDerivative);
+
+        }
+
+        [TestMethod]
+        public void BesselYSeries () {
+
+            Console.WriteLine("0: {0}", AdvancedMath.BesselY(16, 12.0));
+            Console.WriteLine("1: {0}", BesselY_Series(16, 12.0) - BesselY_Series2(16, 12.0));
+            //Console.WriteLine("2: {0}", BesselY_Series2(16, 12.0));
+
+        }
+
+
+        private static double BesselY (int n, double x) {
+
+            double x2 = x / 2.0;
+            double z = x2 * x2;
+
+            double dy = -1.0 / (MoreMath.Pow(x2, n) / AdvancedIntegerMath.Factorial(n - 1)) / Math.PI;
+            double y = dy;
+
+            for (int k = 1; k < n; k++) {
+                double y_old = y;
+                dy *= z / ((n - k) * k);
+                y += dy;
+                Console.WriteLine("{0} {1} {2}", k, dy, y);
+                if (y == y_old) return (y);
+            }
+
+            z = - z;
+
+            double a = 2.0 / Math.PI * MoreMath.Pow(x2, n) / AdvancedIntegerMath.Factorial(n);
+            double b = Math.Log(x2) + AdvancedMath.EulerGamma - AdvancedIntegerMath.HarmonicNumber(n) / 2.0;
+
+            y += a * b;
+
+            for (int k = 1; k < 128; k++) {
+
+                double y_old = y;
+
+                a *= z / (k * (n + k));
+                b -= (1.0 / k + 1.0 / (n + k)) / 2.0;
+
+                y += a * b;
+
+                Console.WriteLine("k={0} a={1} b={2} y={3}", k, a, b, y);
+
+                if (y == y_old) return (y);
+
+            }
+
+            throw new NonconvergenceException(); 
+
+        }
+
+        private static double BesselY_Series2 (int n, double x) {
+
+            double z = x * x / 4.0;
+
+            if (n == 0) return (0);
+
+            double a = 1.0 / Math.PI * MoreMath.Pow(2.0 / x, n) * AdvancedIntegerMath.Factorial(n - 1);
+
+            double y = a;
+            Console.WriteLine("{0} {1} {2}", 0, a, y);
+
+            for (int k = 1; k < n; k++) {
+                double y_old = y;
+                a *= z / ((n - k) * k);
+                y += a;
+                Console.WriteLine("{0} {1} {2}", k, a, y);
+                if (y == y_old) return (y);
+            }
+
+            return (y);
+        }
+
+        // Start from
+
+        // Y_n(x) = \frac{2}{\pi} \log\left(\frac{x}{2}\right) J_n(x) - \frac{1}{\pi} \left(
+
+        // and insert
+
+        //   \psi(k) = -\gamma + \sum_{j=1}^{k-1} \frac{1}{j} 
+
+        private static double BesselY_Series (int n, double x) {
+
+            double z = - x * x / 4.0;
+
+            double a = 2.0 / Math.PI * MoreMath.Pow(x / 2.0, n) / AdvancedIntegerMath.Factorial(n);
+            double b = Math.Log(x / 2.0) + AdvancedMath.EulerGamma - AdvancedIntegerMath.HarmonicNumber(n) / 2.0;
+
+            double y = a * b;
+
+            Console.WriteLine("k={0} a={1} b={2} y={3}", 0, a, b, y);
+
+
+            for (int k = 1; k < 128; k++) {
+
+                double y_old = y;
+
+                a *= z / (k * (n + k));
+                b -= (1.0 / k + 1.0 / (n + k)) / 2.0;
+
+                y += a * b;
+
+                Console.WriteLine("k={0} a={1} b={2} y={3}", k, a, b, y);
+
+                if (y == y_old) return (y);
+
+            }
+
+            throw new NonconvergenceException();
+        }
+
+
+        [TestMethod]
+        public void CumulantTest () {
+
+            Distribution d = new GammaDistribution(2.0);
+
+            double[] K = new double[8];
+            K[0] = 0.0;
+            for (int r = 1; r < K.Length; r++) {
+                K[r] = 2.0 * AdvancedIntegerMath.Factorial(r - 1);
+            }
+
+            double[] M = MomentMath.CumulantToRaw(K);
+            for (int r = 0; r < M.Length; r++) {
+                Console.WriteLine("{0} {1}", M[r], d.Moment(r));
+            }
+
+            Console.WriteLine("---");
+
+            double[] C = MomentMath.CumulantToCentral(K);
+            for (int r = 0; r < C.Length; r++) {
+                Console.WriteLine("{0} {1}", C[r], d.MomentAboutMean(r));
+            }
+
+            Console.WriteLine("---");
+
+            double[] KP = MomentMath.RawToCumulant(M);
+            for (int r = 0; r < KP.Length; r++) {
+                Console.WriteLine("{0} {1}", KP[r], K[r]);
+            }
+
+        }
+
+        [TestMethod]
+        public void TwoSampleKS () {
+
+            int n = 64;
+            //int m = n;
+            //Console.WriteLine(AdvancedIntegerMath.GCF(n, m));
+            //KolmogorovTwoSampleExactDistribution d0 = new KolmogorovTwoSampleExactDistribution(n, m);
+            //for (int c = 1; c <= n * m; c++) {
+            //    Console.WriteLine("{0} {1}", c, d0.LatticePathSum(c));
+            //}
+
+            for (int c = 1; c <= n; c++) {
+                Console.WriteLine("{0} {1}", c, EqualKS(n, c));
+            }
+        }
+
+        private static double EqualKS (int n, int c) {
+
+            int sign = -1;
+            double sum = 0.0;
+            for (int m = n - c; m >= 0; m -= c) {
+                sign = -sign;
+                sum += sign * AdvancedIntegerMath.BinomialCoefficient(2 * n, m);
+            }
+            return (2.0 * sum);
+        }
+
+        /*
+        public static double[] Decompose (double x) {
+            const double c = (1 << 26) + 1;
+            double p = c * x;
+            double hi = p + (x - p);
+            double lo = x - hi;
+            return (new double[] { hi, lo });
+        }
+        */
+        
+        public static double[] Decompose (double x) {
+            const double c = (1 << 18) + 1;
+            double[] parts = new double[3];
+            double p = c * x;
+            double y = p + (x - p);
+            parts[2] = x - y;
+            const double d = (1 << 36) + 1;
+            double q = d * y;
+            double z = q + (y - q);
+            parts[1] = y - z;
+            parts[0] = z;
+            return (parts);
+        }
+
+        public static double[] Decompose (int b, double x) {
+            double hi, lo;
+            Decompose(x, b, out hi, out lo);
+            return (new double[] { hi, lo });
+        }
+
+        public static void Decompose (double x, int bits, out double hi, out double lo) {
+            double c = (1 << bits) + 1;
+            double p = c * x;
+            double q = x - p;
+            hi = p + q;
+            lo = x - hi;
+        }
+
+        [TestMethod]
+        public void TestDecompose () {
+
+            double x = 355.0 / 113.0;
+            bool xSign; long xMantissa; int xExponent;
+            Frexp(x, out xSign, out xMantissa, out xExponent);
+
+            Console.WriteLine("x {0:R} = {1} X 2^({2})", x, xMantissa, xExponent);
+
+            double hi, lo;
+            Decompose(x, 26, out hi, out lo);
+            bool hiSign; long hiMantissa; int hiExponent;
+            Frexp(hi, out hiSign, out hiMantissa, out hiExponent);
+            bool loSign; long loMantissa; int loExponent;
+            Frexp(lo, out loSign, out loMantissa, out loExponent);
+            Console.WriteLine("hi {0:R} = {1} X 2^({2})", hi, hiMantissa, hiExponent);
+            Console.WriteLine("lo {0:R} = {1} X 2^({2})", lo, loMantissa, loExponent);
+
+            double y, a, b, c;
+            Decompose(x, 20, out y, out c);
+            bool ySign; long yMantissa; int yExponent;
+            Frexp(y, out ySign, out yMantissa, out yExponent);
+            bool cSign; long cMantissa; int cExponent;
+            Frexp(c, out cSign, out cMantissa, out cExponent);
+            Console.WriteLine("y {0:R} = {1} X 2^({2})", y, yMantissa, yExponent);
+            Console.WriteLine("c {0:R} = {1} X 2^({2})", c, cMantissa, cExponent);
+
+            Decompose(y, 14, out a, out b);
+            bool aSign; long aMantissa; int aExponent;
+            Frexp(a, out aSign, out aMantissa, out aExponent);
+            bool bSign; long bMantissa; int bExponent;
+            Frexp(b, out bSign, out bMantissa, out bExponent);
+            Console.WriteLine("a {0:R} = {1} X 2^({2})", a, aMantissa, aExponent);
+            Console.WriteLine("b {0:R} = {1} X 2^({2})", b, bMantissa, bExponent);
+
+
+        }
+
+        public static void Multiply2 (double[] a, double[] b, out long z0, out double z1) {
+
+            z0 = 0;
+            z1 = 0.0;
+
+            for (int i = 0; i < Math.Min(a.Length + b.Length, b.Length); i++) {
+                long z0_old = z0;  double z1_old = z1;
+
+                double ab = 0.0;
+                for (int j = Math.Max(0, i - b.Length + 1); j < Math.Min(a.Length, i + 1); j++) {
+                    ab += a[j] * b[i - j];
+                }
+
+                double zr = Math.Round(ab);
+                z0 += (long) zr;
+                double dz = ab - zr;
+                z1 += dz;
+
+                //if (z1 > 0.5) { z1 -= 1.0; z0++; } else if (z1 < -0.5) { z1 += 1.0; z0--; }
+
+                if ((z0 == z0_old) && (z1 == z1_old)) return;
+            }
+
+            throw new NonconvergenceException();
+
+        }
+
+        public static double[] Multiply (double[] a, double[] b) {
+
+            Debug.Assert(a.Length > 0);
+            Debug.Assert(b.Length > 0);
+
+            double[] ab = new double[b.Length];
+
+            ab[0] = a[0] * b[0];
+
+            for (int i = 1; i < Math.Min(a.Length + b.Length, ab.Length); i++) {
+                for (int j = Math.Max(0, i - b.Length + 1); j < Math.Min(a.Length, i + 1); j++) {
+                    ab[i] += a[j] * b[i - j];
+                }
+            }
+
+            return (ab);
+
+        }
+
+        [TestMethod]
+        public void Test2 () {
+            double value = -1.0;
+            bool sign; long mantissa; int exponent;
+            Frexp(value, out sign, out mantissa, out exponent);
+            Console.WriteLine("{0} = {1} {2} X 2^({3})", value, sign, mantissa, exponent); 
+        }
+
+        private static void Frexp (double value, out bool sign, out long mantissa, out int exponent) {
+            long bits = BitConverter.DoubleToInt64Bits(value);
+            sign = (bits < 0);
+            exponent = (int) ((bits >> 52) & 0x7ffL);
+            mantissa = bits & 0xfffffffffffffL;
+
+            mantissa = mantissa | (1L << 52);
+            exponent -= 1075;
+        }
+
+        [TestMethod]
+        public void Test12 () {
+
+            double R = 5734161139222659 * Math.Pow(2.0, -54.0);
+            double C1 = 7074237752028440 * Math.Pow(2.0, -51.0);
+            double C2 = 4967757600021504 * Math.Pow(2.0, -105.0);
+            double C3 = 7744522442262976 * Math.Pow(2.0, -155.0);
+
+            double x = 1000000000.0;
+            Console.WriteLine(x);
+            Console.WriteLine("S {0}", Math.Sin(x));
+
+            double j = Math.Round(x * R);
+
+            x = -j * C1 + x;
+            x = -j * C2 + x;
+            x = -j * C3 + x;
+
+            Console.WriteLine(x);
+            Console.WriteLine("S {0}", Math.Sin(x));
+
+        }
+
+        [TestMethod]
+        public void Test3 () {
+
+            Console.WriteLine("1/(2 Pi):");
+            string text =
+                "001010001011111001100000110110111001001110010001000001010100101001111111000010011" +
+                "1010101111101000111110101001101001101110111000000110110110110001010010101100" +
+                "1100100111100010000111001000001000001111111100101000101100011101010111101111" +
+                "0101110111100010101100001101101110010010001101110001110100100001001001101110" +
+                "1001011100000000001100100100100101110111010100000100111010001100100100001110" +
+                "0111111100001110111101011000111001011000100101001101001110011111011101000100" +
+                "0001000110101111101010010111010111011010001001000010011101001100111000111000" +
+                "0001001101011010001011111011111100100000100111001100100011101011000111001100" +
+                "0001101010011001110011111010010011100100001000101111110001011101111011111100" +
+                "1001010000011101100011111111110001001011111111111110111100000010110011000000" +
+                "0111111101111001011110001000110001011010110100000101001101101000111110110110" +
+                "1001101100111111011001111001001111100101100001001101101110100111101000110001" +
+                "1111101100110100111100101111111101010001011010111010100100111101110101100011" +
+                "1111010111110010111110001011110110011110100000111001110011111011110001010010";
+            Console.WriteLine(text.Length);
+            double[] oneOverTwoPiParts = ParseBinaryString(26, text);
+            foreach (double part in oneOverTwoPiParts) {
+                Console.WriteLine(part);
+            }
+
+            for (double x = 4.0; x < MoreMath.Pow(2.0, 128); x *= 2.0) {
+            }
+
+
+        }
+
+        [TestMethod]
+        public void FindTrigZeros () {
+
+            for (int k = 1048576; k < 4194304; k++) {
+                double y = Math.Abs(Math.Sin(k));
+                if (y < 1.0E-5) Console.WriteLine("{0} {1}", k, y);
+            }
+
+        }
+
+        [TestMethod]
+        public void Test1 () {
+
+            int b = 26;
+            /*
+            Console.WriteLine("1/(2 Pi):");
+            string text =
+                "001010001011111001100000110110111001001110010001000001010100101001111111000010011" +
+                "1010101111101000111110101001101001101110111000000110110110110001010010101100" +
+                "1100100111100010000111001000001000001111111100101000101100011101010111101111" +
+                "0101110111100010101100001101101110010010001101110001110100100001001001101110" +
+                "1001011100000000001100100100100101110111010100000100111010001100100100001110" +
+                "0111111100001110111101011000111001011000100101001101001110011111011101000100" +
+                "0001000110101111101010010111010111011010001001000010011101001100111000111000" +
+                "0001001101011010001011111011111100100000100111001100100011101011000111001100" +
+                "0001101010011001110011111010010011100100001000101111110001011101111011111100" +
+                "1001010000011101100011111111110001001011111111111110111100000010110011000000" +
+                "0111111101111001011110001000110001011010110100000101001101101000111110110110" +
+                "1001101100111111011001111001001111100101100001001101101110100111101000110001" +
+                "1111101100110100111100101111111101010001011010111010100100111101110101100011" +
+                "1111010111110010111110001011110110011110100000111001110011111011110001010010";
+            */
+            Console.WriteLine("1/Pi");
+            string text =
+                "010100010111110011000001101101110010011100100010000010101001010011111110000100111" +
+                "0101011111010001111101010011010011011101110000001101101101100010100101011001" +
+                "1001001111000100001110010000010000011111111001010001011000111010101111011110" +
+                "1011101111000101011000011011011100100100011011100011101001000010010011011101" +
+                "0010111000000000011001001001001011101110101000001001110100011001001000011100" +
+                "1111111000011101111010110001110010110001001010011010011100111110111010001000" +
+                "0010001101011111010100101110101110110100010010000100111010011001110001110000" +
+                "0010011010110100010111110111111001000001001110011001000111010110001110011000" +
+                "0011010100110011100111110100100111001000010001011111100010111011110111111001" +
+                "0010100000111011000111111111100010010111111111111101111000000101100110000000" +
+                "1111111011110010111100010001100010110101101000001010011011010001111101101101";
+
+            Console.WriteLine(text.Length);
+            double[] oneOverTwoPiParts = ParseBinaryString(b, text);
+            foreach (double part in oneOverTwoPiParts) {
+                Console.WriteLine(part);
+            }
+
+            double dsMax = 0.0;
+            double xMax = 0.0;
+            int kMax = 0;
+
+            //int k = 30677225;
+            int k = 15956275;
+            //for (int k = 1 * 65536; k < 1024 * 65536; k++) {
+                double x = k / 65536.0;
+
+                //Console.WriteLine("x");
+                //double x = 1146408.0;
+                //double x = 6381956970095103.0 * MoreMath.Pow(2.0, 797);
+                //double x = Math.PI * 123456789.0;
+                Console.WriteLine("x {0:R}", x);
+                double s0 = Math.Sin(x);
+                Console.WriteLine("S {0:R}", s0);
+                double[] xParts = Decompose(b, x);
+                foreach (double part in xParts) {
+                    //Console.WriteLine(part);
+                }
+
+                //Console.WriteLine("Product");
+                long z0 = 0L;
+                double z1 = 0.0;
+                Multiply2(xParts, oneOverTwoPiParts, out z0, out z1);
+                if (Math.Abs(z1) > 0.5) Console.WriteLine("Z1={0} K={1}", z1, k);
+                /*
+                double[] zParts = Multiply(xParts, oneOverTwoPiParts);
+                foreach (double part in zParts) {
+                    //Console.WriteLine(part);
+                    double zr = Math.Round(part);
+                    z0 += (long) zr;
+                    double dz = part - Math.Round(part);
+                    z1 += dz;
+                    //Console.WriteLine("+ {0} = {1}", dz, z1);
+                }
+                //Console.WriteLine("Result");
+                */
+                Console.WriteLine("{0} + {1:R}", z0, z1);
+                double s1;
+                if (z0 % 2 == 0) {
+                    s1 = Math.Sin(z1 * Math.PI);
+                } else {
+                    s1 = -Math.Sin(z1 * Math.PI);
+                }
+                Console.WriteLine("S {0:R}", s1);
+
+                double ds = Math.Abs(s1 - s0) / s1;
+                if (ds > dsMax) {
+                    dsMax = ds;
+                    xMax = x;
+                    kMax = k;
+                }
+
+            //}
+
+            Console.WriteLine("{0} {1} {2}", kMax, xMax, dsMax);
+
+        }
+
+        [TestMethod]
+        public void FindArgs () {
+            for (int k = 128; k < 65535; k++) {
+                double s = Math.Sin(k);
+                if (Math.Abs(s) < 1.0E-4) Console.WriteLine("{0} {1}", k, s);
+            }
+        }
+
+        private static double[] ParseBinaryString (int b, string text) {
+
+            List<double> parts = new List<double>();
+
+            double value = 1.0;
+            double part = 0.0;
+            int bits = 0;
+            
+            for (int i = 0; i < text.Length; i++) {
+                value = value / 2.0;
+                if (text[i] == '1') {
+                    part += value;
+                }
+                if ((part != 0.0) || (parts.Count > 0)) bits++;
+                if (bits == b) {
+                    parts.Add(part);
+                    part = 0.0;
+                    bits = 0;
+                }
+            }
+            if (part != 0.0) parts.Add(part);
+
+            return (parts.ToArray());
+
+        }
+
 
         [TestMethod]
         public void ET () {

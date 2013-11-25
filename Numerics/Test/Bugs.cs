@@ -15,6 +15,27 @@ namespace Test {
     public class BugTests {
 
         [TestMethod]
+        public void Bug7684 () {
+
+            // These values caused incomplete Beta to be called with argument outside the interval [0,1].
+
+            double I1 = 0.9999902;
+            double a1 = 0.0000434313636267175;
+            double b1 = 18474.36071078790000;
+            BetaDistribution D1 = new BetaDistribution(a1, b1);
+            double x1 = D1.InverseLeftProbability(I1);
+            Console.WriteLine("{0} {1} {2}", x1, D1.LeftProbability(x1), I1);
+
+            double I2 = 0.9998063099306;
+            double a2 = 0.00034509911609819255;
+            double b2 = 6.8453983996634218;
+            BetaDistribution D2 = new BetaDistribution(a2, b2);
+            double x2 = D2.InverseLeftProbability(I2);
+            Console.WriteLine("{0} {1} {2}", x2, D2.LeftProbability(x2), I2);
+
+        }
+
+        [TestMethod]
         public void Bug7213 () {
 
             Sample s = new Sample();

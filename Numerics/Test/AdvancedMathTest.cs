@@ -59,9 +59,9 @@ namespace Test {
 
         [TestMethod]
         public void IntegerBesselRecurrence () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1,100,4)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,16)) {
-                    Console.WriteLine("n = {0}, x={1}", n, x);
+            foreach (int n in TestUtilities.GenerateIntegerValues(1 , 100, 4)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 16)) {
+                    Console.WriteLine("n={0}, x={1:R} Jm={2} J0={3} Jp={4}", n, x, AdvancedMath.BesselJ(n - 1, x), AdvancedMath.BesselJ(n, x), AdvancedMath.BesselJ(n+1,x));
                     Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
                         AdvancedMath.BesselJ(n - 1, x), AdvancedMath.BesselJ(n + 1, x), 2 * n / x * AdvancedMath.BesselJ(n, x)
                     ));
@@ -828,24 +828,34 @@ namespace Test {
         }
 
         [TestMethod]
-        public void IncompleteGammaErfcTest () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 20)) {
+        public void IncompleteGammaErfc () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 16)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Sqrt(Math.PI) * AdvancedMath.Erfc(x), AdvancedMath.Gamma(0.5, x * x)));
             }
         }
 
         [TestMethod]
-        public void IncompleteGammaExpTest () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 20)) {
+        public void IncompleteGammaExp () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 16)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(1.0, x), Math.Exp(-x)));
             }
         }
 
         [TestMethod]
-        public void BetaIntegralTest () {
+        public void BetaSpecialValues () {
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Beta(0.5, 0.5), Math.PI));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Beta(1.0, 1.0), 1.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Beta(1.0, 2.0), 1.0 / 2.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Beta(2.0, 2.0), 1.0 / 6.0));
+
+        }
+
+        [TestMethod]
+        public void BetaIntegral () {
             // a and b values less than one correspond to singular integrals
-            foreach (double a in TestUtilities.GenerateRealValues(1.0, 10.0, 3)) {
-                foreach (double b in TestUtilities.GenerateRealValues(1.0, 10.0, 3)) {
+            foreach (double a in TestUtilities.GenerateRealValues(1.0, 100.0, 4)) {
+                foreach (double b in TestUtilities.GenerateRealValues(1.0, 100.0, 4)) {
                     double B = AdvancedMath.Beta(a, b);
                     Func<double, double> f = delegate(double t) {
                         return (Math.Pow(t, a - 1.0) * Math.Pow(1.0 - t, b - 1.0));
@@ -853,6 +863,19 @@ namespace Test {
                     Interval r = Interval.FromEndpoints(0.0, 1.0);
                     double I = FunctionMath.Integrate(f, r);
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(B, I));
+                }
+            }
+        }
+
+
+        [TestMethod]
+        public void BetaRecurrence () {
+            foreach (double a in TestUtilities.GenerateRealValues(0.01, 10000.0, 8)) {
+                foreach (double b in TestUtilities.GenerateRealValues(0.01, 10000.0, 8)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        AdvancedMath.Beta(a, b),
+                        AdvancedMath.Beta(a + 1.0, b) + AdvancedMath.Beta(a, b + 1.0)
+                    ));
                 }
             }
         }
@@ -868,6 +891,71 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void BetaInequality () {
+            foreach (double a in TestUtilities.GenerateRealValues(10.0E-2, 10.0E3, 8)) {
+                foreach (double b in TestUtilities.GenerateRealValues(10.0E-2, 10.0E3, 8)) {
+                    Assert.IsTrue(AdvancedMath.Beta(a, b) >= Math.Sqrt(AdvancedMath.Beta(a, a) * AdvancedMath.Beta(b, b)));
+                }
+            }
+        }
+
+        // Incomplete beta function
+
+        [TestMethod]
+        public void IncompleteBetaLimits () {
+            foreach (double a in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 8)) {
+                foreach (double b in TestUtilities.GenerateRealValues(0.1, 100.0, 8)) {
+                    Assert.IsTrue(AdvancedMath.LeftRegularizedBeta(a, b, 0.0) == 0.0);
+                    Assert.IsTrue(AdvancedMath.LeftRegularizedBeta(a, b, 1.0) == 1.0);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void IncompleteBetaIdentity1 () {
+            foreach (double a in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 16)) {
+                foreach (double b in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 16)) {
+                    foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0, 8)) {
+                        if (!TestUtilities.IsNearlyEqual(
+                            AdvancedMath.LeftRegularizedBeta(a, b, x) + AdvancedMath.LeftRegularizedBeta(b, a, 1.0 - x), 1.0
+                        )) Console.WriteLine("{0} {1} {2} {3} {4}", a, b, x, AdvancedMath.LeftRegularizedBeta(a, b, x), AdvancedMath.LeftRegularizedBeta(b, a, 1.0 - x));
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                            AdvancedMath.LeftRegularizedBeta(a, b, x) + AdvancedMath.LeftRegularizedBeta(b, a, 1.0 - x), 1.0
+                        ));
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void IncompleteBetaIdentity2 () {
+            foreach (double a in TestUtilities.GenerateRealValues(1.0, 1.0E4, 8)) {
+                foreach (double b in TestUtilities.GenerateRealValues(1.0, 1.0E4, 8)) {
+                    foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 8)) {
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                            AdvancedMath.LeftRegularizedBeta(a, b, x),
+                            x * AdvancedMath.LeftRegularizedBeta(a - 1.0, b, x) + (1.0 - x) * AdvancedMath.LeftRegularizedBeta(a, b - 1.0, x)
+                        ));
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void IncompleteBetaRecurrence () {
+            foreach(double a in TestUtilities.GenerateRealValues(0.1, 100.0, 8)) {
+                foreach (double b in TestUtilities.GenerateRealValues(0.1, 100.0, 8)) {
+                    foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0, 8)) {
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                            (a + b) * AdvancedMath.LeftRegularizedBeta(a, b, x),
+                            a * AdvancedMath.LeftRegularizedBeta(a + 1.0, b, x) + b * AdvancedMath.LeftRegularizedBeta(a, b + 1.0, x)
+                        ));
+                    }
+                }
+            }
+        }
+
         // Error function
 
         [TestMethod]
@@ -878,13 +966,16 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ErfSpecialCasesTest () {
+        public void ErrorFunctionSpecialCases () {
             Assert.IsTrue(AdvancedMath.Erf(0.0) == 0.0);
+            Assert.IsTrue(AdvancedMath.Erf(Double.PositiveInfinity) == 1.0);
+            Assert.IsTrue(AdvancedMath.Erf(Double.NegativeInfinity) == -1.0);
             Assert.IsTrue(AdvancedMath.Erfc(0.0) == 1.0);
+            Assert.IsTrue(AdvancedMath.Erfc(Double.PositiveInfinity) == 0.0);
         }
 
         [TestMethod]
-        public void InverseErfSpecialCasesTest () {
+        public void InverseErrofFunctionSpecialCases () {
             Assert.IsTrue(AdvancedMath.InverseErf(0.0) == 0.0);
             Assert.IsTrue(AdvancedMath.InverseErf(1.0) == Double.PositiveInfinity);
             Assert.IsTrue(AdvancedMath.InverseErfc(0.0) == Double.PositiveInfinity);
@@ -921,7 +1012,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ErfcComplementarity () {
+        public void ErrorFunctionComplementarity () {
             foreach (double x in arguments) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Erf(x) + AdvancedMath.Erfc(x), 1.0));
             }
@@ -929,7 +1020,7 @@ namespace Test {
 
         [TestMethod]
         public void ErfcInequality () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-5,1.0E5,32)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 16)) {
                 double erfc = AdvancedMath.Erfc(x);
                 double factor = 2.0 / Math.Sqrt(Math.PI) * Math.Exp(-x * x);
                 double lower = factor / (x + Math.Sqrt(x * x + 2.0));
@@ -1122,9 +1213,9 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(DF, DI));
             }
         }
-        // detects error in dawson function
+        // This caught an error in our Dawson function.
         // x=2.51786267356676 DF=0.225166478728979 DI=0.221042742228873
-        // integral is right!
+        // Integral was right!
 
         [TestMethod]
         public void FresnelReflectionTest () {
@@ -1559,6 +1650,21 @@ namespace Test {
         }
 
         [TestMethod]
+        public void AiryWronskian () {
+
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
+
+                SolutionPair p = AdvancedMath.Airy(x);
+                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(p.FirstSolutionValue * p.SecondSolutionDerivative,  - p.SecondSolutionValue * p.FirstSolutionDerivative, 1.0 / Math.PI));
+
+                SolutionPair q = AdvancedMath.Airy(-x);
+                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(q.FirstSolutionValue * q.SecondSolutionDerivative, - q.SecondSolutionValue * q.FirstSolutionDerivative, 1.0 / Math.PI));
+
+            }
+
+        }
+
+        [TestMethod]
         public void GoldenRatioTest () {
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual((1.0 + AdvancedMath.GoldenRatio) / AdvancedMath.GoldenRatio, AdvancedMath.GoldenRatio));
@@ -1611,6 +1717,12 @@ namespace Test {
                 Math.PI * Math.PI
             ));
 
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                4.0 * AdvancedMath.DiLog(1.0 / 2.0) - 6.0 * AdvancedMath.DiLog(1.0 / 4.0) -
+                2.0 * AdvancedMath.DiLog(1.0 / 8.0) + AdvancedMath.DiLog(1.0 / 64.0),
+                MoreMath.Pow(Math.Log(2.0), 2)
+            ));
+
         }
 
         [TestMethod]
@@ -1643,6 +1755,58 @@ namespace Test {
 
             }
 
+        }
+
+        [TestMethod]
+        public void PolyTest () {
+            Console.WriteLine(AdvancedMath.DiLog(-3.0));
+            Console.WriteLine(AdvancedMath.Polylog_Inversion(30, -300.0));
+        }
+
+        [TestMethod]
+        public void PolyLogSpecialCases () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 8)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.PolyLog(n, -1.0), -AdvancedMath.DirichletEta(n)));
+                Assert.IsTrue(AdvancedMath.PolyLog(n, 0.0) == 0.0);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.PolyLog(n, 1.0), AdvancedMath.RiemannZeta(n)));
+            }
+        }
+
+        [TestMethod]
+        public void TriLogSpecialCases () {
+            double ln2 = Math.Log(2.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                AdvancedMath.PolyLog(3, 1.0 / 2.0),
+                (4.0 * MoreMath.Pow(ln2, 3) - 2.0 * Math.PI * Math.PI * ln2 + 21.0 * AdvancedMath.RiemannZeta(3.0)) / 24.0
+            ));
+            double lnPhi = Math.Log(AdvancedMath.GoldenRatio);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                AdvancedMath.PolyLog(3, MoreMath.Pow(AdvancedMath.GoldenRatio, -2)),
+                4.0 / 5.0 * AdvancedMath.RiemannZeta(3.0) + 2.0 / 3.0 * MoreMath.Pow(lnPhi, 3) - 2.0 / 15.0 * Math.PI * Math.PI * lnPhi
+            ));
+        }
+
+        [TestMethod]
+        public void TriLogBaileyLadders () {
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                36.0 * AdvancedMath.PolyLog(3, 1.0 / 2.0) - 18.0 * AdvancedMath.PolyLog(3, 1.0 / 4.0) -
+                4.0 * AdvancedMath.PolyLog(3, 1.0 / 8.0) + AdvancedMath.PolyLog(3, 1.0 / 64.0),
+                35.0 / 2.0 * AdvancedMath.RiemannZeta(3.0) - Math.PI * Math.PI * Math.Log(2.0)
+            ));
+
+        }
+
+        [TestMethod]
+        public void PolyLogIntegration () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 64, 4)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 4)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        FunctionMath.Integrate(t => AdvancedMath.PolyLog(n, t) / t, Interval.FromEndpoints(0.0, x)),
+                        AdvancedMath.PolyLog(n + 1, x)
+                    ));
+                }
+            }
         }
 
         [TestMethod]
@@ -1984,6 +2148,32 @@ namespace Test {
 
         }
 
+
+        [TestMethod]
+        public void ClausenSpecialValues () {
+            Assert.IsTrue(AdvancedMath.Clausen(0.0) == 0.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Clausen(Math.PI / 3.0), Math.Sqrt(3.0) / 6.0 * (AdvancedMath.Psi(1, 1.0 / 3.0) - 2.0 / 3.0 * Math.PI * Math.PI)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Clausen(Math.PI / 2.0), AdvancedMath.Catalan));
+        }
+
+        [TestMethod]
+        public void ClausenIntegral () {
+            foreach (double t in TestUtilities.GenerateUniformRealValues(0.0, Math.PI, 4)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    - FunctionMath.Integrate(x => Math.Log(2.0 * Math.Sin(x / 2.0)), Interval.FromEndpoints(0.0, t)),
+                    AdvancedMath.Clausen(t)
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void ClausenSymmetries () {
+            foreach (double t in TestUtilities.GenerateUniformRealValues(-2.0 * Math.PI, 2.0 * Math.PI, 4)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Clausen(2.0 * Math.PI + t), AdvancedMath.Clausen(t)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Clausen(2.0 * Math.PI - t), -AdvancedMath.Clausen(t)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Clausen(Math.PI + t), -AdvancedMath.Clausen(Math.PI - t)));
+            }
+        }
 
 #if FUTURE
 

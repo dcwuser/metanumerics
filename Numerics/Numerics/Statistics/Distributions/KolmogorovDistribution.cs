@@ -155,30 +155,29 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (Mean);
-            } else if (n == 2) {
-                return (Math.PI * Math.PI / 12.0);
             } else {
-                return (AdvancedMath.Gamma(n / 2.0 + 1.0) * AdvancedMath.DirichletEta(n) / Math.Pow(2.0, n / 2.0 - 1.0));
+                return (AdvancedMath.Gamma(r / 2.0 + 1.0) * AdvancedMath.DirichletEta(r) / Math.Pow(2.0, r / 2.0 - 1.0));
             }
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (0.0);
             } else {
-                return (CentralMomentFromRawMoment(n));
+                // Use integration; computation from raw moments suffers from cancelation.
+                return (base.MomentAboutMean(r));
             }
         }
 
@@ -294,15 +293,15 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
         */
 
-        public override double Moment (int m) {
-            if (m < 0) {
-                throw new ArgumentOutOfRangeException("m");
-            } else if (m == 0) {
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
             } else {
                 // we can get these expressions just by integrating Q_0' and Q_1' term by term
-                double M0 = AdvancedMath.DirichletEta(m) * AdvancedMath.Gamma(m / 2.0 + 1.0) / Math.Pow(2.0, m / 2.0 - 1.0);
-                double M1 = -2.0 / 3.0 * AdvancedMath.DirichletEta(m - 1) * AdvancedMath.Gamma((m + 1) / 2.0) / Math.Pow(2.0, (m + 1) / 2.0) * m;
+                double M0 = AdvancedMath.DirichletEta(r) * AdvancedMath.Gamma(r / 2.0 + 1.0) / Math.Pow(2.0, r / 2.0 - 1.0);
+                double M1 = -2.0 / 3.0 * AdvancedMath.DirichletEta(r - 1) * AdvancedMath.Gamma((r + 1) / 2.0) / Math.Pow(2.0, (r + 1) / 2.0) * r;
                 return (M0 + M1 / Math.Sqrt(n));
             }
         }
@@ -845,95 +844,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-    }
-
-    public class KolmogorovTwoSampleExactDistribution : DiscreteDistribution {
-
-        public KolmogorovTwoSampleExactDistribution (int n, int m) {
-            if (n < 1) throw new ArgumentOutOfRangeException("n");
-            if (m < 1) throw new ArgumentOutOfRangeException("m");
-
-            // Ensure n >= m
-            if (m > n) Global.Swap(ref n, ref m);
-
-            this.n = n;
-            this.m = m;
-        }
-
-        private int n, m;
-
-        // We want to count all lattice paths that lead from 0,0 to i,j while satisfying some condition. For the 2-sample KS test, that condition
-        // is | i/n - j/m | < c/mn. This count satisfies
-        //   N(i,j) = N(i, j-1) + N(i-1, j)
-
-        public long LatticePathSum (int c) {
-
-            Func<int, int, int> indicator = (int i, int j) => {
-                if (Math.Abs(m * i - n * j) <= c) {
-                    return (1);
-                } else {
-                    return (0);
-                }
-            };
-
-            long[] column = new long[m + 1];
-
-            for (int j = 0; j <= m; j++) column[j] = indicator(0, j);
-
-            for (int i = 1; i <= n; i++) {
-                column[0] = indicator(i, 0);
-                for (int j = 1; j <= m; j++) {
-                    if (indicator(i, j) == 0) {
-                        column[j] = 0;
-                    } else {
-                        column[j] = column[j] + column[j - 1];
-                    }
-                }
-            }
-
-            return (column[m]);
-
-        }
-
-        public override int Maximum {
-            get {
-                return (m * n);
-            }
-        }
-
-        public override int Minimum {
-            get {
-                return (m);
-            }
-        }
-
-        public override double LeftExclusiveProbability (int k) {
-            if (k <= Minimum) {
-                return (0.0);
-            } else if (k > Maximum) {
-                return (1.0);
-            } else {
-                return (LatticePathSum(k - 1) / AdvancedIntegerMath.BinomialCoefficient(n + m, n));
-            }
-        }
-
-        public override double LeftInclusiveProbability (int k) {
-            if (k < Minimum) {
-                return (0.0);
-            } else if (k >= Maximum) {
-                return (1.0);
-            } else {
-                return (LatticePathSum(k) / AdvancedIntegerMath.BinomialCoefficient(n + m, n));
-            }
-        }
-
-        public override double ProbabilityMass (int k) {
-            if ((k < Minimum) || (k > Maximum)) {
-                return (0.0);
-            } else {
-                return ((LatticePathSum(k) - LatticePathSum(k - 1)) / AdvancedIntegerMath.BinomialCoefficient(n + m, n));
-            }
-        }
     }
 
 }

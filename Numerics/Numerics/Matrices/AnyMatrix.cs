@@ -60,6 +60,29 @@ namespace Meta.Numerics.Matrices {
             return (result);
         }
 
+
+        /// <summary>
+        /// Gets a flag indicating whether the matrix is read-only.
+        /// </summary>
+        /// <remarks>
+        /// <para>Although you can't change the values in a read-only matrix, you can make a writable copy of it.</para>
+        /// </remarks>
+        public bool IsReadOnly {
+
+            get {
+                return (isReadOnly);
+            }
+
+            internal set {
+                isReadOnly = value;
+            }
+
+        }
+
+        private bool isReadOnly = false;
+
+        // to speed access, IsReadOnly shouldn't be virtual
+
     }
 
 }

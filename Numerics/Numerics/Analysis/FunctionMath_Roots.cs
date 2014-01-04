@@ -175,7 +175,7 @@ namespace Meta.Numerics.Functions {
             for (int n = 0; n < Global.SeriesMax; n++) {
 
                 // determine the Newton step
-                SquareLUDecomposition LU = B.LUDecomposition();
+                LUDecomposition LU = B.LUDecomposition();
                 ColumnVector dx = -LU.Solve(F);
 
                 //for (int i = 0; i < d; i++) {

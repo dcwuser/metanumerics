@@ -1315,25 +1315,26 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Tests whether the sample is compatible with another sample.
         /// </summary>
-        /// <param name="sample">The other sample.</param>
+        /// <param name="b">The other sample.</param>
         /// <returns>The test result. The test statistic is the D statistic and the likelyhood is the right probability
         /// to obtain a value of D as large or larger than the one obtained.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="b"/> is null.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
-        public TestResult KolmogorovSmirnovTest (Sample sample) {
-            if (sample == null) throw new ArgumentNullException("sample");
+        public static TestResult KolmogorovSmirnovTest (Sample a, Sample b) {
+            if (a == null) throw new ArgumentNullException("a");
+            if (b == null) throw new ArgumentNullException("b");
 
             // we must have data to do the test
-            if (this.Count < 1) throw new InsufficientDataException();
-            if (sample.Count < 1) throw new InsufficientDataException();
+            if (a.Count < 1) throw new InsufficientDataException(Messages.InsufficientData);
+            if (b.Count < 1) throw new InsufficientDataException(Messages.InsufficientData);
 
             // the samples must be sorted
-            int[] aOrder = this.data.GetSortOrder();
-            int[] bOrder = sample.data.GetSortOrder();
+            int[] aOrder = a.data.GetSortOrder();
+            int[] bOrder = b.data.GetSortOrder();
 
             // keep track of where we are in each sample
-            int c0 = 0;
-            int c1 = 0;
+            int ia = 0;
+            int ib = 0;
 
             // keep track of the cdf of each sample
             double d0 = 0.0;
@@ -1341,15 +1342,15 @@ namespace Meta.Numerics.Statistics {
 
             // find the maximum cdf seperation
             double d = 0.0;
-            while ((c0 < this.Count) && (c1 < sample.Count)) {
-                if (this.data[aOrder[c0]] < sample.data[bOrder[c1]]) {
+            while ((ia < a.Count) && (ib < b.Count)) {
+                if (a.data[aOrder[ia]] < b.data[bOrder[ib]]) {
                     // the next data point is in sample 0
-                    d0 = 1.0 * (c0 + 1) / this.Count;
-                    c0++;
+                    d0 = 1.0 * (ia + 1) / a.Count;
+                    ia++;
                 } else {
                     // the next data point is in sample 1
-                    d1 = 1.0 * (c1 + 1) / sample.Count;
-                    c1++;
+                    d1 = 1.0 * (ib + 1) / b.Count;
+                    ib++;
                 }
                 double dd = Math.Abs(d1 - d0);
                 if (dd > d) d = dd;
@@ -1360,7 +1361,14 @@ namespace Meta.Numerics.Statistics {
             // but this limit is known to be approached slowly; we should look into the exact distribution
             // the exact distribution is actually discrete (since steps are guaranteed to be 1/n or 1/m, D will always be an integer times 1/LCM(n,m))
             // the exact distribution is known and fairly simple in the n=m case (and in that case D will always be an integer times 1/n)
-            return (new TestResult(d, new TransformedDistribution(new KolmogorovDistribution(), 0.0, Math.Sqrt(1.0 * (this.Count + sample.Count) / this.Count / sample.Count))));
+            Distribution nullDistribution;
+            if (AdvancedIntegerMath.BinomialCoefficient(a.Count + b.Count, a.Count) < Int64.MaxValue) {
+                nullDistribution = new DiscreteAsContinuousDistribution(new KolmogorovTwoSampleExactDistribution(a.Count, b.Count), Interval.FromEndpoints(0.0, 1.0));
+            } else {
+                nullDistribution = new TransformedDistribution(new KolmogorovDistribution(), 0.0, Math.Sqrt(1.0 * (a.Count + b.Count) / a.Count / b.Count));
+            }
+
+            return (new TestResult(d, nullDistribution));
 
         }
 

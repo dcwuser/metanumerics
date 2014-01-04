@@ -26,14 +26,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="n">The number of trials, which must be positive.</param>
         public BinomialDistribution (double p, int n) {
             if ((p < 0.0) || (p > 1.0)) throw new ArgumentOutOfRangeException("p");
-            if (n < 1) throw new ArgumentOutOfRangeException("m");
+            if (n < 1) throw new ArgumentOutOfRangeException("n");
             this.p = p;
             this.q = 1.0 - p;
             this.n = n;
         }
 
-        private int n;
-        private double p, q;
+        private readonly int n;
+        private readonly double p, q;
 
         /// <inheritdoc />
         public override double ProbabilityMass (int k) {
@@ -98,7 +98,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Moment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException("r");
             } else if (r == 0) {
                 return (1.0);
             } else {
@@ -123,7 +123,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double MomentAboutMean (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException("r");
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -231,7 +231,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 int kb = n;
                 while (ka != kb) {
                     int k = (ka + kb) / 2;
-                    if (P > LeftExclusiveProbability(k)) {
+                    if (P > LeftInclusiveProbability(k)) {
                         ka = k + 1;
                     } else {
                         kb = k;

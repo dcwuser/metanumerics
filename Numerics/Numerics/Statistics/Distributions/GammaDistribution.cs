@@ -138,13 +138,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
             } else {
-                // M_n = s^n Gamma(a+n)/Gamma(c), implying M_{n} = s (a+n) M_{n-1}
+                // M_r = s^r Gamma(a+r)/Gamma(c), implying M_{r} = s (a+r) M_{r-1}
                 double M = 1.0;
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < r; i++) {
                     M = M * s * (a + i);
                 }
                 return (M);
@@ -152,12 +152,12 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (0.0);
             } else {
 
@@ -167,7 +167,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
                 double C1 = 0.0;
                 double C2 = s * s * a;
-                for (int i = 2; i < n; i++) {
+                for (int i = 2; i < r; i++) {
                     double C3 = s * i * (C2 + a * s * C1);
                     C1 = C2;
                     C2 = C3;
@@ -176,13 +176,14 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        internal override double Cumulant (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        /// <inheritdoc />
+        public override double Cumulant (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (0.0);
             } else {
-                return (a * AdvancedIntegerMath.Factorial(n - 1));
+                return (a * AdvancedIntegerMath.Factorial(r - 1) * MoreMath.Pow(s, r));
             }
         }
 

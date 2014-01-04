@@ -80,48 +80,55 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
-            if (n == 0) {
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (Mean);
             } else {
-                // use an expansion in powers of the mean and moments about the mean
-                // i think this still has problems
-                //double mu = Mean;
-                double M = 0.0;
-                for (int k = 0; k <= n; k = k + 2) {
-                    M += AdvancedIntegerMath.BinomialCoefficient(n, k) * Math.Pow(mu, n - k) * MomentAboutMean(k);
-                }
-                return (M);
+                double[] C = CentralMoments(r);
+                return (MomentMath.CentralToRaw(Mean, C, r));
             }
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
-            if ((n % 2) == 0) {
-                // compute (n-1)!! sigma^n
-                double sigma2 = sigma * sigma;
-                double m = 1.0;
-                for (int j = 1; j < n; j = j + 2) {
-                    m *= sigma2 * j;
-                }
-                return (m);
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
+                return (1.0);
+            } else if ((r % 2) == 0) {
+                // (r-1)!! \sigma^r
+                return (AdvancedIntegerMath.DoubleFactorial(r - 1) * MoreMath.Pow(sigma, r));
             } else {
                 return (0.0);
             }
         }
 
-        internal override double Cumulant (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        // when computing multiple central moments, it's more efficient to use recursion that to compute each seperately
+        // this is used when we compute raw moments
+
+        internal override double[] CentralMoments (int rMax) {
+            double[] C = new double[rMax + 1];
+            C[0] = 1.0;
+            double sigma2 = sigma * sigma;
+            for (int r = 1; r < rMax; r += 2) {
+                C[r + 1] = C[r - 1] * r * sigma2;
+            }
+            return (C);
+        }
+
+        /// <inheritdoc />
+        public override double Cumulant (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (0.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (mu);
-            } else if (n == 2) {
+            } else if (r == 2) {
                 return (sigma * sigma);
             } else {
                 return (0.0);

@@ -9,9 +9,9 @@ using Meta.Numerics.Matrices;
 namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
-    /// Represents a continuous probability distribution.
+    /// Represents all continuous, univariate probability distribution.
     /// </summary>
-	public abstract class Distribution {
+    public abstract class Distribution : UnivariateDistribution {
 
         /// <summary>
         /// Returns the probability density at the given point.
@@ -21,7 +21,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <remarks>
         /// <para>The probability density function (PDF) gives the relative probability of obtaining different values.</para>
         /// </remarks>
-		public abstract double ProbabilityDensity (double x);
+        public abstract double ProbabilityDensity (double x);
 
         /// <summary>
         /// Returns the cumulative probability to the left of (below) the given point.
@@ -50,9 +50,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <para>In survival analysis, the right probability function is commonly called the survival function, because it gives the
         /// fraction of the population remaining after the given time.</para>
         /// </remarks>
-		public virtual double RightProbability (double x) {
-			return( 1.0 - LeftProbability(x) );
-		}
+        public virtual double RightProbability (double x) {
+            return (1.0 - LeftProbability(x));
+        }
 
         /// <summary>
         /// Returns the point at which the cumulative distribution function attains a given value. 
@@ -64,16 +64,16 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// it tells which variable value is the lower border of that quantile.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="P"/> lies outside [0,1].</exception>
-		public virtual double InverseLeftProbability (double P) {
+        public virtual double InverseLeftProbability (double P) {
             // find x where LeftProbability(x) = P 
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
-            Func<double,double> f = delegate(double x) {
-                return(LeftProbability(x) - P);
+            Func<double, double> f = delegate(double x) {
+                return (LeftProbability(x) - P);
             };
             double y = FunctionMath.FindZero(f, Mean);
-            return(y);
+            return (y);
             // since we have the PDF = CDF', change to a method using Newton's method
-		}
+        }
 
         /// <summary>
         /// Returns the point at which the right probability function attains the given value.
@@ -89,73 +89,15 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (y);
         }
 
-        /// <summary>
-        /// Returns the given moment of the distribution.
-        /// </summary>
-        /// <param name="n">The order of the moment to determine.</param>
-        /// <returns>The moment M<sub>n</sub> about the origin.</returns>
-        /// <seealso cref="MomentAboutMean"/>
-		public virtual double Moment (int n) {
-            return (ExpectationValue(delegate(double x) { return (ProbabilityDensity(x) * MoreMath.Pow(x, n)); }));
-		}
+        /// <inheritdoc />
+        public override double Moment (int r) {
+            return (ExpectationValue(x => MoreMath.Pow(x, r)));
+        }
 
-        /// <summary>
-        /// Returns the given moment of the distribution, about the mean. 
-        /// </summary>
-        /// <param name="n">The order of the moment to determine.</param>
-        /// <returns>The moment of order n about the mean.</returns>
-        /// <seealso cref="Moment" />
-		public virtual double MomentAboutMean (int n) {
-			// inheritors may implement
+        /// <inheritdoc />
+        public override double MomentAboutMean (int r) {
             double mu = Mean;
-            return (ExpectationValue(delegate(double x) {
-                return (ProbabilityDensity(x) * MoreMath.Pow(x - mu, n));
-            }));
-		}
-
-        internal virtual double Cumulant (int n) {
-            // inheritors may implement
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Gets the mean of the distribution.
-        /// </summary>
-		public virtual double Mean {
-			get {
-				return(Moment(1));
-			}
-		}
-
-        /// <summary>
-        /// Gets the standard deviation of the distribution.
-        /// </summary>
-		public virtual double StandardDeviation {
-			get {
-				return( Math.Sqrt(Variance) );
-			}
-		}
-
-        /// <summary>
-        /// Gets the variance of the distribution.
-        /// </summary>
-        public virtual double Variance {
-            get {
-                return (MomentAboutMean(2));
-            }
-        }
-
-        /// <summary>
-        /// Ges the skewness of the distribution.
-        /// </summary>
-        /// <remarks>
-        /// <para>The skewness of a distribution is a measurement of its asymmetry about its mean.
-        /// It is the third moment about the mean, measured in units of the cubed standard deviation.</para>
-        /// </remarks>
-        public virtual double Skewness {
-            get {
-                return (MomentAboutMean(3) / Math.Pow(MomentAboutMean(2), 3.0 / 2.0));
-            }
+            return (ExpectationValue(x => MoreMath.Pow(x - mu, r)));
         }
 
         /// <summary>
@@ -183,7 +125,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="f">The function.</param>
         /// <returns>The expectation value of the function.</returns>
         public virtual double ExpectationValue (Func<double, double> f) {
-            return (FunctionMath.Integrate(f, Support));
+            return (FunctionMath.Integrate(x => f(x) * ProbabilityDensity(x), Support));
         }
 
         /// <summary>
@@ -211,138 +153,15 @@ namespace Meta.Numerics.Statistics.Distributions {
             double C = Moment(n);
             for (int k = 1; k <= n; k++) {
                 mm = mm * (-m);
-                C += AdvancedIntegerMath.BinomialCoefficient(n,k) * mm * Moment(n - k);
+                C += AdvancedIntegerMath.BinomialCoefficient(n, k) * mm * Moment(n - k);
             }
 
             return (C);
 
         }
 
-        // compute raw moments from central moments
-        // this doesn't suffer from the cancelation problem of the reverse calculation
-
-        internal virtual double RawMomentFromCentralMoments (int n) {
-
-            double m = Mean;
-
-            double mm = 1.0;
-            double M = MomentAboutMean(n);
-            int B = 1; // binomial coefficient; use recurrence B(n,k) = (n-k+1/k) B(n,k-1)
-            for (int k = 1; k <= n; k++) {
-                B = B * (n - k + 1) / k;
-                mm = mm * m;
-                M += B * mm * MomentAboutMean(n - k);
-            }
-
-            return (M);
-
-        }
 
     }
-
-
-    // Moment formulas used
-
-    // Distribution             Cumulant            Central             Raw
-    // ChiSquared               ?                   Safe Recurrence     Closed
-    // Exponential              Closed              Closed              Sum
-    // Normal                   Closed              Closed              Sum
-#if FUTURE
-    public static class MomentMath {
-
-        // C_n = \sum_{k=0}^{n} \binom{n}{k} M_{n-k} (-\mu)^k
-
-        public static double CentralMomentFromRawMoments (double[] rawMoments) {
-
-            Debug.Assert(rawMoments[0] == 1.0);
-
-            int n = rawMoments.Length - 1;
-
-            if (n == 0) return (1.0);
-            if (n == 1) return (0.0);
-
-            // the first term
-            double MM1 = - rawMoments[1];
-            int k = n;
-            IEnumerator<double> B = AdvancedIntegerMath.BinomialCoefficients(n).GetEnumerator(); B.MoveNext();
-            double MP = 1.0;
-            double C = rawMoments[k];
-
-            // the remaining terms
-            while (B.MoveNext()) {
-                k--;
-                MP *= MM1;
-                C += B.Current * MP * rawMoments[k];
-            }
-            return (C);
-        }
-
-        // M_n = \sum_{k=0}^{n} \binom{n}{k} C_{n-k} \mu^k
-
-        public static double RawMomentFromCentralMoments (double[] centralMoments, double mean) {
-            int n = centralMoments.Length - 1;
-            double MP = 1.0;
-            double M = 0.0;
-            IEnumerator<double> B = AdvancedIntegerMath.BinomialCoefficients(n).GetEnumerator();
-            for (int i = n; i >= 0; i--) {
-                B.MoveNext();
-                M += MP * B.Current * centralMoments[i];
-                MP *= mean;
-            }
-            return (M);
-        }
-
-        // Faa di Bruno's formula related raw moments to cumulants
-
-        // M_n = \sum_{partitions of n} \frac{n!}{m_1 \cdots m_k} C_1 \cdots C_k
-
-        public static double RawMomentFromCumulants (double[] cumulants) {
-            int n = cumulants.Length - 1;
-            double M = 0.0;
-            // each partition of n corresponds to a term, with parition integer -> cumulant
-            foreach (int[] partition in AdvancedIntegerMath.Partitions(n)) {
-                double dM = AdvancedIntegerMath.Factorial(n);
-                int m = 1; int v1 = 0;
-                foreach (int v in partition) {
-                    if (v == v1) {
-                        m++;
-                    } else {
-                        m = 1;
-                    }
-                    dM *= cumulants[v] / AdvancedIntegerMath.Factorial(v) / m;
-                    v1 = v;
-                }
-                M += dM;
-            }
-            return (M);
-        }
-
-        public static double CentralMomentFromCumulants (double[] cumulants) {
-            int n = cumulants.Length - 1;
-            double M = 0.0;
-            // each partition of n corresponds to a term, with parition integer -> cumulant
-            foreach (int[] partition in AdvancedIntegerMath.Partitions(n)) {
-                double dM = AdvancedIntegerMath.Factorial(n);
-                int m = 1; int v1 = 0;
-                foreach (int v in partition) {
-                    if (v == 0) {
-                        dM = 0.0;
-                        break;
-                    } else if (v == v1) {
-                        m++;
-                    } else {
-                        m = 1;
-                    }
-                    dM *= cumulants[v] / AdvancedIntegerMath.Factorial(v) / m;
-                    v1 = v;
-                }
-                M += dM;
-            }
-            return (M);
-        }
-
-    }
-#endif
 
     /// <summary>
     /// Represents an parameterized likelihood distribution.

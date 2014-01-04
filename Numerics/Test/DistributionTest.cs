@@ -39,6 +39,29 @@ namespace Test {
             new GumbelDistribution(1.2, 2.3)
         };
 
+        public static Distribution[] GetDistributions () {
+            return (new Distribution[] {
+            new CauchyDistribution(1.0, 2.0),
+            new UniformDistribution(Interval.FromEndpoints(-2.0,1.0)), new UniformDistribution(Interval.FromEndpoints(7.0, 9.0)),
+            new NormalDistribution(3.0,2.0),
+            new ExponentialDistribution(2.0),
+            new ChiSquaredDistribution(3),
+            new StudentDistribution(5),
+            new LognormalDistribution(0.2,0.4),
+            new WeibullDistribution(2.0, 3.0),
+            new LogisticDistribution(-4.0,5.0),
+            new FisherDistribution(4.0, 7.0),
+            new KuiperDistribution(),
+            new KolmogorovDistribution(),
+            new TriangularDistribution(1.0,2.0,4.0),
+            new BetaDistribution(0.5, 2.0),
+            new ParetoDistribution(1.0, 3.0),
+            new WaldDistribution(3.0, 1.0),
+            new PearsonRDistribution(7),
+            new GammaDistribution(0.8), new GammaDistribution(3.0, 5.0), new GammaDistribution(96.2),
+            new GumbelDistribution(1.2, 2.3)            });
+        }
+
         private double[] probabilities = new double[] {
             0.00001, 0.01, 0.05, 0.1, 1.0 / 3.0, 1.0 / 2.0, 2.0 / 3.0, 0.9, 0.95, 0.99999
         };
@@ -50,21 +73,6 @@ namespace Test {
             }
         }
 
-        [TestMethod]
-        public void DistributionMomentSpecialCases () {
-            foreach (Distribution distribution in distributions) {
-                Console.WriteLine(distribution.GetType().Name);
-                Assert.IsTrue(distribution.Moment(0) == 1.0);
-                Assert.IsTrue(distribution.MomentAboutMean(0) == 1.0);
-                if (!Double.IsNaN(distribution.Mean)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Moment(1), distribution.Mean));
-                    Assert.IsTrue(distribution.MomentAboutMean(1) == 0.0);
-                }
-                if (!Double.IsNaN(distribution.Variance)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.MomentAboutMean(2), distribution.Variance));
-                }
-            }
-        }
 
         [TestMethod]
         public void DistributionSkewness () {
@@ -76,29 +84,6 @@ namespace Test {
                         distribution.Skewness, distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 3.0 / 2.0)
                     ));
                 }
-            }
-        }
-
-        [TestMethod]
-        public void DistributionMomentSums () {
-            foreach (Distribution distribution in distributions) {
-                Console.WriteLine(distribution.GetType().Name);
-                // C2 = M2 - M1^2
-                double M1 = distribution.Moment(1);
-                double M2 = distribution.Moment(2);
-                double C2 = distribution.MomentAboutMean(2);
-                if (Double.IsNaN(M1) || Double.IsNaN(M2)) continue;
-                if (!Double.IsInfinity(C2)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(C2 + M1 * M1, M2));
-                }
-                // C3 = M3 - 3 M2 M1 + 2 M1^3
-                double M3 = distribution.Moment(3);
-                double C3 = distribution.MomentAboutMean(3);
-                if (Double.IsNaN(M3)) continue;
-                if (!Double.IsInfinity(C3)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(C3 + 3.0 * M2 * M1, M3 + 2.0 * M1 * M1 * M1));
-                }
-                // C4 = M4 - 4 M3 M1 + 6 M2 M1^2 - 3 M1^4
             }
         }
 
@@ -506,6 +491,8 @@ namespace Test {
         [TestMethod]
         public void UniformOrderStatistics () {
 
+            // Check that the order statistics of the uniform distribution are distributed as expected.
+
             Random rng = new Random(1);
             UniformDistribution u = new UniformDistribution();
 
@@ -529,12 +516,10 @@ namespace Test {
 
             // maxima should be distributed according to Beta(n,1)
             TestResult maxTest = maxima.KolmogorovSmirnovTest(new BetaDistribution(4, 1));
-            //Console.WriteLine(maxTest.LeftProbability);
             Assert.IsTrue(maxTest.LeftProbability < 0.95);
 
-            // minima should be distributed according to
+            // minima should be distributed according to Beta(1,n)
             TestResult minTest = minima.KolmogorovSmirnovTest(new BetaDistribution(1, 4));
-            //Console.WriteLine(minTest.LeftProbability);
             Assert.IsTrue(minTest.LeftProbability < 0.95);
 
 
@@ -591,6 +576,23 @@ namespace Test {
         }
 
         [TestMethod]
+        public void InverseGaussianSummation () {
+
+            // X_i ~ IG(\mu,\lambda) \rightarrow \sum_{i=0}^{n} X_i ~ IG(n \mu, n^2 \lambda)
+            
+            Random rng = new Random(0);
+            WaldDistribution d0 = new WaldDistribution(1.0, 2.0);
+            Sample s = new Sample();
+            for (int i = 0; i < 64; i++) {
+                s.Add(d0.GetRandomValue(rng) + d0.GetRandomValue(rng) + d0.GetRandomValue(rng));
+            }
+            WaldDistribution d1 = new WaldDistribution(3.0 * 1.0, 9.0 * 2.0);
+            TestResult r = s.KolmogorovSmirnovTest(d1);
+            Console.WriteLine(r.LeftProbability);
+
+        }
+
+        [TestMethod]
         public void CauchyStudentAgreement () {
 
             StudentDistribution S = new StudentDistribution(1);
@@ -606,8 +608,15 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(S.ProbabilityDensity(xS), C.ProbabilityDensity(xC)));
             }
             
+        }
 
-
+        [TestMethod]
+        public void CauchyFWHM () {
+            // Check that FWHM really is the full-width at half-maximum.
+            CauchyDistribution D = new CauchyDistribution(1.0, 2.0);
+            double p = D.ProbabilityDensity(D.Median);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(D.ProbabilityDensity(D.Median - D.FullWithAtHalfMaximum / 2.0), p / 2.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(D.ProbabilityDensity(D.Median + D.FullWithAtHalfMaximum / 2.0), p / 2.0));
         }
 
         [TestMethod]
@@ -683,6 +692,68 @@ namespace Test {
             }
 
         }
+
+        [TestMethod]
+        public void TransformedBetaMoments () {
+
+            // For x ~ B(a,b), kth cumulant of \ln\left(\frac{x}{1-x}\right) = \psi^{(k-1)}(a) \pm \psi^{(k-1)}(b)
+
+            BetaDistribution D = new BetaDistribution(2.0, 3.0);
+
+            double m = D.ExpectationValue(x => Math.Log(x / (1.0 - x)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(m, AdvancedMath.Psi(D.Alpha) - AdvancedMath.Psi(D.Beta)));
+
+            double c2 = D.ExpectationValue(x => MoreMath.Pow(Math.Log(x / (1.0 - x)) - m, 2));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(c2, AdvancedMath.Psi(1, D.Alpha) + AdvancedMath.Psi(1, D.Beta)));
+
+            double c3 = D.ExpectationValue(x => MoreMath.Pow(Math.Log(x / (1.0 - x)) - m, 3));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(c3, AdvancedMath.Psi(2, D.Alpha) - AdvancedMath.Psi(2, D.Beta)));
+
+            double c4 = D.ExpectationValue(x => MoreMath.Pow(Math.Log(x / (1.0 - x)) - m, 4));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(c4 - 3.0 * c2 * c2, AdvancedMath.Psi(3, D.Alpha) + AdvancedMath.Psi(3, D.Beta)));
+
+        }
+
+        [TestMethod]
+        public void DistributionMomentTranslations () {
+
+            int n = 4;
+
+            foreach (Distribution distribution in distributions) {
+
+                if (Double.IsNaN(distribution.Mean)) continue;
+                Console.Write(distribution.GetType().Name);
+
+                // Convert central moments to raw moments
+                double[] centralInputs = new double[n];
+                for (int k = 0; k < n; k++) centralInputs[k] = distribution.MomentAboutMean(k);
+                double[] rawOutputs = MomentMath.CentralToRaw(distribution.Mean, centralInputs);
+                Assert.IsTrue(rawOutputs.Length == n);
+                for (int k = 0; k < n; k++) Assert.IsTrue(TestUtilities.IsNearlyEqual(rawOutputs[k], distribution.Moment(k)));
+
+                // Convert cumulants to central moments
+
+
+            }
+
+        }
+
+        [TestMethod]
+        public void TimeOperations () {
+            foreach (Distribution d in distributions) {
+
+                Stopwatch s = Stopwatch.StartNew();
+                Random rng = new Random(0);
+                double x = 0.0;
+                for (int i = 0; i < 30; i++) {
+                    x += d.Cumulant(i);
+                }
+                s.Stop();
+                Console.WriteLine("{0} {1} {2}", d.GetType().Name, x, s.ElapsedMilliseconds);
+
+            }
+        }
+
 #if FUTURE
         [TestMethod]
         public void MomentMapTest () {

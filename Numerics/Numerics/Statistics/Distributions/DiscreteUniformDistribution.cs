@@ -1,5 +1,7 @@
 ﻿using System;
 
+using Meta.Numerics.Functions;
+
 
 namespace Meta.Numerics.Statistics.Distributions {
 
@@ -68,7 +70,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Variance {
             get {
-                return ((n + 1) * (n - 1)/ 12.0);
+                return ((n + 1) * (n - 1) / 12.0);
             }
         }
 
@@ -108,15 +110,31 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
             } else {
-                if (n % 2 != 0) {
+                if (r % 2 != 0) {
                     return (0.0);
                 } else {
-                    return (base.MomentAboutMean(n));
+                    // Express using Hurwitz Zeta or Bernoulli polynomial
+                    return (base.MomentAboutMean(r));
                 }
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Cumulant (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
+                return (0.0);
+            } else if (r == 1) {
+                return (Mean);
+            } else if (r % 2 != 0) {
+                return (0.0);
+            } else {
+                return (AdvancedIntegerMath.BernoulliNumber(r) / r * (MoreMath.Pow(n, r) - 1.0));
             }
         }
 

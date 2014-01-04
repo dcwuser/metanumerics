@@ -231,6 +231,7 @@ namespace Meta.Numerics.Matrices {
                 // find any zeros on the diagonal and reduce the problem
                 int p = n;
                 while (p > 0) {
+                    if (Math.Abs(b[p - 1]) <= (2.0E-16) * (Math.Abs(a[p]) + Math.Abs(a[p - 1]))) break;
                     p--;
                     // do we need a better zero test?
                     if (a[p] == 0.0) {
@@ -472,7 +473,7 @@ namespace Meta.Numerics.Matrices {
 
         public static void Bidiagonalize (double[] store, int rows, int cols, out double[] a, out double[] b) {
 
-            Debug.Assert(rows >= cols);
+            //Debug.Assert(rows >= cols);
             a = new double[cols];
             b = new double[cols - 1];
 

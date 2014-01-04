@@ -42,7 +42,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (C);
         }
 
-        // C_r = \sum_{k=0}^{n} {n \choose k} (-\mu)^k M_{r-k}
+        // Start from definition C_r = < (x-M1)^r > and use the binomial formula to write (x - M1)^r in terms of powers of x and M1.
+        //   C_r = \sum_{k=0}^{n} {n \choose k} (-\mu)^k M_{r-k}
 
         internal static double RawToCentral (double[] M, int r) {
 
@@ -133,7 +134,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="K">A set or cumulants.</param>
         /// <returns>The corresponding set of raw moments.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="C"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="K"/> is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The zeroth cumulant is not zero.</exception>
         public static double[] CumulantToRaw (double[] K) {
 
@@ -162,28 +163,24 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <summary>
-        /// Converts cumulants to raw moments.
+        /// Converts cumulants to central moments.
         /// </summary>
         /// <param name="K">A set or cumulants.</param>
         /// <returns>The corresponding set of central moments.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="C"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="K"/> is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The zeroth cumulant is not zero.</exception>
         public static double[] CumulantToCentral (double[] K) {
 
             if (K == null) throw new ArgumentNullException("K");
 
             double[] C = new double[K.Length];
-
             if (C.Length == 0) return (C);
 
             if (K[0] != 0.0) throw new ArgumentOutOfRangeException("K");
-
             C[0] = 1.0;
-
             if (C.Length == 1) return (C);
 
             C[1] = 0.0;
-
             if (C.Length == 2) return (C);
 
             for (int r = 2; r < C.Length; r++) {
@@ -242,7 +239,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Converts raw moments to cumulants.
         /// </summary>
-        /// <param name="K">A set of raw moments.</param>
+        /// <param name="M">A set of raw moments.</param>
         /// <returns>The corresponding set of cumulants.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="M"/> is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The zeroth raw moment is not one.</exception>
@@ -264,6 +261,45 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double t = M[r + 1];
                 for (int s = 0; s < r; s++) {
                     t -= AdvancedIntegerMath.BinomialCoefficient(r, s) * K[s + 1] * M[r - s];
+                }
+                K[r + 1] = t;
+            }
+
+            return (K);
+        }
+
+        /// <summary>
+        /// Converts central moments to cumulants.
+        /// </summary>
+        /// <param name="mu">The mean.</param>
+        /// <param name="C">A set of central moments.</param>
+        /// <returns>The corresponding set of cumulants.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="C"/> is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The zeroth central moment is not one, or the first central moment is not zero.</exception>
+        public static double[] CentralToCumulant (double mu, double[] C) {
+
+            if (C == null) throw new ArgumentNullException("C");
+
+            double[] K = new double[C.Length];
+            if (K.Length == 0) return (K);
+
+            // C0 = 1 and K0 = 0
+            if (C[0] != 1.0) throw new ArgumentOutOfRangeException("C");
+            K[0] = 0.0;
+            if (K.Length == 1) return (K);
+
+            // C1 = 0 and K1 = M1
+            if (C[1] != 0.0) throw new ArgumentOutOfRangeException("C");
+            K[1] = mu;
+            if (K.Length == 2) return (K);
+
+            // Determine higher K
+            // s = 0 term involves K1 = M1, so ignore
+            // s = r - 1 term involves C1 = 0, so ignore
+            for (int r = 1; r < K.Length - 1; r++) {
+                double t = C[r + 1];
+                for (int s = 1; s < r - 1; s++) {
+                    t -= AdvancedIntegerMath.BinomialCoefficient(r, s) * K[s + 1] * C[r - s];
                 }
                 K[r + 1] = t;
             }

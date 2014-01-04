@@ -15,6 +15,35 @@ namespace Test {
     public class BugTests {
 
         [TestMethod]
+        public void Bug7686 () {
+            // This SVD failed with a IndexOutOfBoundsException because we didn't handle SVD for cols > rows and didn't check for this condition on entry.
+            RectangularMatrix A = new RectangularMatrix(new double[,] {
+                {-418.746, 310.726, 313.969, 1},
+                {-418.746, 337.451, 229.786, 1},
+                {-305.253, 321.895, 304.895, 1}
+            });
+            var SVD = A.SingularValueDecomposition();
+        }
+
+        [TestMethod]
+        public void Bug7685 () {
+            // This SVD failed with a NonconvergenceException.
+            // Probably this was due to a zero appearing in the superdiagonal band in an intermediate position, since the code change to handle that eliminated the probvlem.
+            SquareMatrix A = new SquareMatrix(new double[,] {
+                {1.900019E+01, 0.000000E+00, 0.000000E+00, -1.385471E+02, 1.027977E+05, 1.520100E+04},
+                {0.000000E+00, 1.900019E+01, 0.000000E+00, -1.026921E+05, -1.499209E+02, 1.410499E+05},
+                {0.000000E+00, 0.000000E+00, 1.900019E+01, -1.499527E+04, -1.410719E+05, 0.000000E+00},
+                {-1.385471E+02, -1.026921E+05, -1.499527E+04, 5.669219E+08, 1.101144E+08, -7.618976E+08},
+                {1.027977E+05, -1.499209E+02, -1.410719E+05, 1.101144E+08, 1.670648E+09, 8.113594E+07},
+                {1.520100E+04, 1.410499E+05, 0.000000E+00, -7.618976E+08, 8.113594E+07, 1.126334E+09}
+            });
+            SingularValueDecomposition SVD = A.SingularValueDecomposition();
+            for (int i = 0; i < SVD.Dimension; i++) {
+                Console.WriteLine(SVD.SingularValue(i));
+            }
+        }
+
+        [TestMethod]
         public void Bug7684 () {
 
             // These values caused incomplete Beta to be called with argument outside the interval [0,1].
@@ -192,7 +221,7 @@ namespace Test {
 
         [TestMethod]
         public void Bug5886 () {
-            // the inverse CDF of hte F-distribution would fail for d2 <= 2
+            // the inverse CDF of the F-distribution would fail for d2 <= 2
             double d1 = 1.0;
             double d2 = 0.1;
             FisherDistribution F = new FisherDistribution(d1, d2);

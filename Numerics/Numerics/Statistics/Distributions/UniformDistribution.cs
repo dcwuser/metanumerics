@@ -12,7 +12,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <seealso href="http://en.wikipedia.org/wiki/Uniform_distribution_(continuous)"/>
     public sealed class UniformDistribution : Distribution {
 
-        private Interval range;
+        private readonly Interval range;
 
         /// <summary>
         /// Initializes a new uniform distribution on the given interval.
@@ -56,70 +56,108 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
-            return (range.LeftEndpoint * (1.0 - P) + range.RightEndpoint * P);
+            return (InverseProbability(P, 1.0 - P));
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double InverseRightProbability (double Q) {
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            return(InverseProbability(1.0 - Q, Q));
+        }
+
+        private double InverseProbability (double P, double Q) {
+            return (range.LeftEndpoint * Q + range.RightEndpoint * P);
+        }
+
+        /// <inheritdoc />
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
-                return (Mean);
             } else {
+                // By simple integration, M_r = (b^{r+1} - a^{r + 1}) / (b - a) / (r + 1).
+                // We have some relatively complex machinery for comuting this without cancelation error.
+                return (DifferenceOfPowers(range.RightEndpoint, range.LeftEndpoint, r + 1) / (r + 1));
+            }
+        }
 
-                double m = range.Midpoint;
-                double w = range.Width;
+        // returns (a^n - b^n), modulo a factor (a - b), computed so as to avoid cancelation errors
 
-                if (Math.Abs(m) > w) {
+        public static double DifferenceOfPowers (double a, double b, int n) {
+            if (n % 2 == 0) {
+                // for even powers, cancelation can be a problem
+                // use a^{2m} - b^{2m} = ( a^m - b^m ) (a^m + b^m)
+                int m = n / 2;
+                return (DifferenceOfPowers(a, b, m) * SumOfPowers(a, b, m));
+            } else {
+                // for odd powers, can be a problem only if a and b have the same sign
+                // use a^n - b^n = (a - b) (a^{n-1} + a^{n-2} b + a^{n-3} b^2 + \cdots + a b^{n-2} + b^{n-1})
+                // All terms in second factor have coefficient 1.
+                double[] aPowers = Powers(a, n);
+                double[] bPowers = Powers(b, n);
+                double s = 0.0;
+                for (int m = 0; m <= (n - 1); m++) {
+                    s += aPowers[m] * bPowers[(n - 1) - m];
+                }
+                // We leave out the factor (a - b). Since this block will execute once and only once for any n,
+                // this will give us (a^n - b^n) / (a - b).
+                return (s);
+            }
+        }
 
-                    // the width is small compared to the midpoint
-                    // start from the approximate value m^n and compute corrections in powers of (w/m)
+        // return (a^n + b^n), computed so as to minimize cancelation errors
 
-                    double f = MoreMath.Pow(m, n);
-
-                    double r = w / m / 2.0;
-                    double rr = r * r;
-
-                    double dg = 1.0;
-                    double g = dg;
-                    for (int k = 2; k <= n; k += 2) {
-                        dg = dg * rr;
-                        g += dg * AdvancedIntegerMath.BinomialCoefficient(n, k) / (k + 1);
-                    }
-
-                    return (f * g);
-
+        private static double SumOfPowers (double a, double b, int n) {
+            if (n % 2 == 0) {
+                // for even powers, cancelation is never a problem
+                return (MoreMath.Pow(a, n) + MoreMath.Pow(b, n));
+            } else {
+                // for odd powers, cancelation can be a problem if a and b have opposite signs
+                if (Math.Sign(a) != Math.Sign(b)) {
+                    // use (a^{2m+1} + b^{2m+1}) = (a + b) (a^{2m} + ... )
+                    return (MoreMath.Pow(a, n) + MoreMath.Pow(b, n));
                 } else {
-                    // the width is large compared to the midpoint
-                    // it should be safe to do a simple subtraction of endpoint powers
-
-                    return ((MoreMath.Pow(range.RightEndpoint, n + 1) - MoreMath.Pow(range.LeftEndpoint, n + 1)) / range.Width / (n + 1));
+                    return (MoreMath.Pow(a, n) + MoreMath.Pow(b, n));
                 }
             }
         }
 
+        // returns all powers of a from a^n up to a^{n-1}
+
+        private static double[] Powers (double a, int n) {
+            double[] powers = new double[n];
+            powers[0] = 1.0;
+            for (int m = 1; m < powers.Length; m++) {
+                powers[m] = powers[m - 1] * a;
+            }
+            return (powers);
+        }
+
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
-            if ((n % 2) != 0) {
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if ((r % 2) != 0) {
                 return (0.0);
             } else {
-                return (MoreMath.Pow(range.Width / 2.0, n) / (n + 1));
+                return (MoreMath.Pow(range.Width / 2.0, r) / (r + 1));
             }
         }
 
-        internal override double Cumulant (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        /// <inheritdoc />
+        public override double Cumulant (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (0.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (range.Midpoint);
+            } else if (r % 2 != 0) {
+                // This isn't strictly necessary since BernoulliNumber(r) will return 0, but there is no reason to compute (b-a)^r
+                return (0.0);
             } else {
-                // B_n / n where B_n is nth Bernoulli number
-                throw new NotImplementedException();
+                return (MoreMath.Pow(range.Width, r) * AdvancedIntegerMath.BernoulliNumber(r) / r);
             }
         }
 

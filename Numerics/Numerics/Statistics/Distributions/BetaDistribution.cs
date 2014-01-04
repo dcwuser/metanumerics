@@ -133,8 +133,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Variance {
             get {
-                double ab = alpha + beta;
-                return (alpha * beta / (ab + 1.0) / (ab * ab));
+                double alphaPlusBeta = alpha + beta;
+                return (alpha * beta / (alphaPlusBeta + 1.0) / (alphaPlusBeta * alphaPlusBeta));
             }
         }
 
@@ -147,15 +147,15 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
             } else {
-                // this is just a recursive development of Beta(alpha + n, beta) / Beta(alpha, beta)
-                double sum = alpha + beta;
+                // this is just a recursive development of \Beta(\alpha + r, \beta) / \Beta(\alpha, \beta)
+                double alphaPlusBeta = alpha + beta;
                 double M = 1.0;
-                for (int i = 0; i < n; i++) {
-                    M = (alpha + i) / (sum + i) * M;
+                for (int i = 0; i < r; i++) {
+                    M = (alpha + i) / (alphaPlusBeta + i) * M;
                 }
                 return (M);
             }
@@ -170,25 +170,25 @@ namespace Meta.Numerics.Statistics.Distributions {
         // This recurrence appears to work and not suffer from the cancelation errors that computation from the raw moments does.
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (0.0);
             } else {
 
                 // use recurrsion
 
-                double s = alpha + beta;
-                double t = beta - alpha;
-                double u = alpha * beta / s;
+                double alphaPlusBeta = alpha + beta;
+                double betaMinusAlpha = beta - alpha;
+                double u = alpha * beta / alphaPlusBeta;
 
                 double C0 = 1.0;
                 double C1 = 0.0;
-                for (int i = 1; i < n; i++) {
-                    double C2 = i / (s + i) / s * (t * C1 + u * C0);
+                for (int i = 1; i < r; i++) {
+                    double C2 = i / (alphaPlusBeta + i) / alphaPlusBeta * (betaMinusAlpha * C1 + u * C0);
                     C0 = C1;
                     C1 = C2;
                 }

@@ -5,8 +5,6 @@ using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Statistics {
 
-#if FUTURE
-
     /// <summary>
     /// A histogram.
     /// </summary>
@@ -83,6 +81,15 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        public void Add (int k) {
+            if ((k < 0) || (k >= counts.Length)) {
+                extraCounts++;
+            } else {
+                counts[k]++;
+            }
+            total++;
+        }
+
         public void Clear () {
             counts = new int[counts.Length];
             extraCounts = 0;
@@ -119,6 +126,12 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        public int Count {
+            get {
+                return(counts.Length);
+            }
+        }
+
         /// <summary>
         /// The range of values in the histogram.
         /// </summary>
@@ -128,6 +141,49 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        public TestResult ChiSquaredTest (DiscreteDistribution distribution) {
+
+            double chi2 = 0.0;
+            int dof = 0;
+
+            //int lastObservedCounts = extraCounts;
+            //double lastExpectedCounts = (distribution.LeftExclusiveProbability(0) + distribution.RightExclusiveProbability(counts.Length - 1)) * total;
+            int lastObservedCounts = 0;
+            double lastExpectedCounts = 0.0;
+
+            int observedCounts = 0;
+            double expectedCounts = 0.0;
+
+            for (int i = 0; i < counts.Length; i++) {
+                observedCounts += counts[i];
+                expectedCounts += distribution.ProbabilityMass(i) * total;
+                if (expectedCounts > 4.0) {
+
+                    if (lastExpectedCounts > 0.0) {
+                        chi2 += MoreMath.Sqr(lastObservedCounts - lastExpectedCounts) / lastExpectedCounts;
+                        dof++;
+                    }
+
+                    lastObservedCounts = observedCounts;
+                    lastExpectedCounts = expectedCounts;
+
+                    observedCounts = 0;
+                    expectedCounts = 0.0;
+                }
+            }
+
+            lastObservedCounts += observedCounts;
+            lastExpectedCounts += expectedCounts;
+            if (lastExpectedCounts > 0.0) {
+                chi2 += MoreMath.Sqr(lastObservedCounts - lastExpectedCounts) / lastExpectedCounts;
+            }
+
+            Distribution nullDistribution = new ChiSquaredDistribution(dof);
+            return (new TestResult(chi2, nullDistribution));
+
+        }
+
+        /*
        public TestResult ChiSquaredTest (DiscreteDistribution distribution) {
 
            int N = TotalCounts;
@@ -150,10 +206,10 @@ namespace Meta.Numerics.Statistics {
            return (new TestResult(chi2, new ChiSquaredDistribution(counts.Length - 1)));
 
         }
-
+        */
 
     }
-
+    
     /// <summary>
     /// One bin of a histogram.
     /// </summary>
@@ -207,7 +263,5 @@ namespace Meta.Numerics.Statistics {
         }
 
     }
-
-#endif
 
 }

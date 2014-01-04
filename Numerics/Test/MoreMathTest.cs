@@ -51,6 +51,17 @@ namespace Test {
 
         }
 
+
+        [TestMethod]
+        public void SmallHypotenuseTest () {
+
+            // construct 3-4-5 right triangle with side lengths whoose squares would underflow
+            double x = 8.0 / Double.MaxValue;
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                MoreMath.Hypot(3.0 * x, 4.0 * x), 5.0 * x
+            ));
+        }
     }
 
 }

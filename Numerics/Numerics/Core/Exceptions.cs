@@ -54,7 +54,7 @@ namespace Meta.Numerics {
         /// <summary>
         /// Initializes a new dimension mismatch exception.
         /// </summary>
-        public DimensionMismatchException () : base() { }
+        public DimensionMismatchException () : base(Messages.DimensionMismatch) { }
 
         /// <summary>
         /// Inititalizes a new dimension mismatch exception with the given exception message.

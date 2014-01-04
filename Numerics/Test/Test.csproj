@@ -109,6 +109,7 @@
     <Compile Include="TridiagonalMatrixTest.cs" />
     <Compile Include="UncertainMathTest.cs" />
     <Compile Include="UncertainValueTest.cs" />
+    <Compile Include="UnivariateDistributionTest.cs" />
     <Compile Include="VectorTest.cs" />
   </ItemGroup>
   <ItemGroup>

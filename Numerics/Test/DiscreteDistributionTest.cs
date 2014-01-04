@@ -62,45 +62,20 @@ namespace Test {
         private DiscreteDistribution[] distributions = new DiscreteDistribution[] {
             new BernoulliDistribution(0.1),
             new BinomialDistribution(0.2, 30), new BinomialDistribution(0.4, 5),
-            new PoissonDistribution(4.5),
+            new PoissonDistribution(4.5), new PoissonDistribution(400.0),
             new DiscreteUniformDistribution(5, 11),
             new GeometricDistribution(0.6)
         };
 
-        [TestMethod]
-        public void DiscreteDistributionMomentSpecialCases () {
-
-            foreach (DiscreteDistribution distribution in distributions) {
-                Assert.IsTrue(distribution.Moment(0) == 1.0);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Moment(1), distribution.Mean));
-                Assert.IsTrue(distribution.MomentAboutMean(0) == 1.0);
-                Assert.IsTrue(distribution.MomentAboutMean(1) == 0.0);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.MomentAboutMean(2), distribution.Variance));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Sqrt(distribution.Variance), distribution.StandardDeviation));
-            }
-
+        public static DiscreteDistribution[] GetDistributions () {
+            return (new DiscreteDistribution[] {
+            new BernoulliDistribution(0.1),
+            new BinomialDistribution(0.2, 30), new BinomialDistribution(0.4, 5),
+            new PoissonDistribution(4.5), new PoissonDistribution(400.0),
+            new DiscreteUniformDistribution(5, 11),
+            new GeometricDistribution(0.6)            });
         }
 
-        [TestMethod]
-        public void DiscreteDistributionMomentSums () {
-            foreach (DiscreteDistribution distribution in distributions) {
-                Console.WriteLine(distribution.GetType().Name);
-                // C2 = M2 - M1^2
-                double M1 = distribution.Moment(1);
-                double M2 = distribution.Moment(2);
-                double C2 = distribution.MomentAboutMean(2);
-                if (!Double.IsInfinity(C2)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(C2 + M1 * M1, M2));
-                }
-                // C3 = M3 - 3 M2 M1 + 2 M1^3
-                double M3 = distribution.Moment(3);
-                double C3 = distribution.MomentAboutMean(3);
-                if (!Double.IsInfinity(C3)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(C3 + 3.0 * M2 * M1, M3 + 2.0 * M1 * M1 * M1));
-                }
-                // C4 = M4 - 4 M3 M1 + 6 M2 M1^2 - 3 M1^4
-            }
-        }
 
         [TestMethod]
         public void DiscreteDistributionUnitarity () {
@@ -151,11 +126,14 @@ namespace Test {
                 // some of these values will be outside the support, but that's fine, our results should still be consistent with probability axioms
                 foreach (int k in TestUtilities.GenerateUniformIntegerValues(-10, +100, 6)) {
 
+                    Console.WriteLine("{0} {1}", distribution.GetType().Name, k);
+
                     double DP = distribution.ProbabilityMass(k);
                     Assert.IsTrue(DP >= 0.0); Assert.IsTrue(DP <= 1.0);
 
                     double P = distribution.LeftInclusiveProbability(k);
                     double Q = distribution.RightExclusiveProbability(k);
+                    Console.WriteLine("{0} {1} {2}", P, Q, P + Q);
 
                     Assert.IsTrue(P >= 0.0); Assert.IsTrue(P <= 1.0);
                     Assert.IsTrue(Q >= 0.0); Assert.IsTrue(Q <= 1.0);
@@ -176,10 +154,11 @@ namespace Test {
                 double P = rng.NextDouble();
 
                 foreach (DiscreteDistribution distribution in distributions) {
-                    int x = distribution.InverseLeftProbability(P);
-                    Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, P, x, distribution.LeftInclusiveProbability(x));
-                    Assert.IsTrue(distribution.LeftInclusiveProbability(x - 1) < P);
-                    Assert.IsTrue(P <= distribution.LeftInclusiveProbability(x));
+                    int k = distribution.InverseLeftProbability(P);
+                    Console.WriteLine("{0} P={1} K={2} P(k<K)={3} P(k<=K)={4}", distribution.GetType().Name, P, k, distribution.LeftExclusiveProbability(k), distribution.LeftInclusiveProbability(k));
+                    Console.WriteLine("    {0} {1}", distribution.LeftExclusiveProbability(k) < P, P <= distribution.LeftInclusiveProbability(k));
+                    Assert.IsTrue(distribution.LeftExclusiveProbability(k) < P);
+                    Assert.IsTrue(P <= distribution.LeftInclusiveProbability(k));
                 }
 
 
@@ -234,6 +213,30 @@ namespace Test {
             PoissonDistribution pd = new PoissonDistribution(0.5);
             double x = pd.InverseLeftProbability(0.7716);
             Console.WriteLine(x);
+
+        }
+
+        [TestMethod]
+        public void DiscreteDistributionRandomValues () {
+
+            foreach (DiscreteDistribution distribution in distributions) {
+
+                int max;
+                if (distribution.Maximum < 128) {
+                    max = distribution.Maximum + 1;
+                } else {
+                    max = (int) Math.Round(distribution.Mean + 2.0 * distribution.StandardDeviation);
+                }
+                Console.WriteLine("{0} {1}", distribution.GetType().Name, max);
+
+                Histogram h = new Histogram(max);
+
+                Random rng = new Random(314159265);
+                for (int i = 0; i < 1024; i++) h.Add(distribution.GetRandomValue(rng));
+                TestResult result = h.ChiSquaredTest(distribution);
+                Assert.IsTrue(result.RightProbability > 0.05);
+
+            }
 
         }
 

@@ -106,7 +106,12 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
-            return (scale * Math.Pow(-Math.Log(1.0 - P), 1.0 / shape));
+            return (scale * Math.Pow(-MoreMath.LogOnePlus(-P), 1.0 / shape));
+        }
+
+        public override double InverseRightProbability (double Q) {
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            return (scale * Math.Pow(-Math.Log(Q), 1.0 / shape)); 
         }
 
         /// <inheritdoc />
@@ -126,30 +131,30 @@ namespace Meta.Numerics.Statistics.Distributions {
         // standard deviation inherits from base; nothing special to say about it
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0.0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double Moment (int r) {
+            if (r < 0.0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
             } else {
-                return (Math.Pow(scale, n) * AdvancedMath.Gamma(1.0 + n / shape));
+                return (Math.Pow(scale, r) * AdvancedMath.Gamma(1.0 + r / shape));
             }
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (0.0);
             } else {
                 // for large shape parameters, central moments involve strong calculations, so integrate to get them
                 if (shape < 2.0) {
-                    return (CentralMomentFromRawMoment(n));
+                    return (CentralMomentFromRawMoment(r));
                 } else {
-                    return(base.MomentAboutMean(n));
+                    return(base.MomentAboutMean(r));
                 }
             }
         }

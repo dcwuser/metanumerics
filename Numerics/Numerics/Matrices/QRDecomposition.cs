@@ -17,9 +17,9 @@ namespace Meta.Numerics.Matrices {
     /// </remarks>
     public sealed class QRDecomposition {
 
-        private double[] qtStore;
-        private double[] rStore;
-        private int rows, cols;
+        private readonly double[] qtStore;
+        private readonly double[] rStore;
+        private readonly int rows, cols;
 
         internal QRDecomposition (double[] qtStore, double[] rStore, int rows, int columns) {
             this.qtStore = qtStore;
@@ -46,18 +46,19 @@ namespace Meta.Numerics.Matrices {
         /// The upper-right triangular matrix R.
         /// </summary>
         /// <returns>The upper-right triangular matrix R.</returns>
+        /// <remarks>
+        /// <para>The returned matrix is read-only. If you need to make changes to it, you can call <see cref="RectangularMatrix.Copy"/> to obtain a writable copy.</para>
+        /// </remarks> 
         public RectangularMatrix RMatrix () {
-            double[] store = new double[rows * cols];
-            Array.Copy(rStore, store, rStore.Length);
-            return (new RectangularMatrix(store, rows, cols));
+            return (new RectangularMatrix(rStore, rows, cols, true));
         }
 
         
         /// <summary>
-        /// Solve the system Q x = b.
+        /// Solve the system A x = b.
         /// </summary>
         /// <param name="rhs">The right-hand-side b.</param>
-        /// <returns>The column vector x for which Q x is closest to b.</returns>
+        /// <returns>The column vector x for which A x is closest to b.</returns>
         public ColumnVector Solve (IList<double> rhs) {
 
             if (rhs == null) throw new ArgumentNullException("rhs");

@@ -695,7 +695,7 @@ namespace Test {
                     //foreach (double datum in aSamples[i]) Console.WriteLine("a={0}", datum);
                     //foreach (double datum in bSamples[j]) Console.WriteLine("b={0}", datum);
 
-                    TestResult result = aSamples[i].KolmogorovSmirnovTest(bSamples[j]);
+                    TestResult result = Sample.KolmogorovSmirnovTest(aSamples[i], bSamples[j]);
                     Console.WriteLine("{0} v. {1}: D={2} P={3}", i, j, result.Statistic, result.LeftProbability);
                     if (i == j) {
                         Assert.IsTrue(result.LeftProbability < 0.90);
@@ -704,7 +704,7 @@ namespace Test {
                     }
 
                     // the order shouldn't matter
-                    TestResult reverse = bSamples[j].KolmogorovSmirnovTest(aSamples[i]);
+                    TestResult reverse = Sample.KolmogorovSmirnovTest(bSamples[j], aSamples[i]);
                     Assert.IsTrue(reverse.Statistic == result.Statistic);
                     Assert.IsTrue(reverse.RightProbability == result.RightProbability);
 

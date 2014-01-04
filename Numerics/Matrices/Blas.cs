@@ -46,19 +46,45 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
-        // |x| = sqrt( sum_i x_i^2 )
+        // |x| = \sqrt( \sum_i x_i^2 )
         public static double dNrm2 (double[] store, int offset, int stride, int count) {
-            double m = 0.0;
-            int n = 0;
+
+            // This is essentially Blue's algorithm. Divide the double range into numbers whose square would
+            // overflow (large), numbers whose square would underflow (small), and numbers in betweeen (medium).
+            // Sum each seperately, scaling large and small to avoid to avoid over- and under-flow before squaring.
+            // Then combine sums when finished. In "usual" circumstances (medium numbers only), this requires
+            // no more flops than a straight sum-of-squares, just a few extra comparisons.
+
+            double small = 0.0;
+            double medium = 0.0;
+            double large = 0.0;
+
             int i = offset;
-            while (n < count) {
-                double x = store[i];
-                m += x * x;
-                n++;
+            for (int n = 0; n < count; n++) {
+                double x = Math.Abs(store[i]);
+                if (x != 0.0) {
+                    if (x < smallLimit) {
+                        small += MoreMath.Sqr(x / smallLimit);
+                    } else if (x < largeLimit) {
+                        medium += x * x;
+                    } else {
+                        large += MoreMath.Sqr(x / largeLimit);
+                    }
+                }
                 i += stride;
             }
-            return (Math.Sqrt(m));
+            if (large > 0.0) {
+                return (MoreMath.Hypot(Math.Sqrt(large) * largeLimit, medium));
+            } else if (small > 0.0) {
+                return (MoreMath.Hypot(Math.Sqrt(small) * smallLimit, medium));
+            } else {
+                return (Math.Sqrt(medium));
+            }
         }
+
+        private static readonly double largeLimit = MoreMath.Pow(2.0, 508);
+
+        private static readonly double smallLimit = 1.0 / largeLimit;
 
         // sum_i |x_i|
         public static double dNrm1 (double[] store, int offset, int stride, int count) {
@@ -135,6 +161,55 @@ namespace Meta.Numerics.Matrices {
 
         }
 
+        // Solve a triangular system
+        //   aIsUpper indicates whether A is upper/right or lower/left
+        //   aIsUnit indicates whether A's diagonal elements are all 1 or not
+        // The relevent elements of xStore are overwritten by the solution vector
+
+        public static void dTrsv (
+            bool aIsUpper, bool aIsUnit, double[] aStore, int aOffset, int aRowStride, int aColStride,
+            double[] xStore, int xOffset, int xStride,
+            int count
+        ) {
+
+            int aDiagonalStride = aColStride + aRowStride;
+
+            // If A is upper triangular, start at the bottom/right and reverse the direction of progression.
+            // This does not affect the passed in variables because integers are pass-by-value.
+            if (aIsUpper) {
+                aOffset = aOffset + (count - 1) * aDiagonalStride;
+                aRowStride = -aRowStride;
+                aColStride = -aColStride;
+                aDiagonalStride = -aDiagonalStride;
+                xOffset = xOffset + (count - 1) * xStride;
+                xStride = -xStride;
+            }
+
+            // The index of the first row element to be subtracted in the numerator.
+            int aRowIndex = aOffset;
+            // The index of the x element to be solved for.
+            int xIndex = xOffset;
+
+            // We hoist the aIsUnit test outside the loop and pay the cost of a little repeated code in
+            // order to avoid an unnecessary per-loop test. It's possible the compiler could do this for us.
+            if (aIsUnit) {
+                for (int n = 0; n < count; n++) {
+                    xStore[xIndex] -= Blas1.dDot(aStore, aRowIndex, aColStride, xStore, xOffset, xStride, n);
+                    aRowIndex += aRowStride;
+                    xIndex += xStride;
+                }
+            } else {
+                int aDiagonalIndex = aOffset;
+                for (int n = 0; n < count; n++) {
+                    xStore[xIndex] -= Blas1.dDot(aStore, aRowIndex, aColStride, xStore, xOffset, xStride, n);
+                    xStore[xIndex] /= aStore[aDiagonalIndex];
+                    aRowIndex += aRowStride;
+                    aDiagonalIndex += aDiagonalStride;
+                    xIndex += xStride;
+                }
+            }
+
+        }
     }
 
 }

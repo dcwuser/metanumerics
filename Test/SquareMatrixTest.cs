@@ -194,17 +194,17 @@ namespace Test {
 
         [TestMethod]
         public void SquareRandomMatrixLUDecomposition () {
-            for (int d = 1; d <= 200; d=d+11) {
+            for (int d = 1; d <= 256; d += 11) {
 
                 Console.WriteLine("d={0}", d);
 
                 SquareMatrix M = CreateSquareRandomMatrix(d);
 
                 // LU decompose the matrix
-                Stopwatch sw = Stopwatch.StartNew();
-                SquareLUDecomposition LU = M.LUDecomposition();
-                sw.Stop();
-                Console.WriteLine(sw.ElapsedMilliseconds);
+                //Stopwatch sw = Stopwatch.StartNew();
+                LUDecomposition LU = M.LUDecomposition();
+                //sw.Stop();
+                //Console.WriteLine(sw.ElapsedMilliseconds);
 
                 Assert.IsTrue(LU.Dimension == d);
 
@@ -248,7 +248,7 @@ namespace Test {
 
                 // LU decompose the matrix
                 SquareMatrix V = CreateVandermondeMatrix(d);
-                SquareLUDecomposition LU = V.LUDecomposition();
+                LUDecomposition LU = V.LUDecomposition();
 
                 // test that the decomposition works
                 SquareMatrix P = LU.PMatrix();
@@ -330,7 +330,7 @@ namespace Test {
             for (int d = 1; d <= 10; d++) {
                 SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
                 Assert.IsTrue(I.Trace() == d);
-                SquareLUDecomposition LU = I.LUDecomposition();
+                LUDecomposition LU = I.LUDecomposition();
                 Assert.IsTrue(LU.Determinant() == 1.0);
                 SquareMatrix II = LU.Inverse();
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(II, I));
@@ -367,6 +367,8 @@ namespace Test {
             M[1,0] = 1;
             M[2,1] = 1;
             M[3,2] = 1;
+            // The eigenvalues of this matrix are -1, -1, 1, 1.
+            // There are only two distinct eigenvectors: (1, -1, 1, -1) with eigenvalue -1, and (1, 1, 1, 1) with eigenvalue 1.
             ComplexEigensystem E = M.Eigensystem();
             for (int i = 0; i < E.Dimension; i++) {
                 Console.WriteLine(E.Eigenvalue(i));
@@ -587,9 +589,10 @@ namespace Test {
         public void MatrixPeriodTest () {
 
             // Period 1 (idempotent) matrix
-            SquareMatrix A = new SquareMatrix(2);
-            A[0, 0] = 1.0; A[0, 1] = 1.0;
-            A[1, 0] = 0.0; A[1, 1] = 0.0;
+            SquareMatrix A = new SquareMatrix(new double[,] {
+                { 1.0, 1.0 },
+                { 0.0, 0.0 }
+            });
 
             SquareMatrix A2 = A.Power(2);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(A2, A));
@@ -609,6 +612,23 @@ namespace Test {
 
             SquareMatrix C4 = C.Power(4);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(C4, C));
+
+        }
+
+        [TestMethod]
+        public void SvdOfRankOneMatrix () {
+
+            // Create a rank-1 matrix
+            ColumnVector v = new ColumnVector(1.0, 2.0, 3.0, 4.0);
+            RectangularMatrix A = v * v.Transpose();
+
+            // Only the first singular value should be non-zero
+            SingularValueDecomposition SVD = A.SingularValueDecomposition();
+            Console.WriteLine(SVD.SingularValue(0));
+            for (int i = 1; i < SVD.Dimension; i++) {
+                Console.WriteLine(SVD.SingularValue(i));
+                Assert.IsTrue(SVD.SingularValue(i) < TestUtilities.TargetPrecision * SVD.SingularValue(0));
+            }
 
         }
 

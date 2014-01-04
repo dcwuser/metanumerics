@@ -12,8 +12,8 @@ namespace Meta.Numerics.Matrices {
     /// </summary>
     public sealed class SquareMatrix : AnySquareMatrix {
 
-        private int dimension;
-        private double[] store;
+        private readonly int dimension;
+        private readonly double[] store;
 
         /// <summary>
         /// Initializes a new square matrix.
@@ -26,10 +26,31 @@ namespace Meta.Numerics.Matrices {
             this.store = MatrixAlgorithms.AllocateStorage(dimension, dimension);
         }
 
-        internal SquareMatrix (double[] storage, int dimension) {
+        /// <summary>
+        /// Initializes a new square matrix from the given 2D array.
+        /// </summary>
+        /// <param name="entries">The source 2D array.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="entries"/> is null.</exception>
+        /// <exception cref="DimensionMismatchException">The first and second dimensions of <paramref name="entries"/> are not equal.</exception>
+        public SquareMatrix (double[,] entries) {
+            if (entries == null) throw new ArgumentNullException("entries");
+            if (entries.GetLength(0) != entries.GetLength(1)) throw new DimensionMismatchException();
+            this.dimension = entries.GetLength(0);
+            this.store = MatrixAlgorithms.AllocateStorage(dimension, dimension);
+            for (int r = 0; r < dimension; r++) {
+                for (int c = 0; c < dimension; c++) {
+                    this[r, c] = entries[r, c];
+                }
+            }
+        }
+
+        internal SquareMatrix (double[] storage, int dimension, bool isReadOnly) {
             this.store = storage;
             this.dimension = dimension;
+            this.IsReadOnly = isReadOnly;
         }
+
+        internal SquareMatrix (double[] storage, int dimension) : this(storage, dimension, false) { }
 
         // required methods
 
@@ -57,6 +78,7 @@ namespace Meta.Numerics.Matrices {
             set {
                 if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
                 if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
+                if (IsReadOnly) throw new InvalidOperationException();
                 MatrixAlgorithms.SetEntry(store, dimension, dimension, r, c, value);
             }
         }
@@ -166,7 +188,7 @@ namespace Meta.Numerics.Matrices {
         /// a row-wise permutation of M).</para>
         /// <para>The LU decomposition of a square matrix is an O(N<sup>3</sup>) operation.</para>
         /// </remarks>
-        public SquareLUDecomposition LUDecomposition () {
+        public LUDecomposition LUDecomposition () {
 
             // copy the matrix content
             double[] luStore = MatrixAlgorithms.Copy(store, dimension, dimension);
@@ -182,7 +204,7 @@ namespace Meta.Numerics.Matrices {
             SquareMatrixAlgorithms.LUDecompose(luStore, permutation, ref parity, dimension);
 
             // package it up and return it
-            SquareLUDecomposition LU = new SquareLUDecomposition(luStore, permutation, parity, dimension);
+            LUDecomposition LU = new LUDecomposition(luStore, permutation, parity, dimension);
 
             return (LU);
 
@@ -270,157 +292,6 @@ namespace Meta.Numerics.Matrices {
 
         }
 
-#if PAST
-
-        public ComplexEigensystem Eigensystem () {
-
-            double[] aStore = MatrixAlgorithms.Copy(store, dimension, dimension);
-            double[] qStore = SquareMatrixAlgorithms.CreateUnitMatrix(dimension);
-            SquareMatrixAlgorithms.ReduceToHessenberg(aStore, qStore, dimension);
-
-            Complex[] eigenvalues = SquareMatrixAlgorithms.ExtractEigenvalues(aStore, qStore, dimension);
-
-            MatrixAlgorithms.PrintMatrix(aStore, dimension, dimension);
-
-            SquareMatrix A = new SquareMatrix(aStore, dimension);
-            SquareMatrix Q = new SquareMatrix(qStore, dimension);
-
-            // get eigenvectors
-            Complex[][] eigenvectors = ExtractEigenvectors(A, Q, eigenvalues);
-            //NormalizeEigenvectors(eigenvectors);
-
-            ComplexEigensystem eigensystem = new ComplexEigensystem(dimension, eigenvalues, eigenvectors);
-            return (eigensystem);
-
-        }
-
-        // given A in real Schur form (i.e. upper triangular except for 2 X 2 blocks along the diagonal), and Q
-        // that got us there, extract eigenvectors of A and apply Q to transform them to the eigenvectors of the
-        // original matrix
-
-        private static Complex[][] ExtractEigenvectors (SquareMatrix A, SquareMatrix Q, Complex[] e) {
-
-            // a store which will be used to store each eigenvalue of A
-            int dim = A.Dimension;
-
-            // a store for the eigenvectors of the the original matrix,
-            // which are th
-            Complex[][] X = new Complex[dim][];
-
-            // get eigenvectors of A
-            for (int k = 0; k < dim; k++) {
-
-                // find the kth eigenvector of the (nearly) upper triangular matrix A
-                Complex[] b;
-                int imax;
-                //Console.WriteLine("Computing eigenvector {0}", k);
-
-                if ((k > 0) && (A[k, k - 1] != 0.0)) {
-                    // an extra element to the left
-                    b = new Complex[k + 1];
-                    b[k] = 1.0;
-                    b[k - 1] = A[k - 1, k] / (e[k] - A[k - 1, k - 1]);
-                    //Console.WriteLine("b[{0}] = {1}", k, b[k]);
-                    //Console.WriteLine("b[{0}] = {1}", k - 1, b[k - 1]);
-                    imax = k - 2;
-                } else if (((k + 1) < dim) && (A[k + 1, k] != 0.0)) {
-                    // an extra element below
-                    b = new Complex[k + 2];
-                    b[k + 1] = 1.0;
-                    b[k] = A[k, k + 1] / (e[k] - A[k, k]);
-                    //b[k + 1] = A[k+1,k] / (e[k] - A[k+1,k+1]);
-                    //Console.WriteLine("b[{0}] = {1}", k+1, b[k+1]);
-                    //Console.WriteLine("b[{0}] = {1}", k, b[k]);
-                    imax = k - 1;
-                } else {
-                    // the pure upper triangular case
-                    b = new Complex[k + 1];
-                    b[k] = 1.0;
-                    imax = k - 1;
-                }
-
-                for (int i = imax; i >= 0; i--) {
-                    //Console.WriteLine("Component {0}", i);
-                    if ((i == 0) || (A[i, i - 1] == 0.0)) {
-                        // system is pure tridiagonal, so solution is straightforward
-                        Complex s = 0.0;
-                        //Console.WriteLine("Start from A[{0},{1}] = {2}", i, k, s);
-                        for (int j = i + 1; j < b.Length; j++) {
-                            s += A[i, j] * b[j];
-                            //Console.WriteLine("Add A[{0},{1}] * B[{2}] = {3} * {4}", i, j, j, A[i, j], b[j]);
-                        }
-                        Complex t = e[k] - A[i, i];
-                        if (s == 0.0) {
-                            // deal with trivial Shur form; this arises e.g. for decomposition of unit matrix
-                            // without this, we get zero divided by zero, which is NaN
-                            b[i] = 0.0;
-                        } else {
-                            b[i] = s / t;
-                        }
-                    } else {
-                        // system has a sub-diagonal element, so solution is a little more complex
-                        Complex s1 = 0.0;
-                        Complex s2 = 0.0;
-                        for (int j = i + 1; j < b.Length; j++) {
-                            s1 += A[i - 1, j] * b[j];
-                            s2 += A[i, j] * b[j];
-                        }
-                        Complex t1 = e[k] - A[i - 1, i - 1];
-                        Complex t2 = e[k] - A[i, i];
-                        b[i] = (s2 + A[i,i-1] * s1 / t1) / (t2 - A[i,i-1] * A[i-1,i]/ t1);
-                    }
-                    //Console.WriteLine("b[{0}] = {1}", i, b[i]);
-                }
-
-                // transform it to the original basis
-                X[k] = new Complex[dim];
-                for (int i = 0; i < dim; i++) {
-                    Complex x = 0.0;
-                    for (int j = 0; j < b.Length; j++) {
-                        x += Q[i, j] * b[j];
-                    }
-                    X[k][i] = x;
-                    //Console.Write("{0}  ", x);
-                }
-                //Console.WriteLine();
-                //Console.ReadLine();
-
-            }
-
-            //
-
-            return (X);
-
-        }
-
-        // renormalize eigenvectors so that their 2-norm is unity
-
-        private static void NormalizeEigenvectors (Complex[,] Z) {
-
-            int d = Z.GetLength(0);
-
-            // loop over eigenvectors
-            for (int n = 0; n < d; n++) {
-
-                // find the normalization factor
-                double x = 0.0;
-                for (int i = 0; i < d; i++) {
-                    Complex z = Z[i,n];
-                    x += z.Re * z.Re + z.Im * z.Im;
-                }
-                x = Math.Sqrt(x);
-
-                // divide by it
-                for (int i = 0; i < d; i++) {
-                    Z[i, n] = Z[i, n] / x;
-                }
-
-            }
-
-        }
-
-#endif
-
         /// <summary>
         /// Computes the singular value decomposition of the square matrix.
         /// </summary>
@@ -434,82 +305,6 @@ namespace Meta.Numerics.Matrices {
             RectangularMatrix r = new RectangularMatrix(copy, dimension, dimension);
             return (r.SingularValueDecomposition());
         }
-
-#if PAST
-
-        private static void WilkersonOneStep (double[] store, int dimension, int a, int n) {
-
-            //Console.WriteLine("Before:");
-            //Write(store, dimension, dimension);
-
-            int x = n - 2;
-            int y = n - 1;
-            int z = n;
-            double Axx = MatrixAlgorithms.GetEntry(store, dimension, dimension, x, x);
-            double Axy = MatrixAlgorithms.GetEntry(store, dimension, dimension, x, y);
-            double Axz = MatrixAlgorithms.GetEntry(store, dimension, dimension, x, z);
-            double Ayx = MatrixAlgorithms.GetEntry(store, dimension, dimension, y, x);
-            double Ayy = MatrixAlgorithms.GetEntry(store, dimension, dimension, y, y);
-            double Ayz = MatrixAlgorithms.GetEntry(store, dimension, dimension, y, z);
-            double Azy = MatrixAlgorithms.GetEntry(store, dimension, dimension, z, y);
-            double Azz = MatrixAlgorithms.GetEntry(store, dimension, dimension, z, z);
-
-            
-            double[] roots = CubicRealRoots(
-                -(Axx + Ayy + Azz),
-                Axx * Ayy + Axx * Azz + Ayy * Azz - Axy * Ayx - Ayz * Ayz,
-                Axy * Ayx * Azz + Axx * Ayz * Azy - Axx * Ayy * Azz - Axz * Azy * Ayx
-            );
-
-            double mu = roots[0];
-            for (int i = 1; i < roots.Length; i++) {
-                if (Math.Abs(roots[i] - Azz) < Math.Abs(mu - Azz)) mu = roots[i];
-            }
-            //Console.WriteLine("mu = {0}", mu);
-            
-            ShiftedQRStep(store, dimension, a, n, mu);
-
-            //Console.WriteLine("After:");
-            //Write(store, dimension, dimension);
-
-        }
-
-        private static double[] CubicRealRoots (double a, double b, double c) {
-            double Q = (a * a - 3.0 * b) / 9.0;
-            double R = (2.0 * a * a * a - 9.0 * a * b + 27.0 * c) / 54.0;
-
-            double Q3 = Q * Q * Q;
-            double R2 = R * R;
-
-            //double S = R * R / (Q * Q * Q);
-            //Console.WriteLine("Q={0}, R={1} S={2}", Q, R, S);
-
-            if (Q3 > R2) {
-                double t = Math.Acos(R/Math.Sqrt(Q3));
-                double x0 = -a / 3.0;
-                double x1 = -2.0 * Math.Sqrt(Q);
-                return (new double[] {
-                    x0 + x1 * Math.Cos(t / 3.0),
-                    x0 + x1 * Math.Cos((t + 2.0 * Math.PI) / 3.0),
-                    x0 + x1 * Math.Cos((t - 2.0 * Math.PI) / 3.0)
-                });
-            } else {
-                double A = Math.Pow(Math.Abs(R) + Math.Sqrt(R2 - Q3), 1.0 / 3.0);
-                if (R >= 0.0) A = -A;
-
-                double B;
-                if (A != 0.0) {
-                    B = Q / A;
-                } else {
-                    B = 0.0;
-                }
-                return (new double[] { A + B - a / 3.0 });
-
-                throw new NotImplementedException();
-            }
-        }
-
-#endif
        
 #if FUTURE
 
@@ -659,9 +454,11 @@ namespace Meta.Numerics.Matrices {
             if (v == null) throw new ArgumentNullException("v");
             if (A.dimension != v.dimension) throw new DimensionMismatchException();
             double[] avStore = new double[A.dimension];
-            Blas2.dGemv(A.store, 0, 1, A.dimension, v.store, 0, 1, avStore, 0, 1, A.dimension, A.dimension);
+            Blas2.dGemv(A.store, 0, 1, A.dimension, v.store, v.offset, v.stride, avStore, 0, 1, A.dimension, A.dimension);
             return (new ColumnVector(avStore, A.dimension));
         }
+
+        // should above method be in ColumnVector type so that all references to vector fields are in VectorBase, RowVector, and ColumnVector?
 
         /// <summary>
         /// Multiply a real, square matrix by a real constant.

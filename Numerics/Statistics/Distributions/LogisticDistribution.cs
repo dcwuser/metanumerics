@@ -101,34 +101,64 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
-            return (m + s * Math.Log(P / (1.0 - P)));
+            return (InverseProbability(P, 1.0 - P));
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
-                return (1.0);
-            } else if (n == 1) {
-                return (Mean);
+        public override double InverseRightProbability (double Q) {
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            return (InverseProbability(1.0 - Q, Q));
+        }
+
+        private double InverseProbability (double P, double Q) {
+            if (P == 0.0) {
+                return (Double.NegativeInfinity);
+            } else if (Q == 0.0) {
+                return (Double.PositiveInfinity);
             } else {
-                return (RawMomentFromCentralMoments(n));
+                return (m + s * Math.Log(P / Q));
             }
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
+            } else if (r == 1) {
+                return (Mean);
             } else {
-                if (n % 2 == 0) {
-                    return (2.0 * AdvancedIntegerMath.Factorial(n) * AdvancedMath.DirichletEta(n) * Math.Pow(s, n));
-                } else {
-                    return (0.0);
-                }
+                double[] C = CentralMoments(r);
+                return (MomentMath.CentralToRaw(Mean, C, r));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
+                return (1.0);
+            } else if (r % 2 != 0) {
+                return (0.0);
+            } else  {
+                return (2.0 * AdvancedIntegerMath.Factorial(r) * AdvancedMath.DirichletEta(r) * MoreMath.Pow(s, r));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Cumulant (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
+                return (0.0);
+            } else if (r == 1) {
+                return (m);
+            } else if (r % 2 != 0) {
+                return (0.0);
+            } else {
+                return (2.0 * AdvancedIntegerMath.Factorial(r - 1) * AdvancedMath.RiemannZeta(r) * MoreMath.Pow(s, r));
             }
         }
 

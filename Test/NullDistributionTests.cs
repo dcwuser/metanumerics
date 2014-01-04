@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 
@@ -99,6 +100,48 @@ namespace Test {
                 Assert.IsTrue(testStatistics.PopulationMean.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Mean));
                 Assert.IsTrue(testStatistics.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Variance));
 
+            }
+
+        }
+
+        [TestMethod]
+        public void TwoSampleKolmogorovNullDistributionTest () {
+
+            Distribution population = new ExponentialDistribution();
+
+            int[] sizes = new int[] { 23, 30, 175 };
+
+            foreach (int na in sizes) {
+                foreach (int nb in sizes) {
+                    Console.WriteLine("{0} {1}", na, nb);
+
+                    Sample d = new Sample();
+                    Distribution nullDistribution = null;
+                    for (int i = 0; i < 128; i++) {
+
+                        Sample a = TestUtilities.CreateSample(population, na, 31415 + na + i);
+                        Sample b = TestUtilities.CreateSample(population, nb, 27182 + nb + i);
+
+                        TestResult r = Sample.KolmogorovSmirnovTest(a, b);
+                        d.Add(r.Statistic);
+                        nullDistribution = r.Distribution;
+
+                    }
+                    // Only do full KS test if the number of bins is larger than the sample size, otherwise we are going to fail
+                    // because the KS test detects the granularity of the distribution
+                    TestResult mr = d.KolmogorovSmirnovTest(nullDistribution);
+                    Console.WriteLine(mr.LeftProbability);
+                    if (AdvancedIntegerMath.LCM(na, nb) > d.Count) Assert.IsTrue(mr.LeftProbability < 0.99);
+                    // But always test that mean and standard deviation are as expected
+                    Console.WriteLine("{0} {1}", nullDistribution.Mean, d.PopulationMean.ConfidenceInterval(0.99));
+                    Assert.IsTrue(d.PopulationMean.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Mean));
+                    Console.WriteLine("{0} {1}", nullDistribution.StandardDeviation, d.PopulationStandardDeviation.ConfidenceInterval(0.99));
+                    Assert.IsTrue(d.PopulationStandardDeviation.ConfidenceInterval(0.99).ClosedContains(nullDistribution.StandardDeviation));
+                    Console.WriteLine("{0} {1}", nullDistribution.MomentAboutMean(3), d.PopulationMomentAboutMean(3).ConfidenceInterval(0.99));
+                    //Assert.IsTrue(d.PopulationMomentAboutMean(3).ConfidenceInterval(0.99).ClosedContains(nullDistribution.MomentAboutMean(3)));
+
+                    //Console.WriteLine("m {0} {1}", nullDistribution.Mean, d.PopulationMean);
+                }
             }
 
         }

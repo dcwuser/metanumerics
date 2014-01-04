@@ -156,5 +156,30 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void ExtendedVectorNorm () {
+
+            // Check that vector norm is correctly computed even when vector is enormous (square would overflow) or tiny (square woudl underflow)
+
+            double x = Double.MaxValue / 32.0;
+
+            // Use the pythagorian quadrouple (2, 3, 6, 7)
+            ColumnVector v = new ColumnVector(2.0, 3.0, 6.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(v.Norm(), 7.0));
+            ColumnVector bv = x * v;
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(bv.Norm(), 7.0 * x));
+            ColumnVector sv = v / x;
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(sv.Norm(), 7.0 / x));
+
+            // Use the pythagorian 7-tuple (1, 2, 3, 4, 5, 27, 28)
+            RowVector u = new RowVector(1.0, 2.0, 3.0, 4.0, 5.0, 27.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(u.Norm(), 28.0));
+            RowVector bu = x * u;
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(bu.Norm(), 28.0 * x));
+            RowVector su = u / x;
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(su.Norm(), 28.0 / x));
+
+        }
+
     }
 }

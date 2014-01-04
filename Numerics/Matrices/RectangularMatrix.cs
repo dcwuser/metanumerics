@@ -42,14 +42,17 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
-        internal RectangularMatrix (double[] store, int rows, int cols) {
+        internal RectangularMatrix (double[] store, int rows, int cols, bool isReadOnly) {
             this.store = store;
             this.rows = rows;
             this.cols = cols;
+            this.IsReadOnly = isReadOnly;
         }
 
-        private double[] store;
-        private int rows, cols;
+        internal RectangularMatrix (double[] store, int rows, int cols) : this(store, rows, cols, false) { }
+
+        private readonly double[] store;
+        private readonly int rows, cols;
 
         // required implementations of abstract methods
 
@@ -63,6 +66,7 @@ namespace Meta.Numerics.Matrices {
             set {
                 if ((r < 0) || (r > rows)) throw new ArgumentOutOfRangeException("r");
                 if ((c < 0) || (c > cols)) throw new ArgumentOutOfRangeException("r");
+                if (IsReadOnly) throw new InvalidOperationException();
                 store[MatrixAlgorithms.GetIndex(rows, cols, r, c)] = value;
             }
         }
@@ -237,26 +241,50 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>The SVD of the matrix.</returns>
         public SingularValueDecomposition SingularValueDecomposition () {
-            
-            // copy the matrix so as not to distrub the original
-            double[] copy = MatrixAlgorithms.Copy(store, rows, cols);
 
-            // bidiagonalize it
-            double[] a, b;
-            MatrixAlgorithms.Bidiagonalize(copy, rows, cols, out a, out b);
+            if (rows >= cols) {
 
-            // form the U and V matrices
-            double[] left = MatrixAlgorithms.AccumulateBidiagonalU(copy, rows, cols);
-            double[] right = MatrixAlgorithms.AccumulateBidiagonalV(copy, rows, cols);
-            
-            // find the singular values of the bidiagonal matrix
-            MatrixAlgorithms.ExtractSingularValues(a, b, left, right, rows, cols);
-            
-            // sort them
-            MatrixAlgorithms.SortValues(a, left, right, rows, cols);
+                // copy the matrix so as not to distrub the original
+                double[] copy = MatrixAlgorithms.Copy(store, rows, cols);
 
-            // package it all up
-            return (new SingularValueDecomposition(left, a, right, rows, cols));
+                // bidiagonalize it
+                double[] a, b;
+                MatrixAlgorithms.Bidiagonalize(copy, rows, cols, out a, out b);
+
+                // form the U and V matrices
+                double[] left = MatrixAlgorithms.AccumulateBidiagonalU(copy, rows, cols);
+                double[] right = MatrixAlgorithms.AccumulateBidiagonalV(copy, rows, cols);
+
+                // find the singular values of the bidiagonal matrix
+                MatrixAlgorithms.ExtractSingularValues(a, b, left, right, rows, cols);
+
+                // sort them
+                MatrixAlgorithms.SortValues(a, left, right, rows, cols);
+
+                // package it all up
+                return (new SingularValueDecomposition(left, a, right, rows, cols));
+
+            } else {
+
+                double[] scratch = MatrixAlgorithms.Transpose(store, rows, cols);
+
+                double[] a, b;
+                MatrixAlgorithms.Bidiagonalize(scratch, cols, rows, out a, out b);
+
+                double[] left = MatrixAlgorithms.AccumulateBidiagonalU(scratch, cols, rows);
+                double[] right = MatrixAlgorithms.AccumulateBidiagonalV(scratch, cols, rows);
+
+                MatrixAlgorithms.ExtractSingularValues(a, b, left, right, cols, rows);
+
+                MatrixAlgorithms.SortValues(a, left, right, cols, rows);
+
+                left = MatrixAlgorithms.Transpose(left, cols, cols);
+                right = MatrixAlgorithms.Transpose(right, rows, rows);
+
+                return (new SingularValueDecomposition(right, a, left, rows, cols));
+
+
+            }
 
         }
 
@@ -273,9 +301,11 @@ namespace Meta.Numerics.Matrices {
             if (v == null) throw new ArgumentNullException("v");
             if (A.cols != v.dimension) throw new DimensionMismatchException();
             double[] avStore = new double[A.rows];
-            Blas2.dGemv(A.store, 0, 1, A.rows, v.store, 0, 1, avStore, 0, 1, A.rows, A.cols);
+            Blas2.dGemv(A.store, 0, 1, A.rows, v.store, v.offset, v.stride, avStore, 0, 1, A.rows, A.cols);
             return (new ColumnVector(avStore, A.rows));
         }
+
+        // should above method be in ColumnVector type so that all references to vector fields are in VectorBase, RowVector, and ColumnVector?
 
         /// <summary>
         /// Casts a rectangular matrix to a square matrix.

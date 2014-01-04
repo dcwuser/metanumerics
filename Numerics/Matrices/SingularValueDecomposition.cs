@@ -32,10 +32,10 @@ namespace Meta.Numerics.Matrices {
             this.cols = cols;
         }
 
-        private int rows, cols;
-        private double[] utStore;
-        private double[] wStore;
-        private double[] vStore;
+        private readonly int rows, cols;
+        private readonly double[] utStore;
+        private readonly double[] wStore;
+        private readonly double[] vStore;
 
         /// <summary>
         /// Gets the number of rows in the original matrix.
@@ -68,9 +68,11 @@ namespace Meta.Numerics.Matrices {
         /// Returns the right transform matrix.
         /// </summary>
         /// <returns>The matrix V, such that A = U S V<sup>T</sup>.</returns>
+        /// <remarks>
+        /// <para>The returned matrix is read-only. If you need to make changes to it, you can call <see cref="SquareMatrix.Copy"/> to obtain a writable copy.</para>
+        /// </remarks>
         public SquareMatrix RightTransformMatrix () {
-            double[] right = MatrixAlgorithms.Copy(vStore, cols, cols);
-            return (new SquareMatrix(right, cols));
+            return (new SquareMatrix(vStore, cols, true));
         }
 
         /// <summary>
@@ -78,7 +80,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <remarks>
         /// <para>For a square matrix, the number of singular values is equal to the dimension of the matrix.
-        /// For a rectangular matrix with more rows than columns, the number of singualr values is equal to
+        /// For a rectangular matrix with more rows than columns, the number of singular values is equal to
         /// the number of columns.</para>
         /// </remarks>
         public int Dimension {
@@ -104,11 +106,12 @@ namespace Meta.Numerics.Matrices {
         /// <param name="n">The (zero-based) index.</param>
         /// <returns>The <paramref name="n"/>th left singular vector.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> lies outside the range [0, <see cref="Dimension"/> - 1].</exception>
+        /// <remarks>
+        /// <para>The returned vector is read-only. If you need to make changes to it, you can call <see cref="ColumnVector.Copy"/> to obtain a writable copy.</para>
+        /// </remarks>
         public ColumnVector LeftSingularVector (int n) {
             if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException("n");
-            double[] vector = new double[rows];
-            Blas1.dCopy(utStore, n, rows, vector, 0, 1, rows);
-            return (new ColumnVector(vector, rows));
+            return (new ColumnVector(utStore, n, rows, rows, true));
         }
 
         /// <summary>
@@ -117,11 +120,24 @@ namespace Meta.Numerics.Matrices {
         /// <param name="n">The (zero-based) index.</param>
         /// <returns>The <paramref name="n"/>th right singular vector.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> lies outside the range [0, <see cref="Dimension"/> - 1].</exception>
+        /// <remarks>
+        /// <para>The returned vector is read-only. If you need to make changes to it, you can call <see cref="ColumnVector.Copy"/> to obtain a writable copy.</para>
+        /// </remarks> 
         public ColumnVector RightSingularVector (int n) {
             if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException("n");
-            double[] vector = new double[cols];
-            Blas1.dCopy(vStore, n * cols, 1, vector, 0, 1, cols);
-            return (new ColumnVector(vector, cols));
+            return (new ColumnVector(vStore, n * cols, 1, cols, true));
+        }
+
+        /// <summary>
+        /// Returns the condition number of the matrix.
+        /// </summary>
+        /// <remarks>
+        /// <para>The conidition number is the ratio of the largest singular value to smallest singular value. It is therefore always larger than one.</para>
+        /// </remarks>
+        public double ConditionNumber {
+            get {
+                return (wStore[0] / wStore[wStore.Length - 1]);
+            }
         }
 
     }

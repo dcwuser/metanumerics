@@ -15,29 +15,23 @@ namespace Meta.Numerics.Matrices {
         /// Initializes a new row vector with the given dimension.
         /// </summary>
         /// <param name="dimension">The dimension of the vector, which must be positive.</param>
-        public RowVector (int dimension)
-            : base(dimension) {
-        }
+        public RowVector (int dimension) : base(dimension) { }
 
         /// <summary>
         /// Initializes a new row vector from the given component list.
         /// </summary>
         /// <param name="list">A list of vector components.</param>
-        public RowVector (IList<double> list)
-            : base(list) {
-        }
+        public RowVector (IList<double> list) : base(list) { }
 
         /// <summary>
         /// Initializes a new row vector with the given components.
         /// </summary>
         /// <param name="list">A list of vector components.</param>
-        public RowVector (params double[] list)
-            : base(list) {
-        }
+        public RowVector (params double[] list) : base(list) { }
 
-        internal RowVector (double[] store, int dim)
-            : base(store, dim) {
-        }
+        internal RowVector (double[] store, int dimension, bool isReadOnly) : base(store, dimension, isReadOnly) { }
+
+        internal RowVector (double[] store, int dimension) : base(store, dimension) { }
 
         /// <inheritdoc />
         public override int RowCount {
@@ -54,12 +48,12 @@ namespace Meta.Numerics.Matrices {
             get {
                 if (r != 0) throw new ArgumentOutOfRangeException("r");
                 if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
-                return (store[c]);
+                return (base[c]);
             }
             set {
                 if (r != 0) throw new ArgumentOutOfRangeException("r");
                 if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
-                store[c] = value;
+                base[c] = value;
             }
         }
 
@@ -68,7 +62,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>An independent column vector with the same components as the row vector.</returns>
         public ColumnVector Transpose () {
-            double[] copy = VectorAlgorithms.Copy(store, dimension);
+            double[] copy = VectorAlgorithms.Copy(store, offset, stride, dimension);
             return (new ColumnVector(copy, dimension));
         }
 
@@ -77,7 +71,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>An independent copy of the row vector.</returns>
         public RowVector Copy () {
-            double[] copy = VectorAlgorithms.Copy(store, dimension);
+            double[] copy = VectorAlgorithms.Copy(store, offset, stride, dimension);
             return (new RowVector(copy, dimension));
         }
 
@@ -91,7 +85,7 @@ namespace Meta.Numerics.Matrices {
             if (v1 == null) throw new ArgumentNullException("v1");
             if (v2 == null) throw new ArgumentNullException("v2");
             if (v1.dimension != v2.dimension) throw new DimensionMismatchException();
-            double[] store = VectorAlgorithms.Add(v1.store, v2.store, v1.dimension);
+            double[] store = VectorAlgorithms.Add(v1.store, v1.offset, v1.stride, v2.store, v2.offset, v2.stride, v1.dimension);
             return (new RowVector(store, v1.dimension));
         }
 
@@ -105,7 +99,7 @@ namespace Meta.Numerics.Matrices {
             if (v1 == null) throw new ArgumentNullException("v1");
             if (v2 == null) throw new ArgumentNullException("v2");
             if (v1.dimension != v2.dimension) throw new DimensionMismatchException();
-            double[] store = VectorAlgorithms.Subtract(v1.store, v2.store, v1.dimension);
+            double[] store = VectorAlgorithms.Subtract(v1.store, v1.offset, v1.stride, v2.store, v2.offset, v2.stride, v1.dimension);
             return (new RowVector(store, v1.dimension));
         }
 
@@ -117,7 +111,7 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The product.</returns>
         public static RowVector operator * (double alpha, RowVector v) {
             if (v == null) throw new ArgumentNullException("v");
-            double[] store = VectorAlgorithms.Multiply(alpha, v.store, v.dimension);
+            double[] store = VectorAlgorithms.Multiply(alpha, v.store, v.offset, v.stride, v.dimension);
             return (new RowVector(store, v.dimension));
         }
 
@@ -129,7 +123,7 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The result.</returns>
         public static RowVector operator / (RowVector v, double alpha) {
             if (v == null) throw new ArgumentNullException("v");
-            double[] store = VectorAlgorithms.Multiply(1.0 / alpha, v.store, v.dimension);
+            double[] store = VectorAlgorithms.Multiply(1.0 / alpha, v.store, v.offset, v.stride, v.dimension);
             return (new RowVector(store, v.dimension));
         }
 
@@ -173,7 +167,7 @@ namespace Meta.Numerics.Matrices {
             if (v == null) throw new ArgumentNullException("v");
             if (u == null) throw new ArgumentNullException("u");
             if (v.dimension != u.dimension) throw new DimensionMismatchException();
-            double p = Blas1.dDot(v.store, 0, 1, u.store, 0, 1, v.dimension);
+            double p = Blas1.dDot(v.store, v.offset, v.stride, u.store, u.offset, u.stride, v.dimension);
             return (p);
         }
 

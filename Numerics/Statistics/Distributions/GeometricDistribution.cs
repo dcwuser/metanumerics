@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 
+using Meta.Numerics.Functions;
+
 namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
@@ -23,7 +25,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             this.q = 1.0 - p;
         }
 
-        private double p, q;
+        private readonly double p, q;
 
 #if PAST
         /// <inheritdoc />
@@ -105,7 +107,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Variance {
             get {
-                return (q / (p*p));
+                return (q / (p * p));
             }
         }
 
@@ -124,6 +126,46 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         // raw moments involve the negative polylog function, central moments the Lerch transcendent
+
+        // Raw moments M_r = E_n(q) / p^r where E_n(q) is the nth Eulerian polynomial, i.e. the polynomial with coefficient < n m > of x^m.
+        // Note that the Eulerian polynomials and their coefficients the Eulerian numbers are not the same as the Euler polynomials and Euler numbers.
+
+        /// <inheritdoc />
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
+                return (1.0);
+            } else {
+                return (q * EulerianPolynomial(r, q) / MoreMath.Pow(p, r));
+            }
+        }
+
+        public static double EulerianPolynomial (int n, double x) {
+
+            // Determine coefficients using < n m > = (n - m) < (n-1) (m-1) > + (m + 1) < (n-1) m >
+            double[] c0 = new double[n];
+            double[] c1 = new double[n];
+            c0[0] = 1.0;
+            for (int i = 2; i <= n; i++) {
+                c1[0] = 1.0;
+                for (int j = 1; j < i; j++) {
+                    c1[j] = (i - j) * c0[j - 1] + (j + 1) * c0[j];
+                }
+                double[] t = c0; c0 = c1; c1 = t;
+            }
+
+            // Evaluate the polynomial \sum_{m = 1} <n m> x^m.
+            double f = 1.0;
+            double xj = 1.0; // tracks x^j
+            for (int j = 1; j < n; j++) {
+                xj *= x;
+                f += c0[j] * xj;
+            }
+            return (f);
+
+        }
+
 
     }
 

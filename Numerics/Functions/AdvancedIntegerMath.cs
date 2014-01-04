@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Functions {
 
@@ -40,8 +41,9 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="AdvancedMath.Gamma(double)"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Factorial"/>
 		public static double Factorial (int n) {
-			if (n<0) throw new ArgumentOutOfRangeException("n");
-			if (n<factorialTable.Length) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n < factorialTable.Length) {
 				return( (double) factorialTable[n]);
 			} else {
 				return( Math.Round( AdvancedMath.Gamma(n+1) ) );
@@ -59,8 +61,9 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso cref="Factorial"/>
 		public static double LogFactorial (int n) {
-			if (n<0) throw new ArgumentOutOfRangeException("n");
-			if (n<factorialTable.Length) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else if (n < factorialTable.Length) {
 				return( Math.Log( (double) factorialTable[n] ) );
 			} else {
 				return( AdvancedMath.LogGamma(n+1) );
@@ -131,45 +134,6 @@ namespace Meta.Numerics.Functions {
 		}
 
         private static readonly double LogLongMax = Math.Log(Int64.MaxValue);
-
-#if PAST
-
-        // this is an O(m) algorithm for computing (n m)
-
-        private static long BinomialCoefficientLoop (int n, int m) {
-
-            int km;
-            if (m < n / 2) {
-                km = n - m;
-            } else {
-                km = m;
-            }
-
-            long t = 1;
-            for (int i = n; i > km; i--) {
-                t = t * i / (n - i + 1);
-            }
-            return (t);
-        }
-
-        /*
-        A suggestion from http://delab.csd.auth.gr/papers/SBI02m.pdf for computing binomial coefficient
-        (n k) in O(min(k,n-k)
-
-        FUNCTION Comb6(n,k:INTEGER): INTEGER;
-        VAR t: INTEGER;
-        BEGIN
-            t:=1
-            IF k<n-k
-                THEN FOR i:=n DOWNTO n-k+1 DO
-                    t:=t*i/(n-i+1)
-                ELSE FOR i:=n DOWNTO k+1 DO
-                    t:=t*i/(n-i+1);
-            Comb6:=t
-        END;
-        
-        */
-#endif
 
         /// <summary>
         /// Enumerates the binomial coefficients of a given order.
@@ -292,6 +256,56 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        /// <summary>
+        /// Computes a Fibonacci number.
+        /// </summary>
+        /// <param name="n">The index of the Fibonacci number to compute, which must be non-negative.</param>
+        /// <returns>The nth Fibonacci number F<sub>n</sub>.</returns>
+        /// <see href="http://en.wikipedia.org/wiki/Fibonacci_number"/>
+        public static double FibonacciNumber (int n) {
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException("n");
+            } else {
+                // Begin with relation F_n = \frac{\phi^n - (-\phi)^{-n}}{\sqrt{5}}, which is exact. For large n, second
+                // term becomes negligable, so we certainly expect F_n = \left[ \frac{\phi^n}{\sqrt{5}} \right] for large enough n.
+                // What's surprising is that n = 0 is already large enough, giving us a really fast way to get the nth Fibonacci
+                // number (at least to floating point precision) without computing any lower Fibonacci numbers, much less all of them.
+                return (Math.Round(MoreMath.Pow(AdvancedMath.GoldenRatio, n) / Math.Sqrt(5.0)));
+            }
+        }
+
+        /// <summary>
+        /// Computes the given Bernoulli number.
+        /// </summary>
+        /// <param name="n">The index of the Bernoulli number to compute, which must be non-negative.</param>
+        /// <returns>The Bernoulli number B<sub>n</sub>.</returns>
+        /// <remarks>
+        /// <para>B<sub>n</sub> vanishes for all odd n except n=1. For n about 260 or larger, B<sub>n</sub> overflows a double.</para>
+        /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Bernoulli_number"/>
+        /// <seealso href="http://mathworld.wolfram.com/BernoulliNumber.html"/>
+        public static double BernoulliNumber (int n) {
+
+            if (n < 0) throw new ArgumentOutOfRangeException("n");
+
+            // B_1 is the only odd Bernoulli number.
+            if (n == 1) return (-1.0 / 2.0);
+
+            // For all other odd arguments, return zero.
+            if (n % 2 != 0) return (0.0);
+
+            // If the argument is small enough, look up the answer in our stored array.
+            int m = n / 2;
+            if (m < Bernoulli.Length) return (Bernoulli[m]);
+
+            // Otherwise, use the relationship with the Riemann zeta function to get the Bernoulli number.
+            // Since this is only done for large n, it would probably be faster to just sum the zeta series explicitly here.
+            double B = 2.0 * AdvancedMath.RiemannZeta(n) / AdvancedMath.PowOverGammaPlusOne(Global.TwoPI, n);
+            if (m % 2 == 0) B = -B;
+            return (B);
+
+        }
+
         // the even Bernoulli numbers B_2n = Bernoulli[n]
         // the only nonvanishing odd Bernoulli number is B_1 = -1/2, which must be handled seperately if you
         // use these numbers in any series expansion
@@ -312,18 +326,44 @@ namespace Meta.Numerics.Functions {
 			throw new NotImplementedException();
 		}
 
-		public static double BernoulliNumberB (int n) {
-			throw new NotImplementedException();
-		}
-
 		public static long EulerNumberE (int n) {
 			throw new NotImplementedException();
 		}
         */
 
-		// 2-integer functions
+        // There are two well-known algorithms for computing Bell numbers. One is Dobinski's formula
+        //   B_n = \frac{1}{e} \sum_{k=0}^{\infty} \frac{k^n}{k!}
+        // which is basically just the relationship between the Bell numbers and the Poisson moments.
+        // The other is the triangle relationship. It computes all Bell numbers up the one sought,
+        // but is O(n^2) in time and O(n) in memory and is slower when a single Bell number is sought.
 
-		// Euclid's algorithm; Knuth gives a binary algorithm that may be faster
+        // As implemented, this return Infinity too soon, at n=165, because the power in the numerator
+        // overflows. We need to deal with that by calling PowOverGamma instead.
+
+        public static double BellNumber (int n) {
+            if (n < 0) throw new ArgumentOutOfRangeException("n");
+
+            // Dobinski's formula only good for n > 0
+            if (n == 0) return (1.0);
+
+            double s = 1.0;
+            double q = 1.0;
+            for (int k = 2; k < Global.SeriesMax; k++) {
+                double s_old = s;
+                q *= k;
+                s += MoreMath.Pow(k, n) / q;
+                if (s == s_old) {
+                    Debug.WriteLine(k);
+                    return (s / Math.E);
+                }
+            }
+            throw new NonconvergenceException();
+        }
+
+
+        // 2-integer functions
+
+        // Euclid's algorithm; Knuth gives a binary algorithm that may be faster
         /// <summary>
         /// Computes the greatest common factor of two integers.
         /// </summary>
@@ -331,7 +371,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="v">The second integer.</param>
         /// <returns>The greatest common factor of <paramref name="u"/> and <paramref name="v"/>.</returns>
         /// <seealso cref="LCM" />
-		public static long GCF (long u, long v) {
+        public static long GCF (long u, long v) {
 			while (v != 0) {
 				long t = u % v;
 				u = v;

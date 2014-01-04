@@ -18,30 +18,6 @@ namespace Meta.Numerics.Matrices {
     /// </remarks>
     public abstract class AnyRectangularMatrix : AnyMatrix<double> {
 
-#if TEMP
-
-        /// <summary>
-        /// Gets or sets the value of a matrix entry.
-        /// </summary>
-        /// <param name="r">The (zero-based) row index.</param>
-        /// <param name="c">The (zero-based) column index.</param>
-        /// <returns>The value of the <paramref name="r"/>,<paramref name="c"/> matrix entry.</returns>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="r"/> or <paramref name="c"/> is
-        /// outside the valid range.</exception>
-        public abstract double this[int r, int c] { get; set; }
-
-        /// <summary>
-        /// Gets the number of matrix rows.
-        /// </summary>
-        public abstract int RowCount { get; }
-
-        /// <summary>
-        /// Gets the number of matrix columns.
-        /// </summary>
-        public abstract int ColumnCount { get; }
-
-#endif
-
         // we an implement some operations, but many will be slow because they do not have access to the underlying storage
         // we will override them with faster implementations in implementing classes, but these ensure that the operations
         // are always defined, including, for binary operations, between different matrix types

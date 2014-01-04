@@ -74,48 +74,48 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
-            // if P is very small, use the inverted series
-            return (-mu * Math.Log(1.0 - P));
+            return (-mu * MoreMath.LogOnePlus(-P));
+        }
+
+        public override double InverseRightProbability (double Q) {
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            return (-mu * Math.Log(Q));
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
             } else {
-                return (MoreMath.Pow(mu, n) * AdvancedIntegerMath.Factorial(n));
+                return (AdvancedIntegerMath.Factorial(r) * MoreMath.Pow(mu, r));
             }
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (0.0);
             } else {
-                // isn't this sum related to psi or a related function?
-                double f = 0.0;
-                double df = -1.0;
-                for (int k = 2; k <= n; k++) {
-                    df = -df / k;
-                    f += df;
-                }
-                return (MoreMath.Pow(mu, n) * AdvancedIntegerMath.Factorial(n) * f);
+                // Subfactorial !r, see http://mathworld.wolfram.com/Subfactorial.html for properties of subfactorial.
+                // Most relevent for fast computation is (!r) = round[ r! / e ].
+                return (Math.Round(AdvancedIntegerMath.Factorial(r) / Math.E) * MoreMath.Pow(mu, r));
             }
         }
 
-        internal override double Cumulant (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        /// <inheritdoc />
+        public override double Cumulant (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (0.0);
             } else {
-                return (MoreMath.Pow(mu, n) * AdvancedIntegerMath.Factorial(n - 1));
+                return (AdvancedIntegerMath.Factorial(r - 1) * MoreMath.Pow(mu, r));
             }
         }
 

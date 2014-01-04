@@ -4,22 +4,13 @@ using Meta.Numerics.Functions;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
-    // really, the inheritance hierarchy should be:
-    //   Distribution
-    //     ContinuousDistribution
-    //       Concrete continuous distributions
-    //     DiscreteDistribution
-    //       Concrete distrete distributions
-    // but what should have been ContinuousDistribution was defined as Distribution
-    // we should correct this in a future new major release
-
     /// <summary>
-    /// Represents all discrete distrubtions.
+    /// Represents all discrete, univariate probability distrubtions.
     /// </summary>
     /// <remarks>
     /// <para>A discrete distribution is a distribution over the integers.</para>
     /// </remarks>
-    public abstract class DiscreteDistribution {
+    public abstract class DiscreteDistribution : UnivariateDistribution {
 
         // replace ProbabilityDensity with ProbabilityMass
 
@@ -142,76 +133,43 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Gets the mean of the distribution.
         /// </summary>
-        public virtual double Mean {
+        public override double Mean {
             get {
                 return (ExpectationValue((int k) => k));
-            }
-
-        }
-
-        /// <summary>
-        /// Gets the variance of the distribution.
-        /// </summary>
-        public virtual double Variance {
-            get {
-                return (MomentAboutMean(2));
-            }
-        }
-
-        /// <summary>
-        /// Gets the skewness of the distribution.
-        /// </summary>
-        public virtual double Skewness {
-            get {
-                return (MomentAboutMean(3) / Math.Pow(MomentAboutMean(2), 3.0 / 2.0));
-            }
-        }
-
-        /// <summary>
-        /// Getst the standard deviation of the distribution.
-        /// </summary>
-        public virtual double StandardDeviation {
-            get {
-                return (Math.Sqrt(Variance));
             }
         }
 
         /// <summary>
         /// Gets a raw moment of the distribution.
         /// </summary>
-        /// <param name="n">The order of the moment.</param>
-        /// <returns>The raw moment M<sub>n</sub>.</returns>
-        public virtual double Moment (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        /// <param name="r">The order of the moment.</param>
+        /// <returns>The raw moment M<sub>r</sub>.</returns>
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
             } else {
-                // if m is large, this is slow; find a better way
-                return (ExpectationValue(delegate(int k) { return (MoreMath.Pow(k, n)); }));
+                return (ExpectationValue(delegate(int k) { return (MoreMath.Pow(k, r)); }));
             } 
         }
 
         /// <summary>
         /// Gets a central moment of the distribution.
         /// </summary>
-        /// <param name="n">The order of the moment.</param>
-        /// <returns>The central moment C<sub>n</sub>.</returns>
-        public virtual double MomentAboutMean (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        /// <param name="r">The order of the moment.</param>
+        /// <returns>The central moment C<sub>r</sub>.</returns>
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (0.0);
             } else {
                 double mu = Mean;
-                return (ExpectationValue(delegate(int k) { return (MoreMath.Pow(k - mu, n)); }));
+                return (ExpectationValue((int k) => MoreMath.Pow(k - mu, r)));
             }
-        }
-
-        internal virtual double Cumulant (int n) {
-            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -227,13 +185,13 @@ namespace Meta.Numerics.Statistics.Distributions {
     }
 
 
-#if PAST
+
     /// <summary>
     /// Represents an interval on the integers.
     /// </summary>
     public struct DiscreteInterval : IEquatable<DiscreteInterval> {
 
-        private DiscreteInterval (int a, int b) {
+        public DiscreteInterval (int a, int b) {
             if (b < a) Global.Swap(ref a, ref b);
             this.a = a;
             this.b = b;
@@ -272,15 +230,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        /// <summary>
-        /// Creates a new discrete interval, given the boundary integers.
-        /// </summary>
-        /// <param name="a">One boundary.</param>
-        /// <param name="b">The other boundary.</param>
-        /// <returns>A discrete interval structure representing the interval.</returns>
-        public static DiscreteInterval FromEndpoints (int a, int b) {
-            return new DiscreteInterval(a, b);
-        }
 
         // convert int to double, replacing minimum and maxiumum integer values by negative and positivel infinity
 
@@ -356,6 +305,6 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
     }
-#endif
+
 
 }

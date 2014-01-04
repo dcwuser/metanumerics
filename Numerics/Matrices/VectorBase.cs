@@ -11,19 +11,26 @@ namespace Meta.Numerics.Matrices {
     /// <seealso cref="ColumnVector"/>
     public abstract class VectorBase : AnyRectangularMatrix, IEnumerable, IEnumerable<double>, ICollection<double>, IList<double> {
 
-        internal VectorBase (double[] store, int dimension) {
-            if (dimension <= 0) throw new ArgumentOutOfRangeException("dimension");
-            this.dimension = dimension;
+        internal VectorBase (double[] store, int offset, int stride, int dimension, bool isReadOnly) {
             this.store = store;
+            this.offset = offset;
+            this.stride = stride;
+            this.dimension = dimension;
+            this.IsReadOnly = isReadOnly;
         }
 
-        internal VectorBase (int dimension) : this(new double[dimension], dimension) {
-        }
+        internal VectorBase (double[] store, int dimension, bool isReadOnly) : this(store, 0, 1, dimension, isReadOnly) { }
+
+        internal VectorBase (double[] store, int dimension) : this(store, dimension, false) { }
+
+        internal VectorBase (int dimension) : this(new double[dimension], dimension) { }
 
         internal VectorBase (IList<double> list) {
             if (list == null) throw new ArgumentNullException("list");
             dimension = list.Count;
             store = new double[dimension];
+            offset = 0;
+            stride = 1;
             list.CopyTo(store, 0);
         }
 
@@ -31,6 +38,7 @@ namespace Meta.Numerics.Matrices {
 
         internal int dimension;
         internal double[] store;
+        internal int offset, stride;
 
         /// <summary>
         /// Gets or sets the specified vector component.
@@ -40,11 +48,12 @@ namespace Meta.Numerics.Matrices {
         public virtual double this[int index] {
             get {
                 if ((index < 0) || (index >= dimension)) throw new ArgumentOutOfRangeException("index");
-                return (store[index]);
+                return (store[offset + stride * index]);
             }
             set {
                 if ((index < 0) || (index >= dimension)) throw new ArgumentOutOfRangeException("index");
-                store[index] = value;
+                if (IsReadOnly) throw new InvalidOperationException();
+                store[offset + stride * index] = value;
             }
         }
 
@@ -62,7 +71,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>The Euclidean norm of the vector.</returns>
         public virtual double Norm () {
-            return(Blas1.dNrm2(store, 0, 1, dimension));
+            return(Blas1.dNrm2(store, offset, stride, dimension));
         }
 
         /// <summary>
@@ -70,7 +79,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>An array containing the vector element values.</returns>
         public virtual new double[] ToArray () {
-            return(VectorAlgorithms.Copy(store, dimension));
+            return(VectorAlgorithms.Copy(store, offset, stride, dimension));
         }
 
         // interface implementations
@@ -80,7 +89,9 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>An enumerator of the vector components.</returns>
         public IEnumerator<double> GetEnumerator () {
-            return ( ((IEnumerable<double>) store).GetEnumerator() );
+            for (int index = 0; index < dimension; index++) {
+                yield return (this[index]);
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator () {
@@ -110,11 +121,14 @@ namespace Meta.Numerics.Matrices {
         }
 
         bool ICollection<double>.Contains (double item) {
-            return (((ICollection<double>)store).Contains(item));
+            for (int index = 0; index < dimension; index++) {
+                if (this[index] == item) return (true);
+            }
+            return (false);
         }
 
         void ICollection<double>.CopyTo (double[] array, int arrayIndex) {
-            Blas1.dCopy(store, 0, 1, array, arrayIndex, 1, dimension);
+            Blas1.dCopy(store, offset, stride, array, arrayIndex, 1, dimension);
         }
 
         bool ICollection<double>.Remove (double item) {
@@ -122,7 +136,10 @@ namespace Meta.Numerics.Matrices {
         }
 
         int IList<double>.IndexOf (double item) {
-            return (((IList<double>)store).IndexOf(item));
+            for (int index = 0; index < dimension; index++) {
+                if (this[index] == item) return(index);
+            }
+            return(-1);
         }
 
         void IList<double>.Insert (int index, double item) {
@@ -137,31 +154,29 @@ namespace Meta.Numerics.Matrices {
 
     internal static class VectorAlgorithms {
 
-        public static double[] Copy (double[] store, int dimension) {
+        public static double[] Copy (double[] store, int offset, int stride, int dimension) {
             double[] copy = new double[dimension];
-            Blas1.dCopy(store, 0, 1, copy, 0, 1, dimension);
+            Blas1.dCopy(store, offset, stride, copy, 0, 1, dimension);
             return (copy);
         }
 
-        public static double[] Add (double[] aStore, double[] bStore, int dimension) {
+        public static double[] Add (double[] aStore, int aOffset, int aStride, double[] bStore, int bOffset, int bStride, int dimension) {
             double[] store = new double[dimension];
-            for (int i = 0; i < dimension; i++) {
-                store[i] = aStore[i] + bStore[i];
-            }
+            Blas1.dCopy(aStore, aOffset, aStride, store, 0, 1, dimension);
+            Blas1.dAxpy(1.0, bStore, bOffset, bStride, store, 0, 1, dimension);
             return(store);
         }
 
-        public static double[] Subtract (double[] aStore, double[] bStore, int dimension) {
+        public static double[] Subtract (double[] aStore, int aOffset, int aStride, double[] bStore, int bOffset, int bStride, int dimension) {
             double[] store = new double[dimension];
-            for (int i = 0; i < dimension; i++) {
-                store[i] = aStore[i] - bStore[i];
-            }
+            Blas1.dCopy(aStore, aOffset, aStride, store, 0, 1, dimension);
+            Blas1.dAxpy(-1.0, bStore, bOffset, bStride, store, 0, 1, dimension);
             return (store);
         }
 
-        public static double[] Multiply (double alpha, double[] store, int dimension) {
+        public static double[] Multiply (double alpha, double[] store, int offset, int stride, int dimension) {
             double[] product = new double[dimension];
-            Blas1.dAxpy(alpha, store, 0, 1, product, 0, 1, dimension);
+            Blas1.dAxpy(alpha, store, offset, stride, product, 0, 1, dimension);
             return (product);
         }
 

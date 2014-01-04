@@ -469,6 +469,83 @@ namespace FutureTest {
     public class FutureTest {
 
         [TestMethod]
+        public void Bell1 () {
+
+            RectangularMatrix A = new RectangularMatrix(new double[,] {
+                {1.0, 0.0, 0.0, 0.0, 2.0},
+                {0.0, 0.0, 3.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0, 0.0},
+                {0.0, 4.0, 0.0, 0.0, 0.0}
+            });
+
+            //A = A.Transpose();
+
+            SingularValueDecomposition svd = A.SingularValueDecomposition();
+
+            Console.WriteLine("values");
+            for (int i = 0; i < svd.Dimension; i++) {
+                Console.WriteLine(svd.SingularValue(i));
+            }
+
+
+            Console.WriteLine("left");
+            WriteMatrix(svd.LeftTransformMatrix());
+
+
+            Console.WriteLine("right");
+            WriteMatrix(svd.RightTransformMatrix());
+
+            Console.WriteLine("product");
+            WriteMatrix(svd.LeftTransformMatrix().Transpose() * A * svd.RightTransformMatrix());
+
+        }
+
+
+        [TestMethod]
+        public void TestCumulant2 () {
+
+            int n = 8;
+
+            //Distribution[] set = new Distribution[] { new UniformDistribution(), new ExponentialDistribution(2.0), new GammaDistribution(3.0), new LogisticDistribution(-4.0, 3.0), new NormalDistribution(-1.0, 2.0), new WaldDistribution(1.0, 2.0) };
+            DiscreteDistribution[] set = new DiscreteDistribution[] { new PoissonDistribution(0.25), new DiscreteUniformDistribution(0, 10) };
+
+            foreach (DiscreteDistribution d in set) {
+            //foreach (Distribution d in set) {
+                Console.WriteLine(d.GetType().Name);
+
+                // From cumulants to central and raw moments
+
+                double[] inK = new double[n];
+                for (int r = 0; r < n; r++) inK[r] = d.Cumulant(r);
+
+                double[] outC = MomentMath.CumulantToCentral(inK);
+                for (int r = 0; r < n; r++) Console.WriteLine("r={0} K={1} -> C={2} v C={3}", r, inK[r], d.MomentAboutMean(r), outC[r]);
+                for (int r = 0; r < n; r++) Assert.IsTrue(Math.Abs(outC[r] - d.MomentAboutMean(r)) <= 1.0E-14 * Math.Abs(outC[r]));
+
+                double[] outM = MomentMath.CumulantToRaw(inK);
+                for (int r = 0; r < n; r++) Assert.IsTrue(Math.Abs(outM[r] - d.Moment(r)) <= 1.0E-14 * Math.Abs(outM[r]));
+
+                // From central moments to cumulants and raw moments
+
+                double[] inC = new double[n];
+                for (int r = 0; r < n; r++) inC[r] = d.MomentAboutMean(r);
+
+                double[] outK = MomentMath.CentralToCumulant(d.Mean, inC);
+                for (int r = 0; r < n; r++) Console.WriteLine("r={0} C={1:R} -> K={2:R} v K={3:R}", r, inC[r], outK[r], d.Cumulant(r));
+                for (int r = 0; r < n; r++) Assert.IsTrue(Math.Abs(outK[r] - d.Cumulant(r)) <= 1.0E-13 * Math.Abs(outK[r]));
+                // moved to 10E-13 due to K_4 of Logistic; why is there even that much disagreement?
+
+                double[] outM2 = MomentMath.CentralToRaw(d.Mean, inC);
+                for (int r = 0; r < n; r++) Assert.IsTrue(Math.Abs(outM2[r] - d.Moment(r)) <= 1.0E-14 * Math.Abs(outM2[r]));
+
+                // From raw moments to central moments and cumulants
+                // This is unstable.
+
+            }
+
+        }
+
+        [TestMethod]
         public void TestNormal () {
             NormalDistribution n = new NormalDistribution();
             Console.WriteLine(n.InverseLeftProbability(1.0E-10));
@@ -899,18 +976,108 @@ namespace FutureTest {
         [TestMethod]
         public void TwoSampleKS () {
 
-            int n = 64;
-            //int m = n;
-            //Console.WriteLine(AdvancedIntegerMath.GCF(n, m));
-            //KolmogorovTwoSampleExactDistribution d0 = new KolmogorovTwoSampleExactDistribution(n, m);
-            //for (int c = 1; c <= n * m; c++) {
-            //    Console.WriteLine("{0} {1}", c, d0.LatticePathSum(c));
-            //}
-
-            for (int c = 1; c <= n; c++) {
-                Console.WriteLine("{0} {1}", c, EqualKS(n, c));
+            int n = 2 * 3 * 3 * 2; int m = 2 * 2 * 3;
+            int lcm = (int) AdvancedIntegerMath.LCM(n, m);
+            int gcf = (int) AdvancedIntegerMath.GCF(n, m);
+            Console.WriteLine("{0} {1} {2} {3}", n, m, lcm, gcf);
+            KolmogorovTwoSampleExactDistribution d0 = new KolmogorovTwoSampleExactDistribution(n, m);
+            
+            for (int k = d0.Minimum; k <= d0.Maximum; k++) {
+                Console.WriteLine("{0} {1} {2}", k, d0.LatticePathSum(k * gcf), d0.LatticePathSum(k * gcf - 1));
             }
+
+            //for (int c = 1; c <= n; c++) {
+            //    Console.WriteLine("{0} {1}", c, EqualKS(n, c));
+            //}
         }
+
+        [TestMethod]
+        public void Eulerian () {
+            GeometricDistribution D = new GeometricDistribution(0.25);
+            Console.WriteLine(D.Mean);
+            Console.WriteLine(D.Moment(1));
+            Console.WriteLine(GeometricDistribution.EulerianPolynomial(4, 1.0));
+            Console.WriteLine(AdvancedIntegerMath.Factorial(2));
+        }
+
+        [TestMethod]
+        public void ChiSquareDistribution () {
+
+            int B = 8;
+            Random rng = new Random(0);
+            //BinomialDistribution d = new BinomialDistribution(0.25, 6);
+            //DiscreteUniformDistribution d = new DiscreteUniformDistribution(0, 4);
+            //BernoulliDistribution d = new BernoulliDistribution(0.25);
+            DiscreteDistribution d = new PoissonDistribution(2.0);
+
+            Sample s = new Sample();
+            ChiSquaredDistribution nullDistribution = null;
+            for (int i = 0; i < 512; i++) {
+
+                Histogram h = new Histogram(B);
+                for (int j = 0; j < 1024; j++) {
+                    int k = d.GetRandomValue(rng);
+                    h.Add(k);
+                    //if (k < h.Count) h[k].Increment();
+                    //h[d.GetRandomValue(rng)].Increment();
+                }
+                TestResult cr = h.ChiSquaredTest(d);
+                nullDistribution = (ChiSquaredDistribution) cr.Distribution;
+                //Console.WriteLine(((ChiSquaredDistribution) cr.Distribution).DegreesOfFreedom);
+                s.Add(cr.Statistic);
+
+            }
+
+            Console.WriteLine(nullDistribution.DegreesOfFreedom);
+            TestResult kr = s.KuiperTest(nullDistribution);
+            Console.WriteLine(kr.LeftProbability);
+
+        }
+
+        [TestMethod]
+        public void TwoSampleKS2 () {
+
+            int n = 2 * 3 * 3; int m = 2 * 2 * 3;
+            Random rng = new Random(0);
+            NormalDistribution d = new NormalDistribution();
+
+            Histogram h = new Histogram((int) AdvancedIntegerMath.LCM(n, m) + 1);
+
+            //int[] h = new int[AdvancedIntegerMath.LCM(n, m) + 1];
+
+            int count = 1000;
+            for (int i = 0; i < count; i++) {
+
+                Sample A = new Sample();
+                for (int j = 0; j < n; j++) A.Add(d.GetRandomValue(rng));
+                Sample B = new Sample();
+                for (int j = 0; j < m; j++) B.Add(d.GetRandomValue(rng));
+
+                TestResult r = Sample.KolmogorovSmirnovTest(A, B);
+                int k = (int) Math.Round(r.Statistic * AdvancedIntegerMath.LCM(n, m));
+                //Console.WriteLine("{0} {1}", r.Statistic, k);
+                h[k].Increment();
+                //h[k] = h[k] + 1;
+
+            }
+
+            KolmogorovTwoSampleExactDistribution ks = new KolmogorovTwoSampleExactDistribution(n, m);
+            double chi2 = 0.0; int dof = 0;
+            for (int i = 0; i < h.Count; i++) {
+                double ne = ks.ProbabilityMass(i) * count;
+                Console.WriteLine("{0} {1} {2}", i, h[i].Counts, ne);
+                if (ne > 4) {
+                    chi2 += MoreMath.Sqr(h[i].Counts - ne) / ne;
+                    dof++;
+                }
+            }
+            Console.WriteLine("chi^2={0} dof={1}", chi2, dof);
+
+            TestResult r2 = h.ChiSquaredTest(ks);
+            ChiSquaredDistribution rd = (ChiSquaredDistribution) r2.Distribution;
+            Console.WriteLine("chi^2={0} dof={1} P={2}", r2.Statistic, rd.DegreesOfFreedom, r2.RightProbability);
+        }
+
 
         private static double EqualKS (int n, int c) {
 

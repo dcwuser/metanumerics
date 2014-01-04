@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using Meta.Numerics.Functions;
 
@@ -18,7 +19,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             this.mu = mu;
         }
 
-        private double mu;
+        private readonly double mu;
 
         /// <inheritdoc />
         public override double ProbabilityMass (int k) {
@@ -81,7 +82,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double LeftExclusiveProbability (int k) {
+        public override double LeftInclusiveProbability (int k) {
             if (k < 0) {
                 return (0.0);
             } else {
@@ -89,15 +90,19 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (k < 16) {
                     double ds = 1.0;
                     double s = ds;
-                    for (int i = 1; i < k; i++) {
+                    for (int i = 1; i <= k; i++) {
                         ds *= mu / i;
                         s += ds;
                     }
                     return (Math.Exp(-mu) * s);
                 } else {
-                    return(AdvancedMath.RightRegularizedGamma(k, mu));
+                    return(AdvancedMath.RightRegularizedGamma(k + 1, mu));
                 }
             }
+        }
+
+        public override double LeftExclusiveProbability (int k) {
+            return(LeftInclusiveProbability(k-1));
         }
 
         /// <inheritdoc />
@@ -106,16 +111,6 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (1.0);
             } else {
                 return (AdvancedMath.LeftRegularizedGamma(k + 1, mu));
-            }
-        }
-
-        internal override double Cumulant (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
-                return (0.0);
-            } else {
-                return (mu);
             }
         }
 
@@ -130,7 +125,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             int ka = 0;
             int kb = (int) Math.Ceiling(mu);
             //Console.WriteLine("[{0} {1}] {2}", ka, kb, LeftProbability(kb));
-            while (P > LeftExclusiveProbability(kb)) {
+            while (P > LeftInclusiveProbability(kb)) {
                 ka = kb;
                 kb = 2 * kb;
                 //Console.WriteLine("[{0} {1}] {2}", ka, kb, LeftProbability(kb));
@@ -144,7 +139,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             // this logic is copied from Binomial; we should factor it out
             while (ka != kb) {
                 int k = (ka + kb) / 2;
-                if (P > LeftExclusiveProbability(k)) {
+                if (P > LeftInclusiveProbability(k)) {
                     ka = k + 1;
                 } else {
                     kb = k;
@@ -162,27 +157,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (r == 0) {
                 return (1.0);
             } else {
-
-                // Moments are given by Touchard polynomials M_r = T_r(\mu).
-                // Touchard polynomials follow recurrence T_{r+1}(x) = x \sum_{k=0}^{r} {r choose k} T_{k}(x).
-                // Basically, this is a hidden way of computing Stirling numbers of the 2nd kind.
-
                 double[] M = new double[r + 1];
                 M[0] = 1.0;
                 M[1] = mu;
-
-                for (int i = 1; i < r; i++) {
-                    double s = 0.0;
-                    for (int j = 0; j <= i; j++) {
-                        s += AdvancedIntegerMath.BinomialCoefficient(i, j) * M[j];
-                    }
-                    M[i + 1] = mu * s;
-                }
-
+                ComputePoissonRawMoments(M);
                 return (M[r]);
 
                 // If mu is small enough and r large enough, it will be faster to just sum terms.
-
             }
 
         }
@@ -194,32 +175,65 @@ namespace Meta.Numerics.Statistics.Distributions {
                 throw new ArgumentOutOfRangeException("r");
             } else if (r == 0) {
                 return (1.0);
-            } else if (r == 1) {
-                return (0.0);
             } else {
-
-                // Moments are given by Touchard polynomials M_r = T_r(\mu).
-                // Touchard polynomials follow recurrence T_{r+1}(x) = x \sum_{k=0}^{r} {r choose k} T_{k}(x).
-                // Basically, this is a hidden way of computing Stirling numbers of the 2nd kind.
-
                 double[] C = new double[r + 1];
                 C[0] = 1.0;
                 C[1] = 0.0;
-
-                for (int i = 1; i < r; i++) {
-                    double s = 0.0;
-                    for (int j = 0; j < i; j++) {
-                        s += AdvancedIntegerMath.BinomialCoefficient(i, j) * C[j];
-                    }
-                    C[i + 1] = mu * s;
-                }
-
+                ComputePoissonCentralMoments(C);
                 return (C[r]);
-
-                // If mu is small enough and r large enough, it will be faster to just sum terms.
-
             }
 
+        }
+
+        // The raw moments of the Poisson distribution are the Touchard polynomials T_r(x) evaluated at x = \mu.
+        // Since the Touchard polynomials satisfy the recurrence
+        //   T_{r+1}(x) = x \sum_{s=0}^{r} { r \choose s } T_s(x)
+        // The raw moments satisfy the same recurrence:
+        //   M_{r+1) = \mu \sum_{s=0}^{r} { r \choose s } M_r
+        // Notice that this computation is O(r^2).
+
+        private void ComputePoissonRawMoments (double[] M) {
+            for (int r = 2; r < M.Length; r++) {
+                IEnumerator<double> binomial = AdvancedIntegerMath.BinomialCoefficients(r - 1).GetEnumerator();
+                double t = 0.0;
+                for (int s = 0; s < r; s++) {
+                    binomial.MoveNext();
+                    t += binomial.Current * M[s];
+                }
+                M[r] = mu * t;
+            }
+        }
+
+        // Privault, "Generalized Bell polynomials and the combinatorics of Poisson central moments",
+        // The Electronic Jounrnal of Combinatorics 2011, derives the recurrence
+        //   C_{r+1} = \mu \sum{s=0}^{r-1} { r \choose s } C_s
+        // for central moments of the Poisson distribution, directly from the definition.
+
+        // This is almost, but not quite, the same recurrence as for the raw moments. For the raw moment recursion,
+        // the bottom binomial argument runs over its full range. For the central moment recursion, the last value of
+        // the bottom binomial argument is left out of the range.
+
+        private void ComputePoissonCentralMoments (double[] C) {
+            for (int r = 2; r < C.Length; r++) {
+                IEnumerator<double> binomial = AdvancedIntegerMath.BinomialCoefficients(r - 1).GetEnumerator();
+                double t = 0.0;
+                for (int s = 0; s < r - 1; s++) {
+                    binomial.MoveNext();
+                    t += binomial.Current * C[s];
+                }
+                C[r] = mu * t;
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Cumulant (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
+                return (0.0);
+            } else {
+                return (mu);
+            }
         }
 
     }

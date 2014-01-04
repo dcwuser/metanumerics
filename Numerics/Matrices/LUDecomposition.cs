@@ -19,9 +19,9 @@ namespace Meta.Numerics.Matrices {
     /// square matrix.</para>
     /// </remarks>
     /// <seealso cref="SquareMatrix"/>
-    public sealed class SquareLUDecomposition {
+    public sealed class LUDecomposition {
 
-        internal SquareLUDecomposition (double[] luStore, int[] permutation, int parity, int dimension) {
+        internal LUDecomposition (double[] luStore, int[] permutation, int parity, int dimension) {
             this.luStore = luStore;
             this.permutation = permutation;
             this.parity = parity;
@@ -72,13 +72,12 @@ namespace Meta.Numerics.Matrices {
 
 
         /// <summary>
-        /// Returns the solution vector that, when multiplied by the original matrix, produces the given left-hand side vector.
+        /// Solves A x = b.
         /// </summary>
-        /// <param name="rhs">The right-hand side vector.</param>
-        /// <returns>The left-hand side vector.</returns>
+        /// <param name="rhs">The right-hand side vector b.</param>
+        /// <returns>The solution vector x.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="rhs"/> is <c>null</c>.</exception>
-        /// <exception cref="DimensionMismatchException">The dimension of <paramref name="rhs"/> is not the same as the
-        /// dimension of the matrix.</exception>
+        /// <exception cref="DimensionMismatchException">The dimension of <paramref name="rhs"/> is not the same as the dimension of the matrix.</exception>
         public ColumnVector Solve (IList<double> rhs) {
 
             if (rhs == null) throw new ArgumentNullException("rhs");
@@ -91,36 +90,12 @@ namespace Meta.Numerics.Matrices {
             }
 
             // solve Ly=b and Ux=y
-            SquareMatrixAlgorithms.SolveLowerLeftTriangular(luStore, x, 0, dimension);
-            SquareMatrixAlgorithms.SolveUpperRightTriangular(luStore, x, 0, dimension);
+            Blas2.dTrsv(false, true, luStore, 0, 1, dimension, x, 0, 1, dimension);
+            //SquareMatrixAlgorithms.SolveLowerLeftTriangular(luStore, x, 0, dimension);
+            Blas2.dTrsv(true, false, luStore, 0, 1, dimension, x, 0, 1, dimension);
+            //SquareMatrixAlgorithms.SolveUpperRightTriangular(luStore, x, 0, dimension);
 
             return (new ColumnVector(x, dimension));
-
-            /*
-            int n = Dimension;
-
-            ColumnVector x = new ColumnVector(n);
-
-            // unscramble and solve Ly=z
-            for (int i = 0; i < n; i++) {
-                double t = rhs[perm[i]];
-                for (int j = 0; j < i; j++) {
-                    t -= lu.GetEntry(i, j) * x[j];
-                }
-                x[i] = t;
-            }
-
-            // solve Ux = y
-            for (int i = n - 1; i >= 0; i--) {
-                double t = x[i];
-                for (int j = n - 1; j > i; j--) {
-                    t -= lu.GetEntry(i, j) * x[j];
-                }
-                x[i] = t / lu.GetEntry(i, i);
-            }
-
-            return (x);
-            */
 
         }
 
@@ -196,11 +171,6 @@ namespace Meta.Numerics.Matrices {
             return (MI);
             */
         }
-        /*
-        ISquareMatrix ISquareDecomposition.Inverse () {
-            return (Inverse());
-        }
-        */
 
         /// <summary>
         /// Gets the L factor.
@@ -211,7 +181,6 @@ namespace Meta.Numerics.Matrices {
         /// that the magnitudes of the sub-diagonal entries are all less than or equal to one.</para>
         /// </remarks>
         public SquareMatrix LMatrix () {
-
             double[] lStore = new double[dimension * dimension];
             for (int c = 0; c < dimension; c++) {
                 int i0 = dimension * c + c;
@@ -219,16 +188,6 @@ namespace Meta.Numerics.Matrices {
                 Blas1.dCopy(luStore, i0 + 1, 1, lStore, i0 + 1, 1, dimension - c - 1);
             }
             return (new SquareMatrix(lStore, dimension));
-            /*
-            SquareMatrix L = new SquareMatrix(Dimension);
-            for (int r = 0; r < Dimension; r++) {
-                for (int c = 0; c < r; c++) {
-                    L[r, c] = lu[r, c];
-                }
-                L[r, r] = 1.0;
-            }
-            return (L);
-            */
         }
 
         /// <summary>
@@ -241,15 +200,6 @@ namespace Meta.Numerics.Matrices {
                 Blas1.dCopy(luStore, dimension * c, 1, uStore, dimension * c, 1, c + 1);
             }
             return (new SquareMatrix(uStore, dimension));
-            /*
-            SquareMatrix U = new SquareMatrix(Dimension);
-            for (int r = 0; r < Dimension; r++) {
-                for (int c = r; c < Dimension; c++) {
-                    U[r, c] = lu[r, c];
-                }
-            }
-            return (U);
-            */
         }
 
         /// <summary>
@@ -261,20 +211,11 @@ namespace Meta.Numerics.Matrices {
         /// not necessarily in the diagonal position.</para>
         /// </remarks>
         public SquareMatrix PMatrix () {
-
             double[] pStore = new double[dimension * dimension];
             for (int i = 0; i < dimension; i++) {
                 pStore[dimension * permutation[i] + i] = 1.0;
             }
             return (new SquareMatrix(pStore, dimension));
-
-            /*
-            SquareMatrix P = new SquareMatrix(Dimension);
-            for (int r = 0; r < Dimension; r++) {
-                P[r, perm[r]] = 1.0;
-            }
-            return (P);
-            */
         }
 
     }

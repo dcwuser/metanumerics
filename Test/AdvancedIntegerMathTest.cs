@@ -290,5 +290,22 @@ namespace Test {
             Assert.IsTrue(AdvancedIntegerMath.PowMod(2, 360360, 779167) == 584877);
         }
 
+        [TestMethod]
+        public void FibonacciSpecialCases () {
+            Assert.IsTrue(AdvancedIntegerMath.FibonacciNumber(0) == 0.0);
+            Assert.IsTrue(AdvancedIntegerMath.FibonacciNumber(1) == 1.0);
+            Assert.IsTrue(AdvancedIntegerMath.FibonacciNumber(2) == 1.0);
+            Assert.IsTrue(AdvancedIntegerMath.FibonacciNumber(3) == 2.0);
+        }
+
+        [TestMethod]
+        public void FibonacciRecurrence () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(2, 1000, 8)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedIntegerMath.FibonacciNumber(n),
+                    AdvancedIntegerMath.FibonacciNumber(n - 1) + AdvancedIntegerMath.FibonacciNumber(n - 2)
+                ));
+            }
+        }
     }
 }

@@ -29,7 +29,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         // internally, we use our Gamma distribution machinery to do our heavy lifting
 
-        private int nu;
+        private readonly int nu;
         private GammaDistribution gamma;
 
         /// <summary>
@@ -73,41 +73,51 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         // improve this
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
-            if (n == 0) {
+        public override double Moment (int r) {
+            if (r < 0) throw new ArgumentOutOfRangeException("r");
+            if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (Mean);
-            } else if (n == 2) {
+            } else if (r == 2) {
                 return (nu * (nu + 2.0));
             } else {
-                // nu ( nu + 2 ) ( nu + 4 ) ... (nu + 2n - 2 )
+                // nu ( nu + 2 ) ( nu + 4 ) ... (nu + 2r - 2 )
                 double nu2 = nu / 2.0;
-                return (Math.Exp(n * Global.LogTwo + AdvancedMath.LogGamma(nu2 + n) - AdvancedMath.LogGamma(nu2)));
+                return (Math.Exp(r * Global.LogTwo + AdvancedMath.LogGamma(nu2 + r) - AdvancedMath.LogGamma(nu2)));
             }
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (0.0);
             } else {
-                // use C_{n} = 2^n U(-n, 1-n-\mu/2, -\mu/2) where U is irregular confluent hypergeometric
+                // use C_{r} = 2^r U(-r, 1-r-\nu/2, -\nu/2) where U is irregular confluent hypergeometric
                 // use recursion U(a-1,b-1,z) = (1-b+z) U(a,b,z) + z a U(a+1,b+1,z) to derive
                 // C_{n+1} = 2n (C_{n} + \nu C_{n-1})
                 double C1 = 0.0;
                 double C2 = 2.0 * nu;
-                for (int k = 2; k < n; k++) {
+                for (int k = 2; k < r; k++) {
                     double C3 = (2*k) * (C2 + nu * C1);
                     C1 = C2;
                     C2 = C3;
                 }
                 return(C2);
+            }
+        }
+
+        public override double Cumulant (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
+                return (0.0);
+            } else {
+                return (MoreMath.Pow(2, r - 1) * AdvancedIntegerMath.Factorial(r - 1) * nu);
             }
         }
 

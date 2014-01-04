@@ -29,8 +29,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             this.lambda = shape;
         }
 
-        private double mu;
-        private double lambda;
+        private readonly double mu;
+        private readonly double lambda;
 
         /// <summary>
         /// Gets the shape parameter of the distribution.
@@ -63,18 +63,18 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return(1.0);
             } else {
                 double M1 = mu;
-                if (n == 1) return(M1);
+                if (r == 1) return(M1);
                 double mu2 = mu * mu;
                 double M2 = mu2 * (lambda + mu) / lambda;
                 // use recursion M_{k+1} = (2k-1) M_{k} \mu^2 / \lambda + \mu^2 M_{k-1} 
-                for (int k = 2; k < n; k++) {
+                for (int k = 2; k < r; k++) {
                     double M3 = ((2 * k - 1) * M2 / lambda + M1) * mu2;
                     M1 = M2;
                     M2 = M3;
@@ -84,29 +84,29 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) {
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
                 throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (0.0);
             } else {
-                return(CentralMomentFromRawMoment(n));
+                return(CentralMomentFromRawMoment(r));
             }
         }
 
         /// <inheritdoc />
-        internal override double Cumulant (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double Cumulant (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (0.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (Mean);
             } else {
                 // K_{r+1} = \frac{(2 r)!}{2^r r! \mu^{2r+1} \lambda^r} = \frac{(2r - 1)!! \mu^{2r+1}}{\lambda^r}
-                return (AdvancedIntegerMath.DoubleFactorial(2 * n - 3) * MoreMath.Pow(mu, 2 * n - 1) / MoreMath.Pow(lambda, n - 1));
+                return (AdvancedIntegerMath.DoubleFactorial(2 * r - 3) * MoreMath.Pow(mu, 2 * r - 1) / MoreMath.Pow(lambda, r - 1));
             }
         }
 

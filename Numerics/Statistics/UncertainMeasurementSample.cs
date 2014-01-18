@@ -286,9 +286,6 @@ namespace Meta.Numerics.Statistics {
             // compute chi^2
             double chi2 = 0.0;
             foreach (UncertainMeasurement<double> datum in this) {
-                //for (int i = 0; i < data.Count; i++) {
-                //DataPoint datum = data[i];
-                double x = datum.X;
                 double y = datum.Y.Value;
                 double dy = datum.Y.Uncertainty;
                 double z = (y - m) / dy;

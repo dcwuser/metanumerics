@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using Meta.Numerics;
 using Meta.Numerics.Statistics.Distributions;
 
 namespace Test {
@@ -67,6 +68,15 @@ namespace Test {
                     // Near-equality added for Weibull
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Cumulant(2), distribution.Variance));
                 }
+            }
+        }
+
+        [TestMethod]
+        public void UnivariateDistributionExcessKurtosis () {
+            foreach (UnivariateDistribution distribution in Distributions) {
+                Console.WriteLine(distribution.GetType().Name);
+                if (Double.IsNaN(distribution.ExcessKurtosis)) continue;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.ExcessKurtosis, distribution.Cumulant(4) / MoreMath.Sqr(distribution.Cumulant(2))));
             }
         }
 

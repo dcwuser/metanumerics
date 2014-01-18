@@ -86,7 +86,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double MomentAboutMean (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException("r");
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {

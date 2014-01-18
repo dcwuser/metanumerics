@@ -176,15 +176,15 @@ namespace Meta.Numerics.Statistics.Distributions {
        }
 
        /// <inheritdoc />
-       public override double MomentAboutMean (int n) {
-           if (n < 0) {
-               throw new ArgumentOutOfRangeException("n");
-           } else if (n == 0) {
+       public override double MomentAboutMean (int r) {
+           if (r < 0) {
+               throw new ArgumentOutOfRangeException("r");
+           } else if (r == 0) {
                return (1.0);
-           } else if (n % 2 != 0) {
+           } else if (r % 2 != 0) {
                return (0.0);
            } else {
-               return (base.MomentAboutMean(n));
+               return (base.MomentAboutMean(r));
            }
        }
 

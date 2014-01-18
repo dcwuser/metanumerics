@@ -5,7 +5,7 @@ namespace Meta.Numerics.Functions {
 
     // code to invert beta, gamma, and error functions
     // this is unfortunately a big pain
-
+#if PAST
     public static partial class AdvancedMath {
 
         // the probit function is the inverse CDF of the normal distribution
@@ -25,5 +25,6 @@ namespace Meta.Numerics.Functions {
 
 
     }
+#endif
 
 }

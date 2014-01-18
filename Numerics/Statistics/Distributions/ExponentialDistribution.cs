@@ -148,6 +148,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
+        public override double ExcessKurtosis {
+            get {
+                return (6.0);
+            }
+        }
+
+        /// <inheritdoc />
         public override Interval Support {
             get {
                 return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));

@@ -486,11 +486,21 @@ namespace Meta.Numerics {
 
         public static void ReduceByOnes (double y, out long y0, out double y1) {
             double yr = Math.Round(y);
-            y0 = (long) yr;
+            if (Math.Abs(yr) < intMax) {
+                y0 = (long) yr;
+            } else {
+                y0 = Math.Sign(yr) * intMax;
+            }
             y1 = y - yr;
         }
 
-        public static double Sin (double x, double y) {
+        // There are 54 bits of accuracy in a double, so any double larger than 2^54 is effectively an integer,
+        // and any double larger than 2^56 is effectively an integer divisible by 4.
+        // Since there are 63 bits of accuracy in a long, the integer part of any double lower than this can
+        // fit in a long. Any double larger than this value we simply peg at this value.
+        private const long intMax = (1L << 56);
+
+        public static double Cos (double x, double y) {
             long x0; double x1;
             ReduceByPiHalves(x, out x0, out x1);
 
@@ -500,7 +510,7 @@ namespace Meta.Numerics {
             long z0 = x0 + y0;
             double z1 = x1 + y1;
 
-            return (Sin(z0, z1));
+            return (Cos(z0, z1));
 
         }
 

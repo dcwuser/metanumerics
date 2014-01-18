@@ -59,18 +59,18 @@ namespace Meta.Numerics.Functions {
                 Bessel_RecurrUpward(m, x, ref J, ref JP, n - m);
                 return (J);
             } else {
-                // we are in the transition region; x is too large for the series but still less than n, so
-                // For x < n, upward recurrance is unstable since even a tiny mixture of the Y solution will come to dominate as n increases.
+                // We are in the transition region; x is too large for the series but still less than n. In this region
+                // upward recurrance is unstable, since even a tiny mixture of the Y solution will come to dominate as n increases.
 
                 // Instead we will use Miller's algorithm: recurr downward from far above and use a sum rule to normalize the result
                 // The sum rule we will use is:
                 //   \sum_{k=-\infty}^{\infty} J_{2k}(x) = J_0(x) + 2 J_2(x) + 2 J_4(x) + \cdots = 1
 
-                // As long as we start sufficiently far above, we can pick arbitrary starting values (say 0 and 1) because these contributes
-                // as so supressed compared to contributions from the order we care about. What high is sufficient? Lots of ink has been spilt
+                // As long as we start sufficiently far above, we can pick arbitrary starting values (say 0 and 1) because these contributions
+                // as so supressed compared to contributions from the order we care about. How far above is sufficient? Lots of ink has been spilt
                 // on this. NR uses a formula of the form m = n + c \sqrt{n}, which they claim can be justified via some hueristic manipulation
                 // of limiting expressions that I cannot reproduce. The literature implies life isn't so simple. Olver gives the most convincing
-                // answer: run the recurrance up until it has produced a factor larger than the error supression you require. Then start back
+                // answer: run the recurrance up until it has produced a factor larger than the error supression you require, then start back
                 // down from there. This is the approach we adopt.
                 double Pm1 = 0.0;
                 double P = 1.0;
@@ -81,7 +81,6 @@ namespace Meta.Numerics.Functions {
                     P = Pp1;
                     m++;
                 }
-                //Debug.WriteLine(String.Format("nmax = {0}", m));
 
                 // These values grow fast. To avoid overflow, we will rescale our results if they get too big.
                 // Since we will multiply by (2k/x), which is greater than one since x < k, we set a limit
@@ -99,8 +98,7 @@ namespace Meta.Numerics.Functions {
                     if (k == n) Jn = J;
                     // Apply the recurrence to get J_{k-1}.
                     double Jm1 = (2 * k) / x * J - Jp1;
-                    //Debug.WriteLine(String.Format("k={0} J={1} Jp1={2} sum={3}", k, J, Jp1, sum));
-                    // J_{k+1} => J_{k}, J_{k} -> J_{k-1} for the next iteration.
+                    // J_{k+1} -> J_{k}, J_{k} -> J_{k-1} for the next iteration.
                     Jp1 = J;
                     J = Jm1;
                     // If we are close to overflow, re-scale all quantities.
@@ -113,6 +111,7 @@ namespace Meta.Numerics.Functions {
                 }
                 // Add J_0 to the sum.
                 sum = 2.0 * sum + J;
+                // If n = 0 we will not have set Jn yet, so set it now.
                 if (n == 0) Jn = J;
                 // Rescale and return J_n.
                 return (Jn / sum);
@@ -600,7 +599,6 @@ namespace Meta.Numerics.Functions {
 
                 int sign;
                 double r = Bessel_CF1(nu, x, out sign);
-                //Console.WriteLine("r={0}", r);
 
                 double J = 1.0 * sign;
                 double Jp1 = r * J;
@@ -611,12 +609,9 @@ namespace Meta.Numerics.Functions {
                     J = Jm1;
                     mu = mu - 1.0;
                 }
-                //Console.WriteLine("derived J = {0} at mu={1}", J, mu);
 
                 Complex z = Bessel_CF2(mu, x);
                 SolutionPair result = Bessel_Steed(mu / x - Jp1 / J, z, 2.0 / Math.PI / x , Math.Sign(J));
-                //Console.WriteLine("actual J = {0} at mu={1}", result.Regular, mu);
-                //Console.WriteLine("scale factor {0}", result.Regular / J);
 
                 return (result.FirstSolutionValue / J);
 
@@ -703,17 +698,7 @@ namespace Meta.Numerics.Functions {
 
                 // recurr upward to nu
                 Bessel_RecurrUpward(mu, x, ref Y, ref YP, n);
-                /*
-                for (int i = 0; i < n; i++) {
-                    // use recurrence on Y, Y':
-                    //   Y_{mu+1} = (mu/x) Y_{mu} - Y_{mu}'
-                    //   Y_{mu}' = Y_{mu-1} - (mu/x) Y_{mu}
-                    double t = Y;
-                    Y = (mu / x) * t - YP;
-                    mu += 1.0;
-                    YP = t - (mu / x) * Y;
-                }
-                */
+
                 return (Y);
 
             }
@@ -973,34 +958,6 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        // large order expansion using Airy functions
-        /*
-        public static double BesselJ_Airy (double nu, double x) {
-
-            double z = Bessel_Zeta(x / nu);
-            double nu3 = Math.Pow(nu, 1.0 / 3.0);
-            double nu23 = nu3 * nu3;
-            double x = nu23 * z;
-
-            double ai, aip; // airy functions
-
-            throw new NotImplementedException();
-
-        }
-        */
-
-        /*
-        public static double Bessel_Zeta (double z) {
-            if (z < 1.0) {
-                double sz = Math.Sqrt((1.0 + z) * (1.0 - z));
-                return (Math.Log((1.0 + sz) / z) - sz);
-            } else {
-                double sz = Math.Sqrt((z + 1.0) * (z - 1.0));
-                return (sz - Math.Acos(1.0 / z));
-            }
-        }
-        */
-
         // **** Spherical Bessel functions ****
 
         /// <summary>
@@ -1102,6 +1059,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
+#if PAST
         private static double SphericalBesselJ_SeriesZero (double x) {
             double xx = x * x / 2.0;
             double dj = 1.0;
@@ -1114,10 +1072,12 @@ namespace Meta.Numerics.Functions {
             }
             throw new NonconvergenceException();
         }
+#endif
 
         private static double SphericalBesselJ_Zero (double x) {
-            if (Math.Abs(x) < 0.25) {
-                return (SphericalBesselJ_SeriesZero(x));
+            if (x == 0.0) {
+                // It's fine to compute sin(x) / x explicitly, even for very very tiny x, as long as x is not actually zero.
+                return (1.0);
             } else {
                 return (MoreMath.Sin(x) / x);
             }
@@ -1176,6 +1136,7 @@ namespace Meta.Numerics.Functions {
             throw new NonconvergenceException();
         }
 
+        /*
         private static double SphericalBesselY_SeriesZero (double x) {
             if (x == 0) return (Double.NegativeInfinity);
             double xx = x * x / 2.0;
@@ -1189,13 +1150,21 @@ namespace Meta.Numerics.Functions {
             }
             throw new NonconvergenceException();
         }
+        */
 
         private static double SphericalBesselY_Zero (double x) {
+            if (x == 0.0) {
+                return (Double.NegativeInfinity);
+            } else {
+                return (-MoreMath.Cos(x) / x);
+            }
+            /*
             if (Math.Abs(x) < 0.25) {
                 return (SphericalBesselY_SeriesZero(x));
             } else {
                 return (-MoreMath.Cos(x) / x);
             }
+            */
         }
 
         private static double SphericalBesselY_SeriesOne (double x) {

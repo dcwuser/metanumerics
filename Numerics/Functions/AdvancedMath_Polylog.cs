@@ -65,6 +65,7 @@ namespace Meta.Numerics.Functions {
             throw new NonconvergenceException();
         }
 
+        /*
         private static double DiLog_Series_1 (double e) {
 
             double f = Math.PI * Math.PI / 6.0;
@@ -83,8 +84,17 @@ namespace Meta.Numerics.Functions {
             }
             throw new NonconvergenceException();
         }
+        */
 
-
+        /// <summary>
+        /// Computes the polylogarithm function.
+        /// </summary>
+        /// <param name="n">The order, which must be non-negative.</param>
+        /// <param name="x">The argument, which must be less than or equal to one.</param>
+        /// <returns>The value of Li<sub>n</sub>(x).</returns>
+        /// <remarks>
+        /// <para>The polylogarithm function becomes complex for arguments larger than one.</para>
+        /// </remarks>
         public static double PolyLog (int n, double x) {
 
             if (x > 1.0) throw new ArgumentOutOfRangeException("x");
@@ -92,16 +102,24 @@ namespace Meta.Numerics.Functions {
             if (n == 0) {
                 return (x / (1.0 - x));
             } else if (n == 1) {
-                return (-Math.Log(1.0 - x));
+                return (-MoreMath.LogOnePlus(-x));
             } else {
 
                 if (x < -1.0) {
                     // For x < -1, reflect x -> 1/x
-                    throw new NotImplementedException();
+                    double w = Math.Log(-x);
+                    double s = PolyLog_BernoulliSum(n, w);
+                    double t = PolyLog(n, 1.0 / x);
+                    Debug.WriteLine("s={0} t={1}", s, t);
+                    if (n % 2 == 0) {
+                        return (s - t);
+                    } else {
+                        return (s + t);
+                    }
                 } else if (x < -0.25) {
                     // For -1 <= x <= 0, reflect x -> -x, unless we are close enough to just directly use the series.
                     // The terms have opposite signs, so we should worry about cancelation. But since Li(x) increases
-                    // monotonically, Li_n(x^2) will we smaller than Li(x) on 0 < x < 1, and that term is additionally
+                    // monotonically, Li_n(x^2) will be smaller than Li(x) on 0 < x < 1, and that term is additionally
                     // supressed by 2^{1-n} for all n > 1.
                     return (-PolyLog(n, -x) + MoreMath.Pow(2.0, 1 - n) * PolyLog(n, x * x));
                 } else if (x < 0.25) {
@@ -113,6 +131,22 @@ namespace Meta.Numerics.Functions {
                 }
 
             }
+
+        }
+
+        private static double PolyLog_BernoulliSum (int n, double w) {
+
+            double s = 0.0;
+            for (int k = n; k > 1; k--) {
+
+                double ds = (1.0 - MoreMath.Pow(2.0, 1 - k)) * Math.Abs(AdvancedIntegerMath.BernoulliNumber(k)) *
+                    MoreMath.Pow(Global.TwoPI, k) / AdvancedIntegerMath.Factorial(k) *
+                    MoreMath.Pow(w, n - k) / AdvancedIntegerMath.Factorial(n - k);
+                Debug.WriteLine("k={0} ds={1}", k, ds);
+                s -= ds;
+            }
+            s -= MoreMath.Pow(w, n) / AdvancedIntegerMath.Factorial(n);
+            return (s);
 
         }
 
@@ -168,27 +202,6 @@ namespace Meta.Numerics.Functions {
                 if (f == f_old) return(f);
             }
             throw new NonconvergenceException();
-
-        }
-
-        public static double Polylog_Inversion (int n, double x) {
-
-            double f = AdvancedMath.PolyLog(n, 1.0 / x);
-            if (n % 2 == 0) f = -f;
-            Debug.WriteLine(String.Format("f1={0}", f));
-
-            double ln = Math.Log(-x);
-            double f2 = - MoreMath.Pow(ln, n) / AdvancedIntegerMath.Factorial(n);
-            Debug.WriteLine(String.Format("f2={0}", f2));
-            f += f2;
-
-            for (int r = 1; r <= n / 2; r++) {
-                double f3 = 2.0 * MoreMath.Pow(ln, n - 2 * r) * AdvancedMath.PolyLog(2 * r, -1.0) / AdvancedIntegerMath.Factorial(n - 2 * r);
-                Debug.WriteLine(String.Format("r={0} n-2r={1} f3={2}", r, n - 2 * r, f3));
-                f += f3;
-            }
-
-            return(f);
 
         }
 

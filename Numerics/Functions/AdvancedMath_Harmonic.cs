@@ -27,7 +27,7 @@ namespace Meta.Numerics.Functions {
 
             double LP = Math.Sqrt((2*l+1) / (4.0 * Math.PI)) * OrthogonalPolynomials.LegendrePe(l, m, Math.Cos(theta));
             double mp = m * phi;
-            return (new Complex(LP * AdvancedMath.Cos(mp,0.0), LP * AdvancedMath.Sin(mp,0.0)));
+            return (new Complex(LP * MoreMath.Cos(mp), LP * MoreMath.Sin(mp)));
 
         }
 

@@ -140,6 +140,51 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
+        private double tolerance = Global.Accuracy;
+
+        /// <summary>
+        /// Gets or sets the tolerance with which singular values are distinguished from zero.
+        /// </summary>
+        /// <remarks>
+        /// <para>Some operations offered by singular value decompositions, including rank determination and computation of the pseudo-inverse matrix,
+        /// depend on determining whether or not a singular value is zero. Since floating point numbers are only approximate representations of real
+        /// numbers, singular values will usually not be exactly zero even for matrices for which they should be, but will instead be very tiny
+        /// numbers, on the order of floating point precision (about 10<sup>-16</sup>) as a fraction of the largest singular value. The value
+        /// of this property is used to determine how small a singular value must be, as a fraction of the largest singular value, to be considered
+        /// zero for these purposes. Usually you will want to maintain its default value.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">The assigned value is outside the range [0,1).</exception>
+        public double Tolerance {
+            get {
+                return (tolerance);
+            }
+            set {
+                if ((value < 0.0) || (value >= 1.0)) throw new ArgumentOutOfRangeException("value");
+                tolerance = value;
+            }
+        }
+
+        /// <summary>
+        /// Computes the rank of the original matrix.
+        /// </summary>
+        /// <remarks>
+        /// <para>The rank of a matrix is the dimension of the space of input vectors which produce non-zero output vectors upon multiplication by the original matrix.</para>
+        /// <para>Since this operation depends on identifying zero singular values, the result will depend on the value of the <see cref="Tolerance"/> property.</para>
+        /// </remarks>
+        public int Rank {
+            get {
+                double minValue = tolerance * wStore[0];
+                int rank = 0;
+                for (int i = 0; i < wStore.Length; i++) {
+                    if (wStore[i] > minValue) {
+                        rank++;
+                    } else {
+                        break;
+                    }
+                }
+                return (rank);
+            }
+        }
     }
 
 }

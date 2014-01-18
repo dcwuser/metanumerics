@@ -11,7 +11,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>A Bernoulli distribution describes a trial with two possible outcomes. These outcomes are usually called
     /// "success" and "failure", but the same framework is applicable to any binary set of outcomes: right or left, true or false, male or female, dead or alive, etc.
     /// We represent the outcomes by 1 and 0, which are the only two integers for which the Bernoulli probability
-    /// does not vanish. The parameter p is the probability of obtaining outcome 1.</para>
+    /// does not vanish. The parameter p1 is the probability of obtaining outcome 1.</para>
     /// <para>When multiple, independent Bernoulli trials are conducted, the binomial distribution (<see cref="BinomialDistribution"/>)
     /// describes the probablity of obtaining any particular number of successes.</para>
     /// </remarks>
@@ -23,11 +23,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Initializes a new Bernoulli distribution.
         /// </summary>
-        /// <param name="p">The probability of success, which must lie between zero and one.</param>
-        public BernoulliDistribution (double p) {
-            if ((p < 0.0) || (p > 1.0)) throw new ArgumentOutOfRangeException("p");
-            this.p = p;
-            this.q = 1.0 - p;
+        /// <param name="p1">The probability of outcome 1, which must lie between zero and one.</param>
+        public BernoulliDistribution (double p1) {
+            if ((p1 < 0.0) || (p1 > 1.0)) throw new ArgumentOutOfRangeException("p1");
+            this.p = p1;
+            this.q = 1.0 - p1;
         }
 
         private double p, q;
@@ -88,10 +88,17 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double ExcessKurtosis {
+            get {
+                return (1.0 / (p * q) - 6.0);
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
             } else {
                 return (p);
@@ -99,17 +106,17 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
             } else {
                 // these are simplifications of q (-p)^n + p q^n
-                if (n % 2 == 0) {
-                    return (p * q * (MoreMath.Pow(p, n - 1) + MoreMath.Pow(q, n - 1)));
+                if (r % 2 == 0) {
+                    return (p * q * (MoreMath.Pow(p, r - 1) + MoreMath.Pow(q, r - 1)));
                 } else {
-                    int m = (n - 1) / 2;
+                    int m = (r - 1) / 2;
                     double pm = MoreMath.Pow(p, m);
                     double qm = MoreMath.Pow(q, m);
                     return (p * q * (qm - pm) * (qm + pm));

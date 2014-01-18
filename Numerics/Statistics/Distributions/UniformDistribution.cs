@@ -183,6 +183,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
+        public override double ExcessKurtosis {
+            get {
+                return (-6.0 / 5.0);
+            }
+        }
+
+        /// <inheritdoc />
         public override double Median {
             get {
                 return (Mean);

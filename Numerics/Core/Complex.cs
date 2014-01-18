@@ -95,7 +95,6 @@ namespace Meta.Numerics {
             return (String.Format(CultureInfo.CurrentCulture, "({0},{1})", re, im));
 		}
 
-
 #if SHO
         /// <summary>
         /// Produces the representation of the complex number for the Python interactive console.
@@ -174,7 +173,7 @@ namespace Meta.Numerics {
         /// <param name="z1">The first complex number.</param>
         /// <param name="z2">The second complex number.</param>
         /// <returns>The sum of the complex numbers.</returns>
-		public static Complex operator+ (Complex z1, Complex z2) {
+		public static Complex operator + (Complex z1, Complex z2) {
             return (new Complex(z1.re + z2.re, z1.im + z2.im));
 		}
 
@@ -184,7 +183,7 @@ namespace Meta.Numerics {
         /// <param name="z1">The first complex number.</param>
         /// <param name="z2">The second complex number.</param>
         /// <returns>The difference of the complex numbers.</returns>
-		public static Complex operator- (Complex z1, Complex z2) {
+		public static Complex operator - (Complex z1, Complex z2) {
             return (new Complex(z1.re - z2.re, z1.im - z2.im));
 		}
 
@@ -194,7 +193,7 @@ namespace Meta.Numerics {
         /// <param name="z1">The first complex number.</param>
         /// <param name="z2">The second complex number.</param>
         /// <returns>The product of the two complex numbers.</returns>
-		public static Complex operator* (Complex z1, Complex z2) {
+		public static Complex operator * (Complex z1, Complex z2) {
             return (new Complex(z1.re * z2.re - z1.im * z2.im, z1.re * z2.im + z1.im * z2.re));
 		}
 
@@ -204,7 +203,7 @@ namespace Meta.Numerics {
         /// <param name="z1">The first complex number.</param>
         /// <param name="z2">The second complex number.</param>
         /// <returns>The quotient of the two complex numbers.</returns>
-		public static Complex operator/ (Complex z1, Complex z2) {
+		public static Complex operator / (Complex z1, Complex z2) {
 			if (Math.Abs(z2.Re) > Math.Abs(z2.Im)) {
 				double x = z2.Im/z2.Re;
 				double w = z2.Re + x*z2.Im;
@@ -245,7 +244,7 @@ namespace Meta.Numerics {
         /// <param name="a">The real number.</param>
         /// <param name="z">The complex number.</param>
         /// <returns>The product az.</returns>
-		public static Complex operator* (double a, Complex z) {
+		public static Complex operator * (double a, Complex z) {
 			return( new Complex(a * z.re, a * z.im) );
 		}
 
@@ -255,7 +254,7 @@ namespace Meta.Numerics {
         /// <param name="z">The complex number.</param>
         /// <param name="a">The real number.</param>
         /// <returns>The product za.</returns>
-		public static Complex operator* (Complex z, double a) {
+		public static Complex operator * (Complex z, double a) {
 			return( a * z );
 		}
 
@@ -276,6 +275,21 @@ namespace Meta.Numerics {
 			return( new Complex(z.Re/a, z.Im/a) );
 		}
         */
+
+        /// <summary>
+        /// Gets the complex value of zero.
+        /// </summary>
+        public static readonly Complex Zero = new Complex(0.0, 0.0);
+
+        /// <summary>
+        /// Gets the complex value of one.
+        /// </summary>
+        public static readonly Complex One = new Complex(1.0, 0.0);
+
+        /// <summary>
+        /// Gets the square root of negative one.
+        /// </summary>
+        public static readonly Complex I = new Complex(0.0, 1.0);
 
 	}
 

@@ -49,6 +49,19 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <summary>
+        /// Gets the excess kurtosis of the distribution.
+        /// </summary>
+        /// <remarks>
+        /// <para>The excess kurtosis of a distribution is a measurement of the fatness of its tails relative
+        /// to the normal distribution.</para>
+        /// </remarks>
+        public virtual double ExcessKurtosis {
+            get {
+                return (Cumulant(4) / MoreMath.Sqr(Cumulant(2)));
+            }
+        }
+
+        /// <summary>
         /// Computes a raw moment of the distribution.
         /// </summary>
         /// <param name="r">The order of the moment to compute.</param>

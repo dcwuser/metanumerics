@@ -241,7 +241,7 @@ namespace Test {
             return (FunctionMath.Integrate((IList<double> x) => {
                 Complex z = 0.0;
                 for (int k = 0; k < d; k++) {
-                    z += ComplexMath.Exp(2.0 * Math.PI * ComplexMath.I * x[k]);
+                    z += ComplexMath.Exp(2.0 * Math.PI * Complex.I * x[k]);
                 }
                 return (MoreMath.Pow(ComplexMath.Abs(z), s));
             }, UnitCube(d), settings));

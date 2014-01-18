@@ -120,6 +120,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
+        public override double ExcessKurtosis {
+            get {
+                return (6.0 / a);
+            }
+        }
+
+        /// <inheritdoc />
         public override double LeftProbability (double x) {
             if (x < 0.0) {
                 return (0.0);

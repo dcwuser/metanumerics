@@ -34,11 +34,14 @@ namespace Meta.Numerics {
 
         public static readonly double SqrtThree = Math.Sqrt(3.0);
 
-        public static readonly double SqrtPI = Math.Sqrt(Math.PI);
+        // Math.Sqrt(Math.PI) is off by 2 x 10^{-16} from nearest representable value
+        public const double SqrtPI = 1.7724538509055160273;
 
-        public const double SqrtTwoPI = 2.5066282746310005024; // Math.Sqrt(TwoPI) is off by 2 X 10^{-16} from nearest representable value
+        // Math.Sqrt(2.0 * Math.PI) is off by 2 X 10^{-16} from nearest representable value
+        public const double SqrtTwoPI = 2.5066282746310005024;
 
-        public static readonly double SqrtHalfPI = Math.Sqrt(HalfPI);
+        // Math.Sqrt(Math.PI / 2.0) is off by 2 X 10^{-16} from nearest representable value
+        public const double SqrtHalfPI = 1.2533141373155002512;
 
         // pre-calculate some often-used logs
 

@@ -1141,7 +1141,7 @@ namespace Test {
 
         [TestMethod]
         public void RiemannZetaReflectionTest () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2,1.0E2,15)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2 ,1.0E2, 16)) {
                 Console.WriteLine("x={0}", x);
                 double zx = AdvancedMath.RiemannZeta(x);
                 double gx = AdvancedMath.Gamma(x);
@@ -1155,7 +1155,7 @@ namespace Test {
         [TestMethod]
         public void ReimannZetaPrimesTest () {
             // pick high enough values so that p^-x == 1 within double precision before we reach the end of our list of primes
-            foreach (double x in TestUtilities.GenerateRealValues(10.0, 1.0E3, 5)) {
+            foreach (double x in TestUtilities.GenerateRealValues(10.0, 1.0E3, 8)) {
                 double f = 1.0;
                 foreach (int p in primes) {
                     double t = 1.0 - Math.Pow(p, -x);
@@ -1758,18 +1758,20 @@ namespace Test {
         }
 
         [TestMethod]
-        public void PolyTest () {
-            Console.WriteLine(AdvancedMath.DiLog(-3.0));
-            Console.WriteLine(AdvancedMath.Polylog_Inversion(30, -300.0));
-        }
-
-        [TestMethod]
         public void PolyLogSpecialCases () {
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 8)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.PolyLog(n, -1.0), -AdvancedMath.DirichletEta(n)));
                 Assert.IsTrue(AdvancedMath.PolyLog(n, 0.0) == 0.0);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.PolyLog(n, 1.0), AdvancedMath.RiemannZeta(n)));
             }
+        }
+
+        [TestMethod]
+        public void PolyLogOneHalf () {
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.PolyLog(0, 1.0 / 2.0), 1.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.PolyLog(1, 1.0 / 2.0), Math.Log(2.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.PolyLog(2, 1.0 / 2.0), (Math.PI * Math.PI - 6.0 * MoreMath.Sqr(Math.Log(2.0))) / 12.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.PolyLog(3, 1.0 / 2.0), (4.0 * MoreMath.Pow(Math.Log(2.0), 3) - 2.0 * Math.PI * Math.PI * Math.Log(2.0) + 21.0 * AdvancedMath.RiemannZeta(3.0)) / 24.0));
         }
 
         [TestMethod]
@@ -1804,6 +1806,17 @@ namespace Test {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         FunctionMath.Integrate(t => AdvancedMath.PolyLog(n, t) / t, Interval.FromEndpoints(0.0, x)),
                         AdvancedMath.PolyLog(n + 1, x)
+                    ));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void PolyLogDuplication () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 64, 4)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 4)) {
+                    Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                        AdvancedMath.PolyLog(n, x), AdvancedMath.PolyLog(n, -x), AdvancedMath.PolyLog(n, x * x) / MoreMath.Pow(2.0, n - 1)
                     ));
                 }
             }

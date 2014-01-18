@@ -293,8 +293,8 @@ namespace Meta.Numerics.Functions {
         public static double EllipticF (double phi, double k) {
             if (Math.Abs(phi) > Global.HalfPI) throw new ArgumentOutOfRangeException("phi");
             if ((k < 0) || (k > 1.0)) throw new ArgumentOutOfRangeException("k");
-            double s = AdvancedMath.Sin(phi, 0.0);
-            double c = AdvancedMath.Cos(phi, 0.0);
+            double s = MoreMath.Sin(phi);
+            double c = MoreMath.Cos(phi);
             double z = s * k;
             return (s * CarlsonF(c * c, 1.0 - z * z, 1.0));
         }
@@ -386,7 +386,7 @@ namespace Meta.Numerics.Functions {
             if ((k < 0.0) || (k > 1.0)) throw new ArgumentOutOfRangeException("k");
 
             //  Arguments in Carlson F and D functions are x = \cos^2 \phi, y = 1 - k^2 \sin^2 \phi, z = 1, z = 1
-            double s = Math.Sin(phi);
+            double s = MoreMath.Sin(phi);
             double x = 1.0 - s * s;
             double sk = s * k;
             double sk2 = sk * sk;

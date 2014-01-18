@@ -141,7 +141,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        public static double EulerianPolynomial (int n, double x) {
+        private static double EulerianPolynomial (int n, double x) {
 
             // Determine coefficients using < n m > = (n - m) < (n-1) (m-1) > + (m + 1) < (n-1) m >
             double[] c0 = new double[n];

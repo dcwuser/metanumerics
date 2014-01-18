@@ -104,12 +104,6 @@ namespace Meta.Numerics.Matrices {
             return (result);
         }
 
-        public static double[] Multiply (double[] aStore, double[] xStore, int nRows, int nCols) {
-            double[] yStore = new double[nCols];
-            Blas2.dGemv(aStore, 0, 1, nRows, xStore, 0, 1, yStore, 0, 1, nRows, nCols);
-            return (yStore);
-        }
-
         // multiplication: an O(N^3) algorithm
 
         public static double[] Multiply (double[] aStore, int aRows, int aCols, double[] bStore, int bRows, int bCols) {
@@ -181,17 +175,17 @@ namespace Meta.Numerics.Matrices {
                 int offset = rows * k + k;
                 int length = rows - k;
                 double a;
-                SquareMatrixAlgorithms.GenerateHouseholderReflection(store, offset, 1, length, out a);
+                VectorAlgorithms.GenerateHouseholderReflection(store, offset, 1, length, out a);
 
                 // apply P to the other columns of A
                 for (int c = k + 1; c < cols; c++) {
-                    SquareMatrixAlgorithms.ApplyHouseholderReflection(store, offset, 1, store, rows * c + k, 1, length);
+                    VectorAlgorithms.ApplyHouseholderReflection(store, offset, 1, store, rows * c + k, 1, length);
                 }
 
                 // apply P to Q to accumulate the transform
                 // since Q is rows X rows, its column count is just rows
                 for (int c = 0; c < rows; c++) {
-                    SquareMatrixAlgorithms.ApplyHouseholderReflection(store, offset, 1, qtStore, rows * c + k, 1, length);
+                    VectorAlgorithms.ApplyHouseholderReflection(store, offset, 1, qtStore, rows * c + k, 1, length);
                 }
 
                 // we are done with the Householder vector now, so we can zero the first column
@@ -277,9 +271,9 @@ namespace Meta.Numerics.Matrices {
             //   | a_m^2 + b_{m-1}^2      a_m b_m     |  =  | T_mm T_mn |
             //   |     a_m b_m          a_n^2 + b_m^2 |     | T_mn T_nn |
             // and pick the eigenvalue closer to the bottom value
-            double T_mm = MoreMath.Pow2(a[m]);
-            if (m > p) T_mm += MoreMath.Pow2(b[m - 1]);
-            double T_nn = MoreMath.Pow2(a[n]) + MoreMath.Pow2(b[m]);
+            double T_mm = MoreMath.Sqr(a[m]);
+            if (m > p) T_mm += MoreMath.Sqr(b[m - 1]);
+            double T_nn = MoreMath.Sqr(a[n]) + MoreMath.Sqr(b[m]);
             double T_mn = a[m] * b[m];
             double dd = MoreMath.Hypot(T_mm - T_nn, 2.0 * T_mn);
             //double dd = Math.Sqrt(Math.Pow(T_mm - T_nn, 2) + 4.0 * Math.Pow(T_mn, 2));
@@ -298,7 +292,7 @@ namespace Meta.Numerics.Matrices {
             // variables for cosine and sine of rotation angles
             double c, s;
 
-            double u = MoreMath.Pow2(a[p]) - e;
+            double u = MoreMath.Sqr(a[p]) - e;
             double v = a[p] * b[p];
             GenerateGivensRotation(ref u, ref v, out c, out s);
 
@@ -473,7 +467,10 @@ namespace Meta.Numerics.Matrices {
 
         public static void Bidiagonalize (double[] store, int rows, int cols, out double[] a, out double[] b) {
 
-            //Debug.Assert(rows >= cols);
+            // This logic is written assuming more rows than columns. If not, bidiagonalize the transpose.
+            Debug.Assert(rows >= cols);
+
+            // Allocate space for the diagonal and superdiagonal.
             a = new double[cols];
             b = new double[cols - 1];
 
@@ -482,24 +479,24 @@ namespace Meta.Numerics.Matrices {
 
                 // generate a householder reflection which, when applied from the left, will zero sub-diagonal elements in the kth column
                 // use those elements to store the reflection vector; store the resulting diagonal element seperately
-                SquareMatrixAlgorithms.GenerateHouseholderReflection(store, rows * k + k, 1, rows - k, out a[k]);
+                VectorAlgorithms.GenerateHouseholderReflection(store, rows * k + k, 1, rows - k, out a[k]);
 
                 // apply that reflection to all the columns; only subsequent ones are affected since preceeding ones
                 // contain only zeros in the subdiagonal rows
                 for (int c = k + 1; c < cols; c++) {
-                    SquareMatrixAlgorithms.ApplyHouseholderReflection(store, rows * k + k, 1, store, rows * c + k, 1, rows - k);
+                    VectorAlgorithms.ApplyHouseholderReflection(store, rows * k + k, 1, store, rows * c + k, 1, rows - k);
                 }
 
                 if ((k + 1) < cols) {
                     // generate a Householder reflection which, when applied from the right, will zero (super+1)-diagonal elements in the kth row
                     // again, store the elements of the reflection vector in the zeroed matrix elements and store the resulting superdiagonal element seperately
-                    SquareMatrixAlgorithms.GenerateHouseholderReflection(store, rows * (k + 1) + k, rows, cols - (k + 1), out b[k]);
+                    VectorAlgorithms.GenerateHouseholderReflection(store, rows * (k + 1) + k, rows, cols - (k + 1), out b[k]);
 
                     // apply the reflection to all the rows; only subsequent ones are affected since the preceeding ones contain only zeros in the
                     // affected columns; the already-zeroed column elements are not distrubed because those columns are not affected
                     // this restriction is why we cannot fully diagonalize using this transform
                     for (int r = k + 1; r < rows; r++) {
-                        SquareMatrixAlgorithms.ApplyHouseholderReflection(store, rows * (k + 1) + k, rows, store, rows * (k + 1) + r, rows, cols - (k + 1));
+                        VectorAlgorithms.ApplyHouseholderReflection(store, rows * (k + 1) + k, rows, store, rows * (k + 1) + r, rows, cols - (k + 1));
                     }
                 }
 
@@ -514,7 +511,7 @@ namespace Meta.Numerics.Matrices {
             for (int k = cols - 2; k >= 0; k--) {
                 // apply Householder reflection to each column from the left
                 for (int j = k + 1; j < cols; j++) {
-                    SquareMatrixAlgorithms.ApplyHouseholderReflection(store, (k + 1) * rows + k, rows, result, j * cols + (k + 1), 1, cols - k - 1);
+                    VectorAlgorithms.ApplyHouseholderReflection(store, (k + 1) * rows + k, rows, result, j * cols + (k + 1), 1, cols - k - 1);
                 }
             }
             return (result);
@@ -529,7 +526,7 @@ namespace Meta.Numerics.Matrices {
             for (int k = cols - 1; k >= 0; k--) {
                 // apply Householder reflection to each row from the right
                 for (int j = k; j < rows; j++) {
-                    SquareMatrixAlgorithms.ApplyHouseholderReflection(store, k * rows + k, 1, result, k * rows + j, rows, rows - k);
+                    VectorAlgorithms.ApplyHouseholderReflection(store, k * rows + k, 1, result, k * rows + j, rows, rows - k);
                 }
             }
 

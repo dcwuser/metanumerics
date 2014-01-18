@@ -336,5 +336,53 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void ComplexRealRiemannZetaAgreement () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.RiemannZeta(x), AdvancedMath.RiemannZeta(x)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.RiemannZeta(-x), AdvancedMath.RiemannZeta(-x)));
+            }
+        }
+
+        [TestMethod]
+        public void ComplexRiemannZetaZeros () {
+
+            // Zeros from http://www.dtc.umn.edu/~odlyzko/zeta_tables/zeros2
+            double[] zeros = new double[] {
+                14.134725141734693790,
+                21.022039638771554993,
+                25.010857580145688763,
+                30.424876125859513210
+            };
+
+            foreach (double zero in zeros) {
+                double rho = FunctionMath.FindZero((double x) => {
+                    Complex f = AdvancedComplexMath.RiemannZeta(new Complex(0.5, x));
+                    return (f.Re + f.Im);
+                }, Math.Round(zero));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(rho, zero));
+            }
+
+        }
+
+        [TestMethod]
+        public void ComplexReimannZetaPrimesTest () {
+            // pick high enough values so that p^-x == 1 within double precision before we reach the end of our list of primes
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0, 100.0, 8)) {
+                Complex zz = z;
+                if (zz.Re < 0.0) zz = -zz;
+                zz += 10.0;
+                Console.WriteLine(zz);
+                Complex f = 1.0;
+                for (int p = 2; p < 100; p++) {
+                    if (!AdvancedIntegerMath.IsPrime(p)) continue;
+                    Complex t = Complex.One - ComplexMath.Pow(p, -zz);
+                    if (t == Complex.One) break;
+                    f = f * t;
+                }
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(1.0 / AdvancedComplexMath.RiemannZeta(zz), f));
+            }
+        }
+
     }
 }

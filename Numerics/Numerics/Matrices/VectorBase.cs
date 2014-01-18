@@ -11,12 +11,11 @@ namespace Meta.Numerics.Matrices {
     /// <seealso cref="ColumnVector"/>
     public abstract class VectorBase : AnyRectangularMatrix, IEnumerable, IEnumerable<double>, ICollection<double>, IList<double> {
 
-        internal VectorBase (double[] store, int offset, int stride, int dimension, bool isReadOnly) {
+        internal VectorBase (double[] store, int offset, int stride, int dimension, bool isReadOnly) : base(isReadOnly) {
             this.store = store;
             this.offset = offset;
             this.stride = stride;
             this.dimension = dimension;
-            this.IsReadOnly = isReadOnly;
         }
 
         internal VectorBase (double[] store, int dimension, bool isReadOnly) : this(store, 0, 1, dimension, isReadOnly) { }
@@ -148,36 +147,6 @@ namespace Meta.Numerics.Matrices {
 
         void IList<double>.RemoveAt (int index) {
             throw new NotSupportedException();
-        }
-
-    }
-
-    internal static class VectorAlgorithms {
-
-        public static double[] Copy (double[] store, int offset, int stride, int dimension) {
-            double[] copy = new double[dimension];
-            Blas1.dCopy(store, offset, stride, copy, 0, 1, dimension);
-            return (copy);
-        }
-
-        public static double[] Add (double[] aStore, int aOffset, int aStride, double[] bStore, int bOffset, int bStride, int dimension) {
-            double[] store = new double[dimension];
-            Blas1.dCopy(aStore, aOffset, aStride, store, 0, 1, dimension);
-            Blas1.dAxpy(1.0, bStore, bOffset, bStride, store, 0, 1, dimension);
-            return(store);
-        }
-
-        public static double[] Subtract (double[] aStore, int aOffset, int aStride, double[] bStore, int bOffset, int bStride, int dimension) {
-            double[] store = new double[dimension];
-            Blas1.dCopy(aStore, aOffset, aStride, store, 0, 1, dimension);
-            Blas1.dAxpy(-1.0, bStore, bOffset, bStride, store, 0, 1, dimension);
-            return (store);
-        }
-
-        public static double[] Multiply (double alpha, double[] store, int offset, int stride, int dimension) {
-            double[] product = new double[dimension];
-            Blas1.dAxpy(alpha, store, offset, stride, product, 0, 1, dimension);
-            return (product);
         }
 
     }

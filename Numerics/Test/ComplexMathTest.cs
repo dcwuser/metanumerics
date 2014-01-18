@@ -11,10 +11,15 @@ namespace Test {
         private Complex a = new Complex(3.0, 4.0);
         private Complex b = new Complex(1.5, -2.3);
 
-        [TestMethod()]
+        [TestMethod]
+        public void ComplexIParts () {
+            Assert.IsTrue(Complex.I.Re == 0.0);
+            Assert.IsTrue(Complex.I.Im == 1.0);
+        }
+
+        [TestMethod]
         public void ComplexIDefinition () {
-            Assert.IsTrue(ComplexMath.I.Re == 0.0);
-            Assert.IsTrue(ComplexMath.I.Im == 1.0);
+            Assert.IsTrue(ComplexMath.Sqrt(-1.0) == Complex.I);
         }
 
         // Square root
@@ -23,7 +28,7 @@ namespace Test {
         public void ComplexSqrt () {
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 16)) {
                 Complex sz = ComplexMath.Sqrt(z);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(sz * sz,z));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sqr(sz), z));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Arg(z) / 2.0, ComplexMath.Arg(sz)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Sqrt(ComplexMath.Abs(z)), ComplexMath.Abs(sz)));
             }
@@ -171,8 +176,8 @@ namespace Test {
 
         [TestMethod]
         public void ComplexExpSpecialCase () {
-            Assert.IsTrue(ComplexMath.Exp(0) == 1);
-            Assert.IsTrue(ComplexMath.Exp(1) == Math.E);
+            Assert.IsTrue(ComplexMath.Exp(0.0) == 1.0);
+            Assert.IsTrue(ComplexMath.Exp(1.0) == Math.E);
         }
 
         [TestMethod]

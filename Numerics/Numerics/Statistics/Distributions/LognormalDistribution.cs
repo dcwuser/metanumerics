@@ -116,6 +116,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
+        public override double ExcessKurtosis {
+            get {
+                double s2 = sigma * sigma;
+                return (MoreMath.ExpMinusOne(4.0 * s2) + 2.0 * MoreMath.ExpMinusOne(3.0 * s2) + 3.0 * MoreMath.ExpMinusOne(2.0 * s2));
+            }
+        }
+
+        /// <inheritdoc />
         public override Interval Support {
             get {
                 return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));

@@ -89,7 +89,11 @@ namespace Meta.Numerics {
         /// <returns>The square root of the argument.</returns>
         public static Complex Sqrt (Complex z) {
             if (z.Im == 0) {
-                return (Math.Sqrt(z.Re));
+                if (z.Re < 0.0) {
+                    return (new Complex(0.0, Math.Sqrt(-z.Re)));
+                } else {
+                    return (new Complex(Math.Sqrt(z.Re), 0.0));
+                }
             } else {
                 return (Pow(z, 0.5));
             }
@@ -172,7 +176,9 @@ namespace Meta.Numerics {
         /// <param name="z">The argument.</param>
         /// <returns>The value of tanh(z).</returns>
         public static Complex Tanh (Complex z) {
-            return (Sinh(z) / Cosh(z));
+            // tanh(z) = -i tan(iz)
+            Complex tan = Tan(new Complex(-z.Im, z.Re));
+            return (new Complex(tan.Im, -tan.Re));
         }
 
         // pure complex binary operations
@@ -197,8 +203,8 @@ namespace Meta.Numerics {
         /// <returns>The value of x<sup>z</sup>.</returns>
         public static Complex Pow (double x, Complex z) {
             if (x < 0.0) throw new ArgumentOutOfRangeException("x");
-            if (z == 0.0) return (1.0);
-            if (x == 0.0) return (0.0);
+            if (z == Complex.Zero) return (Complex.One);
+            if (x == Complex.Zero) return (Complex.Zero);
             double m = Math.Pow(x, z.Re);
             double t = Math.Log(x) * z.Im;
             return (new Complex(m * MoreMath.Cos(t), m * MoreMath.Sin(t)));

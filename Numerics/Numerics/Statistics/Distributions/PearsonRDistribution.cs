@@ -58,23 +58,23 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n % 2 != 0) {
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r % 2 != 0) {
                 return (0.0);
             } else {
                 double M = 1.0;
-                for (int i = 0; i < n; i+= 2) {
-                    M = M * (i + 1) / (this.n + i - 1);
+                for (int i = 0; i < r; i+= 2) {
+                    M = M * (i + 1) / (n + i - 1);
                 }
                 return (M);
             }
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            return (MomentAboutMean(n));
+        public override double Moment (int r) {
+            return (MomentAboutMean(r));
         }
 
         /// <inheritdoc />

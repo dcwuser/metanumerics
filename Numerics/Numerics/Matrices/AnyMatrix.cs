@@ -9,6 +9,12 @@ namespace Meta.Numerics.Matrices {
     /// <typeparam name="T">The type of the matrix entries.</typeparam>
     public abstract class AnyMatrix<T> {
 
+        internal AnyMatrix (bool isReadOnly) {
+            this.isReadOnly = isReadOnly;
+        }
+
+        protected AnyMatrix () : this(false) { }
+
         /// <summary>
         /// Gets the number of matrix rows.
         /// </summary>

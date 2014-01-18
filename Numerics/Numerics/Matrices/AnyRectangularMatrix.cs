@@ -18,6 +18,10 @@ namespace Meta.Numerics.Matrices {
     /// </remarks>
     public abstract class AnyRectangularMatrix : AnyMatrix<double> {
 
+        internal AnyRectangularMatrix (bool isReadOnly) : base(isReadOnly) { }
+
+        protected AnyRectangularMatrix () : base() { }
+
         // we an implement some operations, but many will be slow because they do not have access to the underlying storage
         // we will override them with faster implementations in implementing classes, but these ensure that the operations
         // are always defined, including, for binary operations, between different matrix types

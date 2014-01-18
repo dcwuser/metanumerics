@@ -25,10 +25,13 @@ namespace Meta.Numerics.Matrices {
             values = SymmetricMatrixAlgorithms.InitializeStorage(dimension);
         }
 
-        internal SymmetricMatrix (double[][] storage, int dimension) {
+        internal SymmetricMatrix (double[][] storage, int dimension, bool isReadOnly) {
             this.values = storage;
             this.dimension = dimension;
+            this.IsReadOnly = isReadOnly;
         }
+
+        internal SymmetricMatrix (double[][] storage, int dimension) : this(storage, dimension, false) { }
 
         /// <summary>
         /// Gets the dimension of the matrix.
@@ -62,6 +65,7 @@ namespace Meta.Numerics.Matrices {
             set {
                 if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
                 if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
+                if (IsReadOnly) throw new InvalidOperationException();
                 if (c < r) {
                     values[r][c] = value;
                 } else {
@@ -747,7 +751,7 @@ namespace Meta.Numerics.Matrices {
                 // determine the ith diagonal element
                 double q = A[i][i];
                 for (int j = 0; j < i; j++) {
-                    q -= MoreMath.Pow2(CD[i][j]);
+                    q -= MoreMath.Sqr(CD[i][j]);
                 }
 
                 if (q <= 0.0) return (null);

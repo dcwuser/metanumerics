@@ -62,6 +62,16 @@ namespace Test {
                 MoreMath.Hypot(3.0 * x, 4.0 * x), 5.0 * x
             ));
         }
+
+
+        [TestMethod]
+        public void BigTrig () {
+            // An exactly representable double that is extremely close to a multiple of \pi/2
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                MoreMath.Cos(6381956970095103.0 * MoreMath.Pow(2.0, 797)), 4.6871659242546276E-19
+            ));
+        }
+
     }
 
 }

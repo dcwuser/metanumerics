@@ -42,11 +42,10 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
-        internal RectangularMatrix (double[] store, int rows, int cols, bool isReadOnly) {
+        internal RectangularMatrix (double[] store, int rows, int cols, bool isReadOnly) : base(isReadOnly) {
             this.store = store;
             this.rows = rows;
             this.cols = cols;
-            this.IsReadOnly = isReadOnly;
         }
 
         internal RectangularMatrix (double[] store, int rows, int cols) : this(store, rows, cols, false) { }

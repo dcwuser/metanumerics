@@ -618,7 +618,7 @@ namespace Meta.Numerics.Functions {
 
             double px2 = Math.PI * x * x;
 
-            Complex z = Global.SqrtPI * x / 2.0 * (1.0 - ComplexMath.I);
+            //Complex z = Global.SqrtPI * x / 2.0 * (1.0 - ComplexMath.I);
 
             // investigate this carefully: it appears that (1) imaginary part of f doesn't change and
             // (2) real part of f merely increases at constant rate until "right" number is reached

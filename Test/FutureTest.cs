@@ -304,12 +304,263 @@ namespace FutureTest {
 
     }
 
-    
+    public class TestMultiIntegral {
+
+        public Func<IList<double>, double> Function { get; set; }
+
+        public Interval[] Volume { get; set; }
+
+        public double Result { get; set; }
+
+    }
 
     
 
     [TestClass]
     public class FutureTest {
+
+        private static TestMultiIntegral I0 = new TestMultiIntegral() {
+            Function = (IList<double> x) => Math.Log(x[0] * x[1]),
+            Volume = UnitCube(2),
+            Result = -2.0
+        };
+
+        private static TestMultiIntegral I1 = new TestMultiIntegral() {
+            Function = (IList<double> x) => (x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1]),
+            Volume = UnitCube(2),
+            Result = AdvancedMath.EulerGamma
+        };
+
+        private static TestMultiIntegral I2 = new TestMultiIntegral() {
+            Function = (IList<double> x) => 1.0 / (1.0 - x[0] * x[0] * x[1] * x[1]),
+            Volume = UnitCube(2),
+            Result = Math.PI * Math.PI / 8.0
+        };
+
+        private static TestMultiIntegral I3 = new TestMultiIntegral() {
+            Function = (IList<double> x) => {
+                double s = 0.0;
+                for (int i = 0; i < x.Count; i++) s += MoreMath.Sqr(x[i]);
+                return (s <= 1.0 ? 1.0 : 0.0);
+            },
+            Volume = UnitCube(3),
+            Result = 4.0 / 3.0 * Math.PI / 8.0
+        };
+
+        private static TestMultiIntegral IZ3 = new TestMultiIntegral() {
+            Function = (IList<double> x) => {
+                double p = 1.0;
+                for (int i = 0; i < x.Count; i++) {
+                    p *= x[i];
+                }
+                return (1.0 / (1.0 - p));
+            },
+            Volume = UnitCube(3),
+            Result = AdvancedMath.RiemannZeta(3.0)
+        };
+
+        private static TestMultiIntegral IB31 = new TestMultiIntegral() {
+            Function = (IList<double> x) => {
+                double s = 0.0;
+                for (int k = 0; k < 3; k++) {
+                    s += x[k] * x[k];
+                }
+                return (Math.Pow(s, 1 / 2.0));
+                },
+            Volume = UnitCube(3),
+            Result = Math.Log(2.0 + Math.Sqrt(3.0)) / 2.0 + Math.Sqrt(3.0) / 4.0 - Math.PI / 24.0
+        };
+
+        private static TestMultiIntegral ID4 = new TestMultiIntegral() {
+            Function = (IList<double> x) => {
+                double s = 0.0;
+                for (int k = 0; k < 2; k++) {
+                    double z = x[k] - x[k + 2];
+                    s += z * z;
+                }
+                return (Math.Pow(s, 1 / 2.0));
+            },
+            Volume = UnitCube(4),
+            Result = (2.0 + Math.Sqrt(2.0) + 5.0 * Math.Log(1.0 + Math.Sqrt(2.0))) / 15.0
+        };
+
+        private static Interval[] UnitCube (int d) {
+            Interval[] volume = new Interval[d];
+            for (int i = 0; i < volume.Length; i++) {
+                volume[i] = Interval.FromEndpoints(0.0, 1.0);
+            }
+            return (volume);
+        }
+
+        [TestMethod]
+        public void MultiIntegrateCompare1 () {
+
+            EvaluationSettings settings = new EvaluationSettings() {
+                EvaluationBudget = 100000000,
+                RelativePrecision = 1.0E-4,
+                AbsolutePrecision = 1.0E-4 / 128.0
+            };
+            
+            TestMultiIntegral I = ID4;
+
+            Console.WriteLine("{0} ({1})", I.Result, I.Result * settings.RelativePrecision);
+            /*
+            MultiFunctor fAD = new MultiFunctor(I.Function);
+            double AD = MultiFunctionMath.Integrate_Adaptive(fAD, I.Volume, settings);
+            Console.WriteLine("{0} ({1}) in {2}", AD, AD - I.Result, fAD.EvaluationCount);
+
+            MultiFunctor fMC = new MultiFunctor(I.Function);
+            double MC = MultiFunctionMath.Integrate_MonteCarlo(fMC, I.Volume.Length, settings);
+            Console.WriteLine("{0} ({1}) in {2}", MC, MC - I.Result, fMC.EvaluationCount);
+            */
+            /*
+            MultiFunctor f1 = new MultiFunctor(x => 1.0 / (1.0 - Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Cos(x[2])));
+            double g1 = MultiFunctionMath.Integrate_Adaptive(f1, new Interval[] { Interval.FromEndpoints(0.0, Math.PI), Interval.FromEndpoints(0.0, Math.PI), Interval.FromEndpoints(0.0, Math.PI) }, settings);
+            Console.WriteLine(g1);
+            
+            ICoordinateTransform[] map = new ICoordinateTransform[] {
+                new TransformUnitIntervalToInterval(Interval.FromEndpoints(0.0, Math.PI)),
+                new TransformUnitIntervalToInterval(Interval.FromEndpoints(0.0, Math.PI)),
+                new TransformUnitIntervalToInterval(Interval.FromEndpoints(0.0, Math.PI))
+            };
+            MultiFunctor f0 = new MultiFunctor(x => 1.0 / (1.0 - Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Cos(x[2])), map);
+            double g0 = MultiFunctionMath.Integrate_MonteCarlo(f0, 3, settings);
+            Console.WriteLine(g0);
+            */
+
+        }
+
+        [TestMethod]
+        public void MultiIntegrateCompare () {
+
+            int d = 3;
+            //for (int d = 2; d <= 4; d++) {
+
+                double eps = 1.0E-6 /* 1.0 / (1 << (14 - 3 * d / 2)) */;
+                int max = 1024 * 1024 /*1 << (18 + 3 * d / 2)*/;
+                EvaluationSettings settings = new EvaluationSettings() {
+                    RelativePrecision = eps,
+                    AbsolutePrecision = eps / 128.0,
+                    EvaluationBudget = max
+                };
+
+                //double value = AdvancedMath.EulerGamma;
+                //double value = Math.PI * Math.PI / 8.0;
+                //double value = 4.0 * AdvancedMath.Catalan;
+                //double value = AdvancedMath.RiemannZeta(d);
+                //double value = Math.Pow(Math.PI, d / 2.0) / AdvancedMath.Gamma(d / 2.0 + 1.0) * MoreMath.Pow(2.0, -d);
+                //double value = MoreMath.Pow(2.0, -d);
+                /*
+                double value = 0.0;
+                switch (d) {
+                    case 2:
+                        // trivial square
+                        value = 4.0;
+                        break;
+                    case 3:
+                        value = 16.0 - 8.0 * Math.Sqrt(2.0);
+                        break;
+                    case 4:
+                        value = 48.0 * (Math.PI / 4.0 - Math.Atan(Math.Sqrt(2.0)) / Math.Sqrt(2.0));
+                        break;
+                    case 5:
+                        value = 256.0 * (Math.PI / 12.0 - Math.Atan(1.0 / (2.0 * Math.Sqrt(2.0))) / Math.Sqrt(2.0));
+                        break;
+                }
+                */
+                double value = MoreMath.Pow(AdvancedMath.Gamma(1.0 / 4.0), 4) / 4.0;
+                //double value = Math.Sqrt(6.0) / 96.0 * AdvancedMath.Gamma(1.0 / 24.0) * AdvancedMath.Gamma(5.0 / 24.0) * AdvancedMath.Gamma(7.0 / 24.0) * AdvancedMath.Gamma(11.0 / 24.0);
+                //double value = 3.0 * MoreMath.Pow(AdvancedMath.Gamma(1.0 / 3.0), 6) / Math.Pow(2.0, 14.0 / 3.0) / Math.PI;
+                //double value = Math.Log(5.0 + 3.0 * Math.Sqrt(3.0)) - Math.Log(2.0) / 2.0 - Math.PI / 4.0;
+                //double value = Math.Log(2.0 + Math.Sqrt(3.0)) / 2.0 + Math.Sqrt(3.0) / 4.0 - Math.PI / 24.0;
+
+                Console.WriteLine("* {0} ({1})", value, eps * value);
+
+                int count = 0;
+                Func<IList<double>, double> function = (IList<double> x) => {
+                    count++;
+                    //return ((x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1]));
+                    //return (1.0 / (1.0 - x[0] * x[0] * x[1] * x[1]));
+                    //return (1.0 / (x[0] + x[1]) / Math.Sqrt((1.0 - x[0]) * (1.0 - x[1])));
+                    /*
+                    double p = 1.0;
+                    for (int i = 0; i < x.Count; i++) {
+                        p *= x[i];
+                    }
+                    return (1.0 / (1.0 - p));
+                    */
+                    /*
+                    double r2 = 0.0;
+                    for (int j = 0; j < x.Count; j++) {
+                        r2 += x[j] * x[j];
+                    }
+                    if (r2 <= 1.0) {
+                        return (1.0);
+                    } else {
+                        return (0.0);
+                    }
+                    */
+                    /*
+                    double y = 1.0;
+                    for (int j = 0; j < x.Count; j++) {
+                        y *= x[j];
+                    }
+                    return (y);
+                    */
+                    /*
+                    for (int i = 0; i < d; i++) {
+                        double s = 0.0;
+                        for (int j = 0; j < d; j++) {
+                            if (j != i) s += x[j] * x[j];
+                        }
+                        if (s > 1.0) return (0.0);
+                    }
+                    return (1.0);
+                    */
+                    return (1.0 / (1.0 - Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Cos(x[2])));
+                    //return (1.0 / (3.0 - Math.Cos(x[0]) - Math.Cos(x[1]) - Math.Cos(x[2])));
+                    //Debug.WriteLine("{0} {1} {2}", x[0], x[1], x[2]);
+                    //return (1.0 / (3.0 - Math.Cos(x[0]) * Math.Cos(x[1]) - Math.Cos(x[1]) * Math.Cos(x[2]) - Math.Cos(x[0]) * Math.Cos(x[2])));
+                    /*
+                    double s = 0.0;
+                    for (int k = 0; k < d; k++) {
+                        s += x[k] * x[k];
+                    }
+                    return (Math.Pow(s, -1 / 2.0));
+                    */
+                };
+
+                //Interval[] volume = UnitCube(d);
+                Interval watsonInterval = Interval.FromEndpoints(0.0, Math.PI);
+                Interval[] volume = new Interval[] { watsonInterval, watsonInterval, watsonInterval};
+                
+                //double value1 = FunctionMath.Integrate(function, volume, settings);
+                //Console.WriteLine("1 {0} {1} ({2})", value1, count, value1 - value);        
+            /*
+                count = 0;
+                Stopwatch timer = Stopwatch.StartNew();
+                double value2 = MultiFunctionMath.Integrate(function, volume, settings);
+                timer.Stop();
+                Console.WriteLine("2 {0} {1} ({2})", value2, count, value2 - value);
+                Console.WriteLine(timer.ElapsedMilliseconds);
+            */
+
+            //}
+
+        }
+
+
+        [TestMethod]
+        public void TestIntegrate2 () {
+            /*
+            double value = MultiFunctionMath.Integrate(
+                (IList<double> x) => { return ((x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1])); },
+                new Interval[2] { Interval.FromEndpoints(0.0, 1.0), Interval.FromEndpoints(0.0, 1.0) }
+            );
+            Console.WriteLine(value);
+            */
+        }
+
 
         [TestMethod]
         public void Bell1 () {
@@ -924,128 +1175,6 @@ namespace FutureTest {
             return (2.0 * sum);
         }
 
-        /*
-        public static double[] Decompose (double x) {
-            const double c = (1 << 26) + 1;
-            double p = c * x;
-            double hi = p + (x - p);
-            double lo = x - hi;
-            return (new double[] { hi, lo });
-        }
-        */
-        
-        public static double[] Decompose (double x) {
-            const double c = (1 << 18) + 1;
-            double[] parts = new double[3];
-            double p = c * x;
-            double y = p + (x - p);
-            parts[2] = x - y;
-            const double d = (1 << 36) + 1;
-            double q = d * y;
-            double z = q + (y - q);
-            parts[1] = y - z;
-            parts[0] = z;
-            return (parts);
-        }
-
-        public static double[] Decompose (int b, double x) {
-            double hi, lo;
-            Decompose(x, b, out hi, out lo);
-            return (new double[] { hi, lo });
-        }
-
-        public static void Decompose (double x, int bits, out double hi, out double lo) {
-            double c = (1 << bits) + 1;
-            double p = c * x;
-            double q = x - p;
-            hi = p + q;
-            lo = x - hi;
-        }
-
-        [TestMethod]
-        public void TestDecompose () {
-
-            double x = 355.0 / 113.0;
-            bool xSign; long xMantissa; int xExponent;
-            Frexp(x, out xSign, out xMantissa, out xExponent);
-
-            Console.WriteLine("x {0:R} = {1} X 2^({2})", x, xMantissa, xExponent);
-
-            double hi, lo;
-            Decompose(x, 26, out hi, out lo);
-            bool hiSign; long hiMantissa; int hiExponent;
-            Frexp(hi, out hiSign, out hiMantissa, out hiExponent);
-            bool loSign; long loMantissa; int loExponent;
-            Frexp(lo, out loSign, out loMantissa, out loExponent);
-            Console.WriteLine("hi {0:R} = {1} X 2^({2})", hi, hiMantissa, hiExponent);
-            Console.WriteLine("lo {0:R} = {1} X 2^({2})", lo, loMantissa, loExponent);
-
-            double y, a, b, c;
-            Decompose(x, 20, out y, out c);
-            bool ySign; long yMantissa; int yExponent;
-            Frexp(y, out ySign, out yMantissa, out yExponent);
-            bool cSign; long cMantissa; int cExponent;
-            Frexp(c, out cSign, out cMantissa, out cExponent);
-            Console.WriteLine("y {0:R} = {1} X 2^({2})", y, yMantissa, yExponent);
-            Console.WriteLine("c {0:R} = {1} X 2^({2})", c, cMantissa, cExponent);
-
-            Decompose(y, 14, out a, out b);
-            bool aSign; long aMantissa; int aExponent;
-            Frexp(a, out aSign, out aMantissa, out aExponent);
-            bool bSign; long bMantissa; int bExponent;
-            Frexp(b, out bSign, out bMantissa, out bExponent);
-            Console.WriteLine("a {0:R} = {1} X 2^({2})", a, aMantissa, aExponent);
-            Console.WriteLine("b {0:R} = {1} X 2^({2})", b, bMantissa, bExponent);
-
-
-        }
-
-        public static void Multiply2 (double[] a, double[] b, out long z0, out double z1) {
-
-            z0 = 0;
-            z1 = 0.0;
-
-            for (int i = 0; i < Math.Min(a.Length + b.Length, b.Length); i++) {
-                long z0_old = z0;  double z1_old = z1;
-
-                double ab = 0.0;
-                for (int j = Math.Max(0, i - b.Length + 1); j < Math.Min(a.Length, i + 1); j++) {
-                    ab += a[j] * b[i - j];
-                }
-
-                double zr = Math.Round(ab);
-                z0 += (long) zr;
-                double dz = ab - zr;
-                z1 += dz;
-
-                //if (z1 > 0.5) { z1 -= 1.0; z0++; } else if (z1 < -0.5) { z1 += 1.0; z0--; }
-
-                if ((z0 == z0_old) && (z1 == z1_old)) return;
-            }
-
-            throw new NonconvergenceException();
-
-        }
-
-        public static double[] Multiply (double[] a, double[] b) {
-
-            Debug.Assert(a.Length > 0);
-            Debug.Assert(b.Length > 0);
-
-            double[] ab = new double[b.Length];
-
-            ab[0] = a[0] * b[0];
-
-            for (int i = 1; i < Math.Min(a.Length + b.Length, ab.Length); i++) {
-                for (int j = Math.Max(0, i - b.Length + 1); j < Math.Min(a.Length, i + 1); j++) {
-                    ab[i] += a[j] * b[i - j];
-                }
-            }
-
-            return (ab);
-
-        }
-
         [TestMethod]
         public void Test2 () {
             double value = -1.0;
@@ -1086,184 +1215,6 @@ namespace FutureTest {
             Console.WriteLine("S {0}", Math.Sin(x));
 
         }
-
-        [TestMethod]
-        public void Test3 () {
-
-            Console.WriteLine("1/(2 Pi):");
-            string text =
-                "001010001011111001100000110110111001001110010001000001010100101001111111000010011" +
-                "1010101111101000111110101001101001101110111000000110110110110001010010101100" +
-                "1100100111100010000111001000001000001111111100101000101100011101010111101111" +
-                "0101110111100010101100001101101110010010001101110001110100100001001001101110" +
-                "1001011100000000001100100100100101110111010100000100111010001100100100001110" +
-                "0111111100001110111101011000111001011000100101001101001110011111011101000100" +
-                "0001000110101111101010010111010111011010001001000010011101001100111000111000" +
-                "0001001101011010001011111011111100100000100111001100100011101011000111001100" +
-                "0001101010011001110011111010010011100100001000101111110001011101111011111100" +
-                "1001010000011101100011111111110001001011111111111110111100000010110011000000" +
-                "0111111101111001011110001000110001011010110100000101001101101000111110110110" +
-                "1001101100111111011001111001001111100101100001001101101110100111101000110001" +
-                "1111101100110100111100101111111101010001011010111010100100111101110101100011" +
-                "1111010111110010111110001011110110011110100000111001110011111011110001010010";
-            Console.WriteLine(text.Length);
-            double[] oneOverTwoPiParts = ParseBinaryString(26, text);
-            foreach (double part in oneOverTwoPiParts) {
-                Console.WriteLine(part);
-            }
-
-            for (double x = 4.0; x < MoreMath.Pow(2.0, 128); x *= 2.0) {
-            }
-
-
-        }
-
-        [TestMethod]
-        public void FindTrigZeros () {
-
-            for (int k = 1048576; k < 4194304; k++) {
-                double y = Math.Abs(Math.Sin(k));
-                if (y < 1.0E-5) Console.WriteLine("{0} {1}", k, y);
-            }
-
-        }
-
-        [TestMethod]
-        public void Test1 () {
-
-            int b = 26;
-            /*
-            Console.WriteLine("1/(2 Pi):");
-            string text =
-                "001010001011111001100000110110111001001110010001000001010100101001111111000010011" +
-                "1010101111101000111110101001101001101110111000000110110110110001010010101100" +
-                "1100100111100010000111001000001000001111111100101000101100011101010111101111" +
-                "0101110111100010101100001101101110010010001101110001110100100001001001101110" +
-                "1001011100000000001100100100100101110111010100000100111010001100100100001110" +
-                "0111111100001110111101011000111001011000100101001101001110011111011101000100" +
-                "0001000110101111101010010111010111011010001001000010011101001100111000111000" +
-                "0001001101011010001011111011111100100000100111001100100011101011000111001100" +
-                "0001101010011001110011111010010011100100001000101111110001011101111011111100" +
-                "1001010000011101100011111111110001001011111111111110111100000010110011000000" +
-                "0111111101111001011110001000110001011010110100000101001101101000111110110110" +
-                "1001101100111111011001111001001111100101100001001101101110100111101000110001" +
-                "1111101100110100111100101111111101010001011010111010100100111101110101100011" +
-                "1111010111110010111110001011110110011110100000111001110011111011110001010010";
-            */
-            Console.WriteLine("1/Pi");
-            string text =
-                "010100010111110011000001101101110010011100100010000010101001010011111110000100111" +
-                "0101011111010001111101010011010011011101110000001101101101100010100101011001" +
-                "1001001111000100001110010000010000011111111001010001011000111010101111011110" +
-                "1011101111000101011000011011011100100100011011100011101001000010010011011101" +
-                "0010111000000000011001001001001011101110101000001001110100011001001000011100" +
-                "1111111000011101111010110001110010110001001010011010011100111110111010001000" +
-                "0010001101011111010100101110101110110100010010000100111010011001110001110000" +
-                "0010011010110100010111110111111001000001001110011001000111010110001110011000" +
-                "0011010100110011100111110100100111001000010001011111100010111011110111111001" +
-                "0010100000111011000111111111100010010111111111111101111000000101100110000000" +
-                "1111111011110010111100010001100010110101101000001010011011010001111101101101";
-
-            Console.WriteLine(text.Length);
-            double[] oneOverTwoPiParts = ParseBinaryString(b, text);
-            foreach (double part in oneOverTwoPiParts) {
-                Console.WriteLine(part);
-            }
-
-            double dsMax = 0.0;
-            double xMax = 0.0;
-            int kMax = 0;
-
-            //int k = 30677225;
-            int k = 15956275;
-            //for (int k = 1 * 65536; k < 1024 * 65536; k++) {
-                double x = k / 65536.0;
-
-                //Console.WriteLine("x");
-                //double x = 1146408.0;
-                //double x = 6381956970095103.0 * MoreMath.Pow(2.0, 797);
-                //double x = Math.PI * 123456789.0;
-                Console.WriteLine("x {0:R}", x);
-                double s0 = Math.Sin(x);
-                Console.WriteLine("S {0:R}", s0);
-                double[] xParts = Decompose(b, x);
-                foreach (double part in xParts) {
-                    //Console.WriteLine(part);
-                }
-
-                //Console.WriteLine("Product");
-                long z0 = 0L;
-                double z1 = 0.0;
-                Multiply2(xParts, oneOverTwoPiParts, out z0, out z1);
-                if (Math.Abs(z1) > 0.5) Console.WriteLine("Z1={0} K={1}", z1, k);
-                /*
-                double[] zParts = Multiply(xParts, oneOverTwoPiParts);
-                foreach (double part in zParts) {
-                    //Console.WriteLine(part);
-                    double zr = Math.Round(part);
-                    z0 += (long) zr;
-                    double dz = part - Math.Round(part);
-                    z1 += dz;
-                    //Console.WriteLine("+ {0} = {1}", dz, z1);
-                }
-                //Console.WriteLine("Result");
-                */
-                Console.WriteLine("{0} + {1:R}", z0, z1);
-                double s1;
-                if (z0 % 2 == 0) {
-                    s1 = Math.Sin(z1 * Math.PI);
-                } else {
-                    s1 = -Math.Sin(z1 * Math.PI);
-                }
-                Console.WriteLine("S {0:R}", s1);
-
-                double ds = Math.Abs(s1 - s0) / s1;
-                if (ds > dsMax) {
-                    dsMax = ds;
-                    xMax = x;
-                    kMax = k;
-                }
-
-            //}
-
-            Console.WriteLine("{0} {1} {2}", kMax, xMax, dsMax);
-
-        }
-
-        [TestMethod]
-        public void FindArgs () {
-            for (int k = 128; k < 65535; k++) {
-                double s = Math.Sin(k);
-                if (Math.Abs(s) < 1.0E-4) Console.WriteLine("{0} {1}", k, s);
-            }
-        }
-
-        private static double[] ParseBinaryString (int b, string text) {
-
-            List<double> parts = new List<double>();
-
-            double value = 1.0;
-            double part = 0.0;
-            int bits = 0;
-            
-            for (int i = 0; i < text.Length; i++) {
-                value = value / 2.0;
-                if (text[i] == '1') {
-                    part += value;
-                }
-                if ((part != 0.0) || (parts.Count > 0)) bits++;
-                if (bits == b) {
-                    parts.Add(part);
-                    part = 0.0;
-                    bits = 0;
-                }
-            }
-            if (part != 0.0) parts.Add(part);
-
-            return (parts.ToArray());
-
-        }
-
 
         [TestMethod]
         public void ET () {
@@ -2302,23 +2253,6 @@ namespace FutureTest {
 
         }
 #endif
-        [TestMethod]
-        public void EinTest () {
-
-            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 3.0)));
-            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 2.5)));
-            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 2.0)));
-            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 1.5)));
-            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 1.0)));
-            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 0.5)));
-            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, 0.0)));
-            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, -0.5)));
-            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, -1.0)));
-            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, -1.5)));
-            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, -2.0)));
-            Console.WriteLine(AdvancedComplexMath.Ein(new Complex(-50.0, -2.5)));
-
-        }
 
         [TestMethod]
         public void MultiRootTest () {

@@ -73,13 +73,30 @@ namespace Test
 
         [TestMethod]
         public void ComplexEquality () {
+
             Complex ac = a;
+
+            // Equality operator
             Assert.IsTrue(a == ac);
+            Assert.IsTrue(ac == a);
+            Assert.IsFalse(a == b);
+            Assert.IsFalse(b == a);
+
+            // Inequality operator
             Assert.IsFalse(a != ac);
+            Assert.IsFalse(ac != a);
+            Assert.IsTrue(a != b);
+            Assert.IsTrue(b != a);
+
+            // Equals method
+            Assert.IsTrue(a.Equals(ac));
+            Assert.IsFalse(a.Equals(b));
+            Assert.IsFalse(a.Equals(new object()));
+            Assert.IsFalse(a.Equals(null));
+
+            // Hash
             Assert.IsTrue(a.GetHashCode() == ac.GetHashCode());
 
-            Assert.IsFalse(a == b);
-            Assert.IsTrue(a != b);
         }
 
         [TestMethod()]

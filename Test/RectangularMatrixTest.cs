@@ -115,6 +115,42 @@ namespace Test {
         }
 
         [TestMethod]
+        public void RectangularMatrixEquality () {
+
+            RectangularMatrix A = new RectangularMatrix(new double[,] {
+                { 1.0, 2.0, 3.0 },
+                { 4.0, 5.0, 6.0 }
+            });
+            RectangularMatrix AC = A.Copy();
+            RectangularMatrix B = 2.0 * A;
+
+            // Equality operator
+            Assert.IsTrue(A == AC);
+            Assert.IsTrue(AC == A);
+            Assert.IsFalse(A == B);
+            Assert.IsFalse(B == A);
+            Assert.IsFalse(A == null);
+            Assert.IsFalse(null == A);
+            Assert.IsTrue((RectangularMatrix) null == (RectangularMatrix) null);
+
+            // Inequality operator
+            Assert.IsFalse(A != AC);
+            Assert.IsFalse(AC != A);
+            Assert.IsTrue(A != B);
+            Assert.IsTrue(B != A);
+            Assert.IsTrue(A != null);
+            Assert.IsTrue(null != A);
+            Assert.IsFalse((RectangularMatrix) null != (RectangularMatrix) null);
+
+            // Equals method
+            Assert.IsTrue(A.Equals(AC));
+            Assert.IsFalse(A.Equals(B));
+            Assert.IsFalse(A.Equals(new object()));
+            Assert.IsFalse(A.Equals(null));
+
+        }
+
+        [TestMethod]
         public void RectangularMatrixArithmetic () {
 
             RectangularMatrix M = GenerateRandomMatrix(2, 3);

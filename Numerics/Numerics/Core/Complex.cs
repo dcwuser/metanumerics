@@ -138,8 +138,8 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>False if the two complex numbers are equal, otherwise true.</returns>
         public static bool operator != (Complex z1, Complex z2) {
-            return ((z1.Re != z2.Re) || (z1.Im != z2.Im));
-        }
+            return (!(z1 == z2));
+       }
 
         /// <summary>
         /// Determines whether the given object represents the same complex number.
@@ -147,7 +147,11 @@ namespace Meta.Numerics {
         /// <param name="obj">The object to compare.</param>
         /// <returns>True if the object represents the same complex number, otherwise false.</returns>
         public override bool Equals (object obj) {
-            return(((Complex) obj) == this);
+            if (obj is Complex) {
+                return(((Complex) obj) == this);
+            } else {
+                return (false);
+            }
         }
 
         /// <summary>
@@ -164,7 +168,7 @@ namespace Meta.Numerics {
         /// </summary>
         /// <returns>A hash code.</returns>
         public override int GetHashCode () {
-            return (Re.GetHashCode() ^ Im.GetHashCode());
+            return (Re.GetHashCode() ^ (Im.GetHashCode() * 31));
         }
 
         /// <summary>

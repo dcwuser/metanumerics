@@ -111,7 +111,7 @@ namespace Meta.Numerics.Functions {
 
             IAdaptiveIntegrator integrator = new GaussKronrodIntegrator(integrand, range);
             IntegrationResult result = Integrate_Adaptive(integrator, settings);
-            return (result.Result);
+            return (result.Estimate.Value);
 
         }
 
@@ -159,7 +159,7 @@ namespace Meta.Numerics.Functions {
 
                 // if our error is small enough, return
                 if ((vTotal.Uncertainty <= Math.Abs(vTotal.Value) * s.RelativePrecision) || (vTotal.Uncertainty <= s.AbsolutePrecision)) {
-                    return (new IntegrationResult(vTotal.Value, n));
+                    return (new IntegrationResult(vTotal, n));
                 }
                 //if ((vTotal.Uncertainty <= Math.Abs(vTotal.Value) * s.RelativePrecision) || (vTotal.Uncertainty <= s.AbsolutePrecision)) {
                 //    return (new IntegrationResult(vTotal.Value, n));
@@ -179,33 +179,6 @@ namespace Meta.Numerics.Functions {
 
             }
 
-        }
-
-    }
-
-    // used to pass results back; should this be public? less likely, but perhaps
-
-    internal class IntegrationResult {
-
-        internal IntegrationResult (double result, int count) {
-            this.result = result;
-            this.count = count;
-        }
-
-        private double result;
-
-        private int count;
-
-        public double Result {
-            get {
-                return (result);
-            }
-        }
-
-        public int EvaluationCount {
-            get {
-                return (count);
-            }
         }
 
     }

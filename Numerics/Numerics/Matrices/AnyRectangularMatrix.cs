@@ -16,7 +16,7 @@ namespace Meta.Numerics.Matrices {
     /// idea to accept a <see cref="AnyRectangularMatrix"/>, so that any concrete implementation
     /// can also be passed into your function.</para>
     /// </remarks>
-    public abstract class AnyRectangularMatrix : AnyMatrix<double> {
+    public abstract class AnyRectangularMatrix : AnyMatrix<double>, IEquatable<AnyRectangularMatrix> {
 
         internal AnyRectangularMatrix (bool isReadOnly) : base(isReadOnly) { }
 
@@ -286,6 +286,17 @@ namespace Meta.Numerics.Matrices {
         // equality operations
         // do not re-implement for concrete implementations, because people shouldn't be doing matrix equality comparisons anyway
 
+        private static bool InternalEquals (AnyRectangularMatrix A, AnyRectangularMatrix B) {
+            if (A.RowCount != B.RowCount) return (false);
+            if (A.ColumnCount != B.ColumnCount) return (false);
+            for (int r = 0; r < A.RowCount; r++) {
+                for (int c = 0; c < A.ColumnCount; c++) {
+                    if (A[r, c] != B[r, c]) return (false);
+                }
+            }
+            return (true);
+        }
+
         /// <summary>
         /// Determines whether two matrices are equal.
         /// </summary>
@@ -293,25 +304,12 @@ namespace Meta.Numerics.Matrices {
         /// <param name="B">The second matrix.</param>
         /// <returns>True if <paramref name="A"/> and <paramref name="B"/> are equal, otherwise false.</returns>
         public static bool operator == (AnyRectangularMatrix A, AnyRectangularMatrix B) {
-            if ((object) A == null) {
-                if ((object) B == null) {
-                    return (true);
-                } else {
-                    return (false);
-                }
+            if (Object.ReferenceEquals(A, B)) {
+                return(true);
+            } else if (Object.ReferenceEquals(A, null) || Object.ReferenceEquals(B, null)) {
+                return(false);
             } else {
-                if ((object) B == null) {
-                    return (false);
-                } else {
-                    if (A.RowCount != B.RowCount) return(false);
-                    if (A.ColumnCount != B.ColumnCount) return(false);
-                    for (int r = 0; r < A.RowCount; r++) {
-                        for (int c = 0; c < A.ColumnCount; c++) {
-                            if (A[r, c] != B[r, c]) return (false);
-                        }
-                    }
-                    return (true);
-                }
+                return(InternalEquals(A, B));
             }
         }
 
@@ -326,17 +324,25 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
+        /// Determines whether the given matrix equals the current matrix.
+        /// </summary>
+        /// <param name="other">The matrix to compare.</param>
+        /// <returns>True if the <paramref name="other"/> is equal to the current matrix, otherwise false.</returns>
+        public bool Equals (AnyRectangularMatrix other) {
+            if (other == null) {
+                return (false);
+            } else {
+                return (InternalEquals(this, other));
+            }
+        }
+
+        /// <summary>
         /// Determines whether the given object is an equal matrix.
         /// </summary>
         /// <param name="obj">The object to compare.</param>
         /// <returns>True if <paramref name="obj"/> is an equal matrix, otherwise false.</returns>
         public override bool Equals (object obj) {
-            AnyRectangularMatrix M = obj as RectangularMatrix;
-            if (obj == null) {
-                return (false);
-            } else {
-                return ((this == M));
-            }
+            return (Equals(obj as AnyRectangularMatrix));
         }
 
         /// <summary>

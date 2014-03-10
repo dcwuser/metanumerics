@@ -247,6 +247,61 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        /// <summary>
+        /// Computes the inverse tangent integral.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of Ti<sub>2</sub>(x).</returns>
+        /// <seealso href="http://mathworld.wolfram.com/InverseTangentIntegral.html"/>
+        public static double IntegralTi (double x) {
+            if (x < 0.0) {
+                return (-IntegralTi(-x));
+            } else if (x < 0.75) {
+                return (IntegralTi_Series(x));
+            } else if (x < 4.0 / 3.0) {
+                return (IntegralTi_LogSeries(x));
+            } else {
+                return (IntegralTi_Series(1.0 / x) + Math.PI / 2.0 * Math.Log(x));
+            }
+        }
+
+        // We can get a series for Ti(x) by taking the series for \tan(x), reducing each power by one, and integrating term-by-term.
+        // At x = 1, this series becomes simply the alternating sum of inverse squares, which we know converges to the Catalan
+        // constant but does so very slowly. This series does not converge fast enough for computational purposes near x ~ 1.
+
+        private static double IntegralTi_Series (double x) {
+
+            double mx2 = -x * x;
+            double df = x;
+            double f = df;
+
+            for (int k = 3; k < Global.SeriesMax; k += 2) {
+                double f_old = f;
+                df *= mx2;
+                f += df / (k * k);
+                if (f == f_old) return (f);
+            }
+
+            throw new NonconvergenceException();
+        }
+
+        private static double IntegralTi_LogSeries (double x) {
+            x = Math.Log(x);
+            double x2 = x * x;
+            return (
+                Catalan
+                + Math.PI / 4.0 * x
+                + 1.0 / 4.0 * x2
+                - 1.0 / 48.0 * x2 * x2
+                + 1.0 / 288.0 * x2 * x2 * x2
+                - 61.0 / 80640.0 * x2 * x2 * x2 * x2
+                + 277.0 / 1451520.0 * x2 * x2 * x2 * x2 * x2
+                - 50521.0 / 958003200.0 * x2 * x2 * x2 * x2 * x2 * x2
+                + 41581.0 / 2682408960.0 * x2 * x2 * x2 * x2 * x2 * x2 * x2
+            );
+
+        }
+
     }
 
     public static partial class AdvancedComplexMath {

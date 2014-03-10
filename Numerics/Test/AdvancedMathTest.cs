@@ -2188,6 +2188,13 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void IntegralTiDefinition () {
+
+            Console.WriteLine(AdvancedMath.IntegralTi(0.7));
+
+        }
+
 #if FUTURE
 
         [TestMethod]

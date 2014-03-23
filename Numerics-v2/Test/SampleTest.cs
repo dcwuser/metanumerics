@@ -386,13 +386,13 @@ namespace Test {
             // Fit the sample to a beta distribution
             // The fit should agree with the population and the fit should be good
             FitResult RB = BetaDistribution.FitToSample(S);
-            Assert.IsTrue(RB.Parameter(0).ConfidenceInterval(0.95).ClosedContains(B.Alpha));
-            Assert.IsTrue(RB.Parameter(1).ConfidenceInterval(0.95).ClosedContains(B.Beta));
-            Assert.IsTrue(RB.GoodnessOfFit.LeftProbability < 0.95);
+            Assert.IsTrue(RB.Parameter(0).ConfidenceInterval(0.99).ClosedContains(B.Alpha));
+            Assert.IsTrue(RB.Parameter(1).ConfidenceInterval(0.99).ClosedContains(B.Beta));
+            Assert.IsTrue(RB.GoodnessOfFit.LeftProbability < 0.99);
 
             // Fit to a normal distribution should be bad
             FitResult RN = NormalDistribution.FitToSample(S);
-            Assert.IsTrue(RN.GoodnessOfFit.LeftProbability > 0.95);
+            Assert.IsTrue(RN.GoodnessOfFit.LeftProbability > 0.99);
         }
 
         [TestMethod]

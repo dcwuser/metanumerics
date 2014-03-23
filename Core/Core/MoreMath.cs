@@ -154,6 +154,32 @@ namespace Meta.Numerics {
             }
         }
 
+        /// <summary>
+        /// Computes log(1+x).
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of log(1+x).</returns>
+        /// <remarks>
+        /// <para>If x is close to 0, computing log(1+x) by first adding one and then taking the log can result in a loss of accuracy.
+        /// This function maintains full precision of all values of x by switching to a series expansion for values of x near zero.</para>
+        /// </remarks>
+        internal static double LogOnePlus (double x) {
+            if (Math.Abs(x) < 0.125) {
+                // For small x, use the series \log(1-x) = - \sum_{k=1}^{\infty} \frac{x^k}{k}. 
+                double xk = x;
+                double f = xk;
+                for (int k = 2; k < Global.SeriesMax; k++) {
+                    double f_old = f;
+                    xk *= -x;
+                    f += xk / k;
+                    if (f == f_old) return (f);
+                }
+                throw new NonconvergenceException();
+            } else {
+                return (Math.Log(1.0 + x));
+            }
+        }
+
     }
 
 

@@ -27,10 +27,13 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Error_function" />
         /// <seealso href="http://mathworld.wolfram.com/Erf.html" />
         public static double Erf (double x) {
-            if (x < 0.0) {
-                return (-LeftRegularizedGamma(0.5, x * x));
+            if (x < -1.5) {
+                return (-1.0 + Erfc_ContinuedFraction(-x));
+            } else if (x < 1.5) {
+                // Use the series near the origin.
+                return (Erf_Series(x));
             } else {
-                return (LeftRegularizedGamma(0.5, x * x));
+                return (1.0 - Erfc_ContinuedFraction(x));
             }
         }
 
@@ -47,11 +50,64 @@ namespace Meta.Numerics.Functions {
         /// in this region, use the <see cref="Erf" /> function.</para></remarks>
         /// <seealso cref="Erf" />
         public static double Erfc (double x) {
-            if (x < 0.0) {
-                return (1.0 + LeftRegularizedGamma(0.5, x * x));
+            if (x < -1.5) {
+                return (2.0 - Erfc_ContinuedFraction(-x));
+            } else if (x < 1.5) {
+                return (1.0 - Erf_Series(x));
             } else {
-                return (RightRegularizedGamma(0.5, x * x));
+                return (Erfc_ContinuedFraction(x));
             }
+        }
+
+        // This is a straightforward implementation of the error series:
+        //  erf(x) = \frac{2x}{\sqrt{\pi}} \sum_{k=0}{^\infty} \frac{(-1)^k x^{2k}}{k! (2k+1)}
+        // Converges in about a dozen terms for x less than about 1, but still converges for higher x.
+
+        // This is just the incomplete gamma series specialized for a -> 1/2, x -> x^2, but the specialization
+        // speeds it up considerably, so we do it explicitly.
+
+        private static double Erf_Series (double x) {
+            double mx2 = -x * x;
+            double t = 1.0;
+            double s = t;
+            for (int k = 1; k < Global.SeriesMax; k++) {
+                double s_old = s;
+                t *= mx2 / k;
+                s += t / (2 * k + 1);
+                if (s == s_old) {
+                    return (2.0 * x / Global.SqrtPI * s);
+                }
+            }
+            throw new NonconvergenceException();
+        }
+
+        private static double Erfc_ContinuedFraction (double x) {
+
+            Debug.Assert(x > 0.0);
+
+            // Erfc underflows for x larger than about 27, so no need to compute continued fraction.
+            // This check also avoids computing Infinity * 0 = NaN if x is Infinity.
+            if (x > 28.0) return (0.0);
+
+            // Compute the continued fraction.
+            double x2 = x * x;
+            double aa = 1.0;			// a_1
+            double bb = x2 + 0.5;   	// b_1
+            double D = 1.0 / bb;		// D_1 = b_0/b_1
+            double Df = aa / bb;		// Df_1 = f_1 - f_0
+            double f = 0.0 + Df;		// f_1 = f_0 + Df_1 = b_0 + Df_1
+            for (int k = 1; k < Global.SeriesMax; k++) {
+                double f_old = f;
+                aa = -k * (k - 0.5);
+                bb += 2.0;
+                D = 1.0 / (bb + aa * D);
+                Df = (bb * D - 1.0) * Df;
+                f += Df;
+                if (f == f_old) {
+                    return (x / Global.SqrtPI * Math.Exp(-x2) * f);
+                }
+            }
+            throw new NonconvergenceException();
         }
 
         /// <summary>
@@ -232,6 +288,27 @@ namespace Meta.Numerics.Functions {
             return ((a0 + (a1 + (a2 + a3 * y) * y) * y) / (1.0 + (b1 + (b2 + b3 * y) * y) * y));
 
         }
+
+        internal static double Probit (double P, double Q) {
+            Debug.Assert(P + Q == 1.0);
+            if (P < 0.25) {
+                if (P == 0.0) {
+                    return(Double.NegativeInfinity);
+                } else {
+                    return (-Global.SqrtTwo * InverseErfcByRefinement(2.0 * P));
+                }
+            } else if (P < 0.75) {
+                return (Global.SqrtTwo * InverseErfSeries(2.0 * P - 1.0));
+            } else {
+                if (Q == 0.0) {
+                    return (Double.PositiveInfinity);
+                } else {
+                    return (Global.SqrtTwo * InverseErfcByRefinement(2.0 * Q));
+                }
+            }
+
+        }
+
 
         internal static double ApproximateInverseErf (double y) {
             double x = Global.SqrtPI * y / 2.0;
@@ -541,7 +618,7 @@ namespace Meta.Numerics.Functions {
 
             double px2 = Math.PI * x * x;
 
-            Complex z = Global.SqrtPI * x / 2.0 * (1.0 - ComplexMath.I);
+            //Complex z = Global.SqrtPI * x / 2.0 * (1.0 - ComplexMath.I);
 
             // investigate this carefully: it appears that (1) imaginary part of f doesn't change and
             // (2) real part of f merely increases at constant rate until "right" number is reached

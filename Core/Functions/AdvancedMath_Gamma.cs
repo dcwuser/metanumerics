@@ -1,5 +1,5 @@
-
 using System;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Functions {
 
@@ -22,11 +22,13 @@ namespace Meta.Numerics.Functions {
 		public static double LogGamma (double x) {
             if (x <= 0.0) {
                 throw new ArgumentOutOfRangeException("x");
-            } else if (x > 16.0) {
-                // for large arguments, the asymptotic series is even faster than the Lanczos approximation
-                return (LogGamma_Stirling(x));
+            } else if (x < 16.0) {
+                // For small arguments, use the Lanczos approximation.
+                return (Lanczos.LogGamma(x));
             } else {
-                return (LanczosLogGamma(x));
+                // For large arguments, the asymptotic series is even faster than the Lanczos approximation.
+                return (Stirling.LogGamma(x));
+                //return (LogGamma_Stirling(x));
             }
 		}
 
@@ -55,15 +57,19 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/GammaFunction.html" />
         /// <seealso href="http://dlmf.nist.gov/5">DLMF on the Gamma Function</seealso>
         public static double Gamma (double x) {
-			if (x <= 0.0) {
+            if (x <= 0.0) {
                 if (x == Math.Ceiling(x)) {
                     // poles at zero and negative integers
                     return (Double.NaN);
                 } else {
                     return (Math.PI / Gamma(-x) / (-x) / AdvancedMath.Sin(0.0, x / 2.0));
                 }
-			}
-			return( Math.Exp(LogGamma(x)) );
+            } else if (x < 16.0) {
+                return (Lanczos.Gamma(x));
+            } else {
+                return (Stirling.Gamma(x));
+                //return (Math.Exp(LogGamma_Stirling(x)));
+            }
 		}
 
         /// <summary>
@@ -89,11 +95,12 @@ namespace Meta.Numerics.Functions {
                     // use the reflection formula to change to a positive x
                     return (Psi(1.0 - x) - Math.PI / Math.Tan(Math.PI * x));
                 }
-            } else if (x > 16.0) {
-                // for large arguments, the Stirling asymptotic expansion is faster than the Lanzcos approximation
-                return (Psi_Stirling(x));
+            } else if (x < 16.0) {
+                return (Lanczos.Psi(x));
             } else {
-                return (LanczosPsi(x));
+                // for large arguments, the Stirling asymptotic expansion is faster than the Lanzcos approximation
+                return (Stirling.Psi(x));
+                //return (Psi_Stirling(x));
             }
 		}
 
@@ -237,18 +244,57 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        // This function computes x^{\nu} / \Gamma(\nu + 1), which can easily become Infinity/Infinity=NaN for large \nu if computed naively.
+
+        internal static double PowOverGammaPlusOne (double x, double nu) {
+            if (nu < 16.0) {
+                return (Math.Pow(x, nu) / AdvancedMath.Gamma(nu + 1.0));
+            } else {
+                return(Stirling.PowOverGammaPlusOne(x, nu));
+            }
+        }
+
         // two-argument functions
 
         /// <summary>
         /// Computes the Beta function.
         /// </summary>
-        /// <param name="a">The first parameter.</param>
-        /// <param name="b">The second parameter.</param>
+        /// <param name="a">The first parameter, which must be positive.</param>
+        /// <param name="b">The second parameter, which must be positive.</param>
         /// <returns>The beta function B(a,b).</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is non-positive.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Beta_function"/>
         public static double Beta (double a, double b) {
-			return( Math.Exp( LogGamma(a) + LogGamma(b) - LogGamma(a+b) ) );
+            if (a <= 0.0) throw new ArgumentOutOfRangeException("a");
+            if (b <= 0.0) throw new ArgumentOutOfRangeException("b");
+            if ((a > 16.0) && (b > 16.0)) {
+                return (Stirling.Beta(a, b));
+            } else {
+                return (Lanczos.Beta(a, b));
+            }
 		}
+
+        /// <summary>
+        /// Computes the lograrithm of the Beta function.
+        /// </summary>
+        /// <param name="a">The first parameter, which must be positive.</param>
+        /// <param name="b">The second parameter, which must be positive.</param>
+        /// <returns>The value of ln(B(a,b)).</returns>
+        /// <remarks>
+        /// <para>This function accurately computes ln(B(a,b)) even for values of a and b for which B(a,b) is
+        /// too small or large to be represented by a double.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is non-positive.</exception>
+        /// <seealso cref="Beta"/>
+        internal static double LogBeta (double a, double b) {
+            if (a <= 0.0) throw new ArgumentOutOfRangeException("a");
+            if (b <= 0.0) throw new ArgumentOutOfRangeException("b");
+            if ((a > 16.0) && (b > 16.0)) {
+                return (Stirling.LogBeta(a, b));
+            } else {
+                return (Lanczos.LogBeta(a, b));
+            }
+        }
 
         /// <summary>
         /// Computes the normalized lower (left) incomplete Gamma function.
@@ -343,32 +389,37 @@ namespace Meta.Numerics.Functions {
             if ((x < 0.0) || (x > 1.0)) throw new ArgumentOutOfRangeException("x");
 			if (x == 0.0) return(0.0);
             double xtp = (a + 1.0) / (a + b + 2.0);
-			if (x > xtp) {
-				return(Beta(a,b) - Beta(b, a, 1.0-x));
-			}
-			// evaluate via continued fraction via Steed's method
-			double aa = 1.0;			// a_1
-			double bb = 1.0;			// b_1
-			double D = 1.0;			    // D_1 = 1 / b_1
-			double Df = aa / bb;		// Df_1 = f_1 - f_0 = a_1 / b_1
-			double f = 0.0 + Df;		// f_1 = f_0 + Df_1 = b_0 + Df_1
-			for (int k = 1; k < Global.SeriesMax; k++) {
-                double f_old = f;
-				int m = k/2;
-				if ((k % 2) == 0) {
-					aa = x * m * (b - m) / ((a+k-1)*(a+k));
-				} else {
-					aa = -x * (a + m) * (a + b + m) / ((a+k-1)*(a+k));
-				}
-				D = 1.0 / (bb + aa * D);
-				Df = (bb * D - 1.0) * Df;
-				f += Df;
-                if (f == f_old) {
-                    return (Math.Pow(x, a) * Math.Pow(1.0 - x, b) / a * f);
-                }
-			}
-            throw new NonconvergenceException();
+            if (x > xtp) {
+                return (Beta(a, b) - Beta(b, a, 1.0 - x));
+            } else {
+                return (Math.Pow(x, a) * Math.Pow(1.0 - x, b) * RegularizedBeta_ContinuedFraction(a, b, x));
+            }
 		}
+
+        internal static double RegularizedBeta_ContinuedFraction (double a, double b, double x) {
+            // evaluate via continued fraction via Steed's method
+            double aa = 1.0;			// a_1
+            double bb = 1.0;			// b_1
+            double D = 1.0;			    // D_1 = 1 / b_1
+            double Df = aa / bb;		// Df_1 = f_1 - f_0 = a_1 / b_1
+            double f = 0.0 + Df;		// f_1 = f_0 + Df_1 = b_0 + Df_1
+            for (int k = 1; k < Global.SeriesMax; k++) {
+                double f_old = f;
+                int m = k / 2;
+                if ((k % 2) == 0) {
+                    aa = x * m * (b - m) / ((a + k - 1) * (a + k));
+                } else {
+                    aa = -x * (a + m) * (a + b + m) / ((a + k - 1) * (a + k));
+                }
+                D = 1.0 / (bb + aa * D);
+                Df = (bb * D - 1.0) * Df;
+                f += Df;
+                 if (f == f_old) {
+                    return (f / a);
+                }
+            }
+            throw new NonconvergenceException();
+        }
 
         /// <summary>
         /// Computes the regularized incomplete Beta function.
@@ -378,133 +429,25 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The integral endpoint, which must lie in [0,1].</param>
         /// <returns>The value of I<sub>x</sub>(a, b) = B<sub>x</sub>(a, b) / B(a, b).</returns>
         public static double LeftRegularizedBeta (double a, double b, double x) {
-            return (Beta(a, b, x) / Beta(a, b));
-        }
-
-		// helper functions
-
-        // Stirling's asymptotic series, which does well for large x
-        //   \log \Gamma(z) = (z - 1/2) \log z - z + \log (2 \pi) / 2 +
-        //     \sum_{k=1}^{\infty} \frac{B_{2k}}{2k (2k-1) z^{2k-1}}
-        // this converges in ~8 terms for z > ~10
-
-        private static double LogGamma_Stirling (double x) {
-
-            double f = (x - 0.5) * Math.Log(x) - x + Math.Log(Global.TwoPI) / 2.0;
-
-            double xx = x * x;
-            double xp = x;
-            for (int i = 1; i < AdvancedIntegerMath.Bernoulli.Length; i++) {
-                double f_old = f;
-                f += AdvancedIntegerMath.Bernoulli[i] / (2 * i) / (2 * i - 1) / xp;
-                if (f == f_old) return(f);
-                xp *= xx;
+            if (a <= 0.0) throw new ArgumentOutOfRangeException("a");
+            if (b <= 0.0) throw new ArgumentOutOfRangeException("b");
+            if ((x < 0.0) || (x > 1.0)) throw new ArgumentOutOfRangeException("x");
+            double xtp = (a + 1.0) / (a + b + 2.0);
+            if (x > xtp) {
+                return (1.0 - LeftRegularizedBeta(b, a, 1.0 - x));
+            } else {
+                return (RegularizedBeta_ContinuedFraction(a, b, x) * PowOverBeta(a, b, x));
             }
-
-            throw new NonconvergenceException();
         }
 
-        // by differentiating the Stirling asymptotic series for log Gamma, we obtain an analogous asymptotic series for psi
-        //   \psi(x) = \log z - 1 / (2 z) - \sum_{k=1}^{\infty} \frac{B_{2k}{2k z^{2k}}
-
-        private static double Psi_Stirling (double x) {
-
-            double f = Math.Log(x) - 1.0 / (2.0 * x);
-
-            double x2 = x * x;
-            double xp = x2;
-            for (int i = 1; i < AdvancedIntegerMath.Bernoulli.Length; i++) {
-                double f_old = f;
-                f -= AdvancedIntegerMath.Bernoulli[i] / (2 * i) / xp;
-                if (f == f_old) return (f);
-                xp *= x2;
+        private static double PowOverBeta (double a, double b, double x) {
+            if ((a > 16.0) && (b > 16.0)) {
+                return (Stirling.PowOverBeta(a, b, x));
+            } else {
+                return (Math.Pow(x, a) * Math.Pow(1.0 - x, b) / Beta(a, b));
             }
-            throw new NonconvergenceException();
-
         }
 
-        private static double LanczosLogGamma (double x) {
-
-            // compute the Lanczos series
-            double s = LanczosD[0];
-            for (int i = 1; i < LanczosD.Length; i++) {
-                s += LanczosD[i] / (x + i);
-            }
-            s = 2.0 / Global.SqrtPI * s / x;
-
-            // compute the leading terms
-            double xx = x + 0.5;
-            double t = xx * Math.Log(xx + LanczosR) - x;
-
-            return (t + Math.Log(s));
-
-        }
-
-        private static double LanczosPsi (double x) {
-
-            // compute the Lanczos series
-            double s0 = LanczosD[0];
-            double s1 = 0.0;
-            for (int i = 1; i < LanczosD.Length; i++) {
-                double xi = x + i;
-                double st = LanczosD[i] / xi;
-                s0 += st;
-                s1 += st / xi;
-            }
-
-            // compute the leading terms
-            double xx = x + LanczosR + 0.5;
-            double t = Math.Log(xx) - LanczosR / xx - 1.0 / x;
-
-            return (t - s1/s0);
-
-        }
-
-        // These values are from Table 8.5 of Glendon Ralph Pugh's 2004 PhD thesis,
-        // available at http://web.viu.ca/pughg/phdThesis/phdThesis.pdf
-        // He claims that they "guarantee 16 digit floating point accuracy in the right-half plane"
-
-        internal static readonly double[] LanczosD = new double[] {
-             2.48574089138753565546e-5,
-             1.05142378581721974210,
-            -3.45687097222016235469,
-             4.51227709466894823700,
-            -2.98285225323576655721,
-             1.05639711577126713077,
-            -1.95428773191645869583e-1,
-             1.70970543404441224307e-2,
-            -5.71926117404305781283e-4,
-             4.63399473359905636708e-6,
-            -2.71994908488607703910e-9
-        };
-
-        internal const double LanczosR = 10.900511;
-
-        /*
-        private static double LanczosLogGamma (double[] f, double g, double c, double x) {
-			double p = x + 0.5;
-			double q = g + p;
-			double s = f[0];
-			for (int i=1; i<f.Length; i++) {
-				s += f[i] / (x + i);
-			}
-			return( p * Math.Log(q) - q + Math.Log(c * s / x) );
-		}
-
-		private static double LanczosPsi (double[] f, double g, double x) {
-			double p = x + 0.5;
-			double q = g + p;
-			double s = f[0];
-			double t = 0.0;
-			for (int i=1; i<f.Length; i++) {
-				double xi = x + i;
-				double ds = f[i] / xi;
-				s += ds;
-				t += ds/xi;
-			}
-			return( Math.Log(q) - g/q - t/s - 1.0/x );
-		}
-        */
 
 		// Compute GammaP(a,x) for x < a+1
 		private static double GammaP_Series (double a, double x) {
@@ -684,11 +627,12 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException">The real part of <paramref name="z"/> is negative.</exception>
         /// <seealso cref="AdvancedMath.LogGamma" />
         public static Complex LogGamma (Complex z) {
-            if (z.Re < 0.0) throw new ArgumentOutOfRangeException("z");
-            if (ComplexMath.Abs(z) > 15.0) {
-                return (LogGamma_Stirling(z));
+            if (z.Re < 0.0) {
+                throw new ArgumentOutOfRangeException("z");
+            } else if (ComplexMath.Abs(z) < 16.0) {
+                return (Lanczos.LogGamma(z));
             } else {
-                return (LanczosLogGamma(z));
+                return (LogGamma_Stirling(z));
             }
         }
 
@@ -716,23 +660,6 @@ namespace Meta.Numerics.Functions {
             throw new NonconvergenceException();
         }
 
-        private static Complex LanczosLogGamma (Complex z) {
-
-            // compute the Lanczos series
-            Complex s = AdvancedMath.LanczosD[0];
-            for (int i = 1; i < AdvancedMath.LanczosD.Length; i++) {
-                s += AdvancedMath.LanczosD[i] / (z + i);
-            }
-            s = (2.0 / Global.SqrtPI) * (s / z);
-
-            // compute the leading terms
-            Complex zz = z + 0.5;
-            Complex t = zz * ComplexMath.Log(zz + AdvancedMath.LanczosR) - z;
-
-            return (t + ComplexMath.Log(s));
-
-        }
-
         /// <summary>
         /// Computes the complex digamma (&#x3C8;) function.
         /// </summary>
@@ -746,45 +673,289 @@ namespace Meta.Numerics.Functions {
         public static Complex Psi (Complex z) {
             if (z.Re < 0.5) {
                 // reduce z.Re in order to handle large real values!
-                return (LanczosPsi(1.0 - z) - Math.PI / ComplexMath.Tan(Math.PI * z));
+                return (Psi(1.0 - z) - Math.PI / ComplexMath.Tan(Math.PI * z));
             } else {
-                return (LanczosPsi(z));
+                // add Stirling for large z
+                return (Lanczos.Psi(z));
             }
         }
-
-        private static Complex LanczosPsi (Complex z) {
-
-            // compute the Lanczos series
-            Complex s0 = AdvancedMath.LanczosD[0];
-            Complex s1 = 0.0;
-            for (int i = 1; i < AdvancedMath.LanczosD.Length; i++) {
-                Complex zi = z + i;
-                Complex st = AdvancedMath.LanczosD[i] / zi;
-                s0 += st;
-                s1 += st / zi;
-            }
-
-            // compute the leading terms
-            Complex zz = z + AdvancedMath.LanczosR + 0.5;
-            Complex t = ComplexMath.Log(zz) - AdvancedMath.LanczosR / zz - 1.0 / z;
-
-            return (t - s1 / s0);
-
-        }
-
-        /*
-        private static Complex LanczosLogGamma (double[] f, double g, double c, Complex z) {
-            Complex p = z + 0.5;
-            Complex q = g + p;
-            Complex s = f[0];
-            for (int i = 1; i < f.Length; i++) {
-                s += f[i] / (z + i);
-            }
-            return (p * ComplexMath.Log(q) - q + ComplexMath.Log(c * s / z));
-        }
-        */
-
 
     }
-	
+
+
+
+    // This class handles the Lanczos approximation to the \Gamma function and the correspoding approximations to associated functions.
+    // For basic background to the Lanczos approximation, see http://en.wikipedia.org/wiki/Lanczos_approximation and
+    // http://mathworld.wolfram.com/LanczosApproximation.html and http://www.boost.org/doc/libs/1_53_0/libs/math/doc/sf_and_dist/html/math_toolkit/backgrounders/lanczos.html.
+    // The basic Lanczos formula is:
+    //   \Gamma(z+1) = \sqrt{2 \pi} (z + g + 1/2)^(z+1/2) e^{-(z + g + 1/2)} \left[ c_0 + \frac{c_1}{z+1} + \frac{c_2}{z+2} + \cdots + \frac{c_N}{z+N} \right]
+    // Given a value of g, the c-values can be computed using a complicated set of matrix equations that require high precision.
+    // We write this as:
+    //   \Gamma(z) = \sqrt{2 \pi} (z + g - 1/2)^(z-1/2) e^{-(z + g - 1/2)} \left[ c_0 + \frac{c_1}{z} + \frac{c_2}{z+1} + \cdots + \frac{c_N}{z+N-1} \right]
+    //             = \sqrt{2 \pi} (\frac{z + g - 1/2}{e})^{z-1/2} e^{-g} \left[ c_0 + \frac{c_1}{z} + \frac{c_2}{z+1} + \cdots + \frac{c_N}{z+N-1} \right]
+
+    internal static class Lanczos {
+
+        // These are listed at http://www.mrob.com/pub/ries/lanczos-gamma.html as the values used by GSL, although I don't know if they still are.
+        // Measured deviations at integers 2, 2, 4, 11, 1, 17, 22, 21 X 10^(-16) so this is clearly worse than Godfrey's coefficients, although it
+        // does manage with slightly fewer terms.
+        /*
+        private const double LanczosG = 7.0;
+        private static readonly double[] LanczosC = new double[] {
+            0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+            771.32342877765313, -176.61502916214059, 12.507343278686905,
+            -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7
+        };
+        */
+
+        // Godfrey's coefficients, claimed relative error < 10^(-15), documented at http://my.fit.edu/~gabdo/gamma.txt and in NR 3rd edition section 6.1.
+        // Measured relative deviation at integers 1, 1, 4, 1, 4, 5, 6, 3 X 10^(-16) so this appears about right.
+        // These improves to 1, 1, 2, 1, 3, 3, 3 X 10^(-16) when we pull the 1/e into Math.Pow(t/e, z+1/2) instead of calling Math.Exp(-t) seperately.
+
+        private const double LanczosG = 607.0 / 128.0;
+
+        private static readonly double[] LanczosC = new double[] {
+            0.99999999999999709182,
+            57.156235665862923517,
+            -59.597960355475491248,
+            14.136097974741747174,
+            -0.49191381609762019978,
+            3.3994649984811888699e-5,
+            4.6523628927048575665e-5,
+            -9.8374475304879564677e-5,
+            1.5808870322491248884e-4,
+            -2.1026444172410488319e-4,
+            2.1743961811521264320e-4,
+            -1.6431810653676389022e-4,
+            8.4418223983852743293e-5,
+            -2.6190838401581408670e-5,
+            3.6899182659531622704e-6
+        };
+
+
+        // These coefficients are given by Pugh in his thesis (http://web.viu.ca/pughg/phdThesis/phdThesis.pdf) table 8.5, p. 116
+        // (We record them in his form; to get the usual form, multiply by Exp(-\gamma+1/2) \sqrt{2} / \pi.)
+        // He claims that they "guarantee 16 digit floating point accuracy in the right-half plane", and since he uses fewer coefficients
+        // than Godfrey that would be fantastic. But we measure relative deviations at the integers of 2, 0, 35, 23, 45, 42, 6 X 10^(-16),
+        // making this relatively bad.
+        // Unfortunately, we didn't do these measurements ourselves at first, so we actually used these coefficients until version 3.
+        // Perhaps this really does give 53 bits of accuracy if you do the calculation with more bits. The fact that G is relatively large
+        // makes the initial coefficients relatively large, which probably leads to cancellation errors.
+        /*
+        private const double LanczosG = 10.900511;
+
+        private static readonly double[] LanczosC = new double[] {
+            +2.48574089138753565546e-5,
+            1.05142378581721974210,
+            -3.45687097222016235469,
+            +4.51227709466894823700,
+            -2.98285225323576655721,
+            +1.05639711577126713077,
+            -1.95428773191645869583e-1,
+            +1.70970543404441224307e-2,
+            -5.71926117404305781283e-4,
+            +4.63399473359905636708e-6,
+            -2.71994908488607703910e-9,
+        };
+        */
+
+        // From LanczosG, we derive several values that we need only compute once.
+
+        private static readonly double LanczosGP = LanczosG - 0.5;
+        private static readonly double LanczosExpG = Math.Exp(-LanczosG);
+        private static readonly double LanczosExpGP = Math.Exp(-LanczosGP);
+
+        private static double Sum (double x) {
+            double s = LanczosC[0] + LanczosC[1] / x;
+            for (int i = 2; i < LanczosC.Length; i++) {
+                x += 1.0;
+                s += LanczosC[i] / x;
+            }
+            return (s);
+        }
+
+        private static Complex Sum (Complex z) {
+            Complex s = LanczosC[0] + LanczosC[1] / z;
+            for (int i = 2; i < LanczosC.Length; i++) {
+                z += 1.0;
+                s += LanczosC[i] / z;
+            }
+            return (s);
+        }
+
+        private static double LogSumPrime (double x) {
+            double q = LanczosC[0] + LanczosC[1] / x;
+            double p = LanczosC[1] / (x * x);
+            for (int i = 2; i < LanczosC.Length; i++) {
+                x += 1.0;
+                q += LanczosC[i] / x;
+                p += LanczosC[i] / (x * x);
+            }
+            return (-p / q);
+        }
+
+        private static Complex LogSumPrime (Complex z) {
+            Complex q = LanczosC[0] + LanczosC[1] / z;
+            Complex p = LanczosC[1] / (z * z);
+            for (int i = 2; i < LanczosC.Length; i++) {
+                z += 1.0;
+                q += LanczosC[i] / z;
+                p += LanczosC[i] / (z * z);
+            }
+            return (-p / q);
+        }
+
+        public static double Gamma (double x) {
+            double t = x + LanczosGP;
+            return (
+                Global.SqrtTwoPI *
+                Math.Pow(t / Math.E, x - 0.5) * LanczosExpG *
+                Sum(x)
+            );
+        }
+
+        public static double LogGamma (double x) {
+            double t = x + LanczosGP;
+            return (
+                Math.Log(Global.SqrtTwoPI * Sum(x)) +
+                (x - 0.5) * Math.Log(t) - t
+            );
+        }
+
+        public static Complex LogGamma (Complex z) {
+            Complex t = z + LanczosGP;
+            return (
+                Math.Log(Global.SqrtTwoPI) +
+                (z - 0.5) * ComplexMath.Log(t) - t +
+                ComplexMath.Log(Sum(z))
+            );
+        }
+
+        public static double Psi (double x) {
+            double t = x + LanczosGP;
+            return (Math.Log(t) - LanczosG / t + LogSumPrime(x));
+        }
+
+        public static Complex Psi (Complex z) {
+            Complex t = z + LanczosGP;
+            return (ComplexMath.Log(t) - LanczosG / t + LogSumPrime(z));
+        }
+
+        // If we just compute Exp( LogGamma(x) + LogGamma(y) - LogGamma(x+y) ) then several leading terms in the sum cancel,
+        // potentially introducing cancelation error. So we write out the ratios explicitly and take the opportunity
+        // to write the result in terms of some naturally occuring ratios.
+
+        public static double Beta (double x, double y) {
+            double tx = x + LanczosGP;
+            double ty = y + LanczosGP;
+            double txy = x + y + LanczosGP;
+            return (
+                Global.SqrtTwoPI * LanczosExpGP *
+                Math.Pow(tx / txy, x) * Math.Pow(ty / txy, y) * Math.Sqrt(txy / tx / ty) *
+                Sum(x) * Sum(y) / Sum(x + y)
+            );
+        }
+
+        public static double LogBeta (double x, double y) {
+            double tx = x + LanczosGP;
+            double ty = y + LanczosGP;
+            double txy = x + y + LanczosGP;
+            return(
+                Math.Log(2.0 * Math.PI / txy) / 2.0 + (x - 0.5) * Math.Log( tx / txy) + (y - 0.5) * Math.Log(ty / txy) +
+                Math.Log(LanczosExpGP * Sum(x) * Sum(y) / Sum(x + y))
+            );
+        }
+
+    }
+
+    // This class implements algorithms that arise from Stirling's approximation to the Gamma function, which is an asymptotic expansion good for large
+    // arguments.
+
+    // The Sterling sum converges to full double precision within 12 terms for all x > 16.
+
+    internal static class Stirling {
+
+        private static double Sum (double x) {
+
+            double xx = x * x; // x^2 
+            double xk = x; // tracks x^{2k - 1}
+            double f = AdvancedIntegerMath.Bernoulli[1] / 2.0 / xk; // k = 1 term
+            for (int k = 2; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
+                double f_old = f;
+                xk *= xx;
+                f += AdvancedIntegerMath.Bernoulli[k] / (2 * k) / (2 * k - 1) / xk;
+                if (f == f_old) return (f);
+            }
+
+            throw new NonconvergenceException();
+
+        }
+
+        private static double SumPrime (double x) {
+
+            double xx = x * x;
+            double xk = xx; // tracks x^{2k}
+            double f = -AdvancedIntegerMath.Bernoulli[1] / 2.0 / xk; // k=1 term
+            for (int k = 2; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
+                double f_old = f;
+                xk *= xx;
+                f -= AdvancedIntegerMath.Bernoulli[k] / (2 * k) / xk;
+                if (f == f_old) return (f);
+            }
+            throw new NonconvergenceException();
+
+        }
+
+        public static double LogGamma (double x) {
+            // we-write to use (x-0.5) form to eliminate one one by storing log(2\pi)?
+            return (x * Math.Log(x) - x - Math.Log(x / (2.0 * Math.PI)) / 2.0 + Sum(x));
+        }
+
+        public static double Gamma (double x) {
+            // return (Math.Sqrt(2.0 * Math.PI / x) * Math.Pow(x / Math.E, x) * Math.Exp(Sum(x)));
+            return (Math.Exp(LogGamma(x)));
+        }
+
+        public static double Beta (double x, double y) {
+            double xy = x + y;
+            return (
+                Math.Sqrt(2.0 * Math.PI * xy / x / y) *
+                Math.Pow(x / xy, x) * Math.Pow(y / xy, y) *
+                Math.Exp(Sum(x) + Sum(y) - Sum(xy))
+            );
+        }
+
+        public static double LogBeta (double x, double y) {
+            double xy = x + y;
+            return (x * Math.Log(x / xy) + y * Math.Log(y / xy) - Math.Log(x / xy * y / (2.0 * Math.PI)) / 2.0 + Sum(x) + Sum(y) - Sum(xy));
+        }
+
+        public static double Psi (double x) {
+            return (Math.Log(x) - 0.5 / x + SumPrime(x));
+        }
+
+        // Compute \frac{x^{\nu}}{\Gamma(\nu + 1)}
+
+        public static double PowOverGammaPlusOne (double x, double nu) {
+            return (Math.Pow(x * Math.E / nu, nu) / Math.Sqrt(Global.TwoPI * nu) / Math.Exp(Sum(nu)));
+        }
+
+        // Compute \frac{x^a (1-x)^b}{B(a,b)}
+        // For large a, b, B(a,b) is often unrepresentably small but this ratio is still representable because x^a (1-x)^b is also small.
+        // To compute this ratio, we bring x and (1-x) inside the a and b powers that we need to take anyway to compute B(a,b).
+        
+        // At first we tried doing this explicitly, computing (x / (a / ab))^a * ((1-x) / (b / ab))^b. While this does work over a larger range
+        // than computing x^a * (1-x)^b and B(a,b) seperately, there are still many values for which one of the powers is unrepresentably small (0)
+        // the other is unrepresentably large (Infinity), so the product becomes 0 * Infinity = NaN. We threfore fall back and do this in log-space.
+
+        public static double PowOverBeta (double a, double b, double x) {
+            double ab = a + b;
+            double t = a * Math.Log(x / (a / ab)) + b * Math.Log((1.0 - x) / (b / ab));
+            return (
+                Math.Sqrt(a / ab * b / (2.0 * Math.PI)) * Math.Exp(Sum(ab) - Sum(a) - Sum(b) + t)
+            );
+        }
+
+    }
+
 }

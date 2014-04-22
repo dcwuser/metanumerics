@@ -89,6 +89,7 @@
     <Compile Include="IntervalTest.cs" />
     <Compile Include="MixedMatrixTest.cs" />
     <Compile Include="LanczosTest.cs" />
+    <Compile Include="MultiExtremumTest.cs" />
     <Compile Include="MultiIntegrateTest.cs" />
     <Compile Include="NullDistributionTests.cs" />
     <Compile Include="PermutationTest.cs" />

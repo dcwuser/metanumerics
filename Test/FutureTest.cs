@@ -304,261 +304,183 @@ namespace FutureTest {
 
     }
 
-    public class TestMultiIntegral {
-
-        public Func<IList<double>, double> Function { get; set; }
-
-        public Interval[] Volume { get; set; }
-
-        public double Result { get; set; }
-
-    }
 
     
 
     [TestClass]
     public class FutureTest {
 
-        private static TestMultiIntegral I0 = new TestMultiIntegral() {
-            Function = (IList<double> x) => Math.Log(x[0] * x[1]),
-            Volume = UnitCube(2),
-            Result = -2.0
-        };
+        // See functions at http://www.sfu.ca/~ssurjano/optimization.html
 
-        private static TestMultiIntegral I1 = new TestMultiIntegral() {
-            Function = (IList<double> x) => (x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1]),
-            Volume = UnitCube(2),
-            Result = AdvancedMath.EulerGamma
-        };
+        [TestMethod]
+        public void STA () {
 
-        private static TestMultiIntegral I2 = new TestMultiIntegral() {
-            Function = (IList<double> x) => 1.0 / (1.0 - x[0] * x[0] * x[1] * x[1]),
-            Volume = UnitCube(2),
-            Result = Math.PI * Math.PI / 8.0
-        };
-
-        private static TestMultiIntegral I3 = new TestMultiIntegral() {
-            Function = (IList<double> x) => {
-                double s = 0.0;
-                for (int i = 0; i < x.Count; i++) s += MoreMath.Sqr(x[i]);
-                return (s <= 1.0 ? 1.0 : 0.0);
-            },
-            Volume = UnitCube(3),
-            Result = 4.0 / 3.0 * Math.PI / 8.0
-        };
-
-        private static TestMultiIntegral IZ3 = new TestMultiIntegral() {
-            Function = (IList<double> x) => {
-                double p = 1.0;
+            // Has local minimum when any coordinate is at one of two values, global when all coordinates at one of them.
+            Func<IList<double>, double> fStyblinskiTang = (IList<double> x) => {
+                double fst = 0.0;
                 for (int i = 0; i < x.Count; i++) {
-                    p *= x[i];
+                    double x1 = x[i];
+                    double x2 = MoreMath.Sqr(x1);
+                    fst += x2 * (x2 - 16.0) + 5.0 * x1;
                 }
-                return (1.0 / (1.0 - p));
-            },
-            Volume = UnitCube(3),
-            Result = AdvancedMath.RiemannZeta(3.0)
-        };
+                return (fst / 2.0);
+            };
 
-        private static TestMultiIntegral IB31 = new TestMultiIntegral() {
-            Function = (IList<double> x) => {
+            // Asymptotic "minima" at infinity, and (3,1/2)->0
+            Func<IList<double>, double> fBeale = (IList<double> x) =>
+                MoreMath.Sqr(1.5 - x[0] + x[0] * x[1]) +
+                MoreMath.Sqr(2.25 - x[0] + x[0] * x[1] * x[1]) +
+                MoreMath.Sqr(2.625 - x[0] + x[0] * x[1] * x[1] * x[1]);
+
+
+            Func<IList<double>, double> fEggholder = (IList<double> x) => {
+                double y47 = x[1] + 47.0;
+                return(-y47 * Math.Sin(Math.Sqrt(Math.Abs(y47 + x[0] / 2.0))) - x[0] * Math.Sin(Math.Sqrt(Math.Abs(x[0] - y47))));
+            };
+
+            // Many local minima, global minimum at (0,0)->0
+            Func<IList<double>, double> fAckley = (IList<double> x) => {
                 double s = 0.0;
-                for (int k = 0; k < 3; k++) {
-                    s += x[k] * x[k];
+                double c = 0.0;
+                for (int i = 0; i < x.Count; i++) {
+                    s += x[i] * x[i];
+                    c += Math.Cos(2.0 * Math.PI * x[i]);
                 }
-                return (Math.Pow(s, 1 / 2.0));
-                },
-            Volume = UnitCube(3),
-            Result = Math.Log(2.0 + Math.Sqrt(3.0)) / 2.0 + Math.Sqrt(3.0) / 4.0 - Math.PI / 24.0
-        };
+                return (-20.0 * Math.Exp(-0.2 * Math.Sqrt(s / x.Count)) - Math.Exp(c / x.Count) + 20.0 + Math.E);
+            };
 
-        private static TestMultiIntegral ID4 = new TestMultiIntegral() {
-            Function = (IList<double> x) => {
+            // Burkin has a narrow valley, not aligned with any axis, punctuated with many tiny "wells" along its bottom.
+            // The deepest well is at (-10,1)-> 0.
+            Func<IList<double>, double> fBurkin = (IList<double> x) => 100.0 * Math.Sqrt(Math.Abs(x[1] - 0.01 * x[0] * x[0])) + 0.01 * Math.Abs(x[0] + 10.0);
+
+            Func<IList<double>, double> threeHumpCamel = (IList<double> x) => {
+                double x2 = x[0] * x[0];
+                return (2.0 * x2 - 1.05 * x2 * x2 + x2 * x2 * x2 / 6.0 + (x[0] + x[1]) * x[1]);
+            };
+
+            // Easom has many lobal extra ripples and then a deep but narrow global minimum at (\pi, \pi) -> -1
+            Func<IList<double>, double> fEasom = (IList<double> x) => -Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Exp(-(MoreMath.Sqr(x[0] - Math.PI) + MoreMath.Sqr(x[1] - Math.PI)));
+
+            // Test over [-500,500], minimum at (420.969,...) -> -418.983*d, many local minima
+            Func<IList<double>, double> fSchwefel = (IList<double> x) => {
                 double s = 0.0;
-                for (int k = 0; k < 2; k++) {
-                    double z = x[k] - x[k + 2];
-                    s += z * z;
+                for (int i = 0; i < x.Count; i++) {
+                    s += x[i] * Math.Sin(Math.Sqrt(Math.Abs(x[i])));
                 }
-                return (Math.Pow(s, 1 / 2.0));
-            },
-            Volume = UnitCube(4),
-            Result = (2.0 + Math.Sqrt(2.0) + 5.0 * Math.Log(1.0 + Math.Sqrt(2.0))) / 15.0
-        };
+                return (-s);
+            };
 
-        private static Interval[] UnitCube (int d) {
-            Interval[] volume = new Interval[d];
-            for (int i = 0; i < volume.Length; i++) {
-                volume[i] = Interval.FromEndpoints(0.0, 1.0);
+            Func<IList<double>, double> function = fSchwefel;
+
+            int n = 4;
+
+            ColumnVector start = new ColumnVector(n);
+            //for (int i = 0; i < start.Dimension; i++) start[i] = 1.0;
+
+            Interval[] box = new Interval[n];
+            for (int i = 0; i < box.Length; i++) {
+                box[i] = Interval.FromEndpoints(-500.0, 500.0);
             }
-            return (volume);
-        }
+            //box[0] = Interval.FromEndpoints(-15.0, -5.0);
+            //box[1] = Interval.FromEndpoints(-3.0, 3.0);
 
-        [TestMethod]
-        public void MultiIntegrateCompare1 () {
-
-            EvaluationSettings settings = new EvaluationSettings() {
-                EvaluationBudget = 100000000,
-                RelativePrecision = 1.0E-4,
-                AbsolutePrecision = 1.0E-4 / 128.0
-            };
-            
-            TestMultiIntegral I = ID4;
-
-            Console.WriteLine("{0} ({1})", I.Result, I.Result * settings.RelativePrecision);
-            /*
-            MultiFunctor fAD = new MultiFunctor(I.Function);
-            double AD = MultiFunctionMath.Integrate_Adaptive(fAD, I.Volume, settings);
-            Console.WriteLine("{0} ({1}) in {2}", AD, AD - I.Result, fAD.EvaluationCount);
-
-            MultiFunctor fMC = new MultiFunctor(I.Function);
-            double MC = MultiFunctionMath.Integrate_MonteCarlo(fMC, I.Volume.Length, settings);
-            Console.WriteLine("{0} ({1}) in {2}", MC, MC - I.Result, fMC.EvaluationCount);
-            */
-            /*
-            MultiFunctor f1 = new MultiFunctor(x => 1.0 / (1.0 - Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Cos(x[2])));
-            double g1 = MultiFunctionMath.Integrate_Adaptive(f1, new Interval[] { Interval.FromEndpoints(0.0, Math.PI), Interval.FromEndpoints(0.0, Math.PI), Interval.FromEndpoints(0.0, Math.PI) }, settings);
-            Console.WriteLine(g1);
-            
-            ICoordinateTransform[] map = new ICoordinateTransform[] {
-                new TransformUnitIntervalToInterval(Interval.FromEndpoints(0.0, Math.PI)),
-                new TransformUnitIntervalToInterval(Interval.FromEndpoints(0.0, Math.PI)),
-                new TransformUnitIntervalToInterval(Interval.FromEndpoints(0.0, Math.PI))
-            };
-            MultiFunctor f0 = new MultiFunctor(x => 1.0 / (1.0 - Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Cos(x[2])), map);
-            double g0 = MultiFunctionMath.Integrate_MonteCarlo(f0, 3, settings);
-            Console.WriteLine(g0);
-            */
+            MultiFunctionMath.FindGlobalMinimum(function, box);
+            //MultiFunctionMath.FindExtremum_Amobea(fStyblinskiTang, start, new EvaluationSettings() { RelativePrecision = 1.0E-10, AbsolutePrecision = 1.0E-12, EvaluationBudget = 1000 });
 
         }
 
+        /*
         [TestMethod]
-        public void MultiIntegrateCompare () {
+        public void Rosenbock () {
 
-            int d = 3;
-            //for (int d = 2; d <= 4; d++) {
-
-                double eps = 1.0E-6 /* 1.0 / (1 << (14 - 3 * d / 2)) */;
-                int max = 1024 * 1024 /*1 << (18 + 3 * d / 2)*/;
-                EvaluationSettings settings = new EvaluationSettings() {
-                    RelativePrecision = eps,
-                    AbsolutePrecision = eps / 128.0,
-                    EvaluationBudget = max
-                };
-
-                //double value = AdvancedMath.EulerGamma;
-                //double value = Math.PI * Math.PI / 8.0;
-                //double value = 4.0 * AdvancedMath.Catalan;
-                //double value = AdvancedMath.RiemannZeta(d);
-                //double value = Math.Pow(Math.PI, d / 2.0) / AdvancedMath.Gamma(d / 2.0 + 1.0) * MoreMath.Pow(2.0, -d);
-                //double value = MoreMath.Pow(2.0, -d);
-                /*
-                double value = 0.0;
-                switch (d) {
-                    case 2:
-                        // trivial square
-                        value = 4.0;
-                        break;
-                    case 3:
-                        value = 16.0 - 8.0 * Math.Sqrt(2.0);
-                        break;
-                    case 4:
-                        value = 48.0 * (Math.PI / 4.0 - Math.Atan(Math.Sqrt(2.0)) / Math.Sqrt(2.0));
-                        break;
-                    case 5:
-                        value = 256.0 * (Math.PI / 12.0 - Math.Atan(1.0 / (2.0 * Math.Sqrt(2.0))) / Math.Sqrt(2.0));
-                        break;
+            Func<IList<double>, double> fRosenbrock = (IList<double> x) =>
+                MoreMath.Sqr(1.0 - x[0]) + 100.0 * MoreMath.Sqr(x[1] - x[0] * x[0]);
+            //Func<IList<double>, double> f = (IList<double> x) => 7.0 + 6.0 * MoreMath.Sqr(x[0] - 1.0) + 5.0 * MoreMath.Sqr(x[1] - 2.0) + 4.0 * (x[0] - 1.0) * (x[1] - 2.0);
+            Func<IList<double>, double> fGoldsteinPrice = (IList<double> p) => {
+                double x = p[0]; double yy = p[1]; return (
+                    (1 + MoreMath.Pow(x + yy + 1, 2) * (19 - 14 * x + 3 * x * x - 14 * yy + 6 * x * yy + 6 * yy * yy)) *
+                    (30 + MoreMath.Pow(2 * x - 3 * yy, 2) * (18 - 32 * x + 12 * x * x + 48 * yy - 36 * x * yy + 27 * yy * yy))
+                );
+            };
+            Func<IList<double>, double> fBeale = (IList<double> x) =>
+                MoreMath.Sqr(1.5 - x[0] + x[0] * x[1]) +
+                MoreMath.Sqr(2.25 - x[0] + x[0] * x[1] * x[1]) +
+                MoreMath.Sqr(2.625 - x[0] + x[0] * x[1] * x[1] * x[1]);
+            Func<IList<double>, double> fStyblinskiTang = (IList<double> x) => {
+                double fst = 0.0;
+                for (int i = 0; i < x.Count; i++) {
+                    double x1 = x[i];
+                    double x2 = MoreMath.Sqr(x1);
+                    fst += x2 * (x2 - 16.0) + 5.0 * x1;
                 }
-                */
-                double value = MoreMath.Pow(AdvancedMath.Gamma(1.0 / 4.0), 4) / 4.0;
-                //double value = Math.Sqrt(6.0) / 96.0 * AdvancedMath.Gamma(1.0 / 24.0) * AdvancedMath.Gamma(5.0 / 24.0) * AdvancedMath.Gamma(7.0 / 24.0) * AdvancedMath.Gamma(11.0 / 24.0);
-                //double value = 3.0 * MoreMath.Pow(AdvancedMath.Gamma(1.0 / 3.0), 6) / Math.Pow(2.0, 14.0 / 3.0) / Math.PI;
-                //double value = Math.Log(5.0 + 3.0 * Math.Sqrt(3.0)) - Math.Log(2.0) / 2.0 - Math.PI / 4.0;
-                //double value = Math.Log(2.0 + Math.Sqrt(3.0)) / 2.0 + Math.Sqrt(3.0) / 4.0 - Math.PI / 24.0;
+                return (fst / 2.0);
+            };
+            Func<IList<double>, double> fMcCormick = (IList<double> x) => Math.Sin(x[0] + x[1]) + MoreMath.Sqr(x[0] - x[1]) - 1.5 * x[0] + 2.5 * x[1] + 1.0;
+            // Levi causes some problems we will need to work out.
+            Func<IList<double>, double> fLevi = (IList<double> x) =>
+                MoreMath.Sqr(Math.Sin(3.0 * Math.PI * x[0])) +
+                MoreMath.Sqr(x[0] - 1.0) * (1.0 + MoreMath.Sqr(Math.Sin(3.0 * Math.PI * x[1]))) +
+                MoreMath.Sqr(x[1] - 1.0) * (1.0 + MoreMath.Sqr(Math.Sin(2.0 * Math.PI * x[1])));
 
-                Console.WriteLine("* {0} ({1})", value, eps * value);
+            var f = fStyblinskiTang;
 
-                int count = 0;
-                Func<IList<double>, double> function = (IList<double> x) => {
-                    count++;
-                    //return ((x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1]));
-                    //return (1.0 / (1.0 - x[0] * x[0] * x[1] * x[1]));
-                    //return (1.0 / (x[0] + x[1]) / Math.Sqrt((1.0 - x[0]) * (1.0 - x[1])));
-                    /*
-                    double p = 1.0;
-                    for (int i = 0; i < x.Count; i++) {
-                        p *= x[i];
-                    }
-                    return (1.0 / (1.0 - p));
-                    */
-                    /*
-                    double r2 = 0.0;
-                    for (int j = 0; j < x.Count; j++) {
-                        r2 += x[j] * x[j];
-                    }
-                    if (r2 <= 1.0) {
-                        return (1.0);
-                    } else {
-                        return (0.0);
-                    }
-                    */
-                    /*
-                    double y = 1.0;
-                    for (int j = 0; j < x.Count; j++) {
-                        y *= x[j];
-                    }
-                    return (y);
-                    */
-                    /*
-                    for (int i = 0; i < d; i++) {
-                        double s = 0.0;
-                        for (int j = 0; j < d; j++) {
-                            if (j != i) s += x[j] * x[j];
-                        }
-                        if (s > 1.0) return (0.0);
-                    }
-                    return (1.0);
-                    */
-                    return (1.0 / (1.0 - Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Cos(x[2])));
-                    //return (1.0 / (3.0 - Math.Cos(x[0]) - Math.Cos(x[1]) - Math.Cos(x[2])));
-                    //Debug.WriteLine("{0} {1} {2}", x[0], x[1], x[2]);
-                    //return (1.0 / (3.0 - Math.Cos(x[0]) * Math.Cos(x[1]) - Math.Cos(x[1]) * Math.Cos(x[2]) - Math.Cos(x[0]) * Math.Cos(x[2])));
-                    /*
-                    double s = 0.0;
-                    for (int k = 0; k < d; k++) {
-                        s += x[k] * x[k];
-                    }
-                    return (Math.Pow(s, -1 / 2.0));
-                    */
-                };
+            double[] y = new double[] { 1.0, 1.0 };
+            //double[][] points; double[] values;
+            QuadraticInterpolationModel model = QuadraticInterpolationModel.Construct(f, y, 1.0);
+            int evaluationcount = 6;
 
-                //Interval[] volume = UnitCube(d);
-                Interval watsonInterval = Interval.FromEndpoints(0.0, Math.PI);
-                Interval[] volume = new Interval[] { watsonInterval, watsonInterval, watsonInterval};
-                
-                //double value1 = FunctionMath.Integrate(function, volume, settings);
-                //Console.WriteLine("1 {0} {1} ({2})", value1, count, value1 - value);        
-            /*
-                count = 0;
-                Stopwatch timer = Stopwatch.StartNew();
-                double value2 = MultiFunctionMath.Integrate(function, volume, settings);
-                timer.Stop();
-                Console.WriteLine("2 {0} {1} ({2})", value2, count, value2 - value);
-                Console.WriteLine(timer.ElapsedMilliseconds);
-            */
+            double D = 1.0;
+            while (true) {
 
-            //}
+                // find maximum and minimum points
+                int iMax = 0; double fMax = model.values[0];
+                for (int i = 1; i < model.values.Length; i++) {
+                    if (model.values[i] > fMax) { iMax = i; fMax = model.values[i]; }
+                }
 
+                // find the minimum of the model
+                double[] z = model.FindMinimum(D);
+                double expectedValue = model.Evaluate(z);
+                double[] point = new double[z.Length];
+                for (int i = 0; i < point.Length; i++) point[i] = model.origin[i] + z[i];
+                double value = f(point);
+                evaluationcount++;
+
+                // Adjust the trust region radius based on the ratio of the actual reduction to the expected reduction.
+                double r = (model.MinimumValue - value) / (model.MinimumValue - expectedValue);
+                if (r < 0.25) {
+                    // If we achieved less than 25% of the expected reduction, reduce the trust region.
+                    D = D / 2.0;
+                } else if (r > 0.75) {
+                    // If we achieved at least 75% of the expected reduction, increase the trust region.
+                    D = 2.0 * D;
+                }
+
+                // if the new value is less than the maximum, accept it
+                if (value < fMax) {
+                    model.ReplacePoint(iMax, point, z, value);
+                } else {
+                    // Otherwise, reduce the trust region and try again
+                }
+
+
+            }
         }
-
+        */
 
         [TestMethod]
-        public void TestIntegrate2 () {
-            /*
-            double value = MultiFunctionMath.Integrate(
-                (IList<double> x) => { return ((x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1])); },
-                new Interval[2] { Interval.FromEndpoints(0.0, 1.0), Interval.FromEndpoints(0.0, 1.0) }
-            );
-            Console.WriteLine(value);
-            */
+        public void Optimize () {
+
+            Func<IList<double>, double> function = (IList<double> x) => {
+                return (MoreMath.Sqr(1.0 - x[0]) + 100.0 * MoreMath.Sqr(x[1] - x[0] * x[0]));
+            };
+
+            double[] point = new double[] { 2.0, 3.0 };
+
+            EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-4, EvaluationBudget = 1000 };
+
+            MultiFunctionMath.FindExtremum_Amobea(function, point, settings);
+
         }
 
 

@@ -15,6 +15,25 @@ namespace Test {
     public class BugTests {
 
         [TestMethod]
+        public void Bug7788 () {
+
+            // Beta with high parameters used to have incorrect inverse probabilty,
+            // which in this case resulted in zero median and consistently zero random values.
+
+            Distribution beta = new BetaDistribution(1713.0, 58743.0);
+            Console.WriteLine(beta.Mean);
+            Console.WriteLine(beta.StandardDeviation);
+
+            Assert.IsTrue(beta.Median != 0.0);
+            Assert.IsTrue(Math.Abs(beta.Median - beta.Median) <= beta.StandardDeviation);
+            Random rng = new Random(1);
+            for (int i = 0; i < 10; i++) {
+                Assert.IsTrue(beta.GetRandomValue(rng) != 0.0);
+            }
+
+        }
+
+        [TestMethod]
         public void Bug7686 () {
             // This SVD failed with a IndexOutOfBoundsException because we didn't handle SVD for cols > rows and didn't check for this condition on entry.
             RectangularMatrix A = new RectangularMatrix(new double[,] {

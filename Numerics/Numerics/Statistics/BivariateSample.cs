@@ -89,6 +89,21 @@ namespace Meta.Numerics.Statistics {
             foreach (XY point in points) Add(point);
         }
 
+        /// <summary>
+        /// Adds points from two lists to the sample.
+        /// </summary>
+        /// <param name="x">The x values of the data points.</param>
+        /// <param name="y">The y values of the data points.</param>
+        /// <exception cref="DimensionMistachException">The lengths of the two lists are not equal.</exception>
+        public void Add (IList<double> x, IList<double> y) {
+            if (x == null) throw new ArgumentNullException("x");
+            if (y == null) throw new ArgumentNullException("y");
+            if (x.Count != y.Count) throw new DimensionMismatchException();
+            for (int i = 0; i < x.Count; i++) {
+                Add(x[i], y[i]);
+            }
+        }
+
         private int IndexOf (double x, double y) {
             for (int i = 0; i < Count; i++) {
                 if ((xData[i] == x) && (yData[i] == y)) {

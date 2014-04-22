@@ -33,6 +33,15 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         public double AbsolutePrecision { get; set; }
 
+        /// <summary>
+        /// Occurs when an updated evaluation is available.
+        /// </summary>
+        public event Action<object> Update;
+
+        internal void OnUpdate (object result) {
+            if (Update != null) Update(result);
+        }
+
     }
 
 

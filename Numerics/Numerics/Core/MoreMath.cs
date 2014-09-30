@@ -190,8 +190,8 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The square of the argument.</returns>
         /// <remarks>
-        /// <para>There is nothing numericaly sophisticated inside this function; it is simply for programmers' convenience. Given a complicated expression
-        /// that needs to be squared, it is nice to be able to wrap it in a simple function call instead of explicitly assigning it to a new variable and then
+        /// <para>There is nothing numericaly sophisticated inside this function; it exists simply for programmers' convenience. Given a complicated expression
+        /// that needs to be squared, it is nice to be able to wrap it in a simple function call instead of explicitly assigning its value to a new variable and then
         /// multiplying that variable by itself.</para>
         /// </remarks>
         public static double Sqr (double x) {
@@ -199,23 +199,29 @@ namespace Meta.Numerics {
         }
 
         /// <summary>
-        /// Computes the sine of the given argument to full significance over the full range of 
+        /// Computes the sine of the given value to full significance over the full range of arguments.
         /// </summary>
         /// <param name="x">The argument.</param>
         /// <returns>The value of sin(x).</returns>
         /// <remarks>
-        /// <para>This method addresses several subtle shortcommings of the trigonometric functions of the <see cref="System.Math"/> class.
+        /// <para>This method addresses several subtle shortcommings of the <see cref="System.Math.Sin" /> method.
         /// One shortcoming, quite striking but rarely encountered, is that <see cref="Math.Sin"/> returns entirely wrong results very large
-        /// arguments; for x larger than about 10<sup>20</sup>, it simply returns the argument as the function value. Another shortcomming,
-        /// more commonly encountered but often unnoticed, is that values are not precise near zeros of the function.</para>
-        /// <para>The underlying issue is that 
+        /// arguments; for x larger than about 10<sup>20</sup>, it simply returns the argument as the function value!
         /// (I have no idea
         /// why the base class library designers did not at least choose to return <see cref="Double.NaN"/> so as to signal to the user
-        /// that the result should not be trusted.) 
-        /// </para>
+        /// that the result should not be trusted. No floating point standard specifies this crazy behavior.)
+        /// Another shortcomming, more commonly encountered but often unnoticed, is that for large but not necessarily very large arguments,
+        /// values loose precision near zeros of the function.</para>
         /// <para>
-        /// This method 
+        /// One way to view these shortcommings is that they are justified by the uncertainty inherent in floating point representations. In this
+        /// view, any <see cref="System.Double"/> should be seen as an uncertain value with a relative error of ~10<sup>-16</sup>. If the absolute value
+        /// of the number is very large then the absolute value of this error can be as large or larger than 2&#x3C0; in this circumstance we should not
+        /// expect to be able to say anything about the value. (Except, of course, that it is between -1 and +1, which is violated by the designers' crazy
+        /// choice to return the argument as the value).
         /// </para>
+        /// <para>A contrary view is that it is better to treat all arguments as infinitely precise and return the nearest representable <see cref="System.Double"/>
+        /// to the actual function value under this assumption. Users are unlikely to complain that we returned a more accurate value and this behavior is particularly
+        /// useful when the argument is an intermediate result that the programmer may not even realize has become large.</para>
         /// <para>For typical arguments, say between 10<sup>-4</sup>-4 and 10<sup>4</sup>, the extra cost of this function over
         /// <see cref="Math.Sin"/> is just a couple of comparisons and a single floating point operation; less than 0.1% of
         /// arguments in this range are then routed to our much slower, higher-accuracy algorithm. We therefore suggest that,
@@ -245,7 +251,14 @@ namespace Meta.Numerics {
             }
         }
 
-
+        /// <summary>
+        /// Computes the cosine of the given value to full significance over the full range of arguments.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of sin(x).</returns>
+        /// <remarks>
+        /// <para>For an explanaition of this method, see the remarks for the <see cref="MoreMath.Sin"/> method.</para>
+        /// </remarks>
         public static double Cos (double x) {
 
             // Ensure x is non-negative; this is easy because cosine is an even function.

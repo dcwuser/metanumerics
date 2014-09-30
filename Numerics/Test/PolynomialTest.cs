@@ -2,7 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
-using Meta.Numerics.Functions;
+using Meta.Numerics.Analysis;
 
 namespace Test {
 

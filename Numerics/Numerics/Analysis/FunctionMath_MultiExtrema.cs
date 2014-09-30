@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Meta.Numerics;
 using Meta.Numerics.Matrices;
 
-namespace Meta.Numerics.Functions {
+namespace Meta.Numerics.Analysis {
 
     public static partial class FunctionMath {
 
@@ -107,7 +107,7 @@ namespace Meta.Numerics.Functions {
                     fo.Direction = Q[i];
 
                     // minimize it
-                    LineExtremum m = FindMinimum(fo, 0.0, y, 1.0, new EvaluationSettings() { EvaluationBudget = settings.EvaluationBudget, AbsolutePrecision = 0.0, RelativePrecision = 0.0 });
+                    Extremum m = FindMinimum(fo, 0.0, y, 1.0, new EvaluationSettings() { EvaluationBudget = settings.EvaluationBudget, AbsolutePrecision = 0.0, RelativePrecision = 0.0 });
                     //LineExtremum m = FindMinimum(new Func<double,double>(f1.Evaluate), 0.0, y, 1.0);
 
                     // add to the evaluation count
@@ -158,7 +158,7 @@ namespace Meta.Numerics.Functions {
                 fo.Direction = dx;
                 //LineFunction f2 = new LineFunction(f, x, dx);
                 //LineExtremum mm = FindMinimum(new Func<double,double>(f2.Evaluate), 0.0, y, 1.0);
-                LineExtremum mm = FindMinimum(fo, 0.0, y, 1.0, new EvaluationSettings() { EvaluationBudget = settings.EvaluationBudget, RelativePrecision = 0.0, AbsolutePrecision = 0.0 });
+                Extremum mm = FindMinimum(fo, 0.0, y, 1.0, new EvaluationSettings() { EvaluationBudget = settings.EvaluationBudget, RelativePrecision = 0.0, AbsolutePrecision = 0.0 });
                 //count += f2.Count;
                 //x = f2.Position(mm.Location);
                 x = fo.ComputeLocation(mm.Location);

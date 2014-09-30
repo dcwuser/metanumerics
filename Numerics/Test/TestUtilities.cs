@@ -28,7 +28,7 @@ namespace Test {
             if (2.0 * Math.Abs(x - y) <= e * (Math.Abs(x) + Math.Abs(y))) {
                 return (true);
             } else {
-                if (2.0 * Math.Abs(x - y) <= e) {
+                if (Math.Abs(x - y) <= e) {
                     return (true);
                 } else {
                     return (false);

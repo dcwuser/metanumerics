@@ -2,14 +2,14 @@
 
 using Meta.Numerics.Matrices;
 
-namespace Meta.Numerics.Functions {
+namespace Meta.Numerics.Analysis {
 
     /// <summary>
     /// Represents a maximum or minimum of a function of one variable.
     /// </summary>
-    public class LineExtremum {
+    public sealed class Extremum {
 
-        internal LineExtremum (double x, double f, double f2, int count) {
+        internal Extremum (double x, double f, double f2, int count) {
             this.x = x;
             this.f = f;
             this.f2 = f2;
@@ -76,8 +76,8 @@ namespace Meta.Numerics.Functions {
             }
         }
 
-        internal LineExtremum Negate () {
-            return (new LineExtremum(x, -f, f2, count));
+        internal Extremum Negate () {
+            return (new Extremum(x, -f, f2, count));
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="m">The line extremum.</param>
         /// <returns>The corresponding one-dimensional space extremum.</returns>
-        public static implicit operator SpaceExtremum (LineExtremum m) {
+        public static implicit operator SpaceExtremum (Extremum m) {
             if (m == null) {
                 return (null);
             } else {

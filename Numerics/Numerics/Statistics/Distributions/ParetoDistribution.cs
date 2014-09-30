@@ -209,6 +209,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (m / Math.Pow(1.0 - P, 1.0 / a));
         }
 
+        /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
             if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
             return (m / Math.Pow(Q, 1.0 / a));

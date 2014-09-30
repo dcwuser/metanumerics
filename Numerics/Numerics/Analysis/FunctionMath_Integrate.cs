@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Meta.Numerics.Functions {
+namespace Meta.Numerics.Analysis {
 
     public static partial class FunctionMath {
 
@@ -42,7 +42,7 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         public static double Integrate (Func<double, double> integrand, Interval range) {
             EvaluationSettings settings = new EvaluationSettings();
-            return (Integrate(integrand, range, settings));
+            return (Integrate(integrand, range, settings).Estimate.Value);
         }
 
 
@@ -52,8 +52,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="integrand">The function to be integrated.</param>
         /// <param name="range">The range of integration.</param>
         /// <param name="settings">The settings which control the evaulation of the integal.</param>
-        /// <returns>A numerical estimate of the given integral.</returns>
-        public static double Integrate (Func<double,double> integrand, Interval range, EvaluationSettings settings) {
+        /// <returns>The result of the integral, which includes an estimated value and estimated uncertainty of that value.</returns>
+        public static IntegrationResult Integrate (Func<double,double> integrand, Interval range, EvaluationSettings settings) {
 
             if (integrand == null) throw new ArgumentNullException("integrand");
 
@@ -111,7 +111,7 @@ namespace Meta.Numerics.Functions {
 
             IAdaptiveIntegrator integrator = new GaussKronrodIntegrator(integrand, range);
             IntegrationResult result = Integrate_Adaptive(integrator, settings);
-            return (result.Estimate.Value);
+            return (result);
 
         }
 
@@ -159,7 +159,7 @@ namespace Meta.Numerics.Functions {
 
                 // if our error is small enough, return
                 if ((vTotal.Uncertainty <= Math.Abs(vTotal.Value) * s.RelativePrecision) || (vTotal.Uncertainty <= s.AbsolutePrecision)) {
-                    return (new IntegrationResult(vTotal, n));
+                    return (new IntegrationResult(vTotal, n, s));
                 }
                 //if ((vTotal.Uncertainty <= Math.Abs(vTotal.Value) * s.RelativePrecision) || (vTotal.Uncertainty <= s.AbsolutePrecision)) {
                 //    return (new IntegrationResult(vTotal.Value, n));

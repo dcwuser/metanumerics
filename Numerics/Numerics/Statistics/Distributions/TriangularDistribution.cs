@@ -169,39 +169,39 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (Mean);
             } else {
-                double M = MomentAboutMode(n);
+                double M = MomentAboutMode(r);
                 double t = 1.0;
-                for (int k = n - 1; k >= 0; k--) {
+                for (int k = r - 1; k >= 0; k--) {
                     t *= b;
-                    M += AdvancedIntegerMath.BinomialCoefficient(n, k) * MomentAboutMode(k) * t;
+                    M += AdvancedIntegerMath.BinomialCoefficient(r, k) * MomentAboutMode(k) * t;
                 }
                 return (M);
             }
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (0.0);
             } else {
-                double M = MomentAboutMode(n);
+                double M = MomentAboutMode(r);
                 double s = -MomentAboutMode(1);
                 double t = 1.0;
-                for (int k = n - 1; k >= 0; k--) {
+                for (int k = r - 1; k >= 0; k--) {
                     t *= s;
-                    M += AdvancedIntegerMath.BinomialCoefficient(n, k) * MomentAboutMode(k) * t;
+                    M += AdvancedIntegerMath.BinomialCoefficient(r, k) * MomentAboutMode(k) * t;
                 }
                 //Console.WriteLine("n={0}, M={1}", n, M);
                 return (M);

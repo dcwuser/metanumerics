@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 using Meta.Numerics;
+using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
 
 namespace Test {

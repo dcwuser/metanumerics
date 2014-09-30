@@ -10,6 +10,10 @@ using System.Text;
 
 namespace Meta.Numerics.Functions {
 
+    // A permutation can be represented as a set of cycles, e.g. (1 2)(3), or as a "map" that shows which positions are mapped to which.
+    // Some properties are easier to compute in the cycle representation, some easier in the map representation. The public Permutation
+    // class can store either representation internally, and generate one from the other if necessary.
+
     internal class PermutationAsCycles {
 
         public PermutationAsCycles (int[][] cycles) {
@@ -243,11 +247,18 @@ namespace Meta.Numerics.Functions {
             return (new PermutationAsMap(map));
         }
 
+        public static PermutationAsMap Identity (int n) {
+            int[] map = new int[n];
+            for (int i = 0; i < map.Length; i++) map[i] = i;
+            return (new PermutationAsMap(map));
+        }
+
     }
 
     /// <summary>
     /// Represents a permutation.
     /// </summary>
+    /// <seealso href="http://en.wikipedia.org/wiki/Permutation"/>
     public sealed class Permutation : IEquatable<Permutation>, IFormattable {
 
         internal Permutation (PermutationAsMap map) {
@@ -284,6 +295,10 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Gets a Boolean value that is true if the permutation is even and false if the permutation is odd.
         /// </summary>
+        /// <remarks>
+        /// <para>An even permutation moves an even number of elements; an odd permutation moves an odd number of elements.</para>
+        /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Even_and_odd_permutations"/>
         public bool IsEven {
             get {
                 if (this.cycles == null) ComputeCycles();
@@ -442,6 +457,7 @@ namespace Meta.Numerics.Functions {
             if (x.Count != this.Dimension) throw new DimensionMismatchException();
             if (cycles == null) ComputeCycles();
             cycles.Apply(x);
+            // Obviously it's also possible to apply a permutation given its map representation, but doing so requires auxiluary storage.
         }
 
         /// <summary>
@@ -481,6 +497,8 @@ namespace Meta.Numerics.Functions {
         /// Stated differently, the order of a permutation is the smallest power to which it must be raised to obtain the identity permutation.</para>
         /// <para>Some permutations with dimension greater than about 300 have an order larger than <see cref="Int64.MaxValue"/>; for these permutations
         /// the returned value will overflow.</para>
+        /// <para>Note that the word order is also used to refer to the number of distinct permutations of a given dimension. That "order" is a property
+        /// of the permutation group. This "order" is a property of each permutation.</para>
         /// </remarks>
         public long Order {
             get {
@@ -489,6 +507,13 @@ namespace Meta.Numerics.Functions {
             }
         }
 
+        /// <summary>
+        /// Gets a Boolean value indicating whether the permutation is the identity.
+        /// </summary>
+        /// <value>True if the permutation is the identity, otherwise false.</value>
+        /// <remarks>
+        /// <para>The identity permutation is the permutation that leaves all elements in their original positions.</para>
+        /// </remarks>
         public bool IsIdentity {
             get {
                 if (cycles != null) {
@@ -504,7 +529,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <value>True if the permutation is a derangement, otherwise false.</value>
         /// <remarks>
-        /// <para>A derangement is a permutation that leaves no elements in their original position.</para>
+        /// <para>A derangement is a permutation that leaves no element in its original position.</para>
         /// </remarks>
         public bool IsDerangement {
             get {
@@ -622,6 +647,16 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        /// <summary>
+        /// Returns the identity permutation of the given dimension.
+        /// </summary>
+        /// <param name="dimension">The number of elements on which the permutation acts.</param>
+        /// <returns>The identity permutation of the requested dimension.</returns>
+        public static Permutation Identity (int dimension) {
+            if (dimension < 0) throw new ArgumentOutOfRangeException("dimension");
+            return (new Permutation(PermutationAsMap.Identity(dimension)));
+        }
+
         // This internal equals test should only be called with non-null arguments.
 
         private static bool InstanceEquals (Permutation a, Permutation b) {
@@ -696,10 +731,16 @@ namespace Meta.Numerics.Functions {
             return (hash);
         }
 
-        public static Permutation GetRandomPermutation (int n, Random rng) {
-            if (n < 1) throw new ArgumentOutOfRangeException("n");
+        /// <summary>
+        /// Get a random permutation.
+        /// </summary>
+        /// <param name="dimension">The number of elements on which the permutation acts.</param>
+        /// <param name="rng">A random number generator.</param>
+        /// <returns>A random permutation of the specified dimension. All permutations of the specified dimension are equally likely.</returns>
+        public static Permutation GetRandomPermutation (int dimension, Random rng) {
+            if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
             if (rng == null) throw new ArgumentNullException("rng");
-            return (new Permutation(PermutationAsMap.GetRandomPermutation(n, rng)));
+            return (new Permutation(PermutationAsMap.GetRandomPermutation(dimension, rng)));
         }
 
     }

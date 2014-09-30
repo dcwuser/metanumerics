@@ -108,6 +108,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+        /// <inheritdoc />
         public override double LeftExclusiveProbability (int k) {
             return(LeftInclusiveProbability(k-1));
         }

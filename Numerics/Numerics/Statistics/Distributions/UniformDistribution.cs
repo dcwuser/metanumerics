@@ -84,7 +84,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         // returns (a^n - b^n), modulo a factor (a - b), computed so as to avoid cancelation errors
 
-        public static double DifferenceOfPowers (double a, double b, int n) {
+        private static double DifferenceOfPowers (double a, double b, int n) {
             if (n % 2 == 0) {
                 // for even powers, cancelation can be a problem
                 // use a^{2m} - b^{2m} = ( a^m - b^m ) (a^m + b^m)

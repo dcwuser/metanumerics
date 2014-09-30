@@ -3,9 +3,11 @@ using System.Collections.Generic;
 
 using Meta.Numerics;
 
-namespace Meta.Numerics.Functions {
+namespace Meta.Numerics.Analysis {
 
     public static partial class FunctionMath {
+
+#if PAST
 
         /// <summary>
         /// Integrates the given function over the given volume.
@@ -127,6 +129,8 @@ namespace Meta.Numerics.Functions {
             throw new NonconvergenceException();
 
         }
+
+#endif
 
         // See http://web.maths.unsw.edu.au/~fkuo/sobol/ for lists of suggested parameters
 

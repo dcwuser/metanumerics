@@ -285,7 +285,7 @@ namespace Meta.Numerics.Functions {
         /// too small or large to be represented by a double.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is non-positive.</exception>
-        /// <seealso cref="Beta"/>
+        /// <seealso cref="Beta(System.Double,System.Double)"/>
         public static double LogBeta (double a, double b) {
             if (a <= 0.0) throw new ArgumentOutOfRangeException("a");
             if (b <= 0.0) throw new ArgumentOutOfRangeException("b");
@@ -396,7 +396,7 @@ namespace Meta.Numerics.Functions {
             }
 		}
 
-        public static double RegularizedBeta_ContinuedFraction (double a, double b, double x) {
+        internal static double RegularizedBeta_ContinuedFraction (double a, double b, double x) {
             // evaluate via continued fraction via Steed's method
             double aa = 1.0;			// a_1
             double bb = 1.0;			// b_1

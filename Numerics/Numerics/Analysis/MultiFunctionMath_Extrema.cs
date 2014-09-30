@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
-namespace Meta.Numerics.Functions {
+using Meta.Numerics.Functions;
+
+namespace Meta.Numerics.Analysis {
+
+#if FUTURE
 
     internal class Vertex {
 
@@ -139,4 +143,7 @@ namespace Meta.Numerics.Functions {
         }
 
     }
+
+#endif
+
 }

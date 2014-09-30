@@ -100,13 +100,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
+        public override double Moment (int r) {
+            if (r < 0) throw new ArgumentOutOfRangeException("r");
 
-            if ((n % 2) == 0) {
-                if (n < nu) {
+            if ((r % 2) == 0) {
+                if (r < nu) {
                     double m = 1.0;
-                    for (int j = 1; j <= n / 2; j++) {
+                    for (int j = 1; j <= r / 2; j++) {
                         m *= (2 * j - 1) * nu / (nu - 2 * j);
                     }
                     return (m);
@@ -114,7 +114,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                     return (Double.PositiveInfinity);
                 }
             } else {
-                if (n < nu) {
+                if (r < nu) {
                     return (0.0);
                 } else {
                     return (Double.NaN);
@@ -124,8 +124,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            return (Moment(n));
+        public override double MomentAboutMean (int r) {
+            return (Moment(r));
         }
 
         /// <inheritdoc />

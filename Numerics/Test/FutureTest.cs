@@ -7,6 +7,7 @@ using System.Text;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
+using Meta.Numerics.Analysis;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.SignalProcessing;
 using Meta.Numerics.Statistics;
@@ -467,22 +468,6 @@ namespace FutureTest {
             }
         }
         */
-
-        [TestMethod]
-        public void Optimize () {
-
-            Func<IList<double>, double> function = (IList<double> x) => {
-                return (MoreMath.Sqr(1.0 - x[0]) + 100.0 * MoreMath.Sqr(x[1] - x[0] * x[0]));
-            };
-
-            double[] point = new double[] { 2.0, 3.0 };
-
-            EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-4, EvaluationBudget = 1000 };
-
-            MultiFunctionMath.FindExtremum_Amobea(function, point, settings);
-
-        }
-
 
         [TestMethod]
         public void Bell1 () {

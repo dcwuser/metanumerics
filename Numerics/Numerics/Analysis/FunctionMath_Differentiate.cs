@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Meta.Numerics.Functions {
+namespace Meta.Numerics.Analysis {
+
+#if FUTURE
 
     public static partial class FunctionMath {
 
-#if FUTURE
+
 
         /// <summary>
         /// Estimates the derivative of the given function at the given point.
@@ -82,8 +84,8 @@ namespace Meta.Numerics.Functions {
 
         }
 
-#endif
-
     }
+
+#endif
 
 }

@@ -2,79 +2,45 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
 
-namespace Meta.Numerics.Functions {
+namespace Meta.Numerics.Analysis {
 
-    /// <summary>
-    /// Represents a minimum or maximum of a multidimensional function.
-    /// </summary>
-    public class MultiExtremum {
-
-        internal MultiExtremum (double[] point, double value, double[][] hessian, int count) {
-            this.point = point;
-            this.Value = value;
-            this.hessian = hessian;
-            this.EvaluationCount = count;
-        }
-
-        private double[] point;
-
-        private double[][] hessian;
-
-        /// <summary>
-        /// Gets the dimension of the space on which the function is defined.
-        /// </summary>
-        public int Dimension {
-            get {
-                return (point.Length);
-            }
-        }
-
-        /// <summary>
-        /// Gets the number of evaluations of the function that were performed.
-        /// </summary>
-        public int EvaluationCount { get; internal set; }
-
-        /// <summary>
-        /// Gets the location of the extremum.
-        /// </summary>
-        public ColumnVector Location {
-            get {
-                return (new ColumnVector(point, 0, 1, point.Length, true));
-            }
-        }
-
-        /// <summary>
-        /// Gets the value of the function at the extremum.
-        /// </summary>
-        public double Value { get; internal set; }
-
-        /// <summary>
-        /// Gets the Hessian matrix at the extremum.
-        /// </summary>
-        /// <remarks>
-        /// <para>The Hessian matrix is the matrix of second partial derivatives. It is symmetric because the order of differentiation does not affect the result.</para>
-        /// </remarks>
-        public SymmetricMatrix HessianMatrix {
-            get {
-                return (new SymmetricMatrix(hessian, point.Length, true));
-            }
-        }
-
-    }
+    
 
     public static partial class MultiFunctionMath {
 
+        /// <summary>
+        /// Finds a local minimum of a multi-dimensional function in the vincinity of the given starting location.
+        /// </summary>
+        /// <param name="function">The multi-dimensional function to minimize.</param>
+        /// <param name="start">The starting location for the search.</param>
+        /// <returns>The local minimum.</returns>
         public static MultiExtremum FindMinimum (Func<IList<double>, double> function, IList<double> start) {
             if (function == null) throw new ArgumentNullException("function");
             if (start == null) throw new ArgumentNullException("start");
 
-            int d = start.Count;
-            EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-12, AbsolutePrecision = 1.0E-14, EvaluationBudget = 256 * d };
+            EvaluationSettings settings = GetDefaultOptimizationSettings(start.Count);
+            //EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-12, AbsolutePrecision = 1.0E-14, EvaluationBudget = 32 * (d + 1) * (d + 2) };
             return (FindMinimum(function, start, settings));
         }
 
+        private static EvaluationSettings GetDefaultOptimizationSettings (int d) {
+            EvaluationSettings settings = new EvaluationSettings();
+            settings.RelativePrecision = Math.Pow(10.0, -(8.0 + 8.0 / d));
+            settings.AbsolutePrecision = settings.RelativePrecision;
+            settings.EvaluationBudget = 16 * (d + 1) * (d + 2) * (d + 3);
+            return (settings);
+        }
+
+        /// <summary>
+        /// Finds a local minimum of a multi-dimensional function in the vincinity of the given starting location, subject to the given evaluation constraints.
+        /// </summary>
+        /// <param name="function">The multi-dimensional function to minimize.</param>
+        /// <param name="start">The starting location for the search.</param>
+        /// <param name="settings">The evaluation settings that govern the search for the minimum.</param>
+        /// <returns>The local minimum.</returns>
         public static MultiExtremum FindMinimum (Func<IList<double>, double> function, IList<double> start, EvaluationSettings settings) {
             if (function == null) throw new ArgumentNullException("function");
             if (start == null) throw new ArgumentNullException("start");
@@ -82,6 +48,18 @@ namespace Meta.Numerics.Functions {
 
             MultiFunctor f = new MultiFunctor(function);
             return (FindMinimum_ModelTrust(f, start, 0.25, settings));
+        }
+
+        /// <summary>
+        /// Finds a local maximum of a multi-dimensional function in the vincinity of the given starting location, subject to the given evaluation constraints.
+        /// </summary>
+        /// <param name="function">The multi-dimensional function to maximize.</param>
+        /// <param name="start">The starting location for the search.</param>
+        /// <param name="settings">The evaluation settings that govern the search for the maximum.</param>
+        /// <returns>The local maximum.</returns>
+        public static MultiExtremum FindMaximum (Func<IList<double>, double> function, IList<double> start, EvaluationSettings settings) {
+            MultiFunctor f = new MultiFunctor(function, true);
+            throw new NotImplementedException();
         }
 
         private static MultiExtremum FindMinimum_ModelTrust (MultiFunctor f, IList<double> x, double s, EvaluationSettings settings) {
@@ -107,7 +85,7 @@ namespace Meta.Numerics.Functions {
                 if ((Math.Abs(delta) < settings.AbsolutePrecision) || (Math.Abs(delta) <= Math.Abs(value) * settings.RelativePrecision)) {
                     terminationCount++;
                     if (terminationCount > 2) {
-                        return (new MultiExtremum(point, value, null, f.EvaluationCount));
+                        return (new MultiExtremum(f.EvaluationCount, settings, point, value, model.GetHessian()));
                     }
                 } else {
                     terminationCount = 0;
@@ -219,6 +197,7 @@ namespace Meta.Numerics.Functions {
             for (int i = 0; i < g.Length; i++) {
                 old_r2 += MoreMath.Sqr(g[i]);
             }
+            if (old_r2 == 0.0) return (z);
 
             // Since we have a perfect quadratic form, we need to loop at most d times
             // to obtain an exact solution.
@@ -321,21 +300,35 @@ namespace Meta.Numerics.Functions {
             }
         }
 
+        public double[][] GetHessian () {
+            double[][] H = new double[g.Length][];
+            for (int i = 0; i < g.Length; i++) {
+                H[i] = new double[i + 1];
+                for (int j = 0; j < i; j++) {
+                    H[i][j] = h[i][j];
+                }
+                H[i][i] = 2.0 * h[i][i];
+            }
+            return (H);
+        }
+
     }
 
     // Represents a quadratic multinomial interpolation on a set
     // of given points.
 
-    public class QuadraticInterpolationModel {
+    internal class QuadraticInterpolationModel {
 
         private int d;
 
         public double[] origin;
 
+#if PAST
         // delete these when finished
         private double f0;
         private double[] g;
         private double[][] h;
+#endif
 
         // The Lagrange polynomials for each interpolation point.
 
@@ -358,6 +351,10 @@ namespace Meta.Numerics.Functions {
         //private int maxBadnessIndex;
 
         //public double[] badnesses;
+
+        public double[][] GetHessian () {
+            return (total.GetHessian());
+        }
 
         public double MinimumValue {
             get {
@@ -495,6 +492,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
+#if PAST
         public static QuadraticInterpolationModel Construct (double[][] points, double[] values) {
 
             int m = points.Length;
@@ -564,6 +562,7 @@ namespace Meta.Numerics.Functions {
             MultiFunctor mf = new MultiFunctor(f);
             return (Construct(mf, x, s));
         }
+#endif
 
         internal static QuadraticInterpolationModel Construct (MultiFunctor f, IList<double> x, double s) {
             QuadraticInterpolationModel model = new QuadraticInterpolationModel();

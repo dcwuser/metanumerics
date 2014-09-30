@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics;
 
-namespace Meta.Numerics.Functions {
-
-
-
+namespace Meta.Numerics.Analysis {
 
     // Interface for Monte Carlo point generators. Used to represent both pseudo-random and quasi-random point sequences.
 

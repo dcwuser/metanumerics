@@ -39,6 +39,7 @@ namespace Test {
         [TestMethod]
         public void PermutationEquality () {
 
+            // These two perumations are the same. One is just in cycle notation and the other in list notation.
             Permutation a1 = Permutation.Parse("(0 1)(2 3)");
             Permutation a2 = Permutation.Parse("[1 0 3 2]");
 
@@ -161,28 +162,36 @@ namespace Test {
         [TestMethod]
         public void PermutationDistribution () {
 
-            int n = 4;
-            Dictionary<Permutation, int> index = new Dictionary<Permutation, int>();
-            int count = 0;
-            foreach (Permutation p in Permutation.Permutations(n)) {
-                index.Add(p, count);
-                count++;
+            // We want to test that GetRandomPermutation actually samples all permutations equally
+
+            // Don't let n get too big or we will have a ridiculously large number of bins
+            for (int n = 2; n < 8; n++) {
+
+                // Build a mapping that assign each permutation a unique integer index from 0 to (n! - 1) 
+                Dictionary<Permutation, int> index = new Dictionary<Permutation, int>();
+                int count = 0;
+                foreach (Permutation p in Permutation.Permutations(n)) {
+                    index.Add(p, count);
+                    count++;
+                }
+
+                // Create a historgram of randomly generated permutation indexes
+                Histogram bins = new Histogram(count);
+                Random rng = new Random(2);
+                for (int i = 0; i < 8 * count; i++) {
+                    Permutation p = Permutation.GetRandomPermutation(n, rng);
+                    bins[index[p]].Increment();
+                }
+
+                //for (int i = 0; i < count; i++) {
+                //    Console.WriteLine("{0} {1}", i, bins[i].Counts);
+                //}
+
+                TestResult result = bins.ChiSquaredTest(new DiscreteUniformDistribution(0, count - 1));
+                Console.WriteLine(result.RightProbability);
+                Assert.IsTrue(result.RightProbability > 0.01);
+
             }
-
-            Histogram bins = new Histogram(count);
-
-            Random rng = new Random(2);
-            for (int i = 0; i < 8 * count; i++) {
-                Permutation p = Permutation.GetRandomPermutation(n, rng);
-                bins[index[p]].Increment();
-            }
-
-            for (int i = 0; i < count; i++) {
-                Console.WriteLine("{0} {1}", i, bins[i].Counts);
-            }
-
-            TestResult result = bins.ChiSquaredTest(new DiscreteUniformDistribution(0, count - 1));
-            Console.WriteLine(result.RightProbability);
 
         }
 
@@ -206,6 +215,70 @@ namespace Test {
 
 
             }
+
+        }
+
+        [TestMethod]
+        public void GenerateGroups () {
+
+            Permutation a = Permutation.Parse("(0 1 2)(3)(4)");
+            Permutation b = Permutation.Parse("(0 1 2 3 4)");
+            HashSet<Permutation> A5 = GenerateGroup(new Permutation[] { a, b });
+            Console.WriteLine(A5.Count);
+
+            Permutation c = Permutation.Parse("(0 1 2 3 4 5 6 7 8 9 10)");
+            Permutation d = Permutation.Parse("(0)(1)(2 6 10 7)(3 9 4 5)(8)");
+            HashSet<Permutation> M11 = GenerateGroup(new Permutation[] { c, d });
+            Console.WriteLine(M11.Count);
+
+        }
+
+        private HashSet<Permutation> GenerateGroup (IList<Permutation> generators) {
+
+            // The basic idea is to keep multiplying by generators until we stop generating new elements
+
+            // Validate the generators. There should be at least one, all should have the same dimension, and none should be the identity.
+            int d = generators[0].Dimension;
+
+            // Start with the identity, add it to the group
+            Permutation e = Permutation.Identity(d);
+            HashSet<Permutation> group = new HashSet<Permutation>();
+            group.Add(e);
+
+            // We will generate elements in "generations". The first generation is just the identity.
+            List<Permutation> parents = new List<Permutation>();
+            parents.Add(e);
+
+            // Keep going as long as we have some elements in the parent generation.
+            while (parents.Count > 0) {
+
+                // Start with an empty list of children.
+                List<Permutation> childern = new List<Permutation>();
+
+                // Multiply every parent by a generator.
+                foreach (Permutation parent in parents) {
+                    foreach (Permutation generator in generators) {
+                        Permutation child = parent * generator;
+
+                        // If it creates a new element, add that element to the group and to the children.
+                        // The children list will thus contain only elements that were first created in this generation.
+                        if (!group.Contains(child)) {
+                            group.Add(child);
+                            childern.Add(child);
+                        }
+                        // The first generation will thus be the generators themselves, and will end with the group set containing
+                        // the identity and the generators.
+
+                    }
+                }
+
+                // The children become the parents of the next generation.
+                // If no new elements are generated, there will be no children and the algorithm will terminate.
+                parents = childern;
+
+            }
+
+            return (group);
 
         }
 

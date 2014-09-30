@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
+using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
 
 
@@ -356,7 +357,7 @@ namespace Test {
                         e.AbsolutePrecision = TestUtilities.TargetPrecision;
                         e.RelativePrecision = TestUtilities.TargetPrecision;
 
-                        double I = FunctionMath.Integrate(f, r, e);
+                        double I = FunctionMath.Integrate(f, r, e).Estimate.Value;
                         Console.WriteLine(I);
 
                         // test for orthonormality

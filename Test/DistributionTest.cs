@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
+using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
@@ -181,7 +182,7 @@ namespace Test {
                     double z = x - distribution.Mean;
                     return (distribution.ProbabilityDensity(x) * z * z);
                 };
-                double C2 = FunctionMath.Integrate(f, distribution.Support, new EvaluationSettings() { EvaluationBudget = 4096, RelativePrecision = e, AbsolutePrecision = 0.0 });
+                double C2 = FunctionMath.Integrate(f, distribution.Support, new EvaluationSettings() { EvaluationBudget = 4096, RelativePrecision = e, AbsolutePrecision = 0.0 }).Estimate.Value;
                 Console.WriteLine("  {0} {1}", distribution.StandardDeviation, Math.Sqrt(C2));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(C2, distribution.Variance, e));
             }
@@ -245,7 +246,7 @@ namespace Test {
                         return (distribution.ProbabilityDensity(x) * MoreMath.Pow(x - m, n));
                     };
                     try {
-                        double CI = FunctionMath.Integrate(f, distribution.Support, settings);
+                        double CI = FunctionMath.Integrate(f, distribution.Support, settings).Estimate.Value;
                         Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, n, C, CI);
                         if (C == 0.0) {
                             Assert.IsTrue(Math.Abs(CI) < TestUtilities.TargetPrecision);
@@ -298,8 +299,8 @@ namespace Test {
                         x = distribution.Support.LeftEndpoint + rng.NextDouble() * distribution.Support.Width;
                     }
                     Console.WriteLine("{0} {1}", distribution.GetType().Name, x);
-                    double P = FunctionMath.Integrate(distribution.ProbabilityDensity, Interval.FromEndpoints(distribution.Support.LeftEndpoint, x), settings);
-                    double Q = FunctionMath.Integrate(distribution.ProbabilityDensity, Interval.FromEndpoints(x, distribution.Support.RightEndpoint), settings);
+                    double P = FunctionMath.Integrate(distribution.ProbabilityDensity, Interval.FromEndpoints(distribution.Support.LeftEndpoint, x), settings).Estimate.Value;
+                    double Q = FunctionMath.Integrate(distribution.ProbabilityDensity, Interval.FromEndpoints(x, distribution.Support.RightEndpoint), settings).Estimate.Value;
                     if (!TestUtilities.IsNearlyEqual(P + Q, 1.0)) {
                         // the numerical integral for the triangular distribution can be innacurate, because
                         // its locally low-polynomial behavior fools the integration routine into thinking it need

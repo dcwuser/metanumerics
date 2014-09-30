@@ -4,7 +4,7 @@ using System.Diagnostics;
 using Meta.Numerics;
 using Meta.Numerics.Matrices;
 
-namespace Meta.Numerics.Functions {
+namespace Meta.Numerics.Analysis {
 
     public static partial class FunctionMath {
 

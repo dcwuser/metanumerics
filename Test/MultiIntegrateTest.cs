@@ -6,12 +6,16 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
+using Meta.Numerics.Analysis;
 using Meta.Numerics.Matrices;
 
 namespace Test {
 
     [TestClass]
     public class MultiIntegrateTest {
+
+
+        // Returns a d-dimensional unit cube [0,1]^d
 
         public Interval[] UnitCube (int d) {
             Interval[] box = new Interval[d];
@@ -20,6 +24,8 @@ namespace Test {
             }
             return (box);
         }
+
+        // Returns a d-dimensional symmetric unit cube [-1,+1]^d
 
         public Interval[] SymmetricUnitCube (int d) {
             Interval[] box = new Interval[d];
@@ -32,6 +38,10 @@ namespace Test {
         [TestMethod]
         public void SeperableIntegrals () {
 
+            // Integrates \Pi_{j=0}^{d-1} \int_0^1 \! dx \, x_j^j = \Pi_{j=0}^{d-1} \frac{1}{j+1} = \frac{1}{d!}
+
+            // This is a simple test of a seperable integral
+
             Func<IList<double>, double> f = delegate(IList<double> x) {
                 double y = 1.0;
                 for (int j = 0; j < x.Count; j++) {
@@ -40,11 +50,12 @@ namespace Test {
                 return (y);
             };
 
-            for (int d = 1; d <= 12; d++) {
-                if (d == 3 || d == 9 || d == 10 || d == 12) continue;
+            for (int d = 1; d <= 10; d++) {
                 Console.WriteLine(d);
+                IntegrationResult r = MultiFunctionMath.Integrate(f, UnitCube(d));
+                Console.WriteLine("{0} {1} {2}", r.EvaluationCount, r.Estimate, 1.0 / AdvancedIntegerMath.Factorial(d));
                 Assert.IsTrue(
-                    MultiFunctionMath.Integrate(f, UnitCube(d)).Estimate.ConfidenceInterval(0.99).ClosedContains(
+                    r.Estimate.ConfidenceInterval(0.99).ClosedContains(
                     1.0 / AdvancedIntegerMath.Factorial(d)
                 ));
             }
@@ -72,9 +83,9 @@ namespace Test {
             };
 
             for (int d = 1; d <= 8; d++) {
-                if ((d == 1) || (d == 3) || d == 6) continue;
+                if (d == 6) continue; //. For d=6, integral returns after just ~300 evaluation with an underestimated error; look into this
                 Console.WriteLine(d);
-                IntegrationResult result = MultiFunctionMath.Integrate(f, UnitCube(d), new EvaluationSettings() { RelativePrecision = 1.0E-2, EvaluationBudget = 1000000 });
+                IntegrationResult result = MultiFunctionMath.Integrate(f, UnitCube(d), new EvaluationSettings() { RelativePrecision = 5.0E-3, EvaluationBudget = 1000000 });
                 double V = Math.Pow(Math.PI, d / 2.0) / AdvancedMath.Gamma(d / 2.0 + 1.0) * MoreMath.Pow(2.0, -d);
                 Console.WriteLine("{0} ({1}) {2}", result.Estimate, result.Estimate.Value - V, result.EvaluationCount);
                 Assert.IsTrue(result.Estimate.ConfidenceInterval(0.99).ClosedContains(V));
@@ -130,10 +141,11 @@ namespace Test {
             IntegrationResult i2 = MultiFunctionMath.Integrate(
                 (IList<double> x) => 1.0 / (x[0] + x[1]) / Math.Sqrt((1.0 - x[0]) * (1.0 - x[1])),
                 UnitCube(2),
-                new EvaluationSettings() { RelativePrecision = 1.0E-5, EvaluationBudget = 100000 }
+                new EvaluationSettings() { RelativePrecision = 1.0E-5, EvaluationBudget = 1000000 }
             );
             Console.WriteLine("{0} {1}", i2.Estimate, i2.EvaluationCount);
             Assert.IsTrue(i2.Estimate.ConfidenceInterval(0.99).ClosedContains(4.0 * AdvancedMath.Catalan));
+            // For higher precision demands on this integral, we start getting Infinity +/- NaN for estimate and never terminate, look into this.
             
             IntegrationResult i3 = MultiFunctionMath.Integrate(
                 (IList<double> x) => (x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1]),
@@ -193,7 +205,7 @@ namespace Test {
 
             for (int d = 2; d <= 5; d++) {
 
-                double v1 = MultiFunctionMath.Integrate((IList<double> x) => {
+                UncertainValue v1 = MultiFunctionMath.Integrate((IList<double> x) => {
                     for (int i = 0; i < d; i++) {
                         double s = 0.0;
                         for (int j = 0; j < d; j++) {
@@ -202,7 +214,7 @@ namespace Test {
                         if (s > 1.0) return (0.0);
                     }
                     return (1.0);
-                }, SymmetricUnitCube(d), settings).Estimate.Value;
+                }, SymmetricUnitCube(d), settings).Estimate;
 
                 double v2 = 0.0;
                 switch (d) {
@@ -222,7 +234,7 @@ namespace Test {
                 }
 
                 Console.WriteLine("{0} {1} {2}", d, v1, v2);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(v1, v2, settings.RelativePrecision * 2));
+                Assert.IsTrue(v1.ConfidenceInterval(0.99).ClosedContains(v2));
 
             }
 
@@ -340,6 +352,8 @@ namespace Test {
         [TestMethod]
         public void IsingIntegrals () {
 
+            // See http://www.davidhbailey.com/dhbpapers/ising.pdf.
+
             EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-3, EvaluationBudget = 1000000 };
 
             int d = 4;
@@ -363,6 +377,8 @@ namespace Test {
             Console.WriteLine("{0} {1}", c * r.Estimate, r.EvaluationCount);
 
             Console.WriteLine(7.0 * AdvancedMath.RiemannZeta(3.0) / 12.0);
+
+            Assert.IsTrue((c * r.Estimate).ConfidenceInterval(0.99).ClosedContains(7.0 * AdvancedMath.RiemannZeta(3.0) / 12.0));
 
         }
 
@@ -391,21 +407,25 @@ namespace Test {
         public void GaussianIntegrals () {
 
             Random rng = new Random(1);
-            for (int d = 2; d < 8; d++) {
-                if (d == 4 || d == 5) continue;
+            for (int d = 2; d < 4; d++) {
+                if (d == 4 || d == 5 || d == 6) continue;
                 Console.WriteLine(d);
 
+                // Create a symmetric matrix
                 SymmetricMatrix A = new SymmetricMatrix(d);
                 for (int r = 0; r < d; r++) {
                     for (int c = 0; c < r; c++) {
                         A[r, c] = rng.NextDouble();
                     }
+                    // Ensure it is positive definite by diagonal dominance
                     A[r, r] = r + 1.0;
                 }
 
+                // Compute its determinant, which appears in the analytic value of the integral
                 CholeskyDecomposition CD = A.CholeskyDecomposition();
                 double detA = CD.Determinant();
 
+                // Compute the integral
                 Func<IList<double>, double> f = (IList<double> x) => {
                     ColumnVector v = new ColumnVector(x);
                     double s = v.Transpose() * (A * v);
@@ -416,7 +436,10 @@ namespace Test {
                 for (int i = 0; i < d; i++) volume[i] = Interval.FromEndpoints(Double.NegativeInfinity, Double.PositiveInfinity);
 
                 IntegrationResult I = MultiFunctionMath.Integrate(f, volume);
+
+                // Compare to the analytic result
                 Console.WriteLine("{0} {1}", I.Estimate, Math.Sqrt(MoreMath.Pow(Math.PI, d) / detA));
+                Assert.IsTrue(I.Estimate.ConfidenceInterval(0.99).ClosedContains(Math.Sqrt(MoreMath.Pow(Math.PI, d) / detA)));
 
             }
 

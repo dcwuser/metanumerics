@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
 
@@ -109,6 +110,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (scale * Math.Pow(-MoreMath.LogOnePlus(-P), 1.0 / shape));
         }
 
+        /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
             if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
             return (scale * Math.Pow(-Math.Log(Q), 1.0 / shape)); 

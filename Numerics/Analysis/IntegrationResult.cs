@@ -2,14 +2,14 @@
 
 using Meta.Numerics;
 
-namespace Meta.Numerics.Functions {
+namespace Meta.Numerics.Analysis {
 
     /// <summary>
     /// Represents the result of a numerical integration.
     /// </summary>
-    public sealed class IntegrationResult {
+    public sealed class IntegrationResult : EvaluationResult {
 
-        internal IntegrationResult (UncertainValue estimate, int evaluationCount) {
+        internal IntegrationResult (UncertainValue estimate, int evaluationCount, EvaluationSettings settings) : base(evaluationCount, settings) {
             this.estimate = estimate;
             this.evaluationCount = evaluationCount;
         }
@@ -28,15 +28,6 @@ namespace Meta.Numerics.Functions {
         public UncertainValue Estimate {
             get {
                 return (estimate);
-            }
-        }
-
-        /// <summary>
-        /// Gets the number of function evaluations that were performed.
-        /// </summary>
-        public int EvaluationCount {
-            get {
-                return (evaluationCount);
             }
         }
 

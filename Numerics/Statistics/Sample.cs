@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Text;
 
 using Meta.Numerics;
+using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics.Distributions;

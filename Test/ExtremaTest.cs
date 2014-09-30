@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
+using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
 
@@ -24,7 +25,7 @@ namespace Test {
         public double Value { get; set; }
         public double Curvature { get; set; }
 
-        public bool Agrees (LineExtremum extremum) {
+        public bool Agrees (Extremum extremum) {
             return (
                 TestUtilities.IsNearlyEqual(extremum.Value, Value, 10.0 * TestUtilities.TargetPrecision) &&
                 TestUtilities.IsNearlyEqual(extremum.Location, Location, 10.0 * Math.Sqrt(TestUtilities.TargetPrecision)) &&
@@ -97,7 +98,7 @@ namespace Test {
         [TestMethod]
         public void FindMinimaFromInterval () {
             foreach (TestExtremum testMinimum in testMinima) {
-                LineExtremum minimum = FunctionMath.FindMinimum(testMinimum.Function, testMinimum.Interval);
+                Extremum minimum = FunctionMath.FindMinimum(testMinimum.Function, testMinimum.Interval);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(minimum.Location, testMinimum.Location, Math.Sqrt(TestUtilities.TargetPrecision)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(minimum.Value, testMinimum.Value, TestUtilities.TargetPrecision));
                 //if (!Double.IsNaN(testMinimum.Curvature)) Assert.IsTrue(TestUtilities.IsNearlyEqual(minimum.Curvature, testMinimum.Curvature, 0.1));
@@ -107,7 +108,7 @@ namespace Test {
         [TestMethod]
         public void FindMinimaFromPoint () {
             foreach (TestExtremum testExtremum in testMinima) {
-                LineExtremum extremum = FunctionMath.FindMinimum(testExtremum.Function, testExtremum.Interval.Midpoint);
+                Extremum extremum = FunctionMath.FindMinimum(testExtremum.Function, testExtremum.Interval.Midpoint);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(extremum.Location, testExtremum.Location, Math.Sqrt(TestUtilities.TargetPrecision)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(extremum.Value, testExtremum.Value, TestUtilities.TargetPrecision));
                 //if (!Double.IsNaN(testMinimum.Curvature)) Assert.IsTrue(TestUtilities.IsNearlyEqual(minimum.Curvature, testMinimum.Curvature, 0.05));
@@ -117,7 +118,7 @@ namespace Test {
         [TestMethod]
         public void FindMaximaFromInterval () {
             foreach (TestExtremum testExtremum in testMaxima) {
-                LineExtremum extremum = FunctionMath.FindMaximum(testExtremum.Function, testExtremum.Interval);
+                Extremum extremum = FunctionMath.FindMaximum(testExtremum.Function, testExtremum.Interval);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(extremum.Location, testExtremum.Location, Math.Sqrt(TestUtilities.TargetPrecision)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(extremum.Value, testExtremum.Value, TestUtilities.TargetPrecision));
             }
@@ -126,7 +127,7 @@ namespace Test {
         [TestMethod]
         public void FindMaximaFromPoint () {
             foreach (TestExtremum testExtremum in testMaxima) {
-                LineExtremum extremum = FunctionMath.FindMaximum(testExtremum.Function, testExtremum.Interval.Midpoint);
+                Extremum extremum = FunctionMath.FindMaximum(testExtremum.Function, testExtremum.Interval.Midpoint);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(extremum.Location, testExtremum.Location, Math.Sqrt(TestUtilities.TargetPrecision)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(extremum.Value, testExtremum.Value, TestUtilities.TargetPrecision));
             }
@@ -136,7 +137,7 @@ namespace Test {
         public void FindMinimumOfGamma () {
 
             Func<double, double> f = new Func<double, double>(AdvancedMath.Gamma);
-            LineExtremum minimum = FunctionMath.FindMinimum(f, 1.5);
+            Extremum minimum = FunctionMath.FindMinimum(f, 1.5);
 
             Console.WriteLine(minimum.Location);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(minimum.Location, 1.46163214496836234126, Math.Sqrt(TestUtilities.TargetPrecision)));

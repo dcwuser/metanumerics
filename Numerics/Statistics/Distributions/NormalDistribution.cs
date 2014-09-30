@@ -177,6 +177,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (mu + sigma * z);
         }
 
+        /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
             if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
             double z = AdvancedMath.Probit(1.0 - Q, Q);

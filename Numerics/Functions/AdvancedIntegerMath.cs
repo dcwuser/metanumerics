@@ -340,6 +340,12 @@ namespace Meta.Numerics.Functions {
         // As implemented, this return Infinity too soon, at n=165, because the power in the numerator
         // overflows. We need to deal with that by calling PowOverGamma instead.
 
+        /// <summary>
+        /// Computes the given Bell number.
+        /// </summary>
+        /// <param name="n">The index of the Bell number to compute, which must be non-negative.</param>
+        /// <returns>The Bell number B<sub>n</sub>.</returns>
+        /// <seealso href="http://en.wikipedia.org/wiki/Bell_number"/>
         public static double BellNumber (int n) {
             if (n < 0) throw new ArgumentOutOfRangeException("n");
 

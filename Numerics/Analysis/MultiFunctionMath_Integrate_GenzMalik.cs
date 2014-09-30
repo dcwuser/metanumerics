@@ -4,9 +4,9 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading;
 
-namespace Meta.Numerics.Functions {
+using Meta.Numerics.Functions;
 
-
+namespace Meta.Numerics.Analysis {
 
     public static partial class MultiFunctionMath {
 
@@ -44,6 +44,8 @@ namespace Meta.Numerics.Functions {
 
                 // Check for convergence.
                 if ((error <= settings.AbsolutePrecision) || (error <= settings.RelativePrecision * Math.Abs(value))) {
+                    // Error at specified bound. Otherwise sometimes error is 0. Is there a better solution?
+                    //error = Math.Max(settings.AbsolutePrecision, Math.Abs(value) * settings.RelativePrecision);
                     return (new UncertainValue(value, error));
                 }
 
@@ -74,6 +76,7 @@ namespace Meta.Numerics.Functions {
 
     }
 
+#if FUTURE
     public class Countdown {
         object _locker = new object();
         int _value;
@@ -96,6 +99,7 @@ namespace Meta.Numerics.Functions {
                     Monitor.Wait(_locker);
         }
     }
+#endif
 
     // Genz and Malik developed a 7th order cubature rule with an embedded 5th order rule for arbitrary dimensions.
     // For integration over the symmetric unit cube
@@ -399,7 +403,7 @@ namespace Meta.Numerics.Functions {
         }
     }
 
-    public class IntegrationRegion {
+    internal class IntegrationRegion {
 
         public IntegrationRegion (IList<Interval> box) {
             this.box = box;

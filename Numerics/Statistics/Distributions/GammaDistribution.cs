@@ -1,5 +1,6 @@
 ﻿using System;
 
+using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
 

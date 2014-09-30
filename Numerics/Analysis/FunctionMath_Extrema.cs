@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using Meta.Numerics;
+using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
 
-namespace Meta.Numerics.Functions {
+namespace Meta.Numerics.Analysis {
 
     // The basic public 1D extrema seach methods are
     //   Min(f, x), Min(f, x, settings), Min(f, interval), Min(f, interval, settings)
@@ -37,7 +38,7 @@ namespace Meta.Numerics.Functions {
         /// <returns>The maximum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
         /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a maximum being determined.</exception>
-        public static LineExtremum FindMaximum (Func<double, double> f, double x) {
+        public static Extremum FindMaximum (Func<double, double> f, double x) {
             return (FindMaximum(f, x, DefaultExtremaSettings));
         }
 
@@ -59,7 +60,7 @@ namespace Meta.Numerics.Functions {
         /// argument value &#x3B4;x &#x223C; &#x221A;&#x3B5;. If you supply zero values for both precision settings, the method will adaptively approximate the best attainable precision for
         /// the supplied function and locate the extremum to that resolution. This is our suggested practice unless you know that you require a less precise determination.</para>
         /// </remarks>
-        public static LineExtremum FindMaximum (Func<double, double> f, double x, EvaluationSettings settings) {
+        public static Extremum FindMaximum (Func<double, double> f, double x, EvaluationSettings settings) {
             if (f == null) throw new ArgumentNullException("f");
             if (settings == null) throw new ArgumentNullException("settings");
             return (FindMinimum(new Functor(f, true), x, settings).Negate());
@@ -73,7 +74,7 @@ namespace Meta.Numerics.Functions {
         /// <returns>The minimum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
         /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a minimum being determined.</exception>
-        public static LineExtremum FindMinimum (Func<double, double> f, double x) {
+        public static Extremum FindMinimum (Func<double, double> f, double x) {
             return (FindMinimum(f, x, DefaultExtremaSettings));
         }
 
@@ -97,7 +98,7 @@ namespace Meta.Numerics.Functions {
         /// or other point at which the evaluation of <paramref name="f"/> could fail. If you can reliably bracket an extremum, the <see cref="FindMinimum(Func{Double,Double},Interval,EvaluationSettings)"/>
         /// overload of this method is safer and, if your bracket is any good, usually slightly faster.</para>
         /// </remarks>
-        public static LineExtremum FindMinimum (Func<double, double> f, double x, EvaluationSettings settings) {
+        public static Extremum FindMinimum (Func<double, double> f, double x, EvaluationSettings settings) {
             
             if (f == null) throw new ArgumentNullException("f");
             if (settings == null) throw new ArgumentNullException("settings");
@@ -105,7 +106,7 @@ namespace Meta.Numerics.Functions {
             return (FindMinimum(new Functor(f), x, settings));
         }
 
-        private static LineExtremum FindMinimum (Functor f, double x, EvaluationSettings settings) {
+        private static Extremum FindMinimum (Functor f, double x, EvaluationSettings settings) {
 
             Debug.Assert(f != null); Debug.Assert(settings != null);
 
@@ -118,7 +119,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        private static LineExtremum FindMinimum (Functor f, double x, double fx, double d, EvaluationSettings settings) {
+        private static Extremum FindMinimum (Functor f, double x, double fx, double d, EvaluationSettings settings) {
 
             // This function brackets a minimum by starting from x and taking increasing steps downhill until it moves uphill again.
 
@@ -177,7 +178,7 @@ namespace Meta.Numerics.Functions {
         /// <returns>The maximum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
         /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a minimum being determined.</exception>
-        public static LineExtremum FindMaximum (Func<double, double> f, Interval r) {
+        public static Extremum FindMaximum (Func<double, double> f, Interval r) {
             return (FindMaximum(f, r, DefaultExtremaSettings));
         }
 
@@ -198,7 +199,7 @@ namespace Meta.Numerics.Functions {
         /// argument value &#x3B4;x &#x223C; &#x221A;&#x3B5;. If you supply zero values for both precision settings, the method will adaptively approximate the best attainable precision for
         /// the supplied function and locate the extremum to that resolution. This is our suggested practice unless you know that you require a less precise determination.</para>
         /// </remarks>
-        public static LineExtremum FindMaximum (Func<double, double> f, Interval r, EvaluationSettings settings) {
+        public static Extremum FindMaximum (Func<double, double> f, Interval r, EvaluationSettings settings) {
             if (f == null) throw new ArgumentNullException("f");
             if (settings == null) throw new ArgumentNullException("settings");
             return (FindMinimum(new Functor(f, true), r.LeftEndpoint, r.RightEndpoint, settings).Negate());
@@ -212,7 +213,7 @@ namespace Meta.Numerics.Functions {
         /// <returns>The minimum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
         /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a minimum being determined.</exception>
-        public static LineExtremum FindMinimum (Func<double, double> f, Interval r) {
+        public static Extremum FindMinimum (Func<double, double> f, Interval r) {
             return (FindMinimum(f, r, DefaultExtremaSettings));
         }
 
@@ -233,13 +234,13 @@ namespace Meta.Numerics.Functions {
         /// argument value &#x3B4;x &#x223C; &#x221A;&#x3B5;. If you supply zero values for both precision settings, the method will adaptively approximate the best attainable precision for
         /// the supplied function and locate the extremum to that resolution. This is our suggested practice unless you know that you require a less precise determination.</para>
         /// </remarks>
-        public static LineExtremum FindMinimum (Func<double, double> f, Interval r, EvaluationSettings settings) {
+        public static Extremum FindMinimum (Func<double, double> f, Interval r, EvaluationSettings settings) {
             if (f == null) throw new ArgumentNullException("f");
             if (settings == null) throw new ArgumentNullException("settings");
             return (FindMinimum(new Functor(f), r.LeftEndpoint, r.RightEndpoint, settings));
         }
 
-        private static LineExtremum FindMinimum (
+        private static Extremum FindMinimum (
             Functor f,
             double a, double b,
             EvaluationSettings settings
@@ -278,7 +279,7 @@ namespace Meta.Numerics.Functions {
         // The bracket is [a, b] and the three lowest points are (u,fu), (v,fv), (w, fw)
         // Note that a or b may be u, v, or w.
 
-        private static LineExtremum FindMinimum (
+        private static Extremum FindMinimum (
             Functor f,
             double a, double b,
             double u, double fu, double v, double fv, double w, double fw,
@@ -301,7 +302,7 @@ namespace Meta.Numerics.Functions {
 
                 // Expected final situation is a<tol><tol>u<tol><tol>b, leaving no point left to evaluate that is not within tol of an existing point.
 
-                if ((b - a) <= 4.0 * tol) return (new LineExtremum(u, fu, fpp, f.EvaluationCount));
+                if ((b - a) <= 4.0 * tol) return (new Extremum(u, fu, fpp, f.EvaluationCount));
 
                 double x; ParabolicFit(u, fu, v, fv, w, fw, out x, out fpp);
                 Debug.WriteLine(String.Format("parabolic x={0} f''={1}", x, fpp));

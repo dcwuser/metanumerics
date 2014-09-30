@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Collections;
 
 using Meta.Numerics;
-using Meta.Numerics.Functions;
+using Meta.Numerics.Analysis;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 

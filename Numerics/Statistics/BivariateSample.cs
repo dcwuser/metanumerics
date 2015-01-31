@@ -94,7 +94,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="x">The x values of the data points.</param>
         /// <param name="y">The y values of the data points.</param>
-        /// <exception cref="DimensionMistachException">The lengths of the two lists are not equal.</exception>
+        /// <exception cref="DimensionMismatchException">The lengths of the two lists are not equal.</exception>
         public void Add (IList<double> x, IList<double> y) {
             if (x == null) throw new ArgumentNullException("x");
             if (y == null) throw new ArgumentNullException("y");
@@ -655,6 +655,7 @@ namespace Meta.Numerics.Statistics {
             double a0 = Math.Log(p / q) - b0 * X.Mean;
 
             // define a logistic log-likelyhood function
+            //Func<double[], double> f = delegate (double[] a) { 
             Func<IList<double>,double> f = delegate (IList<double> a) {
                 double L = 0.0;
                 for (int i = 0; i < Count; i++) {
@@ -673,7 +674,7 @@ namespace Meta.Numerics.Statistics {
                 return(L);
             };
 
-            MultiExtremum m = MultiFunctionMath.FindMinimum(f, new double[2] { a0, b0 });
+            MultiExtremum m = MultiFunctionMath.FindLocalMinimum(f, new double[2] { a0, b0 });
             return (new FitResult(m.Location, m.HessianMatrix.Inverse(), null));
 
             //SpaceExtremum m = FunctionMath.FindMinimum(f, new double[2] { a0, b0 });

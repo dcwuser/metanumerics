@@ -34,6 +34,14 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void ComplexSqrtSpecialCases () {
+            Assert.IsTrue(ComplexMath.Sqrt(0.0) == 0.0);
+            Assert.IsTrue(ComplexMath.Sqrt(1.0) == 1.0);
+            Assert.IsTrue(ComplexMath.Sqrt(-1.0) == Complex.I);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sqrt(Complex.I), (ComplexMath.I + 1.0) / Math.Sqrt(2.0)));
+        }
+
         // Trig functions
 
         [TestMethod]
@@ -136,8 +144,8 @@ namespace Test {
 
         [TestMethod]
         public void ComplexPowOneHalf () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 10)) {
-                Assert.IsTrue(ComplexMath.Pow(z, 0.5) == ComplexMath.Sqrt(z));
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 8)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 0.5), ComplexMath.Sqrt(z)));
             }
 
         }
@@ -227,11 +235,9 @@ namespace Test {
 
         [TestMethod]
         public void ComplexPowExponent () {
-
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 6)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(Math.E, z), ComplexMath.Exp(z)));
             }
-
         }
 
         [TestMethod]
@@ -241,7 +247,18 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 0), 1.0));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 1), z));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 2), z * z));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, 3), z * z * z));
+            }
+        }
+
+        [TestMethod]
+        public void ComplexPow () {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 8)) {
+                Complex p = 1.0;
+                for (int k = 1; k < 16; k++) {
+                    p *= z;
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, k), p));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(z, -k), 1.0 / p));
+                }
             }
         }
 
@@ -254,8 +271,80 @@ namespace Test {
                 Assert.IsTrue(ComplexMath.Log(x) == Math.Log(x));
                 Assert.IsTrue(ComplexMath.Sqrt(x) == Math.Sqrt(x));
 
+                Assert.IsTrue(ComplexMath.Abs(x) == Math.Abs(x));
+                Assert.IsTrue(ComplexMath.Arg(x) == 0.0);
+
             }
 
+        }
+
+        [TestMethod]
+        public void ComplexSqrtTest () {
+            Console.WriteLine(ComplexSqrt(new Complex(0.0, 0.0)));
+            Console.WriteLine(ComplexSqrt(new Complex(2.0, 0.0)));
+            Console.WriteLine(ComplexSqrt(new Complex(0.0, 2.0)));
+            Console.WriteLine(ComplexSqrt(new Complex(-2.0, 0.0)));
+            Console.WriteLine(ComplexSqrt(new Complex(0.0, -2.0)));
+            double r = 1.0 / 16.0;
+            Console.WriteLine(ComplexSqrt(new Complex(3.0, r)));
+            Console.WriteLine(ComplexSqrt(new Complex(3.0, -r)));
+            Console.WriteLine(ComplexSqrt(new Complex(r, 3.0)));
+            Console.WriteLine(ComplexSqrt(new Complex(-r, 3.0)));
+            Console.WriteLine(ComplexSqrt(new Complex(-3.0, r)));
+            Console.WriteLine(ComplexSqrt(new Complex(-3.0, -r)));
+            Console.WriteLine(ComplexSqrt(new Complex(r, -3.0)));
+            Console.WriteLine(ComplexSqrt(new Complex(-r, -3.0)));
+        }
+
+        private static Complex ComplexSqrt (Complex z) {
+
+            // We could just call Pow(z, 0.5), but that is slow (involves multiple trig functions)
+            // and looses a bit of symmetry (e.g. square roots of pure negative numbers may have tiny real parts because Pi is not exact)
+
+            // Instead we expand (x + i y)^2 = a + i b to obtain a quadratic equations in x^2 and y^2. Solving (and thinking a bit about signs) yields
+            //   x = \sqrt{\frac{m + a}{2}}
+            //   y = \pm \sqrt{\frac{m - a}{2}}
+            // where m = |a + i b| = \sqrt{a^2 + b^2}
+            
+            // Using this is very straightforward unless |b| << |a|, in which case m ~ |a| and there is a near-cancelation in one of the expressions.
+            // In this case we pull out a factor a and use a series expansion of \sqrt{1 + w} - 1 where w = (b/a)^2.
+
+            // In the end the whole algorithm is a little bit more complicated than I would like, but it is much faster than Pow(z, 0.5).
+
+            double x, y;
+            if (Math.Abs(z.Im) < Math.Abs(z.Re) / 8.0) {
+                double s = Series1(MoreMath.Sqr(z.Im / z.Re));
+                if (z.Re > 0.0) {
+                    x = Math.Sqrt(z.Re * (s + 2.0) / 2.0);
+                    y = Math.Sqrt(z.Re * s / 2.0);
+                } else {
+                    x = Math.Sqrt(-z.Re * s / 2.0);
+                    y = Math.Sqrt(-z.Re * (s + 2.0) / 2.0);
+                }
+            } else {
+                double m = MoreMath.Hypot(z.Re, z.Im);
+                x = Math.Sqrt((m + z.Re) / 2.0);
+                y = Math.Sqrt((m - z.Re) / 2.0);
+            }
+            if (z.Im < 0.0) y = -y;
+            return (new Complex(x, y));
+        }
+
+        // Compute \sqrt{1 + x} - 1 via series
+
+        private static double Series1 (double x) {
+
+            double t = x / 2.0;
+            double s = t;
+
+            for (int k = 2; k < 16; k++) {
+                double s_old = s;
+                t *= - (x / 2.0) * (2 * k - 3) / k;
+                s += t;
+                if (s == s_old) return(s);
+            }
+
+            throw new NonconvergenceException();
         }
 
     }

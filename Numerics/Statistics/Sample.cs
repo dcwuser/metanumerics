@@ -1316,10 +1316,12 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Tests whether the sample is compatible with another sample.
         /// </summary>
+        /// <param name="a">One sample.</param>
         /// <param name="b">The other sample.</param>
         /// <returns>The test result. The test statistic is the D statistic and the likelyhood is the right probability
         /// to obtain a value of D as large or larger than the one obtained.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="b"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is null.</exception>
+        /// <exception cref="InsufficientDataException">One or both of the samples is empty.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
         public static TestResult KolmogorovSmirnovTest (Sample a, Sample b) {
             if (a == null) throw new ArgumentNullException("a");
@@ -1419,31 +1421,29 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Performs a maximum likelihood fit.
         /// </summary>
-        /// <param name="distribution">The distribution to fit to the data.</param>
+        /// <param name="factory">A function that returns a distribution when given its defining parameters.</param>
+        /// <param name="start">An initial guess for the defining parameters.</param>
         /// <returns>The result of the fit, containg the parameters that result in the best fit,
         /// covariance matrix among those parameters, and a test of the goodness of fit.</returns>
         /// <seealso href="http://en.wikipedia.org/wiki/Maximum_likelihood"/>
-        public FitResult MaximumLikelihoodFit (IParameterizedDistribution distribution) {
+        public FitResult MaximumLikelihoodFit (Func<IList<double>, Distribution> factory, IList<double> start) {
 
-            // define a log likeyhood function
-            Func<double[], double> L = delegate(double[] parameters) {
-                distribution.SetParameters(parameters);
+            // Define a log likelyhood function
+            Func<IList<double>, double> L = (IList<double> parameters) => {
+                Distribution distribution = factory(parameters);
                 double lnP = 0.0;
                 foreach (double value in data) {
-                    double P = distribution.Likelihood(value);
+                    double P = distribution.ProbabilityDensity(value);
                     if (P == 0.0) throw new InvalidOperationException();
                     lnP += Math.Log(P);
                 }
                 return (-lnP);
             };
 
-            // maximize it
-            double[] v0 = distribution.GetParameters();
-            SpaceExtremum min = FunctionMath.FindMinimum(L, v0);
+            // Maximize it
+            MultiExtremum min = MultiFunctionMath.FindLocalMinimum(L, start);
 
-            // turn this into a fit result
-            FitResult result = new FitResult(min.Location(), min.Curvature().CholeskyDecomposition().Inverse(), null);
-
+            FitResult result = new FitResult(min.Location, min.HessianMatrix.CholeskyDecomposition().Inverse(), null);
             return (result);
 
         }

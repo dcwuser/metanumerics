@@ -19,10 +19,14 @@ namespace Meta.Numerics.Analysis {
         //private const double crossoverProbability =  1.0 - 1.0 / 8.0 - 1.0 / 14.0; //0.9286; //0.625; //0.5;
         private const double mutationFactor = 0.625; //0.5;
 
+        /// <summary>
+        /// Finds the minimum of a function within the given volume.
+        /// </summary>
+        /// <param name="function">The function.</param>
+        /// <param name="volume">The volume to search.</param>
+        /// <returns>The global minimum.</returns>
         public static MultiExtremum FindGlobalMinimum (Func<IList<double>, double> function, IList<Interval> volume) {
-            if (function == null) throw new ArgumentNullException("function");
-            if (volume == null) throw new ArgumentNullException("volume");
-            return (FindGlobalMinimum(function, volume, null));
+            return (FindGlobalExtremum(function, volume, null, false));
         }
 
         private static DifferentialEvolutionSettings GetDefaultSettings (EvaluationSettings settings, int d) {
@@ -32,8 +36,8 @@ namespace Meta.Numerics.Analysis {
             deSettings.CrossoverProbability = 1.0 - 1.0 / 8.0 - 1.0 / d;
 
             if (settings == null) {
-                deSettings.RelativePrecision = 1.0E-4;
-                deSettings.AbsolutePrecision = 1.0E-8;
+                deSettings.RelativePrecision = Math.Pow(10.0, -(2.0 + 4.0 / d));
+                deSettings.AbsolutePrecision = MoreMath.Sqr(deSettings.RelativePrecision);
                 deSettings.EvaluationBudget = 128 * d * d * d * d;
             } else {
                 deSettings.RelativePrecision = settings.RelativePrecision;
@@ -44,27 +48,52 @@ namespace Meta.Numerics.Analysis {
             return (deSettings);
         }
 
+        /// <summary>
+        /// Finds the minimum of a function within the given volume, subject to the given evaluation constraints.
+        /// </summary>
+        /// <param name="function">The function.</param>
+        /// <param name="volume">The volume to search.</param>
+        /// <param name="settings">The evaluation constraints to apply.</param>
+        /// <returns>The global minimum.</returns>
+        /// <remarks>
+        /// <para>This algorithm attempts to find the global minimum of the given function within the entire given hyper-cube. It generally
+        /// requires many more function evaluations than <see cref="FindLocalMinimum"/>, but is much more likely to find a global minimum
+        /// in situations where multiple local minima exist.</para>
+        /// <para>Unlike <see cref="FindLocalMinimum"/> method, this method does not return an approximate Hessian matrix near the minimum.</para>
+        /// </remarks>
+        /// <exception cref="NonconvergenceException">The minimum could not be found within the given evaluation budget.</exception>
         public static MultiExtremum FindGlobalMinimum (Func<IList<double>, double> function, IList<Interval> volume, EvaluationSettings settings) {
-            if (function == null) throw new ArgumentNullException("function");
-            if (volume == null) throw new ArgumentNullException("volume");
-            DifferentialEvolutionSettings deSettings = GetDefaultSettings(settings, volume.Count);
-            MultiFunctor f = new MultiFunctor(function);
-            return (FindGlobalExtremum(f, volume, deSettings));
+            return (FindGlobalExtremum(function, volume, settings, false));
         }
 
+        /// <summary>
+        /// Finds the maximum of a function within the given volume.
+        /// </summary>
+        /// <param name="function">The function.</param>
+        /// <param name="volume">The volume to search.</param>
+        /// <returns>The global maximum.</returns>
         public static MultiExtremum FindGlobalMaximum (Func<IList<double>, double> function, IList<Interval> volume) {
-            if (function == null) throw new ArgumentNullException("function");
-            if (volume == null) throw new ArgumentNullException("volume");
-            return (FindGlobalMaximum(function, volume, null));
+            return (FindGlobalExtremum(function, volume, null, true));
         }
 
+        /// <summary>
+        /// Finds the maxunyn of a function within the given volume, subject to the given evaluation constraints.
+        /// </summary>
+        /// <param name="function">The function.</param>
+        /// <param name="volume">The volume to search.</param>
+        /// <param name="settings">The evaluation constraints to apply.</param>
+        /// <returns>The global maximum.</returns>
         public static MultiExtremum FindGlobalMaximum (Func<IList<double>, double> function, IList<Interval> volume, EvaluationSettings settings) {
+            return (FindGlobalExtremum(function, volume, settings, true));
+        }
+
+        private static MultiExtremum FindGlobalExtremum (Func<IList<double>, double> function, IList<Interval> volume, EvaluationSettings settings, bool negate) {
             if (function == null) throw new ArgumentNullException("function");
             if (volume == null) throw new ArgumentNullException("volume");
+            MultiFunctor f = new MultiFunctor(function, negate);
             DifferentialEvolutionSettings deSettings = GetDefaultSettings(settings, volume.Count);
-            MultiFunctor f = new MultiFunctor(function, true);
-            MultiExtremum maximum = FindGlobalExtremum(f, volume, deSettings);
-            return (maximum);
+            MultiExtremum extremum = FindGlobalExtremum(f, volume, deSettings);
+            return (extremum);
         }
 
         private static MultiExtremum FindGlobalExtremum (MultiFunctor f, IList<Interval> volume, DifferentialEvolutionSettings settings) {
@@ -76,6 +105,7 @@ namespace Meta.Numerics.Analysis {
             Debug.WriteLine("d={0} m={1}", d, m);
 
             Random rng = new Random(3);
+            //Random rng = new Random(1001110000);
 
             // Start with random points in the allowed region.
             double[][] points = new double[m][];
@@ -150,8 +180,9 @@ namespace Meta.Numerics.Analysis {
                     if (values[i] > maxValue) maxValue = values[i];
                 }
                 double range = maxValue - minValue;
-                if ((range <= settings.AbsolutePrecision) || (range <= Math.Abs(maxValue) * settings.RelativePrecision)) {
-                    MultiExtremum result = new MultiExtremum(f.EvaluationCount, settings, points[minIndex], f.IsNegated ? -values[minIndex] : values[minIndex], null);
+                double tol = settings.ComputePrecision(minValue);
+                if (range <= tol) {
+                    MultiExtremum result = new MultiExtremum(f.EvaluationCount, settings, points[minIndex], f.IsNegated ? -values[minIndex] : values[minIndex], Math.Max(range, 0.75 * tol), null);
                     return (result);
                 }
 

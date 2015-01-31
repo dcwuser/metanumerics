@@ -563,7 +563,13 @@ namespace Meta.Numerics.Functions {
         /// Generates all permutations of the given dimension.
         /// </summary>
         /// <param name="dimension">The number of elements on which the permutations act.</param>
-        /// <returns></returns>
+        /// <returns>All permutations of the given dimension.</returns>
+        /// <remarks>
+        /// <para>The number of permutations of dimension n is n!, which increases very rapidly as n increases. Even in cases
+        /// where n! would overflow a <see cref="Int32"/> or <see cref="Int64"/>, we do successfully produce all permutations.
+        /// Of course, in such cases, it will take a long time to enumerate them all.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="dimension"/> is negative.</exception>
         public static IEnumerable<Permutation> Permutations (int dimension) {
             if (dimension < 0) throw new ArgumentOutOfRangeException("dimension");
 

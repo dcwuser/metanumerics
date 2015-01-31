@@ -302,7 +302,7 @@ namespace Meta.Numerics.Analysis {
 
                 // Expected final situation is a<tol><tol>u<tol><tol>b, leaving no point left to evaluate that is not within tol of an existing point.
 
-                if ((b - a) <= 4.0 * tol) return (new Extremum(u, fu, fpp, f.EvaluationCount));
+                if ((b - a) <= 4.0 * tol) return (new Extremum(u, fu, fpp, f.EvaluationCount, settings));
 
                 double x; ParabolicFit(u, fu, v, fv, w, fw, out x, out fpp);
                 Debug.WriteLine(String.Format("parabolic x={0} f''={1}", x, fpp));

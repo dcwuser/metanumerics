@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Meta.Numerics.Spin {
+namespace Meta.Numerics.Functions {
 
     /// <summary>
     /// Contains methods for computing functions of spin and spin states.

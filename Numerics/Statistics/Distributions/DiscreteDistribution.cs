@@ -185,12 +185,17 @@ namespace Meta.Numerics.Statistics.Distributions {
     }
 
 
-
+#if FUTURE
     /// <summary>
     /// Represents an interval on the integers.
     /// </summary>
     public struct DiscreteInterval : IEquatable<DiscreteInterval> {
 
+        /// <summary>
+        /// Creates a new instance of a discrete interval.
+        /// </summary>
+        /// <param name="a">One endpoint.</param>
+        /// <param name="b">The other endpoint.</param>
         public DiscreteInterval (int a, int b) {
             if (b < a) Global.Swap(ref a, ref b);
             this.a = a;
@@ -305,6 +310,6 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
     }
-
+#endif
 
 }

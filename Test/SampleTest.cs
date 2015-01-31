@@ -844,15 +844,44 @@ namespace Test {
         }
 
         [TestMethod]
+        public void MaximumLikelihoodFitToNormal () {
+
+            // create a normal sample
+            double mu = -1.0;
+            double sigma = 2.0;
+            Distribution d = new NormalDistribution(mu, sigma);
+            Sample s = CreateSample(d, 1024);
+
+            // do an explicit maximum likelyhood fit to a normal distribution
+            FitResult mf = s.MaximumLikelihoodFit((IList<double> p) => new NormalDistribution(p[0], p[1]), new double[] { mu + 1.0, sigma + 1.0 });
+
+            // it should find the parameters
+            Assert.IsTrue(mf.Dimension == 2);
+            Assert.IsTrue(mf.Parameter(0).ConfidenceInterval(0.99).ClosedContains(mu));
+            Assert.IsTrue(mf.Parameter(1).ConfidenceInterval(0.99).ClosedContains(sigma));
+
+            // now do our analytic fit
+            FitResult nf = NormalDistribution.FitToSample(s);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(0).Value, nf.Parameter(0).Value, 1.0E-4));
+            //Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(1).Value, nf.Parameter(1).Value, 1.0E-4));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(0).Uncertainty, nf.Parameter(0).Uncertainty, 1.0E-2));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(1).Uncertainty, nf.Parameter(1).Uncertainty, 1.0E-2));
+
+
+        }
+
+        [TestMethod]
         public void SampleMaximumLikelihoodFit () {
 
             // normal distriubtion
+            Console.WriteLine("normal");
 
             double mu = -1.0;
             double sigma = 2.0;
             Distribution nd = new NormalDistribution(mu, sigma);
             Sample ns = CreateSample(nd, 500);
-            FitResult nr = ns.MaximumLikelihoodFit(new NormalDistribution(mu + 1.0, sigma + 1.0));
+            //FitResult nr = ns.MaximumLikelihoodFit(new NormalDistribution(mu + 1.0, sigma + 1.0));
+            FitResult nr = ns.MaximumLikelihoodFit((IList<double> p) => new NormalDistribution(p[0], p[1]), new double[] { mu + 1.0, sigma + 1.0 });
 
             Console.WriteLine(nr.Parameter(0));
             Console.WriteLine(nr.Parameter(1));
@@ -861,16 +890,23 @@ namespace Test {
             Assert.IsTrue(nr.Parameter(0).ConfidenceInterval(0.95).ClosedContains(mu));
             Assert.IsTrue(nr.Parameter(1).ConfidenceInterval(0.95).ClosedContains(sigma));
 
+            FitResult nr2 = NormalDistribution.FitToSample(ns);
+
             Console.WriteLine(nr.Covariance(0,1));
 
             // test analytic expression
             Assert.IsTrue(TestUtilities.IsNearlyEqual(nr.Parameter(0).Value, ns.Mean, Math.Sqrt(TestUtilities.TargetPrecision)));
+            // we don't expect to be able to test sigma against analytic expression because ML value has known bias for finite sample size
 
+            
             // exponential distribution
+            
+            Console.WriteLine("exponential");
             double em = 3.0;
             Distribution ed = new ExponentialDistribution(em);
             Sample es = CreateSample(ed, 100);
-            FitResult er = es.MaximumLikelihoodFit(new ExponentialDistribution(em + 1.0));
+            //FitResult er = es.MaximumLikelihoodFit(new ExponentialDistribution(em + 1.0));
+            FitResult er = es.MaximumLikelihoodFit((IList<double> p) => new ExponentialDistribution(p[0]), new double[] { em + 1.0 });
 
             Console.WriteLine(er.Parameter(0));
 
@@ -879,44 +915,56 @@ namespace Test {
 
             // test against analytic expression
             Assert.IsTrue(TestUtilities.IsNearlyEqual(er.Parameter(0).Value, es.Mean, Math.Sqrt(TestUtilities.TargetPrecision)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(er.Parameter(0).Uncertainty, es.Mean / Math.Sqrt(es.Count), Math.Sqrt(TestUtilities.TargetPrecision)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(er.Parameter(0).Uncertainty, es.Mean / Math.Sqrt(es.Count), Math.Sqrt(Math.Sqrt(TestUtilities.TargetPrecision))));
+            
+            
 
             // lognormal distribution
+            Console.WriteLine("lognormal");
 
             double l1 = -4.0;
             double l2 = 5.0;
 
             Distribution ld = new LognormalDistribution(l1, l2);
             Sample ls = CreateSample(ld, 100);
-            FitResult lr = ls.MaximumLikelihoodFit(new LognormalDistribution(l1 + 1.0, l2 + 1.0));
+            //FitResult lr = ls.MaximumLikelihoodFit(new LognormalDistribution(l1 + 1.0, l2 + 1.0));
+            FitResult lr = ls.MaximumLikelihoodFit((IList<double> p) => new LognormalDistribution(p[0], p[1]), new double[] { l1 + 1.0, l2 + 1.0 });
 
             Console.WriteLine(lr.Parameter(0));
             Console.WriteLine(lr.Parameter(1));
             Console.WriteLine(lr.Covariance(0, 1));
 
+            Assert.IsTrue(lr.Dimension == 2);
+            Assert.IsTrue(lr.Parameter(0).ConfidenceInterval(0.99).ClosedContains(l1));
+            Assert.IsTrue(lr.Parameter(1).ConfidenceInterval(0.99).ClosedContains(l2));
+
             // weibull distribution
+            Console.WriteLine("weibull");
 
             double w_scale = 4.0;
             double w_shape = 2.0;
-            Distribution w_d = new WeibullDistribution(w_scale, w_shape);
+            WeibullDistribution w_d = new WeibullDistribution(w_scale, w_shape);
             Sample w_s = CreateSample(w_d, 20);
-            FitResult w_r = w_s.MaximumLikelihoodFit(new WeibullDistribution(1.0, 0.5));
+            //FitResult w_r = w_s.MaximumLikelihoodFit(new WeibullDistribution(1.0, 0.5));
+            FitResult w_r = w_s.MaximumLikelihoodFit((IList<double> p) => new WeibullDistribution(p[0], p[1]), new double[] { 2.0, 2.0 });
 
             Console.WriteLine(w_r.Parameter(0));
             Console.WriteLine(w_r.Parameter(1));
             Console.WriteLine(w_r.Covariance(0, 1));
 
-            Assert.IsTrue(w_r.Parameter(0).ConfidenceInterval(0.95).ClosedContains(w_scale));
-            Assert.IsTrue(w_r.Parameter(1).ConfidenceInterval(0.95).ClosedContains(w_shape));
+            Assert.IsTrue(w_r.Parameter(0).ConfidenceInterval(0.95).ClosedContains(w_d.ScaleParameter));
+            Assert.IsTrue(w_r.Parameter(1).ConfidenceInterval(0.95).ClosedContains(w_d.ShapeParameter));
 
             // logistic distribution
+            Console.WriteLine("logistic");
+
             double logistic_m = -3.0;
             double logistic_s = 2.0;
             Distribution logistic_distribution = new LogisticDistribution(logistic_m, logistic_s);
             Sample logistic_sample = CreateSample(logistic_distribution, 100);
-            FitResult logistic_result = logistic_sample.MaximumLikelihoodFit(new LogisticDistribution());
+            //FitResult logistic_result = logistic_sample.MaximumLikelihoodFit(new LogisticDistribution());
+            FitResult logistic_result = logistic_sample.MaximumLikelihoodFit((IList<double> p) => new LogisticDistribution(p[0], p[1]), new double[] { 2.0, 3.0 });
 
-            Console.WriteLine("Logistic:");
             Console.WriteLine(logistic_result.Parameter(0));
             Console.WriteLine(logistic_result.Parameter(1));
 

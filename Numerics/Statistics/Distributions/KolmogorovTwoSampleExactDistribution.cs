@@ -4,7 +4,7 @@ using Meta.Numerics.Functions;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
-    public class KolmogorovTwoSampleExactDistribution : DiscreteDistribution {
+    internal class KolmogorovTwoSampleExactDistribution : DiscreteDistribution {
 
         public KolmogorovTwoSampleExactDistribution (int n, int m) {
             if (n < 1) throw new ArgumentOutOfRangeException("n");

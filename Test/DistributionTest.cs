@@ -71,6 +71,7 @@ namespace Test {
         public void DistributionMedian () {
             foreach (Distribution distribution in distributions) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Median, distribution.InverseLeftProbability(0.5)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Median, distribution.InverseRightProbability(0.5)));
             }
         }
 
@@ -105,6 +106,7 @@ namespace Test {
                 for (int i = 0; i < (probabilities.Length - 1); i++) {
                     Console.WriteLine("{0} {1}", distribution.GetType().Name, probabilities[i]);
                     Assert.IsTrue(distribution.InverseLeftProbability(probabilities[i]) < distribution.InverseLeftProbability(probabilities[i+1]));
+                    Assert.IsTrue(distribution.InverseRightProbability(probabilities[i]) > distribution.InverseRightProbability(probabilities[i + 1]));
                 }
             }
         }

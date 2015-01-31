@@ -262,7 +262,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             ga /= sample.Count; gb /= sample.Count;
 
             // define the function to zero
-            Func<double[], double[]> f = delegate(double[] x) {
+            Func<IList<double>, IList<double>> f = delegate(IList<double> x) {
                 double pab = AdvancedMath.Psi(x[0] + x[1]);
                 return (new double[] {
                     AdvancedMath.Psi(x[0]) - pab - ga,
@@ -280,7 +280,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             double[] x0 = new double[] { m * q, mm * q };
 
             // find the parameter values that zero the two equations
-            double[] x1 = FunctionMath.FindZero(f, x0);
+            IList<double> x1 = MultiFunctionMath.FindZero(f, x0);
             double a = x1[0]; double b = x1[1];
 
             // take more derivatives of \log L to get curvature matrix

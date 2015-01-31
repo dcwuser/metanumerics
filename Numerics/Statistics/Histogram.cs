@@ -90,6 +90,9 @@ namespace Meta.Numerics.Statistics {
             total++;
         }
 
+        /// <summary>
+        /// Sets all bin counts to zero.
+        /// </summary>
         public void Clear () {
             counts = new int[counts.Length];
             extraCounts = 0;

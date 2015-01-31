@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
-namespace Meta.Numerics.Spin {
+namespace Meta.Numerics.Functions {
 
     /// <summary>
     /// Represents a spinor.

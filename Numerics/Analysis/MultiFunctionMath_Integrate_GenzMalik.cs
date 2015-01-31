@@ -10,7 +10,7 @@ namespace Meta.Numerics.Analysis {
 
     public static partial class MultiFunctionMath {
 
-        private static UncertainValue Integrate_Adaptave (MultiFunctor f, CoordinateTransform[] map, IntegrationRegion r, EvaluationSettings settings) {
+        private static UncertainValue Integrate_Adaptive (MultiFunctor f, CoordinateTransform[] map, IntegrationRegion r, EvaluationSettings settings) {
 
             // Create an evaluation rule
             GenzMalik75Rule rule = new GenzMalik75Rule(r.Dimension);
@@ -44,8 +44,6 @@ namespace Meta.Numerics.Analysis {
 
                 // Check for convergence.
                 if ((error <= settings.AbsolutePrecision) || (error <= settings.RelativePrecision * Math.Abs(value))) {
-                    // Error at specified bound. Otherwise sometimes error is 0. Is there a better solution?
-                    //error = Math.Max(settings.AbsolutePrecision, Math.Abs(value) * settings.RelativePrecision);
                     return (new UncertainValue(value, error));
                 }
 

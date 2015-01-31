@@ -20,7 +20,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// model the time-to-failure of industrial componets.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Weibull_distribution" />
-    public sealed class WeibullDistribution : Distribution, IParameterizedDistribution {
+    public sealed class WeibullDistribution : Distribution {
 
         /// <summary>
         /// Initializes a new Weibull distribution.
@@ -289,24 +289,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             // return the result
             return (new FitResult(new double[] {lambda1, k1}, C, test));
 
-        }
-
-
-        double[] IParameterizedDistribution.GetParameters () {
-            return (new double[] { scale, shape });
-        }
-
-        void IParameterizedDistribution.SetParameters (IList<double> parameters) {
-            if (parameters == null) throw new ArgumentNullException("parameters");
-            if (parameters.Count != 2) throw new DimensionMismatchException();
-            if (parameters[0] <= 0.0) throw new ArgumentOutOfRangeException("parameters");
-            if (parameters[1] <= 0.0) throw new ArgumentOutOfRangeException("parameters");
-            scale = parameters[0];
-            shape = parameters[1];
-        }
-
-        double IParameterizedDistribution.Likelihood (double x) {
-            return (ProbabilityDensity(x));
         }
 
     }

@@ -18,7 +18,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </remarks>
     /// <seealso cref="NormalDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Log-normal_distribution" />
-    public sealed class LognormalDistribution : Distribution, IParameterizedDistribution {
+    public sealed class LognormalDistribution : Distribution {
 
         /// <summary>
         /// Initializes a log-normal distribution.
@@ -179,23 +179,23 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
             } else {
-                return (Math.Exp(n * mu + MoreMath.Sqr(n * sigma) / 2.0));
+                return (Math.Exp(r * mu + MoreMath.Sqr(r * sigma) / 2.0));
             }
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
-            } else if (n == 0) {
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
+            } else if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (0.0);
-            } else if (n == 2) {
+            } else if (r == 2) {
                 return (Variance);
             } else {
 
@@ -204,12 +204,12 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double s2 = sigma * sigma / 2.0;
 
                 double C = 0.0;
-                for (int i = 0; i <= n; i++) {
-                    double dC = AdvancedIntegerMath.BinomialCoefficient(n, i) * Math.Exp((MoreMath.Sqr(n - i) + i) * s2);
+                for (int i = 0; i <= r; i++) {
+                    double dC = AdvancedIntegerMath.BinomialCoefficient(r, i) * Math.Exp((MoreMath.Sqr(r - i) + i) * s2);
                     if (i % 2 != 0) dC = -dC;
                     C += dC;
                 }
-                return (Math.Exp(n * mu) * C);
+                return (Math.Exp(r * mu) * C);
 
                 // this isn't great, but it does the job
                 // expand in terms of moments about the origin
@@ -272,23 +272,6 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             return (new FitResult(new double[] { summary.Mean, Math.Sqrt(summary.Variance) }, C, r));
         }
-
-        double[] IParameterizedDistribution.GetParameters () {
-            return (new double[] { mu, sigma });
-        }
-
-        void IParameterizedDistribution.SetParameters (IList<double> parameters) {
-            if (parameters == null) throw new ArgumentNullException("parameters");
-            if (parameters.Count != 2) throw new DimensionMismatchException();
-            if (parameters[1] <= 0.0) throw new ArgumentOutOfRangeException("parameters");
-            mu = parameters[0];
-            sigma = parameters[1];
-        }
-
-        double IParameterizedDistribution.Likelihood (double x) {
-            return (ProbabilityDensity(x));
-        }
-
 
     }
 

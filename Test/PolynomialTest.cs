@@ -119,7 +119,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void PolynomialFit () {
+        public void PolynomialFitFrom2dArray () {
 
             Polynomial p0 = Polynomial.FromCoefficients(5.0, -6.0, 7.0, -8.0);
             Console.WriteLine(p0);
@@ -143,6 +143,23 @@ namespace Test {
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(p0.Evaluate(-1.0), p1.Evaluate(-1.0)));
 
+        }
+
+        [TestMethod]
+        public void PolynomialFitFromXY () {
+
+            Polynomial p0 = Polynomial.FromCoefficients(1.0, 0.0, -3.0, 2.0);
+            Console.WriteLine(p0);
+
+            XY[] points1 = new XY[p0.Degree + 1];
+            for (int x = 0; x < points1.Length; x++) points1[x] = new XY(x, p0.Evaluate(x));
+
+            Polynomial p1 = Polynomial.FromPoints(points1);
+            Console.WriteLine(p1);
+
+            for (int i = 0; i < p0.Degree; i++) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(p0.Coefficient(i), p1.Coefficient(i)));
+            }
         }
 
     }

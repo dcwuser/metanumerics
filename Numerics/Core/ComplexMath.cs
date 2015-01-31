@@ -14,6 +14,7 @@ namespace Meta.Numerics {
         /// <summary>
         /// Gets the unit imaginary number I.
         /// </summary>
+        /// <value>The unit imaginary number.</value>
         public static Complex I {
             get {
                 return (new Complex(0.0, 1.0));
@@ -45,7 +46,7 @@ namespace Meta.Numerics {
         /// <remarks>
         /// <para>The phase of a complex number is the angle between the line joining it to the origin and the real axis of the complex plane.</para>
         /// <para>The phase of complex numbers in the upper complex plane lies between 0 and &#x3C0;. The phase of complex numbers
-        /// in the lower complex plane lies between 0 and -&#x3C0;. The phase of a real number is zero.</para>
+        /// in the lower complex plane lies between 0 and -&#x3C0;. The phase of a positive real number is zero.</para>
         /// </remarks>
         public static double Arg (Complex z) {
             // returns 0 to PI in the upper complex plane (Im>=0),
@@ -95,7 +96,19 @@ namespace Meta.Numerics {
                     return (new Complex(Math.Sqrt(z.Re), 0.0));
                 }
             } else {
-                return (Pow(z, 0.5));
+                if (Math.Abs(z.Im) < 0.125 * Math.Abs(z.Re)) {
+                    // We should try to improve this by using a series instead of the full power algorithm.
+                    return (Pow(z, 0.5));
+                } else {
+                    // This is a pretty fast formula for a complex square root, basically just
+                    // three square roots and a few flops.
+                    // But if z.Im << z.Re, then z.Re ~ m and it suffers from cancelations.
+                    double m = Abs(z);
+                    double x = Math.Sqrt((m + z.Re) / 2.0);
+                    double y = Math.Sqrt((m - z.Re) / 2.0);
+                    if (z.Im < 0.0) y = -y;
+                    return (new Complex(x, y));
+                }
             }
         }
 

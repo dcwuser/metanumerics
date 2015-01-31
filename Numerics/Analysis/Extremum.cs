@@ -7,19 +7,17 @@ namespace Meta.Numerics.Analysis {
     /// <summary>
     /// Represents a maximum or minimum of a function of one variable.
     /// </summary>
-    public sealed class Extremum {
+    public sealed class Extremum : EvaluationResult {
 
-        internal Extremum (double x, double f, double f2, int count) {
+        internal Extremum (double x, double f, double f2, int count, EvaluationSettings settings) : base(count, settings) {
             this.x = x;
             this.f = f;
             this.f2 = f2;
-            this.count = count;
         }
 
         private readonly double x;
         private readonly double f;
         private readonly double f2;
-        private readonly int count;
 
         /// <summary>
         /// Gets the location (x-value) of the extremum.
@@ -66,20 +64,11 @@ namespace Meta.Numerics.Analysis {
             }
         }
 
-
-        /// <summary>
-        /// Gets the number of evaluations of the function that were required to isolate the extremum.
-        /// </summary>
-        public int EvaluationCount {
-            get {
-                return (count);
-            }
-        }
-
         internal Extremum Negate () {
-            return (new Extremum(x, -f, f2, count));
+            return (new Extremum(x, -f, f2, base.EvaluationCount, base.Settings));
         }
 
+        /*
         /// <summary>
         /// Converts a line extremum to a one-dimensional space extremum.
         /// </summary>
@@ -96,6 +85,7 @@ namespace Meta.Numerics.Analysis {
                 return (new SpaceExtremum(s_x, s_f, s_f2));
             }
         }
+        */
     }
 
 }

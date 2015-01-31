@@ -111,6 +111,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+        /// <inheritdoc />
         public override double Cumulant (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException("r");

@@ -10,16 +10,19 @@ namespace Meta.Numerics.Analysis {
     /// </summary>
     public class MultiExtremum : EvaluationResult {
 
-        internal MultiExtremum (int count, EvaluationSettings settings, double[] point, double value, double[][] hessian) : base(count, settings) {
+        internal MultiExtremum (int count, EvaluationSettings settings, double[] point, double value, double precision, double[][] hessian) : base(count, settings) {
             Debug.Assert(point != null);
             this.point = point;
             this.value = value;
+            this.precision = precision;
             this.hessian = hessian;
         }
 
         private readonly double[] point;
 
         private readonly double value;
+
+        private readonly double precision;
 
         private double[][] hessian;
 
@@ -47,6 +50,18 @@ namespace Meta.Numerics.Analysis {
         public double Value {
             get {
                 return (value);
+            }
+        }
+
+        /// <summary>
+        /// Gets the estimated precision of the function value.
+        /// </summary>
+        /// <remarks>
+        /// <para> </para>
+        /// </remarks>
+        public double Precision {
+            get {
+                return (precision);
             }
         }
 

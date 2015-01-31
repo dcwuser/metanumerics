@@ -28,6 +28,7 @@ namespace Meta.Numerics.Analysis {
 
     }
 
+#if PAST
     internal class RandomVectorGenerator : VectorGenerator {
 
         public RandomVectorGenerator (int d, Random rng) : base(d) {
@@ -45,13 +46,14 @@ namespace Meta.Numerics.Analysis {
         }
 
     }
+#endif
 
     internal class SobolVectorGenerator : VectorGenerator {
 
         public SobolVectorGenerator (int d) : base(d) {
             sequences = new SobolSequence[d];
             for (int i = 0; i < sequences.Length; i++) {
-                SobolSequenceParameters p = FunctionMath.sobolParameters[i];
+                SobolSequenceParameters p = SobolSequenceParameters.sobolParameters[i];
                 sequences[i] = new SobolSequence(p.Dimension, p.Coefficients, p.Seeds);
             }
         }
@@ -94,6 +96,7 @@ namespace Meta.Numerics.Analysis {
             }
         }
 
+#if PAST
         public LePageGrid (int dimension, int binCount) {
             this.dimension = dimension;
             this.grid = new double[dimension][];
@@ -107,6 +110,7 @@ namespace Meta.Numerics.Analysis {
             }
             v0 = MoreMath.Pow(binCount, dimension);
         }
+#endif
 
         public LePageGrid (IList<Interval> box, int binCount) {
             this.dimension = box.Count;

@@ -214,8 +214,8 @@ namespace Meta.Numerics {
         /// values loose precision near zeros of the function.</para>
         /// <para>
         /// One way to view these shortcommings is that they are justified by the uncertainty inherent in floating point representations. In this
-        /// view, any <see cref="System.Double"/> should be seen as an uncertain value with a relative error of ~10<sup>-16</sup>. If the absolute value
-        /// of the number is very large then the absolute value of this error can be as large or larger than 2&#x3C0; in this circumstance we should not
+        /// view, any <see cref="System.Double"/> should be seen as an uncertain value with a relative error of ~10<sup>-16</sup>. If the
+        /// number is very large, then the size of this error can be as large or larger than 2&#x3C0;; in this circumstance we should not
         /// expect to be able to say anything about the value. (Except, of course, that it is between -1 and +1, which is violated by the designers' crazy
         /// choice to return the argument as the value).
         /// </para>

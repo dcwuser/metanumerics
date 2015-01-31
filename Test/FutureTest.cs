@@ -15,6 +15,8 @@ using Meta.Numerics.Statistics.Distributions;
 
 namespace FutureTest {
 
+#if FUTURE
+
     // Uniform asymptotic exansion for Bessel functions of large order is summarized in A&S 9.3 and DLMF 
     
     // The basic form is:
@@ -2269,5 +2271,7 @@ namespace FutureTest {
         }
 
     }
+
+#endif
 
 }

@@ -23,7 +23,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </remarks>
     /// <seealso href="WeibullDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Exponential_distribution"/>
-    public sealed class ExponentialDistribution : Distribution, IParameterizedDistribution {
+    public sealed class ExponentialDistribution : Distribution {
 
         private double mu;
 
@@ -77,6 +77,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (-mu * MoreMath.LogOnePlus(-P));
         }
 
+        /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
             if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
             return (-mu * Math.Log(Q));
@@ -159,21 +160,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             get {
                 return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
             }
-        }
-
-        double[] IParameterizedDistribution.GetParameters () {
-            return (new double[] { mu });
-        }
-
-        void IParameterizedDistribution.SetParameters (IList<double> parameters) {
-            if (parameters == null) throw new ArgumentNullException("parameters");
-            if (parameters.Count != 1) throw new DimensionMismatchException();
-            if (parameters[0] <= 0.0) throw new ArgumentOutOfRangeException("parameters");
-            mu = parameters[0];
-        }
-
-        double IParameterizedDistribution.Likelihood (double x) {
-            return (ProbabilityDensity(x));
         }
 
         /// <summary>

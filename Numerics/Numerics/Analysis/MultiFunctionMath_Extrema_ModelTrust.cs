@@ -17,18 +17,17 @@ namespace Meta.Numerics.Analysis {
         /// <param name="function">The multi-dimensional function to minimize.</param>
         /// <param name="start">The starting location for the search.</param>
         /// <returns>The local minimum.</returns>
-        public static MultiExtremum FindMinimum (Func<IList<double>, double> function, IList<double> start) {
+        public static MultiExtremum FindLocalMinimum (Func<IList<double>, double> function, IList<double> start) {
             if (function == null) throw new ArgumentNullException("function");
             if (start == null) throw new ArgumentNullException("start");
 
             EvaluationSettings settings = GetDefaultOptimizationSettings(start.Count);
-            //EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-12, AbsolutePrecision = 1.0E-14, EvaluationBudget = 32 * (d + 1) * (d + 2) };
-            return (FindMinimum(function, start, settings));
+            return (FindLocalMinimum(function, start, settings));
         }
 
         private static EvaluationSettings GetDefaultOptimizationSettings (int d) {
             EvaluationSettings settings = new EvaluationSettings();
-            settings.RelativePrecision = Math.Pow(10.0, -(8.0 + 8.0 / d));
+            settings.RelativePrecision = Math.Pow(10.0, -(10.0 + 4.0 / d));
             settings.AbsolutePrecision = settings.RelativePrecision;
             settings.EvaluationBudget = 16 * (d + 1) * (d + 2) * (d + 3);
             return (settings);
@@ -41,13 +40,29 @@ namespace Meta.Numerics.Analysis {
         /// <param name="start">The starting location for the search.</param>
         /// <param name="settings">The evaluation settings that govern the search for the minimum.</param>
         /// <returns>The local minimum.</returns>
-        public static MultiExtremum FindMinimum (Func<IList<double>, double> function, IList<double> start, EvaluationSettings settings) {
+        /// <remarks>
+        /// <para>The Hessian (matrix of second derivatives) returned with the minimum is an approximation that is constructed in the course of search. It should be
+        /// considered a crude approximation, and may not even be that if the minimum is highly non-quadratic.</para>
+        /// </remarks>
+        /// <exception cref="NonconvergenceException">The number of function evaluations required exceeded the evaluation budget.</exception>
+        public static MultiExtremum FindLocalMinimum (Func<IList<double>, double> function, IList<double> start, EvaluationSettings settings) {
             if (function == null) throw new ArgumentNullException("function");
             if (start == null) throw new ArgumentNullException("start");
             if (settings == null) throw new ArgumentNullException("settings");
 
-            MultiFunctor f = new MultiFunctor(function);
-            return (FindMinimum_ModelTrust(f, start, 0.25, settings));
+            return (FindLocalExtremum(function, start, settings, false));
+        }
+
+        /// <summary>
+        /// Finds a local maximum of a multi-dimensional function in the vincinity of the given starting location.
+        /// </summary>
+        /// <param name="function">The multi-dimensional function to maximize.</param>
+        /// <param name="start">The starting location for the search.</param>
+        /// <returns>The local maximum.</returns>
+        public static MultiExtremum FindLocalMaximum (Func<IList<double>, double> function, IList<double> start) {
+            if (function == null) throw new ArgumentNullException("function");
+            if (start == null) throw new ArgumentNullException("start");
+            return (FindLocalMaximum(function, start, GetDefaultOptimizationSettings(start.Count)));
         }
 
         /// <summary>
@@ -57,9 +72,32 @@ namespace Meta.Numerics.Analysis {
         /// <param name="start">The starting location for the search.</param>
         /// <param name="settings">The evaluation settings that govern the search for the maximum.</param>
         /// <returns>The local maximum.</returns>
-        public static MultiExtremum FindMaximum (Func<IList<double>, double> function, IList<double> start, EvaluationSettings settings) {
-            MultiFunctor f = new MultiFunctor(function, true);
-            throw new NotImplementedException();
+        public static MultiExtremum FindLocalMaximum (Func<IList<double>, double> function, IList<double> start, EvaluationSettings settings) {
+            if (function == null) throw new ArgumentNullException("function");
+            if (start == null) throw new ArgumentNullException("start");
+            if (settings == null) throw new ArgumentNullException("settings");
+            return(FindLocalExtremum(function, start, settings, true));
+        }
+
+        private static MultiExtremum FindLocalExtremum (Func<IList<double>, double> function, IList<double> start, EvaluationSettings settings, bool negate) {
+            MultiFunctor f = new MultiFunctor(function, negate);
+
+            // Pick an initial radius; we need to do this better.
+            /*
+            double s = Double.MaxValue;
+            foreach (double x in start) s = Math.Min((Math.Abs(x) + 1.0 / 8.0) / 8.0, s);
+            */
+            
+            double s = 0.0;
+            foreach (double x in start) s += (Math.Abs(x) + 1.0 / 4.0) / 4.0;
+            s = s / start.Count;
+            
+            //double s = 0.2;
+            Debug.WriteLine("s={0}", s);
+
+
+
+            return (FindMinimum_ModelTrust(f, start, s, settings));
         }
 
         private static MultiExtremum FindMinimum_ModelTrust (MultiFunctor f, IList<double> x, double s, EvaluationSettings settings) {
@@ -68,34 +106,74 @@ namespace Meta.Numerics.Analysis {
             QuadraticInterpolationModel model = QuadraticInterpolationModel.Construct(f, x, s);
             double trustRadius = s;
 
-            int terminationCount = 0;
-
             while (f.EvaluationCount < settings.EvaluationBudget) {
 
                 // Find the minimum point of the model within the trust radius
                 double[] z = model.FindMinimum(trustRadius);
                 double expectedValue = model.Evaluate(z);
 
+                double deltaExpected = model.MinimumValue - expectedValue;
+
                 // Evaluate the function at the suggested minimum
                 double[] point = model.ConvertPoint(z);
                 double value = f.Evaluate(point);
 
-                // Check the termination criteria.
                 double delta = model.MinimumValue - value;
-                if ((Math.Abs(delta) < settings.AbsolutePrecision) || (Math.Abs(delta) <= Math.Abs(value) * settings.RelativePrecision)) {
+                double tol = settings.ComputePrecision(value);
+
+                // To terminate, we demand: a reduction, the reduction be small, the reduction be in line with its expected value, that we have run up against trust boundary,
+                // and that the gradient is small.
+                // I had wanted to demand delta > 0, but we run into some cases where delta keeps being very slightly negative, typically orders of magnitude less than tol,
+                // causing the trust radius to shrink in and endless cycle that causes our approximation to ultimately go sour, even though terminating on the original
+                // very slightly negative delta would have produced an accurate estimate. So we tolerate this case for now.
+                if ((-tol / 4.0 <= delta) && (delta <= tol)) {
+                    // We demand that the model be decent, i.e. that the expected delta was within tol of the measured delta.
+                    if (Math.Abs(delta - deltaExpected) <= tol) {
+                        // We demand that the step not just be small because it ran up against the trust radius. If it ran up against the trust radius,
+                        // there is probably more to be hand by continuing.
+                        double zm = Blas1.dNrm2(z, 0, 1, z.Length);
+                        if (zm < trustRadius) {
+                            // Finally, we demand that the gradient be small. You might think this was obvious since z was small, but if the Hessian is not positive definite
+                            // the interplay of the Hessian and the gradient can produce a small z even if the model looks nothing like a quadratic minimum.
+                            double gm = Blas1.dNrm2(model.GetGradient(), 0, 1, z.Length);
+                            if (gm * zm <= tol) {
+                                if (f.IsNegated) value = -value;
+                                return (new MultiExtremum(f.EvaluationCount, settings, point, value, Math.Max(Math.Abs(delta), 0.75 * tol), model.GetHessian()));
+                            }
+                        }
+                    }
+                }
+
+                // Check the termination criteria.
+                //double delta = model.MinimumValue - value;
+                //double tol = settings.ComputePrecision(value);
+                /*
+                if ((Math.Abs(delta) < tol)) {
                     terminationCount++;
-                    if (terminationCount > 2) {
-                        return (new MultiExtremum(f.EvaluationCount, settings, point, value, model.GetHessian()));
+                    if ((terminationCount > 2)) {
+                        if (f.IsNegated) value = -value;
+                        return (new MultiExtremum(f.EvaluationCount, settings, point, value, Math.Max(Math.Abs(delta), 0.75 * tol), model.GetHessian()));
                     }
                 } else {
                     terminationCount = 0;
                 }
-
+                */
+                
                 // There are now three decisions to be made:
                 //   1. How to change the trust radius
                 //   2. Whether to accept the new point
                 //   3. Which existing point to replace
 
+                // If the actual change was very far from the expected change, reduce the trust radius.
+                // If the expected change did a good job of predicting the actual change, increase the trust radius.
+                if ((delta < 0.25 * deltaExpected) /*|| (8.0 * deltaExpected < delta)*/) {
+                    trustRadius = trustRadius / 2.0;
+                } else if ((0.75 * deltaExpected <= delta) /*&& (delta <= 2.0 * deltaExpected)*/) {
+                    trustRadius = 2.0 * trustRadius;
+                }
+                // It appears that the limits on delta being too large don't help, and even hurt if made too stringent.
+                
+                /*
                 // Adjust the trust region radius based on the ratio of the actual reduction to the expected reduction.
                 double r = (model.MinimumValue - value) / (model.MinimumValue - expectedValue);
                 if (r < 0.25) {
@@ -105,9 +183,9 @@ namespace Meta.Numerics.Analysis {
                     // If we achieved at least 75% of the expected reduction, increase the trust region.
                     trustRadius = 2.0 * trustRadius;
                 }
-
-                // If our 
-                // find maximum and minimum points
+                */
+                
+                // Replace an old point with the new point.
                 int iMax = 0; double fMax = model.values[0];
                 int iBad = 0; double fBad = model.ComputeBadness(0, z, point, value);
                 for (int i = 1; i < model.values.Length; i++) {
@@ -119,7 +197,9 @@ namespace Meta.Numerics.Analysis {
                     Debug.WriteLine("iMax={0}, iBad={1}", iMax, iBad);
                     //model.ReplacePoint(iMax, point, z, value);
                     model.ReplacePoint(iBad, point, z, value);
-                }
+                 }
+                // There is some question about how best to choose which point to replace.
+                // The largest value? The furthest away? The one closest to new min?
 
             }
 
@@ -300,6 +380,10 @@ namespace Meta.Numerics.Analysis {
             }
         }
 
+        public double[] GetGradient () {
+            return (g);
+        }
+
         public double[][] GetHessian () {
             double[][] H = new double[g.Length][];
             for (int i = 0; i < g.Length; i++) {
@@ -351,6 +435,10 @@ namespace Meta.Numerics.Analysis {
         //private int maxBadnessIndex;
 
         //public double[] badnesses;
+
+        public double[] GetGradient () {
+            return (total.GetGradient());
+        }
 
         public double[][] GetHessian () {
             return (total.GetHessian());
@@ -643,14 +731,31 @@ namespace Meta.Numerics.Analysis {
                 for (int i = 0; i < point.Length; i++) {
                     s += MoreMath.Sqr(points[index][i] - point[i]);
                 }
+                s = Math.Pow(s, 3.0 / 2.0) * (values[index] - value);
             } else {
                 if (index == minValueIndex) return (0.0);
                 for (int i = 0; i < point.Length; i++) {
                     s += MoreMath.Sqr(points[index][i] - origin[i]);
                 }
+                s = Math.Pow(s, 3.0 / 2.0) * (values[index] - values[minValueIndex]);
             }
-            s = Math.Pow(s, 3.0 / 2.0) * Math.Abs(polynomials[index].Evaluate(z));
+            //s = Math.Pow(s, 3.0 / 2.0) * Math.Abs(polynomials[index].Evaluate(z));
             return (s);
+        }
+
+        public double FindMinimumSeperation () {
+            double min = Double.MaxValue;
+            for (int i = 0; i < points.Length; i++) {
+                for (int j = 0; j < i; j++) {
+                    double s = 0.0;
+                    for (int k = 0; k < d; k++) {
+                        s += MoreMath.Sqr(points[i][k] - points[j][k]);
+                    }
+                    s = Math.Sqrt(s);
+                    if (s < min) min = s;
+                }
+            }
+            return (min);
         }
 
     }

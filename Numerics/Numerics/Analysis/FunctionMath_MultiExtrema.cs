@@ -23,7 +23,7 @@ namespace Meta.Numerics.Analysis {
         /// <returns>The minimum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> or <paramref name="x"/> is null</exception>
         /// <exception cref="NonconvergenceException">The minimum was not found to the required precision within the budgeted number of function evaluations.</exception>
-        public static SpaceExtremum FindMinimum (Func<double[], double> f, double[] x) {
+        internal static SpaceExtremum FindMinimum (Func<double[], double> f, double[] x) {
 
             return (FindMinimum(f, x, new EvaluationSettings() {
                 RelativePrecision = Global.Accuracy,
@@ -42,7 +42,7 @@ namespace Meta.Numerics.Analysis {
         /// <returns>The minimum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/>, <paramref name="x"/>, or <paramref name="settings"/> is null.</exception>
         /// <exception cref="NonconvergenceException">The minimum was not found to the required precision within the budgeted number of function evaluations.</exception>
-        public static SpaceExtremum FindMinimum (Func<double[], double> f, double[] x, EvaluationSettings settings) {
+        internal static SpaceExtremum FindMinimum (Func<double[], double> f, double[] x, EvaluationSettings settings) {
 
             if (f == null) throw new ArgumentNullException("f");
             if (x == null) throw new ArgumentNullException("x");
@@ -242,7 +242,7 @@ namespace Meta.Numerics.Analysis {
         /// <returns>The maximum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/>, <paramref name="x"/>, or <paramref name="settings"/> is null.</exception>
         /// <exception cref="NonconvergenceException">The maximum was not found to the required precision within the budgeted number of function evaluations.</exception>
-        public static SpaceExtremum FindMaximum (Func<double[], double> f, double[] x, EvaluationSettings settings) {
+        internal static SpaceExtremum FindMaximum (Func<double[], double> f, double[] x, EvaluationSettings settings) {
             return (FindMinimum((double[] p) => -f(p), x, settings));
         }
 
@@ -322,7 +322,7 @@ namespace Meta.Numerics.Analysis {
     /// <summary>
     /// Represents a maximum or minimum of a function on a multi-dimensional space.
     /// </summary>
-    public class SpaceExtremum {
+    internal class SpaceExtremum {
 
         internal SpaceExtremum (double[] x, double f, SymmetricMatrix f2) {
             this.x = x;

@@ -16,7 +16,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// can be converted to a standard logistic distribution by reparameterzing into z = (x-m)/s.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Logistic_distribution" />
-    public sealed class LogisticDistribution : Distribution, IParameterizedDistribution {
+    public sealed class LogisticDistribution : Distribution {
 
         /// <summary>
         /// Initializes a new standard logistic distribution.
@@ -167,22 +167,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else {
                 return (2.0 * AdvancedIntegerMath.Factorial(r - 1) * AdvancedMath.RiemannZeta(r) * MoreMath.Pow(s, r));
             }
-        }
-
-        double[] IParameterizedDistribution.GetParameters () {
-            return (new double[] { m, s });
-        }
-
-        void IParameterizedDistribution.SetParameters (IList<double> parameters) {
-            if (parameters == null) throw new ArgumentNullException("parameters");
-            if (parameters.Count != 2) throw new DimensionMismatchException();
-            if (parameters[1] <= 0.0) throw new ArgumentOutOfRangeException("parameters");
-            m = parameters[0];
-            s = parameters[1];
-        }
-
-        double IParameterizedDistribution.Likelihood (double x) {
-            return (ProbabilityDensity(x));
         }
 
     }

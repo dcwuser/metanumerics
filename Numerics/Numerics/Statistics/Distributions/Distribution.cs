@@ -138,6 +138,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <para>Note that the random number generator <paramref name="rng"/> will be advanced by this method. The next call to its
         /// generator methods will not give the same value as it would had it not been passed to this method.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="rng"/> is null.</exception>
         public virtual double GetRandomValue (Random rng) {
             if (rng == null) throw new ArgumentNullException("rng");
             return (InverseLeftProbability(rng.NextDouble()));
@@ -161,32 +162,6 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         }
 
-
-    }
-
-    /// <summary>
-    /// Represents an parameterized likelihood distribution.
-    /// </summary>
-    public interface IParameterizedDistribution {
-
-        /// <summary>
-        /// Gets the parameter values of the distribution.
-        /// </summary>
-        /// <returns>The parameter values characterizing the distribution.</returns>
-        double[] GetParameters ();
-
-        /// <summary>
-        /// Sets the parameter values of the distribution.
-        /// </summary>
-        /// <param name="parameters">A list of parameter values.</param>
-        void SetParameters (IList<double> parameters);
-
-        /// <summary>
-        /// Gets the likelihood of a value, given the current parameters.
-        /// </summary>
-        /// <param name="x">The value.</param>
-        /// <returns>The likelihood of the value.</returns>
-        double Likelihood (double x);
 
     }
 

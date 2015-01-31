@@ -52,5 +52,14 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(cx.Uncertainty, y.Uncertainty));
         }
 
+        [TestMethod]
+        public void UncertainMathSinASin () {
+            UncertainValue y = new UncertainValue(0.5, 0.1);
+            UncertainValue x = UncertainMath.Asin(y);
+            UncertainValue sx = UncertainMath.Sin(x);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(sx.Value, y.Value));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(sx.Uncertainty, y.Uncertainty));
+        }
+
     }
 }

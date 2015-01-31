@@ -68,10 +68,10 @@ namespace Meta.Numerics.Analysis {
         /// <ul>
         ///   <li>Reduce the required accuracy to the minimum required. Alternatively, if you are willing to wait longer, increase the evaluation budget.</li>
         ///   <li>Exploit symmetries of the problem to reduce the integration volume. For example, to compute the volume of the unit d-sphere, it is better to
-        ///   integrate of [0,1]<sup>d</sup> and multiply the result by 2<sup>d</sup> than to simply integrate over [-1,1]<sup>d</sup>.</li>
+        ///   integrate over [0,1]<sup>d</sup> and multiply the result by 2<sup>d</sup> than to simply integrate over [-1,1]<sup>d</sup>.</li>
         ///   <li>Apply analytic techniques to reduce the dimension of the integral. For example, when computing the volume of the unit d-sphere, it is better
-        ///   to do a (d-1)-dimesional integral over the function that is the height of the sphere in the dth dimension than to do a d-dimensional integral over the function
-        ///   that is 1 inside the sphere and 0 outside it.</li>
+        ///   to do a (d-1)-dimesional integral over the function that is the height of the sphere in the dth dimension than to do a d-dimensional integral over the
+        ///   indicator function that is 1 inside the sphere and 0 outside it.</li>
         /// </ul>
         /// </remarks>
         /// <exception cref="ArgumentException"><paramref name="function"/>, <paramref name="volume"/>, or <paramref name="settings"/> are null, or
@@ -115,23 +115,24 @@ namespace Meta.Numerics.Analysis {
 
             // Use adaptive cubature for small dimensions, Monte-Carlo for large dimensions.
 
-            MultiFunctor f;
+            MultiFunctor f = new MultiFunctor(function);
+            f.IgnoreInfinity = true;
+            f.IgnoreNaN = true;
+
             UncertainValue estimate;
 
             if (d < 1) {
                 throw new InvalidOperationException();
             } else if (d < 4) {
-                f = new MultiFunctor(function);
                 IntegrationRegion r = new IntegrationRegion(box);
-                estimate = Integrate_Adaptave(f, map, r, settings);
+                estimate = Integrate_Adaptive(f, map, r, settings);
             } else if (d < 12) {
-                f = new MultiFunctor(function);
                 estimate = Integrate_MonteCarlo(f, map, box, settings);
             } else {
                 throw new ArgumentException();
             }
 
-            // Sometimes the estimated uncertainty drops precipitiously.
+            // Sometimes the estimated uncertainty drops precipitiously. We will not report an uncertainty less than 3/4 of that demanded.
             double minUncertainty = Math.Max(0.75 * settings.AbsolutePrecision, Math.Abs(estimate.Value) * 0.75 * settings.RelativePrecision);
             if (estimate.Uncertainty < minUncertainty) estimate = new UncertainValue(estimate.Value, minUncertainty);
 
@@ -139,63 +140,6 @@ namespace Meta.Numerics.Analysis {
         }
 
     }
-
-
-    internal class MultiFunctor {
-
-        private readonly Func<IList<double>, double> function;
-
-        private readonly CoordinateTransform[] map;
-
-        private readonly bool negate = false;
-
-        private int count = 0;
-
-        public MultiFunctor (Func<IList<double>, double> function, bool negate) : this(function) {
-            this.negate = negate;
-        }
-
-        public MultiFunctor (Func<IList<double>, double> function) : this(function, null) { }
-
-        public MultiFunctor (Func<IList<double>, double> function, CoordinateTransform[] map) {
-            this.function = function;
-            this.map = map;
-        }
-
-        public double Evaluate (double[] x) {
-            Interlocked.Increment(ref count);
-            if (map == null) {
-                double z = function(new ReadOnlyCollection<double>(x));
-                //if (Double.IsInfinity(z) || Double.IsNaN(z)) z = 0.0;
-                if (negate) z = -z;
-                return (z);
-            } else {
-                double j = 1.0;
-                for (int i = 0; i < x.Length; i++) {
-                    CoordinateTransform transform = map[i];
-                    if (transform != null) transform.TransformInPlace(ref x[i], ref j);
-                }
-                double z = function(new ReadOnlyCollection<double>(x));
-                if (Double.IsInfinity(z) || Double.IsNaN(z)) z = 0.0;
-                return (j * z);
-            }
-
-        }
-
-        public int EvaluationCount {
-            get {
-                return (count);
-            }
-        }
-
-        public bool IsNegated {
-            get {
-                return (negate);
-            }
-        }
-
-    }
-
 
     internal abstract class CoordinateTransform {
 

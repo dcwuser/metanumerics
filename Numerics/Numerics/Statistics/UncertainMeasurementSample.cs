@@ -185,6 +185,15 @@ namespace Meta.Numerics.Statistics {
             // you can't do a fit with less data than parameters
             if (this.Count < start.Length) throw new InsufficientDataException();
 
+            /*
+            Func<IList<double>, double> function0 = (IList<double> x0) => {
+                double[] x = new double[x0.Count];
+                x0.CopyTo(x, 0);
+                return(function(x));
+            };
+            MultiExtremum minimum0 = MultiFunctionMath.FindMinimum(function0, start);
+            */
+
             // create a chi^2 fit metric and minimize it 
             FitMetric<T> metric = new FitMetric<T>(this, function);
             SpaceExtremum minimum = FunctionMath.FindMinimum(new Func<double[], double>(metric.Evaluate), start);
@@ -429,6 +438,20 @@ namespace Meta.Numerics.Statistics {
         private UncertainMeasurementSample<T> set;
 
         private Func<double[], T, double> f;
+
+        public double Evaluate (IList<double> p) {
+            double chi2 = 0.0;
+            foreach (UncertainMeasurement<T> point in set) {
+                T x = point.X;
+                // This is temporary, only works if p is double[]
+                double fx = f((double[]) p, x);
+                double y = point.Y.Value;
+                double dy = point.Y.Uncertainty;
+                double z = (y - fx) / dy;
+                chi2 += z * z;
+            }
+            return (chi2);
+        }
 
         public double Evaluate (double[] p) {
             double chi2 = 0.0;

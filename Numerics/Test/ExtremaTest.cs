@@ -145,6 +145,7 @@ namespace Test {
             Console.WriteLine(minimum.Curvature);
             // add test for known curvature 0.8569736317111708
 
+            /*
             // test conversion to space extremum
             SpaceExtremum space = minimum;
             Assert.IsTrue(space.Dimension == 1);
@@ -155,12 +156,14 @@ namespace Test {
             SymmetricMatrix curvature = space.Curvature();
             Assert.IsTrue(curvature.Dimension == 1);
             Assert.IsTrue(curvature[0, 0] == minimum.Curvature);
+            */
 
             
         }
 
         // Some standard minimization test functions: http://www.zsd.ict.pwr.wroc.pl/files/docs/functions.pdf
 
+        /*
         [TestMethod]
         public void FindSpaceMinimumOfRosenbock () {
 
@@ -189,25 +192,7 @@ namespace Test {
             }
 
         }
+        */
 
-        [TestMethod]
-        public void MinimizeGoldsteinPrice () {
-
-            double[] p0 = new double[] { -0.2, -0.8 };
-            SpaceExtremum m = FunctionMath.FindMinimum(
-                (double[] p) => {
-                    double x = p[0]; double y = p[1]; return (
-                        (1 + MoreMath.Pow(x + y + 1, 2) * (19 - 14 * x + 3 * x * x - 14 * y + 6 * x * y + 6 * y * y)) *
-                        (30 + MoreMath.Pow(2 * x - 3 * y, 2) * (18 - 32 * x + 12 * x * x + 48 * y - 36 * x * y + 27 * y * y))
-                    );
-                }, p0
-            );
-
-            double[] p1 = m.Location();
-            Console.WriteLine("{0} {1} {2}", p1[0], p1[1], m.Value);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(p1[0], 0.0, Math.Sqrt(TestUtilities.TargetPrecision)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(p1[1], -1.0, Math.Sqrt(TestUtilities.TargetPrecision)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(m.Value, 3.0, Math.Sqrt(TestUtilities.TargetPrecision)));
-        }
     }
 }

@@ -7,7 +7,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     // If we choose the former, then P(x_min) > 0, which doesn't make sense. If we choose the latter, then P(x_max) < 1, which also doesn't make sense.
     // If we make either choice, then for a symmetric distribution P(x_mid) != 0.5, because to get 0.5 we would need to take half of the mid-bin.
 
-    // Here is a way that we can get everything we want and have P(x) increase continuously rather than in jumps Define
+    // Here is a way that we can get everything we want and have P(x) increase continuously rather than in jumps. Define
     //   z = (x - x_min) / (x_max - x_min)
     // to be the fraction of the way through the continuos interval and define
     //   k = k_min + z (k_max - k_min + 1)
@@ -126,13 +126,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            return (d.Moment(n));
+        public override double Moment (int r) {
+            return (d.Moment(r));
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int n) {
-            return (d.MomentAboutMean(n) * MoreMath.Pow(xSupport.Width / (d.Maximum - d.Minimum), n));
+        public override double MomentAboutMean (int r) {
+            return (d.MomentAboutMean(r) * MoreMath.Pow(xSupport.Width / (d.Maximum - d.Minimum), r));
         }
 
 

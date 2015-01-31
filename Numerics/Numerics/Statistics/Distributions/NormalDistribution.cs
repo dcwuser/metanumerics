@@ -24,9 +24,9 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>The normal distribution is sometimes called a Gaussian distribtuion, after the mathematician Friedrich Gauss.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Normal_distribution"/>
-    public sealed class NormalDistribution : Distribution, IParameterizedDistribution {
+    public sealed class NormalDistribution : Distribution {
 
-        private double mu, sigma;
+        private readonly double mu, sigma;
 
         // a standard normal generator to be used by GetRandomValue()
         private readonly IDeviateGenerator normalRng;
@@ -189,22 +189,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (rng == null) throw new ArgumentNullException("rng");
             double z = normalRng.GetNext(rng);
             return (mu + sigma * z);
-        }
-
-        double[] IParameterizedDistribution.GetParameters () {
-            return (new double[] { mu, sigma });
-        }
-
-        void IParameterizedDistribution.SetParameters (IList<double> parameters) {
-            if (parameters == null) throw new ArgumentNullException("parameters");
-            if (parameters.Count != 2) throw new DimensionMismatchException();
-            if (parameters[1] <= 0.0) throw new ArgumentOutOfRangeException("parameters");
-            mu = parameters[0];
-            sigma = parameters[1];
-        }
-
-        double IParameterizedDistribution.Likelihood (double x) {
-            return (ProbabilityDensity(x));
         }
 
         /// <summary>

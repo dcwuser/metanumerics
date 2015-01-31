@@ -348,7 +348,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             // We can get an initial guess for k from the method of moments
             //   \frac{\mu^2}{\sigma^2} = k
 
-            double k0 = MoreMath.Pow2(sample.Mean) / sample.Variance;
+            double k0 = MoreMath.Sqr(sample.Mean) / sample.Variance;
 
             // Since 1/(2k) < \log(k) - \psi(k) < 1/k, we could get a bound; that
             // might be better to avoid the solver running into k < 0 territory
@@ -366,7 +366,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             SymmetricMatrix B = new SymmetricMatrix(2);
             B[0, 0] = sample.Count * AdvancedMath.Psi(1, k1);
             B[0, 1] = sample.Count / s1;
-            B[1, 1] = sample.Count * k1 / MoreMath.Pow2(s1);
+            B[1, 1] = sample.Count * k1 / MoreMath.Sqr(s1);
             SymmetricMatrix C = B.CholeskyDecomposition().Inverse();
 
             // Do a KS test for goodness-of-fit

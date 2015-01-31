@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 using Meta.Numerics;
+using Meta.Numerics.Analysis;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
@@ -9,6 +10,27 @@ using Meta.Numerics.Statistics.Distributions;
 namespace Test {
 
     internal static class TestUtilities {
+
+        public static bool IsNearlyEqual (double x, double y, EvaluationSettings s) {
+            if (Double.IsPositiveInfinity(x) && Double.IsPositiveInfinity(y)) return (true);
+            if (Double.IsNegativeInfinity(x) && Double.IsNegativeInfinity(y)) return (true);
+            double m = Math.Abs(x) + Math.Abs(y);
+            double e = s.AbsolutePrecision + m * s.RelativePrecision;
+            return (Math.Abs(x - y) <= e);
+        }
+
+        public static bool IsNearlyEqual (Complex x, Complex y, EvaluationSettings s) {
+            double m = ComplexMath.Abs(x) + ComplexMath.Abs(y);
+            double e = s.AbsolutePrecision + m * s.RelativePrecision;
+            return (ComplexMath.Abs(x - y) <= e);
+        }
+
+        public static bool IsNearlyEqual (AnyRectangularMatrix x, AnyRectangularMatrix y, EvaluationSettings s) {
+            double m = x.FrobeniusNorm() + y.FrobeniusNorm();
+            double e = s.AbsolutePrecision + m * s.RelativePrecision;
+            AnyRectangularMatrix D = x - y;
+            return (D.FrobeniusNorm() <= e);
+        }
 
         // Equality testing
 

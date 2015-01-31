@@ -131,24 +131,6 @@ namespace Meta.Numerics.Analysis {
         }
 
 #endif
-
-        // See http://web.maths.unsw.edu.au/~fkuo/sobol/ for lists of suggested parameters
-
-        internal static readonly SobolSequenceParameters[] sobolParameters = new SobolSequenceParameters[] {
-            new SobolSequenceParameters(1, 0, new ulong[] { 1 }),
-            new SobolSequenceParameters(2, 1, new ulong[] { 1, 3 }),
-            new SobolSequenceParameters(3, 1, new ulong[] { 1, 3, 1 }),
-            new SobolSequenceParameters(3, 2, new ulong[] { 1, 1, 1 }),
-            new SobolSequenceParameters(4, 1, new ulong[] { 1, 1, 3, 3 }),
-            new SobolSequenceParameters(4, 4, new ulong[] { 1, 3, 5, 13 }),
-            new SobolSequenceParameters(5, 2, new ulong[] { 1, 1, 5, 5, 17 }),
-            new SobolSequenceParameters(5, 4, new ulong[] { 1, 1, 5, 5, 5 }),
-            new SobolSequenceParameters(5, 7, new ulong[] { 1, 1, 7, 11, 19 }), 
-            new SobolSequenceParameters(5, 11, new ulong[] { 1, 1, 5, 1, 1 }),
-            new SobolSequenceParameters(5, 13, new ulong[] { 1, 1, 1, 3, 11 }),
-            new SobolSequenceParameters(5, 14, new ulong[] { 1, 3, 5, 5, 31 })
-        };
-
         
     }
 
@@ -258,7 +240,8 @@ namespace Meta.Numerics.Analysis {
 
 
     internal class SobolSequenceParameters {
-        public SobolSequenceParameters (int dimension, ulong coefficients, ulong[] seeds) {
+
+        private SobolSequenceParameters (int dimension, ulong coefficients, ulong[] seeds) {
             this.Dimension = dimension;
             this.Coefficients = coefficients;
             this.Seeds = seeds;
@@ -266,6 +249,24 @@ namespace Meta.Numerics.Analysis {
         public int Dimension { get; private set; }
         public ulong Coefficients { get; private set; }
         public ulong[] Seeds { get; private set; }
+
+        // See http://web.maths.unsw.edu.au/~fkuo/sobol/ for lists of suggested parameters
+
+        public static readonly SobolSequenceParameters[] sobolParameters = new SobolSequenceParameters[] {
+            new SobolSequenceParameters(1, 0, new ulong[] { 1 }),
+            new SobolSequenceParameters(2, 1, new ulong[] { 1, 3 }),
+            new SobolSequenceParameters(3, 1, new ulong[] { 1, 3, 1 }),
+            new SobolSequenceParameters(3, 2, new ulong[] { 1, 1, 1 }),
+            new SobolSequenceParameters(4, 1, new ulong[] { 1, 1, 3, 3 }),
+            new SobolSequenceParameters(4, 4, new ulong[] { 1, 3, 5, 13 }),
+            new SobolSequenceParameters(5, 2, new ulong[] { 1, 1, 5, 5, 17 }),
+            new SobolSequenceParameters(5, 4, new ulong[] { 1, 1, 5, 5, 5 }),
+            new SobolSequenceParameters(5, 7, new ulong[] { 1, 1, 7, 11, 19 }), 
+            new SobolSequenceParameters(5, 11, new ulong[] { 1, 1, 5, 1, 1 }),
+            new SobolSequenceParameters(5, 13, new ulong[] { 1, 1, 1, 3, 11 }),
+            new SobolSequenceParameters(5, 14, new ulong[] { 1, 3, 5, 5, 31 })
+        };
+
     }
 
 }

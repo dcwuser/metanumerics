@@ -396,7 +396,7 @@ namespace Meta.Numerics.Statistics {
                         y += parameters[c] * storage[c][r];
                     }
                 }
-                unexplainedSumOfSquares += MoreMath.Pow2(y - storage[outputIndex][r]);
+                unexplainedSumOfSquares += MoreMath.Sqr(y - storage[outputIndex][r]);
             }
             int unexplainedDegreesOfFreedom = Count - Dimension;
             double unexplainedVariance = unexplainedSumOfSquares / unexplainedDegreesOfFreedom;

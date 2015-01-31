@@ -48,7 +48,7 @@ namespace Meta.Numerics.Analysis {
                 return (relativePrecision);
             }
             set {
-                if ((value < 0.0) || (value > 1.0)) throw new ArgumentOutOfRangeException("value");
+                if ((value < 0.0) || (value >= 1.0)) throw new ArgumentOutOfRangeException("value");
                 relativePrecision = value;
             }
         }
@@ -67,6 +67,11 @@ namespace Meta.Numerics.Analysis {
             }
         }
 
+        internal double ComputePrecision (double value) {
+            return (absolutePrecision + Math.Abs(value) * relativePrecision);
+        }
+
+#if FUTURE
         /// <summary>
         /// Occurs when an updated evaluation is available.
         /// </summary>
@@ -75,6 +80,7 @@ namespace Meta.Numerics.Analysis {
         internal void OnUpdate (object result) {
             if (Update != null) Update(result);
         }
+#endif
 
     }
 

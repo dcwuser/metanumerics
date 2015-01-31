@@ -109,7 +109,7 @@ namespace Test {
 
             // \zeta(1) is infinite, so skip d=1
 
-            for (int d = 2; d <= 9; d++) {
+            for (int d = 2; d <= 10; d++) {
                 Console.WriteLine(d);
                 IntegrationResult result = MultiFunctionMath.Integrate(f, UnitCube(d));
                 Console.WriteLine("{0} ({1}) {2}", result.Estimate, result.Estimate.Value - AdvancedMath.RiemannZeta(d), result.EvaluationCount);

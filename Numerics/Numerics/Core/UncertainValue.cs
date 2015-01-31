@@ -37,7 +37,7 @@ namespace Meta.Numerics {
 				return(u);
 			}
 			internal set {
-				if (value < 0.0) throw new InvalidOperationException();
+				if (value < 0.0) throw new ArgumentOutOfRangeException("value");
 				u = value;
 			}
 		}
@@ -69,6 +69,7 @@ namespace Meta.Numerics {
         /// </summary>
         /// <param name="value">The best estimate of the value.</param>
         /// <param name="uncertainty">The uncertainty in the value.</param>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="uncertainty"/> is negative.</exception>
 		public UncertainValue (double value, double uncertainty) {
 			if (uncertainty < 0.0) throw new ArgumentOutOfRangeException("uncertainty");
 			v = value;

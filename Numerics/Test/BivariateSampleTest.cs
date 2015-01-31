@@ -127,6 +127,8 @@ namespace Test {
             // do 50 fits
             for (int k = 0; k < 50; k++) {
 
+                Console.WriteLine("k={0}", k);
+
                 // generate a synthetic data set
                 BivariateSample s = new BivariateSample();
                 for (int i = 0; i < 50; i++) {
@@ -140,6 +142,8 @@ namespace Test {
                     }
                 }
 
+                //if (k != 27) continue;
+
                 // do the regression
                 FitResult r = s.LinearLogisticRegression();
 
@@ -147,6 +151,8 @@ namespace Test {
                 double a = r.Parameter(0).Value;
                 double b = r.Parameter(1).Value;
                 ps.Add(a, b);
+
+                Console.WriteLine("{0}, {1}", a, b);
 
                 // record estimated covariances
                 caa += r.Covariance(0, 0);

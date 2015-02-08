@@ -569,16 +569,16 @@ namespace Meta.Numerics.Functions {
         // These composite "factors" are, however, still co-prime to the other factors, so the almost-factorization
         // will still work for reduction of Fourier transforms, which is how we are currently using it.
 
-        internal static List<Factor> Factor (int n) {
+        internal static List<Element> Factor (int n) {
             if (n < 1) throw new ArgumentOutOfRangeException("n");
 
-            List<Factor> factors = new List<Factor>();
+            List<Element> factors = new List<Element>();
 
             if (n > 1) FactorByTrialDivision(factors, ref n);
 
             if (n > 1) FactorByPollardsRhoMethod(factors, ref n);
 
-            if (n > 1) factors.Add(new Factor(n, 1));
+            if (n > 1) factors.Add(new Element(n, 1));
 
             return(factors);
         }
@@ -588,7 +588,7 @@ namespace Meta.Numerics.Functions {
         // Trial division is the simplest prime factorization method. It consists of attempted to divide by known primes.
         // It is a good way to eliminate known small prime factors before proceeding on to bigger and more difficult prime factors.
 
-        private static void FactorByTrialDivision (List<Factor> factors, ref int n) {
+        private static void FactorByTrialDivision (List<Element> factors, ref int n) {
 
             foreach (int p in SmallPrimes) {
 
@@ -597,7 +597,7 @@ namespace Meta.Numerics.Functions {
                     n = n / p;
                     m++;
                 }
-                if (m > 0) factors.Add(new Factor(p, m));
+                if (m > 0) factors.Add(new Element(p, m));
 
                 if (n == 1) return;
 
@@ -605,7 +605,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        private static void FactorByPollardsRhoMethod (List<Factor> factors, ref int n) {
+        private static void FactorByPollardsRhoMethod (List<Element> factors, ref int n) {
 
             int x = 5; int y = 2; int k = 1; int l = 1;
 
@@ -636,7 +636,7 @@ namespace Meta.Numerics.Functions {
                         y = y % n;
                         m++;
                     }
-                    factors.Add(new Factor(g, m));
+                    factors.Add(new Element(g, m));
                 }
             }
 
@@ -645,14 +645,14 @@ namespace Meta.Numerics.Functions {
 	}
 
 
-    internal struct Factor {
+    internal struct Element {
 
-        public Factor (int value, int multiplicity) {
+        internal Element (int value, int multiplicity) {
             this.value = value;
             this.multiplicity = multiplicity;
         }
 
-        private int value, multiplicity;
+        private readonly int value, multiplicity;
 
         public int Value {
             get {

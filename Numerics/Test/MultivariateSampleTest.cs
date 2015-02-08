@@ -373,13 +373,13 @@ namespace Test {
                 SA.Add(rng.NextDouble(), rng.NextDouble());
             }
             FitResult RA = SA.LinearRegression(0);
-            double[] PA = RA.Parameters();
-            SymmetricMatrix CA = RA.CovarianceMatrix();
+            ColumnVector PA = RA.Parameters;
+            SymmetricMatrix CA = RA.CovarianceMatrix;
 
             MultivariateSample SB = SA.Columns(1, 0);
             FitResult RB = SB.LinearRegression(1);
-            double[] PB = RB.Parameters();
-            SymmetricMatrix CB = RB.CovarianceMatrix();
+            ColumnVector PB = RB.Parameters;
+            SymmetricMatrix CB = RB.CovarianceMatrix;
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(PA[0], PB[1])); Assert.IsTrue(TestUtilities.IsNearlyEqual(PA[1], PB[0]));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 0], CB[1, 1])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 1], CB[1, 0])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[1, 1], CB[0, 0]));
@@ -387,8 +387,8 @@ namespace Test {
 
             BivariateSample SC = SA.TwoColumns(1, 0);
             FitResult RC = SC.LinearRegression();
-            double[] PC = RC.Parameters();
-            SymmetricMatrix CC = RC.CovarianceMatrix();
+            ColumnVector PC = RC.Parameters;
+            SymmetricMatrix CC = RC.CovarianceMatrix;
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(PA, PC));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(CA, CC));

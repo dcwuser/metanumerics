@@ -673,6 +673,8 @@ namespace Meta.Numerics.Functions {
         /// <para>Near the origin, w(z) &#x2248; 1. To accurately determine w(z) - 1 in this region, use the <see cref="Erf"/>
         /// function. Away from the origin near the large negative imaginary axis, the magnitude w(z) increases rapidly and
         /// may overflow.</para>
+        /// <para>The image below shows the complex Faddeeva function near the origin, using domain coloring.</para>
+        /// <img src="../images/ComplexFaddeevaPlot.png" />
         /// </remarks>
         /// <seealso cref="AdvancedComplexMath.Erf"/>
         /// <seealso cref="AdvancedMath.Erf" />

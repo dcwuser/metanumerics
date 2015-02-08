@@ -130,11 +130,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int n) {
-            if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException("r");
             } else {
-                if (nu2 <= 2.0 * n) {
+                if (nu2 <= 2.0 * r) {
                     return (System.Double.PositiveInfinity);
                 } else {
 
@@ -144,10 +144,10 @@ namespace Meta.Numerics.Statistics.Distributions {
 
                     // this can be computed using the recursion relation for the Gamma function
 
-                    double r = nu2 / nu1;
+                    double q = nu2 / nu1;
                     double M = 1.0;
-                    for (int k = 0; k < n; k++) {
-                        M = M * r * (nu1 + 2*k) / (nu2 - 2*(k+1));
+                    for (int k = 0; k < r; k++) {
+                        M = M * q * (nu1 + 2*k) / (nu2 - 2*(k+1));
                     }
 
                     return (M);

@@ -53,10 +53,11 @@ namespace Test {
             for (int d = 1; d <= 10; d++) {
                 Console.WriteLine(d);
                 IntegrationResult r = MultiFunctionMath.Integrate(f, UnitCube(d));
-                Console.WriteLine("{0} {1} {2}", r.EvaluationCount, r.Estimate, 1.0 / AdvancedIntegerMath.Factorial(d));
-                Assert.IsTrue(
-                    r.Estimate.ConfidenceInterval(0.99).ClosedContains(
-                    1.0 / AdvancedIntegerMath.Factorial(d)
+                Console.WriteLine("{0}: {1} ({2}) ?= {3}", r.EvaluationCount, r.Value, r.Precision, 1.0 / AdvancedIntegerMath.Factorial(d));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    r.Value,
+                    1.0 / AdvancedIntegerMath.Factorial(d),
+                    new EvaluationSettings() { AbsolutePrecision = 2.0 * r.Precision }
                 ));
             }
 
@@ -85,10 +86,10 @@ namespace Test {
             for (int d = 1; d <= 8; d++) {
                 if (d == 6) continue; //. For d=6, integral returns after just ~300 evaluation with an underestimated error; look into this
                 Console.WriteLine(d);
-                IntegrationResult result = MultiFunctionMath.Integrate(f, UnitCube(d), new EvaluationSettings() { RelativePrecision = 5.0E-3, EvaluationBudget = 1000000 });
+                IntegrationResult result = MultiFunctionMath.Integrate(f, UnitCube(d), new EvaluationSettings() { AbsolutePrecision = 0.0, RelativePrecision = 5.0E-3, EvaluationBudget = 1000000 });
                 double V = Math.Pow(Math.PI, d / 2.0) / AdvancedMath.Gamma(d / 2.0 + 1.0) * MoreMath.Pow(2.0, -d);
-                Console.WriteLine("{0} ({1}) {2}", result.Estimate, result.Estimate.Value - V, result.EvaluationCount);
-                Assert.IsTrue(result.Estimate.ConfidenceInterval(0.99).ClosedContains(V));
+                Console.WriteLine("{0} ({1}) {2}: {3}", result.Value, result.Precision, result.Value - V, result.EvaluationCount);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Value, V, new EvaluationSettings() { AbsolutePrecision = 4.0 * result.Precision }));
             }
 
         }
@@ -112,8 +113,8 @@ namespace Test {
             for (int d = 2; d <= 10; d++) {
                 Console.WriteLine(d);
                 IntegrationResult result = MultiFunctionMath.Integrate(f, UnitCube(d));
-                Console.WriteLine("{0} ({1}) {2}", result.Estimate, result.Estimate.Value - AdvancedMath.RiemannZeta(d), result.EvaluationCount);
-                Assert.IsTrue(result.Estimate.ConfidenceInterval(0.99).ClosedContains(AdvancedMath.RiemannZeta(d)));
+                Console.WriteLine("{0} ({1}) {2}", result.Value, result.Precision, AdvancedMath.RiemannZeta(d));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Value, AdvancedMath.RiemannZeta(d), new EvaluationSettings() { AbsolutePrecision = 2.0 * result.Precision }));
             }
 
         }
@@ -135,24 +136,25 @@ namespace Test {
                 (IList<double> x) => 1.0 / (1.0 - x[0] * x[0] * x[1] * x[1]),
                 UnitCube(2)
             );
-            Console.WriteLine("{0} {1}", i1.Estimate, i1.EvaluationCount);
-            Assert.IsTrue(i1.Estimate.ConfidenceInterval(0.99).ClosedContains(Math.PI * Math.PI / 8.0));
+            Console.WriteLine("{0} ({1})", i1.Value, i1.Precision);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(i1.Value, Math.PI * Math.PI / 8.0, new EvaluationSettings() { AbsolutePrecision = 2.0 * i1.Precision }));
+            //Assert.IsTrue(i1.Estimate.ConfidenceInterval(0.99).ClosedContains(Math.PI * Math.PI / 8.0));
 
             IntegrationResult i2 = MultiFunctionMath.Integrate(
                 (IList<double> x) => 1.0 / (x[0] + x[1]) / Math.Sqrt((1.0 - x[0]) * (1.0 - x[1])),
                 UnitCube(2),
                 new EvaluationSettings() { RelativePrecision = 1.0E-5, EvaluationBudget = 1000000 }
             );
-            Console.WriteLine("{0} {1}", i2.Estimate, i2.EvaluationCount);
-            Assert.IsTrue(i2.Estimate.ConfidenceInterval(0.99).ClosedContains(4.0 * AdvancedMath.Catalan));
+            Console.WriteLine("{0} ({1})", i2.Value, i2.Precision);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(i2.Value, 4.0 * AdvancedMath.Catalan, new EvaluationSettings() { AbsolutePrecision = 2.0 * i2.Precision }));
             // For higher precision demands on this integral, we start getting Infinity +/- NaN for estimate and never terminate, look into this.
             
             IntegrationResult i3 = MultiFunctionMath.Integrate(
                 (IList<double> x) => (x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1]),
                 UnitCube(2)
             );
-            Console.WriteLine("{0} {1}", i3.Estimate, i3.EvaluationCount);
-            Assert.IsTrue(i3.Estimate.ConfidenceInterval(0.99).ClosedContains(AdvancedMath.EulerGamma));
+            Console.WriteLine("{0} ({1})", i3.Value, i3.Precision);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(i3.Value, AdvancedMath.EulerGamma, new EvaluationSettings() { AbsolutePrecision = 2.0 * i3.Precision }));
 
         }
 
@@ -205,7 +207,7 @@ namespace Test {
 
             for (int d = 2; d <= 5; d++) {
 
-                UncertainValue v1 = MultiFunctionMath.Integrate((IList<double> x) => {
+                IntegrationResult v1 = MultiFunctionMath.Integrate((IList<double> x) => {
                     for (int i = 0; i < d; i++) {
                         double s = 0.0;
                         for (int j = 0; j < d; j++) {
@@ -214,7 +216,7 @@ namespace Test {
                         if (s > 1.0) return (0.0);
                     }
                     return (1.0);
-                }, SymmetricUnitCube(d), settings).Estimate;
+                }, SymmetricUnitCube(d), settings);
 
                 double v2 = 0.0;
                 switch (d) {
@@ -233,8 +235,8 @@ namespace Test {
                         break;
                 }
 
-                Console.WriteLine("{0} {1} {2}", d, v1, v2);
-                Assert.IsTrue(v1.ConfidenceInterval(0.99).ClosedContains(v2));
+                Console.WriteLine("{0} {1} {2}", d, v1.Value, v2);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(v1.Value, v2, new EvaluationSettings() { AbsolutePrecision = 4.0 * v1.Precision }));
 
             }
 
@@ -278,7 +280,7 @@ namespace Test {
                     z += ComplexMath.Exp(2.0 * Math.PI * Complex.I * x[k]);
                 }
                 return (MoreMath.Pow(ComplexMath.Abs(z), s));
-            }, UnitCube(d), settings).Estimate.Value);
+            }, UnitCube(d), settings).Value);
         }
 
 
@@ -389,7 +391,7 @@ namespace Test {
                     s += x[k] * x[k];
                 }
                 return (Math.Pow(s, r / 2.0));
-            }, UnitCube(d), settings).Estimate.Value);
+            }, UnitCube(d), settings).Value);
         }
 
         public double BoxIntegralD (int d, int r, EvaluationSettings settings) {
@@ -400,7 +402,7 @@ namespace Test {
                     s += z * z;
                 }
                 return (Math.Pow(s, r / 2.0));
-            }, UnitCube(2 * d), settings).Estimate.Value);
+            }, UnitCube(2 * d), settings).Value);
         }
 
         [TestMethod]
@@ -438,9 +440,8 @@ namespace Test {
                 IntegrationResult I = MultiFunctionMath.Integrate(f, volume);
 
                 // Compare to the analytic result
-                Console.WriteLine("{0} {1}", I.Estimate, Math.Sqrt(MoreMath.Pow(Math.PI, d) / detA));
-                Assert.IsTrue(I.Estimate.ConfidenceInterval(0.99).ClosedContains(Math.Sqrt(MoreMath.Pow(Math.PI, d) / detA)));
-
+                Console.WriteLine("{0} ({1}) {2}", I.Value, I.Precision, Math.Sqrt(MoreMath.Pow(Math.PI, d) / detA));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(I.Value, Math.Sqrt(MoreMath.Pow(Math.PI, d) / detA), new EvaluationSettings() { AbsolutePrecision = 2.0 * I.Precision }));
             }
 
         }

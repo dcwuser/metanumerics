@@ -1083,7 +1083,7 @@ namespace Meta.Numerics.Statistics {
         public static OneWayAnovaResult OneWayAnovaTest (IList<Sample> samples) {
 
             if (samples == null) throw new ArgumentNullException("samples");
-            if (samples.Count < 2) throw new InvalidOperationException();
+            if (samples.Count < 2) throw new ArgumentException("There must be at least two samples in the sample list.", "samples");
 
             // determine total count, mean, and within-group sum-of-squares
             int n = 0;
@@ -1130,7 +1130,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         public static TestResult KruskalWallisTest (IList<Sample> samples) {
             if (samples == null) throw new ArgumentNullException("samples");
-            if (samples.Count < 2) throw new InvalidOperationException();
+            if (samples.Count < 2) throw new ArgumentException("There must be at least two samples in the sample list.", "samples");
 
             // sort each sample individually and compute count total from all samples
             int N = 0;

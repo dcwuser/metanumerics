@@ -11,7 +11,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <remarks><para>The D statistic in a Kolmogorov-Smirnov test is distributed (under the null hypothesis) according to a Kolmogorov disribution, in
     /// the limit of a large sample size.</para></remarks>
     /// <seealse cref="Sample.KolmogorovSmirnovTest(Meta.Numerics.Statistics.Distributions.Distribution)" />
-    public class KolmogorovDistribution : Distribution {
+    public sealed class KolmogorovDistribution : Distribution {
 
         /// <summary>
         /// Initializes a new asymptotic Kolmogorov distribution.

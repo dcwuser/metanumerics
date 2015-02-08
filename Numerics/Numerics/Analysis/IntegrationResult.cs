@@ -11,12 +11,9 @@ namespace Meta.Numerics.Analysis {
 
         internal IntegrationResult (UncertainValue estimate, int evaluationCount, EvaluationSettings settings) : base(evaluationCount, settings) {
             this.estimate = estimate;
-            this.evaluationCount = evaluationCount;
         }
 
         private readonly UncertainValue estimate;
-
-        private readonly int evaluationCount;
 
         /// <summary>
         /// Gets the estimated value of the integral and its associated error bar.
@@ -28,6 +25,24 @@ namespace Meta.Numerics.Analysis {
         public UncertainValue Estimate {
             get {
                 return (estimate);
+            }
+        }
+
+        /// <summary>
+        /// Gets the estimated value of the integral.
+        /// </summary>
+        public double Value {
+            get {
+                return (estimate.Value);
+            }
+        }
+
+        /// <summary>
+        /// Gets the estimated precision of the evaluated value.
+        /// </summary>
+        public double Precision {
+            get {
+                return (estimate.Uncertainty);
             }
         }
 

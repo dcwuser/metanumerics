@@ -211,18 +211,20 @@ namespace Meta.Numerics {
         /// why the base class library designers did not at least choose to return <see cref="Double.NaN"/> so as to signal to the user
         /// that the result should not be trusted. No floating point standard specifies this crazy behavior.)
         /// Another shortcomming, more commonly encountered but often unnoticed, is that for large but not necessarily very large arguments,
-        /// values loose precision near zeros of the function.</para>
+        /// function values loose precision, particularly near zeros of the function.</para>
         /// <para>
         /// One way to view these shortcommings is that they are justified by the uncertainty inherent in floating point representations. In this
         /// view, any <see cref="System.Double"/> should be seen as an uncertain value with a relative error of ~10<sup>-16</sup>. If the
-        /// number is very large, then the size of this error can be as large or larger than 2&#x3C0;; in this circumstance we should not
+        /// number is very large, then the absolute size of this error can be as large or larger than 2&#x3C0;; in this circumstance we should not
         /// expect to be able to say anything about the value. (Except, of course, that it is between -1 and +1, which is violated by the designers' crazy
-        /// choice to return the argument as the value).
+        /// choice to return the argument as the value). Even if the absolute error is just a non-negligable faction of 2&#x3C0;, there is a non-neglible fraction
+        /// of the values between -1 and +1 in the corresponding range of function values; any of these values is as good as any other as an answer to the
+        /// question of the sine of our uncertain argument, so we should be satisfied with any returned value in this non-negligible range.
         /// </para>
         /// <para>A contrary view is that it is better to treat all arguments as infinitely precise and return the nearest representable <see cref="System.Double"/>
         /// to the actual function value under this assumption. Users are unlikely to complain that we returned a more accurate value and this behavior is particularly
         /// useful when the argument is an intermediate result that the programmer may not even realize has become large.</para>
-        /// <para>For typical arguments, say between 10<sup>-4</sup>-4 and 10<sup>4</sup>, the extra cost of this function over
+        /// <para>For typical arguments, say between 10<sup>-4</sup> and 10<sup>4</sup>, the extra cost of this function over
         /// <see cref="Math.Sin"/> is just a couple of comparisons and a single floating point operation; less than 0.1% of
         /// arguments in this range are then routed to our much slower, higher-accuracy algorithm. We therefore suggest that,
         /// for general use, you prefer this method over <see cref="Math.Sin"/>; only in very unusual situations where (i) you are guaranteed

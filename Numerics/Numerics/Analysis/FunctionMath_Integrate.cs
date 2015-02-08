@@ -42,7 +42,7 @@ namespace Meta.Numerics.Analysis {
         /// </remarks>
         public static double Integrate (Func<double, double> integrand, Interval range) {
             EvaluationSettings settings = new EvaluationSettings();
-            return (Integrate(integrand, range, settings).Estimate.Value);
+            return (Integrate(integrand, range, settings).Value);
         }
 
 

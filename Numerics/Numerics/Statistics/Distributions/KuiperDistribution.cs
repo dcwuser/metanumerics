@@ -9,7 +9,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents the asymptotic distribution of Kuiper's V statistic.
     /// </summary>
-    public class KuiperDistribution : Distribution {
+    public sealed class KuiperDistribution : Distribution {
 
         /// <summary>
         /// Initializes a new Kuiper distribution.

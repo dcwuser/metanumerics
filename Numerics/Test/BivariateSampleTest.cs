@@ -326,14 +326,14 @@ namespace Test {
                 // do the regression
                 FitResult r = s.PolynomialRegression(a.Length - 1);
 
-                double[] ps = r.Parameters();
+                ColumnVector ps = r.Parameters;
                 //Console.WriteLine("{0} {1} {2}", ps[0], ps[1], ps[2]);
 
                 // record best fit parameters
-                A.Add(r.Parameters());
+                A.Add(ps);
 
                 // record estimated covariances
-                C += r.CovarianceMatrix();
+                C += r.CovarianceMatrix;
 
                 // record the fit statistic
                 F.Add(r.GoodnessOfFit.Statistic);
@@ -375,8 +375,8 @@ namespace Test {
             B.Add(2.0, 9.0);
             FitResult PR = B.PolynomialRegression(1);
             FitResult LR = B.LinearRegression();
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.Parameters(), LR.Parameters()));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.CovarianceMatrix(), LR.CovarianceMatrix()));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.Parameters, LR.Parameters));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.CovarianceMatrix, LR.CovarianceMatrix));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.GoodnessOfFit.Statistic, LR.GoodnessOfFit.Statistic));
 
         }

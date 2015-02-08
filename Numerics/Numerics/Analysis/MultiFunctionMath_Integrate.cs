@@ -13,6 +13,7 @@ namespace Meta.Numerics.Analysis {
         /// <summary>Estimates a multi-dimensional integral.</summary>
         /// <param name="function">The function to integrate.</param>
         /// <param name="volume">The volume over which to integrate.</param>
+        /// <returns>A numerical estimate of the multi-dimensional integral.</returns>
         /// <remarks>
         /// <para>By default, our multidimensional integration system targets a relative accuracy of about 10<sup>-7</sup> (close to full single precision) for d=2, falling gradually
         /// to about 10<sup>-2</sup> (1%) for d=12. To achieve that accuracy, it allows up to about 10<sup>5</sup> evaluations of the integrand for d=2, rising
@@ -122,14 +123,14 @@ namespace Meta.Numerics.Analysis {
             UncertainValue estimate;
 
             if (d < 1) {
-                throw new InvalidOperationException();
+                throw new ArgumentException("The dimension of the integration volume must be at least 1.", "volume");
             } else if (d < 4) {
                 IntegrationRegion r = new IntegrationRegion(box);
                 estimate = Integrate_Adaptive(f, map, r, settings);
             } else if (d < 12) {
                 estimate = Integrate_MonteCarlo(f, map, box, settings);
             } else {
-                throw new ArgumentException();
+                throw new ArgumentException("The dimension of the integrtion volume must be less than 12.", "volume");
             }
 
             // Sometimes the estimated uncertainty drops precipitiously. We will not report an uncertainty less than 3/4 of that demanded.

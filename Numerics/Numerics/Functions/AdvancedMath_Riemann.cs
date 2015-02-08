@@ -7,7 +7,7 @@ namespace Meta.Numerics.Functions {
     public partial class AdvancedMath {
 
         /// <summary>
-        /// Compute the Riemann zeta function.
+        /// Computes the Riemann zeta function.
         /// </summary>
         /// <param name="x">The argument.</param>
         /// <returns>The value &#x3B6;(s).</returns>
@@ -153,6 +153,9 @@ namespace Meta.Numerics.Functions {
         /// <para>As the imaginary part of the argument increases, the computation of the zeta function becomes slower and more difficult.
         /// The computation time is approximately proprotional to the imaginary part of z. The result also slowly looses accuracy for arguments with
         /// very large imaginary parts; for arguments with z.Im of order 10^d, approximately the last d digits of the result are suspect.</para>
+        /// <para>The image below shows the complex &#x393; function near the origin using domain coloring. You can see the first non-trivial
+        /// zeros at (1/2, &#177;14.13...) as well as the trivial zeros along the negative real axis.</para>
+        /// <img src="../images/ComplexRiemannZetaPlot.png" />
         /// </remarks>
         public static Complex RiemannZeta (Complex z) {
 

@@ -32,27 +32,28 @@ namespace Meta.Numerics.Statistics {
     /// <seealso href="http://en.wikipedia.org/wiki/Maximum_likelihood"/>
     public class FitResult {
 
-        private IList<double> parameters;
-        private SymmetricMatrix covarianceMatrix;
-        private TestResult test;
+        private readonly ColumnVector parameters;
+        private readonly SymmetricMatrix covarianceMatrix;
+        private readonly TestResult test;
 
         /// <summary>
         /// Gets the number of fit parameters.
         /// </summary>
         public int Dimension {
             get {
-                return (parameters.Count);
+                return (parameters.Dimension);
             }
         }
 
         /// <summary>
-        /// Gets an array of the best fit parameter set.
+        /// Gets the best fit parameter set.
         /// </summary>
-        /// <returns>An independent array of the best fit parameter values.</returns>
-        public double[] Parameters () {
-            double[] result = new double[Dimension];
-            parameters.CopyTo(result, 0);
-            return (result);
+        /// <value>A read-only vector containing the best-fit parameter values.</value>
+        public ColumnVector Parameters {
+            get {
+                Debug.Assert(parameters.IsReadOnly);
+                return (parameters);
+            }
         }
 
         /// <summary>
@@ -101,8 +102,11 @@ namespace Meta.Numerics.Statistics {
         /// Gets the covariance matrix containing the variances and covariances for all fit parameters.
         /// </summary>
         /// <returns>The covariance matrix.</returns>
-        public SymmetricMatrix CovarianceMatrix () {
-            return (covarianceMatrix.Copy());
+        public SymmetricMatrix CovarianceMatrix {
+            get {
+                Debug.Assert(covarianceMatrix.IsReadOnly);
+                return (covarianceMatrix);
+            }
         }
 
         /// <summary>
@@ -120,22 +124,21 @@ namespace Meta.Numerics.Statistics {
 
         // one-parameter constructor
         internal FitResult (double p1, double dp1, TestResult test) {
-            this.parameters = new ColumnVector(1);
-            this.parameters[0] = p1;
+            this.parameters = new ColumnVector(new double[] {p1}, 0, 1, 1, true);
             this.covarianceMatrix = new SymmetricMatrix(1);
             this.covarianceMatrix[0, 0] = dp1 * dp1;
+            this.covarianceMatrix.IsReadOnly = true;
             this.test = test;
         }
 
         // two-parameter constructor
         internal FitResult (double p1, double dp1, double p2, double dp2, double cov, TestResult test) {
-            this.parameters = new ColumnVector(2);
-            this.parameters[0] = p1;
-            this.parameters[1] = p2;
+            this.parameters = new ColumnVector(new double[] { p1, p2 }, 0, 1, 2, true);
             this.covarianceMatrix = new SymmetricMatrix(2);
             this.covarianceMatrix[0, 0] = dp1 * dp1;
             this.covarianceMatrix[1, 1] = dp2 * dp2;
             this.covarianceMatrix[0, 1] = cov;
+            this.covarianceMatrix.IsReadOnly = true;
             this.test = test;
         }
 
@@ -144,9 +147,38 @@ namespace Meta.Numerics.Statistics {
             Debug.Assert(parameters != null);
             Debug.Assert(covariance != null);
             Debug.Assert(parameters.Count == covariance.Dimension);
-            this.parameters = parameters;
+
+            // This is a bit of a hack to ensure we store read-only ColumnVectors and SymmetricMatrix objects.
+            this.parameters = ConvertListToReadOnlyVector(parameters);
             this.covarianceMatrix = covariance;
+            this.covarianceMatrix.IsReadOnly = true;
+
             this.test = test;
+        }
+
+        private static ColumnVector ConvertListToReadOnlyVector (IList<double> parameters) {
+
+            // If it already is a column vector, just make sure it is read-only
+            // and store it. (This assumes it's not a problem to make it read-only,
+            // but since it was internally generated we control that.)
+            ColumnVector vParameters = parameters as ColumnVector;
+            if ((vParameters != null) && (vParameters.IsReadOnly)) {
+                vParameters.IsReadOnly = true;
+                return (vParameters);
+            }
+
+            // If it's an array, just convert it to a read-only column vector
+            // (This assumes the array won't be modified later, but since it was
+            // internally generated we control that.)
+            double[] aParameters = parameters as double[];
+            if (aParameters != null) {
+                parameters = new ColumnVector(aParameters, 0, 1, aParameters.Length, true);
+            }
+
+            // If necessary, copy the parameters.
+            double[] cParameters = new double[parameters.Count];
+            parameters.CopyTo(cParameters, 0);
+            return (new ColumnVector(cParameters, 0, 1, cParameters.Length, true));
         }
 
     }

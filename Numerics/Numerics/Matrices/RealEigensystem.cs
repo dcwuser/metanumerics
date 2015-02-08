@@ -53,12 +53,14 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Gets the transformation matrix that diagonalizes the original matrix.
         /// </summary>
-        /// <returns>The orthogonal matrix V such that V<sup>T</sup>AV = D, where A is the orignal matrix and D is diagonal.</returns>
+        /// <value>The orthogonal matrix V such that V<sup>T</sup>AV = D, where A is the orignal matrix and D is diagonal.</value>
         /// <remarks>
         /// <para>The returned matrix is read-only. If you need to make changes to it, you can call <see cref="SquareMatrix.Copy"/> to obtain a writable copy.</para>
         /// </remarks>
-        public SquareMatrix TransformMatrix () {
-            return (new SquareMatrix(eigenvectorStorage, dimension, true));
+        public SquareMatrix TransformMatrix {
+            get {
+                return (new SquareMatrix(eigenvectorStorage, dimension, true));
+            }
         }
 
     }

@@ -233,6 +233,7 @@ namespace Meta.Numerics.Analysis {
             return (H);
         }
 
+#if PAST
         /// <summary>
         /// Maximizes a function on a multi-dimensional space in the vicinity of a given point, subject to the given settings. 
         /// </summary>
@@ -245,6 +246,7 @@ namespace Meta.Numerics.Analysis {
         internal static SpaceExtremum FindMaximum (Func<double[], double> f, double[] x, EvaluationSettings settings) {
             return (FindMinimum((double[] p) => -f(p), x, settings));
         }
+#endif
 
     }
 

@@ -166,6 +166,7 @@ namespace Test {
 
         }
 
+        /*
         [TestMethod]
         public void DiscreteContinuousAgreement () {
 
@@ -190,6 +191,7 @@ namespace Test {
             // This is already the case for internal distributions used for exact null distributions, but not for public discrete distributions.
 
         }
+        */
 
         [TestMethod]
         public void OutsideDiscreteDistributionSupport () {
@@ -234,6 +236,7 @@ namespace Test {
                 Random rng = new Random(314159265);
                 for (int i = 0; i < 1024; i++) h.Add(distribution.GetRandomValue(rng));
                 TestResult result = h.ChiSquaredTest(distribution);
+                Console.WriteLine("{0} {1}", result.Statistic, result.RightProbability);
                 Assert.IsTrue(result.RightProbability > 0.05);
 
             }

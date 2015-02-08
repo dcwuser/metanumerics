@@ -176,18 +176,18 @@ namespace Test {
                 }
 
                 // Create a historgram of randomly generated permutation indexes
-                Histogram bins = new Histogram(count);
+                Histogram histogram = new Histogram(count);
                 Random rng = new Random(2);
                 for (int i = 0; i < 8 * count; i++) {
                     Permutation p = Permutation.GetRandomPermutation(n, rng);
-                    bins[index[p]].Increment();
+                    histogram.Bins[index[p]].Increment();
                 }
 
                 //for (int i = 0; i < count; i++) {
                 //    Console.WriteLine("{0} {1}", i, bins[i].Counts);
                 //}
 
-                TestResult result = bins.ChiSquaredTest(new DiscreteUniformDistribution(0, count - 1));
+                TestResult result = histogram.ChiSquaredTest(new DiscreteUniformDistribution(0, count - 1));
                 Console.WriteLine(result.RightProbability);
                 Assert.IsTrue(result.RightProbability > 0.01);
 

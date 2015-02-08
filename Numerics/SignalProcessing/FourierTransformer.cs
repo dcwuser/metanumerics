@@ -128,7 +128,7 @@ namespace Meta.Numerics.SignalProcessing {
 
             // store a plan for the transform based on the prime factorization
             plan = new List<Transformlet>();
-            foreach (Factor factor in factors) {
+            foreach (Element factor in factors) {
 
                 Transformlet t;
                 switch (factor.Value) {
@@ -175,7 +175,7 @@ namespace Meta.Numerics.SignalProcessing {
         }
 
         private int size;
-        private List<Factor> factors;
+        private List<Element> factors;
         private List<Transformlet> plan;
         private FourierNormalization normalizationConvention;
         private FourierSign signConvention;

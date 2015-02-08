@@ -167,7 +167,7 @@ namespace Test {
 
                 Assert.IsTrue(TestUtilities.IsSumNearlyEqual(es, tr));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    D, E.TransformMatrix().Transpose() * M * E.TransformMatrix()
+                    D, E.TransformMatrix.Transpose() * M * E.TransformMatrix
                 ));
 
             }

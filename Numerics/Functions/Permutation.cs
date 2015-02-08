@@ -327,7 +327,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="format">A standard or custom permutation format string.</param>
         /// <returns>The requested string representation of the permutation.</returns>
         /// <remarks>
-        /// <para>The standard permutation format strings are "M", which produces a map representation, and "C", which produces a cycle representation.</para>
+        /// <para>The standard permutation format strings are "M", which produces a map representation, and "C", which produces a cycle representation.
+        /// For explanations of the map and cycle representations of a permutation, see <see cref="Parse"/>.</para>
         /// </remarks>
         public string ToString (string format) {
             return (ToString(format, null));
@@ -340,7 +341,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="formatProvider">An object that provides culture-specific formatting information.</param>
         /// <returns>The requested string represenation of the permutation.</returns>
         /// <remarks>
-        /// <para>The standard permutation format strings are "M", which produces a map representation, and "C", which produces a cycle representation.</para>
+        /// <para>The standard permutation format strings are "M", which produces a map representation, and "C", which produces a cycle representation.
+        /// For explanations of the map and cycle representations of a permutation, see <see cref="Parse"/>.</para>
         /// </remarks>
         public string ToString (string format, IFormatProvider formatProvider) {
 
@@ -360,8 +362,24 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Converts a text representation into a permutation.
         /// </summary>
-        /// <param name="text">The text representation of the permutation.</param>
+        /// <param name="text">A text representation of the permutation.</param>
         /// <returns>The corresponding permutation.</returns>
+        /// <remarks>
+        /// <para>This method is able to parse both map representations and cycle representations of permutations.</para>
+        /// <para>A map representation of an n-dimensional permutation is a space-seperated list of all integers between 0 and n-1,
+        /// enclosed in square brackets. Each number indicates the index of the location to which the object that appears at
+        /// that location is mapped by the permutation. For example, [2 1 0] denotes the permutation that moves the object
+        /// at index 0 to index 2, does not move the object at index 1, and moves the object at index 2 to index 0. Note
+        /// that the numbers in the map representation are the same as the numbers on the second line of Cauchy's two-line
+        /// notation.</para>
+        /// <para>A cycle representation of an n-dimensional representation is a space-seperated list of all integers between 0 and n-1,
+        /// grouped into cycles by parenthesis. Each cycle indicates that the element at the location with the first index in the cycle is moved to
+        /// the location with the second index in the cycle, the element at the location with the second index in the cycle is moved
+        /// to the location with the third index in the cycle, and so on, until the element at the location with the last index
+        /// is moved to the location with the first index. Thus (0 2)(1) indicates that the elements at locations 0 and 2 change
+        /// places and the element at location 1 is left there.</para>
+        /// <para>Note that (0 2)(1) and [2 1 0] represent the same permutation.</para>
+        /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="text"/> is null.</exception>
         /// <exception cref="FormatException"><paramref name="text"/> is not a valid text representation of a permutation.</exception>
         public static Permutation Parse (string text) {
@@ -377,9 +395,12 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Attempts to convert a text representation into a permutation.
         /// </summary>
-        /// <param name="text">The text representaiton of the permutation.</param>
+        /// <param name="text">A text representaiton of the permutation.</param>
         /// <param name="output">The corresponding permutation.</param>
         /// <returns>True if the conversion succeeded, otherwise false.</returns>
+        /// <remarks>
+        /// <para>For information on supported text representations, see <see cref="Parse"/>.</para>
+        /// </remarks>
         public static bool TryParse (string text, out Permutation output) {
 
             output = null;

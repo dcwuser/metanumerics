@@ -69,6 +69,11 @@ namespace Meta.Numerics {
         /// </summary>
         /// <param name="z">The argument.</param>
         /// <returns>The value of ln(z).</returns>
+        /// <remarks>
+        /// <para>The image below shows the complex log function near the origin, using domain coloring.</para>
+        /// <img src="../images/ComplexLogPlot.png" />
+        /// <para>You can see the zero at (0, 1) and the branch cut extending along the negative real axis from the pole at the origin.</para>
+        /// </remarks>
         public static Complex Log (Complex z) {
             return (new Complex(Math.Log(Abs(z)), Arg(z)));
         }
@@ -88,6 +93,11 @@ namespace Meta.Numerics {
         /// </summary>
         /// <param name="z">The argument.</param>
         /// <returns>The square root of the argument.</returns>
+        /// <remarks>
+        /// <para>The image below shows the complex square root function near the origin, using domain coloring.</para>
+        /// <img src="../images/ComplexSqrtPlot.png" />
+        /// <para>You can see the branch cut extending along the negative real axis from the zero at the origin.</para>
+        /// </remarks>
         public static Complex Sqrt (Complex z) {
             if (z.Im == 0) {
                 if (z.Re < 0.0) {

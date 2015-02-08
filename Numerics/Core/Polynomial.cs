@@ -33,8 +33,8 @@ namespace Meta.Numerics {
         /// <returns>A polynomial of degree N-1 that passes through all the given points.</returns>
         public static Polynomial FromPoints (double[,] points) {
             if (points == null) throw new ArgumentNullException("points");
-            if (points.GetLength(0) == 0) throw new InvalidOperationException();
-            if (points.GetLength(1) != 2) throw new InvalidOperationException();
+            if (points.GetLength(0) == 0) throw new ArgumentException("The first dimension of the points array must have length at least one.", "points");
+            if (points.GetLength(1) != 2) throw new ArgumentException("The second dimension of the points array must have length two.", "points");
             double[] x = new double[points.GetLength(0)];
             double[] y = new double[points.GetLength(0)];
             for (int i = 0; i < points.GetLength(0); i++) {
@@ -52,7 +52,7 @@ namespace Meta.Numerics {
         /// <returns>A polynomial that passes through all the given points.</returns>
         public static Polynomial FromPoints (ICollection<XY> points) {
             if (points == null) throw new ArgumentNullException("points");
-            if (points.Count == 0) throw new InvalidOperationException();
+            if (points.Count == 0) throw new ArgumentException("There must be at least one point in the points collection.", "points");
             double[] x = new double[points.Count];
             double[] y = new double[points.Count];
             int i = 0;

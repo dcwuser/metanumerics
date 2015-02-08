@@ -195,8 +195,8 @@ namespace Test {
             // fit to a 1st order polynomial and make sure it agrees
             FitResult poly = data.FitToPolynomial(1);
             Assert.IsTrue(poly.Dimension == 2);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(poly.Parameters(), line.Parameters()));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(poly.CovarianceMatrix(), line.CovarianceMatrix()));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(poly.Parameters, line.Parameters));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(poly.CovarianceMatrix, line.CovarianceMatrix));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(poly.GoodnessOfFit.Statistic, line.GoodnessOfFit.Statistic));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(poly.GoodnessOfFit.LeftProbability, line.GoodnessOfFit.LeftProbability));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(poly.GoodnessOfFit.RightProbability, line.GoodnessOfFit.RightProbability));
@@ -364,7 +364,7 @@ namespace Test {
                 */
 
                 for (int j = 0; j < fits[i].Dimension; j++) {
-                    sample.Add(fits[i].Parameters());
+                    sample.Add(fits[i].Parameters);
                 }
 
 
@@ -550,9 +550,9 @@ namespace Test {
             // chi squared
             Assert.IsTrue(TestUtilities.IsNearlyEqual(pFit.GoodnessOfFit.Statistic, fFit.GoodnessOfFit.Statistic, Math.Sqrt(TestUtilities.TargetPrecision)));
             // parameters
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(pFit.Parameters(), fFit.Parameters(), Math.Sqrt(TestUtilities.TargetPrecision)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(pFit.Parameters, fFit.Parameters, Math.Sqrt(TestUtilities.TargetPrecision)));
             // covariance
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(pFit.CovarianceMatrix(), fFit.CovarianceMatrix(), Math.Sqrt(TestUtilities.TargetPrecision)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(pFit.CovarianceMatrix, fFit.CovarianceMatrix, Math.Sqrt(TestUtilities.TargetPrecision)));
 
         }
 
@@ -592,9 +592,9 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(pFit.GoodnessOfFit.Statistic, fFit.GoodnessOfFit.Statistic, Math.Sqrt(TestUtilities.TargetPrecision)));
             // don't demand super-high precision agreement of parameters and covariance matrix
             // parameters
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(pFit.Parameters(), fFit.Parameters(), Math.Pow(TestUtilities.TargetPrecision,0.3)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(pFit.Parameters, fFit.Parameters, Math.Pow(TestUtilities.TargetPrecision,0.3)));
             // covariance
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(pFit.CovarianceMatrix(), fFit.CovarianceMatrix(), Math.Pow(TestUtilities.TargetPrecision,0.3)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(pFit.CovarianceMatrix, fFit.CovarianceMatrix, Math.Pow(TestUtilities.TargetPrecision,0.3)));
 
         }
 
@@ -617,8 +617,8 @@ namespace Test {
                 UncertainMeasurementSample data = CreateDataSet(xs, fv, fu, i);
                 FitResult fit = data.FitToLine();
 
-                sample.Add(fit.Parameters());
-                covariance = fit.CovarianceMatrix();
+                sample.Add(fit.Parameters);
+                covariance = fit.CovarianceMatrix;
                 // because it depends only on the x's and sigmas, the covariance is always the same
 
                 Console.WriteLine("cov_00 = {0}", covariance[0, 0]);

@@ -28,7 +28,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents a discrete distribution as a continous distribution.
     /// </summary>
-    public class DiscreteAsContinuousDistribution : Distribution {
+    internal class DiscreteAsContinuousDistribution : Distribution {
 
         /// <summary>
         /// Initializes a new shim that represents a discrete distribution as a continuous distribution.

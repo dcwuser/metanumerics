@@ -389,7 +389,6 @@ namespace Meta.Numerics.Functions {
                 }
             }
 
-            int nn = n * n;
             double xm = x - 1.0;
 
             double f = 1.0;

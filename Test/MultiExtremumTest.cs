@@ -495,15 +495,34 @@ namespace Test {
         }
 
         [TestMethod]
-        public void Easom () {
+        public void EasomLocal () {
 
-            Func<IList<double>, double> function = (IList<double> x) => -Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Exp(-(MoreMath.Sqr(x[0] - Math.PI) + MoreMath.Sqr(x[1] - Math.PI)));
+            Func<IList<double>, double> function = (IList<double> x) => Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Exp(-(MoreMath.Sqr(x[0] - Math.PI) + MoreMath.Sqr(x[1] - Math.PI)));
+
+            // We can't start too far from minimum, since cosines introduce many local minima.
+            ColumnVector start = new ColumnVector(1.5, 2.0);
+
+            MultiExtremum maximum = MultiFunctionMath.FindLocalMaximum(function, start);
+
+            Console.WriteLine(maximum.Value);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(maximum.Value, 1.0, new EvaluationSettings() { AbsolutePrecision = 2.0 * maximum.Precision }));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(maximum.Location, new ColumnVector(Math.PI, Math.PI), new EvaluationSettings { AbsolutePrecision = 2.0 * Math.Sqrt(maximum.Precision) }));
+
+        }
+
+        [TestMethod]
+        public void EasomGlobal () {
+
+            Func<IList<double>, double> function = (IList<double> x) => Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Exp(-(MoreMath.Sqr(x[0] - Math.PI) + MoreMath.Sqr(x[1] - Math.PI)));
             IList<Interval> box = new Interval[] { Interval.FromEndpoints(-10.0, 10.0), Interval.FromEndpoints(-10.0, 10.0) };
 
-            MultiExtremum minimum = MultiFunctionMath.FindGlobalMinimum(function, box);
+            MultiExtremum maximum = MultiFunctionMath.FindGlobalMaximum(function, box);
 
-            Console.WriteLine(minimum.EvaluationCount);
-            Console.WriteLine(minimum.Value);
+            Console.WriteLine(maximum.EvaluationCount);
+            Console.WriteLine(maximum.Value);
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(maximum.Value, 1.0, new EvaluationSettings() { AbsolutePrecision = 2.0 * maximum.Precision }));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(maximum.Location, new ColumnVector(Math.PI, Math.PI), new EvaluationSettings { AbsolutePrecision = 2.0 * Math.Sqrt(maximum.Precision) }));
 
 
         }

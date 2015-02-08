@@ -100,6 +100,28 @@ namespace Meta.Numerics.Analysis {
             return (FindMinimum_ModelTrust(f, start, s, settings));
         }
 
+        // This method is due to Powell (http://en.wikipedia.org/wiki/Michael_J._D._Powell), but it is not what
+        // is usually called Powell's Method (http://en.wikipedia.org/wiki/Powell%27s_method); Powell
+        // developed that method in the 1960s, it was included in Numerical Recipies and is very popular.
+        // This is a model trust algorithm developed by Powell in the 2000s. It typically uses many
+        // fewer function evaluations, but does more intensive calcuations between each evaluation.
+
+        // This is basically the UOBYQA variant of Powell's new methods. It maintains a quadratic model
+        // that interpolates between (d + 1) (d + 2) / 2 points. The model is trusted
+        // within a given radius. At each step, it moves to the minimum of the model (or the boundary of
+        // the trust region in that direction) and evaluates the function. The new value is incorporated
+        // into the model and the trust region expanded or contracted depending on how accurate its
+        // prediction of the function value was.
+
+        // Papers on these methods are collected at http://mat.uc.pt/~zhang/software.html#powell_software.
+        // The UOBYQA paper is here: http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.28.1756.
+        // The NEWUOA paper is here: http://www.damtp.cam.ac.uk/user/na/NA_papers/NA2004_08.pdf.
+        // The CONDOR system (http://www.applied-mathematics.net/optimization/CONDORdownload.html) is based on these same ideas.
+        // The thesis of CONDOR's author (http://www.applied-mathematics.net/mythesis/index.html) was also helpful.
+
+        // It should be very easy to extend this method to constrained optimization, either by incorporating the bounds into
+        // the step limits or by mapping hyper-space into a hyper-cube.
+         
         private static MultiExtremum FindMinimum_ModelTrust (MultiFunctor f, IList<double> x, double s, EvaluationSettings settings) {
 
             // Construct an initial model.
@@ -144,20 +166,6 @@ namespace Meta.Numerics.Analysis {
                     }
                 }
 
-                // Check the termination criteria.
-                //double delta = model.MinimumValue - value;
-                //double tol = settings.ComputePrecision(value);
-                /*
-                if ((Math.Abs(delta) < tol)) {
-                    terminationCount++;
-                    if ((terminationCount > 2)) {
-                        if (f.IsNegated) value = -value;
-                        return (new MultiExtremum(f.EvaluationCount, settings, point, value, Math.Max(Math.Abs(delta), 0.75 * tol), model.GetHessian()));
-                    }
-                } else {
-                    terminationCount = 0;
-                }
-                */
                 
                 // There are now three decisions to be made:
                 //   1. How to change the trust radius
@@ -173,18 +181,6 @@ namespace Meta.Numerics.Analysis {
                 }
                 // It appears that the limits on delta being too large don't help, and even hurt if made too stringent.
                 
-                /*
-                // Adjust the trust region radius based on the ratio of the actual reduction to the expected reduction.
-                double r = (model.MinimumValue - value) / (model.MinimumValue - expectedValue);
-                if (r < 0.25) {
-                    // If we achieved less than 25% of the expected reduction, reduce the trust region.
-                    trustRadius = trustRadius / 2.0;
-                } else if (r > 0.75) {
-                    // If we achieved at least 75% of the expected reduction, increase the trust region.
-                    trustRadius = 2.0 * trustRadius;
-                }
-                */
-                
                 // Replace an old point with the new point.
                 int iMax = 0; double fMax = model.values[0];
                 int iBad = 0; double fBad = model.ComputeBadness(0, z, point, value);
@@ -195,7 +191,6 @@ namespace Meta.Numerics.Analysis {
                 }
                 if (value < fMax) {
                     Debug.WriteLine("iMax={0}, iBad={1}", iMax, iBad);
-                    //model.ReplacePoint(iMax, point, z, value);
                     model.ReplacePoint(iBad, point, z, value);
                  }
                 // There is some question about how best to choose which point to replace.
@@ -448,22 +443,6 @@ namespace Meta.Numerics.Analysis {
             get {
                 return (values[minValueIndex]);
             }
-        }
-
-        private double ComputeBadressAbsolute (double[] point, double f) {
-            double s = 0.0;
-            for (int i = 0; i < point.Length; i++) {
-                s += MoreMath.Sqr(point[i] - origin[i]);
-            }
-            return (s * (f - MinimumValue));
-        }
-
-        private double ComputeBadness (double[] z, double f) {
-            double s = 0.0;
-            for (int i = 0; i < z.Length; i++) {
-                s += MoreMath.Sqr(z[i]);
-            }
-            return (s * (f - MinimumValue));
         }
 
         private void Initialize (MultiFunctor f, IList<double> x, double s) {
@@ -739,7 +718,6 @@ namespace Meta.Numerics.Analysis {
                 }
                 s = Math.Pow(s, 3.0 / 2.0) * (values[index] - values[minValueIndex]);
             }
-            //s = Math.Pow(s, 3.0 / 2.0) * Math.Abs(polynomials[index].Evaluate(z));
             return (s);
         }
 

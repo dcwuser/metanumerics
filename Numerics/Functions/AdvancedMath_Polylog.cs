@@ -93,6 +93,10 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument, which must be less than or equal to one.</param>
         /// <returns>The value of Li<sub>n</sub>(x).</returns>
         /// <remarks>
+        /// <para>The nth polylog of x is defined via the series:</para>
+        /// <img src="..\Images\PolyLogSeries.png" />
+        /// <para>Its name comes from the fact that this is a generalization of the logarithm
+        /// series. For n = 1 it reduces to -log(1-x). For n = 2 it reduces to the <see cref="AdvancedMath.DiLog"/> function.</para>
         /// <para>The polylogarithm function becomes complex for arguments larger than one.</para>
         /// </remarks>
         public static double PolyLog (int n, double x) {

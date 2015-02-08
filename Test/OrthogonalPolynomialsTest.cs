@@ -357,9 +357,9 @@ namespace Test {
                         e.AbsolutePrecision = TestUtilities.TargetPrecision;
                         e.RelativePrecision = TestUtilities.TargetPrecision;
 
-                        double I = FunctionMath.Integrate(f, r, e).Estimate.Value;
+                        double I = FunctionMath.Integrate(f, r, e).Value;
                         Console.WriteLine(I);
-
+                        
                         // test for orthonormality
                         if (n == m) {
                             Assert.IsTrue(TestUtilities.IsNearlyEqual(

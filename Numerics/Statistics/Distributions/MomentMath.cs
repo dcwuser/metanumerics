@@ -13,7 +13,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Converts raw moments to central moments.
         /// </summary>
-        /// <param name="M">A set or raw moments.</param>
+        /// <param name="M">A set of raw moments.</param>
         /// <returns>The corresponding set of central moments.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="M"/> is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The zeroth raw moment is not one.</exception>
@@ -72,7 +72,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// Converts central moments to raw moments.
         /// </summary>
         /// <param name="mu">The mean.</param>
-        /// <param name="C">A set or central moments.</param>
+        /// <param name="C">A set of central moments.</param>
         /// <returns>The corresponding set of central moments.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="C"/> is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The zeroth central moment is not one, or the first central moment is not zero.</exception>
@@ -132,7 +132,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Converts cumulants to raw moments.
         /// </summary>
-        /// <param name="K">A set or cumulants.</param>
+        /// <param name="K">A set of cumulants.</param>
         /// <returns>The corresponding set of raw moments.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="K"/> is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The zeroth cumulant is not zero.</exception>
@@ -165,7 +165,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Converts cumulants to central moments.
         /// </summary>
-        /// <param name="K">A set or cumulants.</param>
+        /// <param name="K">A set of cumulants.</param>
         /// <returns>The corresponding set of central moments.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="K"/> is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The zeroth cumulant is not zero.</exception>

@@ -96,6 +96,10 @@ namespace Meta.Numerics.Analysis {
             return (extremum);
         }
 
+        // Differential evoluation is a global optimization algorithm over continuous inputs that is adapted from genetic algorithms for finite inputs.
+        // The idea is maintain a population of input vectors ("agents") and to vary that population over cycles ("generations") according to rules that incorporate
+        // random mutation but on average tend to bring them closer to optima ("fitter").
+
         private static MultiExtremum FindGlobalExtremum (MultiFunctor f, IList<Interval> volume, DifferentialEvolutionSettings settings) {
 
             int d = volume.Count;
@@ -118,8 +122,6 @@ namespace Meta.Numerics.Analysis {
                 values[i] = f.Evaluate(points[i]);
             }
 
-            //int[] indexes = new int[m];
-            //for (int i = 0; i < indexes.Length; i++) indexes[i] = i;
 
             while (f.EvaluationCount < settings.EvaluationBudget) {
 

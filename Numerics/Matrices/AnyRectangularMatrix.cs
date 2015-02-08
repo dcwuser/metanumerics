@@ -348,7 +348,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Not a valid operation.
         /// </summary>
-        /// <returns>Throws an <see cref="InvalidOperationException"/>.</returns>
+        /// <returns>Throws an <see cref="NotSupportedException"/>.</returns>
         /// <remarks>
         /// <para>The <see cref="Object.GetHashCode"/> method is used to provide a quick equality test when an object
         /// is used as a key in a <see cref="System.Collections.Generic.Dictionary{TKey,TValue}"/> or <see cref="System.Collections.Hashtable"/>.

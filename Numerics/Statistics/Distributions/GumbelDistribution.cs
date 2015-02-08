@@ -8,7 +8,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents a Gumbel distribution.
     /// </summary>
     /// <seealso href="http://en.wikipedia.org/wiki/Gumbel_distribution"/>
-    public class GumbelDistribution : Distribution {
+    public sealed class GumbelDistribution : Distribution {
 
         /// <inheritdoc />
         public override Interval Support {

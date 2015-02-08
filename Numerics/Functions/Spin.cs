@@ -15,7 +15,7 @@ namespace Meta.Numerics.Functions {
     /// <para>From a mathematician's point of view, a spinor labels an irreducible representation of the SO(3) or SU(2) Lie group.
     /// Individual vectors within each irreducible representation are represented by <see cref="SpinState"/> objects.</para>
     /// </remarks>
-    public struct Spin {
+    public struct Spin : IEquatable<Spin> {
 
         // construction
 
@@ -128,7 +128,13 @@ namespace Meta.Numerics.Functions {
 
         // equality
 
-        private static bool Equals (Spin a, Spin b) {
+        /// <summary>
+        /// Determines whether two spinors are equal.
+        /// </summary>
+        /// <param name="a">The first spin.</param>
+        /// <param name="b">The second spin.</param>
+        /// <returns>True if <paramref name="a"/> and <paramref name="b"/> are equal, otherwise false.</returns>
+        public static bool Equals (Spin a, Spin b) {
             return(a.TwoJ == b.TwoJ);
         }
 
@@ -150,6 +156,15 @@ namespace Meta.Numerics.Functions {
         /// <returns>False if <paramref name="a"/> and <paramref name="b"/> are equal, otherwise true.</returns>
         public static bool operator != (Spin a, Spin b) {
             return (!Equals(a, b));
+        }
+
+        /// <summary>
+        /// Determines whether the given spinor is equal to this one.
+        /// </summary>
+        /// <param name="s">The spinor to compare.</param>
+        /// <returns>True if <paramref name="s"/> is equal to this one, otherwise false.</returns>
+        public bool Equals (Spin s) {
+            return (Equals(this, s));
         }
 
         /// <summary>

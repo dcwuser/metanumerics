@@ -595,9 +595,9 @@ namespace Meta.Numerics.Functions {
             if (dimension < 0) throw new ArgumentOutOfRangeException("dimension");
 
             // The permutations are enumerated using the Steinhaus-Johnson-Trotter algorithm with Even's speedup.
-            /// See http://en.wikipedia.org/wiki/Steinhaus%E2%80%93Johnson%E2%80%93Trotter_algorithm and Knuth 7.2.1.2.
+            // See http://en.wikipedia.org/wiki/Steinhaus%E2%80%93Johnson%E2%80%93Trotter_algorithm and Knuth 7.2.1.2.
             // The Wikipedia article is less than completely illuminating.
-            /// See http://tropenhitze.wordpress.com/2010/01/25/steinhaus-johnson-trotter-permutation-algorithm-explained-and-implemented-in-java/
+            // See http://tropenhitze.wordpress.com/2010/01/25/steinhaus-johnson-trotter-permutation-algorithm-explained-and-implemented-in-java/
             // and http://www.coderslexicon.com/johnson-trotter-algorithm-in-vc-net/ for more detailed descriptions.
 
             // Note that permutations are not produced in lexographic order. They do alternate between even and odd because there is a single transposition between each.

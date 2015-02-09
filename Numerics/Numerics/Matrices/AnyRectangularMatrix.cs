@@ -20,6 +20,9 @@ namespace Meta.Numerics.Matrices {
 
         internal AnyRectangularMatrix (bool isReadOnly) : base(isReadOnly) { }
 
+        /// <summary>
+        /// Initializes a new instance of the AnyRectangularMatrix class.
+        /// </summary>
         protected AnyRectangularMatrix () : base() { }
 
         // we an implement some operations, but many will be slow because they do not have access to the underlying storage

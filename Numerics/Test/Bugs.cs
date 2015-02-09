@@ -16,6 +16,15 @@ namespace Test {
     public class BugTests {
 
         [TestMethod]
+        public void Bug7887 () {
+            // A user reported a NoncovergenceException for -0.213170584. I was able to reproduce with -0.213170585, and ultimately other values too.
+            // These came from infinitely repeating Halley iterations, so changed I changed the termination criterion to not be strict equality.
+            double x = -0.213170585;
+            double W = AdvancedMath.LambertW(x);
+            Console.WriteLine("{0} -> {1}", x, W);
+        }
+
+        [TestMethod]
         public void Bug7788 () {
 
             // Beta with high parameters used to have incorrect inverse probabilty,

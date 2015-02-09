@@ -1291,12 +1291,14 @@ namespace Test {
         [TestMethod]
         public void LambertTest () {
 
-            foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0 / Math.E, 1.0, 6)) {
+            // Lambert W is defined by W e^W = x, so make sure we satisfy the definition.
+
+            foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0 / Math.E, 1.0, 8)) {
                 double W = AdvancedMath.LambertW(x);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(W * Math.Exp(W), x));
             }
 
-            foreach (double x in TestUtilities.GenerateRealValues(1.0, 1.0E3, 3)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0, 1.0E3, 4)) {
                 double W = AdvancedMath.LambertW(x);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(W * Math.Exp(W), x));
             }
@@ -1304,7 +1306,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void LambertSpecialCaseTest () {
+        public void LambertSpecialCases () {
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.LambertW(-1.0 / Math.E), -1.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.LambertW(-Math.Log(2.0) / 2.0), -Math.Log(2.0)));
@@ -1313,6 +1315,22 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void LambertIntegrals () {
+
+            // These two integrals are documented in the Wikipedia article on the Lambert W function. They can be derived from the definition.
+            // When we were using the equality test to terminate Halley iteration, they caught several infinite iterations.
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(FunctionMath.Integrate(AdvancedMath.LambertW, Interval.FromEndpoints(0.0, Math.E)), Math.E - 1.0));
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                FunctionMath.Integrate(x => AdvancedMath.LambertW(1.0 / (x * x)), Interval.FromEndpoints(0.0, Double.PositiveInfinity)),
+                Math.Sqrt(2.0 * Math.PI)
+            ));
+
+            // Would love to find some integrals that cover [-1/e, 0] too.
+
+        }
 
         [TestMethod]
         public void CoulombEtaZeroTest () {

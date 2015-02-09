@@ -43,6 +43,9 @@ namespace Meta.Numerics.Analysis {
         /// <remarks>
         /// <para>The Hessian (matrix of second derivatives) returned with the minimum is an approximation that is constructed in the course of search. It should be
         /// considered a crude approximation, and may not even be that if the minimum is highly non-quadratic.</para>
+        /// <para>If you have a constrained minimization problem, require a high-precision solution, and do not have a good initial guess, consider first feeding
+        /// your constrained problem into <see cref="FindGlobalMaximum"/>, which supports constraints but gives relatively lower precision solutions, then
+        /// feeding the result of that method into this method, which finds relatively precision solutions but does not support constraints.</para>
         /// </remarks>
         /// <exception cref="NonconvergenceException">The number of function evaluations required exceeded the evaluation budget.</exception>
         public static MultiExtremum FindLocalMinimum (Func<IList<double>, double> function, IList<double> start, EvaluationSettings settings) {

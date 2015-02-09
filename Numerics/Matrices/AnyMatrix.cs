@@ -13,6 +13,9 @@ namespace Meta.Numerics.Matrices {
             this.isReadOnly = isReadOnly;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the AnyMatrix class.
+        /// </summary>
         protected AnyMatrix () : this(false) { }
 
         /// <summary>

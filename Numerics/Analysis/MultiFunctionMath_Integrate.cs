@@ -105,7 +105,8 @@ namespace Meta.Numerics.Analysis {
                 } else {
                     if (Double.IsInfinity(limits.LeftEndpoint)) {
                         // -\infinity to b
-                        throw new NotImplementedException();
+                        box[i] = Interval.FromEndpoints(-1.0, 0.0);
+                        map[i] = new TangentCoordinateTransform(limits.RightEndpoint);
                     } else {
                         // a to b
                         box[i] = limits;

@@ -97,7 +97,7 @@ namespace Meta.Numerics.Statistics {
     }
 
     /// <summary>
-    /// A histogram.
+    /// Represents a histogram.
     /// </summary>
     /// <remarks>
     /// <para>A histogram stores the number of occurances of a value (called the count) within a set of ranges (called bins). It is the
@@ -297,8 +297,9 @@ namespace Meta.Numerics.Statistics {
     }
     
     /// <summary>
-    /// One bin of a histogram.
+    /// Represents one bin in a histogram.
     /// </summary>
+    /// <seealso cref="Histogram"/>
     public struct HistogramBin {
 
         internal HistogramBin (HistogramStorage storage, int index) {
@@ -347,6 +348,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents a collection of histogram bins.
     /// </summary>
+    /// <seealso cref="Histogram"/>
     public sealed class HistogramBinsCollection : ICollection<HistogramBin>, IEnumerable<HistogramBin> {
 
         internal HistogramBinsCollection (HistogramStorage storage) {

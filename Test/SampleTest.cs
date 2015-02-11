@@ -532,7 +532,7 @@ namespace Test {
         [TestMethod]
         public void WeibullFit () {
 
-            foreach (double alpha in new double[] { 0.03, 0.3, 1.3, 3.3 }) {
+            foreach (double alpha in new double[] { 0.031, 0.13, 1.3, 3.1, 13.1, 33.1, 313.1, 1313.1 }) {
                 WeibullDistribution W = new WeibullDistribution(2.2, alpha);
                 Sample S = CreateSample(W, 50);
                 FitResult R = WeibullDistribution.FitToSample(S);

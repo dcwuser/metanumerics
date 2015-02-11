@@ -16,6 +16,28 @@ namespace Test {
     public class BugTests {
 
         [TestMethod]
+        public void Bug7953 () {
+
+            // Fitting this sample to a Weibull caused a NonconvergenceException in the root finder that was used inside the fit method.
+            // The underlying problem was that our equation to solve involved x^k and k ~ 2000 and (~12)^(~2000) overflows double
+            // so all the quantities became Infinity and the root-finder never converged. We changed the algorithm to operate on
+            // w = log x - <log x> which keeps quantities much smaller.
+
+            Sample sample = new Sample(
+                12.824, 12.855, 12.861, 12.862, 12.863,
+                12.864, 12.865, 12.866, 12.866, 12.866,
+                12.867, 12.867, 12.868, 12.868, 12.870,
+                12.871, 12.871, 12.871, 12.871, 12.872,
+                12.876, 12.878, 12.879, 12.879, 12.881
+            );
+
+            FitResult result = WeibullDistribution.FitToSample(sample);
+            Console.WriteLine("{0} {1}", result.Parameter(0), result.Parameter(1));
+            Console.WriteLine(result.GoodnessOfFit.RightProbability);
+        }
+
+
+        [TestMethod]
         public void Bug7887 () {
             // A user reported a NoncovergenceException for -0.213170584. I was able to reproduce with -0.213170585, and ultimately other values too.
             // These came from infinitely repeating Halley iterations, so changed I changed the termination criterion to not be strict equality.

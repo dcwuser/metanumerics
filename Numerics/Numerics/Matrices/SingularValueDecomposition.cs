@@ -7,21 +7,33 @@ namespace Meta.Numerics.Matrices {
     /// Stores the singular value decomposition of a matrix.
     /// </summary>
     /// <remarks>
-    /// <para>The singular value decomposition of a matrix represents it as a product of a left orthogonal matrix, a diagonal
-    /// matrix, and a right orthogonal matrix:</para>
+    /// <para>The singular value decomposition of a matrix represents it as a product of a left orthogonal matrix U, a quasi-diagonal
+    /// &#x3A3; matrix, and a right orthogonal matrix V.</para>
+    /// <img src="../images/SVDEquation.png" />
+    /// <para>Any rectangular matrix has an SVD decomposition. The matrix need not be square. If square, it need not be invertable.
+    /// The dimensions of the decomposition factors are illustrated in the following diagram.</para>
     /// <img src="../images/SVDForm.png" />
-    /// <para>The elements of the diagonal matrix are called the singular values of the original matrix.</para>
-    /// <para>If the orginal matrix is viewed as a linear transform operator, the rows of the right orthogonal matrix matrix form an
-    /// orthonormal basis for the domain of the operator, while the columns of the left orthogonal matrix form an orthonormal
+    /// <para>The elements of the &#x3A3; are called the singular values of the original matrix.</para>
+    /// <para>Viewing A as a linear operator, the rows of V<sup>T</sup> (columns of V) form an
+    /// orthonormal basis for the domain of the operator, while the columns of U form an orthonormal
     /// basis for the range of the operator. These rows and columns are called, respectively, the right and left singular vectors
     /// of the matrix.</para>
-    /// <para>The right singular vectors corresponding to zero singular values span the nullspace of the matrix, that is the
-    /// set of all x for which Ax = 0.</para>
-    /// <para>The SVD can be used to approximate the action of a high-dimensional matrix by a lower-rank one.</para>
+    /// <para>The right singular vectors corresponding to zero singular values span the nullspace of A, that is the
+    /// set of all x for which Ax = 0. The left singular vectors corresponding to non-zero singular values span the range of A,
+    /// that is the space into which all Ax fall; the left singular vectors corresponding to zero singular values span the
+    /// complementary space into which no Ax fall. The total number of non-zero singular values is the rank of A.</para>
+    /// <para>The SVD can be used to approximate the action of a high-dimensional matrix operator by a lower-rank one. By
+    /// keeping only the largest singular values and setting the remaining ones to zero, one obtains a operator that
+    /// can applied with fewer operations and approximates the properties of the original operator.</para>
+    /// <para>Notice that elements in the last columns of U do not contribute to A since they will be multiplied with elements of zero rows of &#x3A3;.
+    /// Many applications use a "thin" or "reduced" form of the SVD, in which the last columns of U and the last rows of &#x3A3; are omitted;
+    /// this makes U not square (and therefore not orthogonal) and &#x3A3; square (and diagonal). Since the remaining elements are the same, you
+    /// can obtain the thin SVD from this object by simply ignoring the irrelevent elements.</para>
     /// <para>Use the <see cref="RectangularMatrix.SingularValueDecomposition"/> of the <see cref="RectangularMatrix"/> class
     /// to obtain the SVD of an rectangular matrix, or the corresponding <see cref="SquareMatrix.SingularValueDecomposition"/>
     /// method of the <see cref="SquareMatrix"/> class to obtain the SVD of a square matrix.</para>
     /// </remarks>
+    /// <see href="http://en.wikipedia.org/wiki/Singular_value_decomposition"/>
     public sealed class SingularValueDecomposition {
 
         internal SingularValueDecomposition (double[] utStore, double[] wStore, double[] vStore, int rows, int cols) {

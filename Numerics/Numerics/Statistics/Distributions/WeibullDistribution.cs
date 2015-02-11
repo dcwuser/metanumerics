@@ -201,8 +201,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             // The log likelyhood function is
             //   \log L = N \log k + (k-1) \sum_i \log x_i - N K \log \lambda - \sum_i \left(\frac{x_i}{\lambda}\right)^k
             // Taking derivatives, we get
-            //   \frac{\partial \log L}{\partial \lambda} = - \frac{N k}{\lambda} + \sum_i \frac{k x_i^k}{\lambda^{k+1}}
-            //   \frac{\partial \log L}{\partial k} =
+            //   \frac{\partial \log L}{\partial \lambda} = - \frac{N k}{\lambda} + \sum_i \frac{k}{\lambda} \left(\frac{x_i}{\lambda}\right)^k
+            //   \frac{\partial \log L}{\partial k} =\frac{N}{k} + \sum_i \left[ 1 - \left(\frac{x_i}{\lambda}\right)^k \right] \log \left(\frac{x_i}{\lambda}\right)
             // Setting the first expression to zero and solving for \lambda gives
             //   \lambda = \left( N^{-1} \sum_i x_i^k \right)^{1/k} = ( < x^k > )^{1/k}
             // which allows us to reduce the problem from 2D to 1D.
@@ -226,32 +226,50 @@ namespace Meta.Numerics.Statistics.Distributions {
             // dont' need it.
             //double s0 = sample.Mean / AdvancedMath.Gamma(1.0 + 1.0 / k0);
 
-            // Construct the \lambda function
-            Func<double,double> lambdaFunction = delegate (double k) {
-                double s = 0.0;
-                foreach (double x in sample) {
-                    s += Math.Pow(x, k);
+            // Simply handing our 1D function to a root-finder works fine until we start to encounter large k. For large k,
+            // even just computing \lambda goes wrong because we are taking x_i^k which overflows. Horst Rinne, "The Weibull
+            // Distribution: A Handbook" describes a way out. Basically, we first move to variables z_i = \log(x_i) and
+            // then w_i = z_i - \bar{z}. Then lots of factors of e^{k \bar{z}} cancel out and, even though we still do
+            // have some e^{k w_i}, the w_i are small and centered around 0 instead of large and centered around \lambda.
+
+            Sample transformedSample = sample.Copy();
+            transformedSample.Transform(x => Math.Log(x));
+            double zbar = transformedSample.Mean;
+            transformedSample.Transform(z => z - zbar);
+
+            // After this change of variable the 1D function to zero becomes
+            //   g(k) = \sum_i ( 1 - k w_i ) e^{k w_i}
+            // It's easy to show that g(0) = n and g(\infinity) = -\infinity, so it must cross zero. It's also easy to take
+            // a derivative
+            //   g'(k) = - k \sum_i w_i^2 e^{k w_i}
+            // so we can apply Newton's method.
+
+            int i = 0;
+            double k1 = k0;
+            while (true) {
+                i++;
+                double g = 0.0;
+                double gp = 0.0;
+                foreach (double w in transformedSample) {
+                    double e = Math.Exp(k1 * w);
+                    g += (1.0 - k1 * w) * e;
+                    gp -= k1 * w * w * e;
                 }
-                return (Math.Pow(s / sample.Count, 1.0 / k));
-            };
+                double dk = -g / gp;
+                k1 += dk;
+                if (Math.Abs(dk) <= Global.Accuracy * Math.Abs(k1)) break;
+                if (i >= Global.SeriesMax) throw new NonconvergenceException();
+            }
+            
+            // The corresponding lambda can also be expressed in terms of zbar and w's.
 
-            // Construct the k function whoose root we want
-            Func<double, double> kFunction = delegate (double k) {
-                double lambda = lambdaFunction(k);
-                double s = 0.0;
-                foreach (double x in sample) {
-                    double r = x / lambda;
-                    s += (Math.Pow(r, k) - 1.0) * Math.Log(r);
-                }
-                return (s / sample.Count - 1.0 / k);
-            };
-
-            // Find its root, starting from our guess
-            double k1 = FunctionMath.FindZero(kFunction, k0);
-
-            // Get the lambda value corresponing to our best k value
-            double lambda1 = lambdaFunction(k1);
-
+            double t = 0.0;
+            foreach (double w in transformedSample) {
+                t += Math.Exp(k1 * w);
+            }
+            t /= transformedSample.Count;
+            double lambda1 = Math.Exp(zbar) * Math.Pow(t, 1.0 / k1);
+            
             // We need the curvature matrix at the minimum of our log likelyhood function
             // to determine the covariance matrix. Taking more derivatives...
             //    \frac{\partial^2 \log L} = \frac{N k}{\lambda^2} - \sum_i \frac{k(k+1) x_i^k}{\lambda^{k+2}}
@@ -261,7 +279,8 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             // Derivatives involving k are less simple.
 
-            // So we will need the means < (x/lambda) log(x/lambda) > and < (x/lambda) log^2(x/lambda) >
+            // We end up needing the means < (x/lambda)^k log(x/lambda) > and < (x/lambda)^k log^2(x/lambda) >
+
             double mpl = 0.0; double mpl2 = 0.0;
             foreach (double x in sample) {
                 double r = x / lambda1;
@@ -275,9 +294,17 @@ namespace Meta.Numerics.Statistics.Distributions {
             mpl = mpl / sample.Count;
             mpl2 = mpl2 / sample.Count;
 
+            // See if we can't do any better here. Transforming to zbar and w's looked ugly, but perhaps it
+            // can be simplified? One interesting observation: if we take expectation values (which gives
+            // the Fisher information matrix) the entries become simple:
+            //   B_{\lambda \lambda} = \frac{N k^2}{\lambda^2}
+            //   B_{\lambda k} = -\Gamma'(2) \frac{N}{\lambda}
+            //   B_{k k } = [1 + \Gamma''(2)] \frac{N}{k^2}
+            // Would it be bad to just use these directly?
+            
             // Construct the curvature matrix and invert it.
             SymmetricMatrix B = new SymmetricMatrix(2);
-            B[0, 0] = sample.Count * MoreMath.Pow2(k1 / lambda1);
+            B[0, 0] = sample.Count * MoreMath.Sqr(k1 / lambda1);
             B[0, 1] = -sample.Count * k1 / lambda1 * mpl;
             B[1, 1] = sample.Count * (1.0 / MoreMath.Pow2(k1) + mpl2);
             SymmetricMatrix C = B.CholeskyDecomposition().Inverse();

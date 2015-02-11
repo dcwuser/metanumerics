@@ -38,6 +38,7 @@ namespace Meta.Numerics.Analysis {
         /// <summary>
         /// Gets the location of the extremum.
         /// </summary>
+        /// <value>A read-only vector of the coordinates at which the function reaches its extremum.</value>
         public ColumnVector Location {
             get {
                 return (new ColumnVector(point, 0, 1, point.Length, true));
@@ -57,7 +58,8 @@ namespace Meta.Numerics.Analysis {
         /// Gets the estimated precision of the function value.
         /// </summary>
         /// <remarks>
-        /// <para> </para>
+        /// <para>This should be understood as an estimate of the accuracy of <see cref="Value"/> as an estimate of the extremum value. It should not
+        /// be intrepreted as a two-sided error bar, because the true minimum (maximum) value, if different, can only be smaller (larger).</para>
         /// </remarks>
         public double Precision {
             get {
@@ -68,8 +70,11 @@ namespace Meta.Numerics.Analysis {
         /// <summary>
         /// Gets the Hessian matrix at the extremum.
         /// </summary>
+        /// <value>A read-only matrix of approximate second partial derivaties at the extremum, or null if the algorithm does not provide one.</value>
         /// <remarks>
-        /// <para>The Hessian matrix is the matrix of second partial derivatives. It is symmetric because the order of differentiation does not affect the result.</para>
+        /// <para>These values, if present, should be considered very approximate. If you require a more precise estimate of second derivatives,
+        /// use numerical differentiation.</para>
+        /// <para>The Hessian matrix is symmetric because the order of differentiation does not affect the result.</para>
         /// </remarks>
         public SymmetricMatrix HessianMatrix {
             get {

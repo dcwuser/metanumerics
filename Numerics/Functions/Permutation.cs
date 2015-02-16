@@ -236,6 +236,9 @@ namespace Meta.Numerics.Functions {
         }
 
         public static PermutationAsMap GetRandomPermutation (int n, Random rng) {
+
+            // Do a Fisher-Yeats shuffle on the integers 0 to n-1
+
             int[] map = new int[n];
             for (int i = 0; i < map.Length; i++) map[i] = i;
 
@@ -251,6 +254,15 @@ namespace Meta.Numerics.Functions {
             int[] map = new int[n];
             for (int i = 0; i < map.Length; i++) map[i] = i;
             return (new PermutationAsMap(map));
+        }
+
+        public override int GetHashCode () {
+            // Okay to ignore one value, since it is determined by the other values.
+            int hash = 19;
+            for (int i = 1; i < map.Length; i++) {
+                hash = 31 * hash + map[i];
+            }
+            return (hash);
         }
 
     }
@@ -750,12 +762,7 @@ namespace Meta.Numerics.Functions {
         /// <inheritdoc />
         public override int GetHashCode () {
             if (map == null) ComputeMap();
-            // Okay to ignore one value, since it is determined by the other values.
-            int hash = 19;
-            for (int i = 1; i < map.map.Length; i++) {
-                hash = 31 * hash + map.map[i];
-            }
-            return (hash);
+            return (map.GetHashCode());
         }
 
         /// <summary>

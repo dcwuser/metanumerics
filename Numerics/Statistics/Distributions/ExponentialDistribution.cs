@@ -162,6 +162,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+        /// <inheritdoc />
+        public override double GetRandomValue (Random rng) {
+            //if (rng == null) throw new ArgumentNullException("rng");
+            //return (-mu * Math.Log(rng.NextDouble()));
+            return (base.GetRandomValue(rng));
+        }
+
         /// <summary>
         /// Computes the exponential distribution that best fits the given sample.
         /// </summary>

@@ -44,6 +44,10 @@ namespace Meta.Numerics.Statistics {
             return (counts[index]);
         }
 
+        public void SetCounts (int index, int value) {
+            counts[index] = value;
+        }
+
         public Interval GetBorders (int index) {
             if (index == 0) {
                 return (Interval.FromEndpoints(Double.NegativeInfinity, borders[0]));
@@ -311,11 +315,15 @@ namespace Meta.Numerics.Statistics {
         private readonly int index;
 
         /// <summary>
-        /// Gets the number of counts in the bin.
+        /// Gets or sets the number of counts in the bin.
         /// </summary>
         public int Counts {
             get {
                 return (storage.GetCounts(index));
+            }
+            set {
+                if (value < 0) throw new ArgumentOutOfRangeException("value");
+                storage.SetCounts(index, value);
             }
         }
 

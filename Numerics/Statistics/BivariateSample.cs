@@ -650,12 +650,7 @@ namespace Meta.Numerics.Statistics {
             double p = Y.Mean; double q = 1.0 - p;
             if ((p <= 0.0) || (q <= 0.0)) throw new InvalidOperationException();
 
-            // make an initial guess at the parameters
-            double b0 = Covariance / X.Variance / Y.Variance;
-            double a0 = Math.Log(p / q) - b0 * X.Mean;
-
-            // define a logistic log-likelyhood function
-            //Func<double[], double> f = delegate (double[] a) { 
+            // Define the log-likelyhood as a function of the parameters
             Func<IList<double>,double> f = delegate (IList<double> a) {
                 double L = 0.0;
                 for (int i = 0; i < Count; i++) {
@@ -664,9 +659,9 @@ namespace Meta.Numerics.Statistics {
                     double ez = Math.Exp(z);
                     double y = yData[i];
                     if (y == 0.0) {
-                        L -= Math.Log(1.0 / (1.0 + ez));
+                        L += Math.Log(1.0 + ez);
                     } else if (y == 1.0) {
-                        L -= Math.Log(ez / (1.0 + ez));
+                        L += Math.Log(1.0 + 1.0 / ez);
                     } else {
                         throw new InvalidOperationException();
                     }
@@ -674,9 +669,22 @@ namespace Meta.Numerics.Statistics {
                 return(L);
             };
 
+            // We need an initial guess at the parameters.
+
+            // This particular initial guess is driven by the fact that, in a logistic model
+            //    \frac{\partial p}{\partial x} = \beta p ( 1 - p)
+            // Evaluating at means, and noting that p (1 - p) = var(y) and that, in a development around the means,
+            //    cov(p, x) = \frac{\partial p}{\partial x} var(x)
+            // we get
+            //    \beta = \frac{cov(y, x)}{var(x) var(y)}
+            // This approximation gets the sign right, but it looks like it usually gets the magnitude quite wrong.
+
+            double b0 = Covariance / X.Variance / Y.Variance;
+            double a0 = Math.Log(p / q) - b0 * X.Mean;
+
             MultiExtremum m = MultiFunctionMath.FindLocalMinimum(f, new double[2] { a0, b0 });
             return (new FitResult(m.Location, m.HessianMatrix.Inverse(), null));
-
+             
             //SpaceExtremum m = FunctionMath.FindMinimum(f, new double[2] { a0, b0 });
             //return (new FitResult(m.Location(), m.Curvature().Inverse(), null));
 

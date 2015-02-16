@@ -179,6 +179,15 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+        /// <inheritdoc />
+        public override double GetRandomValue (Random rng) {
+            return(base.GetRandomValue(rng));
+            //if (rng == null) throw new ArgumentNullException("rng");
+            //return (scale * Math.Pow(-Math.Log(rng.NextDouble()), 1.0 / shape));
+            // Something is wrong with this formula, I need to figure out what it is.
+        }
+        
+
         /// <summary>
         /// Computes the Weibull distribution that best fits the given sample.
         /// </summary>

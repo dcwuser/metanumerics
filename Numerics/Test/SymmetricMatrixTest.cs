@@ -184,6 +184,43 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void RealEigenvalueOrdering () {
+
+            int d = 10;
+
+            Random rng = new Random(d + 1);
+            SymmetricMatrix A = new SymmetricMatrix(d);
+            A.Fill((int r, int c) => -1.0 + 2.0 * rng.NextDouble());
+            RealEigensystem E = A.Eigensystem();
+
+            for (int i = 0; i < E.Dimension; i++) Console.WriteLine(E.Eigenvalue(i));
+
+            E.Sort(OrderBy.ValueAscending);
+            for (int i = 1; i < E.Dimension; i++) {
+                Assert.IsTrue(E.Eigenvalue(i - 1) <= E.Eigenvalue(i));
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, E.Eigenvector(i), E.Eigenvalue(i)));
+             }
+
+            E.Sort(OrderBy.ValueDescending);
+            for (int i = 1; i < E.Dimension; i++) {
+                Assert.IsTrue(E.Eigenvalue(i - 1) >= E.Eigenvalue(i));
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, E.Eigenvector(i), E.Eigenvalue(i)));
+            }
+
+            E.Sort(OrderBy.MagnitudeAscending);
+            for (int i = 1; i < E.Dimension; i++) {
+                Assert.IsTrue(Math.Abs(E.Eigenvalue(i - 1)) <= Math.Abs(E.Eigenvalue(i)));
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, E.Eigenvector(i), E.Eigenvalue(i)));
+            }
+
+            E.Sort(OrderBy.MagnitudeDescending);
+            for (int i = 1; i < E.Dimension; i++) {
+                Assert.IsTrue(Math.Abs(E.Eigenvalue(i - 1)) >= Math.Abs(E.Eigenvalue(i)));
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, E.Eigenvector(i), E.Eigenvalue(i)));
+            }
+
+        }
 
         [TestMethod]
         public void SymmetricMatrixDecomposition () {

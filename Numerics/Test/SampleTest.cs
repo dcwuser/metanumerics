@@ -536,8 +536,9 @@ namespace Test {
                 WeibullDistribution W = new WeibullDistribution(2.2, alpha);
                 Sample S = CreateSample(W, 50);
                 FitResult R = WeibullDistribution.FitToSample(S);
-                Assert.IsTrue(R.Parameter(0).ConfidenceInterval(0.95).ClosedContains(W.ScaleParameter));
-                Assert.IsTrue(R.Parameter(1).ConfidenceInterval(0.95).ClosedContains(W.ShapeParameter));
+                Console.WriteLine("{0} ?= {1}, {2} ?= {3}", R.Parameter(0), W.ScaleParameter, R.Parameter(1), W.ShapeParameter);
+                Assert.IsTrue(R.Parameter(0).ConfidenceInterval(0.99).ClosedContains(W.ScaleParameter));
+                Assert.IsTrue(R.Parameter(1).ConfidenceInterval(0.99).ClosedContains(W.ShapeParameter));
             }
 
         }
@@ -1222,6 +1223,76 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(S1.Minimum, S2.Minimum));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(S1.Maximum, S2.Maximum));
 
+        }
+
+        [TestMethod]
+        public void BivariateLogisticRegression () {
+
+            double[] c = new double[] { -0.1, 1.0 };
+
+            Random rng = new Random(1);
+            UniformDistribution pointDistribution = new UniformDistribution(Interval.FromEndpoints(-4.0, 4.0));
+
+            BivariateSample sample1 = new BivariateSample();
+            MultivariateSample sample2 = new MultivariateSample(2);
+            for (int k = 0; k < 1000; k++) {
+                double x = pointDistribution.GetRandomValue(rng);
+                double z = c[0] * x + c[1];
+                double ez = Math.Exp(z);
+                double p = ez / (1.0 + ez);
+                double y = (rng.NextDouble() < p) ? 1.0 : 0.0;
+                sample1.Add(x, y);
+                sample2.Add(x, y);
+            }
+
+            Console.WriteLine(sample1.Covariance / sample1.X.Variance / sample1.Y.Mean / (1.0 - sample1.Y.Mean));
+            Console.WriteLine(sample1.Covariance / sample1.X.Variance / sample1.Y.Variance);
+
+            FitResult result1 = sample1.LinearLogisticRegression();
+            FitResult result2 = sample2.TwoColumns(0, 1).LinearLogisticRegression();
+            FitResult result3 = sample2.LogisticLinearRegression(1);
+
+            for (int i = 0; i < result1.Dimension; i++) {
+                Console.WriteLine("{0} {1} {2}", i, result1.Parameter(i), result3.Parameter(i) );
+            }
+
+        }
+
+        [TestMethod]
+        public void MultivariateLinearRegression () {
+
+            int outputIndex = 2;
+
+            double[] c = new double[] { -1.0, 2.0, -3.0, 4.0 };
+
+            Random rng = new Random(1001110000);
+            UniformDistribution pointDistribution = new UniformDistribution(Interval.FromEndpoints(-4.0, 4.0));
+
+            MultivariateSample sample = new MultivariateSample(c.Length);
+
+            for (int k = 0; k < 1000; k++) {
+                double[] row = new double[sample.Dimension];
+                double z = 0.0;
+                for (int i = 0; i < row.Length; i++) {
+                    if (i == outputIndex) {
+                        z += c[i];
+                    } else {
+                        row[i] = pointDistribution.GetRandomValue(rng);
+                        z += row[i] * c[i];
+                    }
+                }
+                double ez = Math.Exp(z);
+                double p = ez / (1.0 + ez);
+                row[outputIndex] = (rng.NextDouble() < p) ? 1.0 : 0.0;
+                sample.Add(row);
+            }
+
+            FitResult result = sample.LogisticLinearRegression(outputIndex);
+
+            for (int i = 0; i < result.Dimension; i++) {
+                Console.WriteLine(result.Parameter(i));
+                Assert.IsTrue(result.Parameter(i).ConfidenceInterval(0.99).ClosedContains(c[i]));
+            }
         }
 
     }

@@ -6,6 +6,7 @@ using System.Data;
 #endif
 using System.Globalization;
 
+using Meta.Numerics.Analysis;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics.Distributions;
 
@@ -497,6 +498,63 @@ namespace Meta.Numerics.Statistics {
             if ((outputIndex < 0) || (outputIndex >= Dimension)) throw new ArgumentOutOfRangeException("outputIndex");
 
             return (LinearRegression_Internal(outputIndex));
+
+        }
+
+        /// <summary>
+        /// Performs a linear logistic regression analysis.
+        /// </summary>
+        /// <param name="outputIndex">The index of the column to predict.</param>
+        /// <returns></returns>
+        /// <remarks>Logistic linear regression is suited to situations where multiple input variables, either continuous or binary indicators, are used to predict
+        /// the value of a binary output variable. Like a linear regression, a logistic linear regression tries to find a model that predicts the output variable using
+        /// a linear combination of input variables. Unlike a simple linear regression, the model does not assume that this linear
+        /// function predicts the output directly; instead it assumes that this function value is then fed into a logit link function, which
+        /// maps the real numbers into the interval (0, 1), and interprets the value of this link function as the probability of obtaining success value
+        /// for the output variable.</remarks>
+        /// <exception cref="InvalidOperationException">The column to be predicted contains values other than 0 and 1.</exception>
+        public FitResult LogisticLinearRegression (int outputIndex) {
+
+            if ((outputIndex < 0) || (outputIndex >= this.Dimension)) throw new ArgumentOutOfRangeException("outputIndex");
+            if (this.Count <= this.Dimension) throw new InsufficientDataException();
+
+            // Define the log likelihood as a function of the parameter set
+            Func<IList<double>, double> logLikelihood = (IList<double> a) => {
+                double L = 0.0;
+                for (int k = 0; k < this.Count; k++) {
+                    double z = 0.0;
+                    for (int i = 0; i < this.storage.Length; i++) {
+                        if (i == outputIndex) {
+                            z += a[i];
+                        } else {
+                            z += a[i] * this.storage[i][k];
+                        }
+                    }
+                    double ez = Math.Exp(z);
+
+                    double y = this.storage[outputIndex][k];
+                    if (y == 0.0) {
+                        L -= Math.Log(1.0 + ez);
+                    } else if (y == 1.0) {
+                        L -= Math.Log(1.0 + 1.0 / ez);
+                    } else {
+                        throw new InvalidOperationException();
+                    }
+
+                }
+                return (L);
+            };
+
+            double[] start = new double[this.Dimension];
+            //for (int i = 0; i < start.Length; i++) {
+            //    if (i != outputIndex) start[i] = this.TwoColumns(i, outputIndex).Covariance / this.Column(i).Variance / this.Column(outputIndex).Variance;
+            //}
+
+            MultiExtremum maximum = MultiFunctionMath.FindLocalMaximum(logLikelihood, start);
+
+            FitResult result = new FitResult(maximum.Location, maximum.HessianMatrix.CholeskyDecomposition().Inverse(), null);
+
+            return (result);
 
         }
 

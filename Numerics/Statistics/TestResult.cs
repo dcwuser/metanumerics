@@ -18,12 +18,17 @@ namespace Meta.Numerics.Statistics {
     /// </remarks>
     public class TestResult {
 
-        private double statistic;
-        private Distribution distribution;
+        private readonly double statistic;
+        private readonly Distribution distribution;
 
         internal TestResult (double statistic, Distribution distribution) {
             this.statistic = statistic;
             this.distribution = distribution;
+        }
+
+        internal TestResult (string name, double statistic, TestType type, Distribution distribution) : this(statistic, distribution) {
+            this.name = name;
+            this.type = type;
         }
 
         /// <summary>
@@ -62,7 +67,61 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        private readonly string name;
+
+        private TestType type;
+
+        private string Name {
+            get {
+                return (name);
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicating the type of statistical test.
+        /// </summary>
+        public TestType Type {
+            get {
+                return (type);
+            }
+        }
+
+        /// <summary>
+        /// Gets the probability of such an extreme value of the satistic.
+        /// </summary>
+        /// <value>The P-value of the test-statistic.</value>
+        public double Probability {
+            get {
+                switch (type) {
+                    case TestType.LeftTailed:
+                        return (distribution.LeftProbability(statistic));
+                    case TestType.RightTailed:
+                        return (distribution.RightProbability(statistic));
+                    case TestType.TwoTailed:
+                        // This implementation is only good for distributions
+                        // symmetric about the mean, so if we ever implement
+                        // a two-tailed test that does not fit this requirement,
+                        // we will need to revisit it.
+                        if (statistic < distribution.Mean) {
+                            return (2.0 * distribution.LeftProbability(statistic));
+                        } else {
+                            return (2.0 * distribution.RightProbability(statistic));
+                        }
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+        }
+
     }
 
+    /// <summary>
+    /// Describes the sidedness of a statistical test.
+    /// </summary>
+    public enum TestType {
+        
+        LeftTailed, RightTailed, TwoTailed
+    
+    }
 
 }

@@ -42,6 +42,15 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sqrt(Complex.I), (ComplexMath.I + 1.0) / Math.Sqrt(2.0)));
         }
 
+        [TestMethod]
+        public void Foo () {
+
+            Console.WriteLine(ComplexMath.Sqrt(new Complex(1.0, 0.249999)));
+            Console.WriteLine(ComplexMath.Sqrt(new Complex(1.0, 0.250001)));
+            Console.WriteLine(ComplexMath.Sqrt(new Complex(0.0, 1.0)));
+            Console.WriteLine(ComplexMath.Sqrt(new Complex(0.0, -1.0)));
+        }
+
         // Trig functions
 
         [TestMethod]

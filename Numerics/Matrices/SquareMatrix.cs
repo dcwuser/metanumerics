@@ -14,6 +14,7 @@ namespace Meta.Numerics.Matrices {
 
         private readonly int dimension;
         private readonly double[] store;
+        private readonly int offset, rowStride, colStride;
 
         /// <summary>
         /// Initializes a new square matrix.
@@ -85,12 +86,12 @@ namespace Meta.Numerics.Matrices {
 
         /// <inheritdoc />
         public override double OneNorm () {
-            return (MatrixAlgorithms.OneNorm(store, dimension, dimension));
+            return (MatrixAlgorithms.OneNorm(store, 0, 1, dimension, dimension, dimension));
         }
 
         /// <inheritdoc />
         public override double InfinityNorm () {
-            return (MatrixAlgorithms.InfinityNorm(store, dimension, dimension));
+            return (MatrixAlgorithms.InfinityNorm(store, 0, 1, dimension, dimension, dimension));
         }
 
         /// <summary>
@@ -217,6 +218,7 @@ namespace Meta.Numerics.Matrices {
         /// <seealso cref="Eigensystem"/>
         public Complex[] Eigenvalues () {
             double[] aStore = MatrixAlgorithms.Copy(store, dimension, dimension);
+            SquareMatrixAlgorithms.IsolateCheapEigenvalues(aStore, null, dimension);
             SquareMatrixAlgorithms.ReduceToHessenberg(aStore, null, dimension);
             Complex[] eigenvalues = SquareMatrixAlgorithms.ReduceToRealSchurForm(aStore, null, dimension);
             return (eigenvalues);
@@ -252,7 +254,13 @@ namespace Meta.Numerics.Matrices {
         public ComplexEigensystem Eigensystem () {
 
             double[] aStore = MatrixAlgorithms.Copy(store, dimension, dimension);
-            double[] qStore = SquareMatrixAlgorithms.CreateUnitMatrix(dimension);
+
+            int[] perm = new int[dimension];
+            for (int i = 0; i < perm.Length; i++) perm[i] = i;
+            SquareMatrixAlgorithms.IsolateCheapEigenvalues(aStore, perm, dimension);
+            double[] qStore = MatrixAlgorithms.AllocateStorage(dimension, dimension);
+            for (int i = 0; i < perm.Length; i++) MatrixAlgorithms.SetEntry(qStore, dimension, dimension, perm[i], i, 1.0);
+            //double[] qStore = SquareMatrixAlgorithms.CreateUnitMatrix(dimension);
 
             // Reduce the original matrix to Hessenberg form
             SquareMatrixAlgorithms.ReduceToHessenberg(aStore, qStore, dimension);

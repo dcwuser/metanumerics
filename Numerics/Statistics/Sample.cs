@@ -793,10 +793,13 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException"><see cref="Sample.Count"/> is zero.</exception>
         /// <seealso cref="StudentTTest(double)"/>
         public TestResult ZTest (double referenceMean, double referenceStandardDeviation) {
+            return (ZTest(referenceMean, referenceStandardDeviation, TestType.TwoTailed));
+        }
+
+        public TestResult ZTest (double referenceMean, double referenceStandardDeviation, TestType type) {
             if (this.Count < 1) throw new InsufficientDataException();
             double z = (this.Mean - referenceMean) / (referenceStandardDeviation / Math.Sqrt(this.Count));
-            return (new TestResult(z, new NormalDistribution()));
-
+            return (new TestResult("z", z, type, new NormalDistribution()));
         }
 
         /// <summary>
@@ -838,17 +841,19 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are fewer than two data points in the sample.</exception>
         /// <seealso cref="StudentDistribution" />
         public TestResult StudentTTest (double referenceMean) {
+            return (StudentTTest(referenceMean, TestType.TwoTailed));
+        }
 
+        public TestResult StudentTTest (double referenceMean, TestType type) {
             // we need to be able to compute a mean and standard deviation in order to do this test; the standard deviation requires at least 2 data points
             if (this.Count < 2) throw new InsufficientDataException();
             double sigma = Math.Sqrt(this.SumOfSquareDeviations / (this.Count - 1.0));
-            //double sigma = Math.Sqrt(this.Count / (this.Count - 1.0)) * this.StandardDeviation;
             double se = sigma / Math.Sqrt(this.Count);
 
             double t = (this.Mean - referenceMean) / se;
             int dof = this.Count - 1;
 
-            return (new TestResult(t, new StudentDistribution(dof)));
+            return (new TestResult("t", t, type, new StudentDistribution(dof)));
         }
 
         /// <summary>
@@ -881,7 +886,7 @@ namespace Meta.Numerics.Statistics {
             }
 
             // W should be distributed binomially
-            return (new TestResult(W, new DiscreteAsContinuousDistribution(new BinomialDistribution(0.5, data.Count))));
+            return (new TestResult("W", W, TestType.TwoTailed, new DiscreteAsContinuousDistribution(new BinomialDistribution(0.5, data.Count))));
 
         }
 
@@ -914,7 +919,7 @@ namespace Meta.Numerics.Statistics {
             // evaluate t
             double t = (ma - mb) / Math.Sqrt(v / n);
 
-            return (new TestResult(t, new StudentDistribution(na + nb - 2)));
+            return (new TestResult("t", t, TestType.TwoTailed, new StudentDistribution(na + nb - 2)));
 
         }
 
@@ -1012,7 +1017,7 @@ namespace Meta.Numerics.Statistics {
                 uDistribution = new DiscreteAsContinuousDistribution(new MannWhitneyExactDistribution(a.Count, b.Count));
             }
 
-            return (new TestResult(u1, uDistribution));
+            return (new TestResult("U", u1, TestType.TwoTailed, uDistribution));
 
         }
 
@@ -1243,7 +1248,7 @@ namespace Meta.Numerics.Statistics {
             } else {
                 DDistribution = new TransformedDistribution(new KolmogorovAsymptoticDistribution(n), 0.0, 1.0 / Math.Sqrt(n));
             }
-            return (new TestResult(D, DDistribution));
+            return (new TestResult("D", D, TestType.RightTailed, DDistribution));
             
         }
 
@@ -1270,7 +1275,7 @@ namespace Meta.Numerics.Statistics {
             } else {
                 VDistribution = new TransformedDistribution(new KuiperAsymptoticDistribution(this.Count), 0.0, 1.0 / Math.Sqrt(this.Count));
             }
-            return (new TestResult(V, VDistribution));
+            return (new TestResult("V", V, TestType.RightTailed, VDistribution));
 
         }
 
@@ -1371,7 +1376,7 @@ namespace Meta.Numerics.Statistics {
                 nullDistribution = new TransformedDistribution(new KolmogorovDistribution(), 0.0, Math.Sqrt(1.0 * (a.Count + b.Count) / a.Count / b.Count));
             }
 
-            return (new TestResult(d, nullDistribution));
+            return (new TestResult("D", d, TestType.RightTailed, nullDistribution));
 
         }
 
@@ -1392,7 +1397,7 @@ namespace Meta.Numerics.Statistics {
             // compute the ratio
             double F = v1 / v2;
 
-            return (new TestResult(F, new FisherDistribution(a.Count - 1, b.Count - 1)));
+            return (new TestResult("F", F, TestType.RightTailed, new FisherDistribution(a.Count - 1, b.Count - 1)));
 
         }
 

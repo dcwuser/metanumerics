@@ -295,7 +295,7 @@ namespace Meta.Numerics.Statistics {
             int nu = (rows - 1) * (cols - 1);
 
             // return the test result
-            return (new TestResult(chi2, new ChiSquaredDistribution(nu)));
+            return (new TestResult("ChiSquared", chi2, TestType.RightTailed, new ChiSquaredDistribution(nu)));
 
         }
 

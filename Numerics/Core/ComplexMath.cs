@@ -99,13 +99,57 @@ namespace Meta.Numerics {
         /// <para>You can see the branch cut extending along the negative real axis from the zero at the origin.</para>
         /// </remarks>
         public static Complex Sqrt (Complex z) {
-            if (z.Im == 0) {
+            if (z.Im == 0.0) {
+                // Handle the degenerate case quickly.
+                // This also eliminates need to worry about Im(z) = 0 in subsequent formulas.
                 if (z.Re < 0.0) {
                     return (new Complex(0.0, Math.Sqrt(-z.Re)));
                 } else {
                     return (new Complex(Math.Sqrt(z.Re), 0.0));
                 }
             } else {
+
+                // To find a fast formula for complex square root, note x + i y = \sqrt{a + i b} implies
+                // x^2 + 2 i x y - y^2 = a + i b, so x^2 - y^2 = a and 2 x y = b. Cross-substitute and
+                // use quadratic formula to solve for x^2 and y^2 to obtain
+                //  x = \sqrt{\frac{\sqrt{a^2 + b^2} + a}{2}}  y = \pm \sqrt{\frac{\sqrt{a^2 + b^2} - a}{2}}
+                // This gives complex square root in three square roots and a few flops.
+
+                // Only problem is b << a case, where significant cancelation occurs in one of the formula.
+                // (Which one depends on the sign of a.) Handle that case by series expansion.
+
+                double p, q;
+                if (Math.Abs(z.Im) < 0.25 * Math.Abs(z.Re)) {
+                    double x2 = MoreMath.Sqr(z.Im / z.Re);
+                    double t = x2 / 2.0;
+                    double s = t;
+                    // Find s = \sqrt{1 + x^2} - 1 using binomial expansion
+                    for (int k = 2; true; k++ ) {
+                        if (k > Global.SeriesMax) throw new NonconvergenceException();
+                        double s_old = s;
+                        t *= (1.5 / k - 1.0) * x2;
+                        s += t;
+                        if (s == s_old) break;
+                    }
+                    if (z.Re < 0.0) {
+                        p = -z.Re * s;
+                        q = -2.0 * z.Re + p;
+                    } else {
+                        q = z.Re * s;
+                        p = 2.0 * z.Re + q;
+                    }
+                } else {
+                    double m = ComplexMath.Abs(z);
+                    p = m + z.Re;
+                    q = m - z.Re;
+                }
+
+                double x = Math.Sqrt(p / 2.0);
+                double y = Math.Sqrt(q / 2.0);
+                if (z.Im < 0.0) y = -y;
+                return (new Complex(x, y));
+
+                /*
                 if (Math.Abs(z.Im) < 0.125 * Math.Abs(z.Re)) {
                     // We should try to improve this by using a series instead of the full power algorithm.
                     return (Pow(z, 0.5));
@@ -119,6 +163,7 @@ namespace Meta.Numerics {
                     if (z.Im < 0.0) y = -y;
                     return (new Complex(x, y));
                 }
+                */
             }
         }
 

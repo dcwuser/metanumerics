@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Resources;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
@@ -20,6 +21,10 @@ using System.Security.Permissions;
 
 // CLS compliance
 [assembly: CLSCompliant(true)]
+
+// Define English as neutral resource language
+// This attribute is required for the class to be used in Windows Universal Apps
+[assembly: NeutralResourcesLanguage("en-us")]
 
 // COM exposure
 #if !SILVERLIGHT

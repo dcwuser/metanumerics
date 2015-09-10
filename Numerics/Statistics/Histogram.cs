@@ -269,7 +269,7 @@ namespace Meta.Numerics.Statistics {
             }
 
             Distribution nullDistribution = new ChiSquaredDistribution(dof);
-            return (new TestResult(chi2, nullDistribution));
+            return (new TestResult("ChiSquared", chi2, TestType.RightTailed, nullDistribution));
 
         }
 

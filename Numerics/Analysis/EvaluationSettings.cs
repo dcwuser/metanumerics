@@ -71,6 +71,12 @@ namespace Meta.Numerics.Analysis {
             return (absolutePrecision + Math.Abs(value) * relativePrecision);
         }
 
+        public Action<EvaluationResult> UpdateHandler { get; set; }
+
+        internal void Update (EvaluationResult result) {
+            if (UpdateHandler != null) UpdateHandler(result);
+        }
+
 #if FUTURE
         /// <summary>
         /// Occurs when an updated evaluation is available.

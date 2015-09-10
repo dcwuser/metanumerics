@@ -22,7 +22,17 @@ namespace Meta.Numerics {
 
     internal class PolynomialInterpolator {
 
-        public PolynomialInterpolator (double[] x, double[] y) {
+        public PolynomialInterpolator (int capacity) {
+            if (capacity < 1) throw new ArgumentOutOfRangeException("capacity");
+            this.n = 0;
+            this.x = new double[capacity];
+            this.y = new double[capacity][];
+            for (int i = 0; i < capacity; i++) {
+                this.y[i] = new double[capacity - i];
+            }
+        }
+
+        internal PolynomialInterpolator (double[] x, double[] y) {
             if (x == null) throw new ArgumentNullException("x");
             if (y == null) throw new ArgumentNullException("y");
             if (x.Length != y.Length) throw new InvalidOperationException();
@@ -41,6 +51,13 @@ namespace Meta.Numerics {
         private double[] x;
         private double[][] y;
         int n;
+
+        public void Add (double x, double y) {
+            if (n >= this.x.Length) throw new InvalidOperationException();
+            this.x[n] = x;
+            this.y[0][n] = y;
+            n++;
+        }
 
         public int Order {
             get {

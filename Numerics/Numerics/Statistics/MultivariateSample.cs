@@ -413,7 +413,7 @@ namespace Meta.Numerics.Statistics {
 
             SymmetricMatrix covariance = unexplainedVariance * CD.Inverse();
 
-            return (new FitResult(parameters, covariance, new TestResult(F, fDistribution)));
+            return (new FitResult(parameters, covariance, new TestResult("F", F, TestType.RightTailed, fDistribution)));
 
         }
 
@@ -513,6 +513,7 @@ namespace Meta.Numerics.Statistics {
         /// maps the real numbers into the interval (0, 1), and interprets the value of this link function as the probability of obtaining success value
         /// for the output variable.</remarks>
         /// <exception cref="InvalidOperationException">The column to be predicted contains values other than 0 and 1.</exception>
+        /// <exception cref="InsufficientDataException">There are not more rows in the sample than columns.</exception>
         public FitResult LogisticLinearRegression (int outputIndex) {
 
             if ((outputIndex < 0) || (outputIndex >= this.Dimension)) throw new ArgumentOutOfRangeException("outputIndex");

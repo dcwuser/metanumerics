@@ -290,6 +290,28 @@ namespace Meta.Numerics {
 
     internal static class RangeReduction {
 
+        // Start with Dekker arithmetic. Suppose x and y are floating point numbers with a limited mantissa, say 32 bits; then
+        // x * y will have up to 64 bits, the last 32 bits of which will be lost when put the result into another 32-bit register.
+        // But suppose we decompose x = xHi + xLo and y = yHi + yLo, with each part using only 16 bits but still being stored
+        // in a 32-bit register. Then we can form products like xHi * yHi and xHi * yLo and be sure the product will fit fully
+        // into a 32-bit register, so we can form their sum, product, etc. without any rounding error. This is Dekker arithmetic.
+        // It's basically the idea as representing a long using two ints, but applied to floating point types.
+
+        // Start with the decomposition, which is called Veltkamp splitting:
+
+        public static void Decompose (double x, out double hi, out double lo) {
+            double p = K * x;
+            double q = x - p;
+            hi = p + q;
+            lo = x - hi;
+        }
+
+        public static double[] Decompose (double x) {
+            double hi, lo;
+            Decompose(x, out hi, out lo);
+            return (new double[] { hi, lo });
+        }
+
         // The number of bits to keep in each part when doing Veltkamp splitting
 
         private const int bitsPerPart = 26;
@@ -297,6 +319,9 @@ namespace Meta.Numerics {
         // The corresponding constant used in the Veltkamp splitting algorithm
 
         private const double K = (1 << bitsPerPart) + 1;
+
+
+        // Next comes arithmetic. All we need is multiplication.
 
         // The binary represenation of 2/\pi. We will use this to find z = (2\pi) x.
 
@@ -358,18 +383,9 @@ namespace Meta.Numerics {
             r = b - z;
         }
 
-        public static double[] Decompose (double x) {
-            double hi, lo;
-            Decompose(x, out hi, out lo);
-            return (new double[] { hi, lo });
-        }
 
-        public static void Decompose (double x, out double hi, out double lo) {
-            double p = K * x;
-            double q = x - p;
-            hi = p + q;
-            lo = x - hi;
-        }
+
+
 
         // This is the Dekker multiplication algorithm.
 

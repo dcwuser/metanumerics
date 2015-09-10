@@ -131,6 +131,28 @@ namespace Meta.Numerics.Statistics {
             return (new TestResult(P, new UniformDistribution(Interval.FromEndpoints(0.0, 1.0))));
         }
 
+        /// <summary>
+        /// Performs a McNemar test.
+        /// </summary>
+        /// <returns>The result of the test.</returns>
+        /// <remarks>
+        /// <para>McNemar's test is appropriate to a rather specialized circumstance, so if you aren't sure this is the
+        /// right test, it probably isn't.</para>
+        /// <para>The circumstance to which McNemar's test applies is paired binary measurements. Each member of
+        /// a set is measured twice, once before and once after some treatment, and each measurement has a binary
+        /// outcome. McNemar's test can be used to determine whether the treatment had any systematic effect. The null
+        /// hypothesis is that it the not, i.e. that any discrepancies between the first and second measurements
+        /// were random.</para>
+        /// </remarks>
+        /// <see href="http://en.wikipedia.org/wiki/McNemar%27s_test"/>
+        public TestResult McNemarTest () {
+
+            double t = MoreMath.Sqr(this[0, 1] - this[1, 0]) / (this[0, 1] + this[1, 0]);
+
+            return (new TestResult(t, new ChiSquaredDistribution(1)));
+
+        }
+
     }
 
 

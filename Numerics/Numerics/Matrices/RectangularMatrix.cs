@@ -24,6 +24,9 @@ namespace Meta.Numerics.Matrices {
             rows = rowCount;
             cols = columnCount;
             store = MatrixAlgorithms.AllocateStorage(rows, cols);
+            offset = 0;
+            rowStride = 1;
+            colStride = rows;
         }
 
         /// <summary>
@@ -35,6 +38,9 @@ namespace Meta.Numerics.Matrices {
             rows = source.GetLength(0);
             cols = source.GetLength(1);
             store = MatrixAlgorithms.AllocateStorage(rows, cols);
+            offset = 0;
+            rowStride = 1;
+            colStride = rows;
             for (int r = 0; r < rows; r++) {
                 for (int c = 0; c < cols; c++) {
                     store[MatrixAlgorithms.GetIndex(rows, cols, r, c)] = source[r, c];
@@ -44,6 +50,9 @@ namespace Meta.Numerics.Matrices {
 
         internal RectangularMatrix (double[] store, int rows, int cols, bool isReadOnly) : base(isReadOnly) {
             this.store = store;
+            offset = 0;
+            rowStride = 1;
+            colStride = rows;
             this.rows = rows;
             this.cols = cols;
         }
@@ -51,6 +60,7 @@ namespace Meta.Numerics.Matrices {
         internal RectangularMatrix (double[] store, int rows, int cols) : this(store, rows, cols, false) { }
 
         private readonly double[] store;
+        private readonly int offset, rowStride, colStride;
         private readonly int rows, cols;
 
         // required implementations of abstract methods
@@ -58,15 +68,15 @@ namespace Meta.Numerics.Matrices {
         /// <inheritdoc />
         public override double this[int r, int c] {
             get {
-                if ((r < 0) || (r > rows)) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c > cols)) throw new ArgumentOutOfRangeException("r");
-                return (store[MatrixAlgorithms.GetIndex(rows, cols, r, c)]);
+                if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
+                if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
+                return (store[MatrixAlgorithms.GetIndex(offset, rowStride, colStride, r, c)]);
             }
             set {
-                if ((r < 0) || (r > rows)) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c > cols)) throw new ArgumentOutOfRangeException("r");
+                if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
+                if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
                 if (IsReadOnly) throw new InvalidOperationException();
-                store[MatrixAlgorithms.GetIndex(rows, cols, r, c)] = value;
+                store[MatrixAlgorithms.GetIndex(offset, rowStride, colStride, r, c)] = value;
             }
         }
 
@@ -84,19 +94,19 @@ namespace Meta.Numerics.Matrices {
 
         /// <inheritdoc />
         public override double OneNorm () {
-            return (MatrixAlgorithms.OneNorm(store, rows, cols));
+            return (MatrixAlgorithms.OneNorm(store, offset, rowStride, colStride, rows, cols));
         }
 
         /// <inheritdoc />
         public override double InfinityNorm () {
-            return (MatrixAlgorithms.InfinityNorm(store, rows, cols));
+            return (MatrixAlgorithms.InfinityNorm(store, offset, rowStride, colStride, rows, cols));
         }
 
         /// <inheritdoc />
         public override ColumnVector Column (int c) {
             if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
             double[] cStore = new double[rows];
-            Blas1.dCopy(store, rows * c, 1, cStore, 0, 1, rows);
+            Blas1.dCopy(store, offset + colStride * c, rowStride, cStore, 0, 1, rows);
             return (new ColumnVector(cStore, rows));
         }
 
@@ -104,7 +114,7 @@ namespace Meta.Numerics.Matrices {
         public override RowVector Row (int r) {
             if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
             double[] rStore = new double[cols];
-            Blas1.dCopy(store, r, rows, rStore, 0, 1, cols);
+            Blas1.dCopy(store, offset + rowStride * r, colStride, rStore, 0, 1, cols);
             return (new RowVector(rStore, cols));
         }
 
@@ -195,7 +205,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>An indpendent copy of the matrix.</returns>
         public RectangularMatrix Copy () {
-            double[] cStore = MatrixAlgorithms.Copy(store, rows, cols);
+            double[] cStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, rows, cols);
             return (new RectangularMatrix(cStore, rows, cols));
         }
 
@@ -225,7 +235,7 @@ namespace Meta.Numerics.Matrices {
 
             if (rows < cols) throw new InvalidOperationException();
 
-            double[] rStore = MatrixAlgorithms.Copy(store, rows, cols);
+            double[] rStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, rows, cols);
 
             double[] qtStore = SquareMatrixAlgorithms.CreateUnitMatrix(rows);
 
@@ -244,7 +254,7 @@ namespace Meta.Numerics.Matrices {
             if (rows >= cols) {
 
                 // copy the matrix so as not to distrub the original
-                double[] copy = MatrixAlgorithms.Copy(store, rows, cols);
+                double[] copy = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, rows, cols);
 
                 // bidiagonalize it
                 double[] a, b;
@@ -300,7 +310,7 @@ namespace Meta.Numerics.Matrices {
             if (v == null) throw new ArgumentNullException("v");
             if (A.cols != v.dimension) throw new DimensionMismatchException();
             double[] avStore = new double[A.rows];
-            Blas2.dGemv(A.store, 0, 1, A.rows, v.store, v.offset, v.stride, avStore, 0, 1, A.rows, A.cols);
+            Blas2.dGemv(A.store, A.offset, A.rowStride, A.colStride, v.store, v.offset, v.stride, avStore, 0, 1, A.rows, A.cols);
             return (new ColumnVector(avStore, A.rows));
         }
 

@@ -522,7 +522,7 @@ namespace Meta.Numerics.Statistics {
             // t is the mean deviation as a fraction of standard error
             double t = m / s;
 
-            return (new TestResult(t, new StudentDistribution(Count - 1)));
+            return (new TestResult("t", t, TestType.TwoTailed, new StudentDistribution(Count - 1)));
 
         }
 
@@ -568,7 +568,7 @@ namespace Meta.Numerics.Statistics {
             double unexplainedVarianceSum = SSR;
             double explainedVarianceSum = totalVarianceSum - unexplainedVarianceSum;
             double F = (explainedVarianceSum / 1) / (unexplainedVarianceSum / (n - 2));
-            TestResult test = new TestResult(F, new FisherDistribution(1, n - 2));
+            TestResult test = new TestResult("F", F, TestType.RightTailed, new FisherDistribution(1, n - 2));
 
             return (new FitResult(a, Math.Sqrt(caa), b, Math.Sqrt(cbb), cab, test));
         }
@@ -623,7 +623,7 @@ namespace Meta.Numerics.Statistics {
             double unexplainedVarianceDof = n - (m + 1);
             double explainedVarianceDof = m;
             double F = (explainedVarianceSum / explainedVarianceDof) / (unexplainedVarianceSum / unexplainedVarianceDof);
-            TestResult test = new TestResult(F, new FisherDistribution(explainedVarianceDof, unexplainedVarianceDof));
+            TestResult test = new TestResult("F", F, TestType.RightTailed, new FisherDistribution(explainedVarianceDof, unexplainedVarianceDof));
 
             return (new FitResult(a, C, test));
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
@@ -228,6 +229,19 @@ namespace Test {
             RectangularMatrix P = A * B;
             Assert.IsTrue(P.FrobeniusNorm() <= A.FrobeniusNorm() * B.FrobeniusNorm());
 
+        }
+
+        [TestMethod]
+        public void BigSVD () {
+
+            RectangularMatrix R = GenerateRandomMatrix(500, 100);
+
+            Stopwatch s = Stopwatch.StartNew();
+            SingularValueDecomposition SVD = R.SingularValueDecomposition();
+            s.Stop();
+
+            Console.WriteLine(s.Elapsed);
+            Console.WriteLine(SVD.ConditionNumber);
         }
 
         [TestMethod]

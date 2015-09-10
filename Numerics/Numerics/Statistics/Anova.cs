@@ -117,7 +117,7 @@ namespace Meta.Numerics.Statistics {
             get {
                 double F = (this.SumOfSquares / this.DegreesOfFreedom) / (result.Residual.SumOfSquares / result.Residual.DegreesOfFreedom);
                 Distribution D = new FisherDistribution(this.DegreesOfFreedom, result.Residual.DegreesOfFreedom);
-                return (new TestResult(F, D));
+                return (new TestResult("F", F, TestType.TwoTailed, D));
             }
         }
 

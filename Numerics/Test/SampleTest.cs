@@ -544,6 +544,22 @@ namespace Test {
         }
 
         [TestMethod]
+        public void WeibullRngProblem () {
+
+            Random rng = new Random(1);
+
+            Sample s = new Sample();
+            for (int i = 0; i < 50; i++) {
+                s.Add(rng.NextDouble());
+            }
+
+            WeibullDistribution w = new WeibullDistribution(2.2, 0.031);
+
+            s.Transform(x => w.ScaleParameter * Math.Pow(-Math.Log(1.0 - x), 1.0 / w.ShapeParameter));
+
+        }
+
+        [TestMethod]
         public void WeibullFitUncertainties () {
 
             // check that the uncertainty in reported fit parameters is actually meaningful

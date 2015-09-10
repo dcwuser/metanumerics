@@ -161,7 +161,7 @@ namespace Meta.Numerics.Statistics {
                 }
                 chi2 += Math.Pow((data[i].Y.Value - f) / data[i].Y.Uncertainty, 2);
             }
-            TestResult test = new TestResult(chi2, new ChiSquaredDistribution(data.Count - functions.Length));
+            TestResult test = new TestResult("ChiSquare", chi2, TestType.RightTailed, new ChiSquaredDistribution(data.Count - functions.Length));
 
             // return the results
             FitResult fit = new FitResult(a, C, test);
@@ -204,7 +204,7 @@ namespace Meta.Numerics.Statistics {
             SymmetricMatrix C = CD.Inverse();
 
             // package up the results and return them
-            TestResult test = new TestResult(minimum.Value, new ChiSquaredDistribution(this.Count - minimum.Dimension));
+            TestResult test = new TestResult("ChiSquare", minimum.Value, TestType.RightTailed, new ChiSquaredDistribution(this.Count - minimum.Dimension));
             FitResult fit = new FitResult(minimum.Location(), C, test);
             return (fit);
 
@@ -300,7 +300,7 @@ namespace Meta.Numerics.Statistics {
                 double z = (y - m) / dy;
                 chi2 += z * z;
             }
-            TestResult test = new TestResult(chi2, new ChiSquaredDistribution(Count - 1));
+            TestResult test = new TestResult("ChiSquared", chi2, TestType.RightTailed, new ChiSquaredDistribution(Count - 1));
 
             return (new FitResult(m, dm, test));
         }
@@ -339,7 +339,7 @@ namespace Meta.Numerics.Statistics {
                 double z = (y - a * x) / dy;
                 chi2 += z * z;
             }
-            TestResult test = new TestResult(chi2, new ChiSquaredDistribution(Count - 1));
+            TestResult test = new TestResult("ChiSquared", chi2, TestType.RightTailed, new ChiSquaredDistribution(Count - 1));
 
             // return results
             return (new FitResult(a, da, test));

@@ -58,6 +58,18 @@ namespace Test {
             return (V);
         }
 
+        private static SquareMatrix CreateCirculantMatrix (double[] x) {
+            int d = x.Length;
+            SquareMatrix A = new SquareMatrix(d);
+            for (int c = 0; c < d; c++) {
+                for (int i = 0; i < d; i++) {
+                    int r = (c + i) % d;
+                    A[r, c] = x[i];
+                }
+            }
+            return (A);
+        }
+
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
         public void SquareMatrixInvalidDimensionTest () {
@@ -430,6 +442,25 @@ namespace Test {
 
         }
 
+
+        [TestMethod]
+        public void DifficultEigenvalue () {
+
+            // This is from a paper describing difficult eigenvalue problems.
+            // https://www.mathworks.com/company/newsletters/news_notes/pdf/sum95cleve.pdf
+
+            SquareMatrix A = new SquareMatrix(4);
+            A[0, 0] = 0.0; A[0, 1] = 2.0; A[0, 2] = 0.0; A[0, 3] = -1.0;
+            A[1, 0] = 1.0; A[1, 1] = 0.0; A[1, 2] = 0.0; A[1, 3] = 0.0;
+            A[2, 0] = 0.0; A[2, 1] = 1.0; A[2, 2] = 0.0; A[2, 3] = 0.0;
+            A[3, 0] = 0.0; A[3, 1] = 0.0; A[3, 2] = 1.0; A[3, 3] = 0.0;
+
+            Complex[] zs = A.Eigenvalues();
+            foreach (Complex z in zs) {
+                Console.WriteLine("{0} ({1} {2})", z, ComplexMath.Abs(z), ComplexMath.Arg(z));
+            }
+        }
+
         [TestMethod]
         public void SquareMatrixStochasticEigensystem () {
 
@@ -456,6 +487,7 @@ namespace Test {
                 R[(c + 12) % n, c] = 1.0 / 36.0;
             }
 
+            //Complex[] v = R.Eigenvalues();
             ComplexEigensystem E = R.Eigensystem();
 
             for (int i = 0; i < E.Dimension; i++) {
@@ -463,6 +495,43 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEigenpair(R, E.Eigenvector(i), E.Eigenvalue(i)));
             }
 
+        }
+
+        [TestMethod]
+        public void CirculantEigenvalues () {
+
+            int n = 50;
+
+            double[] x = new double[n];
+            for (int i = 0; i < x.Length; i++) x[i] = 1.0 / (i + 1);
+            SquareMatrix A = CreateCirculantMatrix(x);
+
+            Complex[] u = RootsOfUnity(n);
+            Complex[] v = new Complex[n];
+            for (int i = 0; i < v.Length; i++) {
+                for (int j = 0; j < n; j++) {
+                    v[i] += x[j] * u[(i * (n - j)) % n];
+                }
+            }
+
+            Complex[][] w = new Complex[n][];
+            for (int i = 0; i < n; i++) {
+                w[i] = new Complex[n];
+                for (int j = 0; j < n; j++) {
+                    w[i][j] = u[i * j % n];
+                }
+            }
+
+            Complex[] e = A.Eigenvalues();
+
+        }
+
+        public Complex[] RootsOfUnity (int n) {
+            Complex[] u = new Complex[n];
+            for (int i = 0; i < n; i++) {
+                u[i] = new Complex(MoreMath.Cos(2.0 * Math.PI * i / n), MoreMath.Sin(2.0 * Math.PI * i / n));
+            }
+            return (u);
         }
 
         public static void PrintMatrix (double[,] A) {

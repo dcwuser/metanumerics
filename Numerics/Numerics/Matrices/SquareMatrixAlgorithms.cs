@@ -132,6 +132,67 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
+        public static void IsolateCheapEigenvalues (double[] aStore, int[] perm, int dimension) {
+
+            int n = dimension;
+            while (n > 0) {
+                int r = FindZeroRow(aStore, dimension, n);
+                if (r < 0) {
+                    break;
+                } else {
+                    n--;
+                    SwapIndexes(aStore, perm, dimension, r, n);
+                }
+            }
+
+            int m = 0;
+            while (m < n) {
+                int c = FindZeroColumn(aStore, dimension, m);
+                if (c < 0) {
+                    break;
+                } else {
+                    SwapIndexes(aStore, perm, dimension, c, m);
+                    m++;
+                }
+            }
+
+        }
+
+        private static int FindZeroRow (double[] aStore, int dimension, int n) {
+            for (int r = n - 1; r >= 0; r--) {
+                if (IsZeroRow(aStore, dimension, r, n)) return (r);
+            }
+            return (-1);
+        }
+
+        private static bool IsZeroRow (double[] aStore, int dimension, int r, int n) {
+            for (int c = 0; c < n; c++) {
+                if ((r != c) && (aStore[r + dimension * c] != 0.0)) return (false);
+            }
+            return (true);
+        }
+
+        private static int FindZeroColumn (double[] aStore, int dimension, int m) {
+            for (int c = m; c < dimension; c++) {
+                if (IsZeroColumn(aStore, dimension, c, m)) return(c);
+            }
+            return (-1);
+        }
+
+        private static bool IsZeroColumn (double[] aStore, int dimension, int c, int m) {
+            for (int r = m; r < dimension; r++) {
+                if ((r != c) && (aStore[r + dimension * c] != 0.0)) return (false);
+            }
+            return (true);
+        }
+
+        private static void SwapIndexes (double[] aStore, int[] perm, int dimension, int p, int q) {
+            if (p == q) return;
+            Blas1.dSwap(aStore, p, dimension, aStore, q, dimension, dimension);
+            Blas1.dSwap(aStore, dimension * p, 1, aStore, dimension * q, 1, dimension);
+            if (perm != null) Global.Swap<int>(ref perm[p], ref perm[q]);
+        }
+
         // The reduction to Hessenberg form via a similiarity transform proceeds as follows. A Householder reflection can
         // zero the non-Householder elements in the first column. Since this is a similiarity transform, we have to apply
         // it from the other side as well. The letters indicate which elements are mixed by each transform.

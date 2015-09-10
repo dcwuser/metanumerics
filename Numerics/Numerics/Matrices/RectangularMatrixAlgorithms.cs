@@ -44,11 +44,25 @@ namespace Meta.Numerics.Matrices {
             return (store[nRows * c + r]);
         }
 
+        public static int GetIndex (int offset, int rowStride, int colStride, int r, int c) {
+            return (offset + rowStride * r + colStride * c);
+        }
+
         // transformations and simple arithmetic: O(N^2) operations
 
         public static double[] Copy (double[] store, int nRows, int nColumns) {
             double[] cloneStore = new double[store.Length];
             store.CopyTo(cloneStore, 0);
+            return (cloneStore);
+        }
+
+        public static double[] Copy (double[] store, int offset, int rowStride, int colStride, int nRows, int nColumns) {
+            double[] cloneStore = AllocateStorage(nRows, nColumns);
+            for (int c = 0; c < nColumns; c++) {
+                for (int r = 0; r < nRows; r++) {
+                    cloneStore[nRows * c + r] = store[GetIndex(offset, rowStride, colStride, r, c)];
+                }
+            }
             return (cloneStore);
         }
 
@@ -62,19 +76,21 @@ namespace Meta.Numerics.Matrices {
             return (tStore);
         }
 
-        public static double OneNorm (double[] store, int nRows, int nColumns) {
+        public static double OneNorm (double[] store, int offset, int rowStride, int colStride, int nRows, int nColumns) {
             double norm = 0.0;
             for (int c = 0; c < nColumns; c++) {
-                double csum = Blas1.dNrm1(store, c * nRows, 1, nRows);
+                double csum = Blas1.dNrm1(store, offset + colStride * c, rowStride, nRows);
+                //double csum = Blas1.dNrm1(store, c * nRows, 1, nRows);
                 if (csum > norm) norm = csum;
             }
             return (norm);
         }
 
-        public static double InfinityNorm (double[] store, int nRows, int nColumns) {
+        public static double InfinityNorm (double[] store, int offset, int rowStride, int colStride, int nRows, int nColumns) {
             double norm = 0.0;
             for (int r = 0; r < nRows; r++) {
-                double rsum = Blas1.dNrm1(store, r, nRows, nColumns);
+                double rsum = Blas1.dNrm1(store, offset + rowStride * r, colStride, nColumns);
+                //double rsum = Blas1.dNrm1(store, r, nRows, nColumns);
                 if (rsum > norm) norm = rsum;
             }
             return (norm);
@@ -219,7 +235,9 @@ namespace Meta.Numerics.Matrices {
                     count = 0;
                 }
 
-                if (n == 0) return;
+                if (n == 0) {
+                    return;
+                }
 
                 // p is the upper limit index
                 // find any zeros on the diagonal and reduce the problem

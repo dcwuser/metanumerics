@@ -16,6 +16,44 @@ namespace Test {
     public class BugTests {
 
         [TestMethod]
+        [DeploymentItem("Bug8021.csv")]
+        public void Bug8021 () {
+
+            // User presented a matrix with a large number (138) of zero eigenvalues.
+            // QR algorithm got tripped up on high degeneracy, but eigenvalues could
+            // be revealed before QR by simple index permutation. Added code to isolate
+            // these "cheap" eigenvalues before starting QR algorithm.
+
+            int n = 276;
+            SquareMatrix A = new SquareMatrix(n);
+            using (System.IO.StreamReader reader = System.IO.File.OpenText(@"Bug8021.csv")) {
+                int r = 0;
+                while (!reader.EndOfStream) {
+                    string line = reader.ReadLine();
+                    string[] cells = line.Split(',');
+                    for (int c = 0; c < cells.Length; c++) {
+                        string cell = cells[c];
+                        double value = Double.Parse(cell);
+                        A[r, c] = value;
+                    }
+                    r++;
+                }
+            }
+
+            ComplexEigensystem S = A.Eigensystem();
+            for (int i = 0; i < S.Dimension; i++) {
+                TestUtilities.IsNearlyEigenpair(A, S.Eigenvector(i), S.Eigenvalue(i));
+            }
+
+            Complex[] eigenvalues = A.Eigenvalues();
+            double trace = A.Trace();
+            Complex sum = 0.0;
+            for (int i = 0; i < eigenvalues.Length; i++) sum += eigenvalues[i];
+            TestUtilities.IsNearlyEqual(trace, sum);
+
+        }
+
+        [TestMethod]
         public void Bug7953 () {
 
             // Fitting this sample to a Weibull caused a NonconvergenceException in the root finder that was used inside the fit method.
@@ -228,23 +266,6 @@ namespace Test {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Abs(lambda), 1.0));
                 }
             }
-
-        }
-
-        [TestMethod]
-        public void DifficultEigenvalue () {
-
-            SquareMatrix A = new SquareMatrix(4);
-            A[0, 0] = 0.0; A[0, 1] = 2.0; A[0, 2] = 0.0; A[0, 3] = -1.0;
-            A[1, 0] = 1.0; A[1, 1] = 0.0; A[1, 2] = 0.0; A[1, 3] = 0.0;
-            A[2, 0] = 0.0; A[2, 1] = 1.0; A[2, 2] = 0.0; A[2, 3] = 0.0;
-            A[3, 0] = 0.0; A[3, 1] = 0.0; A[3, 2] = 1.0; A[3, 3] = 0.0;
-
-            Complex[] zs = A.Eigenvalues();
-            foreach (Complex z in zs) {
-                Console.WriteLine("{0} ({1} {2})", z, ComplexMath.Abs(z), ComplexMath.Arg(z));
-            }
-
 
         }
 

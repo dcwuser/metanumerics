@@ -709,10 +709,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value Ai(x).</returns>
         /// <remarks>
-        /// <para>Airy functions are solutions to the Airy differential equation:</para>
-        /// <img src="../images/AiryODE.png" />
-        /// <para>The Airy functions appear in quantum mechanics in the semiclassical WKB solution to the wave functions in a potential.</para>
-        /// <para>For negative arguments, Ai(x) is oscilatory. For positive arguments, it decreases exponentially with increasing x.</para>
+        /// <para>For information on the Airy functions, see <see cref="AdvancedMath.Airy"/>.</para>
         /// </remarks>
         /// <seealso cref="AiryBi"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Airy_functions" />
@@ -725,7 +722,7 @@ namespace Meta.Numerics.Functions {
                 // Close to the origin, use a power series.
                 // Convergence is slightly better for negative x than for positive, so we use it further out to the left of the origin.
                 return (AiryAi_Series(x));
-                // The definitions in terms of bessel functions becomes 0 X infinity at x=0, so we can't use them directly here anyway.
+                // The definitions in terms of bessel functions become 0 X infinity at x=0, so we can't use them directly here anyway.
             } else {
                 double y = 2.0 / 3.0 * Math.Pow(x, 3.0 / 2.0);
                 return (Math.Sqrt(x / 3.0) / Math.PI * ModifiedBesselK(1.0 / 3.0, y));
@@ -769,10 +766,9 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value Bi(x).</returns>
         /// <remarks>
-        /// <para>The Airy functions appear in quantum mechanics in the semiclassical WKB solution to the wave functions in a potential.</para>
-        /// <para>For negative arguments, Bi(x) is oscilatory. For positive arguments, it increases exponentially with increasing x.</para>
-        /// <para>While the notation Bi(x) was chosen simply as a natural complement to Ai(x), it has influenced the common nomenclature for
-        /// this function, which is now often called the "Bairy function".</para>
+        /// <para>For information on the Airy functions, see <see cref="AdvancedMath.Airy"/>.</para>
+        /// <para>While the notation Bi(x) was chosen simply as a natural complement to Ai(x), it has influenced the common
+        /// nomenclature for this function, which is now often called the "Bairy function".</para>
         /// </remarks>        
         /// <seealso cref="AiryAi"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Airy_functions" />
@@ -788,7 +784,6 @@ namespace Meta.Numerics.Functions {
                 // It's also slightly better for negative values, because a given number of oscilations occur further out.  
                 return (AiryBi_Series(x));
             } else {
-                // change to use a function that returns I and K together
                 double y = 2.0 / 3.0 * Math.Pow(x, 3.0 / 2.0);
                 SolutionPair s = ModifiedBessel(1.0 / 3.0, y);
                 return (Math.Sqrt(x) * (2.0 / Global.SqrtThree * s.FirstSolutionValue + s.SecondSolutionValue / Math.PI));
@@ -819,6 +814,19 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="x">The argument.</param>
         /// <returns>The values of Ai(x), Ai'(x), Bi(x), and Bi'(x).</returns>
+        /// <remarks>
+        /// <para>Airy functions are solutions to the Airy differential equation:</para>
+        /// <img src="../images/AiryODE.png" />
+        /// <para>The Airy functions appear in quantum mechanics in the semiclassical WKB solution to the wave functions in a potential.</para>
+        /// <para>For negative arguments, Ai(x) and Bi(x) are oscilatory. For positive arguments, Ai(x) decreases exponentially and Bi(x) increases
+        /// exponentially with increasing x.</para>
+        /// <para>This method simultaneously computes both Airy functions and their derivatives. If you need both Ai and Bi, it is faster to call
+        /// this method once than to call <see cref="AiryAi(double)"/> and <see cref="AiryBi(double)"/> seperately. If on, the other hand, you need
+        /// only Ai or only Bi, it is faster to call the appropriate method to compute the one you need.</para>
+        /// </remarks>
+        /// <seealso cref="AiryAi"/>
+        /// <seealso cref="AiryBi"/>
+        /// <seealso href="http://en.wikipedia.org/wiki/Airy_functions" />
         public static SolutionPair Airy (double x) {
             if (x < -2.0) {
                 // Map to Bessel functions for negative values

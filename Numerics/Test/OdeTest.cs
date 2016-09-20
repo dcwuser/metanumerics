@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
@@ -116,12 +116,17 @@ namespace Test {
         [TestMethod]
         public void OdeExponential () {
 
-            // Exponential
-            // y = y_0 e^{x - x_0}
+            // The exponential function y = e^x satisfies
+            //    y' = y
+            // This is perhaps the simplest differential equation.
+
             Func<double, double, double> f = (double x, double y) => y;
 
-            double y1 = FunctionMath.SolveOde(f, 0.0, 1.0, 2.0);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(y1, MoreMath.Sqr(Math.E)));
+            OdeResult r = FunctionMath.SolveOde(f, 0.0, 1.0, 2.0);
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(r.Y, MoreMath.Sqr(Math.E)));
+
+            Console.WriteLine(r.EvaluationCount);
         }
 
         [TestMethod]
@@ -131,10 +136,10 @@ namespace Test {
             Func<double, double, double> f = (double x, double y) => MoreMath.Sqr(y);
 
             EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-8, EvaluationBudget = 1000 };
-            double y1 = FunctionMath.SolveOde(f, 0.0, 1.0, 0.99, settings);
-            Console.WriteLine(y1);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(y1, 1.0 / (1.0 - 1.0 * (0.99 - 0.0)), settings));
+            OdeResult result = FunctionMath.SolveOde(f, 0.0, 1.0, 0.99, settings);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y, 1.0 / (1.0 - 1.0 * (0.99 - 0.0)), result.Settings));
 
+            Console.WriteLine(result.EvaluationCount);
         }
 
         [TestMethod]
@@ -144,14 +149,17 @@ namespace Test {
             Func<double, double, double> rhs = (double x, double y) => y * (1.0 - y);
             Func<double, double, double> solution = (double y0, double x) => y0 / (y0 + (1.0 - y0) * Math.Exp(-x));
 
+            int count = 0;
             foreach (double y0 in new double[] { -0.1, 0.0, 0.4, 1.0, 1.6 }) {
                 Console.WriteLine(y0);
                 Interval r = Interval.FromEndpoints(0.0, 2.0);
-                double y1 = FunctionMath.SolveOde(rhs, 0.0, y0, 2.0);
+                OdeResult s = FunctionMath.SolveOde(rhs, 0.0, y0, 2.0);
+                double y1 = s.Y;
                 Console.WriteLine(y1);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(y1, solution(y0, 2.0)));
+                count += s.EvaluationCount;
             }
-
+            Console.WriteLine(count);
         }
 
         [TestMethod]
@@ -160,27 +168,28 @@ namespace Test {
             Func<double, double, double> rhs = (double t, double u) => (1.0 - 2.0 * t) * u;
             Func<double, double, double> solution = (double u0, double t) => u0 * Math.Exp(t - t * t);
 
+            int count = 0;
             foreach (double t in new double[] { 0.5, 0.75, 1.50, 2.25, 3.25 }) {
-                double y1 = FunctionMath.SolveOde(rhs, 0.0, 1.0, t);
+                OdeResult r = FunctionMath.SolveOde(rhs, 0.0, 1.0, t);
+                double y1 = r.Y;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(y1, solution(1.0, t)));
+                count += r.EvaluationCount;
             }
-
+            Console.WriteLine(count);
         }
 
         [TestMethod]
         public void OdeSine () {
-            Func<double, double, double> f = (double x, double y) => -y;
-            double y1 = FunctionMath.SolveConservativeOde(f, 0.0, 0.0, 1.0, 5.0);
-            Console.WriteLine(y1);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(y1, MoreMath.Sin(5.0)));
-        }
 
-        [TestMethod]
-        public void OdeSine2 () {
-            Func<double, IList<double>, IList<double>> f2 = (double x, IList<double> y) => new double[] { -y[0] };
-            double[] y0 = new double[] { 0.0 };
-            double[] yp0 = new double[] { 1.0 };
-            ColumnVector z = MultiFunctionMath.SolveConservativeOde(f2, 0.0, y0, yp0, 5.0);
+            // The sine and cosine functions satisfy
+            //   y'' = - y
+            // This is perhaps the simplest conservative differential equation.
+            // (i.e. right hand side depends only on y, not y')
+
+            Func<double, double, double> f = (double x, double y) => -y;
+            OdeResult r = FunctionMath.SolveConservativeOde(f, 0.0, 0.0, 1.0, 5.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(r.Y, MoreMath.Sin(5.0)));
+            Console.WriteLine(r.EvaluationCount);
         }
 
         private static double EulerKineticEnergy (IList<double> I, IList<double> w) {
@@ -221,13 +230,17 @@ namespace Test {
                 EvaluationBudget = 10000
             };
             settings.UpdateHandler = (EvaluationResult r) => {
-                OdeResult<IList<double>> q = (OdeResult<IList<double>>) r;
+                MultiOdeResult q = (MultiOdeResult) r;
                 Console.WriteLine("{0} {1}", q.EvaluationCount, q.X);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(EulerKineticEnergy(I, q.Y), EulerKineticEnergy(I, w0), settings));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(EulerAngularMomentum(I, q.Y), EulerAngularMomentum(I, w0), settings));
             };
 
-            MultiFunctionMath.SolveOde(rhs, 0.0, w0, 10.0, settings);
+            MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, w0, 10.0, settings);
+            Console.WriteLine(result.EvaluationCount);
+
+            // We don't have an analytic solution for the general case, but we can check that
+            // we do conserve the conserved quantities.
 
         }
 
@@ -246,7 +259,7 @@ namespace Test {
 
                 ColumnVector r0 = new ColumnVector(1.0 - e, 0.0, 0.0, Math.Sqrt((1.0 + e) / (1.0 - e)));
 
-                ColumnVector r1 = new ColumnVector(MultiFunctionMath.SolveOde(rhs, 0.0, r0, 2.0 * Math.PI).Y);
+                ColumnVector r1 = MultiFunctionMath.SolveOde(rhs, 0.0, r0, 2.0 * Math.PI).Y;
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(r0, r1, new EvaluationSettings() { RelativePrecision = 1.0E-9 }));
             }
@@ -263,7 +276,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void OdeOrbit () {
+        public void OdeOrbitKepler () {
 
             // This is a simple Keplerian orbit.
             // Hull (1972) constructed initial conditions that guarantee a given orbital eccentricity
@@ -275,29 +288,32 @@ namespace Test {
                 return (new double[] { -r[0] / d3, -r[1] / d3 });
             };
 
-            EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-12, AbsolutePrecision = 1.0E-24, EvaluationBudget = 10000 };
-            settings.UpdateHandler = (EvaluationResult a) => {
-                OdeResult<IList<double>> b = (OdeResult<IList<double>>) a;
-                Console.WriteLine("{0} {1}", b.EvaluationCount, b.X);
-            };
+            EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-12, AbsolutePrecision = 1.0E-24, EvaluationBudget = 8192 };
+            EvaluationSettings relaxedSettings = new EvaluationSettings() { RelativePrecision = 2.0 * settings.RelativePrecision };
 
-            //double e = 0.5;
-            foreach (double e in TestUtilities.GenerateUniformRealValues(0.0, 1.0, 8)) {
+            foreach (double e in new double[] { 0.0, 0.1, 0.3, 0.5, 0.7, 0.9 }) {
                 Console.WriteLine("e = {0}", e);
 
                 ColumnVector r0 = new ColumnVector(1.0 - e, 0.0);
-                ColumnVector rp0 = new ColumnVector(0.0, Math.Sqrt((1.0 + e) / (1.0 - e)));
+                ColumnVector rDot0 = new ColumnVector(0.0, Math.Sqrt((1.0 + e) / (1.0 - e)));
 
+                double E = OrbitEnergy(r0, rDot0);
+                double L = OrbitAngularMomentum(r0, rDot0);
+                
                 settings.UpdateHandler = (EvaluationResult a) => {
-                    OdeResult<IList<double>> b = (OdeResult<IList<double>>) a;
-                    Console.WriteLine("  {0} {1}", b.EvaluationCount, b.X);
-                    Console.WriteLine("  {0} ?= {1}", OrbitEnergy(b.Y, b.YPrime), OrbitEnergy(r0, rp0)); 
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(OrbitAngularMomentum(b.Y, b.YPrime), OrbitAngularMomentum(r0, rp0), settings));
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(OrbitEnergy(b.Y, b.YPrime), OrbitEnergy(r0, rp0), new EvaluationSettings() { RelativePrecision = 2.0E-12 }));
+                    MultiOdeResult b = (MultiOdeResult) a;
+                    //Console.WriteLine("  {0} {1}", b.EvaluationCount, b.X);
+                    //Console.WriteLine("  {0} ?= {1}", OrbitEnergy(b.Y, b.YPrime), OrbitEnergy(r0, rp0)); 
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(OrbitAngularMomentum(b.Y, b.YPrime), L, relaxedSettings));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(OrbitEnergy(b.Y, b.YPrime), E, relaxedSettings));
                 };
+                
+                
+                MultiOdeResult result = MultiFunctionMath.SolveConservativeOde(rhs, 0.0, r0, rDot0, 2.0 * Math.PI, settings);
+                ColumnVector r1 = result.Y;
+                
 
-                ColumnVector r1 = MultiFunctionMath.SolveConservativeOde(rhs, 0.0, r0, rp0, 2.0 * Math.PI, settings);
-
+                Console.WriteLine(result.EvaluationCount);
                 // The 
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(r0, r1, new EvaluationSettings() { RelativePrecision = 1.0E-9 }));
@@ -306,38 +322,272 @@ namespace Test {
         }
 
         [TestMethod]
+        public void OdeOrbitFigureEight () {
+
+            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> q) => {
+
+                double x01 = q[0] - q[2];
+                double y01 = q[1] - q[3];
+
+                double x02 = q[0] - q[4];
+                double y02 = q[1] - q[5];
+
+                double x12 = q[2] - q[4];
+                double y12 = q[3] - q[5];
+
+                double r01 = MoreMath.Pow(MoreMath.Hypot(x01, y01), 3);
+                double r02 = MoreMath.Pow(MoreMath.Hypot(x02, y02), 3);
+                double r12 = MoreMath.Pow(MoreMath.Hypot(x12, y12), 3);
+
+                return (new double[] {
+                    - x01 / r01 - x02 / r02,
+                    - y01 / r01 - y02 / r02,
+                    + x01 / r01 - x12 / r12,
+                    + y01 / r01 - y12 / r12,
+                    + x02 / r02 + x12 / r12,
+                    + y02 / r02 + y12 / r12
+                });
+
+            };
+
+            double[] q1 = new double[] { 0.97000435669734, -0.24308753153583 };
+            double[] p3 = new double[] { -0.93240737144104, -0.86473146092102 };
+
+            ColumnVector q0 = new ColumnVector( q1[0], q1[1], -q1[0], -q1[1], 0.0, 0.0 );
+            ColumnVector p0 = new ColumnVector( -p3[0] / 2.0, -p3[1] / 2.0, -p3[0] / 2.0, -p3[1] / 2.0, p3[0], p3[1] );
+
+            double T = 6.32591398292621;
+
+            EvaluationSettings settings = new EvaluationSettings() {
+                RelativePrecision = 1.0E-12,
+                AbsolutePrecision = 1.0E-24,
+                UpdateHandler = (EvaluationResult r) => {
+                     Console.WriteLine(r.EvaluationCount);
+                }
+            };
+
+            MultiOdeResult result = MultiFunctionMath.SolveConservativeOde(rhs, 0.0, q0, p0, T, settings);
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(q0, result.Y, 1.0E-10));
+
+        }
+
+        [TestMethod]
+        public void OdeOrbitTriangle () {
+
+            // Lagrange described three-body systems where each body sits at the vertex
+            // of an equilateral triangle. Each body executes an elliptical orbit
+            // and the triangle remains equilateral, although its size can change.
+
+            // The case of equal masses on a circle is easily analytically tractable.
+            // In this case the orbits are all along the same circle and the 
+            // the triangle doesn't change size, it just rotates. 
+
+            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> r) => {
+
+                double x01 = r[0] - r[1];
+                double x02 = r[0] - r[2];
+                double x12 = r[1] - r[2];
+
+                double y01 = r[3] - r[4];
+                double y02 = r[3] - r[5];
+                double y12 = r[4] - r[5];
+
+                double r01 = MoreMath.Pow(MoreMath.Hypot(x01, y01), 3);
+                double r02 = MoreMath.Pow(MoreMath.Hypot(x02, y02), 3);
+                double r12 = MoreMath.Pow(MoreMath.Hypot(x12, y12), 3);
+
+                return (new double[] {
+                    - x01 / r01 - x02 / r02,
+                    x01 / r01 - x12 / r12,
+                    x02 / r02 + x12 / r12,
+                    - y01 / r01 - y02 / r02,
+                    y01 / r01 - y12 / r12,
+                    y02 / r02 + y12 / r12
+                });
+
+            };
+
+            double L = 1.0;
+            double R = L / Math.Sqrt(3.0);
+            double v = Math.Sqrt(1.0 / L);
+            double T = 2.0 * Math.PI * Math.Sqrt(L * L * L / 3.0);
+
+            double c = 1.0 / 2.0;
+            double s = Math.Sqrt(3.0) / 2.0;
+
+            ColumnVector r0 = new ColumnVector(R, -c * R, -c * R, 0.0, s * R, -s * R );
+            double[] rp0 = new double[] { 0.0, -s * v, s * v, v, -c * v, -c * v };
+
+            EvaluationSettings settings = new EvaluationSettings() {
+                RelativePrecision = 1.0E-12,
+                AbsolutePrecision = 1.0E-12,
+                EvaluationBudget = 8192,
+                UpdateHandler = (EvaluationResult er) => {
+                    MultiOdeResult mer = (MultiOdeResult) er;
+
+                    ColumnVector r = mer.Y;
+
+                    double x01 = r[0] - r[1];
+                    double x02 = r[0] - r[2];
+                    double x12 = r[1] - r[2];
+
+                    double y01 = r[3] - r[4];
+                    double y02 = r[3] - r[5];
+                    double y12 = r[4] - r[5];
+
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.Hypot(x01, y01), L, 2.0E-12));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.Hypot(x02, y02), L, 2.0E-12));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.Hypot(x12, y12), L, 2.0E-12));
+
+                }
+            };
+
+            MultiOdeResult result = MultiFunctionMath.SolveConservativeOde(rhs, 0.0, r0, rp0, T, settings);
+
+            // Test that one period brought us back to the same place.
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(r0, result.Y, settings));
+        }
+
+
+        [TestMethod]
         public void OdeAiry () {
+
+            // This is the airy differential equation
             Func<double, double, double> f = (double x, double y) => x * y;
-            FunctionMath.SolveConservativeOde(f, 0.0, 1.0 / (Math.Pow(3.0, 2.0 / 3.0) * AdvancedMath.Gamma(2.0 / 3.0)), - 1.0 / (Math.Pow(3.0, 1.0 / 3.0) * AdvancedMath.Gamma(1.0 / 3.0)), -5.0);
+            
+            // Solutions should be of the form f(x) = a Ai(x) + b Bi(x).
+            // Given initial value of f and f', this equation plus the Wronskian can be solved to give
+            //   a = \pi ( f Bi' - f' Bi )    b = \pi ( f' Ai - f Ai' )
+
+            // Start with some initial conditions
+            double x0 = 0.0;
+            double y0 = 0.0;
+            double yp0 = 1.0;
+
+            // Find the a and b coefficients consistent with those values
+            SolutionPair s0 = AdvancedMath.Airy(x0);
+            double a = Math.PI * (y0 * s0.SecondSolutionDerivative - yp0 * s0.SecondSolutionValue);
+            double b = Math.PI * (yp0 * s0.FirstSolutionValue - y0 * s0.FirstSolutionDerivative);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(y0, a * s0.FirstSolutionValue + b * s0.SecondSolutionValue));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(yp0, a * s0.FirstSolutionDerivative + b * s0.SecondSolutionDerivative));
+
+            // Integrate to a new point
+            double x1 = -5.0;
+            OdeResult result = FunctionMath.SolveConservativeOde(f, x0, y0, yp0, x1);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.X, x1));
+            Console.WriteLine(result.EvaluationCount);
+
+            // The solution should still hold
+            SolutionPair s1 = AdvancedMath.Airy(x1);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y, a * s1.FirstSolutionValue + b * s1.SecondSolutionValue));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.YPrime, a * s1.FirstSolutionDerivative + b * s1.SecondSolutionDerivative, result.Settings));
+
         }
 
         [TestMethod]
         public void OdeLRC () {
 
-            double L = 1.0;
-            double R = 1.0;
-            double C = 1.0;
+            // Demanding zero net voltage across L, R, and C elements in series gives
+            //   Q / C + \dot{Q} R + \ddot{Q} L = 0
+            // This is second order linear ODE with constant coefficients, i.e.
+            // universal damped harmonic oscialtor.
 
-            Func<double, IList<double>, IList<double>> rhs = (double x, IList<double> y) => {
-                double q = y[0]; double qp = y[1];
-                return (new double[] {
-                    qp,
-                    (0.0 - q / C - R * qp) / L
-                });
-            };
+            // Characteristic equation r^2 L + R r + r / C = 0 with solutions
+            //   r = \frac{-R \pm \sqrt{R^2 - 4 L / C}{2L}. Define
+            // t_0 = \sqrt{RC} = 1 / w_0 and t_1 = 2 L / R = 1 / w_1.
+
+            // If t_0 < t_1 the descriminant is negative and
+            //   r = - w_0 \pm i w
+            // where w = \sqrt{ w_0^2 - w_1^2 } so
+            //   Q = e^{-w_0 t} \left[ A cos(w t) + B sin(w t) \right]
+            // We get damped oscilatory behavoir.
+
+            // If t_0 > t_1 the descriminant is postive and
+            //   r = \sqrt{ w_1^2 - w_0^2 } \pm w_1
+            // so
+            //   Q = A e^{-w_a t} + B^{-w_b t}
+            // We get purely damped behavior.S 
 
             double q0 = 1.0;
             double qp0 = 0.0;
 
-            double t0 = 2.0 * L / R;
-            double w0 = Math.Sqrt(1.0 / (L * C) - 1.0 / (t0 * t0));
+            EvaluationSettings s = new EvaluationSettings() {
+                RelativePrecision = 1.0E-12,
+                AbsolutePrecision = 1.0E-24
+            };
 
-            double t = 1.0;
-            double sc = (q0 * Math.Cos(w0 * t) + (qp0 + q0 / t0) / w0 * Math.Sin(w0 * t)) * Math.Exp(-t / t0);
-            Console.WriteLine(sc);
+            foreach(double L in TestUtilities.GenerateRealValues(0.1, 10.0, 4, 1)) {
+                foreach (double R in TestUtilities.GenerateRealValues(0.1, 1.0, 4, 2)) {
+                    foreach (double C in TestUtilities.GenerateRealValues(0.1, 1.0, 4, 3)) {
 
-            IList<double> s = MultiFunctionMath.SolveOde(rhs, 0.0, new double[] { q0, qp0 }, t).Y;
-            Console.WriteLine(s[0]);
+                        Func<double, IList<double>, IList<double>> rhs = (double x, IList<double> y) => {
+                            double q = y[0]; double qp = y[1];
+                            return (new double[] {
+                                qp,
+                                (0.0 - q / C - R * qp) / L
+                            });
+                        };
+
+                        double t0 = Math.Sqrt(L * C);
+                        double w0 = 1.0 / t0;
+
+                        double t1 = 2.0 * L / R;
+                        double w1 = 1.0 / t1;
+
+                        double t = 4.0;
+                        double qt;
+                        if (t0 < t1) {
+
+                            double w = Math.Sqrt(w0 * w0 - w1 * w1);
+
+                            double A = q0;
+                            double B = (qp0 + w1 * q0) / w;
+
+                            qt = (A * Math.Cos(w * t) + B * Math.Sin(w * t)) * Math.Exp(-w1 * t);
+
+                        } else {
+
+                            double w = Math.Sqrt(w1 * w1 - w0 * w0);
+                            double wa = w1 + w;
+                            double wb = w0 * w0 / wa;
+
+                            double A = (wb * q0 + qp0) / (2.0 * w);
+                            double B = (wa * q0 + qp0) / (2.0 * w);
+
+                            qt = -A * Math.Exp(-wa * t) + B * Math.Exp(-wb * t);
+                        }
+                        Console.WriteLine(qt);
+
+                        MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, new double[] { q0, qp0 }, t);
+                        Console.WriteLine(result.Y[0]);
+
+                        Console.WriteLine(result.EvaluationCount);
+
+                        if (!TestUtilities.IsNearlyEqual(qt, result.Y[0], s)) {
+                            Console.WriteLine("no");
+                        }
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(qt, result.Y[0], s));
+
+                    }
+                }
+            }
+
+        }
+
+        [TestMethod]
+        public void OdeCatenary () {
+
+            // The equation of a catenary is
+            //  \frac{d^2 y}{dx^2} = \sqrt{1.0 + \left(\frac{dy}{dx}\right)^2}
+            // with y(0) = 1 and y'(0) = 0 and solution y = \cosh(x)
+
+            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> y) =>
+                new double[] { y[1], MoreMath.Hypot(1.0, y[1]) };
+
+            MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, new double[] { 1.0, 0.0 }, 2.0);
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y[0], Math.Cosh(2.0)));
 
         }
 
@@ -354,12 +604,297 @@ namespace Test {
                 u[0] * u[1] - beta * u[2]
             );
 
+            EvaluationSettings settings = new EvaluationSettings() {
+                RelativePrecision = 1.0E-8,
+                EvaluationBudget = 10000
+            };
+
             ColumnVector u0 = new ColumnVector(1.0, 1.0, 1.0);
 
-            MultiFunctionMath.SolveOde(rhs, 0.0, u0, 10.0, new EvaluationSettings() { RelativePrecision = 1.0E-8, EvaluationBudget = 100000 });
+            MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, u0, 10.0, settings);
+
+            Console.WriteLine(result.EvaluationCount);
+
+            // Is there anything we can assert? There is no analytic solution or conserved quantity.
 
         }
-    
+
+        [TestMethod]
+        public void OdeLaneEmden () {
+
+            // The Lane-Emden equations describe a simplified model of stellar structure.
+            // See http://mathworld.wolfram.com/Lane-EmdenDifferentialEquation.html
+
+            // Analytic solutions are known for the n=0, 1, and 5 cases
+
+            int n = 0;
+
+            Func<double, IList<double>, IList<double>> rhs = (double x, IList<double> t) => new ColumnVector(
+                t[1], -MoreMath.Pow(t[0], n) - 2.0 * (x == 0.0 ? 0.0 : t[1] / x)
+            );
+
+            ColumnVector t0 = new ColumnVector(1.0, 0.0);
+
+            double x1 = 2.0;
+
+            EvaluationSettings settings = new EvaluationSettings() {
+                RelativePrecision = 1.0E-12, AbsolutePrecision = 1.0E-24,
+                UpdateHandler = (EvaluationResult o) => {
+                    MultiOdeResult r = (MultiOdeResult) o;
+                    Console.WriteLine(r.X);
+                }
+            };
+
+            n = 0;
+            MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, t0, x1);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y[0], 1.0 - MoreMath.Sqr(x1) / 6.0));
+            Console.WriteLine(result.EvaluationCount);
+
+            n = 1;
+            result = MultiFunctionMath.SolveOde(rhs, 0.0, t0, x1);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y[0], MoreMath.Sin(x1) / x1));
+            Console.WriteLine(result.EvaluationCount);
+
+            n = 5;
+            result = MultiFunctionMath.SolveOde(rhs, 0.0, t0, x1);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y[0], 1.0 / Math.Sqrt(1.0 + MoreMath.Sqr(x1) / 3.0)));
+            Console.WriteLine(result.EvaluationCount);
+
+            // For all of these cases, the initial step fails until it gets very small, then it increases again.
+            // Look into why this is.
+
+        }
+
+        [TestMethod]
+        public void OdeLotkaVolterra () {
+
+            // Lotka/Volterra equations are a non-linear predator-prey model.
+            //   \dot{x} = A x + B x y
+            //   \dot{y} = -C y + D x y
+            // See http://mathworld.wolfram.com/Lotka-VolterraEquations.html
+
+            // It can be shown solutions are always periodic (but not sinusoidal, and
+            // often with phase shift between x and y).
+
+            // Equilibria are x, y = C/D, A /B (and 0, 0).
+            // If started positive, x and y never go negative.
+            // A conserved quantity is: - D x + C log x - B y + A log y
+            // Period of equations linearized around equilibrium is 2 \pi / \sqrt{AC}.
+
+            // Can also be used to model chemical reaction rates.
+
+            double A = 1.5; // Prey growth rate
+            double B = 1.0;
+            double C = 3.0; // Predator death rate
+            double D = 1.0;
+
+            // Try A = 20, B = 1, C = 30, D = 1, X = 8, Y = 12, T = 1
+            // Try A = 1.5, B = 1 C = 3, D = 1, X = 10, Y = 5, T = 10
+ 
+            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> p) => new double[] {
+                A * p[0] - B * p[0] * p[1],
+                -C * p[1] + D * p[0] * p[1]
+            };
+
+            Func<IList<double>, double> conserved = (IList<double> p) =>
+                -D * p[0] + C * Math.Log(p[0]) - B * p[1] + A * Math.Log(p[1]);
+
+            ColumnVector p0 = new ColumnVector(10.0, 5.0);
+
+            double L0 = conserved(p0);
+
+            // Set up a handler that verified conservation and positivity
+            EvaluationSettings settings = new EvaluationSettings() {
+                RelativePrecision = 1.0E-12,
+                AbsolutePrecision = 1.0E-24,
+                EvaluationBudget = 8192
+            };
+            settings.UpdateHandler = (EvaluationResult r) => {
+                    MultiOdeResult rr = (MultiOdeResult) r;
+                    double L = conserved(rr.Y);
+                    Assert.IsTrue(rr.Y[0] > 0.0);
+                    Assert.IsTrue(rr.Y[1] > 0.0);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(L, L0, settings));
+            };
+
+
+            // Estimate period
+            double T = 2.0 * Math.PI / Math.Sqrt(A * C);
+
+            // Integrate over a few estimated periods
+            MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, p0, 3.0 * T, settings);
+
+            Console.WriteLine(result.EvaluationCount);
+
+            //double L1 = conserved(result.Y);
+
+            //Assert.IsTrue(TestUtilities.IsNearlyEqual(L0, L1));
+
+        }
+
+        [TestMethod]
+        public void OdeDawson () {
+
+            // The Dawson function fufills a simple ODE.
+            //   \frac{dF}{dx} + 2 x F = 1 \qquad F(0) = 0
+            // See e.g. https://en.wikipedia.org/wiki/Dawson_function
+            // Verify that we get correct values via ODE integration.
+
+            Func<double, double, double> rhs = (double x, double F) => 1.0 - 2.0 * x * F;
+
+            foreach (double x1 in TestUtilities.GenerateRealValues(0.1, 10.0, 8)) {
+
+                EvaluationSettings s = new EvaluationSettings() {
+                    RelativePrecision = 1.0E-13,
+                    AbsolutePrecision = 0.0
+                };
+                OdeResult r = FunctionMath.SolveOde(rhs, 0.0, 0.0, x1);
+                Debug.WriteLine("{0}: {1} {2}: {3}", x1, r.Y, AdvancedMath.Dawson(x1), r.EvaluationCount);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(r.Y, AdvancedMath.Dawson(x1), s));
+
+            }
+        }
+          
+        [TestMethod]
+        public void OdePendulum () {
+
+            // Without the small-angle approximation, the period of a pendulum is not
+            // independent of angle. Instead, it is given by
+            //   P = 4 K(\sin(\phi_0) / 2)
+            // where \phi_0 is the release angle and K is the complete elliptic function
+            // of the first kind.
+            // See https://en.wikipedia.org/wiki/Pendulum_(mathematics)
+            // We compute for an initial angle of 45 degrees, far beyond a small angle.
+
+            Func<double, double, double> rhs = (double t, double u) => -MoreMath.Sin(u);
+
+            double u0 = Math.PI / 4.0;
+            double p = 4.0 * AdvancedMath.EllipticK(MoreMath.Sin(u0 / 2.0));
+
+            OdeResult r = FunctionMath.SolveConservativeOde(rhs, 0.0, u0, 0.0, p);
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(r.Y, u0));
+
+            Console.WriteLine(r.EvaluationCount);
+
+        }
+
+        [TestMethod]
+        public void OdeErf  () {
+
+            Func<double, double, double> rhs = (double t, double u) =>
+                2.0 / Math.Sqrt(Math.PI) * Math.Exp(-t * t);
+
+            OdeResult r = FunctionMath.SolveOde(rhs, 0.0, 0.0, 5.0);
+
+             Console.WriteLine(r.Y);
+
+        }
+
+        [TestMethod]
+        public void OdeSolarSystem () {
+
+            Planet[] planets = new Planet[] {
+
+                new Planet() {
+                    Name = "Sun",
+                    Mass = 1.3271244004193938E11 * 2.22972472E-15,
+                    Position = new ColumnVector(3.700509269632818E-03, 2.827000367199164E-03, -1.623212133858169E-04),
+                    Velocity = new ColumnVector(-1.181051079944745E-06, 7.011580463060376E-06, 1.791336618633265E-08),
+                    Year = 0.0
+                },
+                new Planet() {
+                    Name = "Earth",
+                    Mass = 398600.440 * 2.22972472E-15,
+                    Position = new ColumnVector(5.170309635282939E-01, -8.738395510520275E-01, -1.323433043109283E-04),
+                    Velocity = new ColumnVector(1.456221287512929E-02, 8.629625079574064E-03, 2.922661879104068E-07),
+                    Year = 365.25636
+                },
+                new Planet() {
+                    Name = "Jupiter",
+                    Mass = 126686511 * 2.22972472E-15,
+                    Position = new ColumnVector(-5.438893557878444E+00, 1.497713688978628E-01, 1.210124167423688E-01),
+                    Velocity = new ColumnVector(-2.955588275385831E-04, -7.186425047188191E-03, 3.648630400553893E-05),
+                    Year = 4332.59
+                },
+                new Planet() {
+                    Name = "Saturn",
+                    Mass = 37931207.8 * 2.22972472E-15,
+                    Position = new ColumnVector(-2.695377264613252E+00, -9.657410990313211E+00, 2.751886819002198E-01),
+                    Velocity = new ColumnVector(5.067197776417300E-03, -1.516587142748002E-03, -1.754902991309407E-04),
+                    Year = 10759.22
+                }
+            };
+
+            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> p) => {
+
+                ColumnVector a = new ColumnVector(3 * planets.Length);
+
+                for (int i = 0; i < planets.Length; i++) {
+
+                    for (int j = 0; j < planets.Length; j++) {
+
+                        if (i == j) continue;
+
+                        double x = p[3 * i] - p[3 * j];
+                        double y = p[3 * i + 1] - p[3 * j + 1];
+                        double z = p[3 * i + 2] - p[3 * j + 2];
+                        double d3 = Math.Pow(x * x + y * y + z * z, 3.0 / 2.0);
+
+                        a[3 * i] -= planets[j].Mass * x / d3;
+                        a[3 * i + 1] -= planets[j].Mass * y / d3;
+                        a[3 * i + 2] -= planets[j].Mass * z / d3;
+
+                    }
+
+                }
+
+                return (a);
+            };
+
+            ColumnVector p0 = new ColumnVector(3 * planets.Length);
+            for(int i = 0; i < planets.Length; i++) {
+                p0[3 * i] = planets[i].Position[0];
+                p0[3 * i + 1] = planets[i].Position[1];
+                p0[3 * i + 2] = planets[i].Position[2];
+            }
+
+            ColumnVector q0 = new ColumnVector(3 * planets.Length);
+            for (int i = 0; i < planets.Length; i++) {
+                q0[3 * i] = planets[i].Velocity[0];
+                q0[3 * i + 1] = planets[i].Velocity[1];
+                q0[3 * i + 2] = planets[i].Velocity[2];
+            }
+
+            EvaluationSettings settings = new EvaluationSettings() {
+                RelativePrecision = 1.0E-8,
+                AbsolutePrecision = 1.0E-16,
+                EvaluationBudget = 8192
+            };
+
+            MultiOdeResult result = MultiFunctionMath.SolveConservativeOde(rhs, 0.0, p0, q0, 4332.59, settings);
+
+        }
+
+    }
+
+    // Positions and velocities for all solar system bodies at any time
+    // are available at http://ssd.jpl.nasa.gov/horizons.cgi
+    // Position units are AU, velocity units are AU/day
+    // Mass is given as the product GM in km^3/s^2, converted to AU^3/day^2.
+
+
+    internal class Planet {
+
+        public string Name { get; set; }
+
+        public double Mass { get; set; }
+
+        public IList<double> Position { get; set; }
+
+        public IList<double> Velocity { get; set; }
+
+        public double Year { get; set; }
 
     }
 }

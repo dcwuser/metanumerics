@@ -23,7 +23,7 @@ namespace Meta.Numerics.Statistics {
 
         public SampleStorage () {
             data = new List<double>();
-            M = 0.0; SS = 0.0;
+            //M = 0.0; SS = 0.0;
             order = null;
         }
 
@@ -33,7 +33,8 @@ namespace Meta.Numerics.Statistics {
         private List<double> data;
 
         // the mean and standard deviation
-        private double M, SS;
+        //private double M, SS;
+        private SampleSummary summary = new SampleSummary();
 
         // the order array
         // order[0] is index of lowest value, so data[order[0]] is lowest value
@@ -58,29 +59,37 @@ namespace Meta.Numerics.Statistics {
 
         public double Mean {
             get {
-                return (M);
+                //return (M);
+                return (summary.Mean);
             }
         }
 
         public double SumOfSquaredDeviations {
             get {
-                return (SS);
+                //return (SS);
+                return (summary.SumOfSquaredDeviations);
             }
         }
 
         public double Variance {
             get {
-                return (SS / data.Count);
+                //return (SS / data.Count);
+                return (summary.Variance);
             }
         }
 
         public void Add (double value) {
             data.Add(value);
             int n = data.Count;
-            double dM = (value - M);
-            M += dM / n;
-            SS += (n - 1.0) / n * dM * dM;
+            //double dM = (value - M);
+            //M += dM / n;
+            //SS += (n - 1.0) / n * dM * dM;
+            summary.Add(value);
             order = null;
+        }
+
+        public int IndexOf (double value) {
+            return (data.IndexOf(value));
         }
 
         public bool Remove (double value) {
@@ -96,6 +105,7 @@ namespace Meta.Numerics.Statistics {
         public void RemoveAt (int i) {
             double value = data[i];
             data.RemoveAt(i);
+            /*
             int n = data.Count;
             if (n > 0) {
                 double dM = (value - M);
@@ -105,13 +115,16 @@ namespace Meta.Numerics.Statistics {
                 M = 0.0;
                 SS = 0.0;
             }
+            */
+            summary.Remove(value);
             order = null;
         }
 
         public void Clear () {
             data.Clear();
-            M = 0.0;
-            SS = 0.0;
+            //M = 0.0;
+            //SS = 0.0;
+            summary.Clear();
             order = null;
         }
 
@@ -124,17 +137,24 @@ namespace Meta.Numerics.Statistics {
                 return (data[index]);
             }
             set {
+                summary.Change(data[index], value);
                 data[index] = value;
             }
         }
 
+        public void CopyTo (double[] array, int startIndex) {
+            data.CopyTo(array, startIndex);
+        }
+
         public void Transform (Func<double, double> transformFunction) {
-            M = 0.0; SS = 0.0;
+            //M = 0.0; SS = 0.0;
+            summary = new SampleSummary();
             for (int i = 0; i < data.Count; i++) {
                 double value = transformFunction(data[i]);
-                double dM = (value - M);
-                M += dM / (i + 1);
-                SS += dM * dM * i / (i + 1);
+                //double dM = (value - M);
+                //M += dM / (i + 1);
+                //SS += dM * dM * i / (i + 1);
+                summary.Add(value);
                 data[i] = value;
             }
             order = null;
@@ -175,8 +195,9 @@ namespace Meta.Numerics.Statistics {
         public SampleStorage Copy () {
             SampleStorage copy = new SampleStorage();
             copy.data = new List<double>(this.data);
-            copy.M = this.M;
-            copy.SS = this.SS;
+            //copy.M = this.M;
+            //copy.SS = this.SS;
+            copy.summary = this.summary;
             copy.order = this.order;
             return (copy);
         }
@@ -194,17 +215,21 @@ namespace Meta.Numerics.Statistics {
     // of the mean and standard deviation.
     // See http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance and Knuth
 
-    internal class SampleSummary {
+    internal struct SampleSummary {
 
-        public SampleSummary () { }
+        /*
+        public SampleSummary () {
+
+        }
+        */
 
         public SampleSummary (IEnumerable<double> values) : this() {
             Add(values);
         }
 
-        int N;
-        double M1;
-        double M2;
+        private int N;
+        private double M1;
+        private double M2;
 
         public int Count {
             get {
@@ -266,6 +291,11 @@ namespace Meta.Numerics.Statistics {
             N = 0;
             M1 = 0.0;
             M2 = 0.0;
+        }
+
+        public void Change (double oldValue, double newValue) {
+            Remove(oldValue);
+            Add(newValue);
         }
 
     }
@@ -796,6 +826,15 @@ namespace Meta.Numerics.Statistics {
             return (ZTest(referenceMean, referenceStandardDeviation, TestType.TwoTailed));
         }
 
+        /// <summary>
+        /// Performs a z-test with the given sidedness.
+        /// </summary>
+        /// <param name="referenceMean">The mean of the comparison population.</param>
+        /// <param name="referenceStandardDeviation">he standard deviation of the comparison population.</param>
+        /// <param name="type">The sidedness of the test to perform.</param>
+        /// <returns>A test result indicating whether the sample mean is significantly different from that of the comparison population
+        /// in the direction indicated by <paramref name="type"/>.</returns>
+        /// <seealso cref="ZTest(double, double)"/>
         public TestResult ZTest (double referenceMean, double referenceStandardDeviation, TestType type) {
             if (this.Count < 1) throw new InsufficientDataException();
             double z = (this.Mean - referenceMean) / (referenceStandardDeviation / Math.Sqrt(this.Count));
@@ -840,12 +879,22 @@ namespace Meta.Numerics.Statistics {
         /// </example>
         /// <exception cref="InsufficientDataException">There are fewer than two data points in the sample.</exception>
         /// <seealso cref="StudentDistribution" />
+        /// <seealso href="https://en.wikipedia.org/wiki/Student%27s_t-test"/>
         public TestResult StudentTTest (double referenceMean) {
             return (StudentTTest(referenceMean, TestType.TwoTailed));
         }
 
+        /// <summary>
+        /// Tests whether the sample mean differs from the reference mean in the specified direction.
+        /// </summary>
+        /// <param name="referenceMean">The reference mean.</param>
+        /// <param name="type">The sidedness of the test to perform.</param>
+        /// <returns>A test result indicating whether the sample mean is significantly different from the reference mean
+        /// in the direction indicated by <paramref name="type"/>.</returns>
         public TestResult StudentTTest (double referenceMean, TestType type) {
-            // we need to be able to compute a mean and standard deviation in order to do this test; the standard deviation requires at least 2 data points
+
+            // We need to be able to compute a mean and standard deviation in order to do this test; the standard deviation requires at least 2 data points.
+
             if (this.Count < 2) throw new InsufficientDataException();
             double sigma = Math.Sqrt(this.SumOfSquareDeviations / (this.Count - 1.0));
             double se = sigma / Math.Sqrt(this.Count);
@@ -1417,10 +1466,7 @@ namespace Meta.Numerics.Statistics {
 
         void ICollection<double>.CopyTo (double[] array, int start) {
             if (array == null) throw new ArgumentNullException("array");
-            // this is not fast; move implementation to SampleStorage and use CopyTo for underlying List
-            for (int i = 0; i < data.Count; i++) {
-                array[start + i] = data[i];
-            }
+            data.CopyTo(array, start);
         }
 
         /// <summary>

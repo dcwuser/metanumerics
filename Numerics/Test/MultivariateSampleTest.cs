@@ -439,6 +439,7 @@ namespace Test {
             for (int i = 0; i < pca.Dimension; i++) {
                 PrincipalComponent pc = pca.Component(i);
                 Assert.IsTrue(pc.Index == i);
+                Assert.IsTrue(pc.Analysis == pca);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(pc.Weight * pc.NormalizedVector(), pc.ScaledVector()));
                 Assert.IsTrue((0.0 <= pc.VarianceFraction) && (pc.VarianceFraction <= 1.0));
                 if (i == 0) {

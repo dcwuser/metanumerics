@@ -301,11 +301,15 @@ namespace Test {
         // returns n positive reals numbers distributed log-uniformly between a and b
 
         public static double[] GenerateRealValues (double a, double b, int n) {
+            return (GenerateRealValues(a, b, n, 1));
+        }
+
+        public static double[] GenerateRealValues (double a, double b, int n, int seed) {
             if ((a <= 0.0) || (b <= 0.0)) throw new ArgumentException();
             double la = Math.Log(a);
             double lb = Math.Log(b);
             double[] result = new double[n];
-            Random rng = new Random(1);
+            Random rng = new Random(seed);
             for (int i = 0; i < n; i++) {
                 result[i] = Math.Exp(la + (lb - la) * rng.NextDouble()); 
                 //result[i] = Math.Pow(10.0, a + (b - a) * rng.NextDouble());

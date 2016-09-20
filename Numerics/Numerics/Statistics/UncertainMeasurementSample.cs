@@ -439,20 +439,6 @@ namespace Meta.Numerics.Statistics {
 
         private Func<double[], T, double> f;
 
-        public double Evaluate (IList<double> p) {
-            double chi2 = 0.0;
-            foreach (UncertainMeasurement<T> point in set) {
-                T x = point.X;
-                // This is temporary, only works if p is double[]
-                double fx = f((double[]) p, x);
-                double y = point.Y.Value;
-                double dy = point.Y.Uncertainty;
-                double z = (y - fx) / dy;
-                chi2 += z * z;
-            }
-            return (chi2);
-        }
-
         public double Evaluate (double[] p) {
             double chi2 = 0.0;
             IEnumerator<UncertainMeasurement<T>> e = set.GetEnumerator();

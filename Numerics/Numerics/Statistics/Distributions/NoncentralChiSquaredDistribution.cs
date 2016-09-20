@@ -5,6 +5,8 @@ using Meta.Numerics.Functions;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
+#if FUTURE
+
     public sealed class NoncentralChiSquaredDistribution : Distribution {
 
         public NoncentralChiSquaredDistribution (double nu, double lambda) {
@@ -79,5 +81,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             throw new NonconvergenceException();
         }
     }
+
+#endif
 
 }

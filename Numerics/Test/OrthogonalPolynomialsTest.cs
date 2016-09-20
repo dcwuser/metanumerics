@@ -446,10 +446,27 @@ namespace Test {
 
         [TestMethod]
         public void ChebyshevMultiplication () {
+
+            // Verify T(n, T(m, x)) = T(n m, x)
+
+            // Close to x = \pm 1, T_n(x) oscilates strongly for large n. This means T_n(x)
+            // swings quickly between -1 and +1, so a very change in argument can
+            // have a very large effect on value. In this region, we can't test this relationship
+            // because even an ulp error in T(m, x) could change T(n, T(m, x)) by a significant
+            // fraction. 
+
+            // Since zeros are given by
+            //   x_k = \cos\left(\frac{(2k+1)\pi}{2n}\right)
+            // Distance between zeros is
+            //   dx = \sqrt{1-x^2} \pi / n
+
             foreach (int n in orders) {
                 foreach (int m in orders) {
-                    if (n * m > 500) continue; // we don't test very high order
                     foreach (double x in bArguments) {
+
+                        double dx = Math.Sqrt(1.0 - x * x) * Math.PI / (n * m);
+                        if (dx < 1.0E-2) continue;
+
                         Console.WriteLine("n={0}, m={1}, x={2}", n, m, x);
                         double Tm = OrthogonalPolynomials.ChebyshevT(m, x);
                         Console.WriteLine("T_m(x)= {0}", Tm);

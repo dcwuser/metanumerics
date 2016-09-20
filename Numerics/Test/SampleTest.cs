@@ -123,7 +123,7 @@ namespace Test {
                 Console.WriteLine("stddev {0} {1}", si, distribution.StandardDeviation);
                 Assert.IsTrue(si.ClosedContains(distribution.StandardDeviation));
 
-                for (int n = 1; n < 8; n++) {
+                for (int n = 0; n < 8; n++) {
                     UncertainValue c = sample.PopulationMomentAboutMean(n);
                     Interval ci = c.ConfidenceInterval(0.95);
                     Console.WriteLine("C{0} {1} {2}", n, ci, distribution.MomentAboutMean(n));

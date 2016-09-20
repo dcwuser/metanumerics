@@ -69,6 +69,7 @@
     <Compile Include="AdvancedComplexMathTest.cs" />
     <Compile Include="AdvancedIntegerMathTest.cs" />
     <Compile Include="AdvancedMathTest.cs" />
+    <Compile Include="AdvancedMathTest_Coulomb.cs" />
     <Compile Include="BinaryContingencyTableTest.cs" />
     <Compile Include="BivariateSampleTest.cs" />
     <Compile Include="Bugs.cs" />
@@ -109,6 +110,7 @@
     <Compile Include="SquareMatrixTest.cs" />
     <Compile Include="SymmetricMatrixTest.cs" />
     <Compile Include="TestUtilities.cs" />
+    <Compile Include="TimeSeriesTest.cs" />
     <Compile Include="TransformedDistributionTest.cs" />
     <Compile Include="TridiagonalMatrixTest.cs" />
     <Compile Include="UncertainMathTest.cs" />

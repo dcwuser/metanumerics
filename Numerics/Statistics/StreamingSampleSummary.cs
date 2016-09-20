@@ -5,6 +5,7 @@ using System.Text;
 
 namespace Meta.Numerics.Statistics {
 
+    /*
     public class StreamingSampleSummary {
 
         public StreamingSampleSummary () { }
@@ -34,5 +35,6 @@ namespace Meta.Numerics.Statistics {
         public UncertainValue PopulationStandardDeviation { get; private set; }
 
     }
+    */
 
 }

@@ -13,7 +13,175 @@ using Meta.Numerics.SignalProcessing;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 
-namespace FutureTest {
+namespace Test {
+
+
+
+    [TestClass]
+    public class FutureTest {
+
+
+        [TestMethod]
+        public void TimeReduction () {
+
+            Console.WriteLine(AdvancedMath.ReduceByCustom(1000.0));
+
+            double y1 = 0.0;
+            Stopwatch s1 = Stopwatch.StartNew();
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E1, 1.0E10, 10000)) {
+                y1 += AdvancedMath.ReduceByDecimal(x);
+            }
+            s1.Stop();
+            Console.WriteLine(s1.ElapsedMilliseconds);
+            Console.WriteLine(y1);
+
+            double y2 = 0.0;
+            Stopwatch s2 = Stopwatch.StartNew();
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E1, 1.0E10, 10000)) {
+                y2 += AdvancedMath.ReduceByCustom(x);
+            }
+            s2.Stop();
+            Console.WriteLine(s2.ElapsedMilliseconds);
+            Console.WriteLine(y2);
+        }
+
+        [TestMethod]
+        public void Seperate () {
+
+            int m = 3;
+
+            int n = 100;
+            double[] y = new double[n];
+
+            Random rng = new Random(1);
+            for (int i = 0; i < y.Length; i++) {
+                y[i] = 1.0 + 2.0 * i / n - 1.0 * i * i / n / n + (i % 3 - 1.0) + rng.NextDouble();
+            }
+
+            // define moving average filter
+            double[] f;
+            if (m % 2 == 0) {
+                f = new double[m + 1];
+                for (int i = 1; i < m; i++) f[i] = 1.0 / m;
+                f[0] = 1.0 / m / 2.0;
+                f[m] = 1.0 / m / 2.0;
+            } else {
+                f = new double[m];
+                for (int i = 0; i < m; i++) f[i] = 1.0 / m;
+            }
+
+            // extract the trend
+            double[] t = new double[y.Length - f.Length];
+            for (int i = 0; i < t.Length; i++) {
+                for (int j = 0; j < f.Length; j++) {
+                    t[i] += y[i + j] * f[j];
+                }
+            }
+
+            // extract the seasonal cycle
+            double[] s = new double[m];
+            int[] c = new int[m];
+            int si = 0;
+            for (int i = 0; i < t.Length; i++) {
+                s[si % m] += y[i + m / 2] - t[i];
+                c[si % m]++;
+                si++;
+            }
+            for (int i = 0; i < s.Length; i++) s[i] = s[i] / c[i];
+
+            // extract the remainder
+            double[] z = new double[t.Length];
+            for (int i = 0; i < z.Length; i++) {
+                z[i] = y[i + m / 2] - t[i] - s[i % m];
+            }
+
+        }
+
+        [TestMethod]
+        public void Filter () {
+
+
+            double[] y = new double[] { 3.0, 1.5, 2.0, 4.5, 3.0, 3.5, 6.0, 4.5, 5.0, 7.5, 6.0, 6.5, 9.0, 7.5, 8.0 };
+            //double[] y = new double[] { 1.0, 2.0, 3.0, 4.0, 2.0, 3.0, 4.0, 5.0, 3.0, 4.0, 5.0, 6.0, 4.0, 5.0, 6.0, 7.0 };
+
+            double[] f = new double[] { 1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0 };
+            //double[] f = new double[] { 0.25, 0.5, 0.25 };
+            //double[] f = new double[] { 0.25, 0.25, 0.25, 0.25 };
+
+            double[] z = new double[y.Length - f.Length];
+            for (int i = 0; i < z.Length; i++) {
+                for (int j = 0; j < f.Length; j++) {
+                    z[i] += y[i + j] * f[j];
+                }
+            }
+
+            Complex[] yp = new Complex[y.Length + f.Length];
+            for (int i = 0; i < y.Length; i++) yp[i] = y[i];
+
+            Complex[] fp = new Complex[yp.Length];
+            for (int i = 0; i < f.Length; i++) fp[i] = f[i];
+
+            FourierTransformer fft = new FourierTransformer(yp.Length);
+            Complex[] ypt = fft.Transform(yp);
+            Complex[] fpt = fft.Transform(fp);
+
+            Complex[] zpt = new Complex[fft.Length];
+            for (int i = 0; i < zpt.Length; i++) {
+                zpt[i] = ypt[i] * fpt[i];
+            }
+            Complex[] zp = fft.InverseTransform(zpt);
+
+        }
+
+        [TestMethod]
+        public void PowerSpectrum () {
+
+            TimeSeries series = new TimeSeries(1.0, 2.0, 1.0, 0.0, 1.0, 2.0, 1.0, 0.0, 1.0, 2.0, 1.0, 0.0);
+            //TimeSeries series = new TimeSeries(0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0);
+            double[] ps = series.PowerSpectrum();
+
+        }
+
+        [TestMethod]
+        public void CoulombAsymptotic () {
+
+            
+            double F1 = AdvancedMath.CoulombF(4, -30.0, 1.0);
+            double G1 = AdvancedMath.CoulombG(4, -30.0, 1.0);
+            Console.WriteLine("{0} {1}", F1, G1);
+            
+
+            for (int L = 0; L < 8; L++) {
+
+                foreach(double eta in new double[] { -30.1, -5.1, -0.31, 0.0, 0.51, 3.1, 50.1}) {
+
+                    foreach (double rho in new double[] { 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0 }) {
+                        //double rho = 32.0 + (L * L + eta * eta) / 2.0;
+                        //for (int i = 0; i < 8; i++) {
+
+                        SolutionPair r = AdvancedMath.Coulomb(L, eta, rho);
+                        //SolutionPair r = AdvancedMath.Coulomb_Asymptotic(L, eta, rho);
+                        Console.WriteLine("{0} {1} {2} : {3} {4} {5} {6} : {7}",
+                            L, eta, rho,
+                            r.FirstSolutionValue, r.FirstSolutionDerivative,
+                            r.SecondSolutionValue, r.SecondSolutionDerivative,
+                            r.FirstSolutionDerivative * r.SecondSolutionValue - r.FirstSolutionValue * r.SecondSolutionDerivative
+                        );
+
+                        Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                            r.FirstSolutionDerivative * r.SecondSolutionValue, - r.FirstSolutionValue * r.SecondSolutionDerivative, 1.0,
+                            TestUtilities.TargetPrecision * 8.0
+                        ));
+
+                        //rho = 1.25 * rho;
+                    }
+                }
+
+            }
+
+        }
+
+    }
 
 #if FUTURE
 
@@ -2274,4 +2442,4 @@ namespace FutureTest {
 
 #endif
 
-}
+    }

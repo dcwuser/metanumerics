@@ -1202,6 +1202,8 @@ namespace Meta.Numerics.Functions {
             if (x > n) kmax = (int) Math.Ceiling(x);
             kmax += 50; // since J_(nu+1)/J_(nu) ~ 1/2 for x~v, taking N steps supresses by 2^(N) = 10^(16) at N ~ 50
 
+            kmax = (int) Math.Ceiling(1.125 * (Math.Max(n, x) + 64.0));
+
             double jp1 = 0.0;
             double j = 1.0 / ((double) kmax); // look for a better guess
 

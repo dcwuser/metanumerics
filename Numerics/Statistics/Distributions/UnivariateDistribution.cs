@@ -112,14 +112,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         // Override this if sets of cumulants are needed and there is a more efficient way to compute a set of them than by
-        // computing each individually. This can occur, for examplek if they obey a recursion relation.
-
+        // computing each individually. This can occur, for example, if they obey a recursion relation.
+        /*
         internal virtual double[] Cumulants (int rMax) {
             double[] K = new double[rMax + 1];
             for (int r = 0; r < K.Length; r++) K[r] = Cumulant(r);
             return (K);
         }
-
+        */
     }
 
 }

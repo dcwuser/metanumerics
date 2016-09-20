@@ -21,6 +21,17 @@ namespace Meta.Numerics.Functions {
 
         // reduces an argument to its corresponding argument between -2 Pi < x < 2 Pi
 
+        public static double ReduceByDecimal (double x) {
+            return (Reduce(x, 0.0));
+        }
+
+        public static double ReduceByCustom (double x) {
+            long x0;
+            double x1;
+            RangeReduction.ReduceByPiHalves(x, out x0, out x1);
+            return (x1);
+        }
+
         internal static double Reduce (double x, double y) {
 
             double t = x + Global.TwoPI * y;

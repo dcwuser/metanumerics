@@ -506,11 +506,11 @@ namespace Meta.Numerics {
 
         public static void ReduceByPiHalves (double x, out long x0, out double x1) {
 
-            PrintFrExp(x);
+            //PrintFrExp(x);
             double[] xParts = Decompose(x);
 
-            for (int i = 0; i < xParts.Length; i++) PrintFrExp(xParts[i]);
-            for (int i = 0; i < 4; i++) PrintFrExp(twoOverPiParts[i]);
+            //for (int i = 0; i < xParts.Length; i++) PrintFrExp(xParts[i]);
+            //for (int i = 0; i < 4; i++) PrintFrExp(twoOverPiParts[i]);
 
             Multiply(xParts, twoOverPiParts, out x0, out x1);
         }

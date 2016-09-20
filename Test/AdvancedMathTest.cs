@@ -1360,7 +1360,7 @@ namespace Test {
                     foreach (double rho in TestUtilities.GenerateRealValues(1.0E-3, 1.0E3, 20)) {
 
                         Console.WriteLine("L={0} eta={1} rho={2}", L, eta, rho);
-
+                         
                         CoulombWronskianHelper(L, eta, rho);
                         CoulombWronskianHelper(L, -eta, rho);
 
@@ -1371,11 +1371,19 @@ namespace Test {
 
         private static void CoulombWronskianHelper (int L, double eta, double rho) {
 
-            double FM = AdvancedMath.CoulombF(L - 1, eta, rho);
-            double GM = AdvancedMath.CoulombG(L - 1, eta, rho);
+            SolutionPair SM = AdvancedMath.Coulomb(L - 1, eta, rho);
+            double FM = SM.FirstSolutionValue;
+            double GM = SM.SecondSolutionValue;
 
-            double F = AdvancedMath.CoulombF(L, eta, rho);
-            double G = AdvancedMath.CoulombG(L, eta, rho);
+            //double FM = AdvancedMath.CoulombF(L - 1, eta, rho);
+            //double GM = AdvancedMath.CoulombG(L - 1, eta, rho);
+
+            SolutionPair S = AdvancedMath.Coulomb(L, eta, rho);
+            double F = S.FirstSolutionValue;
+            double G = S.SecondSolutionValue;
+
+            //double F = AdvancedMath.CoulombF(L, eta, rho);
+            //double G = AdvancedMath.CoulombG(L, eta, rho);
 
             //Console.WriteLine("FM={0} GM={1} F={2} G={3}", FM, GM, F, G);
             //Console.WriteLine("FM * G - F * GM = {0}", FM * G - F * GM);

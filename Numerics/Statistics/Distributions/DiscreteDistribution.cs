@@ -109,20 +109,21 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             if (f == null) throw new ArgumentNullException("f");
 
-            // to avoid running over the whole support when it is large, we move out from the mean
+            // To avoid running over the whole support when it is large, we move outward from the mean,
+            // and stop when the result stops changing. To avoid stopping prematurely beause of a
+            // single zero contribution, we should move outward in groups.
+
             int i0 = (int) Math.Round(Mean);
 
             double s_left = 0.0;
             for (int i = i0 - 1; i >= Minimum; i--) {
                 double s_left_old = s_left;
-                double ds = f(i) * ProbabilityMass(i);
                 s_left += f(i) * ProbabilityMass(i);
                 if (s_left == s_left_old) break;
             }
             double s_right = 0.0;
             for (int i = i0 + 1; i <= Maximum; i++) {
                 double s_right_old = s_right;
-                double ds = f(i) * ProbabilityMass(i);
                 s_right += f(i) * ProbabilityMass(i);
                 if (s_right == s_right_old) break;
             }

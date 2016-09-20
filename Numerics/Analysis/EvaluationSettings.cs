@@ -17,7 +17,7 @@ namespace Meta.Numerics.Analysis {
             RelativePrecision = Global.Accuracy;
             AbsolutePrecision = Global.Accuracy;
         }
-
+         
         private int evaluationBudget;
 
         private double relativePrecision;

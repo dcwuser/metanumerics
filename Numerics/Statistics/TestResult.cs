@@ -120,7 +120,20 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     public enum TestType {
         
-        LeftTailed, RightTailed, TwoTailed
+        /// <summary>
+        /// The P-value gives the probability of obtaining a value as low as observed.
+        /// </summary>
+        LeftTailed,
+
+        /// <summary>
+        /// The P-value gives the probability of obtaining a value as high as observed.
+        /// </summary>
+        RightTailed,
+
+        /// <summary>
+        /// The P-values gives the probabily of obtain a value as large in absolute value as observed.
+        /// </summary>
+        TwoTailed
     
     }
 

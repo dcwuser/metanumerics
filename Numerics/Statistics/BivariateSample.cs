@@ -576,7 +576,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Computes the polynomial of given degree which best fits the data.
         /// </summary>
-        /// <param name="m">The degree, which must be non-negative.</param>
+        /// <param name="m">The degree,  which must be non-negative.</param>
         /// <returns>The fit result.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="m"/> is negative.</exception>
         /// <exception cref="InsufficientDataException">There are fewer data points than coefficients to be fit.</exception>

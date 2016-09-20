@@ -2,11 +2,11 @@
 <package>
   <metadata>
     <id>Meta.Numerics</id>
-    <version>2.2.0</version> 
+    <version>3.0.0</version> 
     <authors>David Wright</authors>
     <description>A library for numeric computing with support for statistics, matrix algebra, and advanced functions.</description>
     <projectUrl>http://www.meta-numerics.net</projectUrl>
-    <iconUrl>http://www.meta-numerics.net/Images/ComplexPsiPlot.png</iconUrl>
+    <iconUrl>http://www.meta-numerics.net/Images/Riemann128.png</iconUrl>
     <licenseUrl>http://metanumerics.codeplex.com/license</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <tags>numeric scientific technical math statistics matrix fft</tags>

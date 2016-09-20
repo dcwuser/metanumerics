@@ -9,85 +9,91 @@ using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Analysis {
 
-    public class OdeResult<T> : EvaluationResult {
-
-        public OdeResult (int count, EvaluationSettings settings, double x, T y, T yPrime) : base(count, settings) {
-            this.X = x;
-            this.Y = y;
-            this.YPrime = yPrime;
-        }
-
-        public double X { get; private set; }
-
-        public T Y { get; private set; }
-
-        public T YPrime { get; private set; }
-
-    }
-
     public static partial class FunctionMath {
 
         private static EvaluationSettings defaultOdeSettings = new EvaluationSettings() { RelativePrecision = 1.0E-12, AbsolutePrecision = 1.0E-24, EvaluationBudget = 5000 };
 
-        public static double SolveConservativeOde (Func<double, double, double> rhs, double x0, double y0, double yp0, double x1) {
+        /// <summary>
+        /// Solves a conservative second order ordinary differential equation initial value problem.
+        /// </summary>
+        /// <param name="rhs">The right hand side function.</param>
+        /// <param name="x0">The initial value of the independent variable.</param>
+        /// <param name="y0">The initial value of the function variable.</param>
+        /// <param name="yp0">The intial value of the function derivative.</param>
+        /// <param name="x1">The final value of the independent variable.</param>
+        /// <returns>The solution, including the final value of the function and its derivative.</returns>
+        public static OdeResult SolveConservativeOde (Func<double, double, double> rhs, double x0, double y0, double yp0, double x1) {
             return (SolveConservativeOde(rhs, x0, y0, yp0, x1, defaultOdeSettings));
         }
 
 
-        public static double SolveConservativeOde (Func<double, double, double> rhs, double x0, double y0, double yp0, double x1, EvaluationSettings settings) {
+        /// <summary>
+        /// Solves a conservative second order ordinary differential equation initial value problem using the given settings.
+        /// </summary>
+        /// <param name="rhs">The right hand side function.</param>
+        /// <param name="x0">The initial value of the independent variable.</param>
+        /// <param name="y0">The initial value of the function variable.</param>
+        /// <param name="yp0">The intial value of the function derivative.</param>
+        /// <param name="x1">The final value of the independent variable.</param>
+        /// <param name="settings">The settings to use when solving the problem.</param>
+        /// <returns>The solution, including the final value of the function and its derivative.</returns>
+        /// <remarks>
+        /// <para>A conservative second order differential equation is one in which the <paramref name="rhs"/>
+        /// does not depend on the first derivative. Such problems have conserved quantities (such as
+        /// energy for a physics problem).</para>
+        /// </remarks>
+        public static OdeResult SolveConservativeOde (Func<double, double, double> rhs, double x0, double y0, double yp0, double x1, EvaluationSettings settings) {
+
             if (rhs == null) throw new ArgumentNullException("rhs");
+            if (settings == null) throw new ArgumentNullException("settings");
+
             BaseOdeStepper<double> stepper = new StoermerStepper(rhs, x0, y0, yp0, settings);
             stepper.Integrate(x1);
-            return (stepper.Y);
+
+            OdeResult result = new OdeResult(stepper.X, stepper.Y, stepper.YPrime, stepper.EvaluationCount, settings);
+            return (result);
 
         }
 
-        public static double SolveOde (Func<double, double, double> rhs, double x0, double y0, double x1) {
+        /// <summary>
+        /// Solves an ordinary differential equation initial value problem.
+        /// </summary>
+        /// <param name="rhs">The right hand side function, which returns the value of the derivative given
+        /// the values of the indepdent variable and the function.</param>
+        /// <param name="x0">The initial value of the independent variable.</param>
+        /// <param name="y0">The initial value of the function.</param>
+        /// <param name="x1">The final value of the independent variable.</param>
+        /// <returns>The solution, including the final value of the function and its derivative.</returns>
+        public static OdeResult SolveOde (Func<double, double, double> rhs, double x0, double y0, double x1) {
             return (SolveOde(rhs, x0, y0, x1, defaultOdeSettings));
         }
 
-        public static double SolveOde (Func<double, double, double> rhs, double x0, double y0, double x1, EvaluationSettings settings) {
-            if (rhs == null) throw new ArgumentNullException("rhs");
+        /// <summary>
+        /// Solves an ordinary differential equation initial value problem.
+        /// </summary>
+        /// <param name="rhs">The right hand side function, which returns the value of the derivative given
+        /// the values of the indepdent variable and the function.</param>
+        /// <param name="x0">The initial value of the independent variable.</param>
+        /// <param name="y0">The initial value of the function.</param>
+        /// <param name="x1">The final value of the independent variable.</param>
+        /// <param name="settings">The settings to use when solving the problem.</param>
+        /// <returns>The solution, including the final value of the function and its derivative.</returns>
+        public static OdeResult SolveOde (Func<double, double, double> rhs, double x0, double y0, double x1, EvaluationSettings settings) {
 
+            if (rhs == null) throw new ArgumentNullException("rhs");
+            if (settings == null) throw new ArgumentNullException("settings");
+
+            /*
             MultiOdeStepper stepper = new BulrischStoerStepper((double x, IList<double> y) => new double[] { rhs(x, y[0]) }, x0, new double[] { y0 }, settings);
             //MultiOdeStepper stepper = new RungeKutta54Stepper((double x, IList<double> y) => new double[] { rhs(x, y[0]) }, range.LeftEndpoint, new double[] { start }, settings);
             stepper.Integrate(x1);
-            return (stepper.Y[0]);
+            return (new OdeResult(stepper.X, stepper.Y[0], stepper.YPrime[0], stepper.EvaluationCount, stepper.Settings));
+            */
 
-        }
-
-    }
-
-    public static partial class MultiFunctionMath {
-
-        public static ColumnVector SolveConservativeOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, IList<double> yp0, double x1) {
-            EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-12, AbsolutePrecision = 1.0E-24, EvaluationBudget = 4096 };
-            return (SolveConservativeOde(rhs, x0, y0, yp0, x1, settings));
-        }
-
-        public static ColumnVector SolveConservativeOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, IList<double> yp0, double x1, EvaluationSettings settings) {
-            if (rhs == null) throw new ArgumentNullException("rhs");
-            if (y0 == null) throw new ArgumentNullException("y0");
-
-            MultiOdeStepper stepper = new MultiStoermerStepper(rhs, x0, y0, yp0, settings);
-            stepper.Integrate(x1);
-            return (new ColumnVector(stepper.Y));
-        }
-
-        public static OdeResult<IList<double>> SolveOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, double x1) {
-            EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-12, AbsolutePrecision = 1.0E-24, EvaluationBudget = 4096 };
-            return (SolveOde(rhs, x0, y0, x1, settings));
-        }
-
-        public static OdeResult<IList<double>> SolveOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, double x1, EvaluationSettings settings) {
-            if (rhs == null) throw new ArgumentNullException("rhs");
-            if (y0 == null) throw new ArgumentNullException("y0");
-            if (settings == null) throw new ArgumentException("settings");
-
-            MultiOdeStepper stepper = new BulrischStoerStepper(rhs, x0, y0, settings);
-            stepper.Integrate(x1);
-
-            return (stepper.Result);
+            BaseOdeStepper<double> stepper2 = new SingleBulrischStoerStepper(rhs, x0, y0, settings);
+            stepper2.Integrate(x1);
+            return (new OdeResult(stepper2.X, stepper2.Y, stepper2.YPrime, stepper2.EvaluationCount, stepper2.Settings));
+            
         }
 
     }
@@ -152,6 +158,8 @@ namespace Meta.Numerics.Analysis {
 
         public abstract void Step ();
 
+        public abstract EvaluationResult GetResult ();
+
         public virtual void Integrate (double X1) {
 
             double X0 = X;
@@ -177,7 +185,7 @@ namespace Meta.Numerics.Analysis {
                 }
 
                 if (Settings.UpdateHandler != null) {
-                    Settings.Update(this.Result);
+                    Settings.Update(this.GetResult());
                 }
 
             }
@@ -203,16 +211,12 @@ namespace Meta.Numerics.Analysis {
             }
         }
 
-        public virtual OdeResult<T> Result {
-            get {
-                return (new OdeResult<T>(EvaluationCount, Settings, X, Y, YPrime));
-            }
-        }
     }
 
     // This is a stepper for 2nd order ODEs with where the 1st derivative does not appear, i.e.
     //   \frac{d^2 y}{dx^2} = f(x, y)
-    // The evolution of such systems ensures a conserved quantity (e.g. energy).
+    // The evolution of such systems ensures a conserved quantity (e.g. energy). If they
+    // are evolved with a non-conservative stepper, the quantity will not be conserved.
 
     internal class StoermerStepper : BaseOdeStepper<double> {
 
@@ -238,7 +242,7 @@ namespace Meta.Numerics.Analysis {
             double bestFactor = 1.0;
             int bestK = -1;
 
-            for (int k = 0; k < N.Length; k++) {
+            for (int k = 0; k < kMax; k++) {
 
                 double y1, yp1;
                 TrialStep(N[k], out y1, out yp1);
@@ -247,25 +251,27 @@ namespace Meta.Numerics.Analysis {
 
                 work += N[k];
 
-                if (k < 1) continue;
+                if (k == 0) {
+                    errors[k] = Math.Abs(y1);
+                    continue;
+                }
 
                 UncertainValue yEstimate = yExtrapolator.Estimate;
-
                 double error = yEstimate.Uncertainty;
-
                 double tol = Settings.ComputePrecision(yEstimate.Value);
 
                 double factor = Math.Pow(tol / error, 1.0 / (2 * k + 1));
-
                 double efficiency = factor / work;
+                errors[k] = error;
 
-                if (((k+1) < N.Length) && (efficiency > bestEfficiency)) {
+                if (((k + 1) < N.Length) && (efficiency > bestEfficiency)) {
                     bestEfficiency = efficiency;
                     bestFactor = factor;
                     bestK = k;
                 }
 
-                
+                if (k < kMin) continue;
+
                 if (error <= tol) {
 
                     X += DeltaX;
@@ -274,7 +280,7 @@ namespace Meta.Numerics.Analysis {
                     YPrimePrime = Evaluate(X, Y);
 
                     if ((k + 2) < N.Length) {
-                        double extrapolatedError = MoreMath.Sqr(1.0 * N[0] / N[k + 1]) * error;
+                        double extrapolatedError = (errors[k] / errors[k - 1]) * errors[k];
                         int extrapolatedWork = work + N[k + 1];
                         double extrapolatedFactor = Math.Pow(tol / extrapolatedError, 1.0 / (2 * k + 3));
                         double extrapolatedEfficiency = extrapolatedFactor / extrapolatedWork;
@@ -289,9 +295,16 @@ namespace Meta.Numerics.Analysis {
                     break;
 
                 }
-                
+
+                if (k == (kMax - 1)) {
+                    double extrapolatedError = (errors[k] / errors[k - 1]) * errors[k];
+                    if (extrapolatedError > tol) break;
+                }
+
             }
 
+            kMin = Math.Max(bestK - 2, 2);
+            kMax = Math.Min(bestK + 2, N.Length - 1);
             if (bestFactor < 0.2) bestFactor = 0.2;
             if (bestFactor > 5.0) bestFactor = 5.0;
             DeltaX *= 0.9375 * bestFactor;
@@ -316,8 +329,16 @@ namespace Meta.Numerics.Analysis {
 
         }
 
-        private static int[] N = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        private static int[] N = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
+        private double[] errors = new double[N.Length];
+
+        private int kMin = 2;
+        private int kMax = N.Length - 2;
+
+        public override EvaluationResult GetResult () {
+            return (new OdeResult(this.X, this.Y, this.YPrime, this.EvaluationCount, this.Settings));
+        }
     }
 
 
@@ -385,7 +406,7 @@ namespace Meta.Numerics.Analysis {
             double bestFactor = 1.0;
             int bestK = -1;
 
-            for (int k = 0; k < N.Length; k++) {
+            for (int k = 0; k < kMax; k++) {
 
                 double[] y1, yp1;
                 TrialStep(N[k], out y1, out yp1);
@@ -393,7 +414,15 @@ namespace Meta.Numerics.Analysis {
 
                 work += N[k];
 
-                if (k < 1) continue;
+                if (k == 0) {
+                    double mAbs = 0.0;
+                    for (int i = 0; i < y1.Length; i++) {
+                        double iAbs = Math.Abs(y1[i]);
+                        if (iAbs > mAbs) mAbs = iAbs;
+                    }
+                    errors[k] = mAbs;
+                    continue;
+                }
 
                 double yNorm, yError, ypNorm, ypError;
                 ComputeExtrapolation(ref y1, out yNorm, out yError, ref yp1, out ypNorm, out ypError);
@@ -404,16 +433,17 @@ namespace Meta.Numerics.Analysis {
                 double yRatio = yTol / yError;
                 double ypRatio = ypTol / ypError;
                 double ratio = Math.Max(yRatio, ypRatio);
-
                 double factor = Math.Pow(ratio, 1.0 / (2 * k + 1));
-
                 double efficiency = factor / work;
+                errors[k] = yError;
 
                 if (((k + 1) < N.Length) && (efficiency > bestEfficiency)) {
                     bestEfficiency = efficiency;
                     bestFactor = factor;
                     bestK = k;
                 }
+
+                if (k < kMin) continue;
 
                 if ((yError <= yTol) && (ypError <= ypTol)) {
                 //if (error <= tol) {
@@ -423,6 +453,23 @@ namespace Meta.Numerics.Analysis {
                     YPrime = yp1;
                     YPrimePrime = Evaluate(X, Y);
 
+
+                    if ((k + 2) < N.Length) {
+                        double extrapolatedError = (errors[k] / errors[k - 1]) * errors[k];
+                        int extrapolatedWork = work + N[k + 1];
+                        double extrapolatedFactor = Math.Pow(yTol / extrapolatedError, 1.0 / (2 * k + 3));
+                        double extrapolatedEfficiency = extrapolatedFactor / extrapolatedWork;
+
+                        if (extrapolatedEfficiency > bestEfficiency) {
+                            bestEfficiency = extrapolatedEfficiency;
+                            bestFactor = extrapolatedFactor;
+                            bestK = k + 1;
+                        }
+                    }
+
+                    break;
+
+                    /*
                     if ((k + 2) < N.Length) {
                         double yExtrapolatedError = MoreMath.Sqr(1.0 * N[0] / N[k + 1]) * yError;
                         double ypExtrapolatedError = MoreMath.Sqr(1.0 * N[0] / N[k + 1]) * ypError;
@@ -441,11 +488,19 @@ namespace Meta.Numerics.Analysis {
                     }
 
                     break;
+                    */
 
+                }
+
+                if (k == (kMax - 1)) {
+                    double extrapolatedError = (errors[k] / errors[k - 1]) * errors[k];
+                    if (extrapolatedError > yTol) break;
                 }
 
             }
 
+            kMin = Math.Max(bestK - 2, 2);
+            kMax = Math.Min(bestK + 2, N.Length - 1);
             if (bestFactor < 0.2) bestFactor = 0.2;
             if (bestFactor > 5.0) bestFactor = 5.0;
             DeltaX *= 0.9375 * bestFactor;
@@ -483,6 +538,9 @@ namespace Meta.Numerics.Analysis {
 
         private static int[] N = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
 
+        private double[] errors = new double[N.Length];
+        private int kMin = 2;
+        private int kMax = N.Length - 2;
     }
 
     internal abstract class MultiOdeStepper : BaseOdeStepper<IList<double>> {
@@ -502,9 +560,18 @@ namespace Meta.Numerics.Analysis {
             return (base.Evaluate(x, new ReadOnlyCollection<double>(y)));
         }
 
+        public override EvaluationResult GetResult () {
+            double[] y = new double[this.Y.Count];
+            this.Y.CopyTo(y, 0);
+            double[] yPrime = new double[this.YPrime.Count];
+            this.YPrime.CopyTo(yPrime, 0);
+            MultiOdeResult result = new MultiOdeResult(this.X, y, yPrime, this.EvaluationCount, this.Settings);
+            return (result);
+        }
+
     }
 
-
+#if FUTURE
     internal class RungeKutta54Stepper : MultiOdeStepper {
 
         public RungeKutta54Stepper (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, EvaluationSettings settings) : base(rhs, x0, y0, settings) {
@@ -682,8 +749,9 @@ namespace Meta.Numerics.Analysis {
         }
 
     }
+#endif
 
-    public class NevilleExtrapolator {
+    internal class NevilleExtrapolator {
 
         public NevilleExtrapolator (int capacity) {
             xValues = new double[capacity];
@@ -734,24 +802,234 @@ namespace Meta.Numerics.Analysis {
 
     }
 
+    internal class SingleBulrischStoerStepper : BaseOdeStepper<double> {
+
+        public SingleBulrischStoerStepper(Func<double, double, double> rhs, double x0, double y0, EvaluationSettings settings) : base(rhs, x0, y0, settings) {
+            YPrime = Evaluate(x0, y0);
+            extrapolator = new NevilleExtrapolator(N.Length);
+            ComputeInitialStep();
+        }
+
+        private void ComputeInitialStep () {
+            //DeltaX = 0.1;
+            DeltaX = Math.Abs(Y / YPrime);
+            // If DeltaX is too big (e.g. YPrime = 0), then Integrate will set it to integration interval.
+            // If DeltaX is too small (e.g. Y = 0)
+            if (Double.IsNaN(DeltaX) || (DeltaX == 0.0)) DeltaX = 0.125;
+            // Can be NaN. If y = 0 and y' = 0, 0/0 = NaN
+
+            // Surprisingly, the choice of initial step appears to have only a small effect
+            // on evaluation count, presumably because we quickly find right step-size.
+            // Tried 1.0, 0.1, |y/y'|, and 1.5 |y/y'|. 
+        }
+
+        public override void Step () {
+
+            ClearExtrapolation();
+
+            // Keep track of the total work (in RHS evaluations) to get to the kth column. 
+            int work = 0;
+
+            // We will use the total work and the computed expansion (or contraction) factor
+            // to target convergence in a given column to compute the most efficient (in terms
+            // of distance stepped per evaluation) column in which to target convergence
+            // on the next step. We need some variables to keep track of this.
+            double bestEfficiency = 0.0;
+            double bestFactor = 1.0;
+            int bestK = -1;
+            
+            // Iterate over sub-steps.
+            // We will only evaluate up to kMax, since if we have to go further it indicates
+            // that our model of convergence is inaccurate.
+            for (int k = 0; k <= kMax; k++) {
+
+                double y1 = TrialStep(N[k]);
+                AddExtrapolationPoint(MoreMath.Sqr(1.0 / N[k]), y1);
+
+                work += N[k];
+
+                // We need at least two trial steps in order for our estimate to have an associated
+                // uncertainty. For the first step just record the value as the error and move on.
+                if (k == 0) {
+                    errors[k] = Math.Abs(y1);
+                    continue;
+                }
+
+                double yExtrap;
+                double norm, error;
+                PerformExtrapolation(out yExtrap, out norm, out error);
+                double tol = Settings.ComputePrecision(norm);
+
+                // Compute the expansion factor required to target convergence in this column on the next step.
+                // Compute the corresponding efficiency and determine if this is the best column to target.
+                double factor = Math.Pow(tol / error, 1.0 / (2 * k + 1));
+                double efficiency = factor / work;
+                errors[k] = error;
+
+                // To give ourselves a margin of safety, we never want to target the final column.
+                if (((k + 1) < N.Length) && (efficiency > bestEfficiency)) {
+                    bestEfficiency = efficiency;
+                    bestFactor = factor;
+                    bestK = k;
+                }
+
+                // Before the minimum k, don't even check for convergence. It might be spurious.
+                // (Any example of this ever happening?)
+                if (k < kMin) continue;
+
+                // Check for convergence.
+                if (error <= tol) {
+
+                    X += DeltaX;
+                    Y = yExtrap;
+                    YPrime = Evaluate(X, Y);
+
+                    // We need to figure out whether we should target convergence in a higher column
+                    // in the next step. (If we don't we'll never increase the step-size, only
+                    // decrease it.) To do that, we need to estimate what the efficiency would be
+                    // if we targeted convergence in the next column.
+
+                    // One way to do this, which I did try, is to just do another evaluation
+                    // That certainly works, but it is very costly. (It also messes up our
+                    // efficiency calculations, since we are really doing more evaluations
+                    // that it assumes.) In any case, I've tried it, and the methods below
+                    // work better on my test set.
+
+                    // Another way is to use the the estimate that NR quotes from Hairer,
+                    // Noersett, and Wanner:
+                    //   {\rm err}_{k+1} \approx \left \frac{n_0}{n_{k+1}} \right)^2 {\rm err}_{k}
+                    // This estimate is order-of-magnitude as best. It also has a deeper problem:
+                    // since it just multiplies the last error by a constant factor, the ratio
+                    // of efficiencies it produces will always be the same, so it will always
+                    // make the same decision about whether to try for the next column.
+
+                    // Another way is to try to extrapolate from the pattern of previous errors.
+                    // Like we do for the function value, we could do extrapolation from a full
+                    // polynomial fit (to logs of errors, since they decrease by multiplicative
+                    // factors). I tried this, and it works well, but it's a lot of extra
+                    // code and a fair amount of increased computational effort.
+
+                    // I also tried extrapolation from just the last three errors and from just
+                    // the last two. Surprisingly, extrapolation from just the last two (i.e.
+                    // assuming the next step will reduce the error by the same factor as the
+                    // last one) resulted in the fewest function evaluations for our test set.
+
+                    // To give ourselves a margin of safety, we never want to target the last
+                    // column, so we'll only try this if we are converging at least two
+                    // columns from the last.
+                    if ((k + 2) < N.Length) {
+                        double extrapolatedError = (errors[k] / errors[k - 1]) * errors[k];
+                        int extrapolatedWork = work + N[k + 1];
+                        double extrapolatedFactor = Math.Pow(tol / extrapolatedError, 1.0  / (2 * k + 3));
+                        double extrapolatedEfficiency = extrapolatedFactor / extrapolatedWork;
+
+                        if (extrapolatedEfficiency > bestEfficiency) {
+                            bestEfficiency = extrapolatedEfficiency;
+                            bestFactor = extrapolatedFactor;
+                            bestK = k + 1;
+                        }
+                    }
+
+                    break;
+
+                }
+
+                // If we are nearly at the maximum, extrapolate the error and quit
+                // if we don't expect to make it. This should reduce the number of
+                // evaluations, and I've verified that it does on our test set.
+                if (k == (kMax - 1)) {
+                    double extrapolatedError = (errors[k] / errors[k - 1]) * errors[k];
+                    if (extrapolatedError > tol) break;
+                }
+
+            }
+
+            // Adjust the step size to target convergence in the optimum column in the next step.
+            kMin = Math.Max(bestK - 2, 2);
+            kMax = Math.Min(bestK + 2, N.Length - 1);
+            if (bestFactor < 0.125) bestFactor = 0.125;
+            if (bestFactor > 4.0) bestFactor = 4.0;
+            DeltaX *= (0.9375 * bestFactor);
+
+        }
+
+        // NR quotes Dueflhard in support of this particular sequence. I haven't tried
+        // other sequences. I have tried going only to the 8th or 9th terms, but 10 terms
+        // reduced the number of evaluations required for my test set.
+
+        private static readonly int[] N = new int[] { 2, 4, 6, 8, 10, 12, 14, 16, 18, 20 };
+
+        private double TrialStep (int n) {
+
+            double h = DeltaX / n;
+            double two_h = 2.0 * h;
+
+            double nY0 = Y;
+            double nY1 = Y + h * YPrime;
+
+            for (int k = 1; k < n; k++) {
+                double nY2 = nY0 + two_h * Evaluate(X + k * h, nY1);
+                nY0 = nY1;
+                nY1 = nY2;
+            }
+
+            nY1 = (nY0 + nY1 + h * Evaluate(X + DeltaX, nY1)) / 2.0;
+            return (nY1);
+
+        }
+
+        private NevilleExtrapolator extrapolator;
+        private double[] errors = new double[N.Length];
+
+        private int kMin = 2;
+        private int kMax = N.Length - 2;
+
+        private void ClearExtrapolation () {
+            extrapolator.Clear();
+        }
+
+        private void AddExtrapolationPoint (double controlValue, double y) {
+            extrapolator.Add(controlValue, y);
+        }
+
+        private void PerformExtrapolation (out double value, out double norm, out double error) {
+            UncertainValue estimate = extrapolator.Estimate;
+            value = estimate.Value;
+            norm = Math.Abs(value);
+            error = estimate.Uncertainty;
+        }
+
+        public override EvaluationResult GetResult () { 
+            return (new OdeResult(X, Y, YPrime, EvaluationCount, this.Settings));
+        }
+
+    }
 
     internal class BulrischStoerStepper : MultiOdeStepper {
 
         public BulrischStoerStepper (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, EvaluationSettings settings) : base(rhs, x0, y0, settings) {
             YPrime = Evaluate(x0, y0);
-            //DeltaX = 1.0;
-            DeltaX = 0.1;
-            //ComputeInitialSetp();
+            ComputeInitialSetp();
 
             extrapolators = new NevilleExtrapolator[Dimension];
             for (int i = 0; i < Dimension; i++) extrapolators[i] = new NevilleExtrapolator(N.Length);
-            errorExtrapolator = new NevilleExtrapolator(N.Length);
-
         }
 
 
         private void ComputeInitialSetp () {
-
+            
+            double yNorm = 0.0;
+            double yPrimeNorm = 0.0;
+            for (int i = 0; i < YPrime.Count; i++) {
+                double yAbs = Math.Abs(Y[i]);
+                if (yAbs > yNorm) yNorm = yAbs;
+                double yPrimeAbs = Math.Abs(YPrime[i]);
+                if (yPrimeAbs > yPrimeNorm) yPrimeNorm = yPrimeAbs;
+            }
+            DeltaX = yNorm / yPrimeNorm;
+            if (Double.IsNaN(DeltaX) || DeltaX == 0.0) DeltaX = 0.125;
+            
+            /*
             double yNorm = 0.0;
             double yPrimeNorm = 0.0;
             for (int i = 0; i < YPrime.Count; i++) {
@@ -763,16 +1041,15 @@ namespace Meta.Numerics.Analysis {
 
             DeltaX = Settings.ComputePrecision(yNorm) / yPrimeNorm;
             for (int k = 0; k < N.Length / 2; k++) DeltaX *= MoreMath.Sqr(N[k]);
+            */
+            //DeltaX = 0.1;
 
         }
 
         private NevilleExtrapolator[] extrapolators;
 
-        private NevilleExtrapolator errorExtrapolator;
-
         private void ClearExtrapolation () {
             for (int i = 0; i < extrapolators.Length; i++) extrapolators[i].Clear();
-            errorExtrapolator.Clear();
         }
 
         private void AddExtrapolationPoint (double controlValue, double[] y) {
@@ -799,10 +1076,6 @@ namespace Meta.Numerics.Analysis {
         public override void Step () {
 
             ClearExtrapolation();
-            //NevilleExtrapolator[] extrapolators = new NevilleExtrapolator[Dimension];
-            //for (int i = 0; i < Dimension; i++) extrapolators[i] = new NevilleExtrapolator(N.Length);
-            //NevilleExtrapolator extrapolator = new NevilleExtrapolator(N.Length);
-            //PolynomialInterpolator errorExtrapolator = new PolynomialInterpolator(N.Length);
 
             // Keep track of the total work (in RHS evaluations) to get to the kth column. 
             int work = 0;
@@ -815,79 +1088,50 @@ namespace Meta.Numerics.Analysis {
             double bestFactor = 1.0; 
             int bestK = -1;
 
-            double previousError = 0.0;
-
             // Iterate over sub-steps.
-            for (int k = 0; k < N.Length; k++) {
+            for (int k = 0; k < kMax; k++) {
 
                 double[] y1 = TrialStep(N[k]);
                 AddExtrapolationPoint(MoreMath.Sqr(1.0 / N[k]), y1);
-                //for (int i = 0; i < Dimension; i++) extrapolators[i].Add(MoreMath.Sqr(1.0 / N[k]), y1[i]);
-                //double y1 = TrialStep(N[k])[0];
-                //extrapolator.Add(MoreMath.Sqr(1.0 / N[k]), y1);
 
                 work += N[k];
 
-                // We need at least two trial steps in order for our estimate to have an associated uncertainty.
-                if (k < 1) continue;
-                //Debug.Assert(extrapolator.Count >= 2);
+                if (k == 0) {
+                    double mAbs = 0.0;
+                    for (int i = 0; i < y1.Length; i++) {
+                        double iAbs = Math.Abs(y1[i]);
+                        if (iAbs > mAbs) mAbs = iAbs;
+                    }
+                    errors[k] = mAbs;
+                    continue;
+                }
 
                 double[] yExtrap;
                 double norm, error;
                 PerformExtrapolation(out yExtrap, out norm, out error);
-                //double[] yExtrap = new double[Dimension];
-                //double[] yExtrapError = new double[Dimension];
-                //for (int i = 0; i < Dimension; i++) {
-                //    UncertainValue estimate = extrapolators[i].Estimate;
-                //    yExtrap[i] = estimate.Value;
-                //    yExtrapError[i] = estimate.Uncertainty;
-                //}
-                //double norm = Blas1.dNrm2(yExtrap, 0, 1, Dimension);
-                //double error = Blas1.dNrm2(yExtrapError, 0, 1, Dimension);
                 double tol = Settings.ComputePrecision(norm);
 
-                //UncertainValue estimate = extrapolator.Estimate;
-                //double tol = Settings.ComputePrecision(estimate.Value);
-
-                // Compute the expansion factor required to target convergence in this column on the next step.
-                // Compute the corresponding efficiency and determine if this is the best column to target.
                 double factor = Math.Pow(tol / error, 1.0 / (2 * k + 1));
                 double efficiency = factor / work;
-                //errorExtrapolator.Add(k, Math.Log(estimate.Uncertainty));
-                // In give ourselves a margin of safety, we never want to target the final column.
+                errors[k] = error;
+
                 if (((k + 1) < N.Length) && (efficiency > bestEfficiency)) {
                     bestEfficiency = efficiency;
                     bestFactor = factor;
                     bestK = k;
                 }
 
+                if (k < kMin) continue;
+
                 // Check for convergence.
                 if (error <= tol) {
 
                     X += DeltaX;
                     Y = yExtrap;
-                    //Y[0] = estimate.Value;
                     YPrime = Evaluate(X, Y);
 
-                    // It would be nice to try to figure out whether we should target convergence
-                    // in a higher column on the next step. There are a few ways to go about this.
-                    // (1) We could go ahead and do the next trial step; this is very expensive.
-                    // (2) We could use polynomial extrapolation to predict the next error; this
-                    // works well and isn't too expensive, but it's a good bit of extra code and
-                    // memory dedicated to a rather marginal case. (3) We could use the estimate
-                    // that NR quotes from Hairer, Noersett, and Wanner:
-                    //   {\rm err}_{k+1} \approx \left \frac{n_0}{n_{k+1}} \right)^2 {\rm err}_{k}
-                    // This estimate is order-of-magnitude as best, but it's very simple and in
-                    // the end what I chose to use.
-
-                    // To give ourselves a margin of safety, we never want to target the last
-                    // column, so we'll only even try this if we are converging at least two
-                    // columns from the last.
                     if ((k + 2) < N.Length) {
-
-                        double extrapolatedError = error * (error / previousError);
-                        //double extrapolatedError = MoreMath.Sqr(1.0 * N[0] / N[k + 1]) * error;
-                        //double extrapolatedError = Math.Exp(errorExtrapolator.Evaluate(k + 1));
+                        double extrapolatedError = (errors[k] / errors[k - 1]) * errors[k];
                         int extrapolatedWork = work + N[k + 1];
                         double extrapolatedFactor = Math.Pow(tol / extrapolatedError, 1.0 / (2 * k + 3));
                         double extrapolatedEfficiency = extrapolatedFactor / extrapolatedWork;
@@ -903,18 +1147,28 @@ namespace Meta.Numerics.Analysis {
 
                 }
 
-                previousError = error;
-                    
+                if (k == (kMax - 1)) {
+                    double extrapolatedError = (errors[k] / errors[k - 1]) * errors[k];
+                    if (extrapolatedError > tol) break;
+                }
+
             }
 
             // Adjust the step size to target convergence in the optimum column in the next step.
-            if (bestFactor < 0.2) bestFactor = 0.2;
-            if (bestFactor > 5.0) bestFactor = 5.0;
+            kMin = Math.Max(bestK - 2, 2);
+            kMax = Math.Min(bestK + 2, N.Length - 1);
+            if (bestFactor < 0.125) bestFactor = 0.125;
+            if (bestFactor > 4.0) bestFactor = 4.0;
             DeltaX *= (0.9375 * bestFactor);
 
         }
 
         private static readonly int[] N = new int[] { 2, 4, 6, 8, 10, 12, 14, 16, 18 };
+
+        private double[] errors = new double[N.Length];
+
+        private int kMin = 2;
+        private int kMax = N.Length - 2;
 
         // do a step consisting of n mini-steps
 
@@ -937,53 +1191,8 @@ namespace Meta.Numerics.Analysis {
             
             return(nY1);
             
-
-            /*
-            double Y0 = Y[0];
-
-            double Y1 = Y0 + h * YPrime[0];
-
-            for (int k = 1; k < n; k++) {
-                double Y2 = Y0 + 2.0 * h * Evaluate(X + k * h, new double[] { Y1 })[0];
-                Y0 = Y1;
-                Y1 = Y2;
-            }
-
-            Y1 = (Y1 + Y0 + h * Evaluate(X + DeltaX, new double[] { Y1 })[0]) / 2.0;
-
-            return (Y1);
-            */
         }
 
     }
-
-    internal abstract class OdeStrategy<T> {
-
-        public abstract double ComputeInitialStep (BaseOdeStepper<T> stepper);
-
-        public abstract void Step (BaseOdeStepper<T> stepper);
-
-    }
-
-    internal abstract class BulrichStoerStrategy<T> : OdeStrategy<T> {
-
-        protected abstract double Norm (IList<double> values);
-
-        public override double ComputeInitialStep (BaseOdeStepper<T> stepper) {
-
-
-
-            throw new NotImplementedException();
-        }
-
-        public override void Step (BaseOdeStepper<T> stepper) {
-            throw new NotImplementedException();
-        }
-
-        protected abstract int StepCount (int k);
-
-        protected abstract int KMax { get; }
-
-    }
-
+   
 }

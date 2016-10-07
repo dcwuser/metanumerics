@@ -221,8 +221,12 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <returns>An array giving the power in each frequency bin.</returns>
         /// <remarks>
-        /// <para>For a time series of length n, the kth index gives the
-        /// power at near period n / k, or frequency k / n. The zeroth
+        /// <para>For a time series of length n, the index k gives the
+        /// power near period n / k, or frequency k / n. (For example,
+        /// for a year-long monthly time series, the value at index 1
+        /// is proportional to the yearly variation, the value at the index 4
+        /// is proportional to the quarterly variation, and the value at index 12
+        /// is proportional to the monthly variation.) The zeroth
         /// entry is proportional to the unfluctuating component of
         /// the signal, i.e. the mean.</para>
         /// </remarks>
@@ -247,64 +251,15 @@ namespace Meta.Numerics.Statistics {
 
         }
 
-        public UncertainValue[] PopulationAutocovariance () {
-
-            double[] g;
-            double v;
-            PopulationStatistics(out g, out v);
-
-            // Fuller shows that 
-            //   V(c_k) = \frac{1}{n-k} \sum{j=-\infty}^{+\infty} ( g_j^2 + g_{k + j} g_{k - k} ) 
-            // plus a term involving fourth cumulants that vanishes for normal errors.
-
-            // For k = 0, this specializes to
-            //   V(c_0) = \frac{2}{n} \left[ g_0^2 + 2 \sum{j=1}{n-1} g_j^2 \right]
-            // For k > 0, the second term is usually smaller than the first, since
-            // the signs tend to be mixed. Ignoring all cross terms we would get
-            //   V(c_k) = \frac{1}{n - k} \left[ g_0^2 + g_k^2 + 2 \sum_{j=1}{n-1} g_j^2 \right]
-
-            // It's problematic to apply this formula naively using the estimated g's.
-            // The reason is that even vanishing g's will have small values due to
-            // noise, and when we sum their squares they will each contribute
-            // positively, and there are quite a lot of them, so we will tend
-            // to significantly overestimate V(c_k).
-
-            // To deal with this, we will subtract off the value we would expect if
-            // all higher g's were zero.
-
-            double e0 = MoreMath.Sqr(g[0]);
-            for (int i = 1; i < g.Length / 3; i++) {
-                e0 += 2.0 * MoreMath.Sqr(g[i]);
-            }
-
-            UncertainValue[] acvEstimates = new UncertainValue[g.Length];
-            for (int i = 0; i < acvEstimates.Length; i++) {
-
-                double e1 = MoreMath.Sqr(g[i]);
-                int im = i;
-                int ip = i;
-                for (int j = 1; j < g.Length / 3; j++) {
-                    im--;
-                    if (im < 0) im += g.Length;
-                    ip++;
-                    if (ip >= g.Length) ip -= g.Length;
-                    e1 += 2.0 * g[im] * g[ip];
-                }
-
-                acvEstimates[i] = new UncertainValue(g[i], Math.Sqrt((e0 + e1) / (data.Count - i)));
-            }
-            return (acvEstimates);
-
-        }
-        
         /// <summary>
         /// Computes estimates for the moments of the population from which the time series is drawn.
         /// </summary>
         /// <returns></returns>
         /// <remarks>
-        /// <para>Just as with a simple <see cref="Sample"/>, time series autocovariances
+        /// <para>Just as is the case for the variance of a simple <see cref="Sample"/>,
+        /// the sample autocovariances of a time series
         /// are not unbiased estimates of the autocovariances of the population from which
-        /// the time series is drawn.</para>
+        /// the series is drawn.</para>
         /// </remarks>
         public TimeSeriesPopulationStatistics PopulationStatistics () {
 
@@ -689,6 +644,31 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         public UncertainValue Autocovariance (int k) {
             if ((k < 0) || (k >= g.Length)) throw new ArgumentOutOfRangeException("k");
+
+            // The task here is to estimate the variance of our estimate of g_k
+
+            // Fuller shows that 
+            //   V(c_k) = \frac{1}{n-k} \sum{j=-\infty}^{+\infty} ( g_j^2 + g_{k + j} g_{k - k} ) 
+            // plus a term involving fourth cumulants that vanishes for normal errors.
+
+            // For k = 0, this specializes to
+            //   V(c_0) = \frac{2}{n} \left[ g_0^2 + 2 \sum{j=1}{n-1} g_j^2 \right]
+            // For k > 0, the second term is usually smaller than the first, since
+            // the signs tend to be mixed. Ignoring all cross terms we would get
+            //   V(c_k) = \frac{1}{n - k} \left[ g_0^2 + g_k^2 + 2 \sum_{j=1}{n-1} g_j^2 \right]
+
+            // It's problematic to apply this formula naively using the estimated g's.
+            // The reason is that even vanishing g's will have small values due to
+            // noise, and when we sum their squares they will each contribute
+            // positively, and there are quite a lot of them, so we will tend
+            // to significantly overestimate V(c_k).
+
+            // I tried to deal with this by subtracting off the value we would expect if
+            // all higher g's were zero, but this often gave negative values since
+            // there is a lot of variance in the g's.
+
+            // For the moment, I am applying the same cutoff I am using for the g_k
+            // estimator.
 
             double e0 = MoreMath.Sqr(g[0]);
             for (int i = 1; i < g.Length / 3; i++) {

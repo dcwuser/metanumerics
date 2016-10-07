@@ -210,18 +210,83 @@ namespace Test {
             //   I_3 \dot{\omega}_3  = (I_1 - I_2) \omega_1 \omega_2
             // where \omega's are rotations about the principal axes and I's are the moments
             // of inertia about those axes. The rotational kinetic energy
-            //   I_1 \omega_1^2 + I_2 \omega_2^2 + I_3 \omega_3^2 = 2E
+            //   I_1 \omega_1^2 + I_2 \omega_2^2 + I_3 \omega_3^2 = 2 E
             // and angular momentum
-            //   I_1^2 \omega_1^2 + I_2^2 \omega_2^2 + I_3^2 \omega_3^2 = M^2
+            //   I_1^2 \omega_1^2 + I_2^2 \omega_2^2 + I_3^2 \omega_3^2 = L^2
             // are conserved quantities.
 
-            ColumnVector I = new ColumnVector(1.0, 2.0, 3.0);
+            // Landau & Lifshitz, Mechanics (3rd edition) solves these equations.
+
+            // Note
+            //   (\cn u)' = - (\sn u)(\dn u)
+            //   (\sn u)' = (\dn u)(\cn u)
+            //   (\dn u)' = -k^2 (\cn u)(\sn u)
+            // So a solution with \omega_1 ~ \cn, \omega_2 ~ \sn, \omega_3 ~ \dn
+            // would seem to work, if we can re-scale variables to eliminate factors.
+            // In fact, this turns out to be the case.
+            
+            // Label axis so that I_3 > I_2 > I_1. If L^2 > 2 E I_2, define
+            //   v^2 = \frac{(I_3 - I_2)(L^2 - 2E I_1)}{I_1 I_2 I_3}
+            //   k^2 = \frac{(I_2 - I_1)(2E I_3 - L^2)}{(I_3 - I_2)(L^2 - 2E I_1)}
+            //   A_1^2 = \frac{2E I_3 - L^2}{I_1 (I_3 - I_1)}
+            //   A_2^2 = \frac{2E I_3 - L^2}{I_2 (I_3 - I_2)}
+            //   A_3^2 = \frac{L^2 - 2E I_1}{I_3 (I_3 - I_1)}
+            // (If L^2 < 2 E I_2, just switch subscripts 1 <-> 3). Then
+            //   \omega_1 = A_1 \cn (c t, k)
+            //   \omega_2 = A_2 \sn (c t, k)
+            //   \omega_3 = A_3 \dn (c t, k)
+            // Period is complete when v T = 4 K.
+
+            ColumnVector I = new ColumnVector(3.0, 4.0, 5.0);
 
             Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> w) => {
                 return (new ColumnVector((I[1] - I[2]) * w[1] * w[2] / I[0], (I[2] - I[0]) * w[2] * w[0] / I[1], (I[0] - I[1]) * w[0] * w[1] / I[2]));
             };
 
-            ColumnVector w0 = new ColumnVector(1.0, 1.0, 1.0);
+            ColumnVector w0 = new ColumnVector(6.0, 0.0, 1.0);
+
+            // Determine L^2 and 2 E
+            double L2 = EulerAngularMomentum(I, w0);
+            double E2 = EulerKineticEnergy(I, w0);
+
+            // As Landau points out, these inequalitites should be ensured by the definitions of E and L.
+            Debug.Assert(E2 * I[0] < L2);
+            Debug.Assert(L2 < E2 * I[2]);
+
+            double v, k;
+            Func<double, ColumnVector> sln;
+            if (L2 > E2 * I[1]) {
+                v = Math.Sqrt((I[2] - I[1]) * (L2 - E2 * I[0]) / I[0] / I[1] / I[2]);
+                k = Math.Sqrt((I[1] - I[0]) * (E2 * I[2] - L2) / (I[2] - I[1]) / (L2 - E2 * I[0]));
+                ColumnVector A = new ColumnVector(
+                    Math.Sqrt((E2 * I[2] - L2) / I[0] / (I[2] - I[0])),
+                    Math.Sqrt((E2 * I[2] - L2) / I[1] / (I[2] - I[1])),
+                    Math.Sqrt((L2 - E2 * I[0]) / I[2] / (I[2] - I[0]))
+                );
+                sln = t => new ColumnVector(
+                    A[0] * AdvancedMath.JacobiCn(v * t, k),
+                    A[1] * AdvancedMath.JacobiSn(v * t, k),
+                    A[2] * AdvancedMath.JacobiDn(v * t, k)
+                );
+
+            } else {
+                v = Math.Sqrt((I[0] - I[1]) * (L2 - E2 * I[2]) / I[0] / I[1] / I[2]);
+                k = Math.Sqrt((I[1] - I[2]) * (E2 * I[0] - L2) / (I[0] - I[1]) / (L2 - E2 * I[2]));
+                ColumnVector A = new ColumnVector(
+                    Math.Sqrt((L2 - E2 * I[2]) / I[0] / (I[0] - I[2])),
+                    Math.Sqrt((E2 * I[0] - L2) / I[1] / (I[0] - I[1])),
+                    Math.Sqrt((E2 * I[0] - L2) / I[2] / (I[0] - I[2]))
+                );
+                sln = t => new ColumnVector(
+                    A[0] * AdvancedMath.JacobiDn(v * t, k),
+                    A[1] * AdvancedMath.JacobiSn(v * t, k),
+                    A[2] * AdvancedMath.JacobiCn(v * t, k)
+                );
+            }
+
+            Debug.Assert(k < 1.0);
+
+            double T = 4.0 * AdvancedMath.EllipticK(k) / v;
 
             double eps = 1.0E-12;
             EvaluationSettings settings = new EvaluationSettings() {
@@ -231,16 +296,26 @@ namespace Test {
             };
             settings.UpdateHandler = (EvaluationResult r) => {
                 MultiOdeResult q = (MultiOdeResult) r;
-                Console.WriteLine("{0} {1}", q.EvaluationCount, q.X);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(EulerKineticEnergy(I, q.Y), EulerKineticEnergy(I, w0), settings));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(EulerAngularMomentum(I, q.Y), EulerAngularMomentum(I, w0), settings));
+
+                // Verify that energy and angular momentum conservation is respected
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(EulerKineticEnergy(I, q.Y), E2, settings));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(EulerAngularMomentum(I, q.Y), L2, settings));
+
+                // Verify that the result agrees with the analytic solution
+                //ColumnVector YP = new ColumnVector(
+                //    A[0] * AdvancedMath.JacobiCn(v * q.X, k),
+                //    A[1] * AdvancedMath.JacobiSn(v * q.X, k),
+                //    A[2] * AdvancedMath.JacobiDn(v * q.X, k)
+                //);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(q.Y, sln(q.X), settings));
             };
 
-            MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, w0, 10.0, settings);
+            MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, w0, T, settings);
             Console.WriteLine(result.EvaluationCount);
 
-            // We don't have an analytic solution for the general case, but we can check that
-            // we do conserve the conserved quantities.
+            // Verify that one period of evolution has brought us back to our initial state
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.X, T));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y, w0, settings));
 
         }
 

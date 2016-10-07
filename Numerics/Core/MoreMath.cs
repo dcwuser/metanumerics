@@ -285,6 +285,29 @@ namespace Meta.Numerics {
             }
         }
 
+
+        /// <summary>
+        /// Returns the value of n mod m.
+        /// </summary>
+        /// <param name="n">The argument.</param>
+        /// <param name="m">The modulus.</param>
+        /// <returns>The value of n mod m.</returns>
+        /// <remarks>The modulus operator in .NET languages (n % m in C#, n Mod m in VB) returns
+        /// a negative remainder for negative n.
+        /// This is not consistent with the mathematical conventions of modular arithmetic,
+        /// which require that 0 &#x2264; n mod m &lt; m. For example, in C# -7 % 4 returns -3
+        /// (which is simply the negative of 7 % 3), while mathematically -7 % 4 = 1 (which can
+        /// seen by applying the repeating 0, 1, 2, 3 pattern to negative integers. In cases
+        /// where it is important to obtain results consistent mathematical conventions,
+        /// you should call this method, which fixes the .NET result.</remarks>
+        public static long Mod (long n, long m) {
+            long r = n % m;
+            if (r < 0) r += m;
+            return (r);
+            // ((n % m) + m) % m would probably be faster (mod being faster than test-and-branch),
+            // but it would suffer overflow problems for m near integer limits
+        }
+
     }
 
 
@@ -455,14 +478,8 @@ namespace Meta.Numerics {
 
         }
 
-        private static long Mod (long n, long m) {
-            long r = n % m;
-            if (r < 0) r += m;
-            return (r);
-        }
-
         public static double Sin (long z0, double z1) {
-            switch (Mod(z0, 4L)) {
+            switch (MoreMath.Mod(z0, 4L)) {
                 case 0L:
                     return (Math.Sin(z1 * Math.PI / 2.0));
                 case 1L:
@@ -478,7 +495,7 @@ namespace Meta.Numerics {
         }
 
         public static double Cos (long z0, double z1) {
-            switch (Mod(z0, 4L)) {
+            switch (MoreMath.Mod(z0, 4L)) {
                 case 0L:
                     return (Math.Cos(z1 * Math.PI / 2.0));
                 case 1L:

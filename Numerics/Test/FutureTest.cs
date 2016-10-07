@@ -21,6 +21,23 @@ namespace Test {
     public class FutureTest {
 
 
+
+
+
+
+        [TestMethod]
+        public void JacobiPeriod () {
+
+
+
+        }
+
+
+
+
+
+
+
         [TestMethod]
         public void TimeReduction () {
 

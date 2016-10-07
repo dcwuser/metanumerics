@@ -279,7 +279,7 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Computes the incomplete elliptic integral of the first kind.
         /// </summary>
-        /// <param name="phi">The integration angle (in radians).</param>
+        /// <param name="phi">The amplitude (in radians).</param>
         /// <param name="k">The elliptic modulus, which must lie between zero and one.</param>
         /// <returns>The value of the Legendre integral F(k).</returns>
         /// <remarks>
@@ -369,7 +369,7 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Computes the incomplete elliptic integral of the second kind.
         /// </summary>
-        /// <param name="phi">The integration angle (in radians).</param>
+        /// <param name="phi">The amplitude (in radians).</param>
         /// <param name="k">The elliptic modulus, which must lie between zero and one.</param>
         /// <returns>The value of E(phi,k).</returns>
         /// <remarks>

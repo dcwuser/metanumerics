@@ -230,6 +230,7 @@ namespace Test {
 
             MultivariateSample parameters = new MultivariateSample(3);
             MultivariateSample covariances = new MultivariateSample(6);
+            Sample tests = new Sample();
             for (int i = 0; i < 100; i++) {
 
                 TimeSeries series = GenerateAR1TimeSeries(alpha, mu, sigma, n, i + 314159);
@@ -245,6 +246,8 @@ namespace Test {
                     result.CovarianceMatrix[0, 2],
                     result.CovarianceMatrix[1, 2]
                 );
+
+                tests.Add(result.GoodnessOfFit.Probability);
 
             }
 
@@ -265,6 +268,22 @@ namespace Test {
             // quite strongly with alpha, so the computed var(m) have a very long tail. This pushes the
             // mean computed var(m) quite a bit higher than a typical value, so we use medians instead
             // of means for our best guess for the predicted variance.
+
+            TestResult ks = tests.KolmogorovSmirnovTest(new UniformDistribution());
+            Assert.IsTrue(ks.Probability > 0.05);
+
+        }
+
+        [TestMethod]
+        public void TimeSeriesBadFit () {
+
+            // Fit AR1 to MA1; the fit should be bad
+
+            TimeSeries series = GenerateMA1TimeSeries(0.4, 0.3, 0.2, 1000);
+
+            FitResult result = series.FitToAR1();
+
+            Assert.IsTrue(result.GoodnessOfFit.Probability < 0.01);
 
         }
 
@@ -292,6 +311,29 @@ namespace Test {
             TimeSeries series = GenerateAR1TimeSeries(0.3, 0.2, 0.1, 100);
             TestResult result = series.LjungBoxTest(10);
             Assert.IsTrue(result.Probability < 0.05);
+
+        }
+
+        [TestMethod]
+        public void DifferenceToStationarity () {
+
+            int n = 100;
+            // Generate white noise
+            TimeSeries series = GenerateMA1TimeSeries(0.0, 0.1, 1.0, 100);
+
+            // Integrate it
+            series.Integrate(0.0);
+            //Assert.IsTrue(series.Count == n);
+            // The result should be correlated
+            TestResult result1 = series.LjungBoxTest();
+            Assert.IsTrue(result1.Probability < 0.01);
+
+            // Difference to return to original values
+            series.Difference();
+            //Assert.IsTrue(series.Count == (n - 1));
+            // The result should be correlated
+            TestResult result2 = series.LjungBoxTest();
+            Assert.IsTrue(result2.Probability > 0.01);
 
         }
 

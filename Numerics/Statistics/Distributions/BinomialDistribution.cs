@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
-using Meta.Numerics;
 using Meta.Numerics.Functions;
 
 namespace Meta.Numerics.Statistics.Distributions {
@@ -25,8 +25,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="p">The probability of the success in a single trial, which must lie between zero and one.</param>
         /// <param name="n">The number of trials, which must be positive.</param>
         public BinomialDistribution (double p, int n) {
-            if ((p < 0.0) || (p > 1.0)) throw new ArgumentOutOfRangeException("p");
-            if (n < 1) throw new ArgumentOutOfRangeException("n");
+            if ((p < 0.0) || (p > 1.0)) throw new ArgumentOutOfRangeException(nameof(p));
+            if (n < 1) throw new ArgumentOutOfRangeException(nameof(n));
             this.p = p;
             this.q = 1.0 - p;
             this.n = n;
@@ -93,24 +93,44 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
 
-        // There are multiple ways to get 
-
         /// <inheritdoc />
         public override double Moment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else {
-                // if m is large, this is slow; find a better way
-                return (ExpectationValue(delegate (int k) { return (MoreMath.Pow(k, r)); }));
+
+                if (n < 2 * r) {
+
+                    // If n is small, just do a weighted sum over the support.
+                    return (ExpectationValue(delegate (int k) { return (MoreMath.Pow(k, r)); }));
+
+                } else {
+
+                    // If n >> r, convert analytically known factorial moments to raw moments
+                    // using Sterling numbers of the 2nd kind. The (falling) factorial moment
+                    //   F_r = (n)_r p^r
+                    // where (n)_r is a falling factorial.
+
+                    double[] s = AdvancedIntegerMath.StirlingNumbers2(r);
+                    double t = 1.0;
+                    double M = 0.0;
+                    for (int k = 1; k <= r; k++) {
+                        // s[0] = 0 (except for r=0, in which case we have already returned above)
+                        t *= (n - (k - 1)) * p;
+                        M += s[k] * t;
+                    }
+                    return (M);
+                }
+                
             }
         }
 
         // The definition of the central moment produces:
         //   C_{r} = \sum{k=0}^{n} (k - np)^r { n \choose k } p^k q^{n-k}
         // This requires a large number of terms when n is large.
-        
+
         // There is a well-known recurrsion:
         //  C_{r+1} = p q [ n r C_{r-1} + \frac{d}{dp} C_{r} ]
         // but this requires symbolic differentiation and produces polynomials whose evaluation may be subject to cancelation.
@@ -123,30 +143,38 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double MomentAboutMean (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
                 return (0.0);
             } else {
-
-                // This requires computing r(r-1)/2 binomial coefficients. Summing over all values requires computing n binomial coefficients.
-
-                double[] C = new double[r + 1];
-                C[0] = 1.0;
-                C[1] = 0.0;
-
-                for (int i = 2; i <= r; i++) {
-                    double s = 0.0;
-                    for (int j = 0; j <= i - 2; j++) {
-                        s += AdvancedIntegerMath.BinomialCoefficient(i - 1, j) * (n * q * C[j] - C[j + 1]);
-                    }
-                    C[i] = p * s;
-                }
-
+                double[] C = CentralMoments(r);
                 return (C[r]);
-
             }
+        }
+
+        internal override double[] CentralMoments (int rMax) {
+ 
+            double[] C = new double[rMax + 1];
+            C[0] = 1.0;
+
+            if (rMax == 0) return (C);
+
+            C[1] = 0.0;
+
+            for (int r = 2; r <= rMax; r++) {
+                double s = 0.0;
+                IEnumerator<double> B = AdvancedIntegerMath.BinomialCoefficients(r - 1).GetEnumerator();
+                for(int k = 0; k <= r - 2; k++) {
+                    B.MoveNext();
+                    s += B.Current * (n * q * C[k] - C[k + 1]);
+                }
+                C[r] = p * s;
+            }
+
+            return (C);
+
         }
 
         // for any m larger than a few, this is a slow way to compute explicit moment
@@ -178,7 +206,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override int InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             if (n < 16) {
 
                 // for small m, just add up probabilities directly
@@ -186,20 +214,6 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double r = p / q;
                 double PP = MoreMath.Pow(q, n);
                 double PS = 0.0;
-                /*
-                using (IEnumerator<double> B = AdvancedIntegerMath.BinomialCoefficients(m).GetEnumerator()) {
-                    // by ending this loop at k = m - 1 instead of k = m, we not only avoid evaluating P(m), but we also
-                    // ensure that if PS = 0.999999 due to floating point noise, and we have P = 0.99999999, we dont
-                    // return m+1 when we should return m
-                    for (int k = 0; k < m; k++) {
-                        B.MoveNext();
-                        PS += B.Current * PP;
-                        if (PS >= P) return(k);
-                        PP *= r;
-                    }
-                    return (m);
-                }
-                */
                 
                 int k = -1;
                 foreach (double B in AdvancedIntegerMath.BinomialCoefficients(n)) {
@@ -211,19 +225,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 // we "shouldn't" reach here, but if floating point jitter makes all the values add up to 0.999999 instead of 1,
                 // and we have P = 0.99999999, it could happen, so in this case we return m
                 return (n);
-                /*
-                // for small distributions, just add probabilities directly
-                int k = 0;
-                double P0 = MoreMath.Pow(q, m);
-                double PP = P0;
-                while (k < m) {
-                    if (P <= PP) break;
-                    k++;
-                    P0 *= (m + 1 - k) / k * p / q;
-                    PP += P0;
-                }
-                return (k);
-                */
+
             } else {
                 // for larger distributions, use bisection
                 // this will require log_{2}(m) CDF evaluations, which is at most 31

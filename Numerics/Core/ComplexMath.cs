@@ -272,7 +272,7 @@ namespace Meta.Numerics {
         public static Complex Pow (double x, Complex z) {
             if (x < 0.0) throw new ArgumentOutOfRangeException("x");
             if (z == Complex.Zero) return (Complex.One);
-            if (x == Complex.Zero) return (Complex.Zero);
+            if (x == 0.0) return (Complex.Zero);
             double m = Math.Pow(x, z.Re);
             double t = Math.Log(x) * z.Im;
             return (new Complex(m * MoreMath.Cos(t), m * MoreMath.Sin(t)));

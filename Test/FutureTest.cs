@@ -20,47 +20,211 @@ namespace Test {
     [TestClass]
     public class FutureTest {
 
+        [TestMethod]
+        public void BugXXXX () {
+            
+            UncertainMeasurementSample uncertainSample = new UncertainMeasurementSample();
 
+            uncertainSample.Add(35.95, 5250.00, 1.0);
+            uncertainSample.Add(36.39,5110.00, 1.0);
+            uncertainSample.Add(30.29,3940.00, 1.0);
+            uncertainSample.Add(34.30,5490.00, 1.0);
+            uncertainSample.Add(35.27,6720.00, 1.0);
+            uncertainSample.Add(34.43,5320.00, 1.0);
+            uncertainSample.Add(35.78,5690.00, 1.0);
+            uncertainSample.Add(35.90,4820.00, 1.0);
+            uncertainSample.Add(35.83,5290.00, 1.0);
+            uncertainSample.Add(39.74,6010.00, 1.0);
+            uncertainSample.Add(36.54,5460.00, 1.0);
+            uncertainSample.Add(35.90,6610.00, 1.0);
+            uncertainSample.Add(36.83,6700.00, 1.0);
+            uncertainSample.Add(33.96,4650.00, 1.0);
+            uncertainSample.Add(36.05,6850.00, 1.0);
+            uncertainSample.Add(32.22,5100.00, 1.0);
+            uncertainSample.Add(29.33,4840.00, 1.0);
+            uncertainSample.Add(31.14,3670.00, 1.0);
+            uncertainSample.Add(35.08,5670.00, 1.0);
+            uncertainSample.Add(26.10,2710.00, 1.0);
+            uncertainSample.Add(29.97,4370.00, 1.0);
+            uncertainSample.Add(32.01,5230.00, 1.0);
+            uncertainSample.Add(36.28,5680.00, 1.0);
+            uncertainSample.Add(33.39,4300.00, 1.0);
+            uncertainSample.Add(33.26,3660.00, 1.0);
+            uncertainSample.Add(32.48,4650.00, 1.0);
+            uncertainSample.Add(30.95,4080.00, 1.0);
+            uncertainSample.Add(27.10,2980.00, 1.0);
+            uncertainSample.Add(30.41,3950.00, 1.0);
+            uncertainSample.Add(31.10,2860.00, 1.0);
+            uncertainSample.Add(26.35,3280.00, 1.0);
+            uncertainSample.Add(29.78,2930.00, 1.0);
+            uncertainSample.Add(27.77,2960.00, 1.0);
+            uncertainSample.Add(28.98,2870.00, 1.0);
+            uncertainSample.Add(28.53,3310.00, 1.0);
+            uncertainSample.Add(27.32,2140.00, 1.0);
+            uncertainSample.Add(27.14,1820.00, 1.0);
+            uncertainSample.Add(27.82,3020.00, 1.0);
+            uncertainSample.Add(25.49,2360.00, 1.0);
+            uncertainSample.Add(23.76,2140.00, 1.0);
+            uncertainSample.Add(28.75,2680.00, 1.0);
+            uncertainSample.Add(25.96,2390.00, 1.0);
+            uncertainSample.Add(24.92,2330.00, 1.0);
+            uncertainSample.Add(27.20,2460.00, 1.0);
+            uncertainSample.Add(25.18,1990.00, 1.0);
+            uncertainSample.Add(25,2130.00, 1.0);
+            uncertainSample.Add(24.81,1980.00, 1.0);
+            uncertainSample.Add(22.49,1320.00, 1.0);
+            uncertainSample.Add(21.62,986.00, 1.0);
+            uncertainSample.Add(21.02,875.00, 1.0);
+            uncertainSample.Add(18.83,927.00, 1.0);
+            uncertainSample.Add(19.10,929.00, 1.0);
+            uncertainSample.Add(17.21,656.00, 1.0);
+            uncertainSample.Add(16.92,564.00, 1.0);
+            uncertainSample.Add(16.21,662.00, 1.0);
+            uncertainSample.Add(20.02,878.00, 1.0);
+            uncertainSample.Add(16.70,536.00, 1.0);
+            uncertainSample.Add(15.96,480.00, 1.0);
+            uncertainSample.Add(17.37,580.00, 1.0);
+
+            FitResult result = uncertainSample.FitToFunction(
+                (double[] c, double x) => c[0] * Math.Pow(x, c[1]),
+                new double[] { 1.0, 1.0 }
+            );
+
+            BivariateSample bivariate = new BivariateSample();
+            foreach (UncertainMeasurement<double> point in uncertainSample) {
+                bivariate.Add(point.X, point.Y.Value);
+            }
+
+            FitResult nlResult = bivariate.NonlinearRegression((
+                IList<double> c, double x) => c[0] * Math.Pow(x, c[1]),
+                new double[] { 1.0, 1.0 }
+            );
+            bivariate.X.Transform(Math.Log);
+            bivariate.Y.Transform(Math.Log);
+            FitResult bivariateResult = bivariate.LinearRegression();
+            UncertainValue a = UncertainMath.Exp(bivariateResult.Parameter(0));
+            UncertainValue b = bivariateResult.Parameter(1);
+
+        }
+
+        [TestMethod]
+        public void NonlinearRegressionTest () {
+
+            BivariateSample s = new BivariateSample();
+            s.Add(1.0, 2.0);
+            s.Add(3.0, 2.0);
+            s.Add(3.0, 4.0);
+            s.Add(5.0, 4.0);
+
+            FitResult linearFit = s.LinearRegression();
+            FitResult nonlinearFit = s.NonlinearRegression(
+                (IList<double> c, double x) => c[0] + c[1] * x,
+                new double[] { 1.0, 1.0 } 
+            );
+
+        }
+
+        public static Complex Hypergeometric2F1_Series(double a, double b, double c, Complex z) {
+
+            Complex t = a * b / c * z;
+            Complex s = 1.0 + t;
+            for (int k = 2; k < 128; k++) {
+                Complex s_old = s;
+                a += 1.0;
+                b += 1.0;
+                c += 1.0;
+                t *= a * b / c / k * z;
+                s += t;
+                if (s == s_old) return (s);
+            }
+
+            throw new NonconvergenceException();
+
+        }
+
+        public static Complex Hypergeometric2F1 (double a, double b, double c, Complex z) {
+
+            double za = ComplexMath.Abs(z);
+            if (za > 1.0) {
+
+                Complex zp = 1.0 / z;
+                Complex t1 = ComplexMath.Pow(-z, -a)
+                    / AdvancedMath.Gamma(b) / AdvancedMath.Gamma(c - a)
+                    * Hypergeometric2F1(a, a - c + 1.0, a - b + 1.0, zp);
+                Complex t2 = ComplexMath.Pow(-z, -b)
+                    / AdvancedMath.Gamma(a) / AdvancedMath.Gamma(c - b)
+                    * Hypergeometric2F1(b, b - c + 1.0, b - a + 1.0, zp);
+                return ((t1 - t2) * Math.PI / Math.Sin(Math.PI * (b - a)));
+
+            } else if (za < 0.75) {
+
+                return (Hypergeometric2F1_Series(a, b, c, z));
+
+            } else {
+                throw new NotImplementedException();
+            }
+
+        }
 
 
 
 
         [TestMethod]
+        [Ignore]
         public void JacobiPeriod () {
 
+            double k = 0.875;
 
+            int n = 0;
+            double a = 1.0;
+            double b = Math.Sqrt(1.0 - k * k);
+            double c2 = a * a - b * b;
+            double s = c2;
+            while (a != b) {
+
+                double ap = (a + b) / 2.0;
+                double bp = Math.Sqrt(a * b);
+                double c2p = MoreMath.Sqr(c2 / 4.0 / ap);
+
+                n++;
+                a = ap;
+                b = bp;
+                c2 = c2p;
+                s += MoreMath.Pow(2.0, n) * c2;
+
+            }
+
+            // This works, but s~1 for k~1, so don't use to compute E for k~1.
 
         }
-
-
-
-
-
-
 
         [TestMethod]
-        public void TimeReduction () {
+        public void PredictionVariance () {
 
-            Console.WriteLine(AdvancedMath.ReduceByCustom(1000.0));
+            Distribution xDistribution = new UniformDistribution(Interval.FromEndpoints(1.0, 8.0));
+            Distribution eDistribuiton = new NormalDistribution();
 
-            double y1 = 0.0;
-            Stopwatch s1 = Stopwatch.StartNew();
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E1, 1.0E10, 10000)) {
-                y1 += AdvancedMath.ReduceByDecimal(x);
+            Sample zSample = new Sample();
+            Sample vSample = new Sample();
+
+            for (int i = 0; i < 100; i++) {
+                Random rng = new Random(i);
+                BivariateSample sample = new BivariateSample();
+                for (int j = 0; j < 10; j++) {
+                    double x = xDistribution.GetRandomValue(rng);
+                    double y = -1.0 + 2.0 * x + eDistribuiton.GetRandomValue(rng);
+                    sample.Add(x, y);
+                }
+                FitResult fit = sample.LinearRegression();
+                double x0 = 3.0;
+                double yp = fit.Parameters[0] + x0 * fit.Parameters[1];
+                double y0 = -1.0 + 2.0 * x0;
+                zSample.Add(yp - y0);
+                vSample.Add(sample.Y.Variance * Math.Sqrt(1.0 - MoreMath.Sqr(sample.CorrelationCoefficient)));
             }
-            s1.Stop();
-            Console.WriteLine(s1.ElapsedMilliseconds);
-            Console.WriteLine(y1);
 
-            double y2 = 0.0;
-            Stopwatch s2 = Stopwatch.StartNew();
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E1, 1.0E10, 10000)) {
-                y2 += AdvancedMath.ReduceByCustom(x);
-            }
-            s2.Stop();
-            Console.WriteLine(s2.ElapsedMilliseconds);
-            Console.WriteLine(y2);
         }
+
 
         [TestMethod]
         public void Seperate () {

@@ -42,7 +42,7 @@ namespace Test {
 
             // This is a simple test of a seperable integral
 
-            Func<IList<double>, double> f = delegate(IList<double> x) {
+            Func<IList<double>, double> f = delegate (IList<double> x) {
                 double y = 1.0;
                 for (int j = 0; j < x.Count; j++) {
                     y *= MoreMath.Pow(x[j], j);
@@ -68,7 +68,7 @@ namespace Test {
 
             // The volume of a d-sphere is \frac{\pi^{d/2}}{\Gamma(d/2 + 1)}
             // and the fraction in the first quadrant is 1/2^d of that
-            
+
             // This is a simple test of the integration of a discontinuous function
 
             Func<IList<double>, double> f = delegate (IList<double> x) {
@@ -77,9 +77,9 @@ namespace Test {
                     r2 += x[j] * x[j];
                 }
                 if (r2 <= 1.0) {
-                    return(1.0);
+                    return (1.0);
                 } else {
-                    return(0.0);
+                    return (0.0);
                 }
             };
 
@@ -125,7 +125,7 @@ namespace Test {
             // At http://mathworld.wolfram.com/DoubleIntegral.html, Mathworld
             // lists a few double integrals with known values that we take as
             // tests.
-            
+
             // One of the integrals listed there is just the zeta integral for d=2
             // which we do above, so we omit it here.
 
@@ -148,13 +148,70 @@ namespace Test {
             Console.WriteLine("{0} ({1})", i2.Value, i2.Precision);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(i2.Value, 4.0 * AdvancedMath.Catalan, new EvaluationSettings() { AbsolutePrecision = 2.0 * i2.Precision }));
             // For higher precision demands on this integral, we start getting Infinity +/- NaN for estimate and never terminate, look into this.
-            
+
             IntegrationResult i3 = MultiFunctionMath.Integrate(
                 (IList<double> x) => (x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1]),
                 UnitCube(2)
             );
             Console.WriteLine("{0} ({1})", i3.Value, i3.Precision);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(i3.Value, AdvancedMath.EulerGamma, new EvaluationSettings() { AbsolutePrecision = 2.0 * i3.Precision }));
+
+        }
+
+        [TestMethod]
+        public void UnitSquareIntegrals () {
+
+            // http://mathworld.wolfram.com/UnitSquareIntegral.html has a long list of integrals over the unit square.
+
+            // Many are taken from
+            // Guillera and Sondow, "Double Integrals and Infinite Products for Some Classical Constants Via Analytic Continuations of Lerch's Transcendent." 16 June 2005.
+            // http://arxiv.org/abs/math.NT/0506319
+
+            Assert.IsTrue(
+                MultiFunctionMath.Integrate(
+                    (IList<double> x) => 1.0 / (1.0 - x[0] * x[1]),
+                    UnitCube(2)
+                ).Estimate.ConfidenceInterval(0.95).ClosedContains(
+                    AdvancedMath.RiemannZeta(2.0)
+                )
+            );
+
+            Assert.IsTrue(
+                MultiFunctionMath.Integrate(
+                    (IList<double> x) => -Math.Log(x[0] * x[1]) / (1.0 - x[0] * x[1]),
+                    UnitCube(2)
+                ).Estimate.ConfidenceInterval(0.95).ClosedContains(
+                    2.0 * AdvancedMath.RiemannZeta(3.0)
+                )
+            );
+
+            Assert.IsTrue(
+                MultiFunctionMath.Integrate(
+                    (IList<double> x) => (x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1]),
+                    UnitCube(2)
+                ).Estimate.ConfidenceInterval(0.95).ClosedContains(
+                    AdvancedMath.EulerGamma
+                )
+            );
+
+            Assert.IsTrue(
+                MultiFunctionMath.Integrate(
+                    (IList<double> x) => (x[0] - 1.0) / (1.0 + x[0] * x[1]) / Math.Log(x[0] * x[1]),
+                    UnitCube(2)
+                ).Estimate.ConfidenceInterval(0.95).ClosedContains(
+                    Math.Log(4.0 / Math.PI)
+                )
+            );
+
+            Assert.IsTrue(
+                MultiFunctionMath.Integrate(
+                    (IList<double> x) => 1.0 / (1.0 + MoreMath.Sqr(x[0] * x[1])),
+                    UnitCube(2)
+                ).Estimate.ConfidenceInterval(0.95).ClosedContains(
+                    AdvancedMath.Catalan
+                )
+            );
+
 
         }
 

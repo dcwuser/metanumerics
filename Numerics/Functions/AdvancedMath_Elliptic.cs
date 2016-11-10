@@ -1,5 +1,5 @@
 ﻿using System;
-
+using System.Diagnostics;
 
 namespace Meta.Numerics.Functions {
 
@@ -171,6 +171,36 @@ namespace Meta.Numerics.Functions {
         // precompute the cube root of four, used by CarlsonD algorithm
         private static readonly double c4 = Math.Pow(2.0, 2.0 / 3.0);
 
+        /// <summary>
+        /// Computes the Carlson integral R<sub>G</sub>.
+        /// </summary>
+        /// <param name="x">The first argument, which must be non-negative.</param>
+        /// <param name="y">The second argument, which must be non-negative.</param>
+        /// <param name="z">The third argument, which must be non-negative.</param>
+        /// <returns>The value of R<sub>G</sub>(x, y, z).</returns>
+        public static double CarlsonG (double x, double y, double z) {
+
+            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
+            if (y < 0.0) throw new ArgumentOutOfRangeException("y");
+            if (z < 0.0) throw new ArgumentOutOfRangeException("z");
+
+            // We will use
+            // 2 R_G = z R_F - 1/3 (x-z)(y-z) R_D + \sqrt{xy/z}
+
+            // To avoid cancelation, we need (x-z)(y-z) < 0. Since R_G is symmetric,
+            // we can permute arguments to ensure this. We need z to be the middle-sized
+            // argument, e.g. x < z < y.
+            if (x > y) Global.Swap(ref x, ref y);
+            if (x > z) Global.Swap(ref x, ref z);
+            if (z > y) Global.Swap(ref z, ref y);
+
+            double s = (x - z) * (y - z);
+            Debug.Assert(s <= 0.0);
+
+            return ((z * CarlsonF(x, y, z) - s / 3.0 * CarlsonD(x, y, z) + Math.Sqrt(x * y / z)) / 2.0);
+
+        }
+
         // Series for complete elliptic integral of the first kind (A&S 17.3.11):
         //   K(k) = (pi/2) ( 1 + (1/2 k)^2 + (1/2 k 3/4 k)^2 + (1/2 k 3/4 k 5/6 k)^2 + ... )
 
@@ -212,14 +242,14 @@ namespace Meta.Numerics.Functions {
         // AGM(a,b) is determined by taking the arithmetic mean (a+b)/2 and the geometric mean sqrt(ab) and re-inserting them as
         // arguments until convergence is achieved.
 
-        private static double Elliptic_AGM (double k) {
+        private static double EllipticK_AGM (double k) {
 
-            double a = 1.0 - k;
-            double b = 1.0 + k;
+            double a = 1.0;
+            double b = Math.Sqrt(1.0 - k * k);
 
-            // starting from 1-k, 1+k, the first iteration will always take us to 1, k',
-            // so although it looks prettier (more symmetric) to start with 1-k, 1-k, it's computationally
-            // faster to start with 1, k'
+            // Starting from 1-k, 1+k, the first iteration will always take us to 1, k',
+            // so although it looks prettier (more symmetric) to start with 1-k, 1-k,
+            // it's computationally faster to start with 1, k'.
 
             for (int n=0; n < Global.SeriesMax; n++) {
 
@@ -262,17 +292,20 @@ namespace Meta.Numerics.Functions {
         public static double EllipticK (double k) {
             if ((k < 0) || (k > 1.0)) throw new ArgumentOutOfRangeException("k");
             if (k < 0.25) {
-                // for small k, use the series near k~0
+                // For small k, use the series near k~0.
                 return (EllipticK_Series(k));
-            } else if (k > 0.875) {
-                // for large k, use the asymptotic expansion near k~1, k'~0
-                double k1 = Math.Sqrt(1.0 - k * k);
-                // k'=0.484 at k=0.875
-                if (k1 == 0.0) return (Double.PositiveInfinity);
-                return (EllipticK_Asymptotic(k1));
+            } else if (k < 0.875) {
+                // For intermediate k, use the AGM method.
+                return (EllipticK_AGM(k));
             } else {
-                // in between, use the AGM method
-                return (Elliptic_AGM(k));
+                // For large k, use the asymptotic expansion. (k' = 0.484 at k=0.875)
+                double k1 = Math.Sqrt(1.0 - k * k);
+                if (k1 == 0.0) {
+                    return (Double.PositiveInfinity);
+                } else {
+                    return (EllipticK_Asymptotic(k1));
+                }
+
             }
         }
 

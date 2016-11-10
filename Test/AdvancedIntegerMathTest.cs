@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
+using Meta.Numerics.Matrices;
+using Meta.Numerics.Statistics.Distributions;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -186,7 +189,7 @@ namespace Test {
 
         [TestMethod]
         public void BinomialCoefficientSums () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 8)) {
                 double S0 = 0.0;
                 double S1 = 0.0;
                 double S2 = 0.0;
@@ -205,7 +208,7 @@ namespace Test {
 
         [TestMethod]
         public void BinomialCoefficientAgreement () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
                 int m = -1;
                 IEnumerator B = AdvancedIntegerMath.BinomialCoefficients(n).GetEnumerator();
                 while (B.MoveNext()) {
@@ -307,5 +310,237 @@ namespace Test {
                 ));
             }
         }
+
+        [TestMethod]
+        public void BellNumberAsPoissonMoment () {
+
+            // The Bell numbers are the moments of the Poisson distribution
+            // with \mu = 1.
+
+            UnivariateDistribution d = new PoissonDistribution(1.0);
+
+            foreach (int r in TestUtilities.GenerateIntegerValues(1, 50, 4)) {
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedIntegerMath.BellNumber(r),
+                    d.Moment(r)
+                ));
+            }
+
+        }
+
+        [TestMethod]
+        public void BellNumberRecurrence () {
+
+            // B_{n+1} = \sum_{k=0}^{n} {n \choose k} B_k
+
+            foreach (int r in TestUtilities.GenerateIntegerValues(50, 100, 2)) {
+                double s = 0.0;
+                IEnumerator<double> b = AdvancedIntegerMath.BinomialCoefficients(r).GetEnumerator();
+                for (int k = 0; k <= r; k++) {
+                    b.MoveNext();
+                    s += b.Current * AdvancedIntegerMath.BellNumber(k);
+                }
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(s, AdvancedIntegerMath.BellNumber(r + 1)));
+            }
+
+        }
+
+        [TestMethod]
+        public void StirlingNumber1SpecialCases () {
+
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber1(0, 0) == 1);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber1(1, 0) == 0);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber1(1, 1) == 1);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber1(2, 0) == 0);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber1(2, 1) == 1);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber1(2, 2) == 1);
+
+            foreach (int m in TestUtilities.GenerateIntegerValues(2, 100, 4)) {
+
+                Assert.IsTrue(AdvancedIntegerMath.StirlingNumber1(m, 0) == 0);
+                Assert.IsTrue(AdvancedIntegerMath.StirlingNumber1(m, 1) == AdvancedIntegerMath.Factorial(m - 1));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedIntegerMath.StirlingNumber1(m, 2),
+                    AdvancedIntegerMath.Factorial(m - 1) * AdvancedIntegerMath.HarmonicNumber(m - 1)
+                ));
+
+                Assert.IsTrue(AdvancedIntegerMath.StirlingNumber1(m, m) == 1);
+                Assert.IsTrue(AdvancedIntegerMath.StirlingNumber1(m, m - 1) == AdvancedIntegerMath.BinomialCoefficient(m, 2));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedIntegerMath.StirlingNumber1(m, m - 2),
+                    (3 * m - 1) * AdvancedIntegerMath.BinomialCoefficient(m, 3) / 4
+                ));
+
+            }
+
+        }
+
+        [TestMethod]
+        public void StirlingNumber2SpecialCases () {
+
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(0, 0) == 1);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(1, 0) == 0);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(1, 1) == 1);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(2, 0) == 0);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(2, 1) == 1);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(2, 2) == 1);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(3, 0) == 0);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(3, 1) == 1);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(3, 2) == 3);
+            Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(3, 3) == 1);
+
+            foreach (int m in TestUtilities.GenerateIntegerValues(2, 100, 4)) {
+
+                Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(m, 0) == 0);
+                Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(m, 1) == 1);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedIntegerMath.StirlingNumber2(m, 2),
+                    MoreMath.Pow(2, m - 1) - 1
+                ));
+
+                Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(m, m) == 1);
+                Assert.IsTrue(AdvancedIntegerMath.StirlingNumber2(m, m - 1) == AdvancedIntegerMath.BinomialCoefficient(m, 2));
+
+            }
+
+        }
+
+        [TestMethod]
+        public void StirlingNumberInequality () {
+
+            // Rows are log-concave
+
+            foreach (int n in TestUtilities.GenerateIntegerValues(10, 100, 4)) {
+                foreach (int k in TestUtilities.GenerateRealValues(2, n-1, 4)) {
+
+                    Assert.IsTrue(
+                        MoreMath.Sqr(AdvancedIntegerMath.StirlingNumber1(n, k)) >=
+                        AdvancedIntegerMath.StirlingNumber1(n, k - 1) *
+                        AdvancedIntegerMath.StirlingNumber1(n, k + 1)
+                    );
+
+                    Assert.IsTrue(
+                        MoreMath.Sqr(AdvancedIntegerMath.StirlingNumber2(n, k)) >=
+                        AdvancedIntegerMath.StirlingNumber2(n, k - 1) *
+                        AdvancedIntegerMath.StirlingNumber2(n, k + 1)
+                    );
+
+                }
+            }
+
+        }
+
+        [TestMethod]
+        public void StirlingNumbers1RowSum () {
+
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
+
+                double sum = 0.0;
+                foreach (double s in AdvancedIntegerMath.StirlingNumbers1(n)) {
+                    sum += s;
+                }
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(sum, AdvancedIntegerMath.Factorial(n)));
+
+            }
+
+        }
+
+        [TestMethod]
+        public void StirlingNumbers2RowSum () {
+
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
+
+                double sum = 0.0;
+                foreach (double s in AdvancedIntegerMath.StirlingNumbers2(n)) {
+                    sum += s;
+                }
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(sum, AdvancedIntegerMath.BellNumber(n)));
+
+            }
+
+        }
+
+        [TestMethod]
+        public void StirlingNumbers2ColumnSum () {
+
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
+                foreach (int k in TestUtilities.GenerateIntegerValues(1, n, 4)) {
+                    
+                    double sum = 0.0;
+                    for (int m = k; m <= n; m++) {
+                        sum +=
+                            AdvancedIntegerMath.BinomialCoefficient(n, m) *
+                            AdvancedIntegerMath.StirlingNumber2(m, k);
+                    }
+
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(sum, AdvancedIntegerMath.StirlingNumber2(n + 1, k + 1)));
+
+                }
+            }
+
+        }
+
+        [TestMethod]
+        public void StirlingNumber2Parity () {
+
+            // Sterling numbers of the 2nd kind provably have the same parity
+            // as a particular related binomial coefficient.
+
+            // This is actually quite a difficult test because it tests the least
+            // significant bits of the numbers. We can't operate on values
+            // with more than 52 bits, since for those numbers we will loose
+            // the least significant bits.
+
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 50, 4)) {
+                foreach (int k in TestUtilities.GenerateIntegerValues(1, n, 4)) {
+
+                    long B = (long) AdvancedIntegerMath.BinomialCoefficient(n - k / 2 - 1, n - k);
+                    long S = (long) AdvancedIntegerMath.StirlingNumber2(n, k);
+
+                    Assert.IsTrue(B % 2 == S % 2);
+
+                }
+            }
+
+        }
+
+        [TestMethod]
+        public void StirlingNumberMatrixInverse () {
+
+            int n = 8;
+
+            SquareMatrix S1 = new SquareMatrix(n);
+            for (int i = 0; i < n; i++) {
+                double[] s = AdvancedIntegerMath.StirlingNumbers1(i);
+                for (int j = 0; j < s.Length; j++) {
+                    if ((i - j) % 2 == 0) {
+                        S1[i, j] = s[j];
+                    } else {
+                        S1[i, j] = -s[j];
+                    }
+                }
+            }
+
+            SquareMatrix S2 = new SquareMatrix(n);
+            for (int i = 0; i < n; i++) {
+                double[] s = AdvancedIntegerMath.StirlingNumbers2(i);
+                for (int j = 0; j < s.Length; j++) {
+                    S2[i, j] = s[j];
+                }
+            }
+
+            SquareMatrix S12 = S1 * S2;
+
+            SquareMatrix I = new SquareMatrix(n);
+            for (int i = 0; i < n; i++) I[i, i] = 1.0;
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(S12, I));
+
+        }
+
+
+        // http://www.cs.columbia.edu/~cs4205/files/CM5.pdf
+        // contains many lesser-known relationships among Stirling numbers
     }
 }

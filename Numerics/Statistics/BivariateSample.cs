@@ -630,6 +630,50 @@ namespace Meta.Numerics.Statistics {
 
 
         /// <summary>
+        /// Finds the parameterized function that best fits the data.
+        /// </summary>
+        /// <param name="f">The parameterized function.</param>
+        /// <param name="start">An initial guess for the parameters.</param>
+        /// <returns>The fit result.</returns>
+        /// <remarks>
+        /// <para>
+        /// In the returned <see cref="FitResult"/>, the parameters appear in the same order as in
+        /// the supplied fit function and initial guess vector. No goodness-of-fit test is returned.
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="f"/> or <paramref name="start"/> is null.</exception>
+        /// <exception cref="InsufficientDataException">There are not more data points than fit parameters.</exception>
+        /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
+        /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
+        public FitResult NonlinearRegression (Func<IList<double>, double, double> f, IList<double> start) {
+
+            if (f == null) throw new ArgumentNullException(nameof(f));
+            if (start == null) throw new ArgumentNullException(nameof(start));
+
+            int n = this.Count;
+            int d = start.Count;
+            if (n <= d) throw new InsufficientDataException();
+
+            MultiExtremum min = MultiFunctionMath.FindLocalMinimum((IList<double> a) => {
+                double ss = 0.0;
+                for (int i = 0; i < n; i++) {
+                    double r = yData[i] - f(a, xData[i]);
+                    ss += r * r;
+                }
+                return (ss);
+            }, start);
+
+            CholeskyDecomposition cholesky = min.HessianMatrix.CholeskyDecomposition();
+            if (cholesky == null) throw new DivideByZeroException();
+            SymmetricMatrix curvature = cholesky.Inverse();
+            curvature = (2.0 * min.Value / (n - d)) * curvature;
+
+            FitResult result = new FitResult(min.Location, curvature, null);
+
+            return (result);
+        }
+
+        /// <summary>
         /// Computes the best-fit linear logistic regression from the data.
         /// </summary>
         /// <returns>The fit result.</returns>

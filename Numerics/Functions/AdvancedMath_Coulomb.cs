@@ -58,6 +58,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        /*
         private static double CoulombPhaseShiftZero (double eta) {
 
             if (eta < 0) return (CoulombPhaseShiftZero(-eta));
@@ -116,7 +117,7 @@ namespace Meta.Numerics.Functions {
             return (s);
 
         }
-
+        */
 
         // each new term introduces factors of rho^2 / (L+1) and 2 eta rho / (L+1), so for this to converge we need
         // rho < sqrt(X) (1 + sqrt(L)) and 2 eta rho < X (1 + L); X ~ 16 gets convergence within 30 terms

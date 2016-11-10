@@ -333,7 +333,8 @@ namespace Meta.Numerics.Statistics {
             // definite, so v is occasionally negative. 
 
             int n = data.Count;
-            int jmax = n / 3;
+            //int jmax = n / 3;
+            int jmax = (int) Math.Floor(Math.Sqrt(n));
 
             double[] c = Autocovariance();
             for (int j = 0; j < c.Length; j++) {
@@ -384,15 +385,22 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The fit with parameters lag-1 coefficient, mean, and standard deviation.</returns>
         public FitResult FitToMA1() {
 
+            if (data.Count < 4) throw new InsufficientDataException();
+
             // MA(1) model is
             //   y_t - \mu = u_t + \beta u_{t-1}
             // where u_t ~ N(0, \sigma) are IID.
 
             // It's easy to show that
             //   m = E(y_t) = \mu
-            //   c0 = V(y_t) = E((y_t - m)^2) = (1 + \beta^2) \sigma^2
-            //   c1 = V(y_t, y_{t-1}) = \beta \sigma^2
-            // So method of moments
+            //   c_0 = V(y_t) = E((y_t - m)^2) = (1 + \beta^2) \sigma^2
+            //   c_1 = V(y_t, y_{t-1}) = \beta \sigma^2
+            // So the method of moments gives
+            //   \beta = \frac{1 - \sqrt{1 - (2 g_1)^2}}{2}
+            //   \mu = m
+            //   \sigma^2 = \frac{c_0}{1 + \beta^2}
+            // It turns out these are very poor (high bias, high variance) estimators,
+            // but they illustrate a basic requirement that g_1 < 1/2.
 
             // The MLE estimator 
 
@@ -418,7 +426,7 @@ namespace Meta.Numerics.Statistics {
             double sigma2 = minimum.Value / (data.Count - 3);
 
             // While there is significant evidence that the MLE value for \beta is biased
-            // for small-n, I know of know anlytic correction.
+            // for small-n, I know of no anlytic correction.
 
             double[] parameters = new double[] { beta, m, Math.Sqrt(sigma2) };
 
@@ -434,8 +442,18 @@ namespace Meta.Numerics.Statistics {
             }
             covariances[1, 1] = sigma2 * (MoreMath.Sqr(1.0 + beta) - 2.0 * beta / n) / n;
             covariances[2, 2] = sigma2 / 2.0 / n;
+
+            TimeSeries residuals = new TimeSeries();
+            double u1 = 0.0;
+            for (int i = 0; i < data.Count; i++) {
+                double u0 = data[i] - m - beta * u1;
+                residuals.Add(u0);
+                u1 = u0;
+            };
+            TestResult test = residuals.LjungBoxTest();
+
             FitResult result = new FitResult(
-                parameters, covariances, null
+                parameters, covariances, test
             );
 
             return (result);
@@ -486,7 +504,7 @@ namespace Meta.Numerics.Statistics {
             //   \frac{\partial^2 L}{\partial \sigma^2} = \frac{-2 n}{\sigma^2}
             //  Mixed derivatives vanish because of the first derivative conditions.
 
-            if (data.Count < 4  ) throw new InsufficientDataException();
+            if (data.Count < 4) throw new InsufficientDataException();
 
             int n = data.Count;
 
@@ -524,8 +542,11 @@ namespace Meta.Numerics.Statistics {
             alpha = alpha + (1.0 + 3.0 * alpha) / n;
 
             double sigma2 = 0.0;
+            TimeSeries residuals = new TimeSeries();
             for (int i = 1; i < data.Count; i++) {
-                sigma2 += MoreMath.Sqr((data[i] - m) - alpha * (data[i - 1] - m));
+                double r = (data[i] - m) - alpha * (data[i - 1] - m);
+                residuals.Add(r);
+                sigma2 += MoreMath.Sqr(r);
             }
             sigma2 = sigma2 / (data.Count - 3);
 
@@ -550,20 +571,23 @@ namespace Meta.Numerics.Statistics {
             covariances[1, 1] = sigma2 / MoreMath.Sqr(1.0 - alpha) * (1.0 - 2.0 * alpha * (1.0 - MoreMath.Pow(alpha, n)) / (1.0 - alpha * alpha) / n) / n;
             covariances[2, 2] = sigma2 / 2.0 / n;
 
+            TestResult test = residuals.LjungBoxTest();
+
              return (new FitResult(
                 parameters,
                 covariances,
-                null
+                test
             ));   
 
         }
 
         /// <summary>
-        /// Recomputes the time series as the series of differences between the values of the original time series.
+        /// Recomputes the time series as the differences between sequential values of the original series.
         /// </summary>
         /// <remarks>
         /// <para>Differencing decreases the number of values in the series by one.</para>
         /// </remarks>
+        /// <seealso cref="Integrate"/>
         public void Difference () {
 
             if (data.Count < 2) throw new InsufficientDataException();
@@ -578,7 +602,35 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Performs a Ljung-Box test for non-correlation of a time series.
+        /// Recomputes the time series as the sums of seqential values of the original series.
+        /// </summary>
+        /// <param name="c">The constant to be added to the first value.</param>
+        /// <seealso cref="Difference"/>
+        public void Integrate (double c) {
+
+            if (data.Count < 1) throw new InsufficientDataException();
+
+            SampleStorage newData = new SampleStorage();
+            newData.Add(data[0] + c);
+            for (int i = 1; i < data.Count; i++) {
+                newData.Add(data[i] + newData[i - 1]);
+            }
+
+            data = newData;
+        }
+
+        /// <summary>
+        /// Performs a Ljung-Box test for non-correlation.
+        /// </summary>
+        /// <returns>The result of the test.</returns>
+        public TestResult LjungBoxTest () {
+            if (data.Count < 2) throw new InsufficientDataException();
+            int kMax = (int) Math.Floor(Math.Sqrt(data.Count));
+            return (LjungBoxTest(kMax));
+        }
+
+        /// <summary>
+        /// Performs a Ljung-Box test for non-correlation with the given number of lags.
         /// </summary>
         /// <param name="kMax">The number of lag times to test.</param>
         /// <returns>The result of the test.</returns>
@@ -588,7 +640,6 @@ namespace Meta.Numerics.Statistics {
             if (kMax >= data.Count) throw new InsufficientDataException();
 
             double[] c = Autocovariance();
-
 
             double Q = 0.0;
             for (int k = 1; k <= kMax; k++) {

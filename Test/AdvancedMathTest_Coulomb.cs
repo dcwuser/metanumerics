@@ -77,11 +77,21 @@ namespace Test {
         }
 
         [TestMethod]
-        public void CoulombSpecialValue () {
+        public void CoulombAtOrigin () {
 
             // F is zero at origin for all L and eta
             Assert.IsTrue(AdvancedMath.CoulombF(0, -1.2, 0.0) == 0.0);
             Assert.IsTrue(AdvancedMath.CoulombF(5, 4.3, 0.0) == 0.0);
+
+
+            // For L = 0, F' and G are finite, non-zero, and related
+            SolutionPair s = AdvancedMath.Coulomb(0, 5.6, 0.0);
+            Assert.IsTrue(s.FirstSolutionValue == 0.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                s.FirstSolutionDerivative * s.SecondSolutionValue,
+                1.0
+            ));
+            Assert.IsTrue(s.SecondSolutionDerivative == Double.NegativeInfinity);
 
         }
 

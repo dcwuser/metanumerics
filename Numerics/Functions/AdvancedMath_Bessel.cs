@@ -300,12 +300,7 @@ namespace Meta.Numerics.Functions {
         private static void BesselY_Series (double nu, double x, out double Y0, out double Y1) {
 
             Debug.Assert(Math.Abs(nu) <= 0.5);
-
-            if (x == 0.0) {
-                Y0 = Double.NegativeInfinity;
-                Y1 = Double.NegativeInfinity;
-                return;
-            }
+            Debug.Assert(x > 0.0);
 
             // polynomial variable and coefficient
 
@@ -394,7 +389,6 @@ namespace Meta.Numerics.Functions {
         private static double BesselJ_Series (double nu, double x) {
             double z = x / 2.0;
             double dJ = AdvancedMath.PowOverGammaPlusOne(z, nu);
-            //double dJ = Math.Pow(z, nu) / AdvancedMath.Gamma(nu + 1.0);
             double J = dJ;
             double zz = -z * z;
             for (int k = 1; k < Global.SeriesMax; k++) {
@@ -417,47 +411,39 @@ namespace Meta.Numerics.Functions {
 
         private static void BesselJ_Series (double nu, double x, out double J, out double JP) {
 
-            if (x == 0.0) {
-                // treat the x = 0 case specially, becase various multipliciations and divisions by zero would give NaNs
-                if (nu == 0.0) {
-                    J = 1.0;
-                    JP = 0.0;
-                } else if (nu < 1.0) {
-                    J = 0.0;
-                    JP = Double.PositiveInfinity;
-                } else if (nu == 1.0) {
-                    J = 0.0;
-                    JP = 0.5;
-                } else {
-                    J = 0.0;
-                    JP = 0.0;
-                }
+            // We divide by x to deal with derivative, so handle x = 0 separately.
+            Debug.Assert(x > 0.0);
+
+            // Evaluate the series of J and J', knowing x != 0
+            // Note that the J' series is just with J series with teach term having one less power,
+            // and each term multipled by the power it has in the J series.
+            double x2 = x / 2.0;
+            double x22 = - x2 * x2;
+            double dJ = AdvancedMath.PowOverGammaPlusOne(x2, nu);
+            /*
+            if (nu < 128.0) {
+                dJ = Math.Pow(x2, nu) / AdvancedMath.Gamma(nu + 1.0);
             } else {
-                // evaluate the series of J and J', knowing x != 0
-                // note that the J' series is just with J series with teach term having one less power, and each term multipled
-                // by the power it has in the J series
-                double x2 = x / 2.0;
-                double x22 = - x2 * x2;
-                double dJ;
-                if (nu < 128.0) {
-                    dJ = Math.Pow(x2, nu) / AdvancedMath.Gamma(nu + 1.0);
-                } else {
-                    // if nu is very big, use log gamma
-                    dJ = Math.Exp(nu * Math.Log(x2) - AdvancedMath.LogGamma(nu + 1.0));
-                }
-                J = dJ; JP = nu * dJ; 
-                for (int k = 1; k < Global.SeriesMax; k++) {
-                    double J_old = J; double JP_old = JP;
-                    dJ *= x22 / k / (nu + k);
-                    J += dJ; JP += (nu + 2 * k) * dJ;
-                    if ((J == J_old) && (JP == JP_old)) {
-                        JP = JP / x;
-                        return;
-                    }
-                }
-                // the J series alone requires 5 ops per term; J' evaulation adds 2 ops per term
-                throw new NonconvergenceException();
+                // if nu is very big, use log gamma
+                dJ = Math.Exp(nu * Math.Log(x2) - AdvancedMath.LogGamma(nu + 1.0));
             }
+            */
+            J = dJ;
+            JP = nu * dJ; 
+            for (int k = 1; k < Global.SeriesMax; k++) {
+                double J_old = J;
+                double JP_old = JP;
+                dJ *= x22 / k / (nu + k);
+                J += dJ;
+                JP += (nu + 2 * k) * dJ;
+                if ((J == J_old) && (JP == JP_old)) {
+                    JP = JP / x;
+                    return;
+                }
+            }
+            // The J series alone requires 5 ops per term; J' evaulation adds 2 ops per term.
+            throw new NonconvergenceException();
+
         }
 
         // computes the ratio f=J_{nu+1}/J_{nu} via a continued fraction
@@ -576,7 +562,7 @@ namespace Meta.Numerics.Functions {
                 double mu = -nu;
                 return (Math.Cos(Math.PI * mu) * BesselJ(mu, x) - Math.Sin(Math.PI * mu) * BesselY(mu, x));
             }
-
+            
             if (x < 4.0 + Math.Sqrt(nu)) {
                 // we are close enough to origin to use series
                 return(BesselJ_Series(nu, x));
@@ -728,13 +714,16 @@ namespace Meta.Numerics.Functions {
             if (nu < 0.0) throw new ArgumentOutOfRangeException("nu");
             if (x < 0.0) throw new ArgumentOutOfRangeException("x");
 
-            if (x < 4.0) {
+            if (x == 0.0) {
+                return (Bessel_Zero(nu));
+            } else if (x < 4.0) {
 
-                // close to the origin, use the series for Y and J
-                // the range does not grow with increasing order because our series for Y is only for small orders
+                // Close to the origin, use the series for Y and J.
+                // The range does not grow with increasing order because our series for Y is only for small orders.
 
                 // for J, we can use the series directly
-                double J, JP; BesselJ_Series(nu, x, out J, out JP);
+                double J, JP;
+                BesselJ_Series(nu, x, out J, out JP);
 
                 // for Y, we only have a series for -0.5 < mu < 0.5, so pick an order in that range offset from our
                 // desired order by an integer number of recurrence steps. Evaluate at the mu order and recurr upward to nu.
@@ -749,15 +738,16 @@ namespace Meta.Numerics.Functions {
                 return(new SolutionPair(J, JP, Y, YP));
 
             } else if (x > 32.0 + nu * nu / 2.0) {
-                // far enough out, use the asymptotic series
+                // Far enough out, use the asymptotic series.
                 return (Bessel_Asymptotic(nu, x));
             } else if (x > nu) {
-                // in the intermediate region, use Steed's method directly if x > nu
+                // In the intermediate region, use Steed's method directly if x > nu.
                 return (Bessel_Steed(nu, x));
             } else {
 
-                // if x < nu, we can't use Steed's method directly because CF2 does not converge
-                // so pick a mu ~ x < nu, offset from nu by an integer; use Steed's method there, then recurse up to nu
+                // If x < nu, we can't use Steed's method directly because CF2 does not converge.
+                // So pick a mu ~ x < nu, offset from nu by an integer; use Steed's method there,
+                // then recurr up to nu.
 
                 // this only occurs for 4 < x < nu, e.g. nu, x = 16, 8
 
@@ -955,6 +945,35 @@ namespace Meta.Numerics.Functions {
             );
 
             return (result);
+
+        }
+
+        // Behavior at zero is slightly complicated, depending on \nu.
+        // Interestingly, the limits are the same for J, Y as for I, K.
+
+        private static SolutionPair Bessel_Zero (double nu) {
+
+            Debug.Assert(nu >= 0.0);
+
+            double J, JP;
+            if (nu == 0.0) {
+                J = 1.0;
+                JP = 0.0;
+            } else {
+                J = 0.0;
+                if (nu < 1.0) {
+                    JP = Double.PositiveInfinity;
+                } else if (nu == 1.0) {
+                    JP = 1.0 / 2.0;
+                } else {
+                    JP = 0.0;
+                }
+            }
+
+            double Y = Double.NegativeInfinity;
+            double YP = Double.PositiveInfinity;
+
+            return (new SolutionPair(J, JP, Y, YP));
 
         }
 

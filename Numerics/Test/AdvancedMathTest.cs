@@ -855,7 +855,12 @@ namespace Test {
 
         [TestMethod]
         public void BetaIntegral () {
-            // a and b values less than one correspond to singular integrals
+
+            // B(a, b) = \int_0^1 \! dt \, t^{a-1} (1 - t)^{b-1}
+
+            // a and b values less than one correspond to singular integrals,
+            // which are numerically difficult.
+
             foreach (double a in TestUtilities.GenerateRealValues(1.0, 100.0, 4)) {
                 foreach (double b in TestUtilities.GenerateRealValues(1.0, 100.0, 4)) {
                     double B = AdvancedMath.Beta(a, b);
@@ -872,6 +877,9 @@ namespace Test {
 
         [TestMethod]
         public void BetaRecurrence () {
+
+            // B(a, b) = B(a + 1, b) + B(a, b + 1)
+
             foreach (double a in TestUtilities.GenerateRealValues(0.01, 10000.0, 8)) {
                 foreach (double b in TestUtilities.GenerateRealValues(0.01, 10000.0, 8)) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
@@ -900,6 +908,26 @@ namespace Test {
                     Assert.IsTrue(AdvancedMath.Beta(a, b) >= Math.Sqrt(AdvancedMath.Beta(a, a) * AdvancedMath.Beta(b, b)));
                 }
             }
+        }
+
+        [TestMethod]
+        public void BetaInequalityOnUnitSquare () {
+
+            // The most famous inequality on the unit square is B(a, b) <= \frac{1}{ab}.
+            // It can be improved and bounded on both sides via
+            //   a + b - ab <= a b B(a, b) <= \frac{a + b}{1 + ab}
+
+            foreach (double a in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 4)) {
+                foreach (double b in TestUtilities.GenerateRealValues(1.0E-3, 1.0, 4)) {
+
+                    double abB = a * b * AdvancedMath.Beta(a, b);
+
+                    Assert.IsTrue((a + b - a * b) <= abB);
+                    Assert.IsTrue(abB <= (a + b) / (1.0 + a * b));
+
+                }
+            }
+
         }
 
         // Incomplete beta function
@@ -1436,16 +1464,6 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ModifiedBesselArgumentZeroTest () {
-
-            Assert.IsTrue(AdvancedMath.ModifiedBesselI(0.0, 0.0) == 1.0);
-            Assert.IsTrue(AdvancedMath.ModifiedBesselI(1.0, 0.0) == 0.0);
-            Assert.IsTrue(AdvancedMath.ModifiedBesselK(0.0, 0.0) == Double.PositiveInfinity);
-            //Assert.IsTrue(AdvancedMath.ModifiedBesselK(1.0, 0.0) == Double.PositiveInfinity);
-
-        }
-
-        [TestMethod]
         public void ModifiedBesselWronskianTest () {
 
             foreach (double nu in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 8)) {
@@ -1693,6 +1711,17 @@ namespace Test {
         }
 
         [TestMethod]
+        public void AiryAgreement () {
+
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 4)) {
+                SolutionPair s = AdvancedMath.Airy(-x);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(s.FirstSolutionValue, AdvancedMath.AiryAi(-x)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(s.SecondSolutionValue, AdvancedMath.AiryBi(-x)));
+            }
+
+        }
+
+        [TestMethod]
         public void GoldenRatioTest () {
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual((1.0 + AdvancedMath.GoldenRatio) / AdvancedMath.GoldenRatio, AdvancedMath.GoldenRatio));
@@ -1707,6 +1736,8 @@ namespace Test {
             };
             Interval r1 = Interval.FromEndpoints(0.0, Math.PI / 4.0);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(FunctionMath.Integrate(f1, r1), AdvancedMath.Catalan));
+
+            // http://mathworld.wolfram.com/CatalansConstant.html equation 36
 
             Func<double, double> f2 = delegate(double t) {
                 return (-Math.Log(t) / (1 + t * t));
@@ -1850,6 +1881,25 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void PolyLogAsFermiDiracIntegral () {
+
+            foreach (int n in TestUtilities.GenerateIntegerValues(2, 32, 2)) {
+                foreach (double x in TestUtilities.GenerateRealValues(0.1, 10.0, 4)) {
+
+                    double fdp = FunctionMath.Integrate(
+                        t => MoreMath.Pow(t, n) / (Math.Exp(t - x) + 1.0),
+                        Interval.FromEndpoints(0.0, Double.PositiveInfinity)
+                    );
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        fdp,
+                        -AdvancedMath.PolyLog(n + 1, -Math.Exp(x)) * AdvancedIntegerMath.Factorial(n)
+                    ));
+
+                }
+            }
+
+        }
 
 
         [TestMethod]
@@ -1873,42 +1923,7 @@ namespace Test {
             }
         }
 
-        [TestMethod]
-        public void CarlsonFSpecialCases () {
 
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 8)) {
-
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedMath.CarlsonF(x, x, x),
-                    1.0 / Math.Sqrt(x)
-                ));
-
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedMath.CarlsonF(0, x, x),
-                    Math.PI / 2.0 / Math.Sqrt(x)
-                ));
-
-            }
-
-        }
-
-        [TestMethod]
-        public void CarlsonFInequality () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0E3, 8)) {
-                foreach (double y in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 8)) {
-                    foreach (double z in TestUtilities.GenerateRealValues(1.0E-1, 1.0E5, 8)) {
-
-                        double min = 3.0 / (Math.Sqrt(x) + Math.Sqrt(y) + Math.Sqrt(z));
-                        double R_F = AdvancedMath.CarlsonF(x, y, z);
-                        double max = 1.0 / Math.Pow(x * y * z, 1.0 / 6.0);
-
-                        Assert.IsTrue(min <= R_F && R_F <= max);
-
-                    }
-                }
-            }
-
-        }
 
         [TestMethod]
         public void CarlsonDSymmetrizedSum () {
@@ -1930,27 +1945,13 @@ namespace Test {
 
         }
 
-        [TestMethod]
-        public void CarslonDSpecialCases () {
 
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 8)) {
-
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedMath.CarlsonD(x, x, x), Math.Pow(x, -3.0 / 2.0)
-                ));
-
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedMath.CarlsonD(0, x, x), 3.0 * Math.PI / 4.0 * Math.Pow(x, -3.0 / 2.0)
-                ));
-
-            }
-
-        }
 
         [TestMethod]
         public void CarlsonLegendreRelation () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 16)) {
 
+                // DLMF 19.21.1
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedMath.CarlsonF(0.0, x + 1.0, 1.0) * AdvancedMath.CarlsonD(0.0, x + 1.0, x) +
                     AdvancedMath.CarlsonD(0.0, x + 1.0, 1.0) * AdvancedMath.CarlsonF(0.0, x + 1.0, x),
@@ -1963,135 +1964,27 @@ namespace Test {
 
         [TestMethod]
         public void CarlsonLemniscaticValues () {
+            // First Lemniscatic DLMF 19.20.2
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.CarlsonF(0.0, 1.0, 2.0), MoreMath.Pow(AdvancedMath.Gamma(1.0 / 4.0), 2) / Math.Sqrt(2.0 * Math.PI) / 4.0));
+            // Second lemniscatic DLMF 19.20.22
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.CarlsonD(0.0, 2.0, 1.0), 3.0 * MoreMath.Pow(AdvancedMath.Gamma(3.0 / 4.0), 2) / Math.Sqrt(2.0 * Math.PI)));
         }
 
-        [TestMethod]
-        public void EllipticESPecialCases () {
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticE(0.0), Math.PI / 2.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticE(1.0), 1.0));
-            
-            double g2 = Math.Pow(AdvancedMath.Gamma(1.0 / 4.0), 2.0);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                AdvancedMath.EllipticE(1.0 / Math.Sqrt(2.0)),
-                Math.Pow(Math.PI, 3.0 / 2.0) / g2 + g2 / 8.0 / Math.Sqrt(Math.PI)
-            ));
-             
-        }
 
-        [TestMethod]
-        public void EllipticLegendreRelation () {
-            foreach (double k in TestUtilities.GenerateRealValues(0.01, 1.0, 8)) {
-                double kp = Math.Sqrt(1.0 - k * k);
-                double E = AdvancedMath.EllipticE(k);
-                double EP = AdvancedMath.EllipticE(kp);
-                double K = AdvancedMath.EllipticK(k);
-                double KP = AdvancedMath.EllipticK(kp);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(K * EP + KP * E, Math.PI / 2.0 + K * KP));
-            }
-        }
-
-        [TestMethod]
-        public void EllipticEIntegration () {
-
-            foreach (double k in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 8)) {
-
-                // define the integrand
-                Func<double, double> f = delegate(double t) {
-                    double z = k * Math.Sin(t);
-                    return (Math.Sqrt(1.0 - z * z));
-                };
-
-                // test complete integral
-                double C = FunctionMath.Integrate(f, Interval.FromEndpoints(0.0, Math.PI / 2.0));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticE(k), C));
-
-                // test incomplete integral
-                foreach (double phi in TestUtilities.GenerateUniformRealValues(0.0, Math.PI / 2.0, 8)) {
-                    double I = FunctionMath.Integrate(f, Interval.FromEndpoints(0.0, phi));
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticE(phi, k), I));
-                }
-
-            }
-
-        }
-
-        [TestMethod]
-        public void EllipticLandenTransform () {
-
-            foreach (double k in TestUtilities.GenerateUniformRealValues(0.0, 1.0, 8)) {
-
-                double kp = Math.Sqrt(1.0 - k * k);
-                double k1 = (1.0 - kp) / (1.0 + kp);
-
-                // For complete 1st kind
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedMath.EllipticK(k),
-                    (1.0 + k1) * AdvancedMath.EllipticK(k1)
-                ));
-
-                // For complete 2nd kind
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedMath.EllipticE(k) + kp * AdvancedMath.EllipticK(k),
-                    (1.0 + kp) * AdvancedMath.EllipticE(k1)
-                ));
-
-                /*
-                foreach (double t in TestUtilities.GenerateUniformRealValues(0.0, Math.PI / 2.0, 4)) {
-
-                    double s = Math.Sin(t);
-                    double t1 = Math.Asin((1.0 + kp) * s * Math.Sqrt(1.0 - s * s) / Math.Sqrt(1.0 - k * k * s * s));
-
-                    // Since t1 can be > pi/2, we need to handle a larger range of angles before we can test the incomplete cases
- 
-
-                }
-
-                */
-            }
-
-        }
 
         [TestMethod]
         public void EllipticKCarlsonFRelationship () {
 
             foreach (double k in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 8)) {
-
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedMath.EllipticK(k),
                     AdvancedMath.CarlsonF(0.0, 1.0 - k * k, 1.0)
                 ));
-
             }
 
         }
 
-        [TestMethod]
-        public void EllipticFBetaRelationship () {
 
-            foreach (double phi in TestUtilities.GenerateUniformRealValues(0.0, Math.PI / 2.0, 8)) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedMath.EllipticF(phi, 1.0 / Math.Sqrt(2.0)),
-                    AdvancedMath.Beta(1.0 / 2.0, 1.0 / 4.0, 1.0 - MoreMath.Pow(Math.Cos(phi), 4)) / Math.Sqrt(8.0)
-                ));
-            }
-
-        }
-
-        [TestMethod]
-        public void EllipticFIntegral () {
-
-            foreach (double k in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 8)) {
-                foreach (double phi in TestUtilities.GenerateUniformRealValues(0.0, Math.PI / 2.0, 4)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        FunctionMath.Integrate(t => AdvancedMath.EllipticF(t, k) / Math.Sqrt(1.0 - MoreMath.Pow(k * Math.Sin(t), 2)), Interval.FromEndpoints(0.0, phi)),
-                        MoreMath.Pow(AdvancedMath.EllipticF(phi, k), 2) / 2.0
-                    ));
-                }
-            }
-
-        }
 
 
         [TestMethod]
@@ -2123,9 +2016,36 @@ namespace Test {
         [TestMethod]
         public void IntegralTiDefinition () {
 
-            Console.WriteLine(AdvancedMath.IntegralTi(0.7));
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 4)) {
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    FunctionMath.Integrate(t => Math.Atan(t) / t, Interval.FromEndpoints(0.0, x)),
+                    AdvancedMath.IntegralTi(x)
+                ));
+
+            }
 
         }
+
+        [TestMethod]
+        public void IntegralTiSpecialCases () {
+
+            // These are documented on http://mathworld.wolfram.com/InverseTangentIntegral.html
+
+            Assert.IsTrue(AdvancedMath.IntegralTi(0.0) == 0.0);
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                AdvancedMath.IntegralTi(1.0), AdvancedMath.Catalan
+            ));
+
+            double t = 2.0 + Math.Sqrt(3.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                3.0 * AdvancedMath.IntegralTi(t),
+                2.0 * AdvancedMath.Catalan + 5.0 / 4.0 * Math.PI * Math.Log(t)
+            ));
+
+        }
+
 
 #if FUTURE
 

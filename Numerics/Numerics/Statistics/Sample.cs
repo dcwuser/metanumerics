@@ -811,7 +811,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>A test result indicating whether the sample mean is significantly different from that of the comparison population.</returns>
         /// <remarks>
         /// <para>A z-test determines whether the sample is compatible with a normal population with known mean and standard deviation.
-        /// In most cases, Student's t-test (<see cref="StudentTTest(double)"/>), which does not assume a known population standard deviation,
+        /// In most cases, Student's t-test (<see cref="StudentTTest(System.Double)"/>), which does not assume a known population standard deviation,
         /// is more appropriate.</para>
         /// </remarks>
         /// <example>

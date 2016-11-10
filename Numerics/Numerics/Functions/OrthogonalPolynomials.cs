@@ -81,7 +81,7 @@ namespace Meta.Numerics.Functions {
                 double H0 = 1.0;
                 double H1 = x;
                 for (int k = 1; k < n; k++) {
-                    double H2 = x * H1 - n * H0;
+                    double H2 = x * H1 - k * H0;
                     H0 = H1;
                     H1 = H2;
                 }

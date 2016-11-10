@@ -69,6 +69,8 @@
     <Compile Include="AdvancedComplexMathTest.cs" />
     <Compile Include="AdvancedIntegerMathTest.cs" />
     <Compile Include="AdvancedMathTest.cs" />
+    <Compile Include="AdvancedMathTest_Bessel.cs" />
+    <Compile Include="AdvancedMathTest_Carlson.cs" />
     <Compile Include="AdvancedMathTest_Coulomb.cs" />
     <Compile Include="AdvancedMathTest_Elliptic.cs" />
     <Compile Include="AdvancedMathTest_Jacobi.cs" />
@@ -86,6 +88,7 @@
     <Compile Include="ExtremaTest.cs" />
     <Compile Include="DifferentiateTest.cs" />
     <Compile Include="FourierTest.cs" />
+    <Compile Include="FutureOdes.cs" />
     <Compile Include="FutureTest.cs" />
     <Compile Include="HistogramTest.cs" />
     <Compile Include="IntegrateTest.cs" />

@@ -40,6 +40,22 @@ namespace Test {
         }
 
         [TestMethod]
+        public void IntegerPowerSpecialCases () {
+
+            double x = 2.7;
+
+            Assert.IsTrue(MoreMath.Pow(x, 0) == 1.0);
+            Assert.IsTrue(MoreMath.Pow(x, 1) == x);
+            Assert.IsTrue(MoreMath.Pow(x, 2) == x * x);
+
+            Assert.IsTrue(MoreMath.Pow(0.0, 2) == 0.0);
+            Assert.IsTrue(MoreMath.Pow(0.0, 1) == 0.0);
+            Assert.IsTrue(MoreMath.Pow(0.0, 0) == 1.0);
+
+            // By convention, the power limit is taken before the argument limit, so 0^0 = 1
+        }
+
+        [TestMethod]
         public void BigHypotenuseTest () {
             
             // construct 3-4-5 right triangle with side lengths whoose squares would overflow

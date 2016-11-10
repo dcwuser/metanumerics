@@ -23,7 +23,9 @@ namespace Meta.Numerics.Functions {
             if (nu < 0.0) throw new ArgumentOutOfRangeException("nu");
             if (x < 0.0) throw new ArgumentOutOfRangeException("x");
 
-            if (x < 2.0) {
+            if (x == 0.0) {
+                return (Bessel_Zero(nu));
+            } else if (x < 2.0) {
                 
                 // use series to determine I and I'
                 double I, IP;
@@ -181,7 +183,9 @@ namespace Meta.Numerics.Functions {
 
             if (x < 0.0) throw new ArgumentOutOfRangeException("x");
 
-            if (x > 32.0 + nu * nu / 2.0) {
+            if (x == 0.0) {
+                return (Double.NegativeInfinity);
+            } else if (x > 32.0 + nu * nu / 2.0) {
                 // for large x, use asymptotic series
                 double sI, sIP, sK, sKP;
                 ModifiedBessel_Asymptotic(nu, x, out sI, out sIP, out sK, out sKP);
@@ -225,66 +229,43 @@ namespace Meta.Numerics.Functions {
 
         private static void ModifiedBesselI_Series (double nu, double x, out double I, out double IP) {
 
-            if (x == 0.0) {
-                if (nu == 0.0) {
-                    I = 1.0;
-                    IP = 0.0;
-                } else if (nu < 1.0) {
-                    I = 0.0;
-                    IP = Double.PositiveInfinity;
-                } else if (nu == 1.0) {
-                    I = 0.0;
-                    IP = 0.5;
-                } else {
-                    I = 0.0;
-                    IP = 0.0;
-                }
-            } else {
-                double x2 = x / 2.0;
-                double xx = x2 * x2;
-                double dI;
-                if (nu < 128.0) {
-                    dI = Math.Pow(x2, nu) / AdvancedMath.Gamma(nu + 1.0);
-                } else {
-                    dI = Math.Exp(nu * Math.Log(x2) - AdvancedMath.LogGamma(nu + 1.0));
-                }
-                I = dI; IP = nu * dI;
-                for (int k = 1; k < Global.SeriesMax; k++) {
-                    double I_old = I; double IP_old = IP;
-                    dI *= xx / k / (nu + k);
-                    I += dI; IP += (nu + 2 * k) * dI;
-                    if ((I == I_old) && (IP == IP_old)) {
-                        IP = IP / x;
-                        return;
-                    }
+            Debug.Assert(x > 0.0);
+
+            double x2 = x / 2.0;
+            double xx = x2 * x2;
+            double dI = AdvancedMath.PowOverGammaPlusOne(x2, nu);
+            I = dI;
+            IP = nu * dI;
+            for (int k = 1; k < Global.SeriesMax; k++) {
+                double I_old = I;
+                double IP_old = IP;
+                dI *= xx / k / (nu + k);
+                I += dI;
+                IP += (nu + 2 * k) * dI;
+                if ((I == I_old) && (IP == IP_old)) {
+                    IP = IP / x;
+                    return;
                 }
             }
 
+            throw new NonconvergenceException();
         }
 
         private static double ModifiedBesselI_Series (double nu, double x) {
 
-            if (x == 0.0) {
-                // handle x = 0 specially
-                if (nu == 0.0) {
-                    return (1.0);
-                } else {
-                    return (0.0);
+            double dI = AdvancedMath.PowOverGammaPlusOne(x / 2.0, nu);
+            double I = dI;
+            double xx = x * x / 4.0;
+            for (int k = 1; k < Global.SeriesMax; k++) {
+                double I_old = I;
+                dI = dI * xx / (nu + k) / k;
+                I += dI;
+                if (I == I_old) {
+                    return (I);
                 }
-            } else {
-                double dI = Math.Pow(x / 2.0, nu) / AdvancedMath.Gamma(nu + 1.0);
-                double I = dI;
-                double xx = x * x / 4.0;
-                for (int k = 1; k < Global.SeriesMax; k++) {
-                    double I_old = I;
-                    dI = dI * xx / (nu + k) / k;
-                    I += dI;
-                    if (I == I_old) {
-                        return (I);
-                    }
-                }
-                throw new NonconvergenceException();
             }
+            throw new NonconvergenceException();
+
         }
 
         // good for x > 32 + nu^2 / 2

@@ -64,16 +64,19 @@ namespace Test {
             new BinomialDistribution(0.2, 30), new BinomialDistribution(0.4, 5),
             new PoissonDistribution(4.5), new PoissonDistribution(400.0),
             new DiscreteUniformDistribution(5, 11),
-            new GeometricDistribution(0.6)
+            new GeometricDistribution(0.6),
+            new NegativeBinomialDistribution(7.8, 0.4)
         };
 
         public static DiscreteDistribution[] GetDistributions () {
             return (new DiscreteDistribution[] {
-            new BernoulliDistribution(0.1),
-            new BinomialDistribution(0.2, 30), new BinomialDistribution(0.4, 5),
-            new PoissonDistribution(4.5), new PoissonDistribution(400.0),
-            new DiscreteUniformDistribution(5, 11),
-            new GeometricDistribution(0.6)            });
+                new BernoulliDistribution(0.1),
+                new BinomialDistribution(0.2, 30), new BinomialDistribution(0.4, 5),
+                new PoissonDistribution(4.5), new PoissonDistribution(400.0),
+                new DiscreteUniformDistribution(5, 11),
+                new GeometricDistribution(0.6),
+                new NegativeBinomialDistribution(7.8, 0.4)
+            });
         }
 
 

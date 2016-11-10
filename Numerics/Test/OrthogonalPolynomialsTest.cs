@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
+using Meta.Numerics.Statistics.Distributions;
 
 
 namespace Test {
@@ -187,6 +188,24 @@ namespace Test {
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
         public void HermiteInvalidOrder () {
             OrthogonalPolynomials.HermiteH(-1, 1.0);
+        }
+
+
+        [TestMethod]
+        public void HermiteNormalExpectation () {
+
+            // Wikipedia article on Hermite polynomials
+            // X ~ N(\mu, 1) => E(He_n(X)) = \mu^n
+
+            NormalDistribution d = new NormalDistribution(2.0, 1.0);
+
+            foreach(int n in TestUtilities.GenerateIntegerValues(1, 32, 7)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    d.ExpectationValue(x => OrthogonalPolynomials.HermiteHe(n, x)),
+                    MoreMath.Pow(d.Mean, n)
+                ));       
+            }
+
         }
 
         // Laguerre

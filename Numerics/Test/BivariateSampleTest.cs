@@ -381,5 +381,50 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void BivariateNonlinearFit () {
+
+            // Verify that we can fit a non-linear function,
+            // that the estimated parameters do cluster around the true values,
+            // and that the estimated parameter covariances do reflect the actually observed covariances
+
+            double a = 2.7;
+            double b = 3.1;
+
+            Distribution xDistribution = new ExponentialDistribution(2.0);
+            Distribution eDistribution = new NormalDistribution(0.0, 4.0);
+
+            MultivariateSample parameters = new MultivariateSample("a", "b");
+            MultivariateSample covariances = new MultivariateSample(3);
+
+            for (int i = 0; i < 64; i++) {
+
+                BivariateSample sample = new BivariateSample();
+                Random rng = new Random(i);
+                for (int j = 0; j < 8; j++) {
+                    double x = xDistribution.GetRandomValue(rng);
+                    double y = a * Math.Pow(x, b) + eDistribution.GetRandomValue(rng);
+                    sample.Add(x, y);
+                }
+
+                FitResult fit = sample.NonlinearRegression(
+                    (IList<double> p, double x) => p[0] * Math.Pow(x, p[1]),
+                    new double[] { 1.0, 1.0 }
+                );
+
+                parameters.Add(fit.Parameters);
+                covariances.Add(fit.Covariance(0, 0), fit.Covariance(1, 1), fit.Covariance(0, 1));
+
+            }
+
+            Assert.IsTrue(parameters.Column(0).PopulationMean.ConfidenceInterval(0.99).ClosedContains(a));
+            Assert.IsTrue(parameters.Column(1).PopulationMean.ConfidenceInterval(0.99).ClosedContains(b));
+
+            Assert.IsTrue(parameters.Column(0).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(0).Mean));
+            Assert.IsTrue(parameters.Column(1).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(1).Mean));
+            Assert.IsTrue(parameters.TwoColumns(0, 1).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
+
+        }
+
     }
 }

@@ -15,7 +15,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="mu">The mean, which must be positive.</param>
         public PoissonDistribution (double mu) {
-            if (mu <= 0.0) throw new ArgumentOutOfRangeException("mu");
+            if (mu <= 0.0) throw new ArgumentOutOfRangeException(nameof(mu));
             this.mu = mu;
         }
 
@@ -124,7 +124,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override int InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
 
             //Console.WriteLine("P={0}", P);
             //int count = 0;
@@ -161,7 +161,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Moment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else {
@@ -180,7 +180,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double MomentAboutMean (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else {
@@ -193,11 +193,27 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         }
 
+        // The (falling) factorial moments of the Poisson distribution are F_r = \mu^r
+        // The raw moments in terms of the factorial moments are
+        //   M_r = \sum_{s=0}^r \{ r \over s \} F_s = \sum_{s=0}^r \{ r \over \}s \mu^s = T_r(\mu)
+        // These are the Touchard polynomials T_r(x) evaluated at x = \mu.
+
+        // From the Sterling number recurrence
+        //   \{ n + 1 \over k + 1 \} = \sum_{j = k}^{n} { n \choose j } \{ j \over k \}
+        // follows the Touchard polynomial recurrence
+        //   T_{r + 1}(x) = x \sum_{s = 0}^{r} { r \choose s } T_{s}(x)
+        // We can use this to compute M_{r}, but note it is a O(r^2) operation and requires O(r)
+        // storage, since to compute each new value requires all the previous values.
+
+        // From another Sterling number recurrence
+        //   \{ n + 1 \over k \} = k \{ n \over k \} + \{ n \over k - 1 \}
+        // follows another Touchard polynomial recurrence
+
         // The raw moments of the Poisson distribution are the Touchard polynomials T_r(x) evaluated at x = \mu.
         // Since the Touchard polynomials satisfy the recurrence
         //   T_{r+1}(x) = x \sum_{s=0}^{r} { r \choose s } T_s(x)
         // The raw moments satisfy the same recurrence:
-        //   M_{r+1) = \mu \sum_{s=0}^{r} { r \choose s } M_r
+        //   M_{r+1} = \mu \sum_{s=0}^{r} { r \choose s } M_r
         // Notice that this computation is O(r^2).
 
         private void ComputePoissonRawMoments (double[] M) {
@@ -213,13 +229,34 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         // Privault, "Generalized Bell polynomials and the combinatorics of Poisson central moments",
-        // The Electronic Jounrnal of Combinatorics 2011, derives the recurrence
+        // The Electronic Jounrnal of Combinatorics 2011
+        // (http://www.ntu.edu.sg/home/nprivault/papers/central_moments.pdf),
+        // derives the recurrence
         //   C_{r+1} = \mu \sum{s=0}^{r-1} { r \choose s } C_s
         // for central moments of the Poisson distribution, directly from the definition.
 
-        // This is almost, but not quite, the same recurrence as for the raw moments. For the raw moment recursion,
-        // the bottom binomial argument runs over its full range. For the central moment recursion, the last value of
-        // the bottom binomial argument is left out of the range.
+        // For the record, here is the derivation, which I have not found elsewhere. By
+        // Poisson PMF, mean, and definition of central moment:
+        //   C_{r+1} = e^{-\mu} \sum_{k=0}^{\infty} \frac{\mu^k}{k!} (k - \mu)^{r+1}
+        // Expand one factor of (k - \mu) to get
+        //   C_{r+1} = e^{-\mu} \sum_{k=1}^{\infty} \frac{\mu^k (k - \mu)^{r}}{(k-1)!} 
+        //            -e^{-\mu} \sum_{k=0}^{\infty} \frac{\mu^{k+1} (k - \mu)^{r}}{k!}
+        // Note k=0 does not contribute to first term because of multiplication by k.
+        // Now in first term, redefine dummy summation variable k -> k + 1 to get
+        //   C_{r+1} = e^{-\mu} \sum_{k=0}^{\infty} \frac{\mu^{k+1}}{k!}
+        //             \left[ (k + 1 - \mu)^{r} - (k - \mu)^{r} \right]
+        // Now use the binomial theorem to expand (k - \mu + 1) in factors of (k -\mu) and 1.
+        //   C_{r+1} = e^{-\mu} \sum_{k=0}^{\infty} \frac{\mu^{k+1}}{k!}
+        //             \sum_{s=0}^{r-1} { r \choose s } (k - \mu)^{s}
+        // The s=r term is canceled by the subtracted (k - \mu)^{r}, so the binomial sum only goes to s=r-1.
+        // Switch the order of the sums and notice \sum_{k} \frac{\mu^{k}}{k!} (k - \mu)^{s} = C_{s}
+        // to obtain the result. Wow.  
+
+        // This is almost, but not quite, the same recurrence as for the raw moments.
+        // For the raw moment recursion, the bottom binomial argument runs over its full range.
+        // For the central moment recursion, the final value of the bottom binomial argument is left out.
+        // Also, for raw moments start the recursion with M_0 = 1, M_1 = \mu. For central moments,
+        // start the recursion with C_0 = 1, C_1 = 0.
 
         private void ComputePoissonCentralMoments (double[] C) {
             for (int r = 2; r < C.Length; r++) {
@@ -236,7 +273,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Cumulant (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (0.0);
             } else {

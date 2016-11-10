@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-using Meta.Numerics.Functions;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
@@ -20,7 +17,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="p">The probabability of the value zero.</param>
         public GeometricDistribution (double p) {
-            if ((p <= 0.0) || (p >= 1.0)) throw new ArgumentOutOfRangeException("p");
+            if ((p <= 0.0) || (p >= 1.0)) throw new ArgumentOutOfRangeException(nameof(p));
             this.p = p;
             this.q = 1.0 - p;
         }
@@ -79,7 +76,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override int InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             if (P < p) {
                 return (0);
             } else {
@@ -125,15 +122,21 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        // raw moments involve the negative polylog function, central moments the Lerch transcendent
+        // Raw moments M_r = \frac{q E_r(q)}{p^r} where E_n(q) is the nth Eulerian polynomial, i.e.
+        // the polynomial with coefficient < n m > of x^m. (https://en.wikipedia.org/wiki/Eulerian_number)
 
-        // Raw moments M_r = E_n(q) / p^r where E_n(q) is the nth Eulerian polynomial, i.e. the polynomial with coefficient < n m > of x^m.
-        // Note that the Eulerian polynomials and their coefficients the Eulerian numbers are not the same as the Euler polynomials and Euler numbers.
+        // Note that the Eulerian polynomials and their coefficients the Eulerian numbers are not
+        // the same as the Euler polynomials and Euler numbers.
+
+        // The (falling) factorial moments of the geometric distribution are also simply expressible
+        // in closed form as F_r \mu^r r!, so we could also use the trick of using the Stirling
+        // numbers to convert these to raw moments. But since we are doing the Eulerian numbers
+        // anyway for cumulants, we will use them for raw moments, too.
 
         /// <inheritdoc />
         public override double Moment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else {
@@ -141,26 +144,51 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+        // Cumulants K_r = \frac{q E_{r-1}(q)}{p^r} (also Eulerian polynomials but not quite same
+        // as raw moments). See Shenton & Bowman, "The Geometric Distribution's Central Moments
+        // and Eulerian Numbers of the Second Kind", Far East J. Theo. Stat. 7 (1) 2002 1-17
+        // (http://www.csm.ornl.gov/~bowman/fjts7.pdf)
+
+        /// <inheritdoc />
+        public override double Cumulant (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException(nameof(r));
+            } else if (r == 0) {
+                return (0.0);
+            } else if (r == 1) {
+                return (q / p);
+            } else {
+                return (q * EulerianPolynomial(r - 1, q) / MoreMath.Pow(p, r));
+            }
+        }
+
+        // Shenton & Bowman also relate central moments to Eulerian numbers of the second kind.
+        // We should implement this, too.
+
+        // Raw and central moments can also be related to the negative-order polylog functions
+        // and the Lerch transcendent, but we don't compute those yet.
+
         private static double EulerianPolynomial (int n, double x) {
 
-            // Determine coefficients using < n m > = (n - m) < (n-1) (m-1) > + (m + 1) < (n-1) m >
-            double[] c0 = new double[n];
-            double[] c1 = new double[n];
-            c0[0] = 1.0;
-            for (int i = 2; i <= n; i++) {
-                c1[0] = 1.0;
-                for (int j = 1; j < i; j++) {
-                    c1[j] = (i - j) * c0[j - 1] + (j + 1) * c0[j];
+            Debug.Assert(n > 0);
+
+            // Determine the Eulerian numbers <n m> using
+            //   < n m > = (n - m) < (n-1) (m-1) > + (m + 1) < (n-1) m >
+            double[] c = new double[n];
+            c[0] = 1.0;           
+            for (int j = 2; j <= n; j++) {
+                c[j - 1] = 1.0;
+                for (int k = j - 2; k > 0; k--) {
+                    c[k] = (k + 1) * c[k] + (j - k) * c[k - 1];
                 }
-                double[] t = c0; c0 = c1; c1 = t;
             }
 
-            // Evaluate the polynomial \sum_{m = 1} <n m> x^m.
+            // Evaluate the polynomial \sum_{m} <n m> x^m.
             double f = 1.0;
             double xj = 1.0; // tracks x^j
             for (int j = 1; j < n; j++) {
                 xj *= x;
-                f += c0[j] * xj;
+                f += c[j] * xj;
             }
             return (f);
 

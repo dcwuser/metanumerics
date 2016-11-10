@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 using Meta.Numerics.Functions;
 
@@ -109,11 +110,39 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             if (f == null) throw new ArgumentNullException("f");
 
+            // If the support is small enough, just take the expectation directly.
+            int w = this.Maximum - this.Minimum;
+            if (w < 32) return (ExpectationValue(f, this.Minimum, this.Maximum));
+
+            // If the support is big (e.g. all 2 billion integers), naive direct computation
+            // will be too slow. 
+
             // To avoid running over the whole support when it is large, we move outward from the mean,
             // and stop when the result stops changing. To avoid stopping prematurely beause of a
             // single zero contribution, we should move outward in groups.
 
             int i0 = (int) Math.Round(Mean);
+
+            /*
+            int kWidth = 3;
+
+            int kMid = i0;
+            int kMin = Math.Max(i0 - kWidth / 2, this.Minimum);
+            int kMax = Math.Min(i0 + kWidth / 2, this.Maximum);
+            double v = ExpectationValue(f, kMin, kMax);
+
+            while(true) {
+                double v_old = v;
+                kMid = kMid - kWidth;
+                kMin = Math.Max(i0 - kWidth / 2, this.Minimum);
+                kMax = Math.Min(i0 + kWidth / 2, this.Maximum);
+                double dv = ExpectationValue(f, kMin, kMax);
+                v += dv;
+                if (v == v_old) break;
+                if (kMin == this.Minimum) break;
+            }
+            */
+            
 
             double s_left = 0.0;
             for (int i = i0 - 1; i >= Minimum; i--) {
@@ -129,6 +158,20 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
             return (s_left + s_right + f(i0) * ProbabilityMass(i0));
 
+        }
+
+
+        private double ExpectationValue(Func<int, double> f, int kMin, int kMax) {
+
+            Debug.Assert(f != null);
+            Debug.Assert(kMin <= kMax);
+
+            double v = 0.0;
+            for (int k = kMin; k <= kMax; k++) {
+                v += ProbabilityMass(k) * f(k);
+            }
+
+            return (v);
         }
 
         /// <summary>

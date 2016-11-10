@@ -317,27 +317,181 @@ namespace Meta.Numerics.Functions {
 
         // the expansions in which they appear are asymptotic; the numbers grow rapidly after ~B_16
 
-        /*
-		public static long StirlingS1 (int n, int m) {
-			throw new NotImplementedException();
-		}
+        /// <summary>
+        /// Computes a Stirling number of the first kind.
+        /// </summary>
+        /// <param name="n">The upper argument, which must be non-negative.</param>
+        /// <param name="k">The lower argument, which must lie between 0 and n.</param>
+        /// <returns>The value of the unsigned Stirling number of the second kind.</returns>
+        public static double StirlingNumber1 (int n, int k) {
 
-		public static long StirlingS2 (int n, int m) {
-			throw new NotImplementedException();
-		}
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+            if ((k < 0) || (k > n)) throw new ArgumentOutOfRangeException(nameof(k));
 
-		public static long EulerNumberE (int n) {
-			throw new NotImplementedException();
-		}
-        */
+            if (k == n) {
+                return (1.0);
+            } else if (k == 0) {
+                return (0.0);
+            } else if (k == 1) {
+                return (AdvancedIntegerMath.Factorial(n - 1));
+            } else if (k == (n - 1)) {
+                return (AdvancedIntegerMath.BinomialCoefficient(n, 2));
+            } else {
+                double[] s = Stirling1_Recursive(n, k);
+                return (s[k]);
+            }
+
+        }
+
+        /// <summary>
+        /// Computes a row of Sterling numbers of the first kind.
+        /// </summary>
+        /// <param name="n">The upper argument, which must be non-negative.</param>
+        /// <returns>An array with n+1 elements. The element with (zero-based) index k contains the
+        /// unsigned Sterling number of the first kind with upper argument n and lower argument k.</returns>
+        public static double[] StirlingNumbers1 (int n) {
+
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+
+            if (n == 0) {
+                return (new double[] { 1.0 });
+            } else {
+                return (Stirling1_Recursive(n, n));
+            }
+
+        }
+
+        private static double[] Stirling1_Recursive (int n, int kMax) {
+
+            Debug.Assert(n > 0);
+            Debug.Assert(kMax > 0);
+            Debug.Assert(kMax <= n);
+
+            double[] s = new double[kMax + 1];
+
+            // Seed j = 1 row
+            s[0] = 0.0;
+            s[1] = 1.0;
+
+            // Compute higher rows
+            for (int j = 2; j <= n; j++) {
+
+                int jkMax;
+                if (j <= kMax) {
+                    s[j] = 1.0;
+                    jkMax = j - 1;
+                } else {
+                    jkMax = kMax;
+                }
+
+                for (int k = jkMax; k > 0; k--) {
+                    s[k] = (j - 1) * s[k] + s[k - 1];
+                }
+
+            }
+
+            return (s);
+
+        }
+
+        /// <summary>
+        /// Computes a Stirling number of the second kind.
+        /// </summary>
+        /// <param name="n">The upper argument, which must be non-negative.</param>
+        /// <param name="k">The lower argument, which must lie between 0 and n.</param>
+        /// <returns>The value of the Stirling number of the second kind.</returns>
+        public static double StirlingNumber2 (int n, int k) {
+
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+            if ((k < 0) || (k > n)) throw new ArgumentOutOfRangeException(nameof(k));
+
+            if ((k == 1) || (k == n)) {
+                return (1.0);
+            } else if (k == 0) {
+                return (0.0);
+                // The exceptional value 1 for n = k = 0 will already have been returned by the previous case. 
+            } else if (k == 2) {
+                return (Math.Round(MoreMath.Pow(2.0, n - 1) - 1.0));
+            } else if (k == (n - 1)) {
+                return (AdvancedIntegerMath.BinomialCoefficient(n, 2));
+            } else {
+                double[] s = Stirling2_Recursive(n, k);
+                return (s[k]);
+            }
+
+            // There is a formula for Stirling numbers
+            //   { n \brace k } = \frac{1}{k!} \sum{j=0}^{k} (-1)^j { k \choose j} (k - j)^n
+            // which would be faster than recursion, but it has large cancelations between
+            // terms. We could try to use it when all values are less than 2^52, for which
+            // double arithmetic is exact for integers. For k!, that means k < 18. For 
+            // largest term in sum for all k, that means n < 14.
+
+        }
+
+        /// <summary>
+        /// Computes a row of Stirling numbers of the second kind.
+        /// </summary>
+        /// <param name="n">The upper argument, which must be non-negative.</param>
+        /// <returns>An array with n+1 elements. The element with (zero-based) index k contains the
+        /// Stirling number of the second kind with upper argument n and lower argument k.</returns>
+        public static double[] StirlingNumbers2 (int n) {
+
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+
+            if (n == 0) {
+                return (new double[] { 1.0 });
+            } else {
+                return (Stirling2_Recursive(n, n));
+            }
+
+        }
+
+        private static double[] Stirling2_Recursive (int n, int kMax) {
+
+            Debug.Assert(n > 0);
+            Debug.Assert(kMax > 0);
+            Debug.Assert(kMax <= n);
+
+            double[] s = new double[kMax + 1];
+
+            // Seed j = 1 row
+            s[0] = 0.0;
+            s[1] = 1.0;
+
+            // Compute higher rows
+            for (int j = 2; j <= n; j++) {
+
+                int jkMax;
+                if (j <= kMax) {
+                    s[j] = 1.0;
+                    jkMax = j - 1;
+                } else {
+                    jkMax = kMax;
+                }
+
+                for (int k = jkMax; k > 1; k--) {
+                    s[k] = k * s[k] + s[k - 1];
+                }
+
+            }
+
+            return (s);
+
+        }
 
         // There are two well-known algorithms for computing Bell numbers. One is Dobinski's formula
         //   B_n = \frac{1}{e} \sum_{k=0}^{\infty} \frac{k^n}{k!}
         // which is basically just the relationship between the Bell numbers and the Poisson moments.
-        // The other is the triangle relationship. It computes all Bell numbers up the one sought,
+        // The other is the triangle relationship. It computes all Bell numbers up to the one sought,
         // but is O(n^2) in time and O(n) in memory and is slower when a single Bell number is sought.
 
-        // As implemented, this return Infinity too soon, at n=165, because the power in the numerator
+        // B_n excees the capacity of a double for n >= 219.
+
+        // Very approximately, the terms in Dobinski's formula increase up to k ~ n / W(n) ~ n / log n
+        // before they start to decrease, where W(n) is the Lambert W function. It might be worthwhile
+        // to start at this value of k and move outwards.
+
+        // As implemented, this returns Infinity too soon, at n=165, because the power in the numerator
         // overflows. We need to deal with that by calling PowOverGamma instead.
 
         /// <summary>
@@ -359,10 +513,10 @@ namespace Meta.Numerics.Functions {
                 q *= k;
                 s += MoreMath.Pow(k, n) / q;
                 if (s == s_old) {
-                    Debug.WriteLine(k);
-                    return (s / Math.E);
+                    return (Math.Round(s / Math.E));
                 }
             }
+            
             throw new NonconvergenceException();
         }
 

@@ -8,6 +8,122 @@ using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Statistics {
 
+#if FUTURE
+    public class LinearRegressionFitResult : FitResult {
+
+
+        internal static LinearRegressionFitResult Construct (BivariateSample sample) {
+
+            int n = sample.Count;
+            double mx = sample.X.Mean;
+            double my = sample.Y.Mean;
+            double cxx = sample.X.Variance;
+            double cyy = sample.Y.Variance;
+            double cxy = sample.Covariance;
+
+            double b = cxy / cxx;
+            double a = my - b * mx;
+
+            double s2 = 0.0;
+            BivariateSample residuals = new BivariateSample();
+            foreach (XY point in sample) {
+                double r = point.Y - (a + b * point.X);
+                s2 += r * r;
+                residuals.Add(point.X, r);
+            }
+            s2 = s2 / (n - 2);
+
+            double cbb = s2 / cxx / n;
+            double cab = -mx * cbb;
+            double caa = (cxx + mx * mx) * cbb;
+
+            ColumnVector v = new ColumnVector(a, b);
+            SymmetricMatrix C = new SymmetricMatrix(2);
+            C[0, 0] = caa;
+            C[1, 1] = cbb;
+            C[0, 1] = cab;
+
+        }
+
+        internal LinearRegressionFitResult () : base(1, 1, null) {
+
+        }
+
+        private int n;
+        private double mx;
+        private double my;
+        private double cxx;
+        private double cxy;
+        private double cyy;
+        private double s2;
+
+        private double a;
+        private double b;
+
+        private BivariateSample residuals;
+
+        public UncertainValue Intercept {
+            get {
+                double b = cxy / cxx;
+                double cbb = s2 / cxx / n;
+                return (new UncertainValue(b, Math.Sqrt(cbb)));
+            }
+        }
+
+        public UncertainValue Slope {
+            get {
+                double a = my - (cxy / cxx) * mx;
+                double caa = s2 * (1.0 + mx * mx / cxx) / n;
+                return (new UncertainValue(a, Math.Sqrt(caa)));
+            }
+        }
+
+        public UncertainValue Error {
+            get {
+                return (new UncertainValue(Math.Sqrt(s2), Math.Sqrt(s2 / n)));
+            }
+        }
+
+        public BivariateSample Residuals () {
+            return (residuals);
+        }
+
+        public UncertainValue Predict (double x) {
+            double y = a + b * x;
+            return (new UncertainValue(y, Math.Sqrt(s2 * (1.0 + 1.0 / n + MoreMath.Sqr(x - mx) / cxx))));
+        }
+
+        public TestResult R {
+            get {
+                double r = cxy / Math.Sqrt(cxx * cyy);
+                return (new TestResult("r", r, TestType.TwoTailed, new Distributions.PearsonRDistribution(n)));
+            }
+        }
+
+        public TestResult F {
+            get {
+                return (this.Anova.Result);
+            }
+        }
+
+        public OneWayAnovaResult Anova {  get {
+
+                double SST = cyy * n;
+                double SSR = s2 * (n - 2);
+                double SSF = SST - SSR;
+
+                AnovaRow fit = new AnovaRow(SSF, 1);
+                AnovaRow residual = new AnovaRow(SSR, n - 2);
+                AnovaRow total = new AnovaRow(SST, n - 1);
+                OneWayAnovaResult result = new OneWayAnovaResult(fit, residual, total);
+                return (result);
+
+            } }
+
+    }
+#endif
+
+
     /// <summary>
     /// Represents the result of a fit procedure.
     /// </summary>

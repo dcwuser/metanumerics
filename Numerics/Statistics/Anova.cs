@@ -1,8 +1,19 @@
 ﻿using System;
+using System.Diagnostics;
 
 using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Statistics {
+
+    // This interface returns that data that an AnovaTestRow needs from other rows in order
+    // to do an F-test. 
+    internal interface IAnovaResult {
+
+        AnovaRow Residual { get; }
+
+        AnovaRow Total { get; }
+
+    }
 
     /// <summary>
     /// The result of a one-way ANOVA test.
@@ -10,7 +21,7 @@ namespace Meta.Numerics.Statistics {
     /// <remarks>
     /// <para>A one way ANOVA test detects the influence of a categorical factor on the mean of a measured variable, which is assumed
     /// to be normally distributed.</para>
-    /// <para>A one way ANOVA result is returned by the static <see cref="Sample.OneWayAnovaTest(System.Collections.Generic.IList{Sample})"/>
+    /// <para>A one way ANOVA result is returned by the static <see cref="Sample.OneWayAnovaTest(System.Collections.Generic.ICollection{Sample})"/>
     /// method.</para>
     /// <para>While, fundamentally, a one-way ANOVA is a simple statistical test like any other, with a single test statistic (F) and
     /// a single associated distribution (the F distribution), some ANOVA users like to examine and report some intermediate quantities
@@ -33,8 +44,8 @@ namespace Meta.Numerics.Statistics {
     /// return(result.Result.RightProbability);
     /// </code>
     /// </example>
-    /// <seealso cref="Sample.OneWayAnovaTest(System.Collections.Generic.IList{Sample})"/>
-    public class OneWayAnovaResult {
+    /// <seealso cref="Sample.OneWayAnovaTest(System.Collections.Generic.ICollection{Sample})"/>
+    public class OneWayAnovaResult : IAnovaResult {
 
         internal OneWayAnovaResult (AnovaRow factor, AnovaRow residual, AnovaRow total) {
 
@@ -71,7 +82,7 @@ namespace Meta.Numerics.Statistics {
     }
 
     /// <summary>
-    /// A row in an ANOVA table.
+    /// A row in an analysis of variance (ANOVA) table.
     /// </summary>
     /// <remarks>
     /// <para>An ANOVA seperates the variance associated with one or more sources into "rows", each of which has an associated
@@ -82,6 +93,8 @@ namespace Meta.Numerics.Statistics {
     public class AnovaRow {
 
         internal AnovaRow (double sumOfSquares, int degreesOfFreedom) {
+            Debug.Assert(sumOfSquares >= 0.0);
+            Debug.Assert(degreesOfFreedom >= 0);
             this.SumOfSquares = sumOfSquares;
             this.DegreesOfFreedom = degreesOfFreedom;
         }
@@ -104,11 +117,11 @@ namespace Meta.Numerics.Statistics {
     /// <seealso cref="OneWayAnovaResult"/>
     public class AnovaTestRow : AnovaRow {
 
-        internal AnovaTestRow (double sumOfSquares, int degreesOfFreedom, OneWayAnovaResult result) : base(sumOfSquares, degreesOfFreedom) {
+        internal AnovaTestRow (double sumOfSquares, int degreesOfFreedom, IAnovaResult result) : base(sumOfSquares, degreesOfFreedom) {
             this.result = result;
         }
 
-        private OneWayAnovaResult result;
+        private IAnovaResult result;
 
         /// <summary>
         /// Gets the result of an F-test measuring the significance of the row.
@@ -117,10 +130,83 @@ namespace Meta.Numerics.Statistics {
             get {
                 double F = (this.SumOfSquares / this.DegreesOfFreedom) / (result.Residual.SumOfSquares / result.Residual.DegreesOfFreedom);
                 Distribution D = new FisherDistribution(this.DegreesOfFreedom, result.Residual.DegreesOfFreedom);
-                return (new TestResult("F", F, TestType.TwoTailed, D));
+                return (new TestResult("F", F, TestType.RightTailed, D));
             }
         }
 
     }
+
+    /// <summary>
+    /// Represents the result of a two-factor analysis of variance.
+    /// </summary>
+    public sealed class TwoWayAnovaResult : IAnovaResult {
+
+        internal TwoWayAnovaResult (AnovaRow row, AnovaRow column, AnovaRow interaction, AnovaRow residual) {
+            Debug.Assert(row != null);
+            Debug.Assert(column != null);
+            Debug.Assert(interaction != null);
+            Debug.Assert(residual != null);
+            this.row = row;
+            this.column = column;
+            this.interaction = interaction;
+            this.residual = residual;
+            this.total = new AnovaRow(
+                row.SumOfSquares + column.SumOfSquares + interaction.SumOfSquares + residual.SumOfSquares,
+                row.DegreesOfFreedom + column.DegreesOfFreedom + interaction.DegreesOfFreedom + residual.DegreesOfFreedom
+            );
+        }
+
+        private AnovaRow row;
+        private AnovaRow column;
+        private AnovaRow interaction;
+        private AnovaRow residual;
+        private AnovaRow total;
+
+        /// <summary>
+        /// Gets the variance assocated with the effect of the row factor.
+        /// </summary>
+        public AnovaTestRow RowFactor {
+            get {
+                return(new AnovaTestRow(row.SumOfSquares, row.DegreesOfFreedom, this));
+            }
+        }
+
+        /// <summary>
+        /// Gets the variance associated with the effect of the column factor. 
+        /// </summary>
+        public AnovaTestRow ColumnFactor {
+            get {
+                return (new AnovaTestRow(column.SumOfSquares, column.DegreesOfFreedom, this));
+            }
+        }
+
+        /// <summary>
+        /// Gets the variance associated with the effect of the interaction of the row and column factors.
+        /// </summary>
+        public AnovaTestRow Interaction {
+            get {
+                return (new AnovaTestRow(interaction.SumOfSquares, interaction.DegreesOfFreedom, this));
+            }
+        }
+
+        /// <summary>
+        /// Gets the variance associated with the unpredicted residuals.
+        /// </summary>
+        public AnovaRow Residual {
+            get {
+                return (residual);
+            }
+        }
+
+        /// <summary>
+        /// Gets the total variance.
+        /// </summary>
+        public AnovaRow Total {
+            get {
+                return (total);
+            }
+        }
+
+    } 
 
 }

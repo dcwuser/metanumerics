@@ -1071,7 +1071,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Performs a one-way ANOVA.
+        /// Performs a one-way analysis of variance (ANOVA).
         /// </summary>
         /// <param name="samples">The samples to compare.</param>
         /// <returns>The result of an F-test comparing the between-group variance to
@@ -1134,26 +1134,27 @@ namespace Meta.Numerics.Statistics {
         /// <remarks>
         /// <para>For detailed information, see the variable argument overload.</para>
         /// </remarks>
-        public static OneWayAnovaResult OneWayAnovaTest (IList<Sample> samples) {
+        public static OneWayAnovaResult OneWayAnovaTest (ICollection<Sample> samples) {
 
-            if (samples == null) throw new ArgumentNullException("samples");
+            if (samples == null) throw new ArgumentNullException(nameof(samples));
             if (samples.Count < 2) throw new ArgumentException("There must be at least two samples in the sample list.", "samples");
 
             // determine total count, mean, and within-group sum-of-squares
             int n = 0;
             double mean = 0.0;
             double SSW = 0.0;
-            for (int i = 0; i < samples.Count; i++) {
-                n += samples[i].Count;
-                mean += samples[i].Count * samples[i].Mean;
-                SSW += samples[i].Count * samples[i].Variance;
+            foreach (Sample sample in samples) {
+                if (sample == null) throw new ArgumentNullException("sample");
+                n += sample.Count;
+                mean += sample.Count * sample.Mean;
+                SSW += sample.Count * sample.Variance;
             }
             mean = mean / n;
 
             // determine between-group sum-of-squares
             double SSB = 0.0;
-            for (int i = 0; i < samples.Count; i++) {
-                SSB += samples[i].Count * MoreMath.Sqr(samples[i].Mean - mean);
+            foreach (Sample sample in samples) {
+                SSB += sample.Count * MoreMath.Sqr(sample.Mean - mean);
             }
 
             // determine degrees of freedom associated with each sum-of-squares
@@ -1167,6 +1168,104 @@ namespace Meta.Numerics.Statistics {
             AnovaRow residual = new AnovaRow(SSW, dW);
             AnovaRow total = new AnovaRow(SSB + SSW, n - 1);
             return (new OneWayAnovaResult(factor, residual, total));
+
+        }
+
+        /// <summary>
+        /// Performs a two-way analysis of variance.
+        /// </summary>
+        /// <param name="samples">A matrix of samples, all of which must have equal counts.</param>
+        /// <returns>The result of the analysis.</returns>
+        /// <remarks>
+        /// <para>A two-way ANOVA analyzes the effect of two seperate input factors, each with
+        /// nominal values, on a continuous output variable.</para>
+        /// <para>The only design supported is complete and balanced: samples must exist
+        /// for all combinations of treatment factors, and each of those samples must
+        /// contain the same number of data points.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="samples"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">The design is not complete or balanced.</exception>
+        public static TwoWayAnovaResult TwoWayAnovaTest (Sample[,] samples) {
+
+            if (samples == null) throw new ArgumentNullException(nameof(samples));
+
+            int rCount = samples.GetLength(0);
+            int cCount = samples.GetLength(1);
+            if (rCount < 2) throw new InvalidOperationException();
+            if (cCount < 2) throw new InvalidOperationException();
+
+            // Determine mean, within group variance
+            int m = -1;
+            int n = 0;
+            double mean = 0.0;
+            double SSE = 0.0;
+            for (int r = 0; r < rCount; r++) {
+                for (int c = 0; c < cCount; c++) {
+                    Sample sample = samples[r, c];
+                    if (sample == null) throw new ArgumentNullException(String.Format("{0}[{1},{2}]", nameof(samples), r, c));
+                    if (sample.Count != m) {
+                        if (m < 0) {
+                            m = sample.Count;
+                        } else {
+                            throw new InvalidOperationException();
+                        }
+                    }
+                    n += sample.Count;
+                    mean += sample.Count * sample.Mean;
+                    SSE += sample.Count * sample.Variance;
+                }
+            }
+            mean = mean / n;
+
+            // Determine between group variance
+            double SSF = 0.0;
+            for (int r = 0; r < rCount; r++) {
+                for (int c = 0; c < cCount; c++) {
+                    SSF += MoreMath.Sqr(samples[r, c].Mean - mean);
+                }
+            }
+            SSF = SSF * samples[0, 0].Count;
+
+            // Determine row-wise variance
+            double SSA = 0.0;
+            for (int r = 0; r < rCount; r++) {
+                double rMean = 0.0;
+                for (int c = 0; c < cCount; c++) {
+                    rMean += samples[r, c].Mean;
+                }
+                rMean = rMean / samples.GetLength(1);
+
+                SSA += MoreMath.Sqr(rMean - mean);
+            }
+            SSA = SSA * samples[0, 0].Count * cCount;
+
+            // Determine column-wise variance
+            double SSB = 0.0;
+            for (int c = 0; c < cCount; c++) {
+                double cMean = 0.0;
+                for (int r = 0; r < rCount; r++) {
+                    cMean += samples[r, c].Mean;
+                }
+                cMean = cMean / rCount;
+
+                SSB += MoreMath.Sqr(cMean - mean);
+            }
+            SSB = SSB * samples[0, 0].Count * rCount;
+
+            // Finding the interaction effect by subtraction allows us to determine it
+            // without storing multiple row and column means. But it introduces a risk
+            // of getting a tiny negative value due to roundoff error, so we should
+            // probably just go ahead and store the row and column means.
+            double SSI = SSF - SSA - SSB;
+            Debug.Assert(SSI >= 0.0);
+
+            AnovaRow row = new AnovaRow(SSA, rCount - 1);
+            AnovaRow column = new AnovaRow(SSB, cCount - 1);
+            AnovaRow interaction = new AnovaRow(SSI, (rCount - 1) * (cCount - 1));
+            AnovaRow error = new AnovaRow(SSE, n - rCount * cCount);
+
+            TwoWayAnovaResult result = new TwoWayAnovaResult(row, column, interaction, error);
+            return (result);
 
         }
 

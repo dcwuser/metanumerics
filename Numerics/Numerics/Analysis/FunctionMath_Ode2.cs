@@ -20,7 +20,48 @@ namespace Meta.Numerics.Analysis {
     }
 
 
-    internal class BulrischStoerStrategy {
+    public static class NewMethods {
+
+        public static OdeResult IntegrateOde(Func<double, double, double> rhs, double x0, double y0, double x1) {
+
+            if (rhs == null) throw new ArgumentNullException(nameof(rhs));
+
+            SingleBulrischStoerEngine engine = new SingleBulrischStoerEngine(rhs, x0, y0);
+            BulrischStoerStrategy<OdeResult> strategy = new BulrischStoerStrategy<OdeResult>(engine, null);
+            strategy.IntegrateTo(x1);
+            return (engine.GetResult());
+
+        }
+
+    }
+
+    internal abstract class OdeStrategy<T> {
+
+        protected OdeStrategy (OdeEngine<T> engine, Action<T> listener) {
+            this.engine = engine;
+            this.listener = listener;
+        }
+
+        private readonly OdeEngine<T> engine;
+
+        private readonly Action<T> listener;
+
+        public void IntegrateTo (double x1) {
+
+            if (listener != null) {
+                T result = engine.GetResult();
+                listener(result);
+            }
+
+        }
+
+    }
+
+    internal class BulrischStoerStrategy<T> : OdeStrategy<T> {
+
+        public BulrischStoerStrategy (OdeEngine<T> engine, Action<T> listener) : base(engine, listener) {
+
+        }
 
         private int kMin;
 
@@ -42,7 +83,8 @@ namespace Meta.Numerics.Analysis {
 
             for (int k = 0; k < kMax; k++) {
 
-                work += engine.AddTrialStep();
+                engine.AddTrialStep();
+                work += engine.Sizes[k];
 
                 if (k == 0) {
                     errors[k] = engine.Norm;
@@ -102,7 +144,7 @@ namespace Meta.Numerics.Analysis {
 
         }
 
-        private BulrischStoerEngine engine;
+        private BulrischStoerEngine<T> engine;
 
     }
 
@@ -135,7 +177,7 @@ namespace Meta.Numerics.Analysis {
 
     }
 
-    internal abstract class BulrischStoerEngine {
+    internal abstract class BulrischStoerEngine<T> : OdeEngine<T> {
 
         public abstract IList<int> Sizes { get; }
 
@@ -148,12 +190,6 @@ namespace Meta.Numerics.Analysis {
         public double Error { get; set; }
 
         public double Norm { get; set; }
-
-        // Put into others
-
-        public double X;
-
-        public double DeltaX;
 
     }
 
@@ -181,7 +217,7 @@ namespace Meta.Numerics.Analysis {
 
     }
 
-    internal class SingleStoermerEngine : BulrischStoerEngine {
+    internal class SingleStoermerEngine : OdeEngine<OdeResult>, IBulrischStoerEngine {
 
         private Func<double, double, double> rhs;
         private double Evaluate (double x, double y) {
@@ -199,7 +235,7 @@ namespace Meta.Numerics.Analysis {
 
         private static int[] N = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
-        public override IList<int> Sizes {  get { return (N); } }
+        public IList<int> Sizes {  get { return (N); } }
 
         private void TrialStep (int n, out double Y1, out double YP1) {
 
@@ -222,12 +258,12 @@ namespace Meta.Numerics.Analysis {
         private NevilleExtrapolator yExtrapolator = new NevilleExtrapolator(N.Length);
         private NevilleExtrapolator ypExtrapolator = new NevilleExtrapolator(N.Length);
 
-        public override void Clear () {
+        public void Clear () {
             yExtrapolator.Clear();
             ypExtrapolator.Clear();
         }
 
-        public override int AddTrialStep () {
+        public void AddTrialStep () {
 
             int k = yExtrapolator.Count;
 
@@ -243,11 +279,13 @@ namespace Meta.Numerics.Analysis {
             );
             Error = Math.Max(yExtrapolator.Estimate.Uncertainty, ypExtrapolator.Estimate.Uncertainty);
 
-            return (N[k]);
         }
 
+        public double Norm { get; private set; }
 
-        public override void Accept () {
+        public double Error { get; private set; }
+
+        public void Accept () {
 
             X += DeltaX;
             Y = yExtrapolator.Estimate.Value;
@@ -256,7 +294,7 @@ namespace Meta.Numerics.Analysis {
 
         }
         
-        public OdeResult GetResult () {
+        public override OdeResult GetResult () {
 
             return (new OdeResult(
                 this.X,
@@ -270,7 +308,14 @@ namespace Meta.Numerics.Analysis {
 
     }
 
-    internal class SingleBulrischStoerEngine : BulrischStoerEngine {
+    internal class SingleBulrischStoerEngine : BulrischStoerEngine<OdeResult> {
+
+        public SingleBulrischStoerEngine(Func<double, double, double> rhs, double x, double y) {
+            this.rhs = rhs;
+            this.X = x;
+            this.Y = y;
+            this.YPrime = rhs(x, y);
+        }
 
         private Func<double, double, double> rhs;
 
@@ -279,7 +324,7 @@ namespace Meta.Numerics.Analysis {
             return (rhs(x, y));
         }
 
-        private int count;
+        private int count = 0;
 
         private double Y;
 
@@ -343,10 +388,22 @@ namespace Meta.Numerics.Analysis {
             }
         }
 
+        public override OdeResult GetResult () {
+
+            return (new OdeResult(
+                this.X,
+                this.Y,
+                this.YPrime,
+                this.count,
+                null
+            ));
+
+        }
+
     }
 
 
-    internal class MultiBulrischStoerEngine : BulrischStoerEngine {
+    internal class MultiBulrischStoerEngine : BulrischStoerEngine<MultiOdeResult> {
 
         private Func<double, IList<double>, IList<double>> rhs;
 
@@ -417,6 +474,13 @@ namespace Meta.Numerics.Analysis {
 
         public override void Accept () {
             throw new NotImplementedException();
+        }
+
+        public override MultiOdeResult GetResult () {
+
+            return (new MultiOdeResult(
+                this.X, null, null, count, null
+            ));
         }
 
     }

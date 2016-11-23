@@ -199,28 +199,106 @@ namespace Test {
         }
 
         [TestMethod]
+        public void TwoWayAnova () {
+
+            Sample[,] samples = new Sample[,] {
+                { new Sample(54, 49, 59, 39, 55), new Sample(25, 29, 47, 26, 28) },
+                { new Sample(53, 72, 43, 56, 52), new Sample(46, 51, 33, 47, 41) },
+                { new Sample(33, 30, 26, 25, 29), new Sample(18, 21, 34, 40, 24) }
+            };
+
+            /*
+            Sample[,] samples = new Sample[,] {
+                { new Sample(4, 5, 6, 5), new Sample(7, 9, 8, 12), new Sample(10, 12, 11, 7) },
+                { new Sample(6, 6, 4, 4), new Sample(13, 15, 12, 12), new Sample(12, 13, 10, 13) }
+            };
+            */
+
+            Sample.TwoWayAnovaTest(samples);
+
+        }
+
+        [TestMethod]
         public void PredictionVariance () {
 
-            Distribution xDistribution = new UniformDistribution(Interval.FromEndpoints(1.0, 8.0));
+            double a0 = -2.0;
+            double b0 = 3.0;
+
+            double[] xValues = TestUtilities.GenerateUniformRealValues(1.0, 8.0, 10);
+
             Distribution eDistribuiton = new NormalDistribution();
 
             Sample zSample = new Sample();
             Sample vSample = new Sample();
+            Sample uSample = new Sample();
 
-            for (int i = 0; i < 100; i++) {
+            BivariateSample pSample = new BivariateSample();
+            Sample sSample = new Sample();
+
+            Sample cbbSample = new Sample();
+            Sample cabSample = new Sample();
+            Sample caaSample = new Sample();
+
+            for (int i = 0; i < 10000; i++) {
                 Random rng = new Random(i);
                 BivariateSample sample = new BivariateSample();
-                for (int j = 0; j < 10; j++) {
-                    double x = xDistribution.GetRandomValue(rng);
-                    double y = -1.0 + 2.0 * x + eDistribuiton.GetRandomValue(rng);
+                foreach (double x in xValues) {
+                    double y = a0 + b0 * x + eDistribuiton.GetRandomValue(rng);
                     sample.Add(x, y);
                 }
+
+                int n = sample.Count;
+                double mx = sample.X.Mean;
+                double my = sample.Y.Mean;
+                double cxx = sample.X.Variance;
+                double cyy = sample.Y.Variance;
+                double cxy = sample.Covariance;
+
+                double b = cxy / cxx;
+                double a = my - b * mx;
+                pSample.Add(a, b);
+
+                double r = cxy / Math.Sqrt(cxx * cyy);
+                Distribution rDistribution = new PearsonRDistribution(n);
+                double pr = rDistribution.RightProbability(r) * 2.0;
+
+                double F = r * r / (1.0 - r * r) * (n - 2);
+                Distribution fDistribution = new FisherDistribution(1, n - 2);
+                double pF = fDistribution.RightProbability(F);
+
+                BivariateSample residuals = new BivariateSample();
+
+                double s2 = 0.0;
+                foreach(XY point in sample) {
+                    double rs = point.Y - (a + b * point.X);
+                    residuals.Add(point.X, rs);
+                    s2 += rs * rs;
+                }
+                s2 = s2 / (n - 2);
+                sSample.Add(s2);
+
+                double cbb = s2 / cxx / n;
+                double cab = -mx * cbb;
+                double caa = (cxx + mx * mx) * cbb;
+
+                cbbSample.Add(cbb);
+                cabSample.Add(cab);
+                caaSample.Add(caa);
+
                 FitResult fit = sample.LinearRegression();
-                double x0 = 3.0;
+
+                double x0 = 0.0;
                 double yp = fit.Parameters[0] + x0 * fit.Parameters[1];
-                double y0 = -1.0 + 2.0 * x0;
+                double y0 = a0 + b0 * x0 + eDistribuiton.GetRandomValue(rng);
                 zSample.Add(yp - y0);
-                vSample.Add(sample.Y.Variance * Math.Sqrt(1.0 - MoreMath.Sqr(sample.CorrelationCoefficient)));
+
+                ColumnVector c = new ColumnVector(1.0, x0);
+                double v = c.Transpose() * (fit.CovarianceMatrix) * c;
+                vSample.Add(v);
+
+                double u = s2 * (1.0 + 1.0 / n + MoreMath.Sqr(x0 - mx) / (cxx * n));
+                uSample.Add(u);
+               
             }
 
         }

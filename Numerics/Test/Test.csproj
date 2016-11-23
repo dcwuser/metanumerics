@@ -74,6 +74,7 @@
     <Compile Include="AdvancedMathTest_Coulomb.cs" />
     <Compile Include="AdvancedMathTest_Elliptic.cs" />
     <Compile Include="AdvancedMathTest_Jacobi.cs" />
+    <Compile Include="AnovaTest.cs" />
     <Compile Include="BinaryContingencyTableTest.cs" />
     <Compile Include="BivariateSampleTest.cs" />
     <Compile Include="Bugs.cs" />

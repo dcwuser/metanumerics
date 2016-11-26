@@ -227,19 +227,30 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (n);
 
             } else {
-                // for larger distributions, use bisection
-                // this will require log_{2}(m) CDF evaluations, which is at most 31
-                int ka = 0;
-                int kb = n;
-                while (ka != kb) {
-                    int k = (ka + kb) / 2;
-                    if (P > LeftInclusiveProbability(k)) {
-                        ka = k + 1;
-                    } else {
-                        kb = k;
-                    }
+
+                double Q = 1.0 - P;
+                if (Q == 0.0) return (n);
+                double mu = n * p;
+
+                int kmin, kmax;
+                if (P < 0.5) {
+                    kmin = 0;
+                    kmax = (int) Math.Ceiling(mu);
+                    int kChernov = (int) Math.Floor(mu - Math.Sqrt(-2.0 * mu * Math.Log(P)));
+                    if (kChernov > kmin) kmin = kChernov;
+                } else {
+                    kmin = (int) Math.Floor(mu);
+                    kmax = n;
+                    int kMarkov = (int) Math.Ceiling(mu / Q);
+                    if (kMarkov < kmax) kmax = kMarkov;
+                    int kCantelli = (int) Math.Ceiling(mu + Math.Sqrt(mu * q * P / Q));
+                    if (kCantelli < kmax) kmax = kCantelli;
+                    int kChernov = (int) Math.Ceiling(mu + Math.Sqrt(-2.0 * mu * Math.Log(Q)));
+                    if (kChernov < kmax) kmax = kChernov;
                 }
-                return (ka);
+
+                return (InverseLeftProbability(kmin, kmax, P));
+
             }
         }
 

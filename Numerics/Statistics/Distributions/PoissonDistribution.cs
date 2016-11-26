@@ -126,35 +126,28 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override int InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
 
-            //Console.WriteLine("P={0}", P);
-            //int count = 0;
+            double Q = 1.0 - P;
 
-            // expand interval until we bracket P
-            int ka = 0;
-            int kb = (int) Math.Ceiling(mu);
-            //Console.WriteLine("[{0} {1}] {2}", ka, kb, LeftProbability(kb));
-            while (P > LeftInclusiveProbability(kb)) {
-                ka = kb;
-                kb = 2 * kb;
-                //Console.WriteLine("[{0} {1}] {2}", ka, kb, LeftProbability(kb));
-                //count++;
-                //if (count > 32) throw new NonconvergenceException();
+            // Use the bounds on the median and the Markov inequality
+            // to place bounds on the value of k.
+            int kmin, kmax;
+            if (P < 0.5) {
+                kmin = 0;
+                kmax = (int) Math.Ceiling(mu + 1.0 / 3.0);
+            } else {
+                kmin = Math.Max((int) Math.Floor(mu - Global.LogTwo), 0);
+                kmax = (int) Math.Ceiling(mu / Q);
             }
 
-            //count = 0;
+            // Use the Chernov inequality to improve the lower bound, if possible
+            int kChernov = (int) Math.Floor(mu - Math.Sqrt(-2.0 * mu * Math.Log(P)));
+            if (kChernov > kmin) kmin = kChernov;
 
-            // reduce interval until we have isolated P
-            // this logic is copied from Binomial; we should factor it out
-            while (ka != kb) {
-                int k = (ka + kb) / 2;
-                if (P > LeftInclusiveProbability(k)) {
-                    ka = k + 1;
-                } else {
-                    kb = k;
-                }
-                //if (count > 32) throw new NonconvergenceException();
-            }
-            return (ka);
+            // Use the Cantelli inequality to improve the upper bound, if possible
+            int kCantelli = (int) Math.Ceiling(mu + Math.Sqrt(mu * P / Q));
+            if (kCantelli < kmax) kmax = kCantelli;
+
+            return (InverseLeftProbability(kmin, kmax, P));
 
         }
 

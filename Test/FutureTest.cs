@@ -218,6 +218,210 @@ namespace Test {
 
         }
 
+
+        [TestMethod]
+        public void BinomialInverseCdf () {
+
+            foreach (int n in new int[] { 2, 8, 32, 128 }) {
+                foreach (double p in new double[] { 0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99 }) {
+                    BinomialDistribution d = new BinomialDistribution(p, n);
+                    foreach (double P in new double[] { 0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99 }) {
+
+                        double Q = 1.0 - P;
+
+                        double kMin = 0.0;
+                        string sMin = "Minimum";
+                        double kMax = n;
+                        string sMax = "Maximum";
+
+                        double mu = n * p;
+
+                        double kMarkov = mu / Q;
+                        if (kMarkov < kMax) {
+                            kMax = kMarkov;
+                            sMax = "Markov";
+                        }
+
+                        double kMedian;
+                        if (P < 0.5) {
+                            kMedian = Math.Ceiling(mu);
+                            if (kMedian < kMax) {
+                                kMax = kMedian;
+                                sMax = "Median";
+                            }
+                        } else {
+                            kMedian = Math.Floor(mu);
+                            if (kMedian > kMin) {
+                                kMin = kMedian;
+                                sMin = "Median";
+                            }
+                        }
+
+                        double kChernovLower = mu - Math.Sqrt(-2.0 * mu * Math.Log(P));
+                        if (kChernovLower > kMin) {
+                            kMin = kChernovLower;
+                            sMin = "Chernov";
+                        }
+
+                        
+                        double kChernovUpper = 1.0 + mu + Math.Sqrt(-2.0 * mu * Math.Log(Q));
+                        if (kChernovUpper < kMax) {
+                            kMax = kChernovUpper;
+                            sMax = "Chernov";
+                        }
+                        
+
+                        double kCantelli = mu + Math.Sqrt(n * p * (1.0 - p) * P / Q);
+                        if (kCantelli < kMax) {
+                            kMax = kCantelli;
+                            sMax = "Cantelli";
+                        }
+
+                        int k = d.InverseLeftProbability(P);
+                        Assert.IsTrue(kMin <= k);
+                        Assert.IsTrue(k <= kMax);
+
+                        Console.WriteLine("n={0} p={1}: P={2} {3} ({4}) <= {5} <= {6} ({7})",
+                            n, p, P, kMin, sMin, k, kMax, sMax);
+                    }
+                }
+            }
+
+        }
+
+        [TestMethod]
+        public void NegativeBinomialInverseCdf () {
+
+            foreach (double r in new double[] { 0.1, 2, 34 }) {
+                foreach (double p in new double[] { 0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99 }) {
+                    double q = 1.0 - p;
+                    NegativeBinomialDistribution d = new NegativeBinomialDistribution(r, p);
+                    foreach (double P in new double[] { 0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99 }) {
+
+                        double Q = 1.0 - P;
+
+                        double kMin = 0.0;
+                        string sMin = "Minimum";
+                        double kMax = Double.PositiveInfinity;
+                        string sMax = "Maximum";
+
+                        double mu = r * p / q;
+
+                        double kMarkov = mu / Q;
+                        if (kMarkov < kMax) {
+                            kMax = kMarkov;
+                            sMax = "Markov";
+                        }
+
+                        /*
+                        double kMedian;
+                        if (P < 0.5) {
+                            kMedian = Math.Ceiling(mu);
+                            if (kMedian < kMax) {
+                                kMax = kMedian;
+                                sMax = "Median";
+                            }
+                        } else {
+                            kMedian = Math.Floor(mu);
+                            if (kMedian > kMin) {
+                                kMin = kMedian;
+                                sMin = "Median";
+                            }
+                        }
+                        */
+
+                        /*
+                        double kChernovLower = mu - Math.Sqrt(-2.0 * mu * Math.Log(P));
+                        if (kChernovLower > kMin) {
+                            kMin = kChernovLower;
+                            sMin = "Chernov";
+                        }
+
+
+                        double kChernovUpper = 1.0 + mu + Math.Sqrt(-2.0 * mu * Math.Log(Q));
+                        if (kChernovUpper < kMax) {
+                            kMax = kChernovUpper;
+                            sMax = "Chernov";
+                        }
+                        */
+
+                        double kCantelli = mu + Math.Sqrt(p * r * P / Q) / q;
+                        if (kCantelli < kMax) {
+                            kMax = kCantelli;
+                            sMax = "Cantelli";
+                        }
+
+                        int k = d.InverseLeftProbability(P);
+                        Assert.IsTrue(kMin <= k);
+                        Assert.IsTrue(k <= kMax);
+
+                        Console.WriteLine("r={0} p={1}: P={2} {3} ({4}) <= {5} <= {6} ({7})",
+                            r, p, P, kMin, sMin, k, kMax, sMax);
+                    }
+                }
+            }
+
+
+        }
+
+        [TestMethod]
+        public void PoissonInverseCdf () {
+
+            foreach (double mu in new double[] { 0.1, 2.0, 30.0 }) {
+                PoissonDistribution d = new PoissonDistribution(mu);
+                foreach (double P in new double[] { 0.01, 0.1, 0.3 , 0.5, 0.7, 0.9, 0.99 }) {
+
+                    double Q = 1.0 - P;
+
+                    double kMin = 0.0;
+                    string sMin = "Zero";
+                    double kMax = Double.PositiveInfinity;
+                    string sMax = "Infinity";
+
+                    double kMarkov = mu / Q;
+                    if (kMarkov < kMax) {
+                        kMax = kMarkov;
+                        sMax = "Markov";
+                    }
+
+                    double kMedian;
+                    if (P < 0.5) {
+                        kMedian = mu + 1.0 / 3.0;
+                        if (kMedian < kMax) {
+                            kMax = kMedian;
+                            sMax = "Median";
+                        }
+                    } else {
+                        kMedian = mu - Math.Log(2.0);
+                        if (kMedian > kMin) {
+                            kMin = kMedian;
+                            sMin = "Median";
+                        }
+                    }
+
+                    double kChernov = mu - Math.Sqrt(-2.0 * mu * Math.Log(P));
+                    if (kChernov > kMin) {
+                        kMin = kChernov;
+                        sMin = "Chernov";
+                    }
+
+                    double kCantelli = mu + Math.Sqrt(mu * P / Q); 
+                    if (kCantelli < kMax) {
+                        kMax = kCantelli;
+                        sMax = "Cantelli";
+                    }
+
+                    int k = d.InverseLeftProbability(P);
+                    Assert.IsTrue(kMin <= k);
+                    Assert.IsTrue(k <= kMax);
+
+                    Console.WriteLine("mu={0} P={1} {2} ({3}) <= {4}<= {5} ({6})", 
+                        mu, P, kMin, sMin, k, kMax, sMax);
+                }
+            }
+
+        }
+
         [TestMethod]
         public void PredictionVariance () {
 

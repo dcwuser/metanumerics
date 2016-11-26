@@ -93,12 +93,48 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="P">The percentile.</param>
         /// <returns>The value.</returns>
         public virtual int InverseLeftProbability (double P) {
+
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
+
+            return (InverseLeftProbability(Minimum, Maximum, P));
+
+            /*
             double PP = 0.0;
             for (int k = Minimum; k <= Maximum; k++) {
                 PP += ProbabilityMass(k);
                 if (PP >= P) return (k);
             }
             return (Maximum);
+            */
+        }
+
+        // Start with lower and upper limits, then use bisection to find
+        // value with LeftExclusiveProbability(k) < P < LeftInclusiveProbability(k)
+
+        // There are a lot of ways we can get limits with which to call this.
+        // Support: Can always start from the full supported interval.
+        // Markov: For distributions with only positive support, Q < \mu / x, so x < \mu / Q.
+        // Median: If analytic median can use it for one side based on whether P < 1/2 or > 1/2.
+        // Cantelli: Express in terms of z = (x - \mu)/\sigma, then Q < \frac{1}{1+z^2}, so z < \sqrt{P/Q}.
+        // Chernov (aka Chernoff)
+
+        internal virtual int InverseLeftProbability(int ka, int kb, double P) {
+
+            Debug.Assert(ka <= kb);
+
+            int n = 0;
+            while (ka != kb) {
+                n++;
+                int k = (ka + kb) / 2;
+                if (P > LeftInclusiveProbability(k)) {
+                    ka = k + 1;
+                } else {
+                    kb = k;
+                }
+                if (n > 32) throw new NonconvergenceException();
+            }
+            return (ka);
+
         }
 
         /// <summary>

@@ -122,7 +122,7 @@ namespace Test {
 
             Func<double, double, double> f = (double x, double y) => y;
 
-            OdeResult r = FunctionMath.SolveOde(f, 0.0, 1.0, 2.0);
+            OdeResult r = FunctionMath.IntegrateOde(f, 0.0, 1.0, 2.0);
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(r.Y, MoreMath.Sqr(Math.E)));
 
@@ -135,9 +135,17 @@ namespace Test {
             // y = \frac{y_0}{1 - y_0 (x - x_0)}
             Func<double, double, double> f = (double x, double y) => MoreMath.Sqr(y);
 
-            EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-8, EvaluationBudget = 1000 };
-            OdeResult result = FunctionMath.SolveOde(f, 0.0, 1.0, 0.99, settings);
+            int count = 0;
+            OdeEvaluationSettings settings = new OdeEvaluationSettings() {
+                RelativePrecision = 1.0E-8,
+                EvaluationBudget = 1024,
+                Listener = (OdeResult) => count++
+            };
+            OdeResult result = FunctionMath.IntegrateOde(f, 0.0, 1.0, 0.99, settings);
+
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y, 1.0 / (1.0 - 1.0 * (0.99 - 0.0)), result.Settings));
+
+            Assert.IsTrue(count > 0);
 
             Console.WriteLine(result.EvaluationCount);
         }
@@ -153,7 +161,7 @@ namespace Test {
             foreach (double y0 in new double[] { -0.1, 0.0, 0.4, 1.0, 1.6 }) {
                 Console.WriteLine(y0);
                 Interval r = Interval.FromEndpoints(0.0, 2.0);
-                OdeResult s = FunctionMath.SolveOde(rhs, 0.0, y0, 2.0);
+                OdeResult s = FunctionMath.IntegrateOde(rhs, 0.0, y0, 2.0);
                 double y1 = s.Y;
                 Console.WriteLine(y1);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(y1, solution(y0, 2.0)));
@@ -170,7 +178,7 @@ namespace Test {
 
             int count = 0;
             foreach (double t in new double[] { 0.5, 0.75, 1.50, 2.25, 3.25 }) {
-                OdeResult r = FunctionMath.SolveOde(rhs, 0.0, 1.0, t);
+                OdeResult r = FunctionMath.IntegrateOde(rhs, 0.0, 1.0, t);
                 double y1 = r.Y;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(y1, solution(1.0, t)));
                 count += r.EvaluationCount;
@@ -187,9 +195,19 @@ namespace Test {
             // (i.e. right hand side depends only on y, not y')
 
             Func<double, double, double> f = (double x, double y) => -y;
-            OdeResult r = FunctionMath.SolveConservativeOde(f, 0.0, 0.0, 1.0, 5.0);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(r.Y, MoreMath.Sin(5.0)));
-            Console.WriteLine(r.EvaluationCount);
+            OdeEvaluationSettings settings = new OdeEvaluationSettings() {
+                Listener = (OdeResult r) => {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        MoreMath.Sqr(r.Y) + MoreMath.Sqr(r.YPrime), 1.0, r.Settings
+                    ));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        r.Y, MoreMath.Sin(r.X), r.Settings
+                    ));
+                }
+            };
+            OdeResult result = FunctionMath.IntegrateConservativeOde(f, 0.0, 0.0, 1.0, 5.0, settings);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y, MoreMath.Sin(5.0)));
+            Console.WriteLine(result.EvaluationCount);
         }
 
         private static double EulerKineticEnergy (IList<double> I, IList<double> w) {
@@ -288,34 +306,32 @@ namespace Test {
 
             double T = 4.0 * AdvancedMath.EllipticK(k) / v;
 
-            double eps = 1.0E-12;
-            EvaluationSettings settings = new EvaluationSettings() {
-                RelativePrecision = eps,
-                AbsolutePrecision = eps * eps,
-                EvaluationBudget = 10000
+            int listenerCount = 0;
+            MultiOdeEvaluationSettings settings = new MultiOdeEvaluationSettings() {
+                Listener = (MultiOdeResult q) => {
+                    listenerCount++;
+
+                    // Verify that energy and angular momentum conservation is respected
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(EulerKineticEnergy(I, q.Y), E2, q.Settings));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(EulerAngularMomentum(I, q.Y), L2, q.Settings));
+
+                    // Verify that the result agrees with the analytic solution
+                    //ColumnVector YP = new ColumnVector(
+                    //    A[0] * AdvancedMath.JacobiCn(v * q.X, k),
+                    //    A[1] * AdvancedMath.JacobiSn(v * q.X, k),
+                    //    A[2] * AdvancedMath.JacobiDn(v * q.X, k)
+                    //);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(q.Y, sln(q.X), q.Settings));
+                }
             };
-            settings.UpdateHandler = (EvaluationResult r) => {
-                MultiOdeResult q = (MultiOdeResult) r;
-
-                // Verify that energy and angular momentum conservation is respected
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(EulerKineticEnergy(I, q.Y), E2, settings));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(EulerAngularMomentum(I, q.Y), L2, settings));
-
-                // Verify that the result agrees with the analytic solution
-                //ColumnVector YP = new ColumnVector(
-                //    A[0] * AdvancedMath.JacobiCn(v * q.X, k),
-                //    A[1] * AdvancedMath.JacobiSn(v * q.X, k),
-                //    A[2] * AdvancedMath.JacobiDn(v * q.X, k)
-                //);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(q.Y, sln(q.X), settings));
-            };
-
-            MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, w0, T, settings);
+            MultiOdeResult result = MultiFunctionMath.IntegrateOde(rhs, 0.0, w0, T, settings);
             Console.WriteLine(result.EvaluationCount);
+            //MultiOdeResult r2 = NewMethods.IntegrateOde(rhs, 0.0, w0, T, settings);
 
             // Verify that one period of evolution has brought us back to our initial state
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result.X, T));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y, w0, settings));
+            Assert.IsTrue(listenerCount > 0);
 
         }
 
@@ -328,13 +344,12 @@ namespace Test {
                 return (new ColumnVector(r[1], -r[0] / d3, r[3], -r[2] / d3));
             };
 
-            //double e = 0.5;
             foreach (double e in TestUtilities.GenerateUniformRealValues(0.0, 1.0, 8)) {
                 Console.WriteLine(e);
 
                 ColumnVector r0 = new ColumnVector(1.0 - e, 0.0, 0.0, Math.Sqrt((1.0 + e) / (1.0 - e)));
 
-                ColumnVector r1 = MultiFunctionMath.SolveOde(rhs, 0.0, r0, 2.0 * Math.PI).Y;
+                ColumnVector r1 = MultiFunctionMath.IntegrateOde(rhs, 0.0, r0, 2.0 * Math.PI).Y;
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(r0, r1, new EvaluationSettings() { RelativePrecision = 1.0E-9 }));
             }
@@ -363,9 +378,6 @@ namespace Test {
                 return (new double[] { -r[0] / d3, -r[1] / d3 });
             };
 
-            EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-12, AbsolutePrecision = 1.0E-24, EvaluationBudget = 8192 };
-            EvaluationSettings relaxedSettings = new EvaluationSettings() { RelativePrecision = 2.0 * settings.RelativePrecision };
-
             foreach (double e in new double[] { 0.0, 0.1, 0.3, 0.5, 0.7, 0.9 }) {
                 Console.WriteLine("e = {0}", e);
 
@@ -374,24 +386,25 @@ namespace Test {
 
                 double E = OrbitEnergy(r0, rDot0);
                 double L = OrbitAngularMomentum(r0, rDot0);
-                
-                settings.UpdateHandler = (EvaluationResult a) => {
-                    MultiOdeResult b = (MultiOdeResult) a;
-                    //Console.WriteLine("  {0} {1}", b.EvaluationCount, b.X);
-                    //Console.WriteLine("  {0} ?= {1}", OrbitEnergy(b.Y, b.YPrime), OrbitEnergy(r0, rp0)); 
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(OrbitAngularMomentum(b.Y, b.YPrime), L, relaxedSettings));
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(OrbitEnergy(b.Y, b.YPrime), E, relaxedSettings));
+
+                MultiOdeEvaluationSettings settings = new MultiOdeEvaluationSettings() {
+                    Listener = (MultiOdeResult b) => {
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(OrbitAngularMomentum(b.Y, b.YPrime), L, b.Settings));
+                        EvaluationSettings relaxed = new EvaluationSettings() { RelativePrecision = 2.0 * b.Settings.RelativePrecision, AbsolutePrecision = 2.0 * b.Settings.AbsolutePrecision };
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(OrbitEnergy(b.Y, b.YPrime), E, relaxed));
+                    }
                 };
                 
-                
-                MultiOdeResult result = MultiFunctionMath.SolveConservativeOde(rhs, 0.0, r0, rDot0, 2.0 * Math.PI, settings);
+               
+                MultiOdeResult result = MultiFunctionMath.IntegrateConservativeOde(rhs, 0.0, r0, rDot0, 2.0 * Math.PI, settings);
                 ColumnVector r1 = result.Y;
                 
-
                 Console.WriteLine(result.EvaluationCount);
-                // The 
 
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(r0, r1, new EvaluationSettings() { RelativePrecision = 1.0E-9 }));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(r0, r1, new EvaluationSettings() { RelativePrecision = 512 * result.Settings.RelativePrecision }));
+
+                // For large eccentricities, we loose precision. This is apparantly typical behavior.
+                // Would be nice if we could quantify expected loss, or correct to do better.
 
             }
         }
@@ -433,15 +446,7 @@ namespace Test {
 
             double T = 6.32591398292621;
 
-            EvaluationSettings settings = new EvaluationSettings() {
-                RelativePrecision = 1.0E-12,
-                AbsolutePrecision = 1.0E-24,
-                UpdateHandler = (EvaluationResult r) => {
-                     Console.WriteLine(r.EvaluationCount);
-                }
-            };
-
-            MultiOdeResult result = MultiFunctionMath.SolveConservativeOde(rhs, 0.0, q0, p0, T, settings);
+            MultiOdeResult result = MultiFunctionMath.IntegrateConservativeOde(rhs, 0.0, q0, p0, T);
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(q0, result.Y, 1.0E-10));
 
@@ -494,13 +499,13 @@ namespace Test {
             ColumnVector r0 = new ColumnVector(R, -c * R, -c * R, 0.0, s * R, -s * R );
             double[] rp0 = new double[] { 0.0, -s * v, s * v, v, -c * v, -c * v };
 
-            EvaluationSettings settings = new EvaluationSettings() {
+            int count = 0;
+            MultiOdeEvaluationSettings settings = new MultiOdeEvaluationSettings() {
                 RelativePrecision = 1.0E-12,
                 AbsolutePrecision = 1.0E-12,
-                EvaluationBudget = 8192,
-                UpdateHandler = (EvaluationResult er) => {
-                    MultiOdeResult mer = (MultiOdeResult) er;
+                Listener = (MultiOdeResult mer) => {
 
+                    count++;
                     ColumnVector r = mer.Y;
 
                     double x01 = r[0] - r[1];
@@ -511,17 +516,19 @@ namespace Test {
                     double y02 = r[3] - r[5];
                     double y12 = r[4] - r[5];
 
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.Hypot(x01, y01), L, 2.0E-12));
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.Hypot(x02, y02), L, 2.0E-12));
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.Hypot(x12, y12), L, 2.0E-12));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.Hypot(x01, y01), L, mer.Settings));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.Hypot(x02, y02), L, mer.Settings));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.Hypot(x12, y12), L, mer.Settings));
 
                 }
             };
 
-            MultiOdeResult result = MultiFunctionMath.SolveConservativeOde(rhs, 0.0, r0, rp0, T, settings);
+            MultiOdeResult result = MultiFunctionMath.IntegrateConservativeOde(rhs, 0.0, r0, rp0, T, settings);
 
             // Test that one period brought us back to the same place.
             Assert.IsTrue(TestUtilities.IsNearlyEqual(r0, result.Y, settings));
+
+            Assert.IsTrue(count > 0);
         }
 
 
@@ -547,9 +554,9 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(y0, a * s0.FirstSolutionValue + b * s0.SecondSolutionValue));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(yp0, a * s0.FirstSolutionDerivative + b * s0.SecondSolutionDerivative));
 
-            // Integrate to a new point
+            // Integrate to a new point (pick a negative one so we test left integration)
             double x1 = -5.0;
-            OdeResult result = FunctionMath.SolveConservativeOde(f, x0, y0, yp0, x1);
+            OdeResult result = FunctionMath.IntegrateConservativeOde(f, x0, y0, yp0, x1);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result.X, x1));
             Console.WriteLine(result.EvaluationCount);
 
@@ -565,7 +572,7 @@ namespace Test {
 
             // Demanding zero net voltage across L, R, and C elements in series gives
             //   Q / C + \dot{Q} R + \ddot{Q} L = 0
-            // This is second order linear ODE with constant coefficients, i.e.
+            // This is a second order linear ODE with constant coefficients, i.e.
             // universal damped harmonic oscialtor.
 
             // Characteristic equation r^2 L + R r + r / C = 0 with solutions
@@ -582,15 +589,10 @@ namespace Test {
             //   r = \sqrt{ w_1^2 - w_0^2 } \pm w_1
             // so
             //   Q = A e^{-w_a t} + B^{-w_b t}
-            // We get purely damped behavior.S 
+            // We get purely damped behavior. 
 
             double q0 = 1.0;
             double qp0 = 0.0;
-
-            EvaluationSettings s = new EvaluationSettings() {
-                RelativePrecision = 1.0E-12,
-                AbsolutePrecision = 1.0E-24
-            };
 
             foreach(double L in TestUtilities.GenerateRealValues(0.1, 10.0, 4, 1)) {
                 foreach (double R in TestUtilities.GenerateRealValues(0.1, 1.0, 4, 2)) {
@@ -634,15 +636,12 @@ namespace Test {
                         }
                         Console.WriteLine(qt);
 
-                        MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, new double[] { q0, qp0 }, t);
+                        MultiOdeResult result = MultiFunctionMath.IntegrateOde(rhs, 0.0, new double[] { q0, qp0 }, t);
                         Console.WriteLine(result.Y[0]);
 
                         Console.WriteLine(result.EvaluationCount);
 
-                        if (!TestUtilities.IsNearlyEqual(qt, result.Y[0], s)) {
-                            Console.WriteLine("no");
-                        }
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(qt, result.Y[0], s));
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(qt, result.Y[0], result.Settings));
 
                     }
                 }
@@ -660,7 +659,7 @@ namespace Test {
             Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> y) =>
                 new double[] { y[1], MoreMath.Hypot(1.0, y[1]) };
 
-            MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, new double[] { 1.0, 0.0 }, 2.0);
+            MultiOdeResult result = MultiFunctionMath.IntegrateOde(rhs, 0.0, new double[] { 1.0, 0.0 }, 2.0);
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y[0], Math.Cosh(2.0)));
 
@@ -679,14 +678,14 @@ namespace Test {
                 u[0] * u[1] - beta * u[2]
             );
 
-            EvaluationSettings settings = new EvaluationSettings() {
+            MultiOdeEvaluationSettings settings = new MultiOdeEvaluationSettings() {
                 RelativePrecision = 1.0E-8,
                 EvaluationBudget = 10000
             };
 
             ColumnVector u0 = new ColumnVector(1.0, 1.0, 1.0);
 
-            MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, u0, 10.0, settings);
+            MultiOdeResult result = MultiFunctionMath.IntegrateOde(rhs, 0.0, u0, 10.0, settings);
 
             Console.WriteLine(result.EvaluationCount);
 
@@ -700,7 +699,7 @@ namespace Test {
             // The Lane-Emden equations describe a simplified model of stellar structure.
             // See http://mathworld.wolfram.com/Lane-EmdenDifferentialEquation.html
 
-            // Analytic solutions are known for the n=0, 1, and 5 cases
+            // Analytic solutions are known for the n=0, 1, and 5 cases.
 
             int n = 0;
 
@@ -712,26 +711,18 @@ namespace Test {
 
             double x1 = 2.0;
 
-            EvaluationSettings settings = new EvaluationSettings() {
-                RelativePrecision = 1.0E-12, AbsolutePrecision = 1.0E-24,
-                UpdateHandler = (EvaluationResult o) => {
-                    MultiOdeResult r = (MultiOdeResult) o;
-                    Console.WriteLine(r.X);
-                }
-            };
-
             n = 0;
-            MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, t0, x1);
+            MultiOdeResult result = MultiFunctionMath.IntegrateOde(rhs, 0.0, t0, x1);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y[0], 1.0 - MoreMath.Sqr(x1) / 6.0));
             Console.WriteLine(result.EvaluationCount);
 
             n = 1;
-            result = MultiFunctionMath.SolveOde(rhs, 0.0, t0, x1);
+            result = MultiFunctionMath.IntegrateOde(rhs, 0.0, t0, x1);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y[0], MoreMath.Sin(x1) / x1));
             Console.WriteLine(result.EvaluationCount);
 
             n = 5;
-            result = MultiFunctionMath.SolveOde(rhs, 0.0, t0, x1);
+            result = MultiFunctionMath.IntegrateOde(rhs, 0.0, t0, x1);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y[0], 1.0 / Math.Sqrt(1.0 + MoreMath.Sqr(x1) / 3.0)));
             Console.WriteLine(result.EvaluationCount);
 
@@ -771,39 +762,30 @@ namespace Test {
                 -C * p[1] + D * p[0] * p[1]
             };
 
-            Func<IList<double>, double> conserved = (IList<double> p) =>
+            Func<IList<double>, double> conservedQuantity = (IList<double> p) =>
                 -D * p[0] + C * Math.Log(p[0]) - B * p[1] + A * Math.Log(p[1]);
 
             ColumnVector p0 = new ColumnVector(10.0, 5.0);
 
-            double L0 = conserved(p0);
+            double L0 = conservedQuantity(p0);
 
-            // Set up a handler that verified conservation and positivity
-            EvaluationSettings settings = new EvaluationSettings() {
-                RelativePrecision = 1.0E-12,
-                AbsolutePrecision = 1.0E-24,
-                EvaluationBudget = 8192
-            };
-            settings.UpdateHandler = (EvaluationResult r) => {
-                    MultiOdeResult rr = (MultiOdeResult) r;
-                    double L = conserved(rr.Y);
+            // Set up a handler that verifies conservation and positivity
+            MultiOdeEvaluationSettings settings = new MultiOdeEvaluationSettings() {
+                Listener = (MultiOdeResult rr) => {
+                    double L = conservedQuantity(rr.Y);
                     Assert.IsTrue(rr.Y[0] > 0.0);
                     Assert.IsTrue(rr.Y[1] > 0.0);
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(L, L0, settings));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(L, L0, rr.Settings));
+                }
             };
-
 
             // Estimate period
             double T = 2.0 * Math.PI / Math.Sqrt(A * C);
 
             // Integrate over a few estimated periods
-            MultiOdeResult result = MultiFunctionMath.SolveOde(rhs, 0.0, p0, 3.0 * T, settings);
+            MultiOdeResult result = MultiFunctionMath.IntegrateOde(rhs, 0.0, p0, 3.0 * T, settings);
 
             Console.WriteLine(result.EvaluationCount);
-
-            //double L1 = conserved(result.Y);
-
-            //Assert.IsTrue(TestUtilities.IsNearlyEqual(L0, L1));
 
         }
 
@@ -823,7 +805,7 @@ namespace Test {
                     RelativePrecision = 1.0E-13,
                     AbsolutePrecision = 0.0
                 };
-                OdeResult r = FunctionMath.SolveOde(rhs, 0.0, 0.0, x1);
+                OdeResult r = FunctionMath.IntegrateOde(rhs, 0.0, 0.0, x1);
                 Debug.WriteLine("{0}: {1} {2}: {3}", x1, r.Y, AdvancedMath.Dawson(x1), r.EvaluationCount);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(r.Y, AdvancedMath.Dawson(x1), s));
 
@@ -846,7 +828,7 @@ namespace Test {
             double u0 = Math.PI / 4.0;
             double p = 4.0 * AdvancedMath.EllipticK(MoreMath.Sin(u0 / 2.0));
 
-            OdeResult r = FunctionMath.SolveConservativeOde(rhs, 0.0, u0, 0.0, p);
+            OdeResult r = FunctionMath.IntegrateConservativeOde(rhs, 0.0, u0, 0.0, p);
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(r.Y, u0));
 
@@ -860,7 +842,7 @@ namespace Test {
             Func<double, double, double> rhs = (double t, double u) =>
                 2.0 / Math.Sqrt(Math.PI) * Math.Exp(-t * t);
 
-            OdeResult r = FunctionMath.SolveOde(rhs, 0.0, 0.0, 5.0);
+            OdeResult r = FunctionMath.IntegrateOde(rhs, 0.0, 0.0, 5.0);
 
              Console.WriteLine(r.Y);
 
@@ -941,13 +923,12 @@ namespace Test {
                 q0[3 * i + 2] = planets[i].Velocity[2];
             }
 
-            EvaluationSettings settings = new EvaluationSettings() {
+            MultiOdeEvaluationSettings settings = new MultiOdeEvaluationSettings() {
                 RelativePrecision = 1.0E-8,
-                AbsolutePrecision = 1.0E-16,
-                EvaluationBudget = 8192
+                AbsolutePrecision = 1.0E-16
             };
 
-            MultiOdeResult result = MultiFunctionMath.SolveConservativeOde(rhs, 0.0, p0, q0, 4332.59, settings);
+            MultiOdeResult result = MultiFunctionMath.IntegrateConservativeOde(rhs, 0.0, p0, q0, 4332.59, settings);
 
         }
 

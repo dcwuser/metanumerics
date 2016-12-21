@@ -167,10 +167,6 @@ namespace Test {
         }
 
 
-
-
-        [TestMethod]
-        [Ignore]
         public void JacobiPeriod () {
 
             double k = 0.875;
@@ -289,6 +285,8 @@ namespace Test {
 
         }
 
+
+
         [TestMethod]
         public void NegativeBinomialInverseCdf () {
 
@@ -345,9 +343,15 @@ namespace Test {
                         }
                         */
 
-                        double kCantelli = mu + Math.Sqrt(p * r * P / Q) / q;
-                        if (kCantelli < kMax) {
-                            kMax = kCantelli;
+                        double kCantelliLower = mu - Math.Sqrt(p * r * Q / P) / q;
+                        if (kCantelliLower > kMin) {
+                            kMin = kCantelliLower;
+                            sMin = "Cantelli";
+                        }
+
+                        double kCantelliUpper = mu + Math.Sqrt(p * r * P / Q) / q;
+                        if (kCantelliUpper < kMax) {
+                            kMax = kCantelliUpper;
                             sMax = "Cantelli";
                         }
 

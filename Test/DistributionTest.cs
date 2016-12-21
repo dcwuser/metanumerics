@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -18,27 +19,48 @@ namespace Test {
         // This appears to occur whether we use inverse CDF or x/(x+y) to generate beta deviates.
         // Perhaps it indicates a problem with P computation for beta in this region?
 
-        private Distribution[] distributions = new Distribution[] {
-            new CauchyDistribution(1.0, 2.0),
-            new UniformDistribution(Interval.FromEndpoints(-2.0,1.0)), new UniformDistribution(Interval.FromEndpoints(7.0, 9.0)),
-            new NormalDistribution(3.0,2.0),
-            new ExponentialDistribution(2.0),
-            new ChiSquaredDistribution(3),
-            new StudentDistribution(5),
-            new LognormalDistribution(0.2,0.4),
-            new WeibullDistribution(2.0, 3.0),
-            new LogisticDistribution(-4.0,5.0),
-            new FisherDistribution(4.0, 7.0),
-            new KuiperDistribution(),
-            new KolmogorovDistribution(),
-            new TriangularDistribution(1.0,2.0,4.0),
-            new BetaDistribution(0.5, 2.0),
-            new ParetoDistribution(1.0, 3.0),
-            new WaldDistribution(3.0, 1.0),
-            new PearsonRDistribution(7),
-            new GammaDistribution(0.8), new GammaDistribution(3.0, 5.0), new GammaDistribution(96.2),
-            new GumbelDistribution(1.2, 2.3)
-        };
+        private static List<Distribution> CreateDistributions () {
+
+            List<Distribution> distributions = new List<Distribution>( new Distribution[] {
+                new CauchyDistribution(1.0, 2.0),
+                new UniformDistribution(Interval.FromEndpoints(-2.0,1.0)), new UniformDistribution(Interval.FromEndpoints(7.0, 9.0)),
+                new NormalDistribution(3.0,2.0),
+                new ExponentialDistribution(2.0),
+                new ChiSquaredDistribution(3),
+                new StudentDistribution(5),
+                new LognormalDistribution(0.2,0.4),
+                new WeibullDistribution(2.0, 3.0),
+                new LogisticDistribution(-4.0,5.0),
+                new FisherDistribution(4.0, 7.0),
+                new KuiperDistribution(),
+                new KolmogorovDistribution(),
+                new TriangularDistribution(1.0,2.0,4.0),
+                new BetaDistribution(0.5, 2.0),
+                new ParetoDistribution(1.0, 3.0),
+                new WaldDistribution(3.0, 1.0),
+                new PearsonRDistribution(7),
+                new GammaDistribution(0.8), new GammaDistribution(3.0, 5.0), new GammaDistribution(96.2),
+                new GumbelDistribution(1.2, 2.3)
+            });
+
+            // Add some distributions that come from tests.
+            Sample small = TestUtilities.CreateSample(distributions[0], 7);
+            Sample large = TestUtilities.CreateSample(distributions[1], 127);
+            distributions.Add(small.KolmogorovSmirnovTest(distributions[2]).Distribution);
+            distributions.Add(large.KolmogorovSmirnovTest(distributions[3]).Distribution);
+            distributions.Add(small.KuiperTest(distributions[4]).Distribution);
+            distributions.Add(large.KuiperTest(distributions[5]).Distribution);
+            //distributions.Add(Sample.MannWhitneyTest(small, large).Distribution);
+
+            BivariateSample two = new BivariateSample();
+            two.Add(new double[] { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 }, new double[] { 6.0, 5.0, 4.0, 3.0, 2.0, 1.0 });
+            //distributions.Add(two.SpearmanRhoTest().Distribution);
+            //distributions.Add(two.KendallTauTest().Distribution);
+
+            return (distributions);
+        }
+
+        private static IEnumerable<Distribution> distributions = CreateDistributions();
 
         public static Distribution[] GetDistributions () {
             return (new Distribution[] {

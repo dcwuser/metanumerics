@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 
 namespace Meta.Numerics.Statistics.Distributions {
@@ -35,7 +36,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="distribution">The discrete distiribution to represent.</param>
         public DiscreteAsContinuousDistribution (DiscreteDistribution distribution) {
-            if (distribution == null) throw new ArgumentNullException("distribution"); 
+            if (distribution == null) throw new ArgumentNullException(nameof(distribution)); 
             this.d = distribution;
             this.xSupport = Interval.FromEndpoints(d.Minimum, d.Maximum);
         }
@@ -46,7 +47,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="distribution">The discrete distiribution to represent.</param>
         /// <param name="support">The continuous support interval into which the discrete support interval is to be mapped.</param>
         public DiscreteAsContinuousDistribution (DiscreteDistribution distribution, Interval support) {
-            if (distribution == null) throw new ArgumentNullException("distribution");
+            if (distribution == null) throw new ArgumentNullException(nameof(distribution));
             this.d = distribution;
             this.xSupport = support;
         }
@@ -61,6 +62,14 @@ namespace Meta.Numerics.Statistics.Distributions {
             kf = k - ki;
         }
 
+        private double ComputeEffectivePoint (double k) {
+            int dSupportWidth = d.Maximum - d.Minimum + 1;
+            double x =
+                xSupport.LeftEndpoint * (d.Maximum - k + 1) / dSupportWidth +
+                xSupport.RightEndpoint * (k - d.Minimum) / dSupportWidth;
+            return (x);
+        }
+
         /// <inheritdoc />
         public override double LeftProbability (double x) {
             if (x < xSupport.LeftEndpoint) {
@@ -68,7 +77,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (x > xSupport.RightEndpoint) {
                 return (1.0);
             } else {
-                int ki; double kf; ComputeEffectiveBin(x, out ki, out kf);
+                int ki; double kf;
+                ComputeEffectiveBin(x, out ki, out kf);
                 return (d.LeftExclusiveProbability(ki) + kf * d.ProbabilityMass(ki));
             }
         }
@@ -80,7 +90,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (x > xSupport.RightEndpoint) {
                 return (0.0);
             } else {
-                int ki; double kf; ComputeEffectiveBin(x, out ki, out kf);
+                int ki; double kf;
+                ComputeEffectiveBin(x, out ki, out kf);
                 return ((1.0 - kf) * d.ProbabilityMass(ki) + d.RightExclusiveProbability(ki));
             }
         }
@@ -138,7 +149,15 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-            return (d.InverseLeftProbability(P));
+            int ki = d.InverseLeftProbability(P);
+            double P0 = d.LeftExclusiveProbability(ki);
+            double P1 = d.ProbabilityMass(ki);
+            Debug.Assert(P0 <= P);
+            Debug.Assert(P <= P0 + P1);
+            double kf = (P - P0) / P1;
+            //Debug.Assert((0 <= kf) && (kf <= 1.0));
+            double k = ki + kf;
+            return (ComputeEffectivePoint(k));
         }
 
         /// <inheritdoc />

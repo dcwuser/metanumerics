@@ -1069,8 +1069,8 @@ namespace Test {
 
             // create three samples from them
             Sample s1a = CreateSample(d1, 20, 1);
-            Sample s1b = CreateSample(d1, 30, 2);
-            Sample s2 = CreateSample(d2, 40, 3);
+            Sample s1b = CreateSample(d1, 40, 2);
+            Sample s2 = CreateSample(d2, 80, 3);
 
             // Mann-Whitney test 1a vs. 1b; they should not be distinguished
             TestResult rab = Sample.MannWhitneyTest(s1a, s1b);

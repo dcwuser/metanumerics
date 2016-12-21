@@ -399,6 +399,7 @@ namespace Meta.Numerics {
 
         private static readonly double[] twoOverPiParts = ParseBinaryString(twoOverPi);
 
+        /*
         public static void Add (double a, double b, out double s, out double r) {
             if (Math.Abs(a) < Math.Abs(b)) Global.Swap(ref a, ref b);
             s = a + b;
@@ -447,7 +448,7 @@ namespace Meta.Numerics {
             throw new NonconvergenceException();
 
         }
-
+        */
 
         public static void Multiply (double[] a, double[] b, out long z0, out double z1) {
 
@@ -548,6 +549,7 @@ namespace Meta.Numerics {
         // fit in a long. Any double larger than this value we simply peg at this value.
         private const long intMax = (1L << 56);
 
+        /*
         public static double Cos (double x, double y) {
             long x0; double x1;
             ReduceByPiHalves(x, out x0, out x1);
@@ -561,6 +563,7 @@ namespace Meta.Numerics {
             return (Cos(z0, z1));
 
         }
+        */
 
         // Extensive comparisons of the result of our range-reduction algorithm to the result of the built-in algorithm
         // indicates that loss of significant figures tends to occur near zeros. We have found y-values above which
@@ -585,6 +588,7 @@ namespace Meta.Numerics {
 
         public const double xLimit = (1 << 20);
 
+        /*
         public static void FrExp (double x, out bool negative, out long mantissa, out int exponent) {
 
             long bits = BitConverter.ToInt64(BitConverter.GetBytes(x), 0);
@@ -609,6 +613,7 @@ namespace Meta.Numerics {
             FrExp(x, out negative, out mantissa, out exponent);
             Debug.WriteLine("{0:R} = {1}{2} X 2^({3})", x, negative ? "-" : "+", mantissa, exponent);
         }
+        */
 
     }
 

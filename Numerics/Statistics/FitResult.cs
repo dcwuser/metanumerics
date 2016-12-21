@@ -8,120 +8,109 @@ using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Statistics {
 
-#if FUTURE
+
+    /// <summary>
+    /// Describes the result of a linear regression.
+    /// </summary>
     public class LinearRegressionFitResult : FitResult {
 
-
-        internal static LinearRegressionFitResult Construct (BivariateSample sample) {
-
-            int n = sample.Count;
-            double mx = sample.X.Mean;
-            double my = sample.Y.Mean;
-            double cxx = sample.X.Variance;
-            double cyy = sample.Y.Variance;
-            double cxy = sample.Covariance;
-
-            double b = cxy / cxx;
-            double a = my - b * mx;
-
-            double s2 = 0.0;
-            BivariateSample residuals = new BivariateSample();
-            foreach (XY point in sample) {
-                double r = point.Y - (a + b * point.X);
-                s2 += r * r;
-                residuals.Add(point.X, r);
-            }
-            s2 = s2 / (n - 2);
-
-            double cbb = s2 / cxx / n;
-            double cab = -mx * cbb;
-            double caa = (cxx + mx * mx) * cbb;
-
-            ColumnVector v = new ColumnVector(a, b);
-            SymmetricMatrix C = new SymmetricMatrix(2);
-            C[0, 0] = caa;
-            C[1, 1] = cbb;
-            C[0, 1] = cab;
-
+        internal LinearRegressionFitResult (
+            ColumnVector v,
+            SymmetricMatrix C,
+            TestResult rTest,
+            OneWayAnovaResult anova,
+            BivariateSample residuals,
+            Func<double, UncertainValue> predict
+        ) : base(v, C, anova.Result) {
+            Debug.Assert(residuals != null);
+            Debug.Assert(rTest != null);
+            Debug.Assert(anova != null);
+            Debug.Assert(predict != null);
+            this.residuals = residuals;
+            this.rTest = rTest;
+            this.anova = anova;
+            this.predict = predict;
         }
 
-        internal LinearRegressionFitResult () : base(1, 1, null) {
+        private readonly BivariateSample residuals;
 
-        }
+        private readonly Func<double, UncertainValue> predict;
 
-        private int n;
-        private double mx;
-        private double my;
-        private double cxx;
-        private double cxy;
-        private double cyy;
-        private double s2;
+        private readonly OneWayAnovaResult anova;
 
-        private double a;
-        private double b;
+        private readonly TestResult rTest;
 
-        private BivariateSample residuals;
-
+        /// <summary>
+        /// Gets the best fit value of the intercept and its associated uncertainty.
+        /// </summary>
         public UncertainValue Intercept {
             get {
-                double b = cxy / cxx;
-                double cbb = s2 / cxx / n;
-                return (new UncertainValue(b, Math.Sqrt(cbb)));
+                return (this.Parameter(0));
             }
         }
 
+        /// <summary>
+        /// Gets the best-fit value of the slope and its associated uncertainty.
+        /// </summary>
         public UncertainValue Slope {
             get {
-                double a = my - (cxy / cxx) * mx;
-                double caa = s2 * (1.0 + mx * mx / cxx) / n;
-                return (new UncertainValue(a, Math.Sqrt(caa)));
+                return (this.Parameter(1));
             }
         }
 
+        /*
         public UncertainValue Error {
             get {
                 return (new UncertainValue(Math.Sqrt(s2), Math.Sqrt(s2 / n)));
             }
         }
+        */
 
+        /// <summary>
+        /// Returns the residuals.
+        /// </summary>
         public BivariateSample Residuals () {
             return (residuals);
         }
 
+        /// <summary>
+        /// Predicts the Y value at a new X value.
+        /// </summary>
+        /// <param name="x">The new X value.</param>
+        /// <returns>The predicted value of Y and its associated uncertainty.</returns>
         public UncertainValue Predict (double x) {
-            double y = a + b * x;
-            return (new UncertainValue(y, Math.Sqrt(s2 * (1.0 + 1.0 / n + MoreMath.Sqr(x - mx) / cxx))));
+            return (predict(x));
         }
 
+        /// <summary>
+        /// Gets the Pearson R test of linear correlation.
+        /// </summary>
         public TestResult R {
             get {
-                double r = cxy / Math.Sqrt(cxx * cyy);
-                return (new TestResult("r", r, TestType.TwoTailed, new Distributions.PearsonRDistribution(n)));
+                return (rTest);
             }
         }
 
+        /// <summary>
+        /// Gets the Fisher F test for the linear regression.
+        /// </summary>
         public TestResult F {
             get {
                 return (this.Anova.Result);
             }
         }
 
-        public OneWayAnovaResult Anova {  get {
-
-                double SST = cyy * n;
-                double SSR = s2 * (n - 2);
-                double SSF = SST - SSR;
-
-                AnovaRow fit = new AnovaRow(SSF, 1);
-                AnovaRow residual = new AnovaRow(SSR, n - 2);
-                AnovaRow total = new AnovaRow(SST, n - 1);
-                OneWayAnovaResult result = new OneWayAnovaResult(fit, residual, total);
-                return (result);
-
-            } }
+        /// <summary>
+        /// Gets an analysis of variance for the linear regression.
+        /// </summary>
+        public OneWayAnovaResult Anova {
+            get {
+                return (anova);
+            }
+        }
 
     }
-#endif
+
 
 
     /// <summary>
@@ -179,7 +168,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>An estimate of the parameter.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is not within [0,<see cref="Dimension"/>-1].</exception>
         public UncertainValue Parameter (int n) {
-            if ((n < 0) || (n >= Dimension)) throw new ArgumentOutOfRangeException("n");
+            if ((n < 0) || (n >= Dimension)) throw new ArgumentOutOfRangeException(nameof(n));
             return (new UncertainValue(parameters[n], Math.Sqrt(covarianceMatrix[n, n])));
         }
 
@@ -191,8 +180,8 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The covariance of the two fit parameters.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> or <paramref name="m"/> is not within [0,<see cref="Dimension"/>-1].</exception>
         public double Covariance (int n, int m) {
-            if ((n < 0) || (n >= Dimension)) throw new ArgumentOutOfRangeException("n");
-            if ((m < 0) || (m >= Dimension)) throw new ArgumentOutOfRangeException("m");
+            if ((n < 0) || (n >= Dimension)) throw new ArgumentOutOfRangeException(nameof(n));
+            if ((m < 0) || (m >= Dimension)) throw new ArgumentOutOfRangeException(nameof(m));
             return (covarianceMatrix[n, m]);
         }
 
@@ -209,8 +198,8 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> or <paramref name="m"/> is not within [0,<see cref="Dimension"/>-1].</exception>
         public double CorrelationCoefficient (int n, int m) {
-            if ((n < 0) || (n >= Dimension)) throw new ArgumentOutOfRangeException("n");
-            if ((m < 0) || (m >= Dimension)) throw new ArgumentOutOfRangeException("m");
+            if ((n < 0) || (n >= Dimension)) throw new ArgumentOutOfRangeException(nameof(n));
+            if ((m < 0) || (m >= Dimension)) throw new ArgumentOutOfRangeException(nameof(m));
             return (covarianceMatrix[n, m] / Math.Sqrt(covarianceMatrix[n,n] * covarianceMatrix[m,m]));
         }
 

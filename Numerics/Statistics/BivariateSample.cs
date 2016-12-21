@@ -85,7 +85,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="points">The data points.</param>
         public void Add (IEnumerable<XY> points) {
-            if (points == null) throw new ArgumentNullException("points");
+            if (points == null) throw new ArgumentNullException(nameof(points));
             foreach (XY point in points) Add(point);
         }
 
@@ -96,8 +96,8 @@ namespace Meta.Numerics.Statistics {
         /// <param name="y">The y values of the data points.</param>
         /// <exception cref="DimensionMismatchException">The lengths of the two lists are not equal.</exception>
         public void Add (IList<double> x, IList<double> y) {
-            if (x == null) throw new ArgumentNullException("x");
-            if (y == null) throw new ArgumentNullException("y");
+            if (x == null) throw new ArgumentNullException(nameof(x));
+            if (y == null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
             for (int i = 0; i < x.Count; i++) {
                 Add(x[i], y[i]);
@@ -181,6 +181,9 @@ namespace Meta.Numerics.Statistics {
         public bool IsReadOnly {
             get {
                 return (isReadOnly);
+            }
+            internal set {
+                isReadOnly = value;
             }
         }
 
@@ -539,8 +542,73 @@ namespace Meta.Numerics.Statistics {
         /// unexplained variance.</para>
         /// </remarks>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
-        public FitResult LinearRegression () {
+        public LinearRegressionFitResult LinearRegression () {
 
+            int n = this.Count;
+            if (n < 3) throw new InsufficientDataException();
+
+            // The means and covariances are the inputs to most of the regression formulas.
+            double mx = xData.Mean;
+            double my = yData.Mean;
+            double cxx = xData.Variance;
+            double cyy = yData.Variance;
+            double cxy = this.Covariance;
+
+            Debug.Assert(cxx >= 0.0);
+            Debug.Assert(cyy >= 0.0);
+
+            // Compute the best-fit parameters
+            double b = cxy / cxx;
+            double a = my - b * mx;
+            // Since cov(x,y) = (n S_xy - S_x S_y)/n^2 and var(x) = (n S_xx - S_x^2) / n^2,
+            // these formulas are equivilent to the 
+            // to the usual formulas for a and b involving sums, but it is more stable against round-off
+            ColumnVector v = new ColumnVector(a, b);
+            v.IsReadOnly = true;
+
+            // Compute Pearson r value
+            double r = cxy / Math.Sqrt(cxx * cyy);
+            TestResult rTest = new TestResult("r", r, TestType.TwoTailed, new Distributions.PearsonRDistribution(n));
+
+            // Compute residuals and other sum-of-squares
+            double SSR = 0.0;
+            BivariateSample residuals = new BivariateSample();
+            foreach (XY point in this) {
+                double z = point.Y - (a + b * point.X);
+                SSR += z * z;
+                residuals.Add(point.X, z);
+            }
+            residuals.IsReadOnly = true;
+            double SST = cyy * n;
+            double SSF = SST - SSR;
+
+            // Use sums-of-squares to do ANOVA
+            AnovaRow fit = new AnovaRow(SSF, 1);
+            AnovaRow residual = new AnovaRow(SSR, n - 2);
+            AnovaRow total = new AnovaRow(SST, n - 1);
+            OneWayAnovaResult anova = new OneWayAnovaResult(fit, residual, total);
+
+            // Compute covariance of parameters matrix
+            double s2 = SSR / (n - 2);
+            double cbb = s2 / cxx / n;
+            double cab = -mx * cbb;
+            double caa = (cxx + mx * mx) * cbb;
+
+            SymmetricMatrix C = new SymmetricMatrix(2);
+            C[0, 0] = caa;
+            C[1, 1] = cbb;
+            C[0, 1] = cab;
+            C.IsReadOnly = true;
+
+            // Prepare the prediction function
+            Func<double, UncertainValue> predict = (double x) => {
+                double y = a + b * x;
+                return (new UncertainValue(y, Math.Sqrt(s2 * (1.0 + 1.0 / n + MoreMath.Sqr(x - mx) / cxx))));
+            };
+
+            return (new LinearRegressionFitResult(v, C, rTest, anova, residuals, predict));
+
+            /*
             int n = Count;
             if (n < 3) throw new InsufficientDataException();
 
@@ -571,6 +639,7 @@ namespace Meta.Numerics.Statistics {
             TestResult test = new TestResult("F", F, TestType.RightTailed, new FisherDistribution(1, n - 2));
 
             return (new FitResult(a, Math.Sqrt(caa), b, Math.Sqrt(cbb), cab, test));
+            */
         }
 
         /// <summary>
@@ -582,7 +651,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are fewer data points than coefficients to be fit.</exception>
         public FitResult PolynomialRegression (int m) {
 
-            if (m < 0) throw new ArgumentOutOfRangeException("m");
+            if (m < 0) throw new ArgumentOutOfRangeException(nameof(m));
 
             int n = Count;
             if (n < m + 1) throw new InsufficientDataException();

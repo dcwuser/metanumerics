@@ -72,6 +72,15 @@ namespace Test {
         }
 
         [TestMethod]
+        public void UnivariateDistributionSkewness () {
+            foreach (UnivariateDistribution distribution in Distributions) {
+                Console.WriteLine(distribution.GetType().Name);
+                if (Double.IsNaN(distribution.ExcessKurtosis)) continue;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Skewness, distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 3.0 / 2.0)));
+            }
+        }
+
+        [TestMethod]
         public void UnivariateDistributionExcessKurtosis () {
             foreach (UnivariateDistribution distribution in Distributions) {
                 Console.WriteLine(distribution.GetType().Name);

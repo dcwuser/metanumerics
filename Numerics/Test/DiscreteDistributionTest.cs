@@ -109,19 +109,6 @@ namespace Test {
         }
 
         [TestMethod]
-        public void DiscreteDistributionSkewness () {
-            foreach (DiscreteDistribution distribution in distributions) {
-                Console.WriteLine(distribution.GetType().FullName);
-                //Console.WriteLine(distribution.MomentAboutMean(3));
-                //Console.WriteLine(distribution.MomentAboutMean(2));
-                //Console.WriteLine(distribution.Skewness);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    distribution.Skewness, distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 3.0 / 2.0)
-                ));
-            }
-        }
-
-        [TestMethod]
         public void DiscreteDistributionProbabilityAxioms () {
 
             foreach (DiscreteDistribution distribution in distributions) {
@@ -166,6 +153,24 @@ namespace Test {
 
 
             }
+
+        }
+
+        [TestMethod]
+        public void BinomialNegativeBinomialRelation () {
+
+            int k = 2;
+
+            int r = 3;
+            double p = 0.4;
+            NegativeBinomialDistribution nb = new NegativeBinomialDistribution(r, p);
+
+            int n = r + k;
+            BinomialDistribution b = new BinomialDistribution(p, n);
+
+            double nbP = nb.LeftInclusiveProbability(k);
+            double bP = b.LeftInclusiveProbability(k);
+
 
         }
 

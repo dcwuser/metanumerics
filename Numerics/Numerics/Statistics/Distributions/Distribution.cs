@@ -67,7 +67,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="P"/> lies outside [0,1].</exception>
         public virtual double InverseLeftProbability (double P) {
             // find x where LeftProbability(x) = P 
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             Func<double, double> f = delegate(double x) {
                 return (LeftProbability(x) - P);
             };
@@ -82,7 +82,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="Q">The right cumulative probability, which must lie between 0 and 1.</param>
         /// <returns>The value x for which <see cref="RightProbability"/> equals Q.</returns>
         public virtual double InverseRightProbability (double Q) {
-            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
             Func<double, double> f = delegate(double x) {
                 return (RightProbability(x) - Q);
             };
@@ -92,13 +92,23 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double Moment (int r) {
-            return (ExpectationValue(x => MoreMath.Pow(x, r)));
+            if (r == 0) {
+                return (1.0);
+            } else {
+                return (ExpectationValue(x => MoreMath.Pow(x, r)));
+            }
         }
 
         /// <inheritdoc />
         public override double MomentAboutMean (int r) {
-            double mu = Mean;
-            return (ExpectationValue(x => MoreMath.Pow(x - mu, r)));
+            if (r == 0) {
+                return (1.0);
+            } else if (r == 1) {
+                return (0.0);
+            } else {
+                double mu = Mean;
+                return (ExpectationValue(x => MoreMath.Pow(x - mu, r)));
+            }
         }
 
         /// <summary>
@@ -126,6 +136,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="f">The function.</param>
         /// <returns>The expectation value of the function.</returns>
         public virtual double ExpectationValue (Func<double, double> f) {
+            if (f == null) throw new ArgumentNullException(nameof(f));
             return (FunctionMath.Integrate(x => f(x) * ProbabilityDensity(x), Support));
         }
 
@@ -140,7 +151,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="rng"/> is null.</exception>
         public virtual double GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException("rng");
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
             return (InverseLeftProbability(rng.NextDouble()));
         }
 

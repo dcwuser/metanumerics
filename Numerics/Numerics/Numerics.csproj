@@ -51,10 +51,10 @@
     <None Include="keypair.snk" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Analysis\BulrischStoerStrategy.cs" />
     <Compile Include="Analysis\EvaluationResult.cs" />
     <Compile Include="Analysis\EvaluationSettings.cs" />
     <Compile Include="Analysis\Extremum.cs" />
-    <Compile Include="Analysis\FunctionMath_Ode2.cs" />
     <Compile Include="Analysis\FunctionMath_Odes.cs" />
     <Compile Include="Analysis\FunctionMath_Roots.cs" />
     <Compile Include="Analysis\IntegrationResult.cs" />
@@ -73,6 +73,7 @@
     <Compile Include="Analysis\MultiOeResult.cs" />
     <Compile Include="Analysis\OdeEvaluationSettings.cs" />
     <Compile Include="Analysis\OdeResult.cs" />
+    <Compile Include="Analysis\OdeStrategy.cs" />
     <Compile Include="Core\BigFloat.cs" />
     <Compile Include="Core\Complex.cs" />
     <Compile Include="Core\ComplexMath.cs" />

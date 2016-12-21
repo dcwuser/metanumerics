@@ -11,7 +11,7 @@ using Meta.Numerics.Statistics.Distributions;
 namespace Meta.Numerics.Statistics {
 
     /// <summary>
-    /// Represents a series a data points.
+    /// Represents an ordered series of data points.
     /// </summary>
     public sealed class TimeSeries : IEnumerable, IEnumerable<double>, ICollection<double>, IList<double> {
 

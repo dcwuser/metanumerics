@@ -126,26 +126,54 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override int InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
 
+            // We will need Q = 1 - P, and if it's zero we know we are at infinity.
             double Q = 1.0 - P;
+            if (Q == 0.0) return (Int32.MaxValue);
 
-            // Use the bounds on the median and the Markov inequality
-            // to place bounds on the value of k.
-            int kmin, kmax;
+            // Just adding up PMF values is fastest if we can we sure there won't be
+            // too many of them, particularly since they obey a recursion relation
+            // that requires only a few flops to iterate. But we don't want to get
+            // into a situation where we might have to add up 100s or 1000s; that would
+            // take too long and accumulate too many errors. We can use the Markov
+            // limit on the tail to bound k.
+            int kmax = (int) Math.Min(Math.Ceiling(mu / Q), Int32.MaxValue);
+
+            if (kmax < 32) {
+                int k = 0;
+                double pmf = Math.Exp(-mu);
+                double pmfSum = pmf;
+                while (pmfSum < P) {
+                    k++;
+                    pmf *= mu / k;
+                    pmfSum += pmf;
+                }
+                return (k);
+            }
+
+            // If kmax is too big to be sure direct sumation would be quick, we
+            // will do binary search instead. We want to start with the best limits
+            // we can quickly compute to avoid extra evaluations of the CDF.
+
+            // We can use the median bounds
+            //   mu - \log 2 \e \nu \le mu + 1/3
+            // to quickly set a limit based on whether P is below or above 1/2.
+            int kmin;
             if (P < 0.5) {
                 kmin = 0;
                 kmax = (int) Math.Ceiling(mu + 1.0 / 3.0);
+
+                // Use the Chernov inequality to improve the lower bound, if possible
+                int kChernov = (int) Math.Floor(mu - Math.Sqrt(-2.0 * mu * Math.Log(P)));
+                if (kChernov > kmin) kmin = kChernov;
+                // This isn't really useful if P > 1/2 because the median already gives a lower bound ~\mu
             } else {
                 kmin = Math.Max((int) Math.Floor(mu - Global.LogTwo), 0);
-                kmax = (int) Math.Ceiling(mu / Q);
+
+                // Use the Cantelli inequality to improve the upper bound, if possible
+                int kCantelli = (int) Math.Ceiling(mu + Math.Sqrt(mu * P / Q));
+                if (kCantelli < kmax) kmax = kCantelli;
+                // This isn't really useful if P < 1/2 because the median already gives an upper bound ~\mu
             }
-
-            // Use the Chernov inequality to improve the lower bound, if possible
-            int kChernov = (int) Math.Floor(mu - Math.Sqrt(-2.0 * mu * Math.Log(P)));
-            if (kChernov > kmin) kmin = kChernov;
-
-            // Use the Cantelli inequality to improve the upper bound, if possible
-            int kCantelli = (int) Math.Ceiling(mu + Math.Sqrt(mu * P / Q));
-            if (kCantelli < kmax) kmax = kCantelli;
 
             return (InverseLeftProbability(kmin, kmax, P));
 

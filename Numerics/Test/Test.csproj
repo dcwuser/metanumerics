@@ -89,7 +89,6 @@
     <Compile Include="ExtremaTest.cs" />
     <Compile Include="DifferentiateTest.cs" />
     <Compile Include="FourierTest.cs" />
-    <Compile Include="FutureOdes.cs" />
     <Compile Include="FutureTest.cs" />
     <Compile Include="HistogramTest.cs" />
     <Compile Include="IntegrateTest.cs" />

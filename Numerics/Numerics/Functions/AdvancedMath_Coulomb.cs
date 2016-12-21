@@ -578,8 +578,8 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/CoulombWaveFunction.html" />
         public static SolutionPair Coulomb (int L, double eta, double rho) {
 
-            if (L < 0) throw new ArgumentOutOfRangeException("L");
-            if (rho < 0) throw new ArgumentOutOfRangeException("rho");
+            if (L < 0) throw new ArgumentOutOfRangeException(nameof(L));
+            if (rho < 0) throw new ArgumentOutOfRangeException(nameof(rho));
 
             if (rho == 0.0) {
                 if (L == 0) {
@@ -623,10 +623,10 @@ namespace Meta.Numerics.Functions {
                     } else {
                         CoulombF_Series(L, eta, rho1, out F, out FP);
 
-                        OdeResult r = FunctionMath.SolveConservativeOde(
+                        OdeResult r = FunctionMath.IntegrateConservativeOde(
                             (double x, double y) => ((L * (L + 1) / x + 2.0 * eta ) / x - 1.0) * y,
                             rho1, F, FP, rho,
-                            new EvaluationSettings() {
+                            new OdeEvaluationSettings() {
                                 RelativePrecision = 2.5E-13,
                                 AbsolutePrecision = 0.0,
                                 EvaluationBudget = 8192 * 2
@@ -661,10 +661,10 @@ namespace Meta.Numerics.Functions {
                         
                         // Integrate inward from turning point.
                         // G increases and F decreases in this direction, so this is stable.
-                        OdeResult r = FunctionMath.SolveConservativeOde(
+                        OdeResult r = FunctionMath.IntegrateConservativeOde(
                             (double x, double y) => (2.0 * eta / x - 1.0) * y,
                             rho2, G, GP, rho,
-                            new EvaluationSettings() {
+                            new OdeEvaluationSettings() {
                                 RelativePrecision = 2.5E-13,
                                 AbsolutePrecision = 0.0,
                                 EvaluationBudget = 8192 * 2
@@ -700,8 +700,8 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/CoulombWaveFunction.html" />
         public static double CoulombF (int L, double eta, double rho) {
 
-            if (L < 0) throw new ArgumentOutOfRangeException("L");
-            if (rho < 0) throw new ArgumentOutOfRangeException("rho");
+            if (L < 0) throw new ArgumentOutOfRangeException(nameof(L));
+            if (rho < 0) throw new ArgumentOutOfRangeException(nameof(rho));
 
             if ((rho < 4.0 + 2.0 * Math.Sqrt(L)) && (Math.Abs(rho * eta) < 8.0  + 4.0 * L)) {
                 // if rho and rho * eta are small enough, use the series expansion at the origin
@@ -746,8 +746,8 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/CoulombWaveFunction.html" />
         public static double CoulombG (int L, double eta, double rho) {
 
-            if (L < 0) throw new ArgumentOutOfRangeException("L");
-            if (rho < 0) throw new ArgumentOutOfRangeException("rho");
+            if (L < 0) throw new ArgumentOutOfRangeException(nameof(L));
+            if (rho < 0) throw new ArgumentOutOfRangeException(nameof(rho));
 
             if ((rho < 4.0) && Math.Abs(rho * eta) < 8.0) {
                 // For small enough rho, use the power series for L=0, then recurse upward to desired L.
@@ -785,10 +785,10 @@ namespace Meta.Numerics.Functions {
                         G = result.SecondSolutionValue;
                         GP = result.SecondSolutionDerivative;
 
-                        OdeResult r = FunctionMath.SolveConservativeOde(
+                        OdeResult r = FunctionMath.IntegrateConservativeOde(
                             (double x, double y) => (2.0 * eta / x - 1.0) * y,
                             rho0, G, GP, rho,
-                            new EvaluationSettings() {
+                            new OdeEvaluationSettings() {
                                 RelativePrecision = 2.5E-13,
                                 AbsolutePrecision = 0.0,
                                 EvaluationBudget = 8192 * 2
@@ -946,10 +946,10 @@ namespace Meta.Numerics.Functions {
             // TODO: switch so we integrate w/o the C factor, then apply it afterward
             if ((F == 0.0) && (FP == 0.0)) return (0.0);
 
-            OdeResult r = FunctionMath.SolveConservativeOde(
+            OdeResult r = FunctionMath.IntegrateConservativeOde(
                 (double x, double y) => ((L * (L + 1) / x + 2.0 * eta) / x - 1.0) * y,
                 rho1, F, FP, rho,
-                new EvaluationSettings() {
+                new OdeEvaluationSettings() {
                     RelativePrecision = 2.5E-13,
                     AbsolutePrecision = 0.0,
                     EvaluationBudget = 8192 * 2

@@ -164,7 +164,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Moment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -179,7 +179,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double MomentAboutMean (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -232,7 +232,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     internal class KuiperAsymptoticDistribution : Distribution {
 
         public KuiperAsymptoticDistribution (int n) {
-            if (n < 2) throw new ArgumentOutOfRangeException("n");
+            if (n < 2) throw new ArgumentOutOfRangeException(nameof(n));
             this.n = n;
             this.sqrt_n = Math.Sqrt(n);
         }
@@ -276,19 +276,19 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        public override double Moment (int m) {
-            if (m < 0) {
-                throw new ArgumentOutOfRangeException("m");
-            } else if (m == 0) {
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException(nameof(r));
+            } else if (r == 0) {
                 return (1.0);
-            } else if (m == 1) {
+            } else if (r == 1) {
                 return (Global.SqrtHalfPI * ( 1.0 - 1.0 / 6.0 / sqrt_n));
-            } else if (m == 3) {
+            } else if (r == 3) {
                 return (Global.SqrtHalfPI * (3.0 / 2.0 * AdvancedMath.RiemannZeta(3.0) - 3.0 / 4.0 / sqrt_n));
             }  else {
                 // we needed to handle 1st and 3rd moments specially because \zeta divergences but multiplication by zero gives finite result
-                return (AdvancedMath.Gamma(m / 2.0 + 1.0) / Math.Pow(2.0, m / 2.0 - 1.0) *
-                    ((m - 1) * AdvancedMath.RiemannZeta(m) - (m - 3) * AdvancedMath.RiemannZeta(m - 2) / sqrt_n)
+                return (AdvancedMath.Gamma(r / 2.0 + 1.0) / Math.Pow(2.0, r / 2.0 - 1.0) *
+                    ((r - 1) * AdvancedMath.RiemannZeta(r) - (r - 3) * AdvancedMath.RiemannZeta(r - 2) / sqrt_n)
                 );
             }
         }
@@ -472,7 +472,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     internal class KuiperExactDistribution : Distribution {
 
         public KuiperExactDistribution (int n) {
-            if (n < 2) throw new ArgumentOutOfRangeException("n");
+            if (n < 2) throw new ArgumentOutOfRangeException(nameof(n));
             this.n = n;
         }
 
@@ -553,7 +553,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (w < n) {
                 return (1.0 - DurbinMatrixP(w));
             } else {
-                return (1.0);
+                return (0.0);
             }
         }
 
@@ -568,30 +568,30 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         ///<inheritdoc />
-        public override double Moment (int m) {
-            if (m < 0) {
-                throw new ArgumentOutOfRangeException("m");
-            } else if (m == 0) {
+        public override double Moment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException(nameof(r));
+            } else if (r == 0) {
                 return (1.0);
-            } else if (m == 1) {
+            } else if (r == 1) {
                 return (Mean);
             } else {
-                return (base.Moment(m));
+                return (base.Moment(r));
             }
         }
 
         ///<inheritdoc />
-        public override double MomentAboutMean (int m) {
-            if (m < 0) {
-                throw new ArgumentOutOfRangeException("m");
-            } else if (m == 0) {
+        public override double MomentAboutMean (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException(nameof(r));
+            } else if (r == 0) {
                 return (1.0);
-            } else if (m == 1) {
+            } else if (r == 1) {
                 return (0.0);
-            } else if (m == 2) {
+            } else if (r == 2) {
                 return (this.Variance);
             } else {
-                return (base.MomentAboutMean(m));
+                return (base.MomentAboutMean(r));
             }
         }
 

@@ -2046,6 +2046,20 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void IntegralTiAndDilog () {
+
+            // Ti_2(x) is the imaginary part of Li_2(I x).
+            // This is documented at http://mathworld.wolfram.com/InverseTangentIntegral.html
+
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 4)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.DiLog(Complex.I * x),
+                    AdvancedMath.DiLog(- x * x) / 4.0 + Complex.I * AdvancedMath.IntegralTi(x)    
+                ));
+            }
+        }
+
 
 #if FUTURE
 

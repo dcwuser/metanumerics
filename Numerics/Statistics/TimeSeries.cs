@@ -25,7 +25,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Initializes a new time series with the given values.
         /// </summary>
-        /// <param name="values"></param>
+        /// <param name="values">The first values in the time series.</param>
         public TimeSeries (params double[] values) {
             Add(values);
         }
@@ -62,7 +62,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="values">The values to be added.</param>
         public void Add(params double[] values) {
-            if (values == null) throw new ArgumentNullException("values");
+            if (values == null) throw new ArgumentNullException(nameof(values));
             foreach (double value in values) data.Add(value);
         }
 
@@ -254,12 +254,17 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Computes estimates for the moments of the population from which the time series is drawn.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A collection of population statistics.</returns>
         /// <remarks>
         /// <para>Just as is the case for the variance of a simple <see cref="Sample"/>,
         /// the sample autocovariances of a time series
         /// are not unbiased estimates of the autocovariances of the population from which
-        /// the series is drawn.</para>
+        /// the series is drawn. Additional computations must be performed to calculate
+        /// unbiased estimates and error estimates for the time series mean and autocovariances.</para>
+        /// <para>Unlike the case of a sime <see cref="Sample"/>, these computations are complicated
+        /// and the same computation is relevant for all moments. Therefore, the computation is performed
+        /// once by this method, which returns a object from which all population statistics can be
+        /// quickly queried.</para>
         /// </remarks>
         public TimeSeriesPopulationStatistics PopulationStatistics () {
 
@@ -291,7 +296,7 @@ namespace Meta.Numerics.Statistics {
             // But almost never is the mean known independent of the sample. If the mean is
             // computed from the sample, this estimator is biased, and the bias is computable.
             //  E(c_k) = g_k - v
-            // Here v is the same quantity as the variace of the mean.
+            // Here v is the same quantity as the variance of the mean.
 
             // For these results, see Fuller, "Introduction To Statistical Time Series",
             // Chapter 6.
@@ -636,7 +641,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The result of the test.</returns>
         public TestResult LjungBoxTest (int kMax) {
 
-            if (kMax < 1) throw new ArgumentOutOfRangeException("kMax");
+            if (kMax < 1) throw new ArgumentOutOfRangeException(nameof(kMax));
             if (kMax >= data.Count) throw new InsufficientDataException();
 
             double[] c = Autocovariance();
@@ -694,7 +699,7 @@ namespace Meta.Numerics.Statistics {
         /// = c[|i-j|].</para>
         /// </remarks>
         public UncertainValue Autocovariance (int k) {
-            if ((k < 0) || (k >= g.Length)) throw new ArgumentOutOfRangeException("k");
+            if ((k < 0) || (k >= g.Length)) throw new ArgumentOutOfRangeException(nameof(k));
 
             // The task here is to estimate the variance of our estimate of g_k
 
@@ -740,6 +745,7 @@ namespace Meta.Numerics.Statistics {
             return (new UncertainValue(g[k], Math.Sqrt((e0 + e1) / (g.Length - k))));
         }
 
+        /*
         /// <summary>
         /// Returns the autocorrelation for the given lag.
         /// </summary>
@@ -747,8 +753,10 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The best estimate, with uncertainty, of the lag-<paramref name="k"/>
         /// autocorrelation of the population.</returns>
         public UncertainValue Autocorrelation (int k) {
-            if ((k < 0) || (k >= g.Length)) throw new ArgumentOutOfRangeException("k");
+            if ((k < 0) || (k >= g.Length)) throw new ArgumentOutOfRangeException(nameof(k));
             return (new UncertainValue(g[k] / g[0], 0.0));
         }
+        // fix computation of uncertainty before making this public
+        */
     }
 }

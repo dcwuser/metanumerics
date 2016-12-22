@@ -13,32 +13,15 @@ namespace Meta.Numerics.Analysis {
         /// <param name="integrand">The function to be integrated.</param>
         /// <param name="range">The range of integration.</param>
         /// <returns>A numerical estimate of the given integral.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="integrand"/> is <see langword="null"/>.</exception>
+        /// <exception cref="NonconvergenceException">The maximum number of function evaluations was exceeded before the integral
+        /// could be determined to the required precision.</exception>
         /// <remarks>
-        /// <para>Integral values are accurate to within about a digit of full double precision.</para>
-        /// <para>To do integrals over infinite regions, simply set the lower bound of the <paramref name="range"/>
-        /// to <see cref="System.Double.NegativeInfinity"/> or the upper bound to <see cref="System.Double.PositiveInfinity"/>.</para>
-        /// <para>Our numerical integrator uses a Gauss-Kronrod rule that can integrate efficiently,
-        /// combined with an adaptive strategy that limits function
-        /// evaluations to those regions required to achieve the desired accuracy.</para>
-        /// <para>Our integrator handles smooth functions extremely efficiently. It handles integrands with
-        /// discontinuities, or discontinuities of derivatives, at the price of slightly more evaluations
-        /// of the integrand. It handles oscilatory functions, so long as not too many periods contribute
-        /// significantly to the integral. It can integrate logarithmic and mild power-law singularities.
-        /// </para>
-        /// <para>Strong power-law singularities will cause the alrorighm to fail with a NonconvergenceException.
-        /// This is unavoidable for essentially any double-precision numerical integrator. Consider, for example,
-        /// the integrable singularity 1/&#x221A;x. Since
-        /// &#x3B5; = &#x222B;<sub>0</sub><sup>&#x3B4;</sup> x<sup>-1/2</sup> dx = 2 &#x3B4;<sup>1/2</sup>,
-        /// points within &#x3B4; &#x223C; 10<sup>-16</sup> of the end-points, which as a close as you can get to
-        /// a point in double precision without being on top of it, contribute at the &#x3B5; &#x223C; 10<sup>-8</sup>
-        /// level to our integral, well beyond limit that nearly-full double precision requires. Said differently,
-        /// to know the value of the integral to &#x3B5; &#x223C; 10<sup>-16</sup> prescision, we would need to
-        /// evaluate the contributions of points within &#x3B4; &#x223C; 10<sup>-32</sup> of the endpoints,
-        /// far closer than we can get.</para>
-        /// <para>If you need to evaluate an integral with such a strong singularity, make an analytic
-        /// change of variable to absorb the singularity before attempting numerical integration. For example,
-        /// to evaluate I = &#x222B;<sub>0</sub><sup>b</sup> f(x) x<sup>-1/2</sup> dx, substitute y = x<sup>1/2</sup>
-        /// to obtain I = 2 &#x222B;<sub>0</sub><sup>&#x221A;b</sup> f(y<sup>2</sup>) dy.</para>
+        /// <para>By default, integrals are evaluated to a relative precision of about 10<sup>-15</sup>, about a digit short of full
+        /// precision, using a budget of about 5000 evaulations. To specify different evaluation settings use
+        /// <see cref="Integrate(Func{double, double}, Interval, EvaluationSettings)"/>.</para>
+        /// <para>See <see cref="Integrate(Func{double, double}, Interval, EvaluationSettings)"/> for detailed remarks on
+        /// numerical integration.</para>
         /// </remarks>
         public static double Integrate (Func<double, double> integrand, Interval range) {
             EvaluationSettings settings = new EvaluationSettings();
@@ -52,7 +35,38 @@ namespace Meta.Numerics.Analysis {
         /// <param name="integrand">The function to be integrated.</param>
         /// <param name="range">The range of integration.</param>
         /// <param name="settings">The settings which control the evaulation of the integal.</param>
-        /// <returns>The result of the integral, which includes an estimated value and estimated uncertainty of that value.</returns>
+        /// <returns>The result of the integral, which includes an estimated value and an estimated uncertainty of that value.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="integrand"/> is <see langword="null"/>.</exception>
+        /// <exception cref="NonconvergenceException">The maximum number of function evaluations was exceeded before the integral
+        /// could be determined to the required precision.</exception>
+        /// <remarks>
+        /// <para>To do integrals over infinite regions, simply set the lower bound of the <paramref name="range"/>
+        /// to <see cref="System.Double.NegativeInfinity"/> or the upper bound to <see cref="System.Double.PositiveInfinity"/>.</para>
+        /// <para>Our numerical integrator uses a Gauss-Kronrod rule that can integrate efficiently,
+        /// combined with an adaptive strategy that limits function
+        /// evaluations to those regions required to achieve the desired accuracy.</para>
+        /// <para>Our integrator handles smooth functions extremely efficiently. It handles integrands with
+        /// discontinuities, or discontinuities of derivatives, at the price of slightly more evaluations
+        /// of the integrand. It can handle oscilatory functions, as long as not too many periods contribute
+        /// significantly to the integral. It can integrate logarithmic and mild power-law singularities.</para>
+        /// <para>Strong power-law singularities will cause the alrorighm to fail with a <see cref="NonconvergenceException"/>.
+        /// This is unavoidable for essentially any double-precision numerical integrator. Consider, for example,
+        /// the integrable singularity 1/&#x221A;x. Since
+        /// &#x3B5; = &#x222B;<sub>0</sub><sup>&#x3B4;</sup> x<sup>-1/2</sup> dx = 2 &#x3B4;<sup>1/2</sup>,
+        /// points within &#x3B4; &#x223C; 10<sup>-16</sup> of the end-points, which as a close as you can get to
+        /// a point in double precision without being on top of it, contribute at the &#x3B5; &#x223C; 10<sup>-8</sup>
+        /// level to our integral, well beyond limit that nearly-full double precision requires. Said differently,
+        /// to know the value of the integral to &#x3B5; &#x223C; 10<sup>-16</sup> prescision, we would need to
+        /// evaluate the contributions of points within &#x3B4; &#x223C; 10<sup>-32</sup> of the endpoints,
+        /// which is far closer than we can get.</para>
+        /// <para>If you need to evaluate an integral with such a strong singularity, make an analytic
+        /// change of variable to absorb the singularity before attempting numerical integration. For example,
+        /// to evaluate I = &#x222B;<sub>0</sub><sup>b</sup> f(x) x<sup>-1/2</sup> dx, substitute y = x<sup>1/2</sup>
+        /// to obtain I = 2 &#x222B;<sub>0</sub><sup>&#x221A;b</sup> f(y<sup>2</sup>) dy.</para>
+        /// <para>To do multi-dimensional integrals, use
+        /// <see cref="MultiFunctionMath.Integrate(Func{IList{double}, double}, IList{Interval}, EvaluationSettings)"/>.
+        /// </para>
+        /// </remarks>
         public static IntegrationResult Integrate (Func<double,double> integrand, Interval range, EvaluationSettings settings) {
 
             if (integrand == null) throw new ArgumentNullException("integrand");

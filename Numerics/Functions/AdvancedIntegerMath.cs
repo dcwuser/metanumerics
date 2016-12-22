@@ -232,6 +232,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="n">The index of the harmonic number to compute, which must be non-negative.</param>
         /// <returns>The harmonic number H<sub>n</sub>.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <remarks>
         /// <para>H<sub>n</sub> is the nth partial sum of the harmonic series.</para>
         /// <para>Since the harmonic series diverges, H<sub>n</sub> grows without bound as n increases, but
@@ -261,6 +262,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="n">The index of the Fibonacci number to compute, which must be non-negative.</param>
         /// <returns>The nth Fibonacci number F<sub>n</sub>.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <see href="http://en.wikipedia.org/wiki/Fibonacci_number"/>
         public static double FibonacciNumber (int n) {
             if (n < 0) {
@@ -279,6 +281,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="n">The index of the Bernoulli number to compute, which must be non-negative.</param>
         /// <returns>The Bernoulli number B<sub>n</sub>.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <remarks>
         /// <para>B<sub>n</sub> vanishes for all odd n except n=1. For n about 260 or larger, B<sub>n</sub> overflows a double.</para>
         /// </remarks>
@@ -322,7 +325,10 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="n">The upper argument, which must be non-negative.</param>
         /// <param name="k">The lower argument, which must lie between 0 and n.</param>
-        /// <returns>The value of the unsigned Stirling number of the second kind.</returns>
+        /// <returns>The value of the unsigned Stirling number of the first kind.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative, or <paramref name="k"/>
+        /// lies outside [0, n].</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Stirling_numbers_of_the_first_kind"/>
         public static double StirlingNumber1 (int n, int k) {
 
             if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
@@ -349,6 +355,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="n">The upper argument, which must be non-negative.</param>
         /// <returns>An array with n+1 elements. The element with (zero-based) index k contains the
         /// unsigned Sterling number of the first kind with upper argument n and lower argument k.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         public static double[] StirlingNumbers1 (int n) {
 
             if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
@@ -400,6 +407,9 @@ namespace Meta.Numerics.Functions {
         /// <param name="n">The upper argument, which must be non-negative.</param>
         /// <param name="k">The lower argument, which must lie between 0 and n.</param>
         /// <returns>The value of the Stirling number of the second kind.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative, or <paramref name="k"/>
+        /// lies outside [0, n].</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Stirling_numbers_of_the_second_kind"/>
         public static double StirlingNumber2 (int n, int k) {
 
             if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
@@ -434,6 +444,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="n">The upper argument, which must be non-negative.</param>
         /// <returns>An array with n+1 elements. The element with (zero-based) index k contains the
         /// Stirling number of the second kind with upper argument n and lower argument k.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         public static double[] StirlingNumbers2 (int n) {
 
             if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));

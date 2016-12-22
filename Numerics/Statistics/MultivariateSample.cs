@@ -32,7 +32,7 @@ namespace Meta.Numerics.Statistics {
         /// recorded for each sample entry.</param>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="dimension"/> is less than one.</exception>
         public MultivariateSample (int dimension) {
-            if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
+            if (dimension < 1) throw new ArgumentOutOfRangeException(nameof(dimension));
             storage = new SampleStorage[dimension];
             for (int j = 0; j < storage.Length; j++) {
                 storage[j] = new SampleStorage();
@@ -86,23 +86,27 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Adds an entry to the sample.
         /// </summary>
-        /// <param name="value">The values associated with the entry.</param>
-        public void Add (params double[] value) {
-            Add((IList<double>) value);
+        /// <param name="values">The values associated with the entry.</param>
+        public void Add (params double[] values) {
+            Add((IList<double>) values);
         }
 
         /// <summary>
         /// Adds an entry to the sample.
         /// </summary>
-        /// <param name="value">The values associated with the entry.</param>
-        public void Add (IList<double> value) {
+        /// <param name="values">The values associated with the entry.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="values"/> is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException">The dimension of <paramref name="values"/> does not match the
+        /// dimension of the multivariate sample.</exception>
+        /// <exception cref="InvalidOperationException">The multivariate sample is read-only.</exception>
+        public void Add (IList<double> values) {
 
-            if (value == null) throw new ArgumentNullException("value");
-            if (value.Count != Dimension) throw new DimensionMismatchException();
+            if (values == null) throw new ArgumentNullException(nameof(values));
+            if (values.Count != Dimension) throw new DimensionMismatchException();
             if (isReadOnly) throw new InvalidOperationException();
 
             for (int i = 0; i < Dimension; i++) {
-                storage[i].Add(value[i]);
+                storage[i].Add(values[i]);
             }
 
         }
@@ -121,9 +125,13 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="values">The values associated with the entry to remove.</param>
         /// <returns>Whether the entry was found and removed.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="values"/> is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException">The dimension of <paramref name="values"/> does not match the
+        /// dimension of the multivariate sample.</exception>
+        /// <exception cref="InvalidOperationException">The multivariate sample is read-only.</exception>
         public bool Remove (IList<double> values) {
 
-            if (values == null) throw new ArgumentNullException("values");
+            if (values == null) throw new ArgumentNullException(nameof(values));
             if (values.Count != Dimension) throw new DimensionMismatchException();
             if (isReadOnly) throw new InvalidOperationException();
 
@@ -142,21 +150,21 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Determines whether the sample contains a given entry.
         /// </summary>
-        /// <param name="value">The values associated with the entry to search for.</param>
+        /// <param name="values">The values associated with the entry to search for.</param>
         /// <returns>Whether the sample contains the given entry.</returns>
-        public bool Contains (params double[] value) {
-            return (Contains((IList<double>) value));
+        public bool Contains (params double[] values) {
+            return (Contains((IList<double>) values));
         }
 
         /// <summary>
         /// Determines whether the sample contains a given entry.
         /// </summary>
-        /// <param name="value">The values associated with the entry to search for.</param>
+        /// <param name="values">The values associated with the entry to search for.</param>
         /// <returns>Whether the sample contains the given entry.</returns>
-        public bool Contains (IList<double> value) {
-            if (value == null) throw new ArgumentNullException("value");
-            if (value.Count != Dimension) throw new DimensionMismatchException();
-            return(IndexOf(value) >= 0); 
+        public bool Contains (IList<double> values) {
+            if (values == null) throw new ArgumentNullException(nameof(values));
+            if (values.Count != Dimension) throw new DimensionMismatchException();
+            return(IndexOf(values) >= 0); 
         }
 
         /// <summary>
@@ -196,7 +204,7 @@ namespace Meta.Numerics.Statistics {
         /// method to obtain an independent copy of the column.</para>
         /// </remarks>
         public Sample Column (int c) {
-            if ((c < 0) || (c >= Dimension)) throw new ArgumentOutOfRangeException("c");
+            if ((c < 0) || (c >= Dimension)) throw new ArgumentOutOfRangeException(nameof(c));
             return (new Sample(storage[c], true));
         }
 
@@ -216,8 +224,8 @@ namespace Meta.Numerics.Statistics {
         /// method to obtain an independent copy of the bivariate sample.</para>
         /// </remarks>
         public BivariateSample TwoColumns (int cx, int cy) {
-            if ((cx < 0) || (cx >= Dimension)) throw new ArgumentOutOfRangeException("cx");
-            if ((cy < 0) || (cy >= Dimension)) throw new ArgumentOutOfRangeException("cy");
+            if ((cx < 0) || (cx >= Dimension)) throw new ArgumentOutOfRangeException(nameof(cx));
+            if ((cy < 0) || (cy >= Dimension)) throw new ArgumentOutOfRangeException(nameof(cy));
             return (new BivariateSample(storage[cx], storage[cy], true));
         }
 
@@ -232,11 +240,11 @@ namespace Meta.Numerics.Statistics {
         /// <para>Note that this is a fast operation, which does not create independent copies of the columns.</para>
         /// </remarks>
         public MultivariateSample Columns (IList<int> columnIndexes) {
-            if (columnIndexes == null) throw new ArgumentNullException("columnIndexes");
+            if (columnIndexes == null) throw new ArgumentNullException(nameof(columnIndexes));
             SampleStorage[] columns = new SampleStorage[columnIndexes.Count];
             for (int i = 0; i < columns.Length; i++) {
                 int ci = columnIndexes[i];
-                if ((ci < 0) || (ci >= Dimension)) throw new ArgumentOutOfRangeException("columnIndexes");
+                if ((ci < 0) || (ci >= Dimension)) throw new ArgumentOutOfRangeException(nameof(columnIndexes));
                 columns[i] = storage[ci];
             }
             return new MultivariateSample(columns, true);
@@ -282,7 +290,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="DimensionMismatchException">The length of <paramref name="powers"/> is not
         /// equal to the <see cref="Dimension"/> of the multivariate sample.</exception>
         public double Moment (IList<int> powers) {
-            if (powers == null) throw new ArgumentNullException("powers");
+            if (powers == null) throw new ArgumentNullException(nameof(powers));
             if (powers.Count != Dimension) throw new DimensionMismatchException();
 
             double M = 0.0;
@@ -308,7 +316,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="DimensionMismatchException">The length of <paramref name="powers"/> is not
         /// equal to the <see cref="Dimension"/> of the multivariate sample.</exception>
         public double MomentAboutMean (IList<int> powers) {
-            if (powers == null) throw new ArgumentNullException("powers");
+            if (powers == null) throw new ArgumentNullException(nameof(powers));
             if (powers.Count != Dimension) throw new DimensionMismatchException();
 
             double C = 0.0;
@@ -381,6 +389,7 @@ namespace Meta.Numerics.Statistics {
 
             // solve the system for the linear model parameters
             CholeskyDecomposition CD = D.CholeskyDecomposition();
+            if (CD == null) throw new DivideByZeroException();
             ColumnVector parameters = CD.Solve(b);
 
             // find total sum of squares, with dof = # points - 1 (minus one for the variance-minimizing mean)
@@ -495,7 +504,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="http://en.wikipedia.org/wiki/Linear_regression"/>
         public FitResult LinearRegression (int outputIndex) {
 
-            if ((outputIndex < 0) || (outputIndex >= Dimension)) throw new ArgumentOutOfRangeException("outputIndex");
+            if ((outputIndex < 0) || (outputIndex >= Dimension)) throw new ArgumentOutOfRangeException(nameof(outputIndex));
 
             return (LinearRegression_Internal(outputIndex));
 
@@ -505,7 +514,8 @@ namespace Meta.Numerics.Statistics {
         /// Performs a linear logistic regression analysis.
         /// </summary>
         /// <param name="outputIndex">The index of the column to predict.</param>
-        /// <returns></returns>
+        /// <returns>A logistic multi-linear model fit. The kth parameter is the slope of the multi-linear model with respect to
+        /// the kth column, except for k equal to the <paramref name="outputIndex"/>, for which it is the intercept.</returns>
         /// <remarks>Logistic linear regression is suited to situations where multiple input variables, either continuous or binary indicators, are used to predict
         /// the value of a binary output variable. Like a linear regression, a logistic linear regression tries to find a model that predicts the output variable using
         /// a linear combination of input variables. Unlike a simple linear regression, the model does not assume that this linear
@@ -516,7 +526,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are not more rows in the sample than columns.</exception>
         public FitResult LogisticLinearRegression (int outputIndex) {
 
-            if ((outputIndex < 0) || (outputIndex >= this.Dimension)) throw new ArgumentOutOfRangeException("outputIndex");
+            if ((outputIndex < 0) || (outputIndex >= this.Dimension)) throw new ArgumentOutOfRangeException(nameof(outputIndex));
             if (this.Count <= this.Dimension) throw new InsufficientDataException();
 
             // Define the log likelihood as a function of the parameter set

@@ -69,6 +69,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Returns the residuals.
         /// </summary>
+        /// <returns>A bivariate sample of residuals of the fit.</returns>
         public BivariateSample Residuals () {
             return (residuals);
         }

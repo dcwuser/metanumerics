@@ -11,11 +11,15 @@ namespace Meta.Numerics.Functions {
         // using the doubling formula to get back to the value of u required.
 
         /// <summary>
-        /// Compute the Jacobian elliptic function sn.
+        /// Computes the Jacobian elliptic function sn.
         /// </summary>
         /// <param name="u">The argument.</param>
         /// <param name="k">The modulus, which must be between 0 and 1.</param>
         /// <returns>The value of sn(u,k).</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="k"/> lies outside [0, 1].</exception>
+        /// <remarks>
+        /// <para>Be aware that some authors use the parameter m = k^2 instead of the modulus k.</para>
+        /// </remarks>
         /// <seealso href="https://en.wikipedia.org/wiki/Jacobi_elliptic_functions"/>
         /// <seealso href="http://mathworld.wolfram.com/JacobiEllipticFunctions.html"/>
         /// <seealso href="http://dlmf.nist.gov/22"/>
@@ -50,6 +54,10 @@ namespace Meta.Numerics.Functions {
         /// <param name="u">The argument.</param>
         /// <param name="k">The modulus, which must be between 0 and 1.</param>
         /// <returns>The value of cn(u,k).</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="k"/> lies outside [0, 1].</exception>
+        /// <remarks>
+        /// <para>Be aware that some authors use the parameter m = k^2 instead of the modulus k.</para>
+        /// </remarks>
         /// <seealso href="https://en.wikipedia.org/wiki/Jacobi_elliptic_functions"/>
         /// <seealso href="http://mathworld.wolfram.com/JacobiEllipticFunctions.html"/>
         /// <seealso href="http://dlmf.nist.gov/22"/>
@@ -84,6 +92,10 @@ namespace Meta.Numerics.Functions {
         /// <param name="u">The argument.</param>
         /// <param name="k">The modulus, which must be between 0 and 1.</param>
         /// <returns>The value of dn(u,k).</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="k"/> lies outside [0, 1].</exception>
+        /// <remarks>
+        /// <para>Be aware that some authors use the parameter m = k^2 instead of the modulus k.</para>
+        /// </remarks>
         /// <seealso href="https://en.wikipedia.org/wiki/Jacobi_elliptic_functions"/>
         /// <seealso href="http://mathworld.wolfram.com/JacobiEllipticFunctions.html"/>
         /// <seealso href="http://dlmf.nist.gov/22"/>

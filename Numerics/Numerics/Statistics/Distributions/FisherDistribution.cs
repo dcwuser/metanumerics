@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using Meta.Numerics.Statistics;
 using Meta.Numerics;
 using Meta.Numerics.Functions;
 
@@ -15,7 +15,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>Many test statistics are ratios of variances and are therefore distributed according to the F-distribution. These include
     /// the F-test (<see cref="Sample.FisherFTest"/>),
     /// the goodness-of-fit test for a multi-linear regression (<see cref="MultivariateSample.LinearRegression(int)"/>),
-    /// and ANOVA tests (<see cref="Sample.OneWayAnovaTest(IList{Sample})"/>).</para>
+    /// and ANOVA tests (<see cref="Sample.OneWayAnovaTest(ICollection{Sample})"/>).</para>
     /// <para>The Fisher distribution is related to the Beta distribution (<see cref="BetaDistribution"/>) by a simple
     /// variable transformation.</para>
     /// <img src="../images/FisherBeta.png" />

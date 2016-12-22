@@ -701,6 +701,32 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void SquareMatrixSVD () {
+
+            for (int d = 4; d < 50; d += 7) {
+
+                SquareMatrix A = CreateSquareRandomMatrix(d, d);
+
+                SingularValueDecomposition SVD = A.SingularValueDecomposition();
+
+                Assert.IsTrue(SVD.Dimension == A.Dimension);
+
+                ColumnVector x = new ColumnVector(d);
+                for (int i = 0; i < d; i++) x[i] = i;
+                ColumnVector b = A * x;
+
+                ColumnVector b1 = SVD.LeftTransformMatrix().Transpose() * b;
+                for (int i = 0; i < SVD.Rank; i++) b1[i] = b1[i] / SVD.SingularValue(i);
+                ColumnVector b2 = SVD.RightTransformMatrix() * b1;
+
+                ColumnVector y = SVD.Solve(b);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(x, y));
+
+            }
+
+        }
+
     }
 
 }

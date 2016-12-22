@@ -12,6 +12,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="y">The second parameter, which must be non-negative.</param>
         /// <param name="z">The third parameter, which must be non-negative.</param>
         /// <returns>The value of R<sub>F</sub>(x,y,z).</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/>, <paramref name="y"/>, or
+        /// <paramref name="z"/> is negative.</exception>
         /// <remarks>
         /// <para>The Carlson F integral is:</para>
         /// <img src="../images/CarlsonFIntegral.png" />
@@ -25,9 +27,9 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Carlson_symmetric_form"/>
         public static double CarlsonF (double x, double y, double z) {
 
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
-            if (y < 0.0) throw new ArgumentOutOfRangeException("y");
-            if (z < 0.0) throw new ArgumentOutOfRangeException("z");
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
+            if (y < 0.0) throw new ArgumentOutOfRangeException(nameof(y));
+            if (z < 0.0) throw new ArgumentOutOfRangeException(nameof(z));
 
             // if more than one is zero, the result diverges
             if (((x == 0.0) && ((y == 0.0) || (z == 0.0))) || ((y == 0.0) && (z == 0.0))) return (Double.PositiveInfinity);
@@ -82,7 +84,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
-       
+
         /// <summary>
         /// Computes the Carlson integral R<sub>D</sub>.
         /// </summary>
@@ -90,6 +92,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="y">The second parameter, which must be non-negative.</param>
         /// <param name="z">The third parameter, which must be non-negative.</param>
         /// <returns>The value of R<sub>D</sub>(x, y, z)</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/>, <paramref name="y"/>, or
+        /// <paramref name="z"/> is negative.</exception>
         /// <remarks>
         /// <para>The Carlson D integral is:</para>
         /// <img src="../images/CarlsonDIntegral.png" />
@@ -100,9 +104,9 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Carlson_symmetric_form"/>
         public static double CarlsonD (double x, double y, double z) {
 
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
-            if (y < 0.0) throw new ArgumentOutOfRangeException("y");
-            if (z < 0.0) throw new ArgumentOutOfRangeException("z");
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
+            if (y < 0.0) throw new ArgumentOutOfRangeException(nameof(y));
+            if (z < 0.0) throw new ArgumentOutOfRangeException(nameof(z));
 
             if ((x == 0.0) && (y == 0.0)) return (Double.PositiveInfinity);
 
@@ -178,11 +182,20 @@ namespace Meta.Numerics.Functions {
         /// <param name="y">The second argument, which must be non-negative.</param>
         /// <param name="z">The third argument, which must be non-negative.</param>
         /// <returns>The value of R<sub>G</sub>(x, y, z).</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/>, <paramref name="y"/>, or
+        /// <paramref name="z"/> is negative.</exception>
+        /// <remarks>
+        /// <para>The Carlson G integral is:</para>
+        /// <img src="..\images\CarlsonGIntegral.png" />
+        /// <para>As can be seen from the definition, it is symmetric with respect to interchanges of any of its arguments.</para>
+        /// <para>The Carlson integrals can be used to express integrals of rational functions. In that sense, they are replacements for
+        /// the Legendre elliptic functions.</para>
+        /// </remarks>
         public static double CarlsonG (double x, double y, double z) {
 
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
-            if (y < 0.0) throw new ArgumentOutOfRangeException("y");
-            if (z < 0.0) throw new ArgumentOutOfRangeException("z");
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
+            if (y < 0.0) throw new ArgumentOutOfRangeException(nameof(y));
+            if (z < 0.0) throw new ArgumentOutOfRangeException(nameof(z));
 
             // We will use
             // 2 R_G = z R_F - 1/3 (x-z)(y-z) R_D + \sqrt{xy/z}
@@ -281,6 +294,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="k">The elliptic modulus, which must lie between zero and one.</param>
         /// <returns>The value of the Legendre integral K(k).</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="k"/> lies outside [0, 1].</exception>
         /// <remarks>
         /// <para>K(k) is defined as the complete elliptic integral:</para>
         /// <img src="../images/EllipticKIntegral.png" />
@@ -324,8 +338,8 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <seealso cref="EllipticK"/>
         public static double EllipticF (double phi, double k) {
-            if (Math.Abs(phi) > Global.HalfPI) throw new ArgumentOutOfRangeException("phi");
-            if ((k < 0) || (k > 1.0)) throw new ArgumentOutOfRangeException("k");
+            if (Math.Abs(phi) > Global.HalfPI) throw new ArgumentOutOfRangeException(nameof(phi));
+            if ((k < 0) || (k > 1.0)) throw new ArgumentOutOfRangeException(nameof(k));
             double s = MoreMath.Sin(phi);
             double c = MoreMath.Cos(phi);
             double z = s * k;
@@ -376,6 +390,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="k">The elliptic modulus, which must lie between zero and one.</param>
         /// <returns>The value of the Legendre integral E(k).</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="k"/> lies outside [0, 1].</exception>
         /// <remarks>
         /// <para>E(k) is defined as the complete elliptic integral:</para>
         /// <img src="../images/EllipticEIntegral.png" />
@@ -386,7 +401,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="EllipticE(double,double)"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Elliptic_integral"/>
         public static double EllipticE (double k) {
-            if ((k < 0.0) || (k > 1.0)) throw new ArgumentOutOfRangeException("k");
+            if ((k < 0.0) || (k > 1.0)) throw new ArgumentOutOfRangeException(nameof(k));
             // these expansions are accurate in the intermediate region, but require many terms
             // it would be good to use a faster approach there, like we do for K
             if (k < 0.71) {
@@ -415,8 +430,8 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Elliptic_integral"/>
         public static double EllipticE (double phi, double k) {
 
-            if (Math.Abs(phi) > Global.HalfPI) throw new ArgumentOutOfRangeException("phi");
-            if ((k < 0.0) || (k > 1.0)) throw new ArgumentOutOfRangeException("k");
+            if (Math.Abs(phi) > Global.HalfPI) throw new ArgumentOutOfRangeException(nameof(phi));
+            if ((k < 0.0) || (k > 1.0)) throw new ArgumentOutOfRangeException(nameof(k));
 
             //  Arguments in Carlson F and D functions are x = \cos^2 \phi, y = 1 - k^2 \sin^2 \phi, z = 1, z = 1
             double s = MoreMath.Sin(phi);

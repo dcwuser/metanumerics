@@ -57,10 +57,12 @@ namespace Meta.Numerics.Analysis {
         /// <returns>The global minimum.</returns>
         /// <remarks>
         /// <para>This algorithm attempts to find the global minimum of the given function within the entire given hyper-cube. It generally
-        /// requires many more function evaluations than <see cref="FindLocalMinimum"/>, but is much more likely to find a global minimum
-        /// in situations where multiple local minima exist.</para>
-        /// <para>Unlike <see cref="FindLocalMinimum"/> method, this method does not return an approximate Hessian matrix near the minimum.</para>
+        /// requires many more function evaluations than <see cref="FindGlobalMinimum(Func{IList{double}, double}, IList{Interval}, EvaluationSettings)"/>,
+        /// but is much more likely to find a global minimum in situations where multiple local minima exist.</para>
+        /// <para>Unlike <see cref="FindGlobalMinimum(Func{IList{double}, double}, IList{Interval}, EvaluationSettings)"/>,
+        /// this method does not return an approximate Hessian matrix near the minimum.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="function"/> or <paramref name="volume"/> is <see langword="null"/>.</exception>
         /// <exception cref="NonconvergenceException">The minimum could not be found within the given evaluation budget.</exception>
         public static MultiExtremum FindGlobalMinimum (Func<IList<double>, double> function, IList<Interval> volume, EvaluationSettings settings) {
             return (FindGlobalExtremum(function, volume, settings, false));
@@ -77,7 +79,7 @@ namespace Meta.Numerics.Analysis {
         }
 
         /// <summary>
-        /// Finds the maxunyn of a function within the given volume, subject to the given evaluation constraints.
+        /// Finds the maximum of a function within the given volume, subject to the given evaluation constraints.
         /// </summary>
         /// <param name="function">The function.</param>
         /// <param name="volume">The volume to search.</param>
@@ -88,8 +90,8 @@ namespace Meta.Numerics.Analysis {
         }
 
         private static MultiExtremum FindGlobalExtremum (Func<IList<double>, double> function, IList<Interval> volume, EvaluationSettings settings, bool negate) {
-            if (function == null) throw new ArgumentNullException("function");
-            if (volume == null) throw new ArgumentNullException("volume");
+            if (function == null) throw new ArgumentNullException(nameof(function));
+            if (volume == null) throw new ArgumentNullException(nameof(volume));
             MultiFunctor f = new MultiFunctor(function, negate);
             DifferentialEvolutionSettings deSettings = GetDefaultSettings(settings, volume.Count);
             MultiExtremum extremum = FindGlobalExtremum(f, volume, deSettings);

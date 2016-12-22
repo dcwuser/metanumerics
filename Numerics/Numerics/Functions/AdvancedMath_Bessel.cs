@@ -698,10 +698,11 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The values of J<sub>nu</sub>(x), J'<sub>nu</sub>(x), Y<sub>nu</sub>(x), and Y'<sub>nu</sub>(x).</returns>
         /// <remarks>
-        /// <para>Bessel functions often occur in physical phenomenon with cylindrical symmetry. They satisfy the differential equation</para>
+        /// <para>Bessel functions often occur in the analysis of physical phenomena with cylindrical symmetry.
+        /// They satisfy the differential equation:</para>
         /// <img src="../images/BesselODE.png" />
-        /// <para>Since this is second order linear equation, is has two linearly independent solutions. The regular Bessel function
-        /// J<sub>&#x3BD;</sub>(x), which is regular at the origin, and the irregular Bessel function Y<sub>&#x3BD;</sub>(x), which diverges
+        /// <para>Since this is a second order linear equation, it has two linearly independent solutions. The regular Bessel function
+        /// J<sub>&#x3BD;</sub>(x), which is finite at the origin, and the irregular Bessel function Y<sub>&#x3BD;</sub>(x), which diverges
         /// at the origin. Far from the origin, both functions are oscilatory.</para>
         /// <para>This method simultaneously computes both Bessel functions and their derivatives. If you need both J and Y, it is faster to call this method once than to call
         /// <see cref="BesselJ(double,double)"/> and <see cref="BesselY(double,double)"/> seperately. If on, the other hand, you need only J or only Y, it is faster to

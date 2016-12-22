@@ -1,5 +1,6 @@
 ﻿using System;
-
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Matrices {
 
@@ -37,6 +38,11 @@ namespace Meta.Numerics.Matrices {
     public sealed class SingularValueDecomposition {
 
         internal SingularValueDecomposition (double[] utStore, double[] wStore, double[] vStore, int rows, int cols) {
+            Debug.Assert(utStore != null);
+            Debug.Assert(wStore != null);
+            Debug.Assert(vStore != null);
+            Debug.Assert(rows > 0);
+            Debug.Assert(cols > 0);
             this.utStore = utStore;
             this.vStore = vStore;
             this.wStore = wStore;
@@ -108,7 +114,7 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The <paramref name="n"/>th singular value.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> lies outside the range [0, <see cref="Dimension"/> - 1].</exception>
         public double SingularValue (int n) {
-            if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException("n");
+            if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException(nameof(n));
             return (wStore[n]);
         }
 
@@ -122,7 +128,7 @@ namespace Meta.Numerics.Matrices {
         /// <para>The returned vector is read-only. If you need to make changes to it, you can call <see cref="ColumnVector.Copy"/> to obtain a writable copy.</para>
         /// </remarks>
         public ColumnVector LeftSingularVector (int n) {
-            if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException("n");
+            if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException(nameof(n));
             return (new ColumnVector(utStore, n, rows, rows, true));
         }
 
@@ -136,7 +142,7 @@ namespace Meta.Numerics.Matrices {
         /// <para>The returned vector is read-only. If you need to make changes to it, you can call <see cref="ColumnVector.Copy"/> to obtain a writable copy.</para>
         /// </remarks> 
         public ColumnVector RightSingularVector (int n) {
-            if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException("n");
+            if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException(nameof(n));
             return (new ColumnVector(vStore, n * cols, 1, cols, true));
         }
 
@@ -171,7 +177,7 @@ namespace Meta.Numerics.Matrices {
                 return (tolerance);
             }
             set {
-                if ((value < 0.0) || (value >= 1.0)) throw new ArgumentOutOfRangeException("value");
+                if ((value < 0.0) || (value >= 1.0)) throw new ArgumentOutOfRangeException(nameof(value));
                 tolerance = value;
             }
         }
@@ -196,6 +202,57 @@ namespace Meta.Numerics.Matrices {
                 }
                 return (rank);
             }
+        }
+
+        /// <summary>
+        /// Solves the system of equations Ax = b, where A is the original, square matrix.
+        /// </summary>
+        /// <param name="rhs">The right-hand-side vector b.</param>
+        /// <returns>The solution vector x.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="rhs"/> is null.</exception>
+        /// <exception cref="DimensionMismatchException"><paramref name="rhs"/> does not have the same dimension as the original matrix.</exception>
+        /// <exception cref="InvalidOperationException">The original matrix is not square.</exception>
+        /// <remarks>
+        /// <para>For singular and nearly-singular matrices, this method operates differently than other solution methods like
+        /// <see cref="SquareQRDecomposition.Solve(IList{double})"/> and <see cref="LUDecomposition.Solve(IList{double})"/>.
+        /// For singular and nearly-singular matrices, those methods
+        /// tend to produce very large or even infinite solution components that delicately cancel to produce the required right-hand-side,
+        /// but have little significance to the problem being modeled because they arise from inverting very small singular values
+        /// of the original matrix that are dominated by floating point rounding errors. The SVD solution discards those singular
+        /// values to obtain a solution vector driven by the dominant, non-singular parts of A. While this solution does not have
+        /// the minimum achievable |Ax - b|, it is often more representative of the desired solution to the problem being modeled.
+        /// </para>
+        /// <para>For original matrices that are not singular or nearly-singular, this method will compute the same solution
+        /// as other methods.</para>
+        /// <para>This method is only avaiable for square original matrices.</para>
+        /// </remarks>
+        public ColumnVector Solve (IList<double> rhs) {
+
+            if (rows != cols) throw new InvalidOperationException();
+            if (rhs == null) throw new ArgumentNullException(nameof(rhs));
+            if (rhs.Count != cols) throw new DimensionMismatchException();
+
+            double[] x = new double[rows];
+            double[] y = new double[rows];
+
+            rhs.CopyTo(x, 0);
+
+            Blas2.dGemv(utStore, 0, 1, rows, x, 0, 1, y, 0, 1, rows, rows);
+
+            double minValue = tolerance * wStore[0];
+            for (int i = 0; i < wStore.Length; i++) {
+                double w = wStore[i];
+                if (w > minValue) {
+                    y[i] /= w;
+                } else {
+                    y[i] = 0.0;
+                }
+            }
+
+            Array.Clear(x, 0, rows);
+            Blas2.dGemv(vStore, 0, 1, rows, y, 0, 1, x, 0, 1, rows, rows);
+
+            return (new ColumnVector(x, rows));
         }
     }
 

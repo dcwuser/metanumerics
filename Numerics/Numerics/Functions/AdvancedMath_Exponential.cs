@@ -252,6 +252,10 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="x">The argument.</param>
         /// <returns>The value of Ti<sub>2</sub>(x).</returns>
+        /// <remarks>
+        /// <para>The inverse tanget integral is defined by:</para>
+        /// <img src="..\images\IntegralTi.png" />
+        /// </remarks>
         /// <seealso href="http://mathworld.wolfram.com/InverseTangentIntegral.html"/>
         public static double IntegralTi (double x) {
             if (x < 0.0) {

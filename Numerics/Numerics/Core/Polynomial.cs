@@ -129,9 +129,9 @@ namespace Meta.Numerics {
         /// </summary>
         /// <returns>The derivative of the polynomail.</returns>
         public virtual Polynomial Differentiate () {
-            double[] coefficients = new double[this.Degree];
-            for (int i = 0; i < coefficients.Length; i++) coefficients[i] = (i + 1) * this.Coefficient(i + 1);
-            return (new Polynomial(coefficients));
+            double[] newCoefficients = new double[this.Degree];
+            for (int i = 0; i < newCoefficients.Length; i++) newCoefficients[i] = (i + 1) * this.Coefficient(i + 1);
+            return (new Polynomial(newCoefficients));
         }
 
         /// <summary>
@@ -140,10 +140,10 @@ namespace Meta.Numerics {
         /// <param name="C">The integration constant.</param>
         /// <returns>The integral of the polynomial.</returns>
         public virtual Polynomial Integrate (double C) {
-            double[] coefficients = new double[this.Degree + 2];
-            coefficients[0] = C;
-            for (int i = 1; i < coefficients.Length; i++) coefficients[i] = this.Coefficient(i - 1) / i;
-            return (new Polynomial(coefficients));
+            double[] newCoefficients = new double[this.Degree + 2];
+            newCoefficients[0] = C;
+            for (int i = 1; i < newCoefficients.Length; i++) newCoefficients[i] = this.Coefficient(i - 1) / i;
+            return (new Polynomial(newCoefficients));
         }
 
         /// <summary>

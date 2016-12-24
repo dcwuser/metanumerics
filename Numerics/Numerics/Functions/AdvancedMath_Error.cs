@@ -13,13 +13,13 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value of erf(x).</returns>
         /// <remarks>
-        /// <para>The error can be defined via a Gaussian integral.</para>
+        /// <para>The error function can be defined as a Gaussian integral.</para>
         /// <img src="../images/ErfIntegral.png" />
         /// <para>The area under a bell curve (<see cref="Meta.Numerics.Statistics.Distributions.NormalDistribution"/>) within &#x2213;z
         /// standard deviations of the mean is given by erf(z/&#x221A;2).</para>
         /// <para>For large values of x, erf(x) &#x2248; 1 to within floating-point accuracy. To obtain accurate values of erfc(x) = 1 - erf(x)
         /// in this range, use the <see cref="Erfc" /> function.</para>
-        /// <para>The inverse of the error function is implemented as <see cref="AdvancedMath.InverseErf"/>.</para>
+        /// <para>The inverse of the error function is available as <see cref="AdvancedMath.InverseErf"/>.</para>
         /// <para>Values of the error function for complex arguments can be obtained using <see cref="AdvancedComplexMath.Erf"/> method, or using the
         /// equivalent but re-parameterized <see cref="AdvancedComplexMath.Faddeeva"/> function.</para>
         /// </remarks>
@@ -43,12 +43,18 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value of erfc(<paramref name="x"/>) = 1 - erf(<paramref name="x"/>).</returns>
         /// <remarks>
-        /// <para>The complementary error function can be used to express the area in the tails of a Bell curve beyond a given distance from its center.</para>
-        /// <para>It can be defined via an integral:</para>
+        /// <para>The complementary error function can be defined by an integral, or by its relation to the error function.</para>
         /// <img src="../images/ErfcIntegral.png" />
-        /// <para>For small values of x, erfc(x) &#x2248; 1 to within floating-point accuracy. To obtain accurate values of erfc(x) = 1 - erf(x)
-        /// in this region, use the <see cref="Erf" /> function.</para></remarks>
+        /// <para>The area in the tails of a bell curve ((<see cref="Meta.Numerics.Statistics.Distributions.NormalDistribution"/>)
+        /// beyond &#x2213;z standard deviations from the mean is given by erfc(z/&#x221A;2).</para>
+        /// <para>For small values of x, erfc(x) &#x2248; 1 to within floating-point accuracy. To obtain accurate values of erf(x) = 1 - erfc(x)
+        /// in this region, use the <see cref="Erf" /> function.</para>
+        /// <para>The inverse of the complementary error function is available as <see cref="InverseErfc(double)"/>.</para>
+        /// <para>Values of the complementary error function for complex arguments can be obtained using the
+        /// <see cref="AdvancedComplexMath.Faddeeva(Complex)"/> function.</para>
+        /// </remarks>
         /// <seealso cref="Erf" />
+        /// <seealso href="http://mathworld.wolfram.com/Erfc.html"/>
         public static double Erfc (double x) {
             if (x < -1.5) {
                 return (2.0 - Erfc_ContinuedFraction(-x));
@@ -121,7 +127,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="InverseErf" />
         public static double InverseErfc (double y) {
 
-            if ((y < 0.0) || (y > 1.0)) throw new ArgumentOutOfRangeException("y");
+            if ((y < 0.0) || (y > 1.0)) throw new ArgumentOutOfRangeException(nameof(y));
 
             if (y == 0.0) {
                 return (Double.PositiveInfinity);
@@ -153,7 +159,7 @@ namespace Meta.Numerics.Functions {
             } else if (y == 1.0) {
                 return(Double.PositiveInfinity);
             } else {
-                throw new ArgumentOutOfRangeException("y");
+                throw new ArgumentOutOfRangeException(nameof(y));
             }
 
         }
@@ -308,7 +314,6 @@ namespace Meta.Numerics.Functions {
             }
 
         }
-
 
         internal static double ApproximateInverseErf (double y) {
             double x = Global.SqrtPI * y / 2.0;
@@ -501,7 +506,7 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>A plot of all values of this function in the complex plane as x ranges from
         /// negative infinity to positive infinity is called a Cornu spiral.</para>
-        /// <para>The Fresnel function can be related to the complex error function along the line (1-I).</para>
+        /// <para>The Fresnel function can be related to the complex error function along the line (1-&#x1D456;).</para>
         /// <img src="../images/FresnelErfRelation.png" />
         /// </remarks>
         /// <seealso cref="FresnelS"/>

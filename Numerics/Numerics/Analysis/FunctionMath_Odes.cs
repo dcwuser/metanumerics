@@ -23,13 +23,11 @@ namespace Meta.Numerics.Analysis {
         /// <exception cref="ArgumentNullException">The <paramref name="rhs"/> is null.</exception>
         /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision before exhausting the maximum allowed number of <paramref name="rhs"/> evaluations.</exception>
         /// <remarks>
-        /// <para>A conservative ordinary differential equation has the form</para>
-        /// <img src="../images/ConservativeODE.png" />
-        /// <para>where the right-hand-side depends only on x and y, not on the derivative y'. ODEs of this form are called conservative because
-        /// they exhibit conserved quantities: combinations of y and y' that maintain the same value as the system evolves. Many forms of
-        /// Newtonian equations of motion, for example, are conservative ODEs, with conserved quantities such as energy, momentum, and
-        /// angular momentum. Our specialized conservative ODE integrator is not only more efficient for conservative ODEs, but does a
-        /// better job of maintaining the conserved quantities.</para>
+        /// <para>For information on integrating conservative ODEs, see
+        /// <see cref="IntegrateConservativeOde(Func{double, double, double}, double, double, double, double, OdeEvaluationSettings)"/>.</para>
+        /// <para>This overload uses default values for precision and evaluation budget. It targets a relative precision of
+        /// about 10<sup>-12</sup> and an absolute precision of about 10<sup>-24</sup> with an evaluation budget of about 8000.
+        /// </para>
         /// </remarks>
         public static OdeResult IntegrateConservativeOde (Func<double, double, double> rhs, double x0, double y0, double yPrime0, double x1) {
             return (IntegrateConservativeOde(rhs, x0, y0, yPrime0, x1, new OdeEvaluationSettings()));
@@ -83,22 +81,9 @@ namespace Meta.Numerics.Analysis {
         /// <exception cref="ArgumentNullException">The <paramref name="rhs"/> is null.</exception>
         /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision before exhausting the maximum allowed number of <paramref name="rhs"/> evaluations.</exception>
         /// <remarks>
-        /// <para>An ordinary differential equation (ODE) has the form:</para>
-        /// <img src="../images/ODE.png" />
-        /// <para>The function specifying the derivative as a function of x and y is called the right-hand-side (RHS).</para>
-        /// <para>The integration of an ODE consists of specifying the value of y at some initial x and computing its value
-        /// at a different x in accordance with the differential equation. The terms "initial" and "final" are derived from
-        /// the common case where the indepdent variable is time, but the technique applies whether the independent variable
-        /// repsents a time, a location, or a completely non-physical quantity, as long as the problem has form of an ODE.</para>
-        /// <para>ODEs involving multi-dimensional, coupled dependent variables can be integrated using the
-        /// <see cref="MultiFunctionMath.IntegrateOde(Func{double, IList{double}, IList{double}}, double, IList{double}, double)"/>
-        /// method. Higher order ODEs can be integrated by representing them as coupled ODEs in which the zeroth component
-        /// is the desired y, the first component is y', the second component is y'', etc. So-called conservative second order
-        /// ODEs should be integrated using the <see cref="FunctionMath.IntegrateConservativeOde(Func{double, double, double}, double, double, double, double)"/>
-        /// method. If your ODE's RHS depends only on x, the problem reduces to a simple integral, which can be solved more rapidly and
-        /// accurately using the <see cref="FunctionMath.Integrate(Func{double, double}, Interval)"/> method. Analytic techniques can
-        /// also be used to reduce several other kinds of ODEs to simple integrals or lower-order ODEs.</para>
-        /// <para>This overload using default values for precision and evaluation budget. It targets a relative precision of
+        /// <para>For information on integrating ODEs, see
+        /// <see cref="IntegrateOde(Func{double, double, double}, double, double, double, OdeEvaluationSettings)"/>.</para>
+        /// <para>This overload uses default values for precision and evaluation budget. It targets a relative precision of
         /// about 10<sup>-12</sup> and an absolute precision of about 10<sup>-24</sup> with an evaluation budget of about 8000.
         /// </para>
         /// </remarks>
@@ -126,18 +111,18 @@ namespace Meta.Numerics.Analysis {
         /// <para>The integration of an ODE consists of specifying the value of y at some initial x and computing its value
         /// at a different x in accordance with the differential equation. The terms "initial" and "final" are derived from
         /// the common case where the indepdent variable is time, but the technique applies whether the independent variable
-        /// repsents a time, a location, or a completely non-physical quantity, as long as the problem has form of an ODE.</para>
-        /// <para>ODEs involving multi-dimensional, coupled dependent variables can be integrated using the
-        /// <see cref="MultiFunctionMath.IntegrateOde(Func{double, IList{double}, IList{double}}, double, IList{double}, double)"/>
+        /// repsents a time, a location, or a completely non-physical quantity, as long as the problem has the form of an ODE.</para>
+        /// <para>ODEs involving multiple, coupled dependent variables can be integrated using the
+        /// <see cref="MultiFunctionMath.IntegrateOde(Func{double, IList{double}, IList{double}}, double, IList{double}, double, MultiOdeEvaluationSettings)"/>
         /// method. Higher order ODEs can be integrated by representing them as coupled ODEs in which the zeroth component
         /// is the desired y, the first component is y', the second component is y'', etc. So-called conservative second order
-        /// ODEs should be integrated using the <see cref="FunctionMath.IntegrateConservativeOde(Func{double, double, double}, double, double, double, double)"/>
+        /// ODEs should be integrated using the
+        /// <see cref="FunctionMath.IntegrateConservativeOde(Func{double, double, double}, double, double, double, double, OdeEvaluationSettings)"/>
         /// method. If your ODE's RHS depends only on x, the problem reduces to a simple integral, which can be solved more rapidly and
-        /// accurately using the <see cref="FunctionMath.Integrate(Func{double, double}, Interval)"/> method. Analytic techniques can
-        /// also be used to reduce several other kinds of ODEs to simple integrals or lower-order ODEs.</para>
+        /// accurately using the <see cref="FunctionMath.Integrate(Func{double, double}, Interval, EvaluationSettings)"/> method.
+        /// Analytic techniques can also be used to reduce several other kinds of ODEs to simple integrals or lower-order ODEs.</para>
         /// </remarks>
         /// <seealso href="https://en.wikipedia.org/wiki/Ordinary_differential_equation"/>
-
         public static OdeResult IntegrateOde (Func<double, double, double> rhs, double x0, double y0, double x1, OdeEvaluationSettings settings) {
 
             if (rhs == null) throw new ArgumentNullException(nameof(rhs));

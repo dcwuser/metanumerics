@@ -224,7 +224,7 @@ namespace Meta.Numerics.Matrices {
         /// </para>
         /// <para>For original matrices that are not singular or nearly-singular, this method will compute the same solution
         /// as other methods.</para>
-        /// <para>This method is only avaiable for square original matrices.</para>
+        /// <para>This method is only available for square original matrices.</para>
         /// </remarks>
         public ColumnVector Solve (IList<double> rhs) {
 

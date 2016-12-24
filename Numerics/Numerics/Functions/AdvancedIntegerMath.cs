@@ -42,7 +42,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Factorial"/>
 		public static double Factorial (int n) {
             if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n < factorialTable.Length) {
 				return( (double) factorialTable[n]);
 			} else {
@@ -62,7 +62,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="Factorial"/>
 		public static double LogFactorial (int n) {
             if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n < factorialTable.Length) {
 				return( Math.Log( (double) factorialTable[n] ) );
 			} else {
@@ -75,39 +75,37 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="n">The upper argument, which must be non-negative.</param>
         /// <param name="m">The lower argument, which must be non-negative and less than or equal to <paramref name="n"/>.</param>
-        /// <returns>The binomial coefficent C(<paramref name="n"/>,<paramref name="m"/>),
-        /// also denoted "<paramref name="n"/> choose <paramref name="m"/>".</returns>
+        /// <returns>The binomial coefficient C(n, m).</returns>
         /// <remarks>
-        /// <para>The binomial coefficient C(n,m) is the coefficient of x<sup>m</sup> in the expansion of (1+x)<sup>n</sup>.</para>
+        /// <para>The binomial coefficient C(n, m) is the coefficient of x<sup>m</sup> in the expansion of (1+x)<sup>n</sup>:</para>
         /// <img src="../images/BinomialExpansion.png" />
+        /// <para>Writing n over m in parenthesis, as in the expression above, is by far the most common notation for binomial
+        /// coefficients, even though it is difficult to write inline.</para>
         /// <para>C(n,m) can also be given a combinatoric intrepretation as the total number of ways to pick m items from a set of
-        /// n distinct items.</para>
+        /// n distinct items. For this reason, it is often read as "n choose m".</para>
         /// <para>For example C(4,2) = 6. This can be seen by expanding (1+x)<sup>4</sup> = 
         /// 1 + 4 x + 6 x<sup>2</sup> + 4 x<sup>3</sup> + x<sup>4</sup> and noting that the coefficient of the x<sup>2</sup> term is 6.
         /// It can also be seen by considering the four-member set (abcd) and noting that there are 6 possible two-member subests:
         /// (ab), (ac), (ad), (bc), (bd), (cd).</para>
-        /// <para>Pascal's triangle is a classic representation of binomial coefficients.</para>
-        /// <table style="text-align: center;">
-        /// <tr><td colspan="3"></td><td colspan="2">C(0,0)</td></tr>
-        /// <tr><td colspan="2"></td><td colspan="2">C(1,0)</td><td colspan="2">C(1,1)</td></tr>
-        /// <tr><td colspan="1"></td><td colspan="2">C(2,0)</td><td colspan="2">C(2,1)</td><td colspan="2">C(2,2)</td></tr>
-        /// <tr><td colspan="2">C(3,0)</td><td colspan="2">C(3,1)</td><td colspan="2">C(3,2)</td><td colspan="2">C(3,3)</td></tr>
-        /// </table>
-        /// <para>The relation of an element in Pascal's triangle to its two parent elements is C(n+1,m) = C(n,m-1) + C(n,m).
-        /// There are many other relationships among binomial coefficients. Among the most computationally useful is
-        /// B(n,m+1) = (n-m)/(m+1) B(n,m), which can be used to generate all the binomial coefficients in a row of Pascal's
-        /// triangle (i.e., all the coefficients for a given order polynomial) starting from an outer values B(n,0) = 1 = B(n,n).
-        /// If you need a series of binomial coefficients, using a recursion will be more computationally efficient than
-        /// calling this method for each one. The <see cref="BinomialCoefficients"/> method provides a fast enumeration of
-        /// all the binomial coefficients in a given row of Pascal's triangle.</para>
-        /// <para>Binomial coefficients are always integers, but we return the result as double because the value can exceed
-        /// the capacity of an int or even a long for even quite moderate values of n and m.</para>
+        /// <para>Pascal's triangle is a classic graphical representation of binomial coefficients:</para>
+        /// <img src="..\images\PascalsTriangle.png" />
+        /// <para>The nth row of Pascal's triangle consists of the binomial coefficients C(n, 0) to C(n, n). Because of the triangular
+        /// arrangement, the identity C(n+1, m) = C(n, m-1) + C(n, m) corresponds to a rule that each entry is the sum of
+        /// the two neighboring entries from the row above. This rule makes it easy to generate additional rows.
+        /// (Proceeding in this fashion from C(0, 0) to the desired C(n, m) would be a very inefficient algorithm
+        /// for generating C(n, m). It is not how this method is implemented.) Pascal's triangle exhibits many other
+        /// fascinating patterns that arise from various binomial coefficient identities.</para>
+        /// <para>If you need multiple sequential binomial coefficients from a row of Pascal's triangle,
+        /// that is mutiple C(n, m) with the same n and increasing m, it is much more efficient to use
+        /// <see cref="BinomialCoefficients(int)"/>, which generates the coefficients iteratively, than to call this
+        /// method independently for each one.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative, or <paramref name="m"/> lies outside [0,<paramref name="n"/>].</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Binomial_coefficient"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Pascal's_triangle"/>
 		public static double BinomialCoefficient (int n, int m) {
-			if (n < 0) throw new ArgumentOutOfRangeException("n");
-			if ((m < 0) || (m > n)) throw new ArgumentOutOfRangeException("m");
+			if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+			if ((m < 0) || (m > n)) throw new ArgumentOutOfRangeException(nameof(m));
 
             // make lower argument small
             if (m > n / 2) m = n - m;
@@ -141,9 +139,10 @@ namespace Meta.Numerics.Functions {
         /// <param name="n">The upper argument, which must be non-negative.</param>
         /// <returns>An enumeration of the binomial coefficients in the nth row of Pascal's triangle.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
+        /// <seealso cref="BinomialCoefficient(int, int)"/>
         public static IEnumerable<double> BinomialCoefficients (int n) {
 
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
 
             if (n < 60) {
                 // use integer arithmetic if we won't overflow a long
@@ -201,7 +200,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/DoubleFactorial.html"/>
         public static double DoubleFactorial (int n) {
             if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n < 32) {
                 return ((double) DoubleFactorial_Multiply(n));
             } else {
@@ -214,11 +213,15 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="n">The argument.</param>
         /// <returns>The value of ln(n!!).</returns>
+        /// <remarks>
+        /// <para>This return value of this method will not overflow even for values of n for which n!!
+        /// would overflow a <see cref="double"/>.</para>
+        /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso cref="DoubleFactorial"/>
         public static double LogDoubleFactorial (int n) {
             if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n < 32) {
                 return (Math.Log((double) DoubleFactorial_Multiply(n)));
             } else {
@@ -235,13 +238,15 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <remarks>
         /// <para>H<sub>n</sub> is the nth partial sum of the harmonic series.</para>
+        /// <img src="..\images\HarmonicSeries.png" />
         /// <para>Since the harmonic series diverges, H<sub>n</sub> grows without bound as n increases, but
         /// it does so extremely slowly, approximately as log(n).</para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Harmonic_series_(mathematics)"/>
         public static double HarmonicNumber (int n) {
             if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n < 32) {
                 // for small values, just add up the harmonic series
                 double H = 0.0;
@@ -266,9 +271,9 @@ namespace Meta.Numerics.Functions {
         /// <see href="http://en.wikipedia.org/wiki/Fibonacci_number"/>
         public static double FibonacciNumber (int n) {
             if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException(nameof(n));
             } else {
-                // Begin with relation F_n = \frac{\phi^n - (-\phi)^{-n}}{\sqrt{5}}, which is exact. For large n, second
+                // Begin with relation F_n = \frac{\phi^n - (-\phi)^{-n}}{\sqrt{5}}, which is exact. For large n, the second
                 // term becomes negligable, so we certainly expect F_n = \left[ \frac{\phi^n}{\sqrt{5}} \right] for large enough n.
                 // What's surprising is that n = 0 is already large enough, giving us a really fast way to get the nth Fibonacci
                 // number (at least to floating point precision) without computing any lower Fibonacci numbers, much less all of them.
@@ -289,7 +294,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/BernoulliNumber.html"/>
         public static double BernoulliNumber (int n) {
 
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
 
             // B_1 is the only odd Bernoulli number.
             if (n == 1) return (-1.0 / 2.0);
@@ -309,16 +314,16 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        // the even Bernoulli numbers B_2n = Bernoulli[n]
-        // the only nonvanishing odd Bernoulli number is B_1 = -1/2, which must be handled seperately if you
-        // use these numbers in any series expansion
+        // Store the even Bernoulli numbers B_{2n} = Bernoulli[n].
+        // The only nonvanishing odd Bernoulli number is B_1 = -1/2, which must be handled seperately if you
+        // use these numbers in any series expansion.
 
         internal static readonly double[] Bernoulli = new double[] {
             1.0, 1.0 / 6.0, -1.0 / 30.0, 1.0 / 42.0, -1.0 / 30.0, 5.0 / 66.0, -691.0 / 2730.0, 7.0 / 6.0,
             -3617.0 / 510.0, 43867.0 / 798.0, -174611.0 / 330.0, 854513.0 / 138.0, -236364091.0 / 2730.0, 8553103.0 / 6.0, -23749461029.0 / 870.0, 8615841276005.0 / 14322.0
         };
 
-        // the expansions in which they appear are asymptotic; the numbers grow rapidly after ~B_16
+        // The expansions in which they appear are asymptotic; the numbers grow rapidly after ~B_16
 
         /// <summary>
         /// Computes a Stirling number of the first kind.
@@ -512,7 +517,7 @@ namespace Meta.Numerics.Functions {
         /// <returns>The Bell number B<sub>n</sub>.</returns>
         /// <seealso href="http://en.wikipedia.org/wiki/Bell_number"/>
         public static double BellNumber (int n) {
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
 
             // Dobinski's formula only good for n > 0
             if (n == 0) return (1.0);
@@ -592,9 +597,9 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="b"/>,  <paramref name="e"/>, or <paramref name="m"/> is not positive.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Modular_exponentiation"/>
         public static int PowMod (int b, int e, int m) {
-            if (b < 0) throw new ArgumentOutOfRangeException("b");
-            if (e < 1) throw new ArgumentOutOfRangeException("e");
-            if (m < 1) throw new ArgumentOutOfRangeException("m");
+            if (b < 0) throw new ArgumentOutOfRangeException(nameof(b));
+            if (e < 1) throw new ArgumentOutOfRangeException(nameof(e));
+            if (m < 1) throw new ArgumentOutOfRangeException(nameof(m));
 
             // use long internally
             // since the "worst" we ever do before modding is to square, and since a long should
@@ -636,7 +641,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Integer_partition"/>
         public static IEnumerable<int[]> Partitions (int n) {
 
-            if (n < 1) throw new ArgumentOutOfRangeException("n");
+            if (n < 1) throw new ArgumentOutOfRangeException(nameof(n));
 
             // initialize the state
             int[] a = new int[n + 1];
@@ -674,7 +679,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/PrimeNumber.html"/>
         public static bool IsPrime (int n) {
             if (n <= 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException(nameof(n));
             } if (n < 8) {
                 return ((n == 2) || (n == 3) || (n == 5) || (n == 7));
             } else {

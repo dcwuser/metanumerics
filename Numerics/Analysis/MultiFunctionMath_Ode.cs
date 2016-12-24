@@ -19,6 +19,19 @@ namespace Meta.Numerics.Analysis {
         /// <param name="yPrime0">The intial values of the functions' derivatives.</param>
         /// <param name="x1">The final value of the independent variable.</param>
         /// <returns>The solution, including the final value of the functions and their derivatives.</returns>
+        /// <remarks>
+        /// <para>For information on integrating coupled, conservative ODEs, see
+        /// <see cref="IntegrateConservativeOde(Func{double, IList{double}, IList{double}}, double, IList{double}, IList{double}, double, MultiOdeEvaluationSettings)"/>.</para>
+        /// <para>This overload uses default settings for precision and evaluation budget. It targets a relative precision of
+        /// about 10<sup>-12</sup> and an absolute precision of about 10<sup>-24</sup> with an evaluation budget of about 8000.
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="rhs"/>, <paramref name="y0"/>, or <paramref name="yPrime0"/>
+        /// is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException"><paramref name="y0"/> and <paramref name="yPrime0"/> do not have the same
+        /// dimension.</exception>
+        /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision before exhausting
+        /// the maximum allowed number of <paramref name="rhs"/>evaluations.</exception>
         public static MultiOdeResult IntegrateConservativeOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, IList<double> yPrime0, double x1) {
             return (IntegrateConservativeOde(rhs, x0, y0, yPrime0, x1, new MultiOdeEvaluationSettings()));
         }
@@ -33,6 +46,15 @@ namespace Meta.Numerics.Analysis {
         /// <param name="x1">The final value of the independent variable.</param>
         /// <param name="settings">The settings to use when solving the problem.</param>
         /// <returns>The solution, including the final value of the functions and their derivatives.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="rhs"/>, <paramref name="y0"/>, <paramref name="yPrime0"/>,
+        /// or <paramref name="settings"/> is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException"><paramref name="y0"/> and <paramref name="yPrime0"/> do not have the same
+        /// dimension.</exception>
+        /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision before exhausting
+        /// the maximum allowed number of <paramref name="rhs"/>evaluations.</exception>
+        /// <remarks>
+        /// <para>For information on conservative ODEs, see <see cref="FunctionMath.IntegrateConservativeOde(Func{double, double, double}, double, double, double, double, OdeEvaluationSettings)"/>.</para>
+        /// </remarks>
         public static MultiOdeResult IntegrateConservativeOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, IList<double> yPrime0, double x1, MultiOdeEvaluationSettings settings) {
 
             if (rhs == null) throw new ArgumentNullException(nameof(rhs));
@@ -63,8 +85,11 @@ namespace Meta.Numerics.Analysis {
         /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision before exhausting
         /// the maximum allowed number of <paramref name="rhs"/> evaluations.</exception>
         /// <remarks>
-        /// <para>The default settings for ODE integration are a relative precision of about 10<sup>-12</sup>, an absolute precision
-        /// of about 10<sup>-24</sup>, and a maximum of about 8000 right-hand-side evaluations.</para>
+        /// <para>For infomration about integrating coupled ODEs, see
+        /// <see cref="IntegrateOde(Func{double, IList{double}, IList{double}}, double, IList{double}, double, MultiOdeEvaluationSettings)"/>.</para>
+        /// <para>This overload uses default settings for precision and evaluation budget. It targets a relative precision of
+        /// about 10<sup>-12</sup> and an absolute precision of about 10<sup>-24</sup> with an evaluation budget of about 8000.
+        /// </para>
         /// </remarks>
         public static MultiOdeResult IntegrateOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, double x1) {
             return (IntegrateOde(rhs, x0, y0, x1, new MultiOdeEvaluationSettings()));
@@ -86,8 +111,8 @@ namespace Meta.Numerics.Analysis {
         /// the maximum allowed number of <paramref name="rhs"/>evaluations.</exception>
         /// <remarks>
         /// <para>This method integrates a set of coupled ordinary differential equations. The dependent variable y is a vector
-        /// with an arbitrary number of components, and the right-hand-side is a vector-valued function that gives the derivative
-        /// of each component, and may depend on the values of all the components as well as the independent variable.
+        /// with any number of components, and the right-hand-side is a vector-valued function that gives the derivative
+        /// of each component. Each component's derivative may depend itself and any other components, as well as on the independent variable.
         /// The independent variable x still takes only a single real value.</para>
         /// </remarks>
         public static MultiOdeResult IntegrateOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, double x1, MultiOdeEvaluationSettings settings) {

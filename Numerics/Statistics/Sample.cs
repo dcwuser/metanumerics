@@ -374,6 +374,7 @@ namespace Meta.Numerics.Statistics {
         /// Adds a value to the sample.
         /// </summary>
         /// <param name="value">The value to add.</param>
+        /// <exception cref="InvalidOperationException">The sample is read-only.</exception>
         public void Add (double value) {
             if (isReadOnly) {
                 throw new InvalidOperationException();
@@ -386,11 +387,13 @@ namespace Meta.Numerics.Statistics {
         /// Adds multiple values to the sample.
         /// </summary>
         /// <param name="values">An enumerable set of the values to add.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="values"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InvalidOperationException">The sample is read-only.</exception>
         public void Add (IEnumerable<double> values) {
             if (isReadOnly) {
                 throw new InvalidOperationException();
             } else {
-                if (values == null) throw new ArgumentNullException("values");
+                if (values == null) throw new ArgumentNullException(nameof(values));
                 foreach (double value in values) {
                     data.Add(value);
                 }
@@ -410,6 +413,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="value">The value to remove.</param>
         /// <returns>True if the value was found and removed, otherwise false.</returns>
+        /// <exception cref="InvalidOperationException">The sample is read-only.</exception>
         public bool Remove (double value) {
             if (isReadOnly) {
                 throw new InvalidOperationException();
@@ -421,6 +425,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Remove all values from the sample.
         /// </summary>
+        /// <exception cref="InvalidOperationException">The sample is read-only.</exception>
         public void Clear () {
             if (isReadOnly) {
                 throw new InvalidOperationException();
@@ -432,12 +437,13 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Transforms all values using a user-supplied function.
         /// </summary>
-        /// <param name="transformFunction">The function used to transform the values, which must not be null.</param>
+        /// <param name="transformFunction">The function used to transform the values.</param>
         /// <remarks>
         /// <para>For example, to replace all values with their logarithms, apply a transform using <see cref="Math.Log(double)"/>.</para>
         /// <para>If the supplied transform function throws an excaption, or returns infinite or NaN values, the transformation
         /// may be incomplete or the data corrupted.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="transformFunction"/> is <see langword="null"/>.</exception>
         public void Transform (Func<double, double> transformFunction) {
             if (transformFunction == null) throw new ArgumentNullException("transformFunction");
             data.Transform(transformFunction);
@@ -448,6 +454,11 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets a value indicating whether the sample is read-only.
         /// </summary>
+        /// <value><see langword="true"/> if the sample is read-only, otherwise <see langword="false"/>.</value>
+        /// <remarks>
+        /// <para>If a sample is read-only and you need to make changes to it, you can use <see cref="Copy"/> to
+        /// obtain a modifyable copy.</para>
+        /// </remarks>
         public bool IsReadOnly {
             get {
                 return (isReadOnly);
@@ -458,7 +469,7 @@ namespace Meta.Numerics.Statistics {
         /// Determines whether the sample contains the given value.
         /// </summary>
         /// <param name="value">The value to check for.</param>
-        /// <returns>True if the sample contains <paramref name="value"/>, otherwise false.</returns>
+        /// <returns>True if the sample contains <paramref name="value"/>, otherwise <see langword="false"/>.</returns>
         public bool Contains (double value) {
             return (data.Contains(value));
         }
@@ -508,7 +519,7 @@ namespace Meta.Numerics.Statistics {
         /// Gets the sample variance.
         /// </summary>
         /// <remarks>
-        /// <para>Note this is the actual variance of the sample values, not the infered variance
+        /// <para>This is the actual variance of the sample values, not the infered variance
         /// of the underlying population; to obtain the latter use <see cref="PopulationVariance" />.</para>
         /// </remarks>
         public double Variance {
@@ -521,7 +532,7 @@ namespace Meta.Numerics.Statistics {
         /// Gets the sample standard deviation.
         /// </summary>
         /// <remarks>
-        /// <para>Note this is the actual standard deviation of the sample values, not the infered standard
+        /// <para>This is the actual standard deviation of the sample values, not the infered standard
         /// deviation of the underlying population; to obtain the latter use
         /// <see cref="PopulationStandardDeviation" />.</para>
         /// </remarks>        
@@ -569,6 +580,10 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="n">The order of the moment to compute.</param>
         /// <returns>The <paramref name="n"/>th moment about its mean of the sample.</returns>
+        /// <remarks>
+        /// <para>This method computes the central momements of the sample data, not the estiamted
+        /// central moments of the underlying population; to obtain the latter, use <see cref="PopulationMomentAboutMean(int)"/>.</para>
+        /// </remarks>
         public double MomentAboutMean (int n) {
             if (n == 0) {
                 return (1.0);
@@ -591,6 +606,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the sample median.
         /// </summary>
+        /// <seealso href="https://en.wikipedia.org/wiki/Median"/>
         public double Median {
             get {
                 return (InverseLeftProbability(0.5));
@@ -602,6 +618,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <remarks>The interquartile range is the interval between the 25th and the 75th percentile.</remarks>
         /// <seealso cref="InverseLeftProbability"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Interquartile_range"/>
         public Interval InterquartileRange {
             get {
                 return (Interval.FromEndpoints(InverseLeftProbability(0.25), InverseLeftProbability(0.75)));
@@ -611,6 +628,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the smallest value in the sample.
         /// </summary>
+        /// <exception cref="InsufficientDataException">The sample contains no data.</exception>
         public double Minimum {
             get {
                 if (data.Count < 1) throw new InsufficientDataException();
@@ -622,6 +640,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the largest value in the sample.
         /// </summary>
+        /// <exception cref="InsufficientDataException">The sample contains no data.</exception>
         public double Maximum {
             get {
                 if (data.Count < 1) throw new InsufficientDataException();
@@ -651,7 +670,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="P"/> lies outside [0,1].</exception>
         /// <exception cref="InsufficientDataException"><see cref="Sample.Count"/> is less than two.</exception>
         public double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             if (data.Count < 2) throw new InsufficientDataException();
             int[] order = data.GetSortOrder();
             double n = P * (data.Count - 1);
@@ -696,10 +715,11 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="n">The order of the moment.</param>
         /// <returns>An estimate of the <paramref name="n"/>th moment of the population.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         public UncertainValue PopulationMoment (int n) {
             if (n < 0) {
                 // we don't do negative moments
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n == 0) {
                 // the zeroth moment is exactly one for any distribution
                 return (new UncertainValue(1.0, 0.0));
@@ -724,7 +744,7 @@ namespace Meta.Numerics.Statistics {
         public UncertainValue PopulationMomentAboutMean (int n) {
             if (n < 0) {
                 // we don't do negative moments
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n == 0) {
                 // the zeroth moment is exactly one for any distribution
                 return (new UncertainValue(1.0, 0.0));
@@ -944,11 +964,29 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="a">The first sample, which must contain at least two entries.</param>
         /// <param name="b">The second sample, which must contain at least two entries.</param>
-        /// <returns>The result of an (equal-variance) Student t-test.</returns>
+        /// <returns>The result of the test. The statistic is the Student's t and the probability
+        /// is the chance of obtaining such an extreme value of t if the two samples are drawn
+        /// from the same distribution.</returns>
+        /// <remarks>
+        /// <para>Given two samples, a back-of-the-envelope way to determine whether their means differ in a statistically
+        /// significant way is to compare their <see cref="PopulationMean"/> values. If their error bars overlap, they
+        /// are probably statistically compatible; if they do not, the difference in means is probably statistically
+        /// significant. Student's t-test is a way to refine this back-of-the-envelope procedure into a statistical test
+        /// that can determine exactly how likely a given seperation of means is under the null hypothesis that the
+        /// two samples are drawn from the same distribution.</para>
+        /// <para>The t-statistic is proportional to the mean of <paramref name="a"/> minus the mean of <paramref name="b"/>,
+        /// so t > 0 indicates that <paramref name="a"/> has a greater mean.</para>
+        /// <para>Student's t-test was one of the first statistical tests. It was described by William Sealy Gosset,
+        /// a chemist who worked for the Guiness brewing company. Since Guiness was concerned that other breweries might take
+        /// advantage of a technique published by one of its chemists, Gosset published his work under the pseudonym Student.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is null.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="a"/> or <paramref name="b"/> contains less than two values.</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Student's_t-test"/>
         public static TestResult StudentTTest (Sample a, Sample b) {
 
-            if (a == null) throw new ArgumentNullException("a");
-            if (b == null) throw new ArgumentNullException("b");
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
 
             // get counts
             int na = a.Count;
@@ -973,45 +1011,47 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Tests whether the sample median is compatible with the mean of another sample.
+        /// Tests whether one sample median is compatible with another sample median.
         /// </summary>
         /// <param name="a">The fisrt sample.</param>
         /// <param name="b">The second sample.</param>
-        /// <returns>The result of the test.</returns>
+        /// <returns>The result of the test. The statistic is the Mann-Whitney U value and the probability
+        /// is the chance of obtaining such an extreme value of U if the two samples are drawn from the
+        /// same distribution.</returns>
         /// <remarks>
-        /// <para>The Mann-Whitney test is a non-parametric alternative to Student's t-test.
+        /// <para>The Mann-Whitney test is a non-parametric alternative to Student's t-test (<see cref="StudentTTest(Sample, Sample)"/>).
         /// Essentially, it supposes that the medians of the two samples are equal and tests
         /// the likelihood of this null hypothesis. Unlike the t-test, it does not assume that the sample distributions are normal.</para>
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Mann-Whitney_U_test"/>
         public static TestResult MannWhitneyTest (Sample a, Sample b) {
 
-            if (a == null) throw new ArgumentNullException("a");
-            if (b == null) throw new ArgumentNullException("b");
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
 
-            // essentially, we want to order the entries from the two samples and find out how
+            // Essentially, we want to order the entries from both samples together and find out how
             // many times "a's beat b's". In the ordering ababb, a beats b 5 times.
 
-            // implementing this naively would be O(N^2), so instead we use a formula that
+            // Implementing this naively would be O(N^2), so instead we use a formula that
             // relates this quantity to the sum of ranks of a's and b's; to get those ranks
             // we do seperate sorts O(N ln N) and a merge sort O(N).
 
-            // sort the two samples
+            // Sort the two samples.
             int[] aOrder = a.data.GetSortOrder();
             int[] bOrder = b.data.GetSortOrder();
 
-            // now we essentially do a merge sort, but instead of actually forming the merged list,
+            // Now we essentially do a merge sort, but instead of actually forming the merged list,
             // we just keep track of the ranks that elements from each sample would have in the merged list
 
-            // variables to track the sum of ranks for each sample
+            // Variables to track the sum of ranks for each sample
             int r1 = 0;
             int r2 = 0;
 
-            // pointers to the current position in each list
+            // Pointers to the current position in each list
             int p1 = 0;
             int p2 = 0;
 
-            // the current rank
+            // The current rank
             int r = 1;
 
             while (true) {
@@ -1045,17 +1085,18 @@ namespace Meta.Numerics.Statistics {
                 }
             }
 
-            // relate u's to r's
+            // Relate u's to r's,
             int u1 = r1 - a.Count * (a.Count + 1) / 2;
             int u2 = r2 - b.Count * (b.Count + 1) / 2;
             Debug.Assert(u1 + u2 == a.Count * b.Count);
 
-            // return the result
+            // Return the result
 
-            // if possible, use the exact distribution
-            // to compute it, we need to do exact integer arithmetic on numbers of order the total number of possible orderings
-            // since decimal is the built-in type that can hold the largest exact integers, we use it for the computation
-            // therefore, to generate the exact distribution, the total number of possible orderings must be less than the capacity of a decimal 
+            // If possible, we want to use the exact distribution of U.
+            // To compute it, we need to do exact integer arithmetic on numbers of order the total number of possible orderings,
+            // which is (a.Count + b.Count!).
+            // Since decimal is the built-in type that can hold the largest exact integers, we use it for the computation.
+            // Therefore, to generate the exact distribution, the total number of possible orderings must be less than the capacity of a decimal. 
             Distribution uDistribution;
             double lnTotal = AdvancedIntegerMath.LogFactorial(a.Count + b.Count) - AdvancedIntegerMath.LogFactorial(a.Count) - AdvancedIntegerMath.LogFactorial(b.Count);
             if (lnTotal > Math.Log((double)Decimal.MaxValue)) {
@@ -1074,7 +1115,7 @@ namespace Meta.Numerics.Statistics {
         /// Performs a one-way analysis of variance (ANOVA).
         /// </summary>
         /// <param name="samples">The samples to compare.</param>
-        /// <returns>The result of an F-test comparing the between-group variance to
+        /// <returns>ANOVA data, including an F-test comparing the between-group variance to
         /// the within-group variance.</returns>
         /// <remarks>
         /// <para>The one-way ANOVA is an extension of the Student t-test (<see cref="StudentTTest(Sample,Sample)"/>)
@@ -1085,8 +1126,8 @@ namespace Meta.Numerics.Statistics {
         /// in the means of the groups rather than perform multiple t-tests. The reason
         /// is that each t-test incurs a small risk of a false positive, so multiple t-tests increase
         /// the total risk of a false positive. For example, given a 95% confidence requirement,
-        /// there is only a 5% chance that a t-test will incorrectly diagnose a significant
-        /// difference. But given 5 samples, there are 5 * 4 /2 = 10 t-tests to be
+        /// there is only a 5% chance that an individual t-test will incorrectly diagnose a significant
+        /// difference. But given 5 samples, there are 5 * 4 / 2 = 10 t-tests to be
         /// performed, giving about a 40% chance that at least one of them will incorrectly
         /// diagnose a significant difference! The ANOVA avoids the accumulation of risk
         /// by performing a single test at the required confidence level to test for
@@ -1097,42 +1138,49 @@ namespace Meta.Numerics.Statistics {
         /// by the name and by the use of a ratio-of-variances test statistic: an
         /// ANOVA is primarily (although not exclusively) sensitive to changes in the
         /// <i>mean</i> between samples. The variances being compared by the test are not the
-        /// variances of the individual samples; instead the test is comparing the variance of
-        /// all samples considered together as one single sample to the variances of the samples
+        /// variances of the individual samples; instead the test compares the variance of
+        /// all samples considered together as one single, large sample to the variances of the samples
         /// considered individually. If the means of some groups differ significantly,
         /// then the variance of the unified sample will be much larger than the vairiances of the
         /// individual samples, and the test will signal a significant difference. Thus the
         /// test uses variance as a tool to detect shifts in mean, not because it
         /// is interesed in the individual sample variances per se.</para>
-        /// <para>ANOVA is most appropriate when the sample data are approximately normal
+        /// <para>ANOVA is most appropriate when the sample data are continuous and approximately normal,
         /// and the samples are distinguished by a nominal variable. For example, given
-        /// a random sampling of the ages of members of five different political parties,
+        /// a random sampling of the heights of members of five different political parties,
         /// a one-way ANOVA would be an appropriate test of the whether the different
-        /// parties tend to attract different-aged memberships.</para>
-        /// <para>On the other hand, given
-        /// data on the incomes and vacation lengths of a large number of people,
-        /// dividing the people into five income quintiles and performing a one-way ANOVA
-        /// to compare the vacation day distribution of each quintile would <i>not</i> be an
-        /// appropriate way to test the hypothesis that richer people take longer
-        /// vacations. Since income is a cardinal variable, it would be better to
-        /// in this case of put the data into a <see cref="BivariateSample"/> and
+        /// parties tend to attract people with different heights.</para>
+        /// <para>Given a continuous independent variable, binning in order to define
+        /// groups and perform an ANOVA is generally not appropriate.
+        /// For exapmple, given the incomes and heights of a large number of people,
+        /// dividing these people into low-height, medium-height, and high-height groups
+        /// and performing an ANOVA of the income of people in each group is not a
+        /// good way to test whether height influences income.
+        /// In a case like this, it would be better to put the data into a <see cref="BivariateSample"/> and
         /// perform a test of association, such as a <see cref="BivariateSample.PearsonRTest" />,
         /// <see cref="BivariateSample.SpearmanRhoTest" />, or <see cref="BivariateSample.KendallTauTest" />
         /// between the two variables. If you have measurements
         /// of additional variables for each indiviual, a <see cref="MultivariateSample.LinearRegression(int)" />
-        /// analysis would allow you to adjust for confounding effects of the other variables.</para>
+        /// analysis would allow you to adjust for the confounding effects of the other variables. If you
+        /// define arbitrary bins of continuously variable data in order to form groups, then your
+        /// ANOVA results will depend on your choice of bins.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="samples"/> is null.</exception>
+        /// <exception cref="ArgumentException"><paramref name="samples"/> contains fewer than two samples.</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Analysis_of_variance"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/One-way_analysis_of_variance"/>
         public static OneWayAnovaResult OneWayAnovaTest (params Sample[] samples) {
             return (OneWayAnovaTest((IList<Sample>)samples));
         }
 
         /// <summary>
-        /// Performs a one-way ANOVA.
+        /// Performs a one-way analysis of variance (ANOVA).
         /// </summary>
         /// <param name="samples">The samples to compare.</param>
-        /// <returns>The result of the test.</returns>
+        /// <returns>ANOVA data, including an F-test comparing the between-group variance to
+        /// the within-group variance.</returns>
         /// <remarks>
-        /// <para>For detailed information, see the variable argument overload.</para>
+        /// <para>For detailed information, see <see cref="OneWayAnovaTest(Sample[])"/>.</para>
         /// </remarks>
         public static OneWayAnovaResult OneWayAnovaTest (ICollection<Sample> samples) {
 
@@ -1174,17 +1222,22 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Performs a two-way analysis of variance.
         /// </summary>
-        /// <param name="samples">A matrix of samples, all of which must have equal counts.</param>
+        /// <param name="samples">A two-dimensional array of samples, all of which must have equal counts.</param>
         /// <returns>The result of the analysis.</returns>
         /// <remarks>
-        /// <para>A two-way ANOVA analyzes the effect of two seperate input factors, each with
-        /// nominal values, on a continuous output variable.</para>
+        /// <para>A two-way ANOVA analyzes the effects of two seperate input factors, each with
+        /// two or more nominal values, on a continuous output variable.</para>
         /// <para>The only design supported is complete and balanced: samples must exist
         /// for all combinations of treatment factors, and each of those samples must
-        /// contain the same number of data points.</para>
+        /// contain the same number of data points. These samples are passed to the method
+        /// as a two-dimensional array <paramref name="samples"/>, whose (i, j)th entry
+        /// contains the sample with ith ith row factor value and jth column factor value.</para>
+        /// <para>For more information on ANOVA tests and when to use them, see the remarks for
+        /// <see cref="OneWayAnovaTest(Sample[])"/>.</para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="samples"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="samples"/> is null, or one of its entries is null.</exception>
         /// <exception cref="InvalidOperationException">The design is not complete or balanced.</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Two-way_analysis_of_variance"/>
         public static TwoWayAnovaResult TwoWayAnovaTest (Sample[,] samples) {
 
             if (samples == null) throw new ArgumentNullException(nameof(samples));
@@ -1275,14 +1328,10 @@ namespace Meta.Numerics.Statistics {
         /// <param name="samples">The set of samples to compare.</param>
         /// <returns>The result of the test.</returns>
         /// <remarks>
-        /// <para>Kruskal-Wallis tests for differences between the samples. It is a non-parametric alternative to the
-        /// one-way ANOVA (<see cref="OneWayAnovaTest(Sample[])"/>).</para>
-        /// <para>The test is essentially a one-way ANOVA performed on the <i>ranks</i> of sample values instead of the sample
-        /// values themselves.</para>
-        /// <para>A Kruskal-Wallis test on two samples is equivilent to a Mann-Whitney test (see <see cref="MannWhitneyTest"/>).</para>
+        /// <para>For detailed information, see <see cref="KruskalWallisTest(Sample[])"/>.</para>
         /// </remarks>
         public static TestResult KruskalWallisTest (IList<Sample> samples) {
-            if (samples == null) throw new ArgumentNullException("samples");
+            if (samples == null) throw new ArgumentNullException(nameof(samples));
             if (samples.Count < 2) throw new ArgumentException("There must be at least two samples in the sample list.", "samples");
 
             // sort each sample individually and compute count total from all samples
@@ -1349,6 +1398,20 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="samples">The set of samples to compare.</param>
         /// <returns>The result of the test.</returns>
+        /// <remarks>
+        /// <para>Kruskal-Wallis tests for differences between the samples. It is a non-parametric alternative to the
+        /// one-way ANOVA (<see cref="OneWayAnovaTest(Sample[])"/>), which is more appropriate when the data far from
+        /// normally distributed.</para>
+        /// <para>The test is essentially a one-way ANOVA performed on the <i>ranks</i> of sample values instead of the sample
+        /// values themselves.</para>
+        /// <para>A Kruskal-Wallis test on two samples is equivilent to a Mann-Whitney test (see <see cref="MannWhitneyTest(Sample, Sample)"/>).</para>
+        /// <para>As with a normal ANOVA, it is not appropriate to bin a continuous independent variable in order to form
+        /// groups for a Kruskal-Wallis test. Kruskal-Wallis addresses the non-normality of the dependent variable, not
+        /// the non-discreteness of the independent variable.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="samples"/> is <see langword="null"/>.</exception>
+        /// <see cref="OneWayAnovaTest(Sample[])"/>
+        /// <see href="https://en.wikipedia.org/wiki/Kruskal%E2%80%93Wallis_one-way_analysis_of_variance"/>
         public static TestResult KruskalWallisTest (params Sample[] samples) {
             return (KruskalWallisTest((IList<Sample>)samples));
         }
@@ -1358,22 +1421,25 @@ namespace Meta.Numerics.Statistics {
         /// Tests whether the sample is compatible with the given distribution.
         /// </summary>
         /// <param name="distribution">The test distribution.</param>
-        /// <returns>The test result. The test statistic is the D statistic and the likelyhood is the right probability
-        /// to obtain a value of D as large or larger than the one obtained.</returns>
+        /// <returns>The test result. The test statistic is the D statistic and the probability is the chance of
+        /// obtaining such a large value of D under the assumption that the sample is drawn from the given distribution.</returns>
         /// <remarks>
-        /// <para>The null hypothesis of the KS test is that the sample is drawn from the given continuous distribution.
-        /// The test statsitic D is the maximum deviation of the sample's emperical distribution function (EDF) from
+        /// <para>The null hypothesis of the Kolmogorov-Smirnov (KS) test is that the sample is drawn from the given continuous distribution.
+        /// The test statsitic D is the maximum deviation of the sample's empirical distribution function (EDF) from
         /// the distribution's cumulative distribution function (CDF). A high value of the test statistic, corresponding
         /// to a low right tail probability, indicates that the sample distribution disagrees with the given distribution
         /// to a degree unlikely to arise from statistical fluctuations.</para>
         /// <para>For small sample sizes, we compute the null distribution of D exactly. For large sample sizes, we use an accurate
-        /// asympotitc approximation. Therefore it is safe to use this method for all sample sizes.</para>
+        /// asympototic approximation. Therefore it is safe to use this method for all sample sizes.</para>
+        /// <para>A variant of this test, <see cref="KolmogorovSmirnovTest(Sample, Sample)"/>, allows you to non-parametrically
+        /// test whether two samples are drawn from the same underlying distribution, without having to specify that distribution.</para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="distribution"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="distribution"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InsufficientDataException">There is no data in the sample.</exception>
         /// <seealso cref="KolmogorovDistribution"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
         public TestResult KolmogorovSmirnovTest (Distribution distribution) {
-            if (distribution == null) throw new ArgumentNullException("distribution");
+            if (distribution == null) throw new ArgumentNullException(nameof(distribution));
             if (this.Count < 1) throw new InsufficientDataException();
 
             return (KolmogorovSmirnovTest(distribution, 0));
@@ -1404,12 +1470,20 @@ namespace Meta.Numerics.Statistics {
         /// Tests whether the sample is compatible with the given distribution.
         /// </summary>
         /// <param name="distribution">The test distribution.</param>
-        /// <returns>The test result. The test statistic is the V statistic and the likelyhood is the right probability
-        /// to obtain a value of V as large or larger than the one obtained.</returns>
+        /// <returns>The test result. The test statistic is the V statistic and the chance to obtain such a large
+        /// value of V under the assumption that the sample is drawn from the given distribution.</returns>
+        /// <remarks>
+        /// <para>Like the Kolmogorov-Smirnov test ((<see cref="KolmogorovSmirnovTest(Distribution)"/>,
+        /// Kuiper's test compares the EDF of the sample to the CDF of the given distribution.</para>
+        /// <para>For small sample sizes, we compute the null distribution of V exactly. For large sample sizes, we use an accurate
+        /// asympototic approximation. Therefore it is safe to use this method for all sample sizes.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="distribution"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InsufficientDataException">There is no data in the sample.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Kuiper%27s_test"/>
         public TestResult KuiperTest (Distribution distribution) {
 
-            if (distribution == null) throw new ArgumentNullException("distribution");
+            if (distribution == null) throw new ArgumentNullException(nameof(distribution));
             if (data.Count < 1) throw new InsufficientDataException();
 
             // compute the V statistic, which is the sum of the D+ and D- statistics
@@ -1473,12 +1547,12 @@ namespace Meta.Numerics.Statistics {
         /// <param name="b">The other sample.</param>
         /// <returns>The test result. The test statistic is the D statistic and the likelyhood is the right probability
         /// to obtain a value of D as large or larger than the one obtained.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException">One or both of the samples is empty.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
         public static TestResult KolmogorovSmirnovTest (Sample a, Sample b) {
-            if (a == null) throw new ArgumentNullException("a");
-            if (b == null) throw new ArgumentNullException("b");
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
 
             // we must have data to do the test
             if (a.Count < 1) throw new InsufficientDataException(Messages.InsufficientData);
@@ -1529,14 +1603,16 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Tests whether the variance of two samples is compatible.
+        /// Tests whether the variances of two samples are compatible.
         /// </summary>
         /// <param name="a">The first sample.</param>
         /// <param name="b">The second sample.</param>
         /// <returns>The result of the test.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is <see langword="null"/>.</exception>
         public static TestResult FisherFTest (Sample a, Sample b) {
-            if (a == null) throw new ArgumentNullException("a");
-            if (b == null) throw new ArgumentNullException("b");
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
+            if ((a.Count < 2) || (b.Count < 2)) throw new InsufficientDataException();
 
             // compute population variances
             double v1 = a.Count / (a.Count - 1.0) * a.Variance;
@@ -1564,7 +1640,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         void ICollection<double>.CopyTo (double[] array, int start) {
-            if (array == null) throw new ArgumentNullException("array");
+            if (array == null) throw new ArgumentNullException(nameof(array));
             data.CopyTo(array, start);
         }
 
@@ -1577,6 +1653,9 @@ namespace Meta.Numerics.Statistics {
         /// covariance matrix among those parameters, and a test of the goodness of fit.</returns>
         /// <seealso href="http://en.wikipedia.org/wiki/Maximum_likelihood"/>
         public FitResult MaximumLikelihoodFit (Func<IList<double>, Distribution> factory, IList<double> start) {
+
+            if (factory == null) throw new ArgumentNullException(nameof(factory));
+            if (start == null) throw new ArgumentNullException(nameof(start));
 
             // Define a log likelyhood function
             Func<IList<double>, double> L = (IList<double> parameters) => {

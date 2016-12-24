@@ -6,7 +6,7 @@ using System.IO;
 namespace Meta.Numerics {
 
     /// <summary>
-    /// Contains addtional basic math operations.
+    /// Contains additional basic math operations.
     /// </summary>
     /// <remarks>
     /// <para>The <see cref="System.Math"/> class defines many basic math operations, but a few that are important for optimal numerical
@@ -191,8 +191,9 @@ namespace Meta.Numerics {
         /// <returns>The square of the argument.</returns>
         /// <remarks>
         /// <para>There is nothing numericaly sophisticated inside this function; it exists simply for programmers' convenience. Given a complicated expression
-        /// that needs to be squared, it is nice to be able to wrap it in a simple function call instead of explicitly assigning its value to a new variable and then
-        /// multiplying that variable by itself.</para>
+        /// that needs to be squared, it is nice to be able to wrap it in a simple call to this function instead of explicitly assigning its value to a new variable and then,
+        /// in a seperate statement, multiplying that variable by itself. Even if you are hyper-vigilant about function call overhead, you should not worry
+        /// about using this function, because even the most basic optimizing compiler will optimize away the call.</para>
         /// </remarks>
         public static double Sqr (double x) {
             return (x * x);
@@ -206,9 +207,9 @@ namespace Meta.Numerics {
         /// <remarks>
         /// <para>This method addresses several subtle shortcommings of the <see cref="System.Math.Sin" /> method.
         /// One shortcoming, quite striking but rarely encountered, is that <see cref="Math.Sin"/> returns entirely wrong results very large
-        /// arguments; for x larger than about 10<sup>20</sup>, it simply returns the argument as the function value!
+        /// arguments -- for x larger than about 10<sup>20</sup>, it simply returns the argument as the function value!
         /// (I have no idea
-        /// why the base class library designers did not at least choose to return <see cref="Double.NaN"/> so as to signal to the user
+        /// why the base class library designers did not at least choose to return <see cref="Double.NaN"/>, so as to signal to the caller
         /// that the result should not be trusted. No floating point standard specifies this crazy behavior.)
         /// Another shortcomming, more commonly encountered but often unnoticed, is that for large but not necessarily very large arguments,
         /// function values loose precision, particularly near zeros of the function.</para>
@@ -216,17 +217,19 @@ namespace Meta.Numerics {
         /// One way to view these shortcommings is that they are justified by the uncertainty inherent in floating point representations. In this
         /// view, any <see cref="System.Double"/> should be seen as an uncertain value with a relative error of ~10<sup>-16</sup>. If the
         /// number is very large, then the absolute size of this error can be as large or larger than 2&#x3C0;; in this circumstance we should not
-        /// expect to be able to say anything about the value. (Except, of course, that it is between -1 and +1, which is violated by the designers' crazy
+        /// expect to be able to say anything about the value (except, of course, that it is between -1 and +1, which is violated by the designers' crazy
         /// choice to return the argument as the value). Even if the absolute error is just a non-negligable faction of 2&#x3C0;, there is a non-neglible fraction
-        /// of the values between -1 and +1 in the corresponding range of function values; any of these values is as good as any other as an answer to the
-        /// question of the sine of our uncertain argument, so we should be satisfied with any returned value in this non-negligible range.
+        /// of the values between -1 and +1 in the corresponding range of function values; any of these values is as possible as any other as a value
+        /// for the sine of our uncertain argument, so we should be satisfied with any returned value in this non-negligible range.
         /// </para>
-        /// <para>A contrary view is that it is better to treat all arguments as infinitely precise and return the nearest representable <see cref="System.Double"/>
-        /// to the actual function value under this assumption. Users are unlikely to complain that we returned a more accurate value and this behavior is particularly
+        /// <para>A different view is that it is better regard every representable floating point value as some exact rational number, and
+        /// when computing functions of floating point numbers, to always strive to return the representable floating point value nearest
+        /// to the actual function of that exact rational.
+        /// Callers are unlikely to complain if we are careful in the regard, and this behavior is particularly
         /// useful when the argument is an intermediate result that the programmer may not even realize has become large.</para>
-        /// <para>For typical arguments, say between 10<sup>-4</sup> and 10<sup>4</sup>, the extra cost of this function over
+        /// <para>For typical arguments, say between 10<sup>-4</sup> and 10<sup>4</sup>, the extra cost of calling this function instead of
         /// <see cref="Math.Sin"/> is just a couple of comparisons and a single floating point operation; less than 0.1% of
-        /// arguments in this range are then routed to our much slower, higher-accuracy algorithm. We therefore suggest that,
+        /// arguments in this range are then routed to our much slower, high-accuracy algorithm. We therefore suggest that,
         /// for general use, you prefer this method over <see cref="Math.Sin"/>; only in very unusual situations where (i) you are guaranteed
         /// never to encounter very large arguments, (ii) full precision values are not required, and (iii) the run-time of your
         /// application is critical and dominated by trigonometric calculations, should you prefer the base class library method.</para>
@@ -296,8 +299,8 @@ namespace Meta.Numerics {
         /// a negative remainder for negative n.
         /// This is not consistent with the mathematical conventions of modular arithmetic,
         /// which require that 0 &#x2264; n mod m &lt; m. For example, in C# -7 % 4 returns -3
-        /// (which is simply the negative of 7 % 3), while mathematically -7 % 4 = 1 (which can
-        /// seen by applying the repeating 0, 1, 2, 3 pattern to negative integers. In cases
+        /// (which is simply the negative of 7 % 4), while mathematically -7 mod 4 = 1, as can
+        /// seen by extending the repeating 0, 1, 2, 3 pattern to negative integers. In cases
         /// where it is important to obtain results consistent mathematical conventions,
         /// you should call this method, which fixes the .NET result.</remarks>
         public static long Mod (long n, long m) {

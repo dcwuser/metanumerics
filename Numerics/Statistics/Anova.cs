@@ -19,15 +19,16 @@ namespace Meta.Numerics.Statistics {
     /// The result of a one-way ANOVA test.
     /// </summary>
     /// <remarks>
-    /// <para>A one way ANOVA test detects the influence of a categorical factor on the mean of a measured variable, which is assumed
+    /// <para>A one way ANOVA test detects the influence of a single factor on the mean of a measured variable, which is assumed
     /// to be normally distributed.</para>
     /// <para>A one way ANOVA result is returned by the static <see cref="Sample.OneWayAnovaTest(System.Collections.Generic.ICollection{Sample})"/>
     /// method.</para>
-    /// <para>While, fundamentally, a one-way ANOVA is a simple statistical test like any other, with a single test statistic (F) and
-    /// a single associated distribution (the F distribution), some ANOVA users like to examine and report some intermediate quantities
-    /// used in the computation of the test. In particular, the sum of square deviations and corresponding degrees of freedom associated
+    /// <para>Fundamentally, a one-way ANOVA is a simple statistical test like any other, with a single test statistic (F) and
+    /// a single associated null distribution (the <see cref="FisherDistribution"/>), but some ANOVA users like to examine and
+    /// report intermediate quantities used in the computation of the test.
+    /// In particular, the sum of square deviations and degrees of freedom associated
     /// with the design factor and the residual, and their sum may be of interest. Each of these appear as rows in the common tabular
-    /// representation of an ANOVA test. To enable this, the class makes this information available as <see cref="AnovaRow"/> objects
+    /// representation of an ANOVA. To enable this, the class makes this information available as <see cref="AnovaRow"/> objects
     /// returned by the <see cref="Factor"/>, <see cref="Residual"/>, and <see cref="Total"/> properties. This has the unfortunate
     /// side-effect of making the AVOVA look more complicated than it really is. If you just want the test result, you can get it
     /// from the <see cref="Result"/> property.</para>
@@ -40,8 +41,8 @@ namespace Meta.Numerics.Statistics {
     /// Sample group1 = new Sample(4, 5, 6);
     /// Sample group2 = new Sample(3, 4, 5);
     /// Sample group3 = new Sample(5, 6, 8, 9);
-    /// OneWayAnovaResult result = Sample.OneWayAnovaTest(group1, group2, group3);
-    /// return(result.Result.RightProbability);
+    /// OneWayAnovaResult anova = Sample.OneWayAnovaTest(group1, group2, group3);
+    /// Console.WriteLine("P = {0}", anova.Result.Probability);
     /// </code>
     /// </example>
     /// <seealso cref="Sample.OneWayAnovaTest(System.Collections.Generic.ICollection{Sample})"/>
@@ -139,6 +140,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents the result of a two-factor analysis of variance.
     /// </summary>
+    /// <seealso cref="Sample.TwoWayAnovaTest(Sample[,])"/>
     public sealed class TwoWayAnovaResult : IAnovaResult {
 
         internal TwoWayAnovaResult (AnovaRow row, AnovaRow column, AnovaRow interaction, AnovaRow residual) {
@@ -156,11 +158,11 @@ namespace Meta.Numerics.Statistics {
             );
         }
 
-        private AnovaRow row;
-        private AnovaRow column;
-        private AnovaRow interaction;
-        private AnovaRow residual;
-        private AnovaRow total;
+        private readonly AnovaRow row;
+        private readonly AnovaRow column;
+        private readonly AnovaRow interaction;
+        private readonly AnovaRow residual;
+        private readonly AnovaRow total;
 
         /// <summary>
         /// Gets the variance assocated with the effect of the row factor.

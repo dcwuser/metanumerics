@@ -4,12 +4,12 @@ using System.Collections.Generic;
 namespace Meta.Numerics.Analysis {
 
     /// <summary>
-    /// Contains settings used to solve a multi-dimensional ordinary differential equation.
+    /// Contains settings used to solve a set of coupled ordinary differential equations.
     /// </summary>
     public class MultiOdeEvaluationSettings : EvaluationSettings {
 
         /// <summary>
-        /// Initializes a new instance of evaluation settings for multiple ODEs.
+        /// Initializes a new instance of evaluation settings for coupled ODEs.
         /// </summary>
         public MultiOdeEvaluationSettings () : base(null) { }
 
@@ -18,11 +18,9 @@ namespace Meta.Numerics.Analysis {
         /// Gets or sets the handler that is called to report on progress toward the solution.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// For each successful step, this delegate is called to report the solution at the
-        /// new abcissa. If you have the listener record these results, we can interpolate
-        /// in order to approximate the solution at intermediate points.
-        /// </para>
+        /// <para>As the ODE is integrated, the specified handler is called for each integration
+        /// step. This allows the handler to monitor progress toward the solution and to
+        /// obtain intermediate values via interpolation.</para>
         /// </remarks>
         public Action<MultiOdeResult> Listener { get; set; }
 

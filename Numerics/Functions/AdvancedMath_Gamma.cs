@@ -21,7 +21,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="Gamma(double)" />
 		public static double LogGamma (double x) {
             if (x <= 0.0) {
-                throw new ArgumentOutOfRangeException("x");
+                throw new ArgumentOutOfRangeException(nameof(x));
             } else if (x < 16.0) {
                 // For small arguments, use the Lanczos approximation.
                 return (Lanczos.LogGamma(x));
@@ -68,7 +68,6 @@ namespace Meta.Numerics.Functions {
                 return (Lanczos.Gamma(x));
             } else {
                 return (Stirling.Gamma(x));
-                //return (Math.Exp(LogGamma_Stirling(x)));
             }
 		}
 
@@ -116,9 +115,10 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Polygamma_function"/>
         /// <seealso href="http://mathworld.wolfram.com/PolygammaFunction.html"/>
+        /// <seealso href="http://dlmf.nist.gov/5.15">DLMF on the Polygamma Function</seealso>
         public static double Psi (int n, double x) {
 
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(x));
 
             // for n=0, use normal digamma algorithm
             if (n == 0) return (Psi(x));
@@ -263,10 +263,27 @@ namespace Meta.Numerics.Functions {
         /// <param name="b">The second parameter, which must be positive.</param>
         /// <returns>The beta function B(a,b).</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is non-positive.</exception>
+        /// <remarks>
+        /// <para>The Beta function can be defined by the integral:</para>
+        /// <img src="..\images\BetaIntegral.png" />
+        /// <para>Equivalently, it can be defined as a commonly occuring ratio of Gamma functions:</para>
+        /// <img src="..\images\BetaGammaRelation.png" />
+        /// <para>When evaluating such a ratio of Gamma functions, it is better to use this method than to call
+        /// <see cref="Gamma(double)"/> three times and form the ratio explicitly. One reason is that this method
+        /// will be faster. Another reason is that, for many values, the individual Gamma functions will overflow
+        /// even though the Beta function does not; this method will not overflow in such cases. There are still
+        /// other cases in which the value of Beta does overflow or underflow a <see cref="double"/>; in such cases,
+        /// the method <see cref="LogBeta(double, double)"/> will still return an accurate value of its logarithm.</para>
+        /// <para>One place this ratio occurs is in the expression for a binomial coefficient in terms of factorials, so the Beta
+        /// function can used to generalize binomial coefficients (<see cref="AdvancedIntegerMath.BinomialCoefficient(int, int)"/>)
+        /// to non-integer values.</para>
+        /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Beta_function"/>
+        /// <seealso href="http://mathworld.wolfram.com/BetaFunction.html"/>
+        /// <seealso href="http://dlmf.nist.gov/5.12">DLMF on the Beta Function</seealso>
         public static double Beta (double a, double b) {
-            if (a <= 0.0) throw new ArgumentOutOfRangeException("a");
-            if (b <= 0.0) throw new ArgumentOutOfRangeException("b");
+            if (a <= 0.0) throw new ArgumentOutOfRangeException(nameof(a));
+            if (b <= 0.0) throw new ArgumentOutOfRangeException(nameof(b));
             if ((a > 16.0) && (b > 16.0)) {
                 return (Stirling.Beta(a, b));
             } else {
@@ -287,8 +304,8 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is non-positive.</exception>
         /// <seealso cref="Beta(System.Double,System.Double)"/>
         public static double LogBeta (double a, double b) {
-            if (a <= 0.0) throw new ArgumentOutOfRangeException("a");
-            if (b <= 0.0) throw new ArgumentOutOfRangeException("b");
+            if (a <= 0.0) throw new ArgumentOutOfRangeException(nameof(a));
+            if (b <= 0.0) throw new ArgumentOutOfRangeException(nameof(b));
             if ((a > 16.0) && (b > 16.0)) {
                 return (Stirling.LogBeta(a, b));
             } else {
@@ -374,8 +391,8 @@ namespace Meta.Numerics.Functions {
 
 
 
-		// three-argument functions
-        
+        // three-argument functions
+
         /// <summary>
         /// Computes the incomplete Beta function.
         /// </summary>
@@ -383,10 +400,13 @@ namespace Meta.Numerics.Functions {
         /// <param name="b">The right shape paraemter, which must be non-negative.</param>
         /// <param name="x">The integral endpoint, which must lie in [0,1].</param>
         /// <returns>The value of B<sub>x</sub>(a, b).</returns>
-		public static double Beta (double a, double b, double x) {
-            if (a < 0.0) throw new ArgumentOutOfRangeException("a");
-            if (b < 0.0) throw new ArgumentOutOfRangeException("b");
-            if ((x < 0.0) || (x > 1.0)) throw new ArgumentOutOfRangeException("x");
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is negative, or
+        /// <paramref name="x"/> lies outside [0, 1].</exception>
+        /// <seealso href="http://mathworld.wolfram.com/IncompleteBetaFunction.html"/>
+        public static double Beta (double a, double b, double x) {
+            if (a < 0.0) throw new ArgumentOutOfRangeException(nameof(a));
+            if (b < 0.0) throw new ArgumentOutOfRangeException(nameof(b));
+            if ((x < 0.0) || (x > 1.0)) throw new ArgumentOutOfRangeException(nameof(x));
 			if (x == 0.0) return(0.0);
             double xtp = (a + 1.0) / (a + b + 2.0);
             if (x > xtp) {
@@ -628,7 +648,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="AdvancedMath.LogGamma" />
         public static Complex LogGamma (Complex z) {
             if (z.Re < 0.0) {
-                throw new ArgumentOutOfRangeException("z");
+                throw new ArgumentOutOfRangeException(nameof(z));
             } else if (ComplexMath.Abs(z) < 16.0) {
                 return (Lanczos.LogGamma(z));
             } else {
@@ -670,6 +690,7 @@ namespace Meta.Numerics.Functions {
         /// <img src="../images/ComplexPsiPlot.png" />
         /// </remarks>
         /// <seealso cref="AdvancedMath.Psi(double)" />
+        /// <seealso href="https://en.wikipedia.org/wiki/Digamma_function"/>
         public static Complex Psi (Complex z) {
             if (z.Re < 0.5) {
                 // reduce z.Re in order to handle large real values!

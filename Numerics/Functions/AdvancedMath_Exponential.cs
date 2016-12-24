@@ -46,12 +46,14 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The function Ei(x) appears in the evaluation of some indefinite integrals involving exponents and in
         /// number theory in the approximation li(x) = Ei(ln x) to the cumulative distribution of primes.</para>
-        /// <para>It is related to the real part of the exponential integral for negative arguments by
-        /// E<sub>1</sub>(-x &#177; i&#x3B5;) = -Ei(x) &#x2213; i&#x3C0;. </para>
+        /// <para>Ei(x) is related to the real part of E<sub>1</sub>(x) for negative arguments by:</para>
+        /// <img src="../images/E1EiRelation.png" />
+        /// <para>To compute Ei(z) in the entire complex plane, use <see cref="AdvancedComplexMath.Ein(Complex)"/>.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
+        /// <seealso cref="IntegralE(int, double)"/>
         public static double IntegralEi (double x) {
-            if (x < 0) throw new ArgumentOutOfRangeException("x");
+            if (x < 0) throw new ArgumentOutOfRangeException(nameof(x));
             if (x < 40.0) {
                 return (IntegralEi_Series(x));
             } else {
@@ -60,21 +62,31 @@ namespace Meta.Numerics.Functions {
         }
 
         /// <summary>
-        /// Computes the exponential integral.
+        /// Computes the generalized exponential integral.
         /// </summary>
         /// <param name="n">The order parameter.</param>
         /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The value of E<sub>n</sub>(x).</returns>
         /// <remarks>
-        /// <para>The exponential integral is defined as:</para>
+        /// <para>The generalized exponential integral is defined as:</para>
         /// <img src="../images/EIntegral.png" />
-        /// <para>It is related to the incomplete Gamma function for negative, integer shape parameters by &#x393;(-k, x) = Ei<sub>k+1</sub>(x) / x<sup>k</sup>.</para>
-        /// <para>In hydrology, E<sub>1</sub>(x) is sometimes called the Well function.</para>
+        /// <para>It is related to the incomplete Gamma function (<see cref="Gamma(double, double)"/>)
+        /// for negative, integer shape parameters.</para>
+        /// <img src="../images/EnGammaRelation.png" />
+        /// <para>For n=1, it expressible as a simple power series.</para>
+        /// <img src="../images/E1Series.png" />
+        /// <para>For negative x, E<sub>1</sub>(x) develops an imaginary part, but its real part is given by the Ei(x) function
+        /// (<see cref="IntegralEi(double)"/>).</para>
+        /// <img src="../images/E1EiRelation.png" />
+        /// <para>To compute E<sub>1</sub>(z) in the entire complex plane, use <see cref="AdvancedComplexMath.Ein(Complex)"/>.</para>
+        /// <para>Sometimes the function E<sub>1</sub>(z) is called the exponential integral, and sometimes that name is used
+        /// for Ei(x). In hydrology, E<sub>1</sub>(x) is sometimes called the Well function.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
+        /// <seealso href="http://mathworld.wolfram.com/En-Function.html"/>
         public static double IntegralE (int n, double x) {
 
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
 
             // special case x = 0
             if (x == 0.0) {
@@ -165,7 +177,7 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         public static double IntegralCi (double x) {
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
             if (x < 4.0) {
                 return (IntegralCi_Series(x));
             } else {
@@ -317,10 +329,14 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value of Ein(z).</returns>
         /// <remarks>
         /// <para>The entire exponential integral function can be defined by an integral or an equivalent series.</para>
-        /// <para>Both Ei(z) and E<sub>1</sub>(x) and be obtained from Ein(z).</para>
-        /// <para>Unlike either Ei(z) or E<sub>1</sub>(z), Ein(z) is entire, that is, it has no poles or cuts anywhere
+        /// <img src="..\images\EinIntegralSeries.png" />
+        /// <para>Both Ei(x) and E<sub>1</sub>(z) can be obtained from Ein(z).</para>
+        /// <img src="..\images\E1EiEinRelation.png" />
+        /// <para>Unlike either Ei(x) or E<sub>1</sub>(z), Ein(z) is entire, that is, it has no poles or cuts anywhere
         /// in the complex plane.</para>
         /// </remarks>
+        /// <seealso cref="AdvancedMath.IntegralEi(double)"/>
+        /// <seealso cref="AdvancedMath.IntegralE(int, double)"/>
         public static Complex Ein (Complex z) {
 
             if (z.Re < -40.0) {

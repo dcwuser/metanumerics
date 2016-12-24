@@ -56,7 +56,8 @@ namespace Meta.Numerics {
         /// </summary>
         /// <param name="P">The required confidence level.</param>
         /// <returns>The associated confidence interval.</returns>
-        /// <remarks><para>This method assumes </para></remarks>
+        /// <remarks><para>This method assumes that the value is normally distributed with a mean equal to <see cref="Value"/>
+        /// and a standard deviation equal to <see cref="Uncertainty"/>.</para></remarks>
         public Interval ConfidenceInterval (double P) {
             if ((P <= 0.0) || (P >= 1.0)) throw new ArgumentOutOfRangeException("P");
             double z = Math.Sqrt(2.0) * AdvancedMath.InverseErf(P);

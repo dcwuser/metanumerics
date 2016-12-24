@@ -34,7 +34,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <RunCodeAnalysis>true</RunCodeAnalysis>
-    <CodeAnalysisRuleSet>BasicDesignGuidelineRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>Numerics.ruleset</CodeAnalysisRuleSet>
     <DocumentationFile>bin\Debug\Meta.Numerics.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -45,10 +45,12 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Release\Meta.Numerics.xml</DocumentationFile>
+    <CodeAnalysisRuleSet>Numerics.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .NET Framework is automatically included -->
     <None Include="keypair.snk" />
+    <None Include="Numerics.ruleset" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Analysis\BulrischStoerStrategy.cs" />
@@ -70,7 +72,7 @@
     <Compile Include="Analysis\MultiFunctionMath_Roots.cs" />
     <Compile Include="Analysis\MultiFunctor.cs" />
     <Compile Include="Analysis\MultiOdeEvaluationSettings.cs" />
-    <Compile Include="Analysis\MultiOeResult.cs" />
+    <Compile Include="Analysis\MultiOdeResult.cs" />
     <Compile Include="Analysis\OdeEvaluationSettings.cs" />
     <Compile Include="Analysis\OdeResult.cs" />
     <Compile Include="Analysis\OdeStrategy.cs" />

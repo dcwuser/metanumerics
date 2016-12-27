@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Meta.Numerics</id>
-    <version>3.0.0</version> 
+    <version>3.1.0</version> 
     <authors>David Wright</authors>
     <description>A library for numeric computing with support for statistics, matrix algebra, and advanced functions.</description>
     <projectUrl>http://www.meta-numerics.net</projectUrl>

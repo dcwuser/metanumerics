@@ -29,7 +29,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="datum">The data point.</param>
         public void Add (UncertainMeasurement<T> datum) {
-            if (datum == null) throw new ArgumentNullException("datum");
+            if (datum == null) throw new ArgumentNullException(nameof(datum));
             data.Add(datum);
         }
 
@@ -48,7 +48,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="data">The data points.</param>
         public void Add (IEnumerable<UncertainMeasurement<T>> data) {
-            if (data == null) throw new ArgumentNullException("data");
+            if (data == null) throw new ArgumentNullException(nameof(data));
             foreach (UncertainMeasurement<T> datum in data) {
                 this.data.Add(datum);
             }
@@ -100,7 +100,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are fewer data points than fit parameters.</exception>
         public FitResult FitToLinearFunction (Func<T, double>[] functions) {
 
-            if (functions == null) throw new ArgumentNullException("functions");
+            if (functions == null) throw new ArgumentNullException(nameof(functions));
             if (functions.Length > data.Count) throw new InsufficientDataException();
 
             // construct the design matrix
@@ -176,11 +176,13 @@ namespace Meta.Numerics.Statistics {
         /// <param name="start">An initial guess at the parameters.</param>
         /// <returns>A fit result containing the best-fitting function parameters
         /// and a &#x3C7;<sup>2</sup> test of the quality of the fit.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="function"/> or <paramref name="start"/> are null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="function"/> or <paramref name="start"/> are <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException">There are fewer data points than fit parameters.</exception>
+        /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
+        /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
         public FitResult FitToFunction (Func<double[], T, double> function, double[] start) {
-            if (function == null) throw new ArgumentNullException("function");
-            if (start == null) throw new ArgumentNullException("start");
+            if (function == null) throw new ArgumentNullException(nameof(function));
+            if (start == null) throw new ArgumentNullException(nameof(start));
 
             // you can't do a fit with less data than parameters
             if (this.Count < start.Length) throw new InsufficientDataException();
@@ -201,6 +203,7 @@ namespace Meta.Numerics.Statistics {
             // compute the covariance (Hessian) matrix by inverting the curvature matrix
             SymmetricMatrix A = 0.5 * minimum.Curvature();
             CholeskyDecomposition CD = A.CholeskyDecomposition(); // should not return null if we were at a minimum
+            if (CD == null) throw new DivideByZeroException();
             SymmetricMatrix C = CD.Inverse();
 
             // package up the results and return them
@@ -228,7 +231,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         void ICollection<UncertainMeasurement<T>>.CopyTo (UncertainMeasurement<T>[] array, int offset) {
-            if (array == null) throw new ArgumentNullException("array");
+            if (array == null) throw new ArgumentNullException(nameof(array));
             data.CopyTo(array, offset);
         }
 
@@ -262,7 +265,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="data">An enumerator over the <see cref="UncertainMeasurement{Double}" />s to place in the set.</param>
         public UncertainMeasurementSample (IEnumerable<UncertainMeasurement<double>> data)
             : base() {
-            if (data == null) throw new ArgumentNullException("data");
+            if (data == null) throw new ArgumentNullException(nameof(data));
             foreach (UncertainMeasurement<double> datum in data) {
                 Add(datum);
             }
@@ -273,6 +276,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <returns>A fit result containing the best combined value and a &#x3C7;<sup>2</sup> test of the quality of the fit.</returns>
         /// <remarks><para>This method provides a simple way to </para></remarks>
+        /// <exception cref="InsufficientDataException">There are fewer than one data points.</exception>
         public FitResult FitToConstant () {
 
             if (Count < 1) throw new InsufficientDataException();
@@ -310,6 +314,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <returns>A fit result containing the best-fit proportionality constant parameter and a &#x3C7;<sup>2</sup> test of the
         /// quality of the fit.</returns>
+        /// <exception cref="InsufficientDataException">There are fewer than one data points.</exception>
         public FitResult FitToProportionality () {
 
             if (Count < 1) throw new InsufficientDataException();
@@ -350,6 +355,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <returns>A fit result containing the best-fit intercept and slope parameters and a &#x3C7;<sup>2</sup> test of
         /// the quality of the fit.</returns>
+        /// <exception cref="InsufficientDataException">There are fewer than two data points.</exception>
         public FitResult FitToLine () {
 
             if (Count < 2) throw new InsufficientDataException();
@@ -404,11 +410,12 @@ namespace Meta.Numerics.Statistics {
         /// <param name="order">The order of the polynomial to fit.</param>
         /// <returns>A fit result containg the best-fit polynomial coefficients, in order of ascending power from 0 to <paramref name="order"/>,
         /// and a &#x3C7;<sup>2</sup> test of the quality of the fit.</returns>
-        /// <exception cref="InvalidOperationException">There are more polynomial coefficients than data points.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="order"/> is negative.</exception>
+        /// <exception cref="InsufficientDataException">There are more polynomial coefficients than data points.</exception>
         public FitResult FitToPolynomial (int order) {
 
-            if (order < 0) throw new ArgumentOutOfRangeException("order");
-            if (Count < order) throw new InvalidOperationException();
+            if (order < 0) throw new ArgumentOutOfRangeException(nameof(order));
+            if (Count < order) throw new InsufficientDataException();
 
             // create the functions
             Func<double, double>[] functions = new Func<double, double>[order + 1];

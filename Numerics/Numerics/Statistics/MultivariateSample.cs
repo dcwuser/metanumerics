@@ -500,6 +500,8 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="outputIndex"/> is outside the range of allowed indexes.</exception>
         /// <exception cref="InsufficientDataException">There are fewer entries than the dimension of the multivariate sample.</exception>
+        /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
+        /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
         /// <seealso cref="LinearRegression(int)"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Linear_regression"/>
         public FitResult LinearRegression (int outputIndex) {
@@ -524,6 +526,8 @@ namespace Meta.Numerics.Statistics {
         /// for the output variable.</remarks>
         /// <exception cref="InvalidOperationException">The column to be predicted contains values other than 0 and 1.</exception>
         /// <exception cref="InsufficientDataException">There are not more rows in the sample than columns.</exception>
+        /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
+        /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
         public FitResult LogisticLinearRegression (int outputIndex) {
 
             if ((outputIndex < 0) || (outputIndex >= this.Dimension)) throw new ArgumentOutOfRangeException(nameof(outputIndex));
@@ -562,8 +566,10 @@ namespace Meta.Numerics.Statistics {
             //}
 
             MultiExtremum maximum = MultiFunctionMath.FindLocalMaximum(logLikelihood, start);
+            CholeskyDecomposition CD = maximum.HessianMatrix.CholeskyDecomposition();
+            if (CD == null) throw new DivideByZeroException();
 
-            FitResult result = new FitResult(maximum.Location, maximum.HessianMatrix.CholeskyDecomposition().Inverse(), null);
+            FitResult result = new FitResult(maximum.Location, CD.Inverse(), null);
 
             return (result);
 

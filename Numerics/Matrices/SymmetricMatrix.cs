@@ -139,7 +139,7 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Returns the Cholesky decomposition of the matrix.
+        /// Computes the Cholesky decomposition of the matrix.
         /// </summary>
         /// <returns>The Cholesky decomposition of the matrix, or null if the matrix is not positive definite.</returns>
         /// <remarks>

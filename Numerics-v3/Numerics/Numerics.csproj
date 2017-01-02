@@ -1,0 +1,230 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>keypair.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{C93BE2CF-4153-4230-8CD4-D0F6C5018121}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Meta.Numerics</RootNamespace>
+    <AssemblyName>Meta.Numerics</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Profile136</TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;SILVERLIGHT</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>Numerics.ruleset</CodeAnalysisRuleSet>
+    <DocumentationFile>bin\Debug\Meta.Numerics.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;SILVERLIGHT</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\Meta.Numerics.xml</DocumentationFile>
+    <CodeAnalysisRuleSet>Numerics.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- A reference to the entire .NET Framework is automatically included -->
+    <None Include="keypair.snk" />
+    <None Include="Numerics.ruleset" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Analysis\BulrischStoerStrategy.cs" />
+    <Compile Include="Analysis\EvaluationResult.cs" />
+    <Compile Include="Analysis\EvaluationSettings.cs" />
+    <Compile Include="Analysis\Extremum.cs" />
+    <Compile Include="Analysis\FunctionMath_Odes.cs" />
+    <Compile Include="Analysis\FunctionMath_Roots.cs" />
+    <Compile Include="Analysis\IntegrationResult.cs" />
+    <Compile Include="Analysis\MultiExtremum.cs" />
+    <Compile Include="Analysis\MultiFunctionMath.cs" />
+    <Compile Include="Analysis\MultiFunctionMath_Extrema.cs" />
+    <Compile Include="Analysis\MultiFunctionMath_Extrema_DifferentialEvolution.cs" />
+    <Compile Include="Analysis\MultiFunctionMath_Extrema_ModelTrust.cs" />
+    <Compile Include="Analysis\MultiFunctionMath_Integrate.cs" />
+    <Compile Include="Analysis\MultiFunctionMath_Integrate_GenzMalik.cs" />
+    <Compile Include="Analysis\MultiFunctionMath_Integrate_MonteCarlo.cs" />
+    <Compile Include="Analysis\MultiFunctionMath_Ode.cs" />
+    <Compile Include="Analysis\MultiFunctionMath_Roots.cs" />
+    <Compile Include="Analysis\MultiFunctor.cs" />
+    <Compile Include="Analysis\MultiOdeEvaluationSettings.cs" />
+    <Compile Include="Analysis\MultiOdeResult.cs" />
+    <Compile Include="Analysis\OdeEvaluationSettings.cs" />
+    <Compile Include="Analysis\OdeResult.cs" />
+    <Compile Include="Analysis\OdeStrategy.cs" />
+    <Compile Include="Core\BigFloat.cs" />
+    <Compile Include="Core\Complex.cs" />
+    <Compile Include="Core\ComplexMath.cs" />
+    <Compile Include="Core\Exceptions.cs" />
+    <Compile Include="Core\Functions.cs" />
+    <Compile Include="Core\Global.cs" />
+    <Compile Include="Core\Interval.cs" />
+    <Compile Include="Core\MoreMath.cs" />
+    <Compile Include="Core\Point.cs" />
+    <Compile Include="Core\Polynomial.cs" />
+    <Compile Include="Core\PolynomialInterpolation.cs" />
+    <Compile Include="Core\UncertainMath.cs" />
+    <Compile Include="Core\UncertainValue.cs" />
+    <Compile Include="Functions\AdvancedIntegerMath.cs" />
+    <Compile Include="Functions\AdvancedMath.cs" />
+    <Compile Include="Functions\AdvancedMath_Bessel.cs" />
+    <Compile Include="Functions\AdvancedMath_Constants.cs" />
+    <Compile Include="Functions\AdvancedMath_Coulomb.cs" />
+    <Compile Include="Functions\AdvancedMath_Elliptic.cs" />
+    <Compile Include="Functions\AdvancedMath_Error.cs" />
+    <Compile Include="Functions\AdvancedMath_Exponential.cs" />
+    <Compile Include="Functions\AdvancedMath_Gamma.cs" />
+    <Compile Include="Functions\AdvancedMath_Harmonic.cs" />
+    <Compile Include="Functions\AdvancedMath_Inverse.cs" />
+    <Compile Include="Functions\AdvancedMath_Jacobi.cs" />
+    <Compile Include="Functions\AdvancedMath_Kelvin.cs" />
+    <Compile Include="Functions\AdvancedMath_Lambert.cs" />
+    <Compile Include="Functions\AdvancedMath_ModifiedBessel.cs" />
+    <Compile Include="Functions\AdvancedMath_Polylog.cs" />
+    <Compile Include="Functions\AdvancedMath_Riemann.cs" />
+    <Compile Include="Analysis\FunctionMath.cs" />
+    <Compile Include="Analysis\FunctionMath_Differentiate.cs" />
+    <Compile Include="Analysis\FunctionMath_Extrema.cs" />
+    <Compile Include="Analysis\FunctionMath_Integrate.cs" />
+    <Compile Include="Analysis\FunctionMath_MultiExtrema.cs" />
+    <Compile Include="Analysis\SobolSequence.cs" />
+    <Compile Include="Functions\OrthogonalPolynomials.cs" />
+    <Compile Include="Functions\Partition.cs" />
+    <Compile Include="Functions\Permutation.cs" />
+    <Compile Include="Functions\SolutionPair.cs" />
+    <Compile Include="Matrices\AnyMatrix.cs" />
+    <Compile Include="Matrices\AnyRectangularMatrix.cs" />
+    <Compile Include="Matrices\AnySquareMatrix.cs" />
+    <Compile Include="Matrices\Blas.cs" />
+    <Compile Include="Matrices\CholeskyDecomposition.cs" />
+    <Compile Include="Matrices\ColumnVector.cs" />
+    <Compile Include="Matrices\ComplexEigensystem.cs" />
+    <Compile Include="Matrices\ComplexVector.cs" />
+    <Compile Include="Matrices\Interfaces.cs" />
+    <Compile Include="Matrices\QRDecomposition.cs" />
+    <Compile Include="Matrices\RealEigensystem.cs" />
+    <Compile Include="Matrices\RectangularMatrix.cs" />
+    <Compile Include="Matrices\RectangularMatrixAlgorithms.cs" />
+    <Compile Include="Matrices\RowVector.cs" />
+    <Compile Include="Matrices\SingularValueDecomposition.cs" />
+    <Compile Include="Matrices\SparseSquareMatrix.cs" />
+    <Compile Include="Matrices\LUDecomposition.cs" />
+    <Compile Include="Matrices\SquareMatrix.cs" />
+    <Compile Include="Matrices\SquareMatrixAlgorithms.cs" />
+    <Compile Include="Matrices\SquareQRDecomposition.cs" />
+    <Compile Include="Matrices\SymmetricMatrix.cs" />
+    <Compile Include="Matrices\TridiagonalMatrix.cs" />
+    <Compile Include="Matrices\VectorAlgorithms.cs" />
+    <Compile Include="Matrices\VectorBase.cs" />
+    <Compile Include="Messages.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Messages.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SignalProcessing\FourierAlgorithms.cs" />
+    <Compile Include="SignalProcessing\FourierTransformer.cs" />
+    <Compile Include="Functions\Spin.cs" />
+    <Compile Include="Functions\SpinMath.cs" />
+    <Compile Include="Functions\SpinState.cs" />
+    <Compile Include="Statistics\Anova.cs" />
+    <Compile Include="Statistics\BinaryContingencyTable.cs" />
+    <Compile Include="Statistics\BivariateSample.cs" />
+    <Compile Include="Statistics\ContingencyTable.cs" />
+    <Compile Include="Statistics\DiscreteHistogram.cs" />
+    <Compile Include="Statistics\Distributions\BernoulliDistribution.cs" />
+    <Compile Include="Statistics\Distributions\BetaDistribution.cs" />
+    <Compile Include="Statistics\Distributions\BinomialDistribution.cs" />
+    <Compile Include="Statistics\Distributions\CauchyDistribution.cs" />
+    <Compile Include="Statistics\Distributions\ChiSquaredDistribution.cs" />
+    <Compile Include="Statistics\Distributions\DiscreteAsContinuousDistribution.cs" />
+    <Compile Include="Statistics\Distributions\DiscreteDistribution.cs" />
+    <Compile Include="Statistics\Distributions\DiscreteUniformDistribution.cs" />
+    <Compile Include="Statistics\Distributions\Distribution.cs" />
+    <Compile Include="Statistics\Distributions\ExponentialDistribution.cs" />
+    <Compile Include="Statistics\Distributions\FisherDistribution.cs" />
+    <Compile Include="Statistics\Distributions\GammaDistribution.cs" />
+    <Compile Include="Statistics\Distributions\GeometricDistribution.cs" />
+    <Compile Include="Statistics\Distributions\GumbelDistribution.cs" />
+    <Compile Include="Statistics\Distributions\IDeviateGenerator.cs" />
+    <Compile Include="Statistics\Distributions\KendallDistribution.cs" />
+    <Compile Include="Statistics\Distributions\KolmogorovDistribution.cs" />
+    <Compile Include="Statistics\Distributions\KolmogorovTwoSampleExactDistribution.cs" />
+    <Compile Include="Statistics\Distributions\KuiperDistribution.cs" />
+    <Compile Include="Statistics\Distributions\LogisticDistribution.cs" />
+    <Compile Include="Statistics\Distributions\LognormalDistribution.cs" />
+    <Compile Include="Statistics\Distributions\MannWhitneyDistribution.cs" />
+    <Compile Include="Statistics\Distributions\MomentMath.cs" />
+    <Compile Include="Statistics\Distributions\NegativeBinomialDistribution.cs" />
+    <Compile Include="Statistics\Distributions\NoncentralChiSquaredDistribution.cs" />
+    <Compile Include="Statistics\Distributions\NormalDistribution.cs" />
+    <Compile Include="Statistics\Distributions\ParetoDistribution.cs" />
+    <Compile Include="Statistics\Distributions\PearsonRDistribution.cs" />
+    <Compile Include="Statistics\Distributions\PoissonDistribution.cs" />
+    <Compile Include="Statistics\Distributions\SpearmanDistribution.cs" />
+    <Compile Include="Statistics\Distributions\StudentDistribution.cs" />
+    <Compile Include="Statistics\Distributions\TransformedDistribution.cs" />
+    <Compile Include="Statistics\Distributions\TriangularDistribution.cs" />
+    <Compile Include="Statistics\Distributions\TruncatedNormalDistribution.cs" />
+    <Compile Include="Statistics\Distributions\UniformDistribution.cs" />
+    <Compile Include="Statistics\Distributions\UnivariateDistribution.cs" />
+    <Compile Include="Statistics\Distributions\WaldDistribution.cs" />
+    <Compile Include="Statistics\Distributions\WeibullDistribution.cs" />
+    <Compile Include="Statistics\FitResult.cs" />
+    <Compile Include="Statistics\Histogram.cs" />
+    <Compile Include="Statistics\InsufficientDataException.cs" />
+    <Compile Include="Statistics\MultivariateSample.cs" />
+    <Compile Include="Statistics\PrincipalComponentAnalysis.cs" />
+    <Compile Include="Statistics\Sample.cs" />
+    <Compile Include="Statistics\StreamingSampleSummary.cs" />
+    <Compile Include="Statistics\TestResult.cs" />
+    <Compile Include="Statistics\TimeSeries.cs" />
+    <Compile Include="Statistics\UncertainMeasurement.cs" />
+    <Compile Include="Statistics\UncertainMeasurementSample.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Messages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Messages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="bin\" />
+    <Folder Include="Special\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

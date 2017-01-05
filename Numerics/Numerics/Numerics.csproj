@@ -8,7 +8,7 @@
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
+    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{C93BE2CF-4153-4230-8CD4-D0F6C5018121}</ProjectGuid>
@@ -16,8 +16,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Meta.Numerics</RootNamespace>
     <AssemblyName>Meta.Numerics</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Profile136</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <SccProjectName>SAK</SccProjectName>
@@ -51,6 +52,7 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
     <None Include="keypair.snk" />
     <None Include="Numerics.ruleset" />
+    <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Analysis\BulrischStoerStrategy.cs" />
@@ -90,6 +92,7 @@
     <Compile Include="Core\UncertainMath.cs" />
     <Compile Include="Core\UncertainValue.cs" />
     <Compile Include="Functions\AdvancedIntegerMath.cs" />
+    <Compile Include="Functions\AdvancedIntegerMath_Partitions.cs" />
     <Compile Include="Functions\AdvancedMath.cs" />
     <Compile Include="Functions\AdvancedMath_Bessel.cs" />
     <Compile Include="Functions\AdvancedMath_Constants.cs" />
@@ -112,6 +115,7 @@
     <Compile Include="Analysis\FunctionMath_Integrate.cs" />
     <Compile Include="Analysis\FunctionMath_MultiExtrema.cs" />
     <Compile Include="Analysis\SobolSequence.cs" />
+    <Compile Include="Functions\IntegerPartition.cs" />
     <Compile Include="Functions\OrthogonalPolynomials.cs" />
     <Compile Include="Functions\Partition.cs" />
     <Compile Include="Functions\Permutation.cs" />
@@ -140,11 +144,6 @@
     <Compile Include="Matrices\TridiagonalMatrix.cs" />
     <Compile Include="Matrices\VectorAlgorithms.cs" />
     <Compile Include="Matrices\VectorBase.cs" />
-    <Compile Include="Messages.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Messages.resx</DependentUpon>
-    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SignalProcessing\FourierAlgorithms.cs" />
     <Compile Include="SignalProcessing\FourierTransformer.cs" />
@@ -205,15 +204,6 @@
     <Compile Include="Statistics\TimeSeries.cs" />
     <Compile Include="Statistics\UncertainMeasurement.cs" />
     <Compile Include="Statistics\UncertainMeasurementSample.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="System" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Messages.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Messages.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="bin\" />

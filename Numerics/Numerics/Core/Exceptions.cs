@@ -1,23 +1,17 @@
 using System;
 using System.Collections.Generic;
-#if !SILVERLIGHT
-using System.Runtime.Serialization;
-#endif
 
 namespace Meta.Numerics {
 
     /// <summary>
     /// The exception that is thrown when an algorithm fails to converge.
     /// </summary>
-#if !SILVERLIGHT
-    [Serializable]
-#endif
     public class NonconvergenceException : Exception {
 
         /// <summary>
         /// Initializes a new nonconvergence exception.
         /// </summary>
-        public NonconvergenceException () : base() { }
+        public NonconvergenceException () : base("The algorithm did not converge within the allowed number of iterations.") { }
 
         /// <summary>
         /// Inititalizes a new nonconvergence exception with the given exception message.
@@ -32,29 +26,17 @@ namespace Meta.Numerics {
         /// <param name="innerException">The inner exception.</param>
         public NonconvergenceException (String message, Exception innerException) : base(message, innerException) { }
 
-#if !SILVERLIGHT
-        /// <summary>
-        /// Initalizes a new nonconvergence exception with the given serialization information and streaming context.
-        /// </summary>
-        /// <param name="info">The serialization information.</param>
-        /// <param name="context">The streaming context.</param>
-        protected NonconvergenceException (SerializationInfo info, StreamingContext context) : base(info, context) { }
-#endif
-
     }
 
     /// <summary>
     /// The exception that is thrown when attempting an operation on objects with incompatible dimensions.
     /// </summary>
-#if !SILVERLIGHT
-    [Serializable]
-#endif
     public class DimensionMismatchException : InvalidOperationException {
 
         /// <summary>
         /// Initializes a new dimension mismatch exception.
         /// </summary>
-        public DimensionMismatchException () : base(Messages.DimensionMismatch) { }
+        public DimensionMismatchException () : base("The object(s) did not have the expected dimension(s).") { }
 
         /// <summary>
         /// Inititalizes a new dimension mismatch exception with the given exception message.
@@ -68,15 +50,6 @@ namespace Meta.Numerics {
         /// <param name="message">The exeption message.</param>
         /// <param name="innerException">The inner exception.</param>
         public DimensionMismatchException (String message, Exception innerException) : base(message, innerException) { }
-
-#if !SILVERLIGHT
-        /// <summary>
-        /// Initalizes a new dimension mismatch exception with the given serialization information and streaming context.
-        /// </summary>
-        /// <param name="info">The serialization information.</param>
-        /// <param name="context">The streaming context.</param>
-        protected DimensionMismatchException (SerializationInfo info, StreamingContext context) : base(info, context) { }
-#endif
 
     }
 

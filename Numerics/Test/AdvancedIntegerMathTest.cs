@@ -246,41 +246,9 @@ namespace Test {
             Assert.IsTrue(AdvancedIntegerMath.GCF(a, b) * AdvancedIntegerMath.LCM(a, b) == a * b);
         }
 
-        [TestMethod]
-        public void IntegerPartitionCounts () {
 
-            // these counts are from Table 21.5 of Abromowitz & Stegun
-            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(1)) == 1);
-            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(2)) == 2);
-            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(3)) == 3);
-            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(4)) == 5);
-            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(5)) == 7);
-            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(6)) == 11);
-            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(7)) == 15);
-            Assert.IsTrue(CountValues(AdvancedIntegerMath.Partitions(8)) == 22);
 
-        }
 
-        private int CountValues (IEnumerable enumeration) {
-            int count = 0;
-            foreach (object value in enumeration) count++;
-            return(count);
-        }
-
-        [TestMethod]
-        public void IntegerPartitionSums () {
-
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
-
-                foreach (int[] partition in AdvancedIntegerMath.Partitions(n)) {
-                    int s = 0;
-                    foreach (int i in partition) s += i;
-                    Assert.IsTrue(s == n);
-                }
-
-            }
-
-        }
 
         [TestMethod]
         public void PowModTest () {

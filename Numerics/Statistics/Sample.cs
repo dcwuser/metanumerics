@@ -1555,8 +1555,8 @@ namespace Meta.Numerics.Statistics {
             if (b == null) throw new ArgumentNullException(nameof(b));
 
             // we must have data to do the test
-            if (a.Count < 1) throw new InsufficientDataException(Messages.InsufficientData);
-            if (b.Count < 1) throw new InsufficientDataException(Messages.InsufficientData);
+            if (a.Count < 1) throw new InsufficientDataException("Messages.InsufficientData");
+            if (b.Count < 1) throw new InsufficientDataException("Messages.InsufficientData");
 
             // the samples must be sorted
             int[] aOrder = a.data.GetSortOrder();

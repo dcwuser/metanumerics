@@ -333,7 +333,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="other">The matrix to compare.</param>
         /// <returns>True if the <paramref name="other"/> is equal to the current matrix, otherwise false.</returns>
         public bool Equals (AnyRectangularMatrix other) {
-            if (other == null) {
+            if (Object.ReferenceEquals(other, null)) {
                 return (false);
             } else {
                 return (InternalEquals(this, other));
@@ -355,7 +355,7 @@ namespace Meta.Numerics.Matrices {
         /// <returns>Throws an <see cref="NotSupportedException"/>.</returns>
         /// <remarks>
         /// <para>The <see cref="Object.GetHashCode"/> method is used to provide a quick equality test when an object
-        /// is used as a key in a <see cref="System.Collections.Generic.Dictionary{TKey,TValue}"/> or <see cref="Hashtable"/>.
+        /// is used as a key in a <see cref="System.Collections.Generic.IDictionary{TKey,TValue}"/> or <see cref="System.Collections.IDictionary"/>.
         /// Since a useful hash code of a matrix would need to involve all its elements, it is not possible to make this a fast operation.
         /// Also, since matrices are not immutable, they should not be used as hash keys. (A matrix might be changed after it
         /// had already been used as a key.) For these reasons, requesting a hash code for a matrix is not supported.

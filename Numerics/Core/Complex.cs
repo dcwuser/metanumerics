@@ -13,9 +13,6 @@ namespace Meta.Numerics {
     /// <para>Version 4.0 of the .NET Framework introduced a Complex structure equivalent to this one. To maintain compatibility
     /// with earlier versions of the .NET Framework, Meta.Numerics maintains its own Complex structure.</para>
     /// </remarks>
-#if !SILVERLIGHT
-    [Serializable]
-#endif
     public struct Complex : IEquatable<Complex> {
 
         private double re;
@@ -121,6 +118,10 @@ namespace Meta.Numerics {
 
 		// equality operators
 
+        private static bool Equals (Complex z1, Complex z2) {
+            return ((z1.re == z2.re) && (z1.im == z2.im));
+        }
+
         /// <summary>
         /// Tests the equality of two complex numbers.
         /// </summary>
@@ -128,7 +129,7 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>True if the two complex numbers are equal, otherwise false.</returns>
         public static bool operator == (Complex z1, Complex z2) {
-            return ((z1.re == z2.re) && (z1.im == z2.im));
+            return (Equals(z1, z2));
         }
 
         /// <summary>
@@ -138,7 +139,7 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>False if the two complex numbers are equal, otherwise true.</returns>
         public static bool operator != (Complex z1, Complex z2) {
-            return (!(z1 == z2));
+            return (!Equals(z1, z2));
        }
 
         /// <summary>
@@ -148,7 +149,7 @@ namespace Meta.Numerics {
         /// <returns>True if the object represents the same complex number, otherwise false.</returns>
         public override bool Equals (object obj) {
             if (obj is Complex) {
-                return(((Complex) obj) == this);
+                return (Equals(this, (Complex) obj));
             } else {
                 return (false);
             }
@@ -160,7 +161,7 @@ namespace Meta.Numerics {
         /// <param name="other">The complex number to compare.</param>
         /// <returns>True if the complex number is the same, otherwise false.</returns>
         public bool Equals (Complex other) {
-            return (this == other);
+            return (Equals(this, other));
         }
 
         /// <summary>

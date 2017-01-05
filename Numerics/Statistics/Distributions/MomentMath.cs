@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 using Meta.Numerics.Functions;
 
@@ -204,8 +205,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         // Each term has a combinatoric factor of r! divided by the product of all the integers in the partition. (E.g. 1^4, 1^2 * 2, 2^2, 1 * 3, and 4.)
 
         internal static double CumulantToMoment (double[] K, int r, bool central) {
+            Debug.Assert(K != null);
+            Debug.Assert(r > 0);
+            Debug.Assert(K.Length >= r);
             double M = 0.0;
-            foreach (int[] partition in AdvancedIntegerMath.Partitions(r)) {
+            foreach (int[] partition in AdvancedIntegerMath.InternalPartitions(r)) {
                 double dM = AdvancedIntegerMath.Factorial(r);
                 int u = 0; // tracks the last observed partition member
                 int m = 1; // tracks the multiplicity of the current partition member

@@ -46,8 +46,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Beta_distribution" />
         public BetaDistribution (double alpha, double beta) {
-            if (alpha <= 0.0) throw new ArgumentOutOfRangeException("alpha");
-            if (beta <= 0.0) throw new ArgumentOutOfRangeException("beta");
+            if (alpha <= 0.0) throw new ArgumentOutOfRangeException(nameof(alpha));
+            if (beta <= 0.0) throw new ArgumentOutOfRangeException(nameof(beta));
             this.alpha = alpha;
             this.beta = beta;
             // cache value of B(alpha, beta) to avoid having to re-calculate it whenever needed
@@ -150,7 +150,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Moment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else {
                 // this is just a recursive development of \Beta(\alpha + r, \beta) / \Beta(\alpha, \beta)
                 double alphaPlusBeta = alpha + beta;
@@ -173,7 +173,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double MomentAboutMean (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -202,7 +202,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
 
             double x, y;
             betaInverter.InverseRegularizedBeta(P, 1.0 - P, out x, out y);
@@ -211,7 +211,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
-            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
 
             double x, y;
             betaInverter.InverseRegularizedBeta(1.0 - Q, Q, out x, out y);
@@ -221,7 +221,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         
         /// <inheritdoc />
         public override double GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException("rng");
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
             return (betaRng.GetNext(rng));
         }
         
@@ -240,7 +240,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         /// <exception cref="InvalidOperationException">Not all the entries in <paramref name="sample" /> lie between zero and one.</exception>
         public static FitResult FitToSample (Sample sample) {
-            if (sample == null) throw new ArgumentNullException("sample");
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
 
             // maximum likelyhood calculation
@@ -315,8 +315,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         public BetaInverter (double a, double b, double logB) {
-            if (a <= 0.0) throw new ArgumentOutOfRangeException("a");
-            if (b <= 0.0) throw new ArgumentOutOfRangeException("b");
+            if (a <= 0.0) throw new ArgumentOutOfRangeException(nameof(a));
+            if (b <= 0.0) throw new ArgumentOutOfRangeException(nameof(b));
             this.a = a;
             this.b = b;
             this.a1 = a - 1.0;
@@ -483,7 +483,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
                 // Remember old coordinates
                 double x_old = x;
-                double y_old = y;
+                //double y_old = y;
 
                 // Evaluate I and I' at the coordinates
                 double P, Q, D;

@@ -15,7 +15,7 @@ using System.Security.Permissions;
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Meta Numerics")]
-[assembly: AssemblyCopyright("Copyright © Meta Numerics 2008-2016")]
+[assembly: AssemblyCopyright("Copyright © Meta Numerics 2008-2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -27,10 +27,8 @@ using System.Security.Permissions;
 [assembly: NeutralResourcesLanguage("en-us")]
 
 // COM exposure
-#if !SILVERLIGHT
 [assembly: ComVisible(false)]
 [assembly: Guid("765978ee-7429-4132-a31f-233f8423f971")]
-#endif
 
 // Security
 #if !SILVERLIGHT
@@ -48,6 +46,6 @@ using System.Security.Permissions;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("3.1.0.0")]
-[assembly: AssemblyFileVersion("3.1.0.0")]
+[assembly: AssemblyVersion("4.0.0.0")]
+[assembly: AssemblyFileVersion("4.0.0.0")]
 

@@ -60,7 +60,7 @@ namespace Test {
             Random rng = new Random(1);
             for (int r = 0; r < rd; r++) {
                 for (int c = 0; c < cd; c++) {
-                    M[r,c] = 2.0 * rng.NextDouble() - 1.0;
+                    M[r, c] = 2.0 * rng.NextDouble() - 1.0;
                 }
             }
             return (M);
@@ -160,17 +160,24 @@ namespace Test {
             RectangularMatrix M2 = 2.0 * M;
             Assert.IsTrue(MA == M2);
 
+            RectangularMatrix MB = MA / 2.0;
+            Assert.IsTrue(MB == M);
+
             RectangularMatrix MS = M - M;
             RectangularMatrix M0 = 0.0 * M;
             Assert.IsTrue(MS == M0);
+
+            RectangularMatrix MN = -M;
+            RectangularMatrix MM = -1.0 * M;
+            Assert.IsTrue(MN == MM);
 
             RectangularMatrix MT = M.Transpose();
             Assert.IsTrue(MT.RowCount == M.ColumnCount);
             Assert.IsTrue(MT.ColumnCount == M.RowCount);
 
-            RectangularMatrix MM = M * MT;
-            Assert.IsTrue(MM.RowCount == M.RowCount);
-            Assert.IsTrue(MM.ColumnCount == MT.ColumnCount);
+            RectangularMatrix MMT = M * MT;
+            Assert.IsTrue(MMT.RowCount == M.RowCount);
+            Assert.IsTrue(MMT.ColumnCount == MT.ColumnCount);
 
         }
 
@@ -183,11 +190,11 @@ namespace Test {
             Assert.IsTrue(QRD.RowCount == M.RowCount);
             Assert.IsTrue(QRD.ColumnCount == M.ColumnCount);
 
-            SquareMatrix Q = QRD.QMatrix();
+            SquareMatrix Q = QRD.QMatrix;
             Assert.IsTrue(Q.Dimension == M.RowCount);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(Q * Q.Transpose(), TestUtilities.CreateSquareUnitMatrix(Q.Dimension)));
 
-            RectangularMatrix R = QRD.RMatrix();
+            RectangularMatrix R = QRD.RMatrix;
             Assert.IsTrue(R.RowCount == M.RowCount);
             Assert.IsTrue(R.ColumnCount == M.ColumnCount);
 
@@ -331,7 +338,7 @@ namespace Test {
             double y100 = U[100, 0] * SVD.SingularValue(0) * V[1, 0] + U[100, 1] * SVD.SingularValue(1) * V[1, 1];
             Console.WriteLine("y100 = {0} {1}", y100, R[100, 1]);
 
-            ColumnVector d1 = U[0,0] * SVD.SingularValue(0) * SVD.RightSingularVector(0) + 
+            ColumnVector d1 = U[0, 0] * SVD.SingularValue(0) * SVD.RightSingularVector(0) +
                 U[0, 1] * SVD.SingularValue(1) * SVD.RightSingularVector(1);
             Console.WriteLine("d1 = ({0} {1})", d1[0], d1[1]);
             ColumnVector d100 = U[100, 0] * SVD.SingularValue(0) * SVD.RightSingularVector(0) +
@@ -427,6 +434,30 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void CastRectangularToSquare () {
+
+            RectangularMatrix A = GenerateRandomMatrix(2, 3);
+
+            RectangularMatrix AT = A.Transpose();
+
+            RectangularMatrix ATA1 = AT * A;
+
+            SquareMatrix ATA2 = (SquareMatrix) ATA1;
+            Assert.IsTrue(ATA2 == ATA1);
+       
+            SymmetricMatrix ATA3 = A.MultiplyTransposeBySelf();
+            Assert.IsTrue(ATA2 == ATA3);
+        
+            RectangularMatrix AAT1 = A * AT;
+
+            SquareMatrix AAT2 = (SquareMatrix) AAT1;
+            Assert.IsTrue(AAT2 == AAT1);
+
+            SymmetricMatrix AAT3 = A.MultiplySelfByTranspose();
+            Assert.IsTrue(AAT2 == AAT3);
+
+        }
     }
 
 }

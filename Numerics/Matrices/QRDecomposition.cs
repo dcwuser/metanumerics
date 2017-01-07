@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
+
 
 namespace Meta.Numerics.Matrices {
 
@@ -22,6 +22,10 @@ namespace Meta.Numerics.Matrices {
         private readonly int rows, cols;
 
         internal QRDecomposition (double[] qtStore, double[] rStore, int rows, int columns) {
+            Debug.Assert(qtStore != null);
+            Debug.Assert(rStore != null);
+            Debug.Assert(rows > 0);
+            Debug.Assert(columns > 0);
             this.qtStore = qtStore;
             this.rStore = rStore;
             this.rows = rows;
@@ -31,29 +35,30 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// The orthogonal matrix Q.
         /// </summary>
-        /// <returns>The orthogonal matrix Q.</returns>
-        public SquareMatrix QMatrix () {
-            double[] qStore = new double[rows * rows];
-            for (int r = 0; r < rows; r++) {
-                for (int c = 0; c < rows; c++) {
-                    qStore[rows * c + r] = qtStore[rows * r + c];
-                }
+        /// <value>The orthogonal matrix Q in the decomposition M = Q R.</value>
+        /// <remarks>
+        /// <para>The returned matrix is read-only. If you need to make changes to it, you can call <see cref="SquareMatrix.Copy"/> to obtain a writable copy.</para>
+        /// </remarks> 
+        public SquareMatrix QMatrix {
+            get {
+                return (new SquareMatrix(qtStore, 0, rows, 1, rows, true));
             }
-            return (new SquareMatrix(qStore, rows));
         }
 
         /// <summary>
         /// The upper-right triangular matrix R.
         /// </summary>
-        /// <returns>The upper-right triangular matrix R.</returns>
+        /// <value>The upper-right triangular matrix R in the decomposition M = Q R.</value>
         /// <remarks>
         /// <para>The returned matrix is read-only. If you need to make changes to it, you can call <see cref="RectangularMatrix.Copy"/> to obtain a writable copy.</para>
         /// </remarks> 
-        public RectangularMatrix RMatrix () {
-            return (new RectangularMatrix(rStore, rows, cols, true));
+        public RectangularMatrix RMatrix {
+            get {
+                return (new RectangularMatrix(rStore, rows, cols, true));
+            }
         }
 
-        
+
         /// <summary>
         /// Solve the system A x = b.
         /// </summary>
@@ -61,7 +66,7 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The column vector x for which A x is closest to b.</returns>
         public ColumnVector Solve (IList<double> rhs) {
 
-            if (rhs == null) throw new ArgumentNullException("rhs");
+            if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (rhs.Count != rows) throw new DimensionMismatchException();
 
             // copy rhs into an array, if necessary
@@ -128,7 +133,7 @@ namespace Meta.Numerics.Matrices {
             // This is detailed in Ake Bjorck, "Numerical Methods for Least Squares Problems", pp. 118-120
 
             C = new SymmetricMatrix(a.Dimension);
-            RectangularMatrix R = QR.RMatrix();
+            RectangularMatrix R = QR.RMatrix;
             double c; // used for storage so we don't call bounds-checking accessors each time
             for (int k = C.Dimension - 1; k >= 0; k--) {
                 c = 1.0 / R[k, k]; ;

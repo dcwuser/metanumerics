@@ -62,6 +62,22 @@ namespace Test {
 
         }
 
+
+        [TestMethod]
+        public void SparseSquareMatrixArithmetic () {
+
+            SparseSquareMatrix S1 = CreateRandomSparseSquareMatrix(8, 16, new Random(2));
+
+            SparseSquareMatrix S2 = 2.0 * S1;
+
+            Assert.IsTrue(S2 != S1);
+
+            SparseSquareMatrix S3 = 0.5 * S2;
+
+            Assert.IsTrue(S3 == S1);
+
+        }
+
         [TestMethod]
         public void SparseSquareMatrixRowsAndColumns () {
 

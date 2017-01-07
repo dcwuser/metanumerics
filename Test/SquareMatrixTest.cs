@@ -120,15 +120,24 @@ namespace Test {
 
             SquareMatrix M = CreateSquareRandomMatrix(5);
 
-            // addition is same a multiplication by two
+            // Addition is same as multiplication by two
             SquareMatrix MA = M + M;
             SquareMatrix M2 = 2.0 * M;
             Assert.IsTrue(MA == M2);
 
-            // subraction of self same as multiplication by zero
+            // Division by two returns us to original
+            SquareMatrix MB = MA / 2.0;
+            Assert.IsTrue(MB == M);
+
+            // Subraction of self same as multiplication by zero
             SquareMatrix MS = M - M;
             SquareMatrix M0 = 0.0 * M;
             Assert.IsTrue(MS == M0);
+
+            // Negation is same as multiplication by negative one
+            SquareMatrix MN = -M;
+            SquareMatrix MM = -1.0 * M;
+            Assert.IsTrue(MN == MM);
 
             // check transpose
             SquareMatrix MT = M.Transpose();
@@ -186,8 +195,8 @@ namespace Test {
                 Assert.IsTrue(QRD.Dimension == M.Dimension);
 
                 // test that the decomposition works
-                SquareMatrix Q = QRD.QMatrix();
-                SquareMatrix R = QRD.RMatrix();
+                SquareMatrix Q = QRD.QMatrix;
+                SquareMatrix R = QRD.RMatrix;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(Q * R, M));
 
                 // check that the inverse works
@@ -462,6 +471,34 @@ namespace Test {
         }
 
         [TestMethod]
+        public void SquareMatrixNotInvertable () {
+
+            SquareMatrix A = new SquareMatrix(2);
+            A[1, 1] = 1.0;
+
+            // Inverting should throw
+            try {
+                A.Inverse();
+                Assert.IsTrue(false);
+            } catch (DivideByZeroException) {
+
+            }
+
+            // LU Decomposing should throw
+            try {
+                A.LUDecomposition();
+                Assert.IsTrue(false);
+            } catch (DivideByZeroException) {
+
+            }
+
+            // SVD should succeed, and give infinite condition number
+            SingularValueDecomposition SVD = A.SingularValueDecomposition();
+            Assert.IsTrue(Double.IsInfinity(SVD.ConditionNumber));
+
+        }
+
+        [TestMethod]
         public void SquareMatrixStochasticEigensystem () {
 
             // this is a simplifed form of a Markov matrix that arose in the Monopoly problem
@@ -500,7 +537,7 @@ namespace Test {
         [TestMethod]
         public void CirculantEigenvalues () {
 
-            int n = 50;
+            int n = 12;
 
             double[] x = new double[n];
             for (int i = 0; i < x.Length; i++) x[i] = 1.0 / (i + 1);
@@ -522,8 +559,20 @@ namespace Test {
                 }
             }
 
-            Complex[] e = A.Eigenvalues();
+            Complex[] eValues = A.Eigenvalues();
+            Complex eProduct = 1.0;
+            foreach (Complex eValue in eValues) {
+                eProduct *= eValue;
+            }
 
+            // v and eValues should be equal. By inspection they are,
+            // but how to verify this given floating point jitter?
+
+            // Verify that eigenvalue product equals determinant.
+            SquareQRDecomposition QR = A.QRDecomposition();
+            double det = QR.Determinant();
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(eProduct, det));
         }
 
         public Complex[] RootsOfUnity (int n) {
@@ -654,6 +703,25 @@ namespace Test {
 
         }
 
+
+        [TestMethod]
+        public void MatrixPowerSpecialCases () {
+
+            SquareMatrix A = CreateSquareRandomMatrix(3);
+
+            // Zero power is identity
+            SquareMatrix A0 = A.Power(0);
+
+            // One power is self
+            SquareMatrix A1 = A.Power(1);
+            Assert.IsTrue(A == A1);
+
+            // Two powers same as multiplying by self
+            SquareMatrix A2 = A.Power(2);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(A2, A * A));
+
+        }
+
         [TestMethod]
         public void MatrixPeriodTest () {
 
@@ -691,8 +759,12 @@ namespace Test {
             ColumnVector v = new ColumnVector(1.0, 2.0, 3.0, 4.0);
             RectangularMatrix A = v * v.Transpose();
 
-            // Only the first singular value should be non-zero
             SingularValueDecomposition SVD = A.SingularValueDecomposition();
+
+            // The rank should be 1
+            Assert.IsTrue(SVD.Rank == 1);
+
+            // Only the first singular value should be non-zero
             Console.WriteLine(SVD.SingularValue(0));
             for (int i = 1; i < SVD.Dimension; i++) {
                 Console.WriteLine(SVD.SingularValue(i));

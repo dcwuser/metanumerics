@@ -77,9 +77,13 @@ namespace Meta.Numerics.Matrices {
         /// Returns the left transform matrix.
         /// </summary>
         /// <returns>The matrix U, such that A = U S V<sup>T</sup>.</returns>
+        /// <remarks>
+        /// <para>The returned matrix is read-only. If you need to make changes to it, you can call <see cref="SquareMatrix.Copy"/> to obtain a writable copy.</para>
+        /// </remarks>
         public SquareMatrix LeftTransformMatrix () {
-            double[] left = MatrixAlgorithms.Transpose(utStore, rows, rows);
-            return (new SquareMatrix(left, rows));
+            return (new SquareMatrix(utStore, 0, rows, 1, rows, true));
+            //double[] left = MatrixAlgorithms.Transpose(utStore, rows, rows);
+            //return (new SquareMatrix(left, rows));
         }
 
         /// <summary>

@@ -108,13 +108,18 @@ namespace Test {
             SymmetricMatrix M2 = 2.0 * M;
             Assert.IsTrue(MA == M2);
 
+            // division by two should return us to the original
+            // SymmetricMatrix MB = M2 / 2.0;
+
             // subraction of self same as multiplication by zero
             SymmetricMatrix MS = M - M;
             SymmetricMatrix M0 = 0.0 * M;
             Assert.IsTrue(MS == M0);
 
-            // matrix multiplication
-            SquareMatrix MM = M * M;
+            // negation is same as multiplication by negative one
+            SymmetricMatrix MN = -M;
+            SymmetricMatrix MM = -1.0 * M;
+            Assert.IsTrue(MM == MN);
 
         }
 

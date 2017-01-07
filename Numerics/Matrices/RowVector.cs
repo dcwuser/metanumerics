@@ -29,6 +29,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="list">A list of vector components.</param>
         public RowVector (params double[] list) : base(list) { }
 
+        internal RowVector(double[] store, int offset, int stride, int dimension, bool isReadonly) : base(store, offset, stride, dimension, isReadonly) { }
+
         internal RowVector (double[] store, int dimension, bool isReadOnly) : base(store, dimension, isReadOnly) { }
 
         internal RowVector (double[] store, int dimension) : base(store, dimension) { }
@@ -46,13 +48,13 @@ namespace Meta.Numerics.Matrices {
         /// <inheritdoc />
         public override double this[int r, int c] {
             get {
-                if (r != 0) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
+                if (r != 0) throw new ArgumentOutOfRangeException(nameof(r));
+                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
                 return (base[c]);
             }
             set {
-                if (r != 0) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
+                if (r != 0) throw new ArgumentOutOfRangeException(nameof(r));
+                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
                 base[c] = value;
             }
         }
@@ -82,8 +84,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="v2">The second row vector.</param>
         /// <returns>The sum <paramref name="v1"/> + <paramref name="v2"/>.</returns>
         public static RowVector operator + (RowVector v1, RowVector v2) {
-            if (v1 == null) throw new ArgumentNullException("v1");
-            if (v2 == null) throw new ArgumentNullException("v2");
+            if (v1 == null) throw new ArgumentNullException(nameof(v1));
+            if (v2 == null) throw new ArgumentNullException(nameof(v2));
             if (v1.dimension != v2.dimension) throw new DimensionMismatchException();
             double[] store = VectorAlgorithms.Add(v1.store, v1.offset, v1.stride, v2.store, v2.offset, v2.stride, v1.dimension);
             return (new RowVector(store, v1.dimension));
@@ -96,8 +98,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="v2">The second column vector.</param>
         /// <returns>The difference <paramref name="v1"/> - <paramref name="v2"/>.</returns>
         public static RowVector operator - (RowVector v1, RowVector v2) {
-            if (v1 == null) throw new ArgumentNullException("v1");
-            if (v2 == null) throw new ArgumentNullException("v2");
+            if (v1 == null) throw new ArgumentNullException(nameof(v1));
+            if (v2 == null) throw new ArgumentNullException(nameof(v2));
             if (v1.dimension != v2.dimension) throw new DimensionMismatchException();
             double[] store = VectorAlgorithms.Subtract(v1.store, v1.offset, v1.stride, v2.store, v2.offset, v2.stride, v1.dimension);
             return (new RowVector(store, v1.dimension));
@@ -110,7 +112,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="v">The row vector.</param>
         /// <returns>The product.</returns>
         public static RowVector operator * (double alpha, RowVector v) {
-            if (v == null) throw new ArgumentNullException("v");
+            if (v == null) throw new ArgumentNullException(nameof(v));
             double[] store = VectorAlgorithms.Multiply(alpha, v.store, v.offset, v.stride, v.dimension);
             return (new RowVector(store, v.dimension));
         }
@@ -122,7 +124,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="v">The row vector.</param>
         /// <returns>The result.</returns>
         public static RowVector operator / (RowVector v, double alpha) {
-            if (v == null) throw new ArgumentNullException("v");
+            if (v == null) throw new ArgumentNullException(nameof(v));
             double[] store = VectorAlgorithms.Multiply(1.0 / alpha, v.store, v.offset, v.stride, v.dimension);
             return (new RowVector(store, v.dimension));
         }
@@ -143,8 +145,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The matrix.</param>
         /// <returns>The product row vector.</returns>
         public static RowVector operator * (RowVector v, AnyRectangularMatrix A) {
-            if (v == null) throw new ArgumentNullException("v");
-            if (A == null) throw new ArgumentNullException("A");
+            if (v == null) throw new ArgumentNullException(nameof(v));
+            if (A == null) throw new ArgumentNullException(nameof(A));
             if (v.Dimension != A.RowCount) throw new DimensionMismatchException();
             RowVector vA = new RowVector(A.ColumnCount);
 
@@ -164,8 +166,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="u">The column vector.</param>
         /// <returns>The value of the scalar product.</returns>
         public static double operator * (RowVector v, ColumnVector u) {
-            if (v == null) throw new ArgumentNullException("v");
-            if (u == null) throw new ArgumentNullException("u");
+            if (v == null) throw new ArgumentNullException(nameof(v));
+            if (u == null) throw new ArgumentNullException(nameof(u));
             if (v.dimension != u.dimension) throw new DimensionMismatchException();
             double p = Blas1.dDot(v.store, v.offset, v.stride, u.store, u.offset, u.stride, v.dimension);
             return (p);

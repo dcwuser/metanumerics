@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+
 
 namespace Meta.Numerics.Matrices {
 
@@ -19,14 +19,11 @@ namespace Meta.Numerics.Matrices {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="rowCount"/> or <paramref name="columnCount"/>
         /// is less than one.</exception>
         public RectangularMatrix (int rowCount, int columnCount) {
-            if (rowCount < 1) throw new ArgumentOutOfRangeException("rowCount");
-            if (columnCount < 1) throw new ArgumentOutOfRangeException("columnCount");
+            if (rowCount < 1) throw new ArgumentOutOfRangeException(nameof(rowCount));
+            if (columnCount < 1) throw new ArgumentOutOfRangeException(nameof(columnCount));
             rows = rowCount;
             cols = columnCount;
-            store = MatrixAlgorithms.AllocateStorage(rows, cols);
-            offset = 0;
-            rowStride = 1;
-            colStride = rows;
+            store = MatrixAlgorithms.AllocateStorage(rows, cols, ref offset, ref rowStride, ref colStride);
         }
 
         /// <summary>
@@ -34,13 +31,10 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="source">The source 2D array.</param>
         public RectangularMatrix (double[,] source) {
-            if (source == null) throw new ArgumentNullException("source");
+            if (source == null) throw new ArgumentNullException(nameof(source));
             rows = source.GetLength(0);
             cols = source.GetLength(1);
-            store = MatrixAlgorithms.AllocateStorage(rows, cols);
-            offset = 0;
-            rowStride = 1;
-            colStride = rows;
+            store = MatrixAlgorithms.AllocateStorage(rows, cols, ref offset, ref rowStride, ref colStride);
             for (int r = 0; r < rows; r++) {
                 for (int c = 0; c < cols; c++) {
                     store[MatrixAlgorithms.GetIndex(rows, cols, r, c)] = source[r, c];
@@ -68,13 +62,13 @@ namespace Meta.Numerics.Matrices {
         /// <inheritdoc />
         public override double this[int r, int c] {
             get {
-                if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
+                if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException(nameof(r));
+                if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException(nameof(c));
                 return (store[MatrixAlgorithms.GetIndex(offset, rowStride, colStride, r, c)]);
             }
             set {
-                if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
+                if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException(nameof(r));
+                if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException(nameof(c));
                 if (IsReadOnly) throw new InvalidOperationException();
                 store[MatrixAlgorithms.GetIndex(offset, rowStride, colStride, r, c)] = value;
             }
@@ -104,7 +98,7 @@ namespace Meta.Numerics.Matrices {
 
         /// <inheritdoc />
         public override ColumnVector Column (int c) {
-            if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException("c");
+            if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException(nameof(c));
             double[] cStore = new double[rows];
             Blas1.dCopy(store, offset + colStride * c, rowStride, cStore, 0, 1, rows);
             return (new ColumnVector(cStore, rows));
@@ -112,7 +106,7 @@ namespace Meta.Numerics.Matrices {
 
         /// <inheritdoc />
         public override RowVector Row (int r) {
-            if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException("r");
+            if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException(nameof(r));
             double[] rStore = new double[cols];
             Blas1.dCopy(store, offset + rowStride * r, colStride, rStore, 0, 1, cols);
             return (new RowVector(rStore, cols));
@@ -125,11 +119,15 @@ namespace Meta.Numerics.Matrices {
         /// <param name="B">The second matrix.</param>
         /// <returns>The sum matrix <paramref name="A"/> + <paramref name="B"/>.</returns>
         public static RectangularMatrix operator + (RectangularMatrix A, RectangularMatrix B) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.rows != B.rows) throw new DimensionMismatchException();
             if (A.cols != B.cols) throw new DimensionMismatchException();
-            double[] abStore = MatrixAlgorithms.Add(A.store, B.store, A.rows, A.cols);
+            double[] abStore = MatrixAlgorithms.Add(
+                A.store, A.offset, A.rowStride, A.colStride,
+                B.store, B.offset, B.rowStride, B.colStride,
+                A.rows, A.cols
+            );
             return (new RectangularMatrix(abStore, A.rows, A.cols));
         }
 
@@ -140,11 +138,15 @@ namespace Meta.Numerics.Matrices {
         /// <param name="B">The second matrix.</param>
         /// <returns>The sum matrix <paramref name="A"/> - <paramref name="B"/>.</returns>
         public static RectangularMatrix operator - (RectangularMatrix A, RectangularMatrix B) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.rows != B.rows) throw new DimensionMismatchException();
             if (A.cols != B.cols) throw new DimensionMismatchException();
-            double[] abStore = MatrixAlgorithms.Subtract(A.store, B.store, A.rows, A.cols);
+            double[] abStore = MatrixAlgorithms.Subtract(
+                A.store, A.offset, A.rowStride, A.colStride,
+                B.store, B.offset, B.rowStride, B.colStride,
+                A.rows, A.cols
+            );
             return (new RectangularMatrix(abStore, A.rows, A.cols));
         }
 
@@ -155,11 +157,15 @@ namespace Meta.Numerics.Matrices {
         /// <param name="B">The second matrix.</param>
         /// <returns>The product matrix AB.</returns>
         public static RectangularMatrix operator * (RectangularMatrix A, RectangularMatrix B) {
-            // this is faster than the base operator, because it knows about the underlying structure
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            // This is faster than the base operator, because it knows about the underlying storage structure
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.cols != B.rows) throw new DimensionMismatchException();
-            double[] abStore = MatrixAlgorithms.Multiply(A.store, A.rows, A.cols, B.store, B.rows, B.cols);
+            double[] abStore = MatrixAlgorithms.Multiply(
+                A.store, A.offset, A.rowStride, A.colStride,
+                B.store, B.offset, B.rowStride, B.colStride,
+                A.rows, A.cols, B.cols
+            );
             return (new RectangularMatrix(abStore, A.rows, B.cols));
         }
 
@@ -170,8 +176,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The matrix.</param>
         /// <returns>The product aA.</returns>
         public static RectangularMatrix operator * (double alpha, RectangularMatrix A) {
-            if (A == null) throw new ArgumentNullException("A");
-            double[] store = MatrixAlgorithms.Multiply(alpha, A.store, A.rows, A.cols);
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            double[] store = MatrixAlgorithms.Multiply(alpha, A.store, A.offset, A.rowStride, A.colStride, A.rows, A.cols);
             return (new RectangularMatrix(store, A.rows, A.cols));
         }
 
@@ -181,9 +187,9 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The matrix.</param>
         /// <param name="alpha">The constant.</param>
         /// <returns>The quotient A/a.</returns>
-        public static RectangularMatrix operator * (RectangularMatrix A, double alpha) {
-            if (A == null) throw new ArgumentNullException("A");
-            double[] store = MatrixAlgorithms.Multiply(1.0 / alpha, A.store, A.rows, A.cols);
+        public static RectangularMatrix operator / (RectangularMatrix A, double alpha) {
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            double[] store = MatrixAlgorithms.Multiply(1.0 / alpha, A.store, A.offset, A.rowStride, A.colStride, A.rows, A.cols);
             return (new RectangularMatrix(store, A.rows, A.cols));
         }
 
@@ -193,8 +199,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The matrix.</param>
         /// <returns>The matrix -A.</returns>
         public static RectangularMatrix operator - (RectangularMatrix A) {
-            if (A == null) throw new ArgumentNullException("A");
-            double[] store = MatrixAlgorithms.Multiply(-1.0, A.store, A.rows, A.cols);
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            double[] store = MatrixAlgorithms.Multiply(-1.0, A.store, A.offset, A.rowStride, A.colStride, A.rows, A.cols);
             return (new RectangularMatrix(store, A.rows, A.cols));
         }
 
@@ -214,8 +220,9 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>M<sup>T</sup></returns>
         public RectangularMatrix Transpose () {
-            double[] tStore = MatrixAlgorithms.Transpose(store, rows, cols);
-            return (new RectangularMatrix(tStore, cols, rows));
+            // Just copy with rows <-> columns to get transpose
+            double[] transpose = MatrixAlgorithms.Copy(store, offset, colStride, rowStride, cols, rows);
+            return (new RectangularMatrix(transpose, cols, rows));
         }
 
 
@@ -306,8 +313,8 @@ namespace Meta.Numerics.Matrices {
         /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="v"/> is null.</exception>
         /// <exception cref="DimensionMismatchException">The column count of <paramref name="A"/> is not the same as the dimension of <paramref name="v"/>.</exception>
         public static ColumnVector operator * (RectangularMatrix A, ColumnVector v) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (v == null) throw new ArgumentNullException("v");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (v == null) throw new ArgumentNullException(nameof(v));
             if (A.cols != v.dimension) throw new DimensionMismatchException();
             double[] avStore = new double[A.rows];
             Blas2.dGemv(A.store, A.offset, A.rowStride, A.colStride, v.store, v.offset, v.stride, avStore, 0, 1, A.rows, A.cols);
@@ -335,9 +342,9 @@ namespace Meta.Numerics.Matrices {
         /// </remarks>
         /// <exception cref="InvalidCastException">The row and column dimensions of the matrix are not equal.</exception>
         public static explicit operator SquareMatrix (RectangularMatrix A) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (A.RowCount != A.ColumnCount) throw new InvalidCastException();
-            return(new SquareMatrix(A.store, A.RowCount));
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (A.rows != A.cols) throw new InvalidCastException();
+            return (new SquareMatrix(A.store, A.offset, A.rowStride, A.colStride, A.rows, false));
         }
 
     }

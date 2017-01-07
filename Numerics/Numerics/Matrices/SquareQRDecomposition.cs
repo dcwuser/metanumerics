@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Matrices {
 
@@ -20,6 +21,9 @@ namespace Meta.Numerics.Matrices {
         private readonly int dimension;
 
         internal SquareQRDecomposition (double[] qtStore, double[] rStore, int dimension) {
+            Debug.Assert(qtStore != null);
+            Debug.Assert(rStore != null);
+            Debug.Assert(dimension > 0);
             this.qtStore = qtStore;
             this.rStore = rStore;
             this.dimension = dimension;
@@ -29,9 +33,13 @@ namespace Meta.Numerics.Matrices {
         /// The orthogonal matrix Q.
         /// </summary>
         /// <returns>The orthogonal matrix Q.</returns>
-        public SquareMatrix QMatrix () {
-            double[] qStore = MatrixAlgorithms.Transpose(qtStore, dimension, dimension);
-            return(new SquareMatrix(qStore, dimension));
+        /// <remarks>
+        /// <para>The returned matrix is read-only. If you need to make changes to it, you can call <see cref="SquareMatrix.Copy"/> to obtain a writable copy.</para>
+        /// </remarks>
+        public SquareMatrix QMatrix {
+            get {
+                return (new SquareMatrix(qtStore, 0, dimension, 1, dimension, true));
+            }
         }
 
         /// <summary>
@@ -41,8 +49,10 @@ namespace Meta.Numerics.Matrices {
         /// <remarks>
         /// <para>The returned matrix is read-only. If you need to make changes to it, you can call <see cref="SquareMatrix.Copy"/> to obtain a writable copy.</para>
         /// </remarks>
-        public SquareMatrix RMatrix () {
-            return (new SquareMatrix(rStore, dimension, true));
+        public SquareMatrix RMatrix {
+            get {
+                return (new SquareMatrix(rStore, dimension, true));
+            }
         }
 
         /// <summary>
@@ -55,7 +65,7 @@ namespace Meta.Numerics.Matrices {
         /// </remarks>
         public ColumnVector Solve (IList<double> rhs) {
 
-            if (rhs == null) throw new ArgumentNullException("rhs");
+            if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (rhs.Count != dimension) throw new DimensionMismatchException();
 
             double[] y = new double[rhs.Count];
@@ -86,7 +96,7 @@ namespace Meta.Numerics.Matrices {
         public SquareMatrix Inverse () {
 
             // solve R Q^T column-by-column
-            double[] iStore = MatrixAlgorithms.Copy(qtStore, dimension, dimension);
+            double[] iStore = MatrixAlgorithms.Copy(qtStore);
             for (int c = 0; c < dimension; c++) {
                 SquareMatrixAlgorithms.SolveUpperRightTriangular(rStore, iStore, dimension * c, dimension);
             }

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+
 
 namespace Meta.Numerics.Matrices {
 
@@ -14,6 +14,13 @@ namespace Meta.Numerics.Matrices {
     /// idea to accept a <see cref="AnySquareMatrix"/>, so that your function could operate on any concrete implementation.</para>
     /// </remarks>
     public abstract class AnySquareMatrix : AnyRectangularMatrix {
+
+        /// <summary>
+        /// Initializes a new instance of the AnySquareMatrix class.
+        /// </summary>
+        protected AnySquareMatrix () : base() { }
+
+        internal AnySquareMatrix (bool isReadOnly) : base(isReadOnly) { }
 
         /// <summary>
         /// Gets or sets the dimension of the square matrix.
@@ -55,8 +62,8 @@ namespace Meta.Numerics.Matrices {
         /// <para>Matrix addition is an O(N<sup>2</sup>) process.</para>
         /// </remarks>
         public static SquareMatrix operator + (AnySquareMatrix A, AnySquareMatrix B) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.Dimension != B.Dimension) throw new DimensionMismatchException();
             SquareMatrix M = new SquareMatrix(A.Dimension);
             for (int r = 0; r < M.Dimension; r++) {
@@ -77,8 +84,8 @@ namespace Meta.Numerics.Matrices {
         /// <para>Matrix addition is an O(N<sup>2</sup>) process.</para>
         /// </remarks>
         public static SquareMatrix operator - (AnySquareMatrix A, AnySquareMatrix B) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.Dimension != B.Dimension) throw new DimensionMismatchException();
             SquareMatrix M = new SquareMatrix(A.Dimension);
             for (int r = 0; r < M.Dimension; r++) {
@@ -99,8 +106,8 @@ namespace Meta.Numerics.Matrices {
         /// <para>Matrix multiplication is an O(N<sup>3</sup>) process.</para>
         /// </remarks>
         public static SquareMatrix operator * (AnySquareMatrix A, AnySquareMatrix B) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.Dimension != B.Dimension) throw new DimensionMismatchException();
             SquareMatrix M = new SquareMatrix(A.Dimension);
             for (int r = 0; r < M.Dimension; r++) {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Meta.Numerics.Matrices {
 
@@ -30,8 +30,16 @@ namespace Meta.Numerics.Matrices {
             return (new double[nRows * nCols]);
         }
 
+        public static double[] AllocateStorage (int nRows, int nCols, ref int offset, ref int rowStride, ref int colStride) {
+            offset = 0;
+            rowStride = 1;
+            colStride = nRows;
+            return (AllocateStorage(nRows, nCols));
+        }
+
         // basic access: O(1) operations
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetIndex (int nRows, int nCols, int r, int c) {
             return (nRows * c + r);
         }
@@ -44,43 +52,43 @@ namespace Meta.Numerics.Matrices {
             return (store[nRows * c + r]);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetIndex (int offset, int rowStride, int colStride, int r, int c) {
             return (offset + rowStride * r + colStride * c);
         }
 
         // transformations and simple arithmetic: O(N^2) operations
 
-        public static double[] Copy (double[] store, int nRows, int nColumns) {
-            double[] cloneStore = new double[store.Length];
-            store.CopyTo(cloneStore, 0);
-            return (cloneStore);
+        public static double[] Copy (double[] store) {
+            double[] copy = new double[store.Length];
+            Array.Copy(store, copy, store.Length);
+            return (copy);
         }
 
-        public static double[] Copy (double[] store, int offset, int rowStride, int colStride, int nRows, int nColumns) {
-            double[] cloneStore = AllocateStorage(nRows, nColumns);
-            for (int c = 0; c < nColumns; c++) {
-                for (int r = 0; r < nRows; r++) {
-                    cloneStore[nRows * c + r] = store[GetIndex(offset, rowStride, colStride, r, c)];
+        public static double[] Copy (double[] store, int offset, int rowStride, int colStride, int nRows, int nCols) {
+            double[] copyStore = AllocateStorage(nRows, nCols);
+            if ((rowStride == 1) && (colStride == nRows)) {
+                Array.Copy(store, offset, copyStore, 0, copyStore.Length);
+            } else {
+                for (int c = 0; c < nCols; c++) {
+                    int sourceIndex = offset + colStride * c;
+                    int copyIndex = nRows * c;
+                    Blas1.dCopy(store, sourceIndex, rowStride, copyStore, copyIndex, 1, nRows);
                 }
             }
-            return (cloneStore);
+            return (copyStore);
         }
 
-        public static double[] Transpose (double[] store, int nRows, int nColumns) {
-            double[] tStore = new double[store.Length];
-            for (int r = 0; r < nRows; r++) {
-                for (int c = 0; c < nColumns; c++) {
-                    tStore[nColumns * r + c] = store[nRows * c + r];
-                }
-            }
-            return (tStore);
+
+        public static double[] Transpose (double[] store, int nRows, int nCols) {
+            // A transpose is just a copy with rowStride <-> colStride interchanged.
+            return (Copy(store, 0, 1, nRows, nRows, nCols));
         }
 
         public static double OneNorm (double[] store, int offset, int rowStride, int colStride, int nRows, int nColumns) {
             double norm = 0.0;
             for (int c = 0; c < nColumns; c++) {
                 double csum = Blas1.dNrm1(store, offset + colStride * c, rowStride, nRows);
-                //double csum = Blas1.dNrm1(store, c * nRows, 1, nRows);
                 if (csum > norm) norm = csum;
             }
             return (norm);
@@ -90,37 +98,88 @@ namespace Meta.Numerics.Matrices {
             double norm = 0.0;
             for (int r = 0; r < nRows; r++) {
                 double rsum = Blas1.dNrm1(store, offset + rowStride * r, colStride, nColumns);
-                //double rsum = Blas1.dNrm1(store, r, nRows, nColumns);
                 if (rsum > norm) norm = rsum;
             }
             return (norm);
         }
 
-        public static double[] Add (double[] xStore, double[] yStore, int nRows, int nCols) {
-            double[] store = new double[nRows * nCols];
-            for (int i = 0; i < store.Length; i++) {
-                store[i] = xStore[i] + yStore[i];
+        public static double[] Add (
+            double[] aStore, int aOffset, int aRowStride, int aColStride,
+            double[] bStore, int bOffset, int bRowStride, int bColStride,
+            int nRows, int nCols
+        ) {
+            double[] store = AllocateStorage(nRows, nCols);
+            int index = 0;
+            for (int c = 0; c < nCols; c++) {
+                int aIndex = aOffset + aColStride * c;
+                int bIndex = bOffset + bColStride * c;
+                for (int r = 0; r < nRows; r++) {
+                    store[index] = aStore[aIndex] + bStore[bIndex];
+                    aIndex += aRowStride;
+                    bIndex += bRowStride;
+                    index += 1;
+                }
             }
             return (store);
         }
 
-        public static double[] Subtract (double[] xStore, double[] yStore, int nRows, int nCols) {
-            double[] store = new double[nRows * nCols];
-            for (int i = 0; i < store.Length; i++) {
-                store[i] = xStore[i] - yStore[i];
+        public static double[] Subtract (
+            double[] aStore, int aOffset, int aRowStride, int aColStride,
+            double[] bStore, int bOffset, int bRowStride, int bColStride,
+            int nRows, int nCols
+        ) {
+            double[] store = AllocateStorage(nRows, nCols);
+            int index = 0;
+            for (int c = 0; c < nCols; c++) {
+                int aIndex = aOffset + aColStride * c;
+                int bIndex = bOffset + bColStride * c;
+                for (int r = 0; r < nRows; r++) {
+                    store[index] = aStore[aIndex] - bStore[bIndex];
+                    aIndex += aRowStride;
+                    bIndex += bRowStride;
+                    index += 1;
+                }
             }
             return (store);
         }
 
-        public static double[] Multiply (double alpha, double[] store, int nRows, int nCols) {
-            double[] result = new double[nRows * nCols];
-            for (int i = 0; i < store.Length; i++) {
-                result[i] = alpha * store[i];
+        public static double[] Multiply (double alpha, double[] store, int offset, int rowStride, int colStride, int nRows, int nCols) {
+            double[] result = AllocateStorage(nRows, nCols);
+            int resultIndex = 0;
+            for (int c = 0; c < nCols; c++) {
+                int sourceIndex = offset + colStride * c;
+                for (int r = 0; r < nRows; r++) {
+                    result[resultIndex] = alpha * store[sourceIndex];
+                    sourceIndex += rowStride;
+                    resultIndex += 1;
+                }
             }
             return (result);
         }
 
         // multiplication: an O(N^3) algorithm
+
+        public static double[] Multiply (
+            double[] aStore, int aOffset, int aRowStride, int aColStride,
+            double[] bStore, int bOffset, int bRowStride, int bColStride,
+            int aRows, int aCols, int bCols
+        ) {
+            double[] abStore = AllocateStorage(aRows, bCols);
+            for (int j = 0; j  < bCols; j++) {
+                int abIndex = aRows * j;
+                int bIndex = bOffset + bColStride * j;
+                for (int k = 0; k < aCols; k++) {
+                    double t = bStore[bIndex + bRowStride * k];
+                    if (t != 0.0) {
+                        int aIndex = aOffset + aColStride * k;
+                        for (int i = 0; i < aRows; i++) {
+                            abStore[abIndex + i] += t * aStore[aIndex + aRowStride * i];
+                        }
+                    }
+                }
+            }
+            return (abStore);
+        }
 
         public static double[] Multiply (double[] aStore, int aRows, int aCols, double[] bStore, int bRows, int bCols) {
 
@@ -182,8 +241,6 @@ namespace Meta.Numerics.Matrices {
         // This gives us (Q_N \cdots Q_2 Q_1) A = R, so A = (Q_N \cdots Q_2 Q_1)^T R = (Q_1^T Q_2^T \cdots Q_N^T) R
 
         public static void QRDecompose (double[] store, double[] qtStore, int rows, int cols) {
-
-            double[] vStore = new double[rows];
 
             // loop over columns
             for (int k = 0; k < cols; k++) {

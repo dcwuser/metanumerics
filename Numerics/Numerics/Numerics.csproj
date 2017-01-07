@@ -128,7 +128,6 @@
     <Compile Include="Matrices\ColumnVector.cs" />
     <Compile Include="Matrices\ComplexEigensystem.cs" />
     <Compile Include="Matrices\ComplexVector.cs" />
-    <Compile Include="Matrices\Interfaces.cs" />
     <Compile Include="Matrices\QRDecomposition.cs" />
     <Compile Include="Matrices\RealEigensystem.cs" />
     <Compile Include="Matrices\RectangularMatrix.cs" />

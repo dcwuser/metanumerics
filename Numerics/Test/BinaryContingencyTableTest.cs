@@ -43,13 +43,6 @@ namespace Test {
         }
 
         [TestMethod]
-        public void BCT () {
-
-            BinaryContingencyTable B = new BinaryContingencyTable();
-
-        }
-
-        [TestMethod]
         public void BinaryContingencyNullTest () {
 
             BinaryContingencyTable e0 = CreateExperiment(0.25, 0.33, 0.33, 200);

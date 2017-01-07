@@ -181,5 +181,20 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void VectorAsMatrix () {
+
+            RowVector r = new RowVector(1.0, 2.0, 3.0);
+            Assert.IsTrue(r[0, 1] == r[1]);
+            r[0, 1] = 0.0;
+            Assert.IsTrue(r[1] == 0.0);
+
+            ColumnVector c = r.Transpose();
+            Assert.IsTrue(c[1, 0] == 0.0);
+            c[1, 0] = 2.0;
+            Assert.IsTrue(c[1] == 2.0);
+
+        }
+
     }
 }

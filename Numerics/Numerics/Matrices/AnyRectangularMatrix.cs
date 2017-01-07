@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Text;
+using System.Diagnostics;
+
 
 namespace Meta.Numerics.Matrices {
 
@@ -95,7 +94,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="c">The (zero-based) column index.</param>
         /// <returns>An independent copy of the specified column.</returns>
         public virtual ColumnVector Column (int c) {
-            if ((c < 0) || (c >= ColumnCount)) throw new ArgumentOutOfRangeException("c");
+            if ((c < 0) || (c >= ColumnCount)) throw new ArgumentOutOfRangeException(nameof(c));
             ColumnVector v = new ColumnVector(RowCount);
             for (int r = 0; r < RowCount; r++) {
                 v[r] = this[r, c];
@@ -109,7 +108,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="r">The (zero-based) row index.</param>
         /// <returns>An independent copy of the specified row.</returns>
         public virtual RowVector Row (int r) {
-            if ((r < 0) || (r >= RowCount)) throw new ArgumentOutOfRangeException("r");
+            if ((r < 0) || (r >= RowCount)) throw new ArgumentOutOfRangeException(nameof(r));
             RowVector v = new RowVector(ColumnCount);
             for (int c = 0; c < ColumnCount; c++) {
                 v[c] = this[r, c];
@@ -127,8 +126,8 @@ namespace Meta.Numerics.Matrices {
         /// <para>Matrix addition is an O(N<sup>2</sup>) process.</para>
         /// </remarks>
         public static RectangularMatrix operator + (AnyRectangularMatrix A, AnyRectangularMatrix B) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.RowCount != B.RowCount) throw new DimensionMismatchException();
             if (A.ColumnCount != B.ColumnCount) throw new DimensionMismatchException();
             RectangularMatrix M = new RectangularMatrix(A.RowCount, A.ColumnCount);
@@ -150,8 +149,8 @@ namespace Meta.Numerics.Matrices {
         /// <para>Matrix subtraction is an O(N<sup>2</sup>) process.</para>
         /// </remarks>
         public static RectangularMatrix operator - (AnyRectangularMatrix A, AnyRectangularMatrix B) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.RowCount != B.RowCount) throw new DimensionMismatchException();
             if (A.ColumnCount != B.ColumnCount) throw new DimensionMismatchException();
             RectangularMatrix M = new RectangularMatrix(A.RowCount, A.ColumnCount);
@@ -175,8 +174,8 @@ namespace Meta.Numerics.Matrices {
         /// <para>Matrix multiplication is an O(N<sup>3</sup>) process.</para>
         /// </remarks>
         public static RectangularMatrix operator * (AnyRectangularMatrix A, AnyRectangularMatrix B) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.ColumnCount != B.RowCount) throw new DimensionMismatchException();
             RectangularMatrix M = new RectangularMatrix(A.RowCount, B.ColumnCount);
             for (int i = 0; i < A.RowCount; i++) {
@@ -256,7 +255,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The matrix.</param>
         /// <returns>The product matrix.</returns>
         public static RectangularMatrix operator * (double alpha, AnyRectangularMatrix A) {
-            if (A == null) throw new ArgumentNullException("A");
+            if (A == null) throw new ArgumentNullException(nameof(alpha));
             RectangularMatrix B = new RectangularMatrix(A.RowCount, A.ColumnCount);
             for (int i = 0; i < A.RowCount; i++) {
                 for (int j = 0; j < A.ColumnCount; j++) {
@@ -273,8 +272,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="v">The column vector.</param>
         /// <returns>The product column vector.</returns>
         public static ColumnVector operator * (AnyRectangularMatrix A, ColumnVector v) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (v == null) throw new ArgumentNullException("v");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (v == null) throw new ArgumentNullException(nameof(v));
             if (A.ColumnCount != v.Dimension) throw new DimensionMismatchException();
             ColumnVector Av = new ColumnVector(A.RowCount);
 
@@ -291,6 +290,8 @@ namespace Meta.Numerics.Matrices {
         // do not re-implement for concrete implementations, because people shouldn't be doing matrix equality comparisons anyway
 
         private static bool InternalEquals (AnyRectangularMatrix A, AnyRectangularMatrix B) {
+            Debug.Assert(!Object.ReferenceEquals(A, null));
+            Debug.Assert(!Object.ReferenceEquals(B, null));
             if (A.RowCount != B.RowCount) return (false);
             if (A.ColumnCount != B.ColumnCount) return (false);
             for (int r = 0; r < A.RowCount; r++) {

@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 
-using Meta.Numerics;
 
 namespace Meta.Numerics.Matrices {
 
@@ -14,7 +12,9 @@ namespace Meta.Numerics.Matrices {
 
         private readonly int dimension;
         private readonly double[] store;
-        private readonly int offset, rowStride, colStride;
+        private readonly int offset;
+        private readonly int rowStride;
+        private readonly int colStride;
 
         /// <summary>
         /// Initializes a new square matrix.
@@ -22,9 +22,9 @@ namespace Meta.Numerics.Matrices {
         /// <param name="dimension">The dimension of the matrix, which must be positive.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="dimension"/> &lt; 1.</exception>
         public SquareMatrix (int dimension) {
-            if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
+            if (dimension < 1) throw new ArgumentOutOfRangeException(nameof(dimension));
             this.dimension = dimension;
-            this.store = MatrixAlgorithms.AllocateStorage(dimension, dimension);
+            this.store = MatrixAlgorithms.AllocateStorage(dimension, dimension, ref offset, ref rowStride, ref colStride);
         }
 
         /// <summary>
@@ -34,10 +34,10 @@ namespace Meta.Numerics.Matrices {
         /// <exception cref="ArgumentNullException"><paramref name="entries"/> is null.</exception>
         /// <exception cref="DimensionMismatchException">The first and second dimensions of <paramref name="entries"/> are not equal.</exception>
         public SquareMatrix (double[,] entries) {
-            if (entries == null) throw new ArgumentNullException("entries");
+            if (entries == null) throw new ArgumentNullException(nameof(entries));
             if (entries.GetLength(0) != entries.GetLength(1)) throw new DimensionMismatchException();
             this.dimension = entries.GetLength(0);
-            this.store = MatrixAlgorithms.AllocateStorage(dimension, dimension);
+            this.store = MatrixAlgorithms.AllocateStorage(dimension, dimension, ref offset, ref rowStride, ref colStride);
             for (int r = 0; r < dimension; r++) {
                 for (int c = 0; c < dimension; c++) {
                     this[r, c] = entries[r, c];
@@ -45,11 +45,17 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
-        internal SquareMatrix (double[] storage, int dimension, bool isReadOnly) {
+        internal SquareMatrix (double[] storage, int offset, int rowStride, int colStride, int dimension, bool isReadOnly) : base(isReadOnly) {
+            Debug.Assert(storage != null);
+            Debug.Assert(dimension > 0);
             this.store = storage;
             this.dimension = dimension;
-            this.IsReadOnly = isReadOnly;
+            this.offset = offset;
+            this.rowStride = rowStride;
+            this.colStride = colStride;
         }
+
+        internal SquareMatrix (double[] storage, int dimension, bool isReadOnly) : this(storage, 0, 1, dimension, dimension, isReadOnly) {  }
 
         internal SquareMatrix (double[] storage, int dimension) : this(storage, dimension, false) { }
 
@@ -72,43 +78,44 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The value of the specified matrix entry M<sub>r c</sub>.</returns>
         public override double this[int r, int c] {
             get {
-                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
-                return (MatrixAlgorithms.GetEntry(store, dimension, dimension, r, c));
+                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
+                return (store[MatrixAlgorithms.GetIndex(offset, rowStride, colStride, r, c)]);
             }
             set {
-                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
+                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
                 if (IsReadOnly) throw new InvalidOperationException();
-                MatrixAlgorithms.SetEntry(store, dimension, dimension, r, c, value);
+                store[MatrixAlgorithms.GetIndex(offset, rowStride, colStride, r, c)] = value;
             }
         }
 
         /// <inheritdoc />
         public override double OneNorm () {
-            return (MatrixAlgorithms.OneNorm(store, 0, 1, dimension, dimension, dimension));
+            return (MatrixAlgorithms.OneNorm(store, offset, rowStride, colStride, dimension, dimension));
         }
 
         /// <inheritdoc />
         public override double InfinityNorm () {
-            return (MatrixAlgorithms.InfinityNorm(store, 0, 1, dimension, dimension, dimension));
+            return (MatrixAlgorithms.InfinityNorm(store, offset, rowStride, colStride, dimension, dimension));
         }
 
         /// <summary>
         /// Returns a vector representing a given row of the matrix.
         /// </summary>
-        /// <param name="r">The (zero-based) row number to return.</param>
-        /// <returns>An independent copy of the specified row.</returns>
-        /// <remarks>The returned vector is not linked to the matrix. If an entry in the matrix is updated after this method
-        /// is called, the returned object will continue to represent a row of the original, not the updated, matrix. Similiarly,
-        /// updates to the elements of the returned vector will not update the original matrix.</remarks>
+        /// <param name="r">The (zero-based) row index to return.</param>
+        /// <returns>A vector containing the entries of the specified row.</returns>
+        /// <remarks>
+        /// <para>The returned vector is independent of the matrix.
+        /// If an entry of the returned vector is updated, the corresponding entry of the original matrix will not be updated
+        /// as well, Similiarly, if an entry in the matrix is updated after this method is called, the corresponding
+        /// entry of the vector will not change.</para>
+        /// </remarks>
         public override RowVector Row (int r) {
-            if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
-            RowVector row = new RowVector(dimension);
-            for (int c = 0; c < dimension; c++) {
-                row[c] = this[r, c];
-            }
-            return (row);
+            if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+            double[] rStore = new double[dimension];
+            Blas1.dCopy(store, offset + rowStride * r, colStride, rStore, 0, 1, dimension);
+            return (new RowVector(rStore, dimension));
         }
 
         /// <summary>
@@ -116,16 +123,17 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="c">The (zero-based) column number to return.</param>
         /// <returns>An independent copy of the specificed column.</returns>
-        /// <remarks>The returned vector is not linked to the matrix. If an entry in the matrix is updated after this method
-        /// is called, the returned object will continue to represent a row of the original, not the updated, matrix. Similiarly,
-        /// updates to the elements of the returned vector will not update the original matrix.</remarks>
+        /// <remarks>
+        /// <para>The returned vector is independent of the matrix.
+        /// If an entry of the returned vector is updated, the corresponding entry of the original matrix will not be updated
+        /// as well, Similiarly, if an entry in the matrix is updated after this method is called, the corresponding
+        /// entry of the vector will not change.</para>
+        /// </remarks>
         public override ColumnVector Column (int c) {
-            if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
-            ColumnVector column = new ColumnVector(dimension);
-            for (int r = 0; r < dimension; r++) {
-                column[r] = this[r, c];
-            }
-            return (column);
+            if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
+            double[] cStore = new double[dimension];
+            Blas1.dCopy(store, offset + colStride * c, rowStride, cStore, 0, 1, dimension);
+            return (new ColumnVector(cStore, dimension));
         }
 
         /// <summary>
@@ -133,23 +141,21 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>An independent copy of the matrix.</returns>
         public SquareMatrix Copy () {
-            double[] cStore = MatrixAlgorithms.Copy(store, dimension, dimension);
-            return (new SquareMatrix(cStore, dimension));
+            double[] copyStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, dimension, dimension);
+            return (new SquareMatrix(copyStore, dimension));
         }
-
-        /*
-        IMatrix IMatrix.Clone () {
-            return (Clone());
-        }
-        */
 
         /// <summary>
         /// Creates a transpose of the matrix.
         /// </summary>
         /// <returns>The matrix transpose M<sup>T</sup>.</returns>
         public SquareMatrix Transpose () {
-            double[] tStore = MatrixAlgorithms.Transpose(store, dimension, dimension);
-            return (new SquareMatrix(tStore, dimension));
+            // To transpose, just copy with
+            double[] transpose = MatrixAlgorithms.Copy(store, offset, colStride, rowStride, dimension, dimension);
+            return (new SquareMatrix(transpose, dimension));
+            //return (new SquareMatrix(store, 0, colStride, rowStride, dimension, false));
+            //double[] tStore = MatrixAlgorithms.Transpose(store, dimension, dimension);
+            //return (new SquareMatrix(tStore, dimension));
         }
 
         /// <summary>
@@ -163,7 +169,7 @@ namespace Meta.Numerics.Matrices {
         /// </remarks>
         /// <exception cref="DivideByZeroException">The matrix is singular.</exception>
         public SquareMatrix Inverse () {
-            double[] iStore = MatrixAlgorithms.Copy(store, dimension, dimension);
+            double[] iStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, dimension, dimension);
             SquareMatrixAlgorithms.GaussJordanInvert(iStore, dimension);
             return(new SquareMatrix(iStore, dimension));
         }
@@ -191,22 +197,21 @@ namespace Meta.Numerics.Matrices {
         /// </remarks>
         public LUDecomposition LUDecomposition () {
 
-            // copy the matrix content
-            double[] luStore = MatrixAlgorithms.Copy(store, dimension, dimension);
+            // Copy the matrix content
+            double[] luStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, dimension, dimension);
 
-            // prepare an initial permutation and parity
+            // Prepare an initial permutation and parity
             int[] permutation = new int[dimension];
             for (int i = 0; i < permutation.Length; i++) {
                 permutation[i] = i;
             }
             int parity = 1;
 
-            // do the LU decomposition
+            // Do the LU decomposition
             SquareMatrixAlgorithms.LUDecompose(luStore, permutation, ref parity, dimension);
 
-            // package it up and return it
+            // Package it up and return it
             LUDecomposition LU = new LUDecomposition(luStore, permutation, parity, dimension);
-
             return (LU);
 
         }
@@ -217,7 +222,7 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The eigenvalues of the matrix.</returns>
         /// <seealso cref="Eigensystem"/>
         public Complex[] Eigenvalues () {
-            double[] aStore = MatrixAlgorithms.Copy(store, dimension, dimension);
+            double[] aStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, dimension, dimension);
             SquareMatrixAlgorithms.IsolateCheapEigenvalues(aStore, null, dimension);
             SquareMatrixAlgorithms.ReduceToHessenberg(aStore, null, dimension);
             Complex[] eigenvalues = SquareMatrixAlgorithms.ReduceToRealSchurForm(aStore, null, dimension);
@@ -253,7 +258,8 @@ namespace Meta.Numerics.Matrices {
         /// </remarks>
         public ComplexEigensystem Eigensystem () {
 
-            double[] aStore = MatrixAlgorithms.Copy(store, dimension, dimension);
+            //double[] aStore = MatrixAlgorithms.Copy(store, dimension, dimension);
+            double[] aStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, dimension, dimension);
 
             int[] perm = new int[dimension];
             for (int i = 0; i < perm.Length; i++) perm[i] = i;
@@ -267,8 +273,6 @@ namespace Meta.Numerics.Matrices {
 
             // Reduce the Hessenberg matrix to real Schur form
             SquareMatrixAlgorithms.ReduceToRealSchurForm(aStore, qStore, dimension);
-
-            //MatrixAlgorithms.PrintMatrix(aStore, dimension, dimension);
 
             //SquareMatrix A = new SquareMatrix(aStore, dimension);
             SquareMatrix Q = new SquareMatrix(qStore, dimension);
@@ -309,7 +313,7 @@ namespace Meta.Numerics.Matrices {
         /// to all matrices, including non-square and singular square matrices.</para>
         /// </remarks>
         public SingularValueDecomposition SingularValueDecomposition () {
-            double[] copy = MatrixAlgorithms.Copy(store, dimension, dimension);
+            double[] copy = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, dimension, dimension);
             RectangularMatrix r = new RectangularMatrix(copy, dimension, dimension);
             return (r.SingularValueDecomposition());
         }
@@ -365,7 +369,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>A QR decomposition of the matrix.</returns>
         public SquareQRDecomposition QRDecomposition () {
-            double[] rStore = MatrixAlgorithms.Copy(store, dimension, dimension);
+            double[] rStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, dimension, dimension);
             double[] qtStore = SquareMatrixAlgorithms.CreateUnitMatrix(dimension);
             MatrixAlgorithms.QRDecompose(rStore, qtStore, dimension, dimension);
             return (new SquareQRDecomposition(qtStore, rStore, dimension));
@@ -377,8 +381,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="n">The power to which to raise the matrix, which must be positive.</param>
         /// <returns>The matrix A<sup>n</sup>.</returns>
         public SquareMatrix Power (int n) {
-            if (n < 1) {
-                throw new ArgumentOutOfRangeException("n");
+            if (n < 0) {
+                throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n == 0) {
                 return (new SquareMatrix(SquareMatrixAlgorithms.CreateUnitMatrix(dimension), dimension));
             } else if (n == 1) {
@@ -400,10 +404,14 @@ namespace Meta.Numerics.Matrices {
         /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is null.</exception>
         /// <exception cref="DimensionMismatchException">The dimension of <paramref name="A"/> is not the same as the dimension of <paramref name="B"/>.</exception>
         public static SquareMatrix operator + (SquareMatrix A, SquareMatrix B) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.dimension != B.dimension) throw new DimensionMismatchException();
-            double[] abStore = MatrixAlgorithms.Add(A.store, B.store, A.dimension, A.dimension);
+            double[] abStore = MatrixAlgorithms.Add(
+                A.store, A.offset, A.rowStride, A.colStride,
+                B.store, B.offset, B.rowStride, B.colStride,
+                A.dimension, A.dimension
+            );
             return (new SquareMatrix(abStore, A.dimension));
         }
 
@@ -419,10 +427,14 @@ namespace Meta.Numerics.Matrices {
         /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is null.</exception>
         /// <exception cref="DimensionMismatchException">The dimension of <paramref name="A"/> is not the same as the dimension of <paramref name="B"/>.</exception>
         public static SquareMatrix operator - (SquareMatrix A, SquareMatrix B) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.dimension != B.dimension) throw new DimensionMismatchException();
-            double[] abStore = MatrixAlgorithms.Subtract(A.store, B.store, A.dimension, A.dimension);
+            double[] abStore = MatrixAlgorithms.Subtract(
+                A.store, A.offset, A.rowStride, A.colStride,
+                B.store, B.offset, B.rowStride, B.colStride,
+                A.dimension, A.dimension
+            );
             return (new SquareMatrix(abStore, A.dimension));
         }
 
@@ -440,10 +452,14 @@ namespace Meta.Numerics.Matrices {
         /// <exception cref="DimensionMismatchException">The dimension of <paramref name="A"/> is not the same as the dimension of <paramref name="B"/>.</exception>
         public static SquareMatrix operator * (SquareMatrix A, SquareMatrix B) {
             // this is faster than the base operator, because it knows about the underlying structure
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.dimension != B.dimension) throw new DimensionMismatchException();
-            double[] abStore = MatrixAlgorithms.Multiply(A.store, A.dimension, A.dimension, B.store, B.dimension, B.dimension);
+            double[] abStore = MatrixAlgorithms.Multiply(
+                A.store, A.offset, A.rowStride, A.colStride,
+                B.store, B.offset, B.rowStride, B.colStride,
+                A.dimension, A.dimension, A.dimension
+            );
             return (new SquareMatrix(abStore, A.dimension));
         }
 
@@ -458,11 +474,11 @@ namespace Meta.Numerics.Matrices {
         /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="v"/> is null.</exception>
         /// <exception cref="DimensionMismatchException">The dimension of <paramref name="A"/> is not the same as the dimension of <paramref name="v"/>.</exception>
         public static ColumnVector operator * (SquareMatrix A, ColumnVector v) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (v == null) throw new ArgumentNullException("v");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (v == null) throw new ArgumentNullException(nameof(v));
             if (A.dimension != v.dimension) throw new DimensionMismatchException();
             double[] avStore = new double[A.dimension];
-            Blas2.dGemv(A.store, 0, 1, A.dimension, v.store, v.offset, v.stride, avStore, 0, 1, A.dimension, A.dimension);
+            Blas2.dGemv(A.store, A.offset, A.rowStride, A.colStride, v.store, v.offset, v.stride, avStore, 0, 1, A.dimension, A.dimension);
             return (new ColumnVector(avStore, A.dimension));
         }
 
@@ -475,8 +491,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The matrix.</param>
         /// <returns>The product aA.</returns>
         public static SquareMatrix operator * (double alpha, SquareMatrix A) {
-            if (A == null) throw new ArgumentNullException("A");
-            double[] store = MatrixAlgorithms.Multiply(alpha, A.store, A.dimension, A.dimension);
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            double[] store = MatrixAlgorithms.Multiply(alpha, A.store, A.offset, A.rowStride, A.colStride, A.dimension, A.dimension);
             return (new SquareMatrix(store, A.dimension));
         }
 
@@ -486,9 +502,9 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The matrix.</param>
         /// <param name="alpha">The constant.</param>
         /// <returns>The quotient A/a.</returns>
-        public static SquareMatrix operator * (SquareMatrix A, double alpha) {
-            if (A == null) throw new ArgumentNullException("A");
-            double[] store = MatrixAlgorithms.Multiply(1.0 / alpha, A.store, A.dimension, A.dimension);
+        public static SquareMatrix operator / (SquareMatrix A, double alpha) {
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            double[] store = MatrixAlgorithms.Multiply(1.0 / alpha, A.store, A.offset, A.rowStride, A.colStride, A.dimension, A.dimension);
             return (new SquareMatrix(store, A.dimension));
         }
 
@@ -499,8 +515,8 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The matrix -A.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="A"/> is null.</exception>
         public static SquareMatrix operator - (SquareMatrix A) {
-            if (A == null) throw new ArgumentNullException("A");
-            double[] store = MatrixAlgorithms.Multiply(-1.0, A.store, A.dimension, A.dimension);
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            double[] store = MatrixAlgorithms.Multiply(-1.0, A.store, A.offset, A.rowStride, A.colStride, A.dimension, A.dimension);
             return (new SquareMatrix(store, A.dimension));
         }
 

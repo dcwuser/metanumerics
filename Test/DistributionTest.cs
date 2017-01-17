@@ -138,7 +138,7 @@ namespace Test {
             foreach (Distribution distribution in distributions) {
                 // some of these x's will be outside range,
                 // but that should just produce zero probability values
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5, 3)) {
                     DistributionProbabilityTestHelper(distribution, x);
                     DistributionProbabilityTestHelper(distribution, -x);
                 }

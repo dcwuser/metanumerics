@@ -17,7 +17,7 @@ namespace Meta.Numerics {
         /// <value>The unit imaginary number.</value>
         public static Complex I {
             get {
-                return (new Complex(0.0, 1.0));
+                return (Complex.I);
             }
         }
 
@@ -99,72 +99,55 @@ namespace Meta.Numerics {
         /// <para>You can see the branch cut extending along the negative real axis from the zero at the origin.</para>
         /// </remarks>
         public static Complex Sqrt (Complex z) {
+
             if (z.Im == 0.0) {
+
                 // Handle the degenerate case quickly.
                 // This also eliminates need to worry about Im(z) = 0 in subsequent formulas.
+
                 if (z.Re < 0.0) {
                     return (new Complex(0.0, Math.Sqrt(-z.Re)));
                 } else {
                     return (new Complex(Math.Sqrt(z.Re), 0.0));
                 }
+
             } else {
 
-                // To find a fast formula for complex square root, note x + i y = \sqrt{a + i b} implies
-                // x^2 + 2 i x y - y^2 = a + i b, so x^2 - y^2 = a and 2 x y = b. Cross-substitute and
-                // use quadratic formula to solve for x^2 and y^2 to obtain
+                // One way to compute Sqrt(z) is to just reproduce Pow(z, 0.5), which coverts to polar coordinates
+                // (sqrt + atan), halves the phase (division), and reconverts to cartesian coordinates (cos + sin).
+                // Not only is this more expensive than necessary, it also fails to preserve certain expected
+                // symmetries, such as that the square root of a pure negative is a pure imaginary, and that the
+                // square root of a pure imaginary has exactly equal real and imaginary parts.
+
+                // To find a fast and symmetry-respecting formula for complex square root,
+                // note x + i y = \sqrt{a + i b} implies x^2 + 2 i x y - y^2 = a + i b,
+                // so x^2 - y^2 = a and 2 x y = b. Cross-substitute and use the quadratic formula to solve for
+                // x ^2 and y^2 to obtain
                 //  x = \sqrt{\frac{\sqrt{a^2 + b^2} + a}{2}}  y = \pm \sqrt{\frac{\sqrt{a^2 + b^2} - a}{2}}
-                // This gives complex square root in three square roots and a few flops.
 
-                // Only problem is b << a case, where significant cancelation occurs in one of the formula.
-                // (Which one depends on the sign of a.) Handle that case by series expansion.
+                // The problem with these expressions is that, depending on sgn(a), either x or y suffers from
+                // cancelationwhen |b| << |a|. We can get aroud this by noting that our formulas imply
+                // x ^2 y^2 = b^2 / 4 so |x| |y| = |b| / 2. So after computing the one that doesn't suffer
+                // from cancelation, we can compute the other with just division. This is basically just
+                // the right way to evaluate the quadratic formula without cancelation.
 
-                double p, q;
-                if (Math.Abs(z.Im) < 0.25 * Math.Abs(z.Re)) {
-                    double x2 = MoreMath.Sqr(z.Im / z.Re);
-                    double t = x2 / 2.0;
-                    double s = t;
-                    // Find s = \sqrt{1 + x^2} - 1 using binomial expansion
-                    for (int k = 2; true; k++ ) {
-                        if (k > Global.SeriesMax) throw new NonconvergenceException();
-                        double s_old = s;
-                        t *= (1.5 / k - 1.0) * x2;
-                        s += t;
-                        if (s == s_old) break;
-                    }
-                    if (z.Re < 0.0) {
-                        p = -z.Re * s;
-                        q = -2.0 * z.Re + p;
-                    } else {
-                        q = z.Re * s;
-                        p = 2.0 * z.Re + q;
-                    }
+                // This reduces our total cost to two sqrt and a few flops, and it respects the desired
+                // symmetries.
+
+                // The signs are a matter of choice of branch cut, which is traditionally x > 0 and sgn(y) = sgn(b).
+
+                double x, y;
+                if (z.Re > 0.0) {
+                    x = Math.Sqrt((MoreMath.Hypot(z.Re, z.Im) + z.Re) / 2.0);
+                    y = z.Im / x / 2.0;
                 } else {
-                    double m = ComplexMath.Abs(z);
-                    p = m + z.Re;
-                    q = m - z.Re;
+                    y = Math.Sqrt((MoreMath.Hypot(z.Re, z.Im) - z.Re) / 2.0) * Math.Sign(z.Im);
+                    x = z.Im / y / 2.0;
                 }
-
-                double x = Math.Sqrt(p / 2.0);
-                double y = Math.Sqrt(q / 2.0);
-                if (z.Im < 0.0) y = -y;
                 return (new Complex(x, y));
 
-                /*
-                if (Math.Abs(z.Im) < 0.125 * Math.Abs(z.Re)) {
-                    // We should try to improve this by using a series instead of the full power algorithm.
-                    return (Pow(z, 0.5));
-                } else {
-                    // This is a pretty fast formula for a complex square root, basically just
-                    // three square roots and a few flops.
-                    // But if z.Im << z.Re, then z.Re ~ m and it suffers from cancelations.
-                    double m = Abs(z);
-                    double x = Math.Sqrt((m + z.Re) / 2.0);
-                    double y = Math.Sqrt((m - z.Re) / 2.0);
-                    if (z.Im < 0.0) y = -y;
-                    return (new Complex(x, y));
-                }
-                */
             }
+
         }
 
         /// <summary>
@@ -173,6 +156,8 @@ namespace Meta.Numerics {
         /// <param name="z">The argument.</param>
         /// <returns>The value of sin(z).</returns>
         public static Complex Sin (Complex z) {
+            // Sine of a complex mixes sin, cos, sinh, and cosh. By computing sinh and cosh ourselves
+            // from exp, we prevent having to evaluate exp twice inside seperate calls to sinh and cosh.
             double p = Math.Exp(z.Im);
             double q = 1 / p;
             double sinh = (p - q) / 2.0;

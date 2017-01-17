@@ -170,7 +170,9 @@
     <Compile Include="Statistics\Distributions\GumbelDistribution.cs" />
     <Compile Include="Statistics\Distributions\IDeviateGenerator.cs" />
     <Compile Include="Statistics\Distributions\KendallDistribution.cs" />
+    <Compile Include="Statistics\Distributions\KolmogorovAsymptoticDistribution.cs" />
     <Compile Include="Statistics\Distributions\KolmogorovDistribution.cs" />
+    <Compile Include="Statistics\Distributions\KolmogorovExactDistribution.cs" />
     <Compile Include="Statistics\Distributions\KolmogorovTwoSampleExactDistribution.cs" />
     <Compile Include="Statistics\Distributions\KuiperDistribution.cs" />
     <Compile Include="Statistics\Distributions\LogisticDistribution.cs" />

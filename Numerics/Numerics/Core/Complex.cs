@@ -209,21 +209,61 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>The quotient of the two complex numbers.</returns>
 		public static Complex operator / (Complex z1, Complex z2) {
-			if (Math.Abs(z2.Re) > Math.Abs(z2.Im)) {
-				double x = z2.Im/z2.Re;
-				double w = z2.Re + x*z2.Im;
-				return( new Complex((z1.Re + x*z1.Im)/w, (z1.Im-x*z1.Re)/w) );
-			} else {
-				double x = z2.Re/z2.Im;
-				double w = x*z2.Re + z2.Im;
-				return( new Complex((x*z1.Re+z1.Im)/w, (x*z1.Im-z1.Re)/w) );
-			}
+            return (Divide(z1, z2));
 		}
 
-		// mixed double-complex binary operations
-		
-		// these are not strictly necessary, since we have defined an implicit double->Complex casr
-        // but they are presumably faster than doing a cast and then an operation with zero im parts
+        private static Complex Divide (Complex z1, Complex z2) {
+
+            // In math class we are taught
+            //   \frac{a + i b}{c + i d} = \frac{(a + i b)(c - i d)}{(c + i d)(c - i d)} =
+            //   \frac{(a c + b d) + i (b c  - a d)}{c^2 + d^2} 
+            // This is a terrible formula to use numerically, because c^2 + d^2 can easily overflow.
+
+            // Smith's 1962 aglorithm factors out the larger of c or d, e.g. if c is larger
+            //   \frac{c (a + b d / c) + i c (b - a d / c)}{c (c + d d / c)} =
+            //   \frac{(a + b r) + i (b - a r)}{c + d r}
+            // where r = d / c. This is where most implementations of complex division stop.
+
+            // In "A Robust Complex Division in Scilab" (2012) (https://arxiv.org/pdf/1210.4539v2.pdf),
+            // Baudin & Smith note this algorithm also has problems when r underflows, which
+            // can happen easily since it has been chosen to be small, and suggest in that
+            // case changing the order of operations in the numerator terms.
+            //   \frac{(a + d (b / c)) + i (b - d (a / c))}{c}
+            // They give several examples where this improves the result and find that it
+            // reduces by rate of problematic results over their space of test cases by
+            // nearly two orders of magnitude over Smith's original method. Aside from a single
+            // extra test, its common path is no less performant than Smith's original method.
+
+            double re, im;
+            if (Math.Abs(z2.im) <= Math.Abs(z2.re)) {
+                Divide_Internal(z1.re, z1.im, z2.re, z2.im, out re, out im);
+            } else {
+                // The d > c version of the formula is obtained by a <-> b, c <-> d, f <-> -f.
+                Divide_Internal(z1.im, z1.re, z2.im, z2.re, out re, out im);
+                im = -im;
+            }
+
+            return (new Complex(re, im));
+             
+        }
+
+        private static void Divide_Internal (double a, double b, double c, double d, out double e, out double f) {
+            double r = d / c;
+            double t = 1.0 / (c + d * r);
+            const double normalLimit = 1.0 / Double.MaxValue;
+            if (Math.Abs(r) > normalLimit) {
+                e = (a + b * r) * t;
+                f = (b - a * r) * t;
+            } else {
+                e = (a + d * (b / c)) * t;
+                f = (b - d * (a / c)) * t;
+            }
+        }
+
+        // Mixed double-complex binary operations
+
+        // These are not strictly necessary, since we have defined an implicit double -> Complex cast,
+        // but they are presumably faster than doing a cast and then an operation with zero im parts.
 
         /*
 		public static Complex operator+ (Complex z, double a) {
@@ -243,13 +283,16 @@ namespace Meta.Numerics {
 		}
         */
 
+        // Mixed complex/double arithmetic
+
         /// <summary>
         /// Multiplies a complex number by a real number.
         /// </summary>
         /// <param name="a">The real number.</param>
         /// <param name="z">The complex number.</param>
         /// <returns>The product az.</returns>
-		public static Complex operator * (double a, Complex z) {
+        public static Complex operator * (double a, Complex z) {
+            // This is 2 flops instead of a cast plus 6 flops.
 			return( new Complex(a * z.re, a * z.im) );
 		}
 
@@ -275,11 +318,18 @@ namespace Meta.Numerics {
 				return( new Complex(a*x/w, -a/w) );
 			}
 		}
-
-		public static Complex operator/ (Complex z, double a) {
-			return( new Complex(z.Re/a, z.Im/a) );
-		}
         */
+
+        /// <summary>
+        /// Divides a complex number by a real number.
+        /// </summary>
+        /// <param name="z">The complex dividend.</param>
+        /// <param name="a">The real divisor.</param>
+        /// <returns>The quotient z / a.</returns>
+		public static Complex operator / (Complex z, double a) {
+            // This is 2 flops instead of a cast plus 9 (!) flops.
+			return( new Complex(z.Re / a, z.Im / a) );
+		}
 
         /// <summary>
         /// Gets the complex value of zero.
@@ -295,6 +345,21 @@ namespace Meta.Numerics {
         /// Gets the square root of negative one.
         /// </summary>
         public static readonly Complex I = new Complex(0.0, 1.0);
+
+        /// <summary>
+        /// Determines if the given complex number is not-a-number.
+        /// </summary>
+        /// <param name="z">The complex number.</param>
+        /// <returns><see langword="true"/> if the argument is not-a-number,
+        /// otherwise <see langword="false"/>.</returns>
+        /// <remarks>
+        /// <para>The <see cref="Double.NaN"/> value is used to signal the result of a failed or impossible calculation,
+        /// such as dividing zero by zero. A <see cref="Complex"/> value is considered to be not-a-number if
+        /// either its real or imaginary part is not-a-number. This method tests for such an occurance.</para>
+        /// </remarks>
+        public static bool IsNaN (Complex z) {
+            return (Double.IsNaN(z.Re) || Double.IsNaN(z.Im));
+        }
 
 	}
 

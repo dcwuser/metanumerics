@@ -149,7 +149,6 @@ namespace Test {
             Console.WriteLine("{0} {1}", distribution.GetType().Name, x);
             double P = distribution.LeftProbability(x);
             double Q = distribution.RightProbability(x);
-            Console.WriteLine(" P={0} Q={1} P+Q={2}", P, Q, P + Q);
             Assert.IsTrue((0.0 <= P) && (P <= 1.0));
             Assert.IsTrue((0.0 <= Q) && (Q <= 1.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(P + Q, 1.0));
@@ -158,7 +157,6 @@ namespace Test {
             // DistributionMeanIntegralTest, DistributionVarianceIntegralTest, DistributionRawMomentIntegralTest,
             // and DistributionCentralMomentIntegralTest use it
             double p = distribution.ProbabilityDensity(x);
-            Console.WriteLine(" p={0}", p);
             Assert.IsTrue(p >= 0.0);
         }
 
@@ -206,7 +204,7 @@ namespace Test {
                     double z = x - distribution.Mean;
                     return (distribution.ProbabilityDensity(x) * z * z);
                 };
-                double C2 = FunctionMath.Integrate(f, distribution.Support, new EvaluationSettings() { EvaluationBudget = 4096, RelativePrecision = e, AbsolutePrecision = 0.0 }).Value;
+                double C2 = FunctionMath.Integrate(f, distribution.Support, new IntegrationSettings() { RelativePrecision = e, AbsolutePrecision = 0.0 }).Value;
                 Console.WriteLine("  {0} {1}", distribution.StandardDeviation, Math.Sqrt(C2));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(C2, distribution.Variance, e));
             }
@@ -253,7 +251,7 @@ namespace Test {
 
                     if (C == 0.0) continue;
 
-                    EvaluationSettings settings = new EvaluationSettings();
+                    IntegrationSettings settings = new IntegrationSettings();
                     if (C == 0.0) {
                         // if moment is zero, use absolute precision
                         settings.AbsolutePrecision = TestUtilities.TargetPrecision;
@@ -300,8 +298,7 @@ namespace Test {
             Random rng = new Random(4);
 
             // if integral is very small, we still want to get it very accurately
-            EvaluationSettings settings = new EvaluationSettings();
-            settings.AbsolutePrecision = 0.0;
+            IntegrationSettings settings = new IntegrationSettings() { AbsolutePrecision = 0.0 };
 
             foreach (Distribution distribution in distributions) {
 

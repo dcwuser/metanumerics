@@ -84,7 +84,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     // n = 6: <t> = 1290643/653184, <t^2> = 1594285/373248, <t^3> = 11686771/1161216 => C2 = 156623190071/426649337856, C3 = 24188301396000379/139340260549066752
     // n = 7: <t> = 7067335/3294172, <t^2> = 298688525/59295096, <t^3> = 2039651983/158120256, => C2 = 42440671868125/97664122490256, C3 = 8138432234802217189/35746935301330176448
 
-    public class KolmogorovExactDistribution : Distribution {
+    internal class KolmogorovExactDistribution : Distribution {
 
         public KolmogorovExactDistribution (int size) {
             if (size < 1) throw new ArgumentOutOfRangeException(nameof(size));
@@ -219,7 +219,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             SquareMatrix H = GetDurbinMatrix(k, h);
 
             SquareMatrix Hn = H.Power(n);
-            //SquareMatrix Hn = NewMatrixPower(H, n);
 
             double f = AdvancedIntegerMath.Factorial(n) / MoreMath.Pow(n, n);
             return (f * Hn[k - 1, k - 1]);

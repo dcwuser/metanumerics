@@ -31,10 +31,17 @@ namespace Meta.Numerics.Analysis {
 
         private static DifferentialEvolutionSettings GetDefaultSettings (EvaluationSettings settings, int d) {
 
+            if (settings == null) settings = new EvaluationSettings();
+
             DifferentialEvolutionSettings deSettings = new DifferentialEvolutionSettings();
             deSettings.Population = 8 * d + 4;
             deSettings.CrossoverProbability = 1.0 - 1.0 / 8.0 - 1.0 / d;
 
+            deSettings.RelativePrecision = (settings.RelativePrecision < 0.0) ? Math.Pow(10.0, -(2.0 + 4.0 / d)) : settings.RelativePrecision;
+            deSettings.AbsolutePrecision = (settings.AbsolutePrecision < 0.0) ? Math.Pow(10.0, -(4.0 + 8.0 / d)) : settings.AbsolutePrecision;
+            deSettings.EvaluationBudget = (settings.EvaluationBudget < 0) ? 128 * d * d * d * d : settings.EvaluationBudget;
+
+            /*
             if (settings == null) {
                 deSettings.RelativePrecision = Math.Pow(10.0, -(2.0 + 4.0 / d));
                 deSettings.AbsolutePrecision = MoreMath.Sqr(deSettings.RelativePrecision);
@@ -44,6 +51,7 @@ namespace Meta.Numerics.Analysis {
                 deSettings.AbsolutePrecision = settings.AbsolutePrecision;
                 deSettings.EvaluationBudget = settings.EvaluationBudget;
             }
+            */
 
             return (deSettings);
         }

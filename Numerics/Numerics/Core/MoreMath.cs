@@ -115,19 +115,28 @@ namespace Meta.Numerics {
         /// x<sup>2</sup> or y<sup>2</sup> would overflow.</para>
         /// </remarks>
         public static double Hypot (double x, double y) {
-            if ((x == 0.0) && (y == 0.0)) {
-                return (0.0);
+
+            double ax = Math.Abs(x);
+            double ay = Math.Abs(y);
+
+            double small, big;
+            if (ax < ay) {
+                small = ax;
+                big = ay;
             } else {
-                double ax = Math.Abs(x);
-                double ay = Math.Abs(y);
-                if (ax > ay) {
-                    double r = y / x;
-                    return (ax * Math.Sqrt(1.0 + r * r));
-                } else {
-                    double r = x / y;
-                    return (ay * Math.Sqrt(1.0 + r * r));
-                }
+                small = ay;
+                big = ax;
             }
+
+            if (small == 0.0) {
+                return (big);
+            } else if (Double.IsPositiveInfinity(big) && !Double.IsNaN(small)) {
+                return (Double.PositiveInfinity);
+            } else {
+                double ratio = small / big;
+                return (big * Math.Sqrt(1.0 + ratio * ratio));
+            }
+
         }
 
         /// <summary>
@@ -250,9 +259,12 @@ namespace Meta.Numerics {
                 } else {
                     return (y);
                 }
-            } else {
+            } else if (x < Double.PositiveInfinity) {
                 // If x is beyond the range of the built-in function eintirely, use our range-reduction algorithm
                 return (RangeReduction.Sin(x));
+            } else {
+                // If x is infinite or NaN, return NaN.
+                return (Double.NaN);
             }
         }
 
@@ -282,9 +294,11 @@ namespace Meta.Numerics {
                 } else {
                     return (y);
                 }
-            } else {
+            } else if (x < Double.PositiveInfinity) {
                 // If x is beyond the range of the built-in function eintirely, use our range-reduction algorithm
                 return (RangeReduction.Cos(x));
+            } else {
+                return (Double.NaN);
             }
         }
 

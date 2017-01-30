@@ -61,6 +61,7 @@
     <Compile Include="Analysis\Extremum.cs" />
     <Compile Include="Analysis\FunctionMath_Odes.cs" />
     <Compile Include="Analysis\FunctionMath_Roots.cs" />
+    <Compile Include="Analysis\IntegrationSettings.cs" />
     <Compile Include="Analysis\IntegrationResult.cs" />
     <Compile Include="Analysis\MultiExtremum.cs" />
     <Compile Include="Analysis\MultiFunctionMath.cs" />
@@ -82,7 +83,6 @@
     <Compile Include="Core\Complex.cs" />
     <Compile Include="Core\ComplexMath.cs" />
     <Compile Include="Core\Exceptions.cs" />
-    <Compile Include="Core\Functions.cs" />
     <Compile Include="Core\Global.cs" />
     <Compile Include="Core\Interval.cs" />
     <Compile Include="Core\MoreMath.cs" />

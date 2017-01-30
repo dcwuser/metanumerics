@@ -18,19 +18,13 @@ namespace Meta.Numerics.Analysis {
         /// <param name="start">The starting location for the search.</param>
         /// <returns>The local minimum.</returns>
         public static MultiExtremum FindLocalMinimum (Func<IList<double>, double> function, IList<double> start) {
-            if (function == null) throw new ArgumentNullException("function");
-            if (start == null) throw new ArgumentNullException("start");
-
-            EvaluationSettings settings = GetDefaultOptimizationSettings(start.Count);
-            return (FindLocalMinimum(function, start, settings));
+            return (FindLocalMinimum(function, start, new EvaluationSettings()));
         }
 
-        private static EvaluationSettings GetDefaultOptimizationSettings (int d) {
-            EvaluationSettings settings = new EvaluationSettings();
-            settings.RelativePrecision = Math.Pow(10.0, -(10.0 + 4.0 / d));
-            settings.AbsolutePrecision = settings.RelativePrecision;
-            settings.EvaluationBudget = 16 * (d + 1) * (d + 2) * (d + 3);
-            return (settings);
+        private static void SetDefaultOptimizationSettings (EvaluationSettings settings, int d) {
+            if (settings.RelativePrecision < 0.0) settings.RelativePrecision = Math.Pow(10.0, -(10.0 + 4.0 / d));
+            if (settings.AbsolutePrecision < 0.0) settings.AbsolutePrecision = Math.Pow(10.0, -(10.0 + 4.0 / d));
+            if (settings.EvaluationBudget < 0) settings.EvaluationBudget = 16 * (d + 1) * (d + 2) * (d + 3);
         }
 
         /// <summary>
@@ -53,7 +47,6 @@ namespace Meta.Numerics.Analysis {
             if (function == null) throw new ArgumentNullException("function");
             if (start == null) throw new ArgumentNullException("start");
             if (settings == null) throw new ArgumentNullException("settings");
-
             return (FindLocalExtremum(function, start, settings, false));
         }
 
@@ -64,9 +57,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="start">The starting location for the search.</param>
         /// <returns>The local maximum.</returns>
         public static MultiExtremum FindLocalMaximum (Func<IList<double>, double> function, IList<double> start) {
-            if (function == null) throw new ArgumentNullException("function");
-            if (start == null) throw new ArgumentNullException("start");
-            return (FindLocalMaximum(function, start, GetDefaultOptimizationSettings(start.Count)));
+            return (FindLocalMaximum(function, start, new EvaluationSettings()));
         }
 
         /// <summary>
@@ -99,7 +90,7 @@ namespace Meta.Numerics.Analysis {
             //double s = 0.2;
             Debug.WriteLine("s={0}", s);
 
-
+            SetDefaultOptimizationSettings(settings, start.Count);
 
             return (FindMinimum_ModelTrust(f, start, s, settings));
         }

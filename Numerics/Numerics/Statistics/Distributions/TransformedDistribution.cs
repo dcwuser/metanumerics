@@ -48,6 +48,10 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+        // <x> = \int dx \, x \frac{dP}{dx} = \int dx \, (a + b y) \frac{dP}{dx}
+        //     = a \int dx \frac{dP}{dx} + b \int dx y \frac{dP}{dx} \frac{dy}{dy}
+        //     = a + b \int dy y \frac{dP}{dy} = a + b <y> 
+
         public override double Mean {
             get {
                 return (TransformYtoX(baseDistribution.Mean));
@@ -71,8 +75,18 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        public override double MomentAboutMean (int n) {
-            return (baseDistribution.MomentAboutMean(n) * MoreMath.Pow(scale, n));
+        public override double Moment (int r) {
+            if (shift == 0.0) {
+                return (baseDistribution.Moment(r) * MoreMath.Pow(scale, r));
+            } else {
+                // If shift is non-zero, we need to do a binomial expansion inovling multiple y-moments.
+                // In that case, just do integral.
+                return(base.Moment(r));
+            }
+        }
+
+        public override double MomentAboutMean (int r) {
+            return (baseDistribution.MomentAboutMean(r) * MoreMath.Pow(scale, r));
         }
 
         public override double InverseLeftProbability (double P) {

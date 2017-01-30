@@ -119,7 +119,7 @@ namespace Meta.Numerics.Analysis {
         /// ODEs should be integrated using the
         /// <see cref="FunctionMath.IntegrateConservativeOde(Func{double, double, double}, double, double, double, double, OdeEvaluationSettings)"/>
         /// method. If your ODE's RHS depends only on x, the problem reduces to a simple integral, which can be solved more rapidly and
-        /// accurately using the <see cref="FunctionMath.Integrate(Func{double, double}, Interval, EvaluationSettings)"/> method.
+        /// accurately using the <see cref="FunctionMath.Integrate(Func{double, double}, Interval, IntegrationSettings)"/> method.
         /// Analytic techniques can also be used to reduce several other kinds of ODEs to simple integrals or lower-order ODEs.</para>
         /// </remarks>
         /// <seealso href="https://en.wikipedia.org/wiki/Ordinary_differential_equation"/>

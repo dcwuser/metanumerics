@@ -11,7 +11,7 @@ namespace Meta.Numerics.Analysis {
         /// <summary>
         /// Initializes a new instance of evaluation settings for coupled ODEs.
         /// </summary>
-        public MultiOdeEvaluationSettings () : base(null) { }
+        public MultiOdeEvaluationSettings () : base() { }
 
 
         /// /// <summary>

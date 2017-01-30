@@ -36,16 +36,34 @@ namespace Test {
     public class IntegrateTest {
         
         [TestMethod]
+        public void IntegrateSettings () {
+
+            // Make sure Integrate respects settings
+            IntegrationSettings settings = new IntegrationSettings();
+            settings.AbsolutePrecision = 1.0E-10;
+            settings.RelativePrecision = 0.0;
+
+            int count = 0;
+            settings.Listener = (IntegrationResult r) => {
+                count++;
+                Assert.IsTrue(r.EvaluationCount > 0);
+            };
+
+            IntegrationResult result = FunctionMath.Integrate(Math.Log, Interval.FromEndpoints(0.0, 2.0), settings);
+            Assert.IsTrue(count > 0);
+            Assert.IsTrue(result.Estimate.ConfidenceInterval(0.95).ClosedContains(Math.Log(4.0) - 2.0));
+            Assert.IsTrue(result.Estimate.Uncertainty < settings.AbsolutePrecision);
+
+        }
+
+
+        [TestMethod]
         public void IntegrateTestIntegrals () {
-
-            Console.WriteLine(integrals.Length);
-
             for (int i = 0; i < integrals.Length; i++) {
                 TestIntegral integral = integrals[i];
                 double result = FunctionMath.Integrate(integral.Integrand, integral.Range);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(result, integral.Result));
             }
-
         }
 
         private TestIntegral[] integrals = new TestIntegral[] {
@@ -117,7 +135,7 @@ namespace Test {
 
             new TestIntegral(
                 delegate (double x) {
-                    return(1.0/x);
+                    return(1.0 / x);
                 },
                 Interval.FromEndpoints(1.0, Math.E),
                 1.0
@@ -133,7 +151,7 @@ namespace Test {
 
             new TestIntegral(
                 delegate (double x) {
-                    return( Math.Pow(x, x) ); // has minimum at 
+                    return( Math.Pow(x, x) ); 
                 },
                 Interval.FromEndpoints(0.0, 1.0),
                 0.78343051071213440706 // 1 - 1/2^2 + 1/3^3 - 1/4^4 + 1/5^5 + ...
@@ -266,7 +284,7 @@ namespace Test {
 
             new TestIntegral(
                 delegate (double x) {
-                    return( Math.Pow(x,-1.0/6.0));
+                    return( Math.Pow(x, -1.0 / 6.0));
                 },
                 Interval.FromEndpoints(0.0, 1.0),
                 6.0 / 5.0

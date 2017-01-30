@@ -372,7 +372,7 @@ namespace Test {
 
                         // need to loosen default evaluation settings in order to get convergence in some of these cases
                         // seems to have most convergence problems for large a
-                        EvaluationSettings e = new EvaluationSettings();
+                        IntegrationSettings e = new IntegrationSettings();
                         e.AbsolutePrecision = TestUtilities.TargetPrecision;
                         e.RelativePrecision = TestUtilities.TargetPrecision;
 

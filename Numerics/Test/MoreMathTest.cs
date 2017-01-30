@@ -56,7 +56,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void BigHypotenuseTest () {
+        public void HypotBig () {
             
             // construct 3-4-5 right triangle with side lengths whoose squares would overflow
             double x = Double.MaxValue / 8.0;
@@ -69,7 +69,7 @@ namespace Test {
 
 
         [TestMethod]
-        public void SmallHypotenuseTest () {
+        public void HypotSmall () {
 
             // construct 3-4-5 right triangle with side lengths whoose squares would underflow
             double x = 8.0 / Double.MaxValue;
@@ -79,6 +79,29 @@ namespace Test {
             ));
         }
 
+        [TestMethod]
+        public void HypotSpecialCases () {
+
+            double x = 3.14;
+
+            Assert.IsTrue(MoreMath.Hypot(0.0, 0.0) == 0.0);
+            Assert.IsTrue(MoreMath.Hypot(0.0, x) == Math.Abs(x));
+            Assert.IsTrue(MoreMath.Hypot(0.0, -x) == Math.Abs(x));
+            Assert.IsTrue(MoreMath.Hypot(x, 0.0) == Math.Abs(x));
+            Assert.IsTrue(MoreMath.Hypot(-x, 0.0) == Math.Abs(x));
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.Hypot(x, -x), Math.Sqrt(2.0) * Math.Abs(x)));
+        }
+
+        [TestMethod]
+        public void HypotExtremeValues () {
+            Assert.IsTrue(Double.IsPositiveInfinity(MoreMath.Hypot(Double.MaxValue, Double.MaxValue)));
+            Assert.IsTrue(Double.IsPositiveInfinity(MoreMath.Hypot(-Double.MaxValue, Double.MaxValue)));
+            Assert.IsTrue(Double.IsPositiveInfinity(MoreMath.Hypot(Double.PositiveInfinity, Double.NegativeInfinity)));
+            Assert.IsTrue(Double.IsPositiveInfinity(MoreMath.Hypot(Double.NegativeInfinity, Double.NegativeInfinity)));
+            Assert.IsTrue(Double.IsNaN(MoreMath.Hypot(Double.NaN, 0.0)));
+            Assert.IsTrue(Double.IsNaN(MoreMath.Hypot(Double.PositiveInfinity, Double.NaN)));
+        }
 
         [TestMethod]
         public void BigTrig () {
@@ -87,6 +110,12 @@ namespace Test {
                 MoreMath.Cos(6381956970095103.0 * MoreMath.Pow(2.0, 797)), 4.6871659242546276E-19
             ));
         }
+
+        // https://www.csee.umbc.edu/~phatak/645/supl/Ng-ArgReduction.pdf says
+        // 6381956970095103 X 2^{797} = n (\pi / 2) + 4.687165924254624 X 10^{-19}
+
+        // http://perso.ens-lyon.fr/nathalie.revol/publis/BDKMR05.pdf says
+        // 6411027962775774 X 2^{-48} = n (\pi / 4) + 3.094903 X 10^{-19}
 
     }
 

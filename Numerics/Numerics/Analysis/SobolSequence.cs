@@ -264,7 +264,10 @@ namespace Meta.Numerics.Analysis {
             new SobolSequenceParameters(5, 7, new ulong[] { 1, 1, 7, 11, 19 }), 
             new SobolSequenceParameters(5, 11, new ulong[] { 1, 1, 5, 1, 1 }),
             new SobolSequenceParameters(5, 13, new ulong[] { 1, 1, 1, 3, 11 }),
-            new SobolSequenceParameters(5, 14, new ulong[] { 1, 3, 5, 5, 31 })
+            new SobolSequenceParameters(5, 14, new ulong[] { 1, 3, 5, 5, 31 }),
+            new SobolSequenceParameters(6, 1, new ulong[] { 1, 3, 3, 9, 7, 49 }),
+            new SobolSequenceParameters(6, 13, new ulong[] { 1, 1, 1, 15, 21, 21 }),
+            new SobolSequenceParameters(6, 16, new ulong[] { 1, 3, 1, 13, 27, 49 })
         };
 
     }

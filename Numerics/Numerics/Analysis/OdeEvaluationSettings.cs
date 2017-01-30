@@ -13,7 +13,7 @@ namespace Meta.Numerics.Analysis {
         /// <summary>
         /// Initializes a new instance of ODE evaluation settings.
         /// </summary>
-        public OdeEvaluationSettings () : base(null) {
+        public OdeEvaluationSettings () : base() {
 
         }
 

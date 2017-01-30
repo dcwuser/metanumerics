@@ -299,7 +299,7 @@ namespace Meta.Numerics.Analysis {
 
     public static partial class MultiFunctionMath {
 
-        private static UncertainValue Integrate_MonteCarlo (MultiFunctor f, CoordinateTransform[] map, IList<Interval> box, EvaluationSettings settings) {
+        private static UncertainValue Integrate_MonteCarlo (MultiFunctor f, CoordinateTransform[] map, IList<Interval> box, IntegrationSettings settings) {
 
             int d = box.Count;
 
@@ -333,6 +333,10 @@ namespace Meta.Numerics.Analysis {
                 double value = (value1 + value2 + value3) / 3.0;
                 double error = Math.Max(Math.Abs(value1 - value3), Math.Max(Math.Abs(value1 - value2), Math.Abs(value2 - value3)));
                 Debug.WriteLine("{0} {1} {2}", f.EvaluationCount, value, error);
+
+                if (settings.Listener != null) {
+                    settings.Listener(new IntegrationResult(new UncertainValue(value, error), f.EvaluationCount, settings));
+                }
 
                 // Check for convergence.
                 if ((error <= settings.AbsolutePrecision) || (error <= Math.Abs(value) * settings.RelativePrecision)) {
@@ -368,6 +372,9 @@ namespace Meta.Numerics.Analysis {
                     refineCount = 0;
                 }
 
+                if (f.EvaluationCount >= settings.EvaluationBudget) {
+                    throw new NonconvergenceException();
+                }
 
             }
 

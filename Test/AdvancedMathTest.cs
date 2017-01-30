@@ -861,6 +861,13 @@ namespace Test {
             // a and b values less than one correspond to singular integrals,
             // which are numerically difficult.
 
+            // The range of these integrals varies enoromously, and there is no cancelation,
+            // so specify a pure relative accuracy target.
+            IntegrationSettings settings = new IntegrationSettings() {
+                AbsolutePrecision = 0.0,
+                RelativePrecision = TestUtilities.TargetPrecision
+            };
+
             foreach (double a in TestUtilities.GenerateRealValues(1.0, 100.0, 4)) {
                 foreach (double b in TestUtilities.GenerateRealValues(1.0, 100.0, 4)) {
                     double B = AdvancedMath.Beta(a, b);
@@ -868,7 +875,7 @@ namespace Test {
                         return (Math.Pow(t, a - 1.0) * Math.Pow(1.0 - t, b - 1.0));
                     };
                     Interval r = Interval.FromEndpoints(0.0, 1.0);
-                    double I = FunctionMath.Integrate(f, r);
+                    double I = FunctionMath.Integrate(f, r, settings).Value;
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(B, I));
                 }
             }
@@ -882,9 +889,9 @@ namespace Test {
 
             foreach (double a in TestUtilities.GenerateRealValues(0.01, 10000.0, 8)) {
                 foreach (double b in TestUtilities.GenerateRealValues(0.01, 10000.0, 8)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        AdvancedMath.Beta(a, b),
-                        AdvancedMath.Beta(a + 1.0, b) + AdvancedMath.Beta(a, b + 1.0)
+                    Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                        AdvancedMath.Beta(a + 1.0, b), AdvancedMath.Beta(a, b + 1.0),
+                        AdvancedMath.Beta(a, b)
                     ));
                 }
             }
@@ -964,8 +971,8 @@ namespace Test {
                 foreach (double b in TestUtilities.GenerateRealValues(1.0, 1.0E4, 8)) {
                     foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 8)) {
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                            AdvancedMath.LeftRegularizedBeta(a, b, x),
-                            x * AdvancedMath.LeftRegularizedBeta(a - 1.0, b, x) + (1.0 - x) * AdvancedMath.LeftRegularizedBeta(a, b - 1.0, x)
+                            x * AdvancedMath.LeftRegularizedBeta(a - 1.0, b, x) + (1.0 - x) * AdvancedMath.LeftRegularizedBeta(a, b - 1.0, x),
+                            AdvancedMath.LeftRegularizedBeta(a, b, x)
                         ));
                     }
                 }

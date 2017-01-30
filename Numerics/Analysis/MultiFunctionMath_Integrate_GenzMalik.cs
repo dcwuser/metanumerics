@@ -65,6 +65,10 @@ namespace Meta.Numerics.Analysis {
                     rule.Evaluate(f, map, subRegion);
                     regionList.AddLast(subRegion);
                 }
+
+                if (f.EvaluationCount >= settings.EvaluationBudget) {
+                    throw new NonconvergenceException();
+                }
                 
             }
 

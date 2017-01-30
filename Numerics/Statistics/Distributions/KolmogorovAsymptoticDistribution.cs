@@ -47,7 +47,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             this.n = n;
         }
 
-        private int n;
+        private readonly int n;
 
         // The dividing line between where P-series and Q-series are used.
 

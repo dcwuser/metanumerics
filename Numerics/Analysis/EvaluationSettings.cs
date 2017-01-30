@@ -13,12 +13,6 @@ namespace Meta.Numerics.Analysis {
         /// Initializes a new set of default evaulation settings.
         /// </summary>
         public EvaluationSettings () {
-            EvaluationBudget = 5000;
-            RelativePrecision = Global.Accuracy;
-            AbsolutePrecision = Global.Accuracy;
-        }
-
-        internal EvaluationSettings (object isDefault) {
             evaluationBudget = -1;
             relativePrecision = -1.0;
             absolutePrecision = -1.0;

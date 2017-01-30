@@ -15,7 +15,7 @@ namespace Test {
             if (Double.IsPositiveInfinity(x) && Double.IsPositiveInfinity(y)) return (true);
             if (Double.IsNegativeInfinity(x) && Double.IsNegativeInfinity(y)) return (true);
             double m = Math.Abs(x) + Math.Abs(y);
-            double e = s.AbsolutePrecision + m * s.RelativePrecision;
+            double e = Math.Max(0.0, s.AbsolutePrecision) + m * Math.Max(0.0, s.RelativePrecision);
             return (Math.Abs(x - y) <= e);
         }
 
@@ -27,7 +27,7 @@ namespace Test {
 
         public static bool IsNearlyEqual (AnyRectangularMatrix x, AnyRectangularMatrix y, EvaluationSettings s) {
             double m = x.FrobeniusNorm() + y.FrobeniusNorm();
-            double e = s.AbsolutePrecision + m * s.RelativePrecision;
+            double e = Math.Max(0.0, s.AbsolutePrecision) + m * Math.Max(0.0, s.RelativePrecision);
             AnyRectangularMatrix D = x - y;
             return (D.FrobeniusNorm() <= e);
         }
@@ -326,8 +326,24 @@ namespace Test {
             for (int i = 0; i < n; i++) {
                 double re = Math.Exp(la + (lb - la) * rng.NextDouble());
                 double im = Math.Exp(la + (lb - la) * rng.NextDouble());
-                if (rng.NextDouble() < 0.5) re = -re;
-                if (rng.NextDouble() < 0.5) im = -im;
+                switch (rng.Next(4)) {
+                    case 0:
+                        break;
+                    case 1:
+                        im = -im;
+                        break;
+                    case 2:
+                        re = -re;
+                        im = -im;
+                        break;
+                    case 3:
+                        re = -re;
+                        break;
+                    default:
+                        throw new InvalidOperationException();
+                }
+                //if (rng.NextDouble() < 0.5) re = -re;
+                //if (rng.NextDouble() < 0.5) im = -im;
                 result[i] = new Complex(re, im);
             }
             return (result);

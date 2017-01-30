@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Analysis {
 
@@ -17,17 +18,26 @@ namespace Meta.Numerics.Analysis {
         /// <exception cref="NonconvergenceException">The maximum number of function evaluations was exceeded before the integral
         /// could be determined to the required precision.</exception>
         /// <remarks>
-        /// <para>By default, integrals are evaluated to a relative precision of about 10<sup>-15</sup>, about a digit short of full
-        /// precision, using a budget of about 5000 evaulations. To specify different evaluation settings use
-        /// <see cref="Integrate(Func{double, double}, Interval, EvaluationSettings)"/>.</para>
-        /// <para>See <see cref="Integrate(Func{double, double}, Interval, EvaluationSettings)"/> for detailed remarks on
+        /// <para>By default, integrals are evaluated to a relative precision of about 10<sup>-14</sup>, about two digits short of full
+        /// precision, or an absolute presions of about 10<sup>-21</sup>, using a budget of about 5000 evaulations.
+        /// To specify different evaluation settings use
+        /// <see cref="Integrate(Func{double, double}, Interval, IntegrationSettings)"/>.</para>
+        /// <para>See <see cref="Integrate(Func{double, double}, Interval, IntegrationSettings)"/> for detailed remarks on
         /// numerical integration.</para>
         /// </remarks>
         public static double Integrate (Func<double, double> integrand, Interval range) {
-            EvaluationSettings settings = new EvaluationSettings();
+            IntegrationSettings settings = new IntegrationSettings();
             return (Integrate(integrand, range, settings).Value);
         }
 
+        internal static IntegrationSettings SetIntegrationDefaults (IntegrationSettings settings) {
+            IntegrationSettings result = new IntegrationSettings();
+            result.RelativePrecision = (settings.RelativePrecision < 0.0) ? 1.0E-14 : settings.RelativePrecision;
+            result.AbsolutePrecision = (settings.AbsolutePrecision < 0.0) ? 1.0E-15 : settings.AbsolutePrecision;
+            result.EvaluationBudget = (settings.EvaluationBudget < 0) ? 5000 : settings.EvaluationBudget;
+            result.Listener = settings.Listener;
+            return (result);
+        }
 
         /// <summary>
         /// Evaluates a definite integral with the given evaluation settings.
@@ -64,12 +74,15 @@ namespace Meta.Numerics.Analysis {
         /// to evaluate I = &#x222B;<sub>0</sub><sup>b</sup> f(x) x<sup>-1/2</sup> dx, substitute y = x<sup>1/2</sup>
         /// to obtain I = 2 &#x222B;<sub>0</sub><sup>&#x221A;b</sup> f(y<sup>2</sup>) dy.</para>
         /// <para>To do multi-dimensional integrals, use
-        /// <see cref="MultiFunctionMath.Integrate(Func{IList{double}, double}, IList{Interval}, EvaluationSettings)"/>.
+        /// <see cref="MultiFunctionMath.Integrate(Func{IList{double}, double}, IList{Interval}, IntegrationSettings)"/>.
         /// </para>
         /// </remarks>
-        public static IntegrationResult Integrate (Func<double,double> integrand, Interval range, EvaluationSettings settings) {
+        public static IntegrationResult Integrate (Func<double,double> integrand, Interval range, IntegrationSettings settings) {
 
-            if (integrand == null) throw new ArgumentNullException("integrand");
+            if (integrand == null) throw new ArgumentNullException(nameof(integrand));
+            if (settings == null) throw new ArgumentNullException(nameof(settings));
+
+            settings = SetIntegrationDefaults(settings);
 
             // remap infinite integrals to finite integrals
 
@@ -131,7 +144,10 @@ namespace Meta.Numerics.Analysis {
 
         // the drivers
 
-        private static IntegrationResult Integrate_Adaptive (IAdaptiveIntegrator integrator, EvaluationSettings s) {
+        private static IntegrationResult Integrate_Adaptive (IAdaptiveIntegrator integrator, IntegrationSettings settings) {
+
+            Debug.Assert(integrator != null);
+            Debug.Assert(settings != null);
 
             LinkedList<IAdaptiveIntegrator> list = new LinkedList<IAdaptiveIntegrator>();
             list.AddFirst(integrator);
@@ -144,8 +160,6 @@ namespace Meta.Numerics.Analysis {
                 // and noting which contributes the most error
                 // keep track of the total value and uncertainty
                 UncertainValue vTotal = new UncertainValue();
-                //double v = 0.0;
-                //double u = 0.0;
 
                 // keep track of which node contributes the most error
                 LinkedListNode<IAdaptiveIntegrator> maxNode = null;
@@ -158,9 +172,6 @@ namespace Meta.Numerics.Analysis {
 
                     UncertainValue v = i.Estimate;
                     vTotal += v;
-                    //UncertainValue uv = i.Estimate;
-                    //v += uv.Value;
-                    //u += uv.Uncertainty;
 
                     if (v.Uncertainty > maxError) {
                         maxNode = node;
@@ -171,23 +182,24 @@ namespace Meta.Numerics.Analysis {
 
                 }
 
-                // if our error is small enough, return
-                if ((vTotal.Uncertainty <= Math.Abs(vTotal.Value) * s.RelativePrecision) || (vTotal.Uncertainty <= s.AbsolutePrecision)) {
-                    return (new IntegrationResult(vTotal, n, s));
+                // Inform listeners of our latest result.
+                if (settings.Listener != null) {
+                    settings.Listener(new IntegrationResult(vTotal, n, settings));
                 }
-                //if ((vTotal.Uncertainty <= Math.Abs(vTotal.Value) * s.RelativePrecision) || (vTotal.Uncertainty <= s.AbsolutePrecision)) {
-                //    return (new IntegrationResult(vTotal.Value, n));
-                //}
+
+                // if our error is small enough, return
+                if ((vTotal.Uncertainty <= Math.Abs(vTotal.Value) * settings.RelativePrecision) || (vTotal.Uncertainty <= settings.AbsolutePrecision)) {
+                    return (new IntegrationResult(vTotal, n, settings));
+                }
 
                 // if our evaluation count is too big, throw
-                if (n > s.EvaluationBudget) throw new NonconvergenceException();
+                if (n > settings.EvaluationBudget) throw new NonconvergenceException();
 
-                // subdivide the interval with the largest error
+                // Subdivide the interval with the largest error
                 IEnumerable<IAdaptiveIntegrator> divisions = maxNode.Value.Divide();
                 foreach (IAdaptiveIntegrator division in divisions) {
                     list.AddBefore(maxNode, division);
                     n += division.EvaluationCount;
-                    //v2 += division.Estimate;
                 }
                 list.Remove(maxNode);
 
@@ -219,17 +231,13 @@ namespace Meta.Numerics.Analysis {
 
     }
 
-    internal interface IIterativeIntegrator : IIntegrator {
-
-        void Iterate ();
-
-    }
-
-    // integrator base class
+    // Integrator base class
+    // All integtators inherit from this, whether adaptive or iterative.
 
     internal abstract class Integrator : IIntegrator {
 
         protected Integrator (Func<double, double> integrand, Interval range) {
+            Debug.Assert(integrand != null);
             this.f = integrand;
             this.r = range;
         }
@@ -237,19 +245,19 @@ namespace Meta.Numerics.Analysis {
         private Func<double, double> f;
         private Interval r;
 
-        public virtual Func<double, double> Integrand {
+        public Func<double, double> Integrand {
             get {
                 return (f);
             }
         }
 
-        public virtual Interval Range {
+        public Interval Range {
             get {
                 return (r);
             }
         }
 
-        public virtual int EvaluationCount {
+        public int EvaluationCount {
             get {
                 return (n);
             }
@@ -259,14 +267,17 @@ namespace Meta.Numerics.Analysis {
 
         protected double Evaluate (double x) {
             n++;
-            return (Integrand(x));
+            double y = f(x);
+            // Ignore singularities
+            if (Double.IsInfinity(y) || Double.IsNaN(y)) y = 0.0;
+            return (y);
         }
 
         public abstract UncertainValue Estimate { get; }
 
     }
 
-    // integrators
+    // Integrators
 
     internal class GaussKronrodIntegrator : Integrator, IAdaptiveIntegrator {
 
@@ -275,7 +286,12 @@ namespace Meta.Numerics.Analysis {
             Compute();
         }
 
-        // abcissas and weights 
+        // This is a 15-point Gauss-Kronrod role. It is exact for up to 30th order polynomials.
+        // There is an embeded 7-point rule (embedded meaning it uses the same points with different weights).
+        // Combining them gives a high-order estimate along with an error estimate without requiring additional evaluations.
+
+        // These values appear at https://en.wikipedia.org/wiki/Gauss%E2%80%93Kronrod_quadrature_formula.
+        // Other possibilities appear at http://www.advanpix.com/2011/11/07/gauss-kronrod-quadrature-nodes-weights/
 
         private static readonly double[] x = new double[] {
             -0.9914553711208126,
@@ -362,8 +378,7 @@ namespace Meta.Numerics.Analysis {
             }
         }
 
-
-        public virtual IList<IAdaptiveIntegrator> Divide () {
+        public IList<IAdaptiveIntegrator> Divide () {
             GaussKronrodIntegrator i1 = new GaussKronrodIntegrator(Integrand, Interval.FromEndpoints(Range.LeftEndpoint, Range.Midpoint));
             i1.Generation = this.Generation + 1;
             GaussKronrodIntegrator i2 = new GaussKronrodIntegrator(Integrand, Interval.FromEndpoints(Range.Midpoint, Range.RightEndpoint));
@@ -371,7 +386,7 @@ namespace Meta.Numerics.Analysis {
             return (new GaussKronrodIntegrator[] { i1, i2 });
         }
 
-        public virtual int Generation { get; private set; }
+        public int Generation { get; private set; }
     }
 
 }

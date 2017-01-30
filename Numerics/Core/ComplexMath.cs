@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 using Meta.Numerics.Functions;
 
@@ -100,55 +101,87 @@ namespace Meta.Numerics {
         /// </remarks>
         public static Complex Sqrt (Complex z) {
 
+            // Handle the degenerate case quickly.
             if (z.Im == 0.0) {
-
-                // Handle the degenerate case quickly.
-                // This also eliminates need to worry about Im(z) = 0 in subsequent formulas.
-
                 if (z.Re < 0.0) {
                     return (new Complex(0.0, Math.Sqrt(-z.Re)));
                 } else {
                     return (new Complex(Math.Sqrt(z.Re), 0.0));
                 }
+            }
+            // This also eliminates need to worry about Im(z) = 0 in subsequent formulas.
 
-            } else {
+            // One way to compute Sqrt(z) is just to call Pow(z, 0.5), which coverts to polar coordinates
+            // (sqrt + atan), halves the phase, and reconverts to cartesian coordinates (cos + sin).
+            // Not only is this more expensive than necessary, it also fails to preserve certain expected
+            // symmetries, such as that the square root of a pure negative is a pure imaginary, and that the
+            // square root of a pure imaginary has exactly equal real and imaginary parts. This all goes
+            // back to the fact that Math.PI is not stored with infinite precision, so taking half of Math.PI
+            // does not land us on an argument with sine exactly equal to zero.
 
-                // One way to compute Sqrt(z) is to just reproduce Pow(z, 0.5), which coverts to polar coordinates
-                // (sqrt + atan), halves the phase (division), and reconverts to cartesian coordinates (cos + sin).
-                // Not only is this more expensive than necessary, it also fails to preserve certain expected
-                // symmetries, such as that the square root of a pure negative is a pure imaginary, and that the
-                // square root of a pure imaginary has exactly equal real and imaginary parts.
+            // To find a fast and symmetry-respecting formula for complex square root,
+            // note x + i y = \sqrt{a + i b} implies x^2 + 2 i x y - y^2 = a + i b,
+            // so x^2 - y^2 = a and 2 x y = b. Cross-substitute and use the quadratic formula to obtain
+            //   x = \sqrt{\frac{\sqrt{a^2 + b^2} + a}{2}}  y = \pm \sqrt{\frac{\sqrt{a^2 + b^2} - a}{2}}
+            // There is just one complication: depending on the sign on a, either x or y suffers from
+            // cancelation when |b| << |a|. We can get aroud this by noting that our formulas imply
+            // x^2 y^2 = b^2 / 4, so |x| |y| = |b| / 2. So after computing the one that doesn't suffer
+            // from cancelation, we can compute the other with just a division. This is basically just
+            // the right way to evaluate the quadratic formula without cancelation.
 
-                // To find a fast and symmetry-respecting formula for complex square root,
-                // note x + i y = \sqrt{a + i b} implies x^2 + 2 i x y - y^2 = a + i b,
-                // so x^2 - y^2 = a and 2 x y = b. Cross-substitute and use the quadratic formula to solve for
-                // x ^2 and y^2 to obtain
-                //  x = \sqrt{\frac{\sqrt{a^2 + b^2} + a}{2}}  y = \pm \sqrt{\frac{\sqrt{a^2 + b^2} - a}{2}}
+            // All this reduces our total cost to two sqrts and a few flops, and it respects the desired
+            // symmetries. Much better than atan + cos + sin!
 
-                // The problem with these expressions is that, depending on sgn(a), either x or y suffers from
-                // cancelationwhen |b| << |a|. We can get aroud this by noting that our formulas imply
-                // x ^2 y^2 = b^2 / 4 so |x| |y| = |b| / 2. So after computing the one that doesn't suffer
-                // from cancelation, we can compute the other with just division. This is basically just
-                // the right way to evaluate the quadratic formula without cancelation.
+            // The signs are a matter of choice of branch cut, which is traditionally taken so x > 0 and sign(y) = sign(b).
 
-                // This reduces our total cost to two sqrt and a few flops, and it respects the desired
-                // symmetries.
+            double a = z.Re;
+            double b = z.Im;
 
-                // The signs are a matter of choice of branch cut, which is traditionally x > 0 and sgn(y) = sgn(b).
-
-                double x, y;
-                if (z.Re > 0.0) {
-                    x = Math.Sqrt((MoreMath.Hypot(z.Re, z.Im) + z.Re) / 2.0);
-                    y = z.Im / x / 2.0;
-                } else {
-                    y = Math.Sqrt((MoreMath.Hypot(z.Re, z.Im) - z.Re) / 2.0) * Math.Sign(z.Im);
-                    x = z.Im / y / 2.0;
+            // If the components are too large, Hypot(a, b) will overflow, even though the subsequent sqrt would
+            // make the result representable. To avoid this, we re-scale (by exact powers of 2 for accuracy)
+            // when we encounter very large components to avoid intermediate infinities.
+            bool rescale = false;
+            if ((Math.Abs(a) >= sqrtRescaleThreshold) || (Math.Abs(b) >= sqrtRescaleThreshold)) {
+                if (Double.IsInfinity(b) && !Double.IsNaN(a)) {
+                    return (new Complex(Double.PositiveInfinity, b));
                 }
-                return (new Complex(x, y));
+                a *= 0.25;
+                b *= 0.25;
+                rescale = true;
+            }
+            // 1. Note that, if one component is very large and the other is very small, this re-scale could cause
+            // the very small component to underflow. This is not a problem, though, because the neglected term
+            // is ~ (very small) / (very large), which would underflow anyway.
+            // 2. Note that our test for re-scaling requires two abs and two floating point comparisons.
+            // For the typical non-overflowng case, it might be faster to just test for IsInfinity after Hypot,
+            // then re-scale and re-do Hypot if overflow is detected. That version makes the code more
+            // complicated and simple profiling experiments show no discernible perf improvement, so
+            // stick with this version for now.
 
+            double x, y;
+            if (a >= 0.0) {
+                x = Math.Sqrt((MoreMath.Hypot(a, b) + a) / 2.0);
+                y = b / (2.0 * x);
+            } else {
+                y = Math.Sqrt((MoreMath.Hypot(a, b) - a) / 2.0);
+                if (b < 0.0) y = -y;
+                x = b / (2.0 * y);
+            }
+            // Note that, because we have re-scaled when any components are very large,
+            // (2.0 * x) and (2.0 * y) are guaranteed not to overflow.
+
+            if (rescale) {
+                x *= 2.0;
+                y *= 2.0;
             }
 
+
+            return (new Complex(x, y));
+
         }
+
+        // This is the largest value x for which (Hypot(x,x) + x) does not overflow.
+        private static readonly double sqrtRescaleThreshold = Double.MaxValue / (1.0 + Math.Sqrt(2.0));
 
         /// <summary>
         /// Computes the sine of a complex number.
@@ -163,6 +196,10 @@ namespace Meta.Numerics {
             double sinh = (p - q) / 2.0;
             double cosh = (p + q) / 2.0;
             return (new Complex(MoreMath.Sin(z.Re) * cosh, MoreMath.Cos(z.Re) * sinh));
+            // For large z.Im, it's pretty easy for cosh and sinh to overflow. There is a very tiny space
+            // of arguments for which z.Im causes cosh and sinh barely overflow, but the sin and cos of z.Re
+            // are small enough to bring the result back into the representable range. We don't
+            // handle this, so we return inf for those values.
         }
 
         /// <summary>
@@ -234,17 +271,170 @@ namespace Meta.Numerics {
             return (new Complex(tan.Im, -tan.Re));
         }
 
+        // Using sin(w) = \frac{e^{iw} - e^{-iw}}{2i}, write z = sin(w) and e^{iw} = v and solve for z.
+        //    v^2 - 2 i v z - 1 = 0
+        //    v = i z \pm \sqrt{1-z^2}
+        //    w = -i \ln (i z \pm \sqrt{1-z^2})
+        // Basically, we just need to compute i z \pm \sqrt{1-z^2}. The log determines its magnitude and
+        // phase, multiplying by i switches their places.
+
+        /// <summary>
+        /// Computes the inverse sine (arcsine) of a complex number.
+        /// </summary>
+        /// <param name="z">The number.</param>
+        /// <returns>The value of arcsin(z).</returns>
+        public static Complex Asin (Complex z) {
+
+            double b, bPrime, q;
+            Asin_Internal(Math.Abs(z.Re), Math.Abs(z.Im), out b, out bPrime, out q);
+
+            double p;
+            if (bPrime < 0.0) {
+                p = Math.Asin(b);
+            } else {
+                p = Math.Atan(bPrime);
+            }
+            if (z.Re < 0.0) p = -p;
+
+            if (z.Im < 0.0) q = -q;
+
+            return (new Complex(p, q));
+
+        }
+
+        /// <summary>
+        /// Computes the inverse cosine (arccosine) of a complex number.
+        /// </summary>
+        /// <param name="z">The number.</param>
+        /// <returns>The value of arccos(z).</returns>
+        public static Complex Acos (Complex z) {
+
+            double b, bPrime, q;
+            Asin_Internal(Math.Abs(z.Re), Math.Abs(z.Im), out b, out bPrime, out q);
+
+            double p;
+            if (bPrime < 0.0) {
+                p = Math.Acos(b);
+            } else {
+                p = Math.Atan(1.0 / bPrime);
+            }
+            if (z.Re < 0.0) p = Math.PI - p;
+
+            if (z.Im > 0.0) q = -q;
+
+            return (new Complex(p, q));
+
+        }
+
+        private static void Asin_Internal (double x, double y, out double b, out double bPrime, out double v) {
+
+            Debug.Assert(!(x < 0.0));
+            Debug.Assert(!(y < 0.0));
+
+            // This method for the inverse complex sine (and cosine) is described in
+            // Hull and Tang, "Implementing the Complex Arcsine and Arccosine Functions Using Exception Handling",
+            // ACM Transactions on Mathematical Software (1997)
+            // (https://www.researchgate.net/profile/Ping_Tang3/publication/220493330_Implementing_the_Complex_Arcsine_and_Arccosine_Functions_Using_Exception_Handling/links/55b244b208ae9289a085245d.pdf)
+
+            // First, the basics: start with sin(w) = \frac{e^{iw} - e^{-iw}}{2i} = z. Here z is the input
+            // and w is the output. To solve for w, define t = e^{i w} and multiply through by t to
+            // get the quadratic equation t^2 - 2 i z t - 1 = 0. The solution is t = i z + \sqrt{1 - z^2}, so
+            //   w = arcsin(z) = - i \ln ( i z + \sqrt{1 - z^2} )
+            // Decompose z = x + i y, multiply out i z + \sqrt{1 - z^2}, use \ln s = |s| + i arg(s), and do a
+            // bunch of algebra to get the components of w = arcsin(z) = u + i v
+            //   u = arcsin(\beta)  v = sign(y) \ln (\alpha + \sqrt{\alpha^2 - 1})
+            // where
+            //   \alpha = \frac{\rho + \sigma}{2}  \beta = \frac{\rho - \sigma}{2}
+            //   \rho = \sqrt{(x + 1)^2 + y^2}  \sigma = \sqrt{(x - 1)^2 + y^2}
+            // This appears in DLMF section 4.23. (http://dlmf.nist.gov/4.23), along with the analogous
+            //   arccos(w) = arccos(\beta) - i sign(y) \ln (\alpha + \sqrt{\alpha^2 - 1})
+            // So \alpha and \beta together give us arcsin(w) and arccos(w).
+
+            // As written, \alpha is not susceptable to cancelation errors, but \beta is. To avoid cancelation, note
+            //   \beta = \frac{\rho^2 - \sigma^2}{2(\rho + \sigma)} = \frac{2 x}{\rho + \sigma} = \frac{x}{\alpha}
+            // which is not subject to cancelation. Note \alpha >= 1 and |\beta| <= 1.
+
+            // For \alpha ~ 1, the argument of the log is near unity, so we compute (\alpha - 1) instead,
+            // and write the argument as 1 + (\alpha - 1) + \sqrt{(\alpha - 1)(\alpha + 1)}.
+            // For \beta ~ 1, arccos does not accurately resolve small angles, so we compute the tangent of the angle
+            // instead. Hull and Tang derive formulas for (\alpha - 1) and \beta' = \tan(u) that do not suffer
+            // cancelation for these cases.
+
+            // For simplicity, we assume all positive inputs and return all positive outputs. The caller should
+            // assign signs appropriate to the desired cut conventions. We return v directly since its magnitude
+            // is the same for both arcsin and arccos. Instead of u, we usually return \beta and sometimes \beta'.
+            // If \beta' is not computed, it is set to -1; if it is computed, it should be used instead of \beta
+            // to determine u. Compute u = \arcsin(\beta) or u = \arctan(\beta') for arcsin, u = \arccos(\beta)
+            // or \arctan(1/\beta') for arccos.
+
+            // For x or y large enough to overflow \alpha^2, we can simplify our formulas and avoid overflow.
+            if ((x > Global.SqrtMax / 2.0) || (y > Global.SqrtMax / 2.0)) {
+
+                b = -1.0;
+                bPrime = x / y;
+
+                double small, big;
+                if (x < y) {
+                    small = x;
+                    big = y;
+                } else {
+                    small = y;
+                    big = x;
+                }
+                v = Global.LogTwo + Math.Log(big) + 0.5 * MoreMath.LogOnePlus(MoreMath.Sqr(small / big));
+
+            } else {
+
+                double r = MoreMath.Hypot((x + 1.0), y);
+                double s = MoreMath.Hypot((x - 1.0), y);
+
+                double a = (r + s) / 2.0;
+                b = x / a;
+                Debug.Assert(a >= 1.0);
+                Debug.Assert(Math.Abs(b) <= 1.0);
+
+                if (b > 0.75) {
+                    double amx;
+                    if (x <= 1.0) {
+                        amx = (y * y / (r + (x + 1.0)) + (s + (1.0 - x))) / 2.0;
+                    } else {
+                        amx = y * y * (1.0 / (r + (x + 1.0)) + 1.0 / (s + (x - 1.0))) / 2.0;
+                    }
+                    Debug.Assert(amx >= 0.0);
+                    bPrime = x / Math.Sqrt((a + x) * amx);
+                } else {
+                    bPrime = -1.0;
+                }
+
+                if (a < 1.5) {
+                    double am1;
+                    if (x < 1.0) {
+                        am1 = y * y / 2.0 * (1.0 / (r + (x + 1.0)) + 1.0 / (s + (1.0 - x)));
+                    } else {
+                        am1 = (y * y / (r + (x + 1.0)) + (s + (x - 1.0))) / 2.0;
+                    }
+                    Debug.Assert(am1 >= 0.0);
+                    v = MoreMath.LogOnePlus(am1 + Math.Sqrt(am1 * (a + 1.0)));
+                } else {
+                    // Because of the test above, we can be sure that a * a will not overflow.
+                    v = Math.Log(a + Math.Sqrt((a - 1.0) * (a + 1.0)));
+                }
+
+            }
+
+        }
+
         // pure complex binary operations
 
         /// <summary>
         /// Raises a complex number to an arbitrary real power.
         /// </summary>
         /// <param name="z">The argument.</param>
-        /// <param name="p">The power.</param>
-        /// <returns>The value of z<sup>p</sup>.</returns>
-        public static Complex Pow (Complex z, double p) {
-            double m = Math.Pow(Abs(z), p);
-            double t = Arg(z) * p;
+        /// <param name="r">The power.</param>
+        /// <returns>The value of z<sup>r</sup>.</returns>
+        public static Complex Pow (Complex z, double r) {
+            double m = Math.Pow(Abs(z), r);
+            double t = Arg(z) * r;
             return (new Complex(m * MoreMath.Cos(t), m * MoreMath.Sin(t)));
         }
 
@@ -261,6 +451,25 @@ namespace Meta.Numerics {
             double m = Math.Pow(x, z.Re);
             double t = Math.Log(x) * z.Im;
             return (new Complex(m * MoreMath.Cos(t), m * MoreMath.Sin(t)));
+        }
+
+        /// <summary>
+        /// Raises a complex number to a complex power.
+        /// </summary>
+        /// <param name="z">The base.</param>
+        /// <param name="r">The exponent.</param>
+        /// <returns>The value of z<sup>r</sup>.</returns>
+        /// <seealso href="http://mathworld.wolfram.com/ComplexExponentiation.html"/>
+        public static Complex Pow (Complex z, Complex r) {
+            if (r == Complex.Zero) return (Complex.One);
+            if (z == Complex.Zero) return (Complex.Zero);
+            if (z == Complex.One) return (Complex.One);
+            if (r == Complex.One) return (z);
+            double m = Abs(z);
+            double t = Arg(z);
+            double n = Math.Pow(m, r.Re) * Math.Exp(-r.Im * t);
+            double u = r.Re * t + r.Im * Math.Log(m);
+            return (new Complex(n * MoreMath.Cos(u), n * MoreMath.Sin(u)));
         }
 
         /// <summary>

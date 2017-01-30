@@ -15,38 +15,28 @@ namespace Meta.Numerics.Analysis {
         /// <param name="volume">The volume over which to integrate.</param>
         /// <returns>A numerical estimate of the multi-dimensional integral.</returns>
         /// <remarks>
-        /// <para>By default, our multidimensional integration system targets a relative accuracy of about 10<sup>-7</sup> (close to full single precision) for d=2, falling gradually
-        /// to about 10<sup>-2</sup> (1%) for d=12. To achieve that accuracy, it allows up to about 10<sup>5</sup> evaluations of the integrand for d=2, rising
-        /// up to about 10<sup>8</sup> evaluations for d=12.</para>
-        /// <para>You can change the accuracy demands and evaluation budget by passing an <see cref="EvaluationSettings"/> object to the integration method. By decreasing
-        /// the accuracy you require or increasing the evaluation budget, you may be able to successfully complete integrals that would fail for the default settings.</para>
+        /// <para>For multi-dimensional integration, the default accurary targets and evaluation budget varies with the dimension of the integral.
+        /// The default relative accuracy target falls from about 10<sup>-7</sup> (close to full single precision) for d=2
+        /// to about 10<sup>-1</sup> (10%) for d=15. The default absolute accuracy target falls from about 10<sup>-8</sup> to about 10<sup>-2</sup> over the same range.
+        /// To achieve those targets, it allows up to about 100,000 evaluations of the integrand for d=2, rising up to about 1 billion evaluations for d=15.</para>
+        /// <para>You can change the accuracy targets and evaluation budget by passing an <see cref="EvaluationSettings"/> object to
+        /// <see cref="Integrate(Func{IList{double}, double}, IList{Interval}, IntegrationSettings)"/> overload. By decreasing
+        /// the accuracy you demand or increasing the evaluation budget, you may be able to successfully complete integrals that would fail for the default settings.</para>
+        /// <para>For more information on multi-dimensional integration, see <see cref="Integrate(Func{IList{double}, double}, IList{Interval}, IntegrationSettings)"/>.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="function"/> or <paramref name="volume"/> is <see langword="null"/>.</exception>
+        /// <exception cref="NonconvergenceException">The required accuracy could not be achieved using the evaulation budget.</exception>
         public static IntegrationResult Integrate (Func<IList<double>, double> function, IList<Interval> volume) {
+            return (Integrate(function, volume, new IntegrationSettings()));
+        }
 
-            if (function == null) throw new ArgumentNullException("function");
-            if (volume == null) throw new ArgumentNullException("volume");
-
-            // Compute a target accuracy that decreases with dimension from full at d = 1 to ~1/8 at d = 8.
-            //   d = 2, eps = 3E-8, max = 65K
-            //   d = 3, eps = 1E-5, max = 330K
-            //   d = 4, eps = 2E-4, max = 1M
-            //   d = 6, eps =, max = 
-            //   d = 8, eps =, max =
-            //   d = 10, eps =, max =
-
-            // Choose default evaluation settings based on dimension.
-            int d = volume.Count;
-            double precision = Math.Pow(10.0, -(1.0 + 12.0 / d)); // change to 10^{-(1+12/d)} or 2^{-3(1 + 12/d)}?
-            int count = (d * d * d * d) * 4096;
-
-            EvaluationSettings settings = new EvaluationSettings() {
-                AbsolutePrecision = precision * precision,
-                RelativePrecision = precision,
-                EvaluationBudget = d * d * d * d * 4096
-            };
-
-            return (Integrate(function, volume, settings));
-
+        internal static IntegrationSettings SetMultiIntegrationDefaults (IntegrationSettings original, int d) {
+            IntegrationSettings settings = new IntegrationSettings();
+            settings.RelativePrecision = (original.RelativePrecision < 0.0) ? Math.Pow(10.0, -(0.0 + 14.0 / d)) : original.RelativePrecision;
+            settings.AbsolutePrecision = (original.AbsolutePrecision < 0.0) ? Math.Pow(10.0, -(1.0 + 14.0 / d)) : original.AbsolutePrecision;
+            settings.EvaluationBudget = (original.EvaluationBudget < 0.0) ? (int) Math.Round(Math.Pow(10.0, 9.0 - 8.0 / d)) : original.EvaluationBudget;
+            settings.Listener = original.Listener;
+            return (settings);
         }
 
         /// <summary>
@@ -62,7 +52,7 @@ namespace Meta.Numerics.Analysis {
         /// volume as a bounding hyper-rectangle that encloses your desired integration region, and returing the value 0 for the integrand outside of the desired integration
         /// region. For example, to find the volume of a unit d-sphere, you can integrate a function that is 1 inside the unit d-sphere and 0 outside it over the volume
         /// [-1,1]<sup>d</sup>. You can integrate over infinite volumes by specifing volume endpoints of <see cref="Double.PositiveInfinity"/> and/or
-        /// <see cref="Double.NegativeInfinity"/>. Volumes with dimension greater than 12 are not currently supported.</para>
+        /// <see cref="Double.NegativeInfinity"/>. Volumes with dimension greater than 15 are not currently supported.</para>
         /// <para>Integrals with hard boundaries (like our hyper-sphere volume problem) typically require more evaluations than integrals of smooth functions to achieve the same accuracy.
         /// Integrals with canceling positive and negative contributions also typically require more evaluations than integtrals of purely positive functions.</para>
         /// <para>Numerical multi-dimensional integration is computationally expensive. To make problems more tractable, keep in mind some rules of thumb:</para>
@@ -76,16 +66,18 @@ namespace Meta.Numerics.Analysis {
         /// </ul>
         /// </remarks>
         /// <exception cref="ArgumentException"><paramref name="function"/>, <paramref name="volume"/>, or <paramref name="settings"/> are null, or
-        /// the dimension of <paramref name="volume"/> is larger than 12.</exception>
+        /// the dimension of <paramref name="volume"/> is larger than 15.</exception>
         /// <exception cref="NonconvergenceException">The prescribed accuracy could not be achieved with the given evaluation budget.</exception>
-        public static IntegrationResult Integrate (Func<IList<double>, double> function, IList<Interval> volume, EvaluationSettings settings) {
+        public static IntegrationResult Integrate (Func<IList<double>, double> function, IList<Interval> volume, IntegrationSettings settings) {
 
-            if (function == null) throw new ArgumentNullException("function");
-            if (volume == null) throw new ArgumentNullException("volume");
-            if (settings == null) throw new ArgumentNullException("settings");
+            if (function == null) throw new ArgumentNullException(nameof(function));
+            if (volume == null) throw new ArgumentNullException(nameof(volume));
+            if (settings == null) throw new ArgumentNullException(nameof(settings));
 
             // Get the dimension from the box
             int d = volume.Count;
+
+            settings = SetMultiIntegrationDefaults(settings, d);
 
             // Translate the integration volume, which may be infinite, into a bounding box plus a coordinate transform.
             Interval[] box = new Interval[d];
@@ -128,10 +120,10 @@ namespace Meta.Numerics.Analysis {
             } else if (d < 4) {
                 IntegrationRegion r = new IntegrationRegion(box);
                 estimate = Integrate_Adaptive(f, map, r, settings);
-            } else if (d < 12) {
+            } else if (d < 16) {
                 estimate = Integrate_MonteCarlo(f, map, box, settings);
             } else {
-                throw new ArgumentException("The dimension of the integrtion volume must be less than 12.", "volume");
+                throw new ArgumentException("The dimension of the integrtion volume must be less than 16.", "volume");
             }
 
             // Sometimes the estimated uncertainty drops precipitiously. We will not report an uncertainty less than 3/4 of that demanded.

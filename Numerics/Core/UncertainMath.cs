@@ -34,10 +34,9 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The sine of the argument.</returns>
         public static UncertainValue Sin (UncertainValue x) {
-            UncertainValue y = new UncertainValue();
-            y.Value = Math.Sin(x.Value);
-            y.Uncertainty = Math.Abs(Math.Cos(x.Value)) * x.Uncertainty;
-            return (y);
+            double v = Math.Sin(x.Value);
+            double u = Math.Abs(Math.Cos(x.Value)) * x.Uncertainty;
+            return (new UncertainValue(v, u));
         }
 
         /// <summary>
@@ -49,10 +48,6 @@ namespace Meta.Numerics {
             double v = Math.Cos(x.Value);
             double u = Math.Abs(Math.Sin(x.Value)) * x.Uncertainty;
             return (new UncertainValue(v, u));
-            //UncertainValue y = new UncertainValue();
-            //y.Value = Math.Cos(x.Value);
-            //y.Uncertainty = Math.Abs(Math.Sin(x.Value)) * x.Uncertainty;
-            //return (y);
         }
 
         /// <summary>
@@ -62,12 +57,8 @@ namespace Meta.Numerics {
         /// <returns>The tanget of the argument.</returns>
         public static UncertainValue Tan (UncertainValue x) {
             double v = Math.Tan(x.Value);
-            double u = (1.0 + MoreMath.Pow2(v)) * x.Uncertainty;
+            double u = (1.0 + v * v) * x.Uncertainty;
             return (new UncertainValue(v, u));
-            //UncertainValue y = new UncertainValue();
-            //y.Value = Math.Tan(x.Value);
-            //y.Uncertainty = (1.0 + Math.Pow(y.Value, 2)) * x.Uncertainty;
-            //return (y);
         }
 
         /// <summary>
@@ -79,10 +70,6 @@ namespace Meta.Numerics {
             double v = Math.Asin(x.Value);
             double u = x.Uncertainty / Math.Abs(Math.Cos(v));
             return (new UncertainValue(v, u));
-            //UncertainValue y = new UncertainValue();
-            //y.Value = Math.Asin(x.Value);
-            //y.Uncertainty = x.Uncertainty / Math.Abs(Math.Cos(y.Value));
-            //return (y);
         }
 
         /// <summary>
@@ -91,10 +78,9 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The arccosine of the argument.</returns>
         public static UncertainValue Acos (UncertainValue x) {
-            UncertainValue y = new UncertainValue();
-            y.Value = Math.Acos(x.Value);
-            y.Uncertainty = x.Uncertainty / Math.Abs(Math.Sin(y.Value));
-            return (y);
+            double v = Math.Acos(x.Value);
+            double u = x.Uncertainty / Math.Abs(Math.Sin(v));
+            return (new UncertainValue(v, u));
         }
 
         /// <summary>
@@ -131,10 +117,9 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The value of e^<sup>x1</sup>.</returns>
         public static UncertainValue Exp (UncertainValue x) {
-            UncertainValue y = new UncertainValue();
-            y.Value = Math.Exp(x.Value);
-            y.Uncertainty = y.Value * x.Uncertainty;
-            return (y);
+            double v = Math.Exp(x.Value);
+            double u = v * x.Uncertainty;
+            return (new UncertainValue(v, u));
         }
 
         /// <summary>
@@ -143,10 +128,9 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The value of ln(x1).</returns>
         public static UncertainValue Log (UncertainValue x) {
-            UncertainValue y = new UncertainValue();
-            y.Value = Math.Log(x.Value);
-            y.Uncertainty = x.RelativeUncertainty;
-            return (y);
+            double v = Math.Log(x.Value);
+            double u = x.RelativeUncertainty;
+            return (new UncertainValue(v, u));
         }
 
         /// <summary>
@@ -156,10 +140,9 @@ namespace Meta.Numerics {
         /// <param name="p">The power.</param>
         /// <returns>The argument raised to the specified power.</returns>
         public static UncertainValue Pow (UncertainValue x, double p) {
-            UncertainValue y = new UncertainValue();
-            y.Value = Math.Pow(x.Value, p);
-            y.Uncertainty = Math.Abs(p * y.Value * x.RelativeUncertainty);
-            return (y);
+            double v = Math.Pow(x.Value, p);
+            double u = Math.Abs(p * v * x.RelativeUncertainty);
+            return (new UncertainValue(v, u));
         }
 
         /// <summary>
@@ -168,10 +151,9 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The hyperbolic sine of the argument.</returns>
         public static UncertainValue Sinh (UncertainValue x) {
-            UncertainValue y = new UncertainValue();
-            y.Value = Math.Sinh(x.Value);
-            y.Uncertainty = Math.Cosh(x.Value) * x.Uncertainty;
-            return (y);
+            double v = Math.Sinh(x.Value);
+            double u = Math.Cosh(x.Value) * x.Uncertainty;
+            return (new UncertainValue(v, u));
         }
 
         /// <summary>
@@ -180,10 +162,9 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The hyperbolic cosine of the argument.</returns>
         public static UncertainValue Cosh (UncertainValue x) {
-            UncertainValue y = new UncertainValue();
-            y.Value = Math.Cosh(x.Value);
-            y.Uncertainty = Math.Abs(Math.Sinh(x.Value)) * x.Uncertainty;
-            return (y);
+            double v = Math.Cosh(x.Value);
+            double u = Math.Abs(Math.Sinh(x.Value)) * x.Uncertainty;
+            return (new UncertainValue(v, u));
         }
 
         /// <summary>
@@ -192,10 +173,9 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The hyperbolic tanget of the argument.</returns>
         public static UncertainValue Tanh (UncertainValue x) {
-            UncertainValue y = new UncertainValue();
-            y.Value = Math.Tanh(x.Value);
-            y.Uncertainty = y.Uncertainty / Math.Pow(Math.Cosh(x.Value), 2);
-            return (y);
+            double v = Math.Tanh(x.Value);
+            double u = x.Uncertainty / MoreMath.Sqr(Math.Cosh(x.Value));
+            return (new UncertainValue(v, u));
         }
 
     }

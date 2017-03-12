@@ -25,14 +25,14 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <seealso href="http://en.wikipedia.org/wiki/Exponential_distribution"/>
     public sealed class ExponentialDistribution : Distribution {
 
-        private double mu;
+        private readonly double mu;
 
         /// <summary>
         /// Initializes a new exponential distribution with the given mean.
         /// </summary>
         /// <param name="mu">The mean, which must be positive.</param>
         public ExponentialDistribution (double mu) {
-            if (mu <= 0.0) throw new ArgumentOutOfRangeException("mu");
+            if (mu <= 0.0) throw new ArgumentOutOfRangeException(nameof(mu));
             this.mu = mu;
         }
 
@@ -73,20 +73,29 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             return (-mu * MoreMath.LogOnePlus(-P));
         }
 
         /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
-            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
             return (-mu * Math.Log(Q));
+        }
+
+        /// <inheritdoc />
+        public override double Hazard (double x) {
+            if (x < 0.0) {
+                return (0.0);
+            } else {
+                return (1.0 / mu);
+            }
         }
 
         /// <inheritdoc />
         public override double Moment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else {
@@ -97,7 +106,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double MomentAboutMean (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -112,7 +121,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Cumulant (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (0.0);
             } else {
@@ -184,7 +193,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
         public static FitResult FitToSample (Sample sample) {
 
-            if (sample == null) throw new ArgumentNullException("sample");
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) throw new InsufficientDataException();
 
             // none of the data is allowed to be negative

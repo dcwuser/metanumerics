@@ -90,6 +90,18 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (y);
         }
 
+        /// <summary>
+        /// Computes the hazard function.
+        /// </summary>
+        /// <param name="x">The reference point.</param>
+        /// <returns>The hazard function p(x)/Q(x).</returns>
+        /// <remarks>
+        /// <para>Also known as the failure rate or force of mortality.</para>
+        /// </remarks>
+        public virtual double Hazard (double x) {
+            return (ProbabilityDensity(x) / RightProbability(x));
+        }
+
         /// <inheritdoc />
         public override double Moment (int r) {
             if (r == 0) {

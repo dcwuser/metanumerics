@@ -77,6 +77,8 @@
     <Compile Include="AdvancedMathTest_Carlson.cs" />
     <Compile Include="AdvancedMathTest_Coulomb.cs" />
     <Compile Include="AdvancedMathTest_Elliptic.cs" />
+    <Compile Include="AdvancedMathTest_Error.cs" />
+    <Compile Include="AdvancedMathTest_Hypergeometric.cs" />
     <Compile Include="AdvancedMathTest_Jacobi.cs" />
     <Compile Include="AnovaTest.cs" />
     <Compile Include="BinaryContingencyTableTest.cs" />

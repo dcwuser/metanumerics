@@ -12,55 +12,10 @@ namespace Test {
 
 
 
-    [TestClass()]
+    [TestClass]
     public class OrthogonalPolynomialsTest {
 
-
-        private TestContext testContextInstance;
-
-        public TestContext TestContext {
-            get {
-                return testContextInstance;
-            }
-            set {
-                testContextInstance = value;
-            }
-        }
-
-        #region Additional test attributes
-        // 
-        //You can use the following additional attributes as you write your tests:
-        //
-        //Use ClassInitialize to run code before running the first test in the class
-        //[ClassInitialize()]
-        //public static void MyClassInitialize(TestContext testContext)
-        //{
-        //}
-        //
-        //Use ClassCleanup to run code after all tests in a class have run
-        //[ClassCleanup()]
-        //public static void MyClassCleanup()
-        //{
-        //}
-        //
-        //Use TestInitialize to run code before running each test
-        //[TestInitialize()]
-        //public void MyTestInitialize()
-        //{
-        //}
-        //
-        //Use TestCleanup to run code after each test has run
-        //[TestCleanup()]
-        //public void MyTestCleanup()
-        //{
-        //}
-        //
-        #endregion
-
-
-
         // For all orthogonal polynomials, we should test
-        //                     Legendre  Chebyshev  Hermine  Laguerre
         //   Orthonormality
         //   Recurrsion
         //   Special cases
@@ -775,9 +730,10 @@ namespace Test {
         [TestMethod]
         public void ZernikeBessel () {
 
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 30, 6)) {
-                foreach (int m in TestUtilities.GenerateUniformIntegerValues(0, n, 6)) {
-                    //int m = n;
+            // \int_0^{1} \! R^{m}_{n}(\rho) J_{m}(x \rho) \rho \, d\rho = (-1)^{(n-m)/2} J_{n+1}(x) / x
+
+            foreach (int n in TestUtilities.GenerateIntegerValues(2, 32, 4)) {
+                foreach (int m in TestUtilities.GenerateUniformIntegerValues(0, n, 2)) {
                     if ((m % 2) != (n % 2)) continue; // skip trivial cases
                     foreach (double x in TestUtilities.GenerateRealValues(1.0, 10.0, 4)) {
 
@@ -797,10 +753,10 @@ namespace Test {
 
                         Console.WriteLine("  {0} {1}", I, J);
 
-                        // near-zero integrals result from delicate cancelations, and thus
+                        // Near-zero integrals result from delicate cancelations, and thus
                         // cannot be expected to achieve the relative target precision;
-                        // the can achieve the absolute target precisions, so translate
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(I, J, Math.Abs(TestUtilities.TargetPrecision / J)));
+                        // they can achieve the absolute target precisions, though.
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(I, J, new EvaluationSettings() { RelativePrecision = 0.0, AbsolutePrecision = TestUtilities.TargetPrecision }));
 
                     }
                 }

@@ -82,6 +82,7 @@
     <Compile Include="Core\BigFloat.cs" />
     <Compile Include="Core\Complex.cs" />
     <Compile Include="Core\ComplexMath.cs" />
+    <Compile Include="Core\DoubleDecomposition.cs" />
     <Compile Include="Core\Exceptions.cs" />
     <Compile Include="Core\Global.cs" />
     <Compile Include="Core\Interval.cs" />
@@ -102,6 +103,7 @@
     <Compile Include="Functions\AdvancedMath_Exponential.cs" />
     <Compile Include="Functions\AdvancedMath_Gamma.cs" />
     <Compile Include="Functions\AdvancedMath_Harmonic.cs" />
+    <Compile Include="Functions\AdvancedMath_Hypergeometric.cs" />
     <Compile Include="Functions\AdvancedMath_Inverse.cs" />
     <Compile Include="Functions\AdvancedMath_Jacobi.cs" />
     <Compile Include="Functions\AdvancedMath_Kelvin.cs" />
@@ -175,6 +177,7 @@
     <Compile Include="Statistics\Distributions\KolmogorovExactDistribution.cs" />
     <Compile Include="Statistics\Distributions\KolmogorovTwoSampleExactDistribution.cs" />
     <Compile Include="Statistics\Distributions\KuiperDistribution.cs" />
+    <Compile Include="Statistics\Distributions\LaplaceDistribution.cs" />
     <Compile Include="Statistics\Distributions\LogisticDistribution.cs" />
     <Compile Include="Statistics\Distributions\LognormalDistribution.cs" />
     <Compile Include="Statistics\Distributions\MannWhitneyDistribution.cs" />

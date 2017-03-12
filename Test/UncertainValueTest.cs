@@ -8,32 +8,28 @@ using Meta.Numerics;
 namespace Test
 {
     
-    
-    /// <summary>
-    ///This is a test class for UncertainValueTest and is intended
-    ///to contain all UncertainValueTest Unit Tests
-    ///</summary>
-    [TestClass()]
+    [TestClass]
     public class UncertainValueTest {
-
-
-        private TestContext testContextInstance;
-
-        /// <summary>
-        ///Gets or sets the test context which provides
-        ///information about and functionality for the current test run.
-        ///</summary>
-        public TestContext TestContext {
-            get {
-                return testContextInstance;
-            }
-            set {
-                testContextInstance = value;
-            }
-        }
 
         UncertainValue a = new UncertainValue(1.0, 0.5);
         UncertainValue b = new UncertainValue(-2.0, 3.0);
+
+        [TestMethod]
+        public void UncertainValueEquality () {
+
+            Assert.IsTrue(a == a);
+            Assert.IsTrue(a.Equals(a));
+            Assert.IsTrue(a.Equals((object) a));
+
+            Assert.IsTrue(a != b);
+            Assert.IsTrue(!a.Equals(b));
+            Assert.IsTrue(!a.Equals((object) b));
+
+            Assert.IsTrue(!a.Equals(null));
+
+            Assert.IsTrue(a.GetHashCode() != b.GetHashCode());
+
+        }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
@@ -53,13 +49,13 @@ namespace Test
         [TestMethod]
         public void UncertainValueAdditionTriangleTest () {
             UncertainValue c = a + b;
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Pow(c.Uncertainty, 2), Math.Pow(a.Uncertainty, 2) + Math.Pow(b.Uncertainty, 2)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.Sqr(c.Uncertainty), MoreMath.Sqr(a.Uncertainty) + MoreMath.Sqr(b.Uncertainty)));
         }
 
         [TestMethod]
         public void UncertainValueSubtractionTriangleTest () {
             UncertainValue c = a - b;
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Pow(c.Uncertainty, 2), Math.Pow(a.Uncertainty, 2) + Math.Pow(b.Uncertainty, 2)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.Sqr(c.Uncertainty), MoreMath.Sqr(a.Uncertainty) + MoreMath.Sqr(b.Uncertainty)));
         }
 
         [TestMethod]

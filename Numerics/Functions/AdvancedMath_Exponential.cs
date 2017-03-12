@@ -6,15 +6,16 @@ namespace Meta.Numerics.Functions {
 
     public static partial class AdvancedMath {
 
-        // this series is technically convergent everywhere, but it won't start converging until k ~ x, so it's best to use with small x
-        // takes about 100 terms at x~40; it would be nice to move to the asymptotic expansion for lower x, but it fails to converge in that region
+        // This series is technically convergent everywhere, but it won't start converging until k ~ x, so it's best to use with small x
+        // takes about 100 terms at x~40; it would be nice to move to the asymptotic expansion for lower x, but it fails to converge in that region.
+
         private static double IntegralEi_Series (double x) {
             double dy = x;
             double y = EulerGamma + Math.Log(x) + dy;
             for (int k = 2; k < Global.SeriesMax; k++) {
                 double y_old = y;
-                dy = dy * x / k;
-                y = y_old + dy / k;
+                dy *= x / k;
+                y += dy / k;
                 if (y == y_old) return (y);
             }
             throw new NonconvergenceException();
@@ -31,9 +32,11 @@ namespace Meta.Numerics.Functions {
             double y = dy;
             for (int k = 1; k < Global.SeriesMax; k++) {
                 double y_old = y;
-                dy = dy * k / x;
-                y = y_old + dy;
-                if (y == y_old) return (Math.Exp(x) / x * y);
+                dy *= k / x;
+                y += dy;
+                if (y == y_old) {
+                    return (Math.Exp(x) / x * y);
+                }
             }
             throw new NonconvergenceException();
         }
@@ -53,11 +56,14 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso cref="IntegralE(int, double)"/>
         public static double IntegralEi (double x) {
-            if (x < 0) throw new ArgumentOutOfRangeException(nameof(x));
-            if (x < 40.0) {
+            if (x < 0) {
+                throw new ArgumentOutOfRangeException(nameof(x));
+            } else if (x < 40.0) {
                 return (IntegralEi_Series(x));
-            } else {
+            } else if (x <= Double.PositiveInfinity) {
                 return (IntegralEi_Asymptotic(x));
+            } else {
+                return (Double.NaN);
             }
         }
 
@@ -419,7 +425,7 @@ namespace Meta.Numerics.Functions {
             if (z.Re > 4.0) {
                 return(false);
             } else if (z.Re > 0.0) {
-                return (Math.Abs(z.Im) < 6.0 * (1.0 - MoreMath.Pow2(z.Re / 4.0)));
+                return (Math.Abs(z.Im) < 6.0 * (1.0 - MoreMath.Sqr(z.Re / 4.0)));
             } else if (z.Re > -20.0) {
                 return (Math.Abs(z.Im) < 7.0 - Math.Abs(z.Re + 10.0) / 10.0);
             } else if (z.Re > -50.0) {

@@ -107,12 +107,13 @@ namespace Test {
         public void BigTrig () {
             // An exactly representable double that is extremely close to a multiple of \pi/2
             Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                MoreMath.Cos(6381956970095103.0 * MoreMath.Pow(2.0, 797)), 4.6871659242546276E-19
+                MoreMath.Cos(6381956970095103.0 * MoreMath.Pow(2.0, 797)), -4.6871659242546276E-19
             ));
         }
 
         // https://www.csee.umbc.edu/~phatak/645/supl/Ng-ArgReduction.pdf says
-        // 6381956970095103 X 2^{797} = n (\pi / 2) + 4.687165924254624 X 10^{-19}
+        //   6381956970095103 X 2^{797} = n (\pi / 2) + 4.687165924254624 X 10^{-19}
+        // This is supposedly the closest any representable double gets to an exact multiple of \pi / 2.
 
         // http://perso.ens-lyon.fr/nathalie.revol/publis/BDKMR05.pdf says
         // 6411027962775774 X 2^{-48} = n (\pi / 4) + 3.094903 X 10^{-19}

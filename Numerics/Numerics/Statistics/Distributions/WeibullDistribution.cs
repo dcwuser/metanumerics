@@ -28,15 +28,15 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="scale">The scale parameter, which must be positive.</param>
         /// <param name="shape">The shape parameter, which must be positive.</param>
         public WeibullDistribution (double scale, double shape) {
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException("scale");
-            if (shape <= 0.0) throw new ArgumentOutOfRangeException("shape");
+            if (scale <= 0.0) throw new ArgumentOutOfRangeException(nameof(scale));
+            if (shape <= 0.0) throw new ArgumentOutOfRangeException(nameof(shape));
             this.scale = scale;
             this.shape = shape;
         }
 
-        private double scale;
+        private readonly double scale;
 
-        private double shape;
+        private readonly double shape;
 
         /// <summary>
         /// Gets the scale parameter of the distribution.
@@ -105,14 +105,23 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
+        public override double Hazard (double x) {
+            if (x <= 0.0) {
+                return (0.0);
+            } else {
+                return (Math.Pow(x / scale, shape - 1.0));
+            }
+        }
+
+        /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             return (scale * Math.Pow(-MoreMath.LogOnePlus(-P), 1.0 / shape));
         }
 
         /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
-            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
             return (scale * Math.Pow(-Math.Log(Q), 1.0 / shape)); 
         }
 
@@ -135,7 +144,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Moment (int r) {
             if (r < 0.0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else {
@@ -146,13 +155,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double MomentAboutMean (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
                 return (0.0);
             } else {
-                // for large shape parameters, central moments involve strong calculations, so integrate to get them
+                // for large shape parameters, central moments involve strong cancelations, so integrate to get them
                 if (shape < 2.0) {
                     return (CentralMomentFromRawMoment(r));
                 } else {
@@ -203,7 +212,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         public static FitResult FitToSample (Sample sample) {
 
-            if (sample == null) throw new ArgumentNullException("sample");
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
             if (sample.Minimum <= 0.0) throw new InvalidOperationException();
 

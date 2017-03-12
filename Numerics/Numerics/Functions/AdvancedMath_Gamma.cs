@@ -57,13 +57,13 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/GammaFunction.html" />
         /// <seealso href="http://dlmf.nist.gov/5">DLMF on the Gamma Function</seealso>
         public static double Gamma (double x) {
-            if (x <= 0.0) {
-                if (x == Math.Ceiling(x)) {
-                    // poles at zero and negative integers
-                    return (Double.NaN);
-                } else {
-                    return (Math.PI / Gamma(-x) / (-x) / AdvancedMath.Sin(0.0, x / 2.0));
-                }
+            if (x < 0.25) {
+                // Use \Gamma(x) \Gamma(1-x) = \frac{\pi}{\sin(\pi x)} to move values close to and left of origin to x > 0
+                long y0;
+                double y1;
+                RangeReduction.ReduceByOnes(2.0 * x, out y0, out y1);
+                double s = RangeReduction.Sin(y0, y1);
+                return (Math.PI / s / Gamma(1.0 - x));
             } else if (x < 16.0) {
                 return (Lanczos.Gamma(x));
             } else {
@@ -99,7 +99,6 @@ namespace Meta.Numerics.Functions {
             } else {
                 // for large arguments, the Stirling asymptotic expansion is faster than the Lanzcos approximation
                 return (Stirling.Psi(x));
-                //return (Psi_Stirling(x));
             }
 		}
 
@@ -254,6 +253,101 @@ namespace Meta.Numerics.Functions {
             }
         }
 
+
+        /// <summary>
+        /// Computes the Pochammer symbol (x)<sub>y</sub>.
+        /// </summary>
+        /// <param name="x">The first argument.</param>
+        /// <param name="y">The second argument.</param>
+        /// <returns>The value of (x)<sub>y</sub>.</returns>
+        /// <remarks>
+        /// <para>The Pochhammer symbol is defined as a ratio of Gamma functions.</para>
+        /// <para>For positive integer y, this is equal to a rising factorial product.</para>
+        /// <para>Note that while the Pochhammer symbol notation is very common, combinatorialists use the same notation
+        /// for a falling factorial.</para>
+        /// <para>If you need to compute a ratio of Gamma functions, in most cases you should compute it by calling this
+        /// function instead of taking the quotient of two calls to the <see cref="Gamma(double)"/> function,
+        /// because there is a large fraction of the parameter space where Gamma(x+y) and Gamma(x) overflow,
+        /// but their quotient does not, and is correctly computed by this method.</para>
+        /// <para>This function accepts both positive and negative values for both x and y.</para>
+        /// </remarks>
+        /// <seealso href="http://mathworld.wolfram.com/PochhammerSymbol.html"/>
+        public static double Pochhammer (double x, double y) {
+
+            // Handle simplest cases quickly
+            if (y == 0.0) {
+                return (1.0);
+            } else if (y == 1.0) {
+                return (x);
+            }
+
+            // Should we also handle small integer y explicitly?
+
+            // The key case of x and y positive is pretty simple. Both the Lanczos and Stirling forms of \Gamma
+            // admit forms that preserve accuracy in \Gamma(x+y) / \Gamma(x) - 1 as y -> 0. It turns
+            // out, however, to be ridiculous complicated to handle all the corner cases that appear in
+            // other regions of the x-y plane.
+
+            double z = x + y;
+            if (x < 0.25) {
+
+                bool xNonPositiveInteger = (Math.Round(x) == x);
+                bool zNonPositiveInteger = (z <= 0.0) && (Math.Round(z) == z);
+
+                if (xNonPositiveInteger) {
+                    if (zNonPositiveInteger) {
+                        long m;
+                        double p;
+                        if (z >= x) {
+                            m = (long) (z - x);
+                            p = Pochhammer(-z + 1, m);
+                        } else {
+                            m = (long) (x - z);
+                            p = 1.0 / Pochhammer(-x + 1, m);
+                        }
+                        if (m % 2 != 0) p = -p;
+                        return (p);
+                    } else {
+                        return (0.0);
+                    }
+                }
+
+                if (y < 0.0) {
+                    // x negative, y negative; we can transform to make x and y positive
+                    return (1.0 / Pochhammer(1.0 - x, -y) * MoreMath.SinPi(x) / MoreMath.SinPi(z));
+                } else if (z <= 0.25) {
+                    // x negative, y positive, but not positive enough, so z still negative
+                    // we can transform to make x and y positive
+                    return (Pochhammer(1.0 - z, y) * MoreMath.SinPi(x) / MoreMath.SinPi(z));
+                } else {
+                    // x negative, y positive enough to make z positive
+                    return (Gamma(1.0 - x) * Gamma(z) * MoreMath.SinPi(x) / Math.PI);
+                }
+
+            } else {
+
+                if (z >= 0.25) {
+                    // This is the standard case: x positive, y may be negative, but not negative enough to make z negative
+                    double P;
+                    if ((x > 16.0) && (z > 16.0)) {
+                        P = Stirling.ReducedLogPochhammer(x, y);
+                    } else {
+                        P = Lanczos.ReducedLogPochhammer(x, y);
+                    }
+                    return (Math.Exp(y * P));
+                } else {
+                    // if y is very negative, z will also be negative, so we can transform one gamma
+                    if (Math.Round(z) == z) {
+                        return (Double.PositiveInfinity);
+                    } else {
+                        return (Math.PI / (Gamma(x) * Gamma(1.0 - z) * MoreMath.SinPi(z)));
+                    }
+                }
+
+            }
+
+        }
+
         // two-argument functions
 
         /// <summary>
@@ -330,8 +424,8 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso cref="RightRegularizedGamma" />
         public static double LeftRegularizedGamma (double a, double x) {
-			if (a <= 0) throw new ArgumentOutOfRangeException("a");
-			if (x < 0) throw new ArgumentOutOfRangeException("x");
+			if (a <= 0) throw new ArgumentOutOfRangeException(nameof(a));
+			if (x < 0) throw new ArgumentOutOfRangeException(nameof(x));
             if ((a > 128.0) && (Math.Abs(x - a) < 0.25 * a)) {
                 double P, Q;
                 Gamma_Temme(a, x, out P, out Q);
@@ -356,8 +450,8 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso cref="LeftRegularizedGamma"/>
 		public static double RightRegularizedGamma (double a, double x) {
-			if (a <= 0) throw new ArgumentOutOfRangeException("a");
-			if (x < 0) throw new ArgumentOutOfRangeException("x");
+			if (a <= 0) throw new ArgumentOutOfRangeException(nameof(a));
+			if (x < 0) throw new ArgumentOutOfRangeException(nameof(x));
             if ((a > 128.0) && (Math.Abs(x - a) < 0.25 * a)) {
                 double P, Q;
                 Gamma_Temme(a, x, out P, out Q);
@@ -449,9 +543,9 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The integral endpoint, which must lie in [0,1].</param>
         /// <returns>The value of I<sub>x</sub>(a, b) = B<sub>x</sub>(a, b) / B(a, b).</returns>
         public static double LeftRegularizedBeta (double a, double b, double x) {
-            if (a <= 0.0) throw new ArgumentOutOfRangeException("a");
-            if (b <= 0.0) throw new ArgumentOutOfRangeException("b");
-            if ((x < 0.0) || (x > 1.0)) throw new ArgumentOutOfRangeException("x");
+            if (a <= 0.0) throw new ArgumentOutOfRangeException(nameof(a));
+            if (b <= 0.0) throw new ArgumentOutOfRangeException(nameof(b));
+            if ((x < 0.0) || (x > 1.0)) throw new ArgumentOutOfRangeException(nameof(x));
             double xtp = (a + 1.0) / (a + b + 2.0);
             if (x > xtp) {
                 return (1.0 - LeftRegularizedBeta(b, a, 1.0 - x));
@@ -826,6 +920,25 @@ namespace Meta.Numerics.Functions {
             return (-p / q);
         }
 
+        // To calculate \frac{\Gamma(x + y)}{\Gamma(x)}, we need \frac{S(x+y)}{S(x)}. A little bit of algebra shows
+        //   \frac{S(x+y)}{S(x)} = 1 - y \left[ \sum_{k=1} \frac{c_k}{(x + y + (k-1))(x + (k-1))} \right]
+        //                               \left[ c_0 + \sum_{k=1} \frac{c_k}{x + (k-1)} \right]
+        // Expressing the result as the rate at which the ratio moves away from 1 as y increases allows us to
+        // derive accurate results for small y.
+
+        private static double RatioOfSumsResidual (double x, double y) {
+            double z = x + y;
+            double p = LanczosC[1] / (x * z);
+            double q = LanczosC[0] + LanczosC[1] / x;
+            for (int i = 2; i < LanczosC.Length; i++) {
+                x += 1.0;
+                z += 1.0;
+                p += LanczosC[i] / (x * z);
+                q += LanczosC[i] / x;
+            }
+            return (p / q);
+        }
+
         public static double Gamma (double x) {
             double t = x + LanczosGP;
             return (
@@ -860,6 +973,13 @@ namespace Meta.Numerics.Functions {
         public static Complex Psi (Complex z) {
             Complex t = z + LanczosGP;
             return (ComplexMath.Log(t) - LanczosG / t + LogSumPrime(z));
+        }
+
+        public static double ReducedLogPochhammer (double x, double y) {
+            double r = MoreMath.ReducedLogOnePlus(-RatioOfSumsResidual(x, y), y) +
+                (x - 0.5) * MoreMath.ReducedLogOnePlus(1.0 / (x + LanczosGP), y) +
+                Math.Log(x + y + LanczosGP) - 1.0;
+            return (r);
         }
 
         // If we just compute Exp( LogGamma(x) + LogGamma(y) - LogGamma(x+y) ) then several leading terms in the sum cancel,
@@ -927,6 +1047,23 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        // Computes (S(x + y) - S(x)) / y, i.e. the rate at which S(x + y) - S(x) changes with y
+
+        private static double ReducedPochhammerSum (double x, double y) {
+            double L = MoreMath.ReducedLogOnePlus(1.0 / x, y);
+            double xx = x * x;
+            double xk = x;
+            double f = AdvancedIntegerMath.Bernoulli[1] / 2.0 / xk * MoreMath.ReducedExpMinusOne(-L, y);
+            for (int k = 2; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
+                double f_old = f;
+                xk *= xx;
+                f += AdvancedIntegerMath.Bernoulli[k] / (2 * k) / (2 * k - 1) / xk * MoreMath.ReducedExpMinusOne((1 - 2 * k) * L, y);
+                if (f == f_old) return (f);
+            }
+            throw new NonconvergenceException();
+
+        }
+
         public static double LogGamma (double x) {
             // we-write to use (x-0.5) form to eliminate one one by storing log(2\pi)?
             return (x * Math.Log(x) - x - Math.Log(x / (2.0 * Math.PI)) / 2.0 + Sum(x));
@@ -935,6 +1072,11 @@ namespace Meta.Numerics.Functions {
         public static double Gamma (double x) {
             // return (Math.Sqrt(2.0 * Math.PI / x) * Math.Pow(x / Math.E, x) * Math.Exp(Sum(x)));
             return (Math.Exp(LogGamma(x)));
+        }
+
+        public static double ReducedLogPochhammer (double x, double y) {
+            double L = MoreMath.ReducedLogOnePlus(1.0 / x, y);
+            return ((x - 0.5) * L + Math.Log(x + y) - 1.0 + ReducedPochhammerSum(x, y));
         }
 
         public static double Beta (double x, double y) {

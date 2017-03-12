@@ -82,6 +82,26 @@ namespace Meta.Numerics {
 			return( new Complex(x,0.0) );
 		}
 
+
+        /// <summary>
+        /// Converts a System.Numerics.Complex number to a Meta.Numerics.Complex number.
+        /// </summary>
+        /// <param name="value">The System.Numerics.Complex number.</param>
+        /// <returns>The Meta.Numerics.Complex number.</returns>
+        /// <remarks>
+        /// <para>The <see cref="System.Numerics.Complex"/> data type has been available in the .NET Framework since version 4.0.
+        /// Because Meta.Numerics offered its own <see cref="Complex"/> data type before the .NET Framework, and since even in
+        /// the latest version of the .NET Framework, its Complex type has some notable deficiencies (e.g., compute
+        /// <see cref="System.Numerics.Complex.Sqrt(System.Numerics.Complex)"/> of -1.0 and note that it does
+        /// not equal <see cref="System.Numerics.Complex.ImaginaryOne"/>), our own Complex type persists. Eventually, we
+        /// expect the deficiencies of <see cref="System.Numerics.Complex"/> to be corected. Until that time,
+        /// to ease interoperation, we provide an implicit cast that converts the .NET Framework Complex type into
+        /// the Meta.Numerics Complex type.</para>
+        /// </remarks>
+        //public static implicit operator Complex (System.Numerics.Complex value) {
+        //    return (new Complex(value.Real, value.Imaginary));
+        //}
+
 		// printing
 
         /// <summary>
@@ -265,15 +285,29 @@ namespace Meta.Numerics {
         // These are not strictly necessary, since we have defined an implicit double -> Complex cast,
         // but they are presumably faster than doing a cast and then an operation with zero im parts.
 
-        /*
+        /// <summary>
+        /// Computes the sum of a complex and a real number.
+        /// </summary>
+        /// <param name="z">The complex number.</param>
+        /// <param name="a">The real number.</param>
+        /// <returns>The sum z + a.</returns>
 		public static Complex operator+ (Complex z, double a) {
-			return( new Complex(z.Re + a, z.Im) );
+            // This is 1 flop instead of a cast plus 2 flops.
+			return (new Complex(z.Re + a, z.Im));
 		}
 
+        /// <summary>
+        /// Computes the sum of a real and a complex number.
+        /// </summary>
+        /// <param name="a">The real number.</param>
+        /// <param name="z">The complex number.</param>
+        /// <returns>The sum a + z.</returns>
 		public static Complex operator+ (double a, Complex z) {
-			return( z + a );
+            // This is 1 flop instead a cast plus 2 flops.
+            return (new Complex(a + z.Re, z.Im));
 		}
 
+        /*
 		public static Complex operator- (Complex z, double a) {
 			return( new Complex(z.Re -a, z.Im) );
 		}

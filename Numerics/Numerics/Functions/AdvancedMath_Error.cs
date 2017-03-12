@@ -32,8 +32,10 @@ namespace Meta.Numerics.Functions {
             } else if (x < 1.5) {
                 // Use the series near the origin.
                 return (Erf_Series(x));
-            } else {
+            } else if (x <= Double.PositiveInfinity) {
                 return (1.0 - Erfc_ContinuedFraction(x));
+            } else {
+                return (Double.NaN);
             }
         }
 
@@ -60,8 +62,10 @@ namespace Meta.Numerics.Functions {
                 return (2.0 - Erfc_ContinuedFraction(-x));
             } else if (x < 1.5) {
                 return (1.0 - Erf_Series(x));
-            } else {
+            } else if (x <= Double.PositiveInfinity) {
                 return (Erfc_ContinuedFraction(x));
+            } else {
+                return (Double.NaN);
             }
         }
 
@@ -81,7 +85,7 @@ namespace Meta.Numerics.Functions {
                 t *= mx2 / k;
                 s += t / (2 * k + 1);
                 if (s == s_old) {
-                    return (2.0 * x / Global.SqrtPI * s);
+                    return (2.0 / Global.SqrtPI * x * s);
                 }
             }
             throw new NonconvergenceException();
@@ -173,7 +177,7 @@ namespace Meta.Numerics.Functions {
 
         private static double InverseErfSeries (double x) {
 
-            double z = Global.SqrtPI * x / 2.0;
+            double z = Global.SqrtPI / 2.0 * x;
             double z2 = z * z;
 
             double s = 1.0;
@@ -349,12 +353,14 @@ namespace Meta.Numerics.Functions {
             } else if (x < 1.0) {
                 // use the series expansion near the origin
                 return (Dawson_Series(x));
-            } else if (x > 10.0) {
+            } else if (x < 10.0) {
+                // use the Rybicki algorithm in between
+                return (Dawson_Rybicki(x));
+            } else if (x <= Double.PositiveInfinity) {
                 // use the asymptotic expansion for large values
                 return (Dawson_Asymptotic(x));
             } else {
-                // use the Rybicki algorithm in between
-                return (Dawson_Rybicki(x));
+                return (Double.NaN);
             }
         }
 
@@ -689,13 +695,13 @@ namespace Meta.Numerics.Functions {
         public static Complex Faddeeva (Complex z) {
 
             // use reflection formulae to ensure that we are in the first quadrant
-            if (z.Im < 0.0) return (2.0 * ComplexMath.Exp(-z * z) - Faddeeva(-z));
+            if (z.Im < 0.0) return (2.0 * ComplexMath.Exp(-ComplexMath.Sqr(z)) - Faddeeva(-z));
             if (z.Re < 0.0) return (Faddeeva(-z.Conjugate).Conjugate);
 
             double r = ComplexMath.Abs(z);
             if (r < 2.0) {
                 // use series for small z
-                return (ComplexMath.Exp(-z * z) * (1.0 - Erf_Series(-ComplexMath.I * z)));
+                return (ComplexMath.Exp(-ComplexMath.Sqr(z)) * (1.0 - Erf_Series(-ComplexMath.I * z)));
                 //return (Faddeeva_Series(z));
             } else if ((z.Im < 0.1) && (z.Re < 30.0)) {
                 // this is a special, awkward region
@@ -811,7 +817,7 @@ namespace Meta.Numerics.Functions {
 
         private static Complex Erf_Series (Complex z) {
             Complex zp = 2.0 / Global.SqrtPI * z;
-            Complex zz = - z * z;
+            Complex zz = - ComplexMath.Sqr(z);
             Complex f = zp;
             for (int k = 1; k < Global.SeriesMax; k++) {
                 Complex f_old = f;
@@ -853,9 +859,9 @@ namespace Meta.Numerics.Functions {
                 // otherwise, just compute from Faddeva
                 if (z.Re < 0.0) {
                     // since Fadddeeva blows up for negative z.Re, use erf(z) = -erf(-z)
-                    return (ComplexMath.Exp(-z * z) * Faddeeva(-ComplexMath.I * z) - 1.0);
+                    return (ComplexMath.Exp(-ComplexMath.Sqr(z)) * Faddeeva(-ComplexMath.I * z) - 1.0);
                 } else {
-                    return (1.0 - ComplexMath.Exp(-z * z) * Faddeeva(ComplexMath.I * z));
+                    return (1.0 - ComplexMath.Exp(-ComplexMath.Sqr(z)) * Faddeeva(ComplexMath.I * z));
                 }
                 // we don't do this near the origin beause we would loose accuracy in the very small real parts there by subtracting from 1
             } 

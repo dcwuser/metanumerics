@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 using Meta.Numerics.Functions;
 
@@ -85,8 +86,20 @@ namespace Meta.Numerics {
         /// </summary>
         /// <param name="z">The argument.</param>
         /// <returns>The value of z<sup>2</sup>.</returns>
+        /// <remarks>
+        /// <para>Unlike <see cref="MoreMath.Sqr(double)"/>, there is slightly more to this method than shorthand for z * z.
+        /// In terms of real and imaginary parts z = x + i y, the product z * z = (x * x - y * y) + i(x * y + x * y),
+        /// which not only requires 6 flops to evaluate, but also computes the real part as an expression that can easily overflow
+        /// or suffer from significant cancelation error. By instead computing z<sup>2</sup> via as (x - y) * (x + y) + i 2 * x * y,
+        /// this method not only requires fewer flops but is also less subject to overflow and cancelation error. You should
+        /// therefore generally favor the computation of z<sup>2</sup> using this method over its computation as z * z.</para> 
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Complex Sqr (Complex z) {
-            return (z * z);
+            // This form has one less flop than z * z, and, more importantly, evaluates
+            // (x - y) * (x + y) instead of x * x - y * y; the latter would be more
+            // subject to cancelation errors and overflow or underflow 
+            return (new Numerics.Complex((z.Re - z.Im) * (z.Re + z.Im), 2.0 * z.Re * z.Im));
         }
 
         /// <summary>
@@ -192,7 +205,7 @@ namespace Meta.Numerics {
             // Sine of a complex mixes sin, cos, sinh, and cosh. By computing sinh and cosh ourselves
             // from exp, we prevent having to evaluate exp twice inside seperate calls to sinh and cosh.
             double p = Math.Exp(z.Im);
-            double q = 1 / p;
+            double q = 1.0 / p;
             double sinh = (p - q) / 2.0;
             double cosh = (p + q) / 2.0;
             return (new Complex(MoreMath.Sin(z.Re) * cosh, MoreMath.Cos(z.Re) * sinh));
@@ -220,7 +233,7 @@ namespace Meta.Numerics {
         /// <returns>The value of cos(z).</returns>
         public static Complex Cos (Complex z) {
             double p = Math.Exp(z.Im);
-            double q = 1 / p;
+            double q = 1.0 / p;
             double sinh = (p - q) / 2.0;
             double cosh = (p + q) / 2.0;
             return (new Complex(MoreMath.Cos(z.Re) * cosh, -MoreMath.Sin(z.Re) * sinh));
@@ -242,11 +255,20 @@ namespace Meta.Numerics {
         /// <param name="z">The argument.</param>
         /// <returns>The value of tan(z).</returns>
         public static Complex Tan (Complex z) {
-            // tan z = [sin(2x) + I sinh(2y)]/[cos(2x) + I cosh(2y)]
+            // tan x = sin z / cos z, but to avoid unnecessary repeated trig computations, use
+            //   tan z = \frac{\sin(2x) + i \sinh(2y)}{\cos(2x) + \cosh(2y)}
+            // from A&S 4.3.57, and compute trig functions here.
+
+            // Even this can only be used for |y| not-too-big, beacuse sinh and cosh (correctly) overflow
+            // for quite moderate y, even though their ratio does not. In that case, divide
+            // through by cosh to get:
+            //   tan z = \frac{\frac{\sin(2x)}{\cosh(2y)} + i \tanh(2y)}{1 + \frac{\cos(2x)}{\cosh(2y)}}
+            // which correctly computes the (tiny) real part and the (normal-sized) imaginary part.
+
             double x2 = 2.0 * z.Re;
             double y2 = 2.0 * z.Im;
             double p = Math.Exp(y2);
-            double q = 1 / p;
+            double q = 1.0 / p;
             double cosh = (p + q) / 2.0;
             if (Math.Abs(z.Im) < 4.0) {
                 double sinh = (p - q) / 2.0;
@@ -255,8 +277,8 @@ namespace Meta.Numerics {
             } else {
                 // when Im(z) gets too large, sinh and cosh individually blow up
                 // but ratio is still ~1, so rearrage to use tanh instead
-                double F = (1.0 + Math.Cos(x2) / cosh);
-                return (new Complex(MoreMath.Sin(x2) / cosh / F, Math.Tanh(y2) / F));
+                double D = (1.0 + Math.Cos(x2) / cosh);
+                return (new Complex(MoreMath.Sin(x2) / cosh / D, Math.Tanh(y2) / D));
             }
         }
 
@@ -328,9 +350,6 @@ namespace Meta.Numerics {
 
         private static void Asin_Internal (double x, double y, out double b, out double bPrime, out double v) {
 
-            Debug.Assert(!(x < 0.0));
-            Debug.Assert(!(y < 0.0));
-
             // This method for the inverse complex sine (and cosine) is described in
             // Hull and Tang, "Implementing the Complex Arcsine and Arccosine Functions Using Exception Handling",
             // ACM Transactions on Mathematical Software (1997)
@@ -367,6 +386,9 @@ namespace Meta.Numerics {
             // to determine u. Compute u = \arcsin(\beta) or u = \arctan(\beta') for arcsin, u = \arccos(\beta)
             // or \arctan(1/\beta') for arccos.
 
+            Debug.Assert((x >= 0.0) || Double.IsNaN(x));
+            Debug.Assert((y >= 0.0) || Double.IsNaN(y));
+
             // For x or y large enough to overflow \alpha^2, we can simplify our formulas and avoid overflow.
             if ((x > Global.SqrtMax / 2.0) || (y > Global.SqrtMax / 2.0)) {
 
@@ -390,31 +412,42 @@ namespace Meta.Numerics {
 
                 double a = (r + s) / 2.0;
                 b = x / a;
-                Debug.Assert(a >= 1.0);
-                Debug.Assert(Math.Abs(b) <= 1.0);
+                //Debug.Assert(a >= 1.0);
+                //Debug.Assert(Math.Abs(b) <= 1.0);
 
                 if (b > 0.75) {
-                    double amx;
+                    //double amx;
                     if (x <= 1.0) {
-                        amx = (y * y / (r + (x + 1.0)) + (s + (1.0 - x))) / 2.0;
+                        double amx = (y * y / (r + (x + 1.0)) + (s + (1.0 - x))) / 2.0;
+                        bPrime = x / Math.Sqrt((a + x) * amx);
                     } else {
-                        amx = y * y * (1.0 / (r + (x + 1.0)) + 1.0 / (s + (x - 1.0))) / 2.0;
+                        // In this case, amx ~ y^2. Since we take the square root of amx, we should
+                        // pull y out from under the square root so we don't loose its contribution
+                        // when y^2 underflows.
+                        double t = (1.0 / (r + (x + 1.0)) + 1.0 / (s + (x - 1.0))) / 2.0;
+                        bPrime = x / Math.Sqrt((a + x) * t) / y;
                     }
-                    Debug.Assert(amx >= 0.0);
-                    bPrime = x / Math.Sqrt((a + x) * amx);
+                    //Debug.Assert(amx >= 0.0);
+                    //bPrime = x / Math.Sqrt((a + x) * amx);
                 } else {
                     bPrime = -1.0;
                 }
 
                 if (a < 1.5) {
-                    double am1;
                     if (x < 1.0) {
-                        am1 = y * y / 2.0 * (1.0 / (r + (x + 1.0)) + 1.0 / (s + (1.0 - x)));
+                        // This is another case where our expression is proportional to y^2 and
+                        // we take its square root, so again we pull out a factor of y from
+                        // under the square root. Without this trick, our result has zero imaginary
+                        // part for y smaller than about 1.0E-155, while the imaginary part
+                        // should be about y.
+                        double t = (1.0 / (r + (x + 1.0)) + 1.0 / (s + (1.0 - x))) / 2.0;
+                        double am1 = y * y * t;
+                        v = MoreMath.LogOnePlus(am1 + y * Math.Sqrt(t * (a + 1.0)));
                     } else {
-                        am1 = (y * y / (r + (x + 1.0)) + (s + (x - 1.0))) / 2.0;
+                        double am1 = (y * y / (r + (x + 1.0)) + (s + (x - 1.0))) / 2.0;
+                        v = MoreMath.LogOnePlus(am1 + Math.Sqrt(am1 * (a + 1.0)));
                     }
-                    Debug.Assert(am1 >= 0.0);
-                    v = MoreMath.LogOnePlus(am1 + Math.Sqrt(am1 * (a + 1.0)));
+                    //Debug.Assert(am1 >= 0.0);
                 } else {
                     // Because of the test above, we can be sure that a * a will not overflow.
                     v = Math.Log(a + Math.Sqrt((a - 1.0) * (a + 1.0)));
@@ -445,7 +478,7 @@ namespace Meta.Numerics {
         /// <param name="z">The complex exponent.</param>
         /// <returns>The value of x<sup>z</sup>.</returns>
         public static Complex Pow (double x, Complex z) {
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
             if (z == Complex.Zero) return (Complex.One);
             if (x == 0.0) return (Complex.Zero);
             double m = Math.Pow(x, z.Re);
@@ -480,59 +513,71 @@ namespace Meta.Numerics {
         /// <returns>The value of z<sup>n</sup>.</returns>
         public static Complex Pow (Complex z, int n) {
 
-            // this is a straight-up copy of MoreMath.Pow with x -> z, double -> Complex
-
             if (n < 0) return (1.0 / Pow(z, -n));
 
             switch (n) {
                 case 0:
-                    // we follow convention that 0^0 = 1
+                    // We follow convention that 0^0 = 1
                     return (1.0);
                 case 1:
                     return (z);
                 case 2:
                     // 1 multiply
-                    return (z * z);
+                    return (Sqr(z));
                 case 3:
                     // 2 multiplies
-                    return (z * z * z);
+                    return (Sqr(z) * z);
                 case 4: {
                         // 2 multiplies
-                        Complex z2 = z * z;
-                        return (z2 * z2);
+                        Complex z2 = Sqr(z);
+                        return (Sqr(z2));
                     }
                 case 5: {
                         // 3 multiplies
-                        Complex z2 = z * z;
-                        return (z2 * z2 * z);
+                        Complex z2 = Sqr(z);
+                        return (Sqr(z2) * z);
                     }
                 case 6: {
                         // 3 multiplies
-                        Complex z2 = z * z;
-                        return (z2 * z2 * z2);
+                        Complex z2 = Sqr(z);
+                        return (Sqr(z2) * z2);
                     }
                 case 7: {
                         // 4 multiplies
-                        Complex z3 = z * z * z;
-                        return (z3 * z3 * z);
+                        Complex z3 = Sqr(z) * z;
+                        return (Sqr(z3) * z);
                     }
                 case 8: {
                         // 3 multiplies
-                        Complex z2 = z * z;
-                        Complex z4 = z2 * z2;
-                        return (z4 * z4);
+                        Complex z2 = Sqr(z);
+                        Complex z4 = Sqr(z2);
+                        return (Sqr(z4));
                     }
                 case 9: {
                         // 4 multiplies
-                        Complex z3 = z * z * z;
-                        return (z3 * z3 * z3);
+                        Complex z3 = Sqr(z) * z;
+                        return (Sqr(z3) * z3);
                     }
                 case 10: {
                         // 4 multiplies
-                        Complex z2 = z * z;
-                        Complex z4 = z2 * z2;
-                        return (z4 * z4 * z2);
+                        Complex z2 = Sqr(z);
+                        Complex z4 = Sqr(z2);
+                        return (Sqr(z4) * z2);
                     }
+                case 12: {
+                        // 4 multiplies
+                        Complex z3 = Sqr(z) * z;
+                        Complex z6 = Sqr(z3);
+                        return (Sqr(z6));
+                    }
+                case 16: {
+                        // 4 multiplies
+                        Complex z2 = Sqr(z);
+                        Complex z4 = Sqr(z2);
+                        Complex z8 = Sqr(z4);
+                        return (Sqr(z8));
+                    }
+                // that's all the cases do-able in 4 or fewer complex multiplies
                 default:
                     return (ComplexMath.Pow(z, (double)n));
             }

@@ -167,6 +167,29 @@ namespace Meta.Numerics {
             }
         }
 
+        // Computes [ e^(\epsilon * x) - 1 ] / \epsilon, i.e. the rate at which ExpMinusOne grows with x
+
+        internal static double ReducedExpMinusOne (double x, double e) {
+            if (x == Double.NegativeInfinity) return (0.0);
+            double y = e * x;
+            if (Math.Abs(y) < 0.125) {
+                // For small x, use the series e^{x} = \sum_{k=0}^{\infty} \frac{x^k}{k!} = 1 + x + x^2 / 2! + x^3 / 3! + \cdots
+                double dr = x;
+                double r = dr;
+                for (int k = 2; k < Global.SeriesMax; k++) {
+                    double r_old = r;
+                    dr *= y / k;
+                    r += dr;
+                    if (r == r_old) return (r);
+                }
+                throw new NonconvergenceException();
+            } else {
+                return ((Math.Exp(y) - 1.0) / e);
+            }
+
+
+        }
+
         /// <summary>
         /// Computes log(1+x).
         /// </summary>
@@ -193,6 +216,27 @@ namespace Meta.Numerics {
             }
         }
 
+        // Computes \log (1 + e * x) / e, i.e. the rate at which LogOnePlus changes with e
+
+        internal static double ReducedLogOnePlus (double x, double e) {
+            double y = e * x;
+            if (Math.Abs(y) < 0.125) {
+                // For small x, use the series \log(1-x) = - \sum_{k=1}^{\infty} \frac{x^k}{k}. 
+                double xk = x;
+                double f = xk;
+                for (int k = 2; k < Global.SeriesMax; k++) {
+                    double f_old = f;
+                    xk *= -y;
+                    f += xk / k;
+                    if (f == f_old) return (f);
+                }
+                throw new NonconvergenceException();
+            } else {
+                return (Math.Log(1.0 + y) / e);
+            }
+
+        }
+
         /// <summary>
         /// Computes x<sup>2</sup>.
         /// </summary>
@@ -207,6 +251,18 @@ namespace Meta.Numerics {
         public static double Sqr (double x) {
             return (x * x);
         }
+
+        /// <summary>
+        /// The conversion factor from degrees to radians.
+        /// </summary>
+        /// <remarks>
+        /// <para>This conversion factor makes it easier to compute trigonometric functions if arguments in degrees.
+        /// Since trigonometric methods such as <see cref="Math.Sin"/> and <see cref="MoreMath.Cos"/> take arguments
+        /// in dimensionless radians, you must convert a degree input to radians before passing it into one of these
+        /// functions. This field makes it easy to do so via a simple and visually mnemonic multiplication. If x is
+        /// in degrees and you wish to take its sine, just write: Math.Sin(x * MoreMath.Degrees).</para>
+        /// </remarks>
+        public static readonly double Degrees = Math.PI / 180.0;
 
         /// <summary>
         /// Computes the sine of the given value to full significance over the full range of arguments.
@@ -260,7 +316,7 @@ namespace Meta.Numerics {
                     return (y);
                 }
             } else if (x < Double.PositiveInfinity) {
-                // If x is beyond the range of the built-in function eintirely, use our range-reduction algorithm
+                // If x is beyond the range of the built-in function entirely, use our range-reduction algorithm
                 return (RangeReduction.Sin(x));
             } else {
                 // If x is infinite or NaN, return NaN.
@@ -295,13 +351,26 @@ namespace Meta.Numerics {
                     return (y);
                 }
             } else if (x < Double.PositiveInfinity) {
-                // If x is beyond the range of the built-in function eintirely, use our range-reduction algorithm
+                // If x is beyond the range of the built-in function entirely, use our range-reduction algorithm
                 return (RangeReduction.Cos(x));
             } else {
                 return (Double.NaN);
             }
         }
 
+        internal static double SinPi (double x) {
+            long y0;
+            double y1;
+            RangeReduction.ReduceByOnes(2.0 * x, out y0, out y1);
+            return (RangeReduction.Sin(y0, y1));
+        }
+
+        internal static double CosPi (double x) {
+            long y0;
+            double y1;
+            RangeReduction.ReduceByOnes(2.0 * x, out y0, out y1);
+            return (RangeReduction.Cos(y0, y1));
+        }
 
         /// <summary>
         /// Returns the value of n mod m.

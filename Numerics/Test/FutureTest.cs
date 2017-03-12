@@ -21,6 +21,11 @@ namespace Test {
     public class FutureTest {
 
         [TestMethod]
+        public void Decomp () {
+
+        }
+
+        [TestMethod]
         public void NonlinearRegressionTest () {
 
             BivariateSample s = new BivariateSample();
@@ -36,49 +41,6 @@ namespace Test {
             );
 
         }
-
-        public static Complex Hypergeometric2F1_Series(double a, double b, double c, Complex z) {
-
-            Complex t = a * b / c * z;
-            Complex s = 1.0 + t;
-            for (int k = 2; k < 128; k++) {
-                Complex s_old = s;
-                a += 1.0;
-                b += 1.0;
-                c += 1.0;
-                t *= a * b / c / k * z;
-                s += t;
-                if (s == s_old) return (s);
-            }
-
-            throw new NonconvergenceException();
-
-        }
-
-        public static Complex Hypergeometric2F1 (double a, double b, double c, Complex z) {
-
-            double za = ComplexMath.Abs(z);
-            if (za > 1.0) {
-
-                Complex zp = 1.0 / z;
-                Complex t1 = ComplexMath.Pow(-z, -a)
-                    / AdvancedMath.Gamma(b) / AdvancedMath.Gamma(c - a)
-                    * Hypergeometric2F1(a, a - c + 1.0, a - b + 1.0, zp);
-                Complex t2 = ComplexMath.Pow(-z, -b)
-                    / AdvancedMath.Gamma(a) / AdvancedMath.Gamma(c - b)
-                    * Hypergeometric2F1(b, b - c + 1.0, b - a + 1.0, zp);
-                return ((t1 - t2) * Math.PI / Math.Sin(Math.PI * (b - a)));
-
-            } else if (za < 0.75) {
-
-                return (Hypergeometric2F1_Series(a, b, c, z));
-
-            } else {
-                throw new NotImplementedException();
-            }
-
-        }
-
 
         public void JacobiPeriod () {
 

@@ -14,9 +14,10 @@ namespace Test {
         public static bool IsNearlyEqual (double x, double y, EvaluationSettings s) {
             if (Double.IsPositiveInfinity(x) && Double.IsPositiveInfinity(y)) return (true);
             if (Double.IsNegativeInfinity(x) && Double.IsNegativeInfinity(y)) return (true);
-            double m = Math.Abs(x) + Math.Abs(y);
-            double e = Math.Max(0.0, s.AbsolutePrecision) + m * Math.Max(0.0, s.RelativePrecision);
-            return (Math.Abs(x - y) <= e);
+            if (Double.IsNaN(x) && Double.IsNaN(y)) return (true);
+            double norm = Math.Abs(x) + Math.Abs(y);
+            double tol = Math.Max(0.0, s.AbsolutePrecision) + norm * Math.Max(0.0, s.RelativePrecision);
+            return (Math.Abs(x - y) <= tol);
         }
 
         public static bool IsNearlyEqual (Complex x, Complex y, EvaluationSettings s) {
@@ -45,6 +46,8 @@ namespace Test {
 
         public static bool IsNearlyEqual (double x, double y, double e) {
 
+            return (IsNearlyEqual(x, y, new EvaluationSettings() { RelativePrecision = e, AbsolutePrecision = e }));
+            /*
             if (Double.IsPositiveInfinity(x) || Double.IsPositiveInfinity(y)) return (true);
             if (Double.IsNegativeInfinity(x) || Double.IsNegativeInfinity(y)) return (true);
             if (2.0 * Math.Abs(x - y) <= e * (Math.Abs(x) + Math.Abs(y))) {
@@ -56,7 +59,7 @@ namespace Test {
                     return (false);
                 }
             }
-
+            */
         }
 
         // equality of complexes
@@ -111,6 +114,19 @@ namespace Test {
             } else {
                 return (false);
             }
+        }
+
+        public static bool IsSumNearlyEqual(IEnumerable<double> xs, double y, EvaluationSettings settings) {
+
+            double sum = 0.0;
+            double norm = 0.0;
+            foreach (double x in xs) {
+                sum += x;
+                norm += Math.Abs(x);
+            }
+            double tol = settings.AbsolutePrecision + settings.RelativePrecision * norm;
+            return (Math.Abs(sum - y) <= tol);
+
         }
 
         public static bool IsSumNearlyEqual (Complex z1, Complex z2, Complex zz) {

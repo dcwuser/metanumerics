@@ -253,7 +253,7 @@ namespace Test {
         [TestMethod]
         public void ComplexArcTrigInversion () {
 
-            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-3, 1.0E3, 32)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 32)) {
                 Complex asin = ComplexMath.Asin(z);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sin(asin), z));
                 Complex acos = ComplexMath.Acos(z);

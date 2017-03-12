@@ -17,8 +17,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="mu">The scale parameter, which must be positive.</param>
         /// <param name="alpha">The shape parameter, which must be positive.</param>
         public ParetoDistribution (double mu, double alpha) {
-            if (mu <= 0.0) throw new ArgumentOutOfRangeException("mu");
-            if (alpha <= 0.0) throw new ArgumentOutOfRangeException("alpha");
+            if (mu <= 0.0) throw new ArgumentOutOfRangeException(nameof(mu));
+            if (alpha <= 0.0) throw new ArgumentOutOfRangeException(nameof(alpha));
             this.m = mu;
             this.a = alpha;
         }
@@ -46,7 +46,6 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (a);
             }
         }
-
 
         /// <summary>
         /// Gets the Gini coefficient corresponding to the distribution.
@@ -112,7 +111,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Moment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r >= a) {
@@ -126,7 +125,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double MomentAboutMean (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r >= a) {
@@ -204,14 +203,23 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
+        public override double Hazard (double x) {
+            if (x < m) {
+                return (0.0);
+            } else {
+                return (a / x);
+            }
+        }
+
+        /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             return (m / Math.Pow(1.0 - P, 1.0 / a));
         }
 
         /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
-            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
             return (m / Math.Pow(Q, 1.0 / a));
         }
 

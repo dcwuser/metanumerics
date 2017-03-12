@@ -30,7 +30,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="scale">The scale parameter, which must be positive.</param>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="scale"/> is negative or zero.</exception>
         public GumbelDistribution (double location, double scale) {
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException("scale");
+            if (scale <= 0.0) throw new ArgumentOutOfRangeException(nameof(scale));
             this.m = location;
             this.s = scale;
         }
@@ -86,8 +86,15 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
+        public override double Hazard (double x) {
+            double z = (x - m) / s;
+            double e = Math.Exp(-z);
+            return (e / MoreMath.ExpMinusOne(e) / s);
+        }
+
+        /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             return (m - s * Math.Log(-Math.Log(P)));
         }
 
@@ -129,7 +136,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double MomentAboutMean (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -142,7 +149,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Moment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else {
                 double[] M = RawMoments(r);
                 return (M[r]);
@@ -189,7 +196,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Cumulant (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (0.0);
             } else if (r == 1) {

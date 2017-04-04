@@ -21,7 +21,7 @@ namespace Meta.Numerics {
         private readonly int max;
 
         /// <summary>
-        /// The minimum value on the interval.
+        /// Gets the minimum value on the interval.
         /// </summary>
         public int LeftEndpoint {
             get {
@@ -30,11 +30,20 @@ namespace Meta.Numerics {
         }
 
         /// <summary>
-        /// The maximum value on the interval.
+        /// Gets the maximum value on the interval.
         /// </summary>
         public int RightEndpoint {
             get {
                 return (max);
+            }
+        }
+
+        /// <summary>
+        /// Gets the width of the interval.
+        /// </summary>
+        public int Width {
+            get {
+                return (max - min);
             }
         }
 

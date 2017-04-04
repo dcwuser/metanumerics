@@ -7,11 +7,13 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents a Laplace distribution.
     /// </summary>
-    public sealed class LaplaceDistribution : Distribution {
+    /// <seealso href="https://en.wikipedia.org/wiki/Laplace_distribution"/>
+    public sealed class LaplaceDistribution : ContinuousDistribution {
 
         /// <summary>
         /// Initializes a new standard Laplace distribution.
         /// </summary>
+        /// <remarks>A Laplace distribution is a symmetric variant of the <see cref="ExponentialDistribution"/>.</remarks>
         public LaplaceDistribution () : this(0.0, 1.0) { }
 
         /// <summary>
@@ -40,7 +42,8 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc/>
         public override double ProbabilityDensity (double x) {
-            return (Math.Exp(-Math.Abs(x - a) / b) / (2.0 * b));
+            double z = (x - a) / b;
+            return (Math.Exp(-Math.Abs(z)) / (2.0 * b));
         }
 
         /// <inheritdoc/>
@@ -76,7 +79,19 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (P <= 0.5) {
                 return (a + b * Math.Log(2.0 * P));
             } else {
-                throw new NotImplementedException();
+                double Q = 1.0 - P;
+                return (a - b * Math.Log(2.0 * Q));
+            }
+        }
+
+        /// <inheritdoc/>
+        public override double InverseRightProbability (double Q) {
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
+            if (Q <= 0.5) {
+                return (a - b * Math.Log(2.0 * Q));
+            } else {
+                double P = 1.0 - Q;
+                return (a + b * Math.Log(2.0 * P));
             }
         }
 
@@ -116,13 +131,57 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc/>
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r % 2 == 0) {
-                return (AdvancedIntegerMath.Factorial(r) / Math.Pow(b, r));
+                return (AdvancedIntegerMath.Factorial(r) * Math.Pow(b, r));
             } else {
                 return (0.0);
+            }
+        }
+
+        internal override double[] CentralMoments (int rMax) {
+            double[] c = new double[rMax + 1];
+            c[0] = 1.0;
+            for (int r = 2; r <= rMax; r++) {
+                c[r] = c[r - 2] * r * (r - 1) * (b * b);
+            }
+            return (c);
+        }
+
+        /// <inheritdoc/>
+        public override double RawMoment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException(nameof(r));
+            } else {
+                double[] central = CentralMoments(r);
+                return (MomentMath.CentralToRaw(a, central, r));
+            }
+        }
+
+        /// <inheritdoc/>
+        public override double Cumulant (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException(nameof(r));
+            } else if (r == 0) {
+                return (1.0);
+            } else if (r == 1) {
+                return (a);
+            } else if (r % 2 == 0) {
+                return (AdvancedIntegerMath.Factorial(r - 1) * Math.Pow(b, r));
+            } else {
+                return (0.0);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override double Hazard (double x) {
+            double z = (x - a) / b;
+            if (z < 0.0) {
+                return(1.0 / b / (2.0 * Math.Exp(-z) - 1.0));
+            } else {
+                return (1.0 / b);
             }
         }
 

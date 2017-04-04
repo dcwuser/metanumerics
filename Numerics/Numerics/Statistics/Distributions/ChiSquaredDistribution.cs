@@ -25,19 +25,19 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </remarks>
     /// <seealso cref="ContingencyTable.PearsonChiSquaredTest"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Chi-square_distribution" />
-    public sealed class ChiSquaredDistribution : Distribution {
+    public sealed class ChiSquaredDistribution : ContinuousDistribution {
 
         // internally, we use our Gamma distribution machinery to do our heavy lifting
 
-        private readonly int nu;
-        private GammaDistribution gamma;
+        private readonly double nu;
+        private readonly GammaDistribution gamma;
 
         /// <summary>
         /// Initializes a new &#x3C7;<sup>2</sup> distribution.
         /// </summary>
         /// <param name="nu">The number of degrees of freedom, which must be positive.</param>
-        public ChiSquaredDistribution (int nu) {
-            if (nu < 1) throw new ArgumentOutOfRangeException("nu");
+        public ChiSquaredDistribution (double nu) {
+            if (nu < 1.0) throw new ArgumentOutOfRangeException(nameof(nu));
             this.nu = nu;
             this.gamma = new GammaDistribution(nu / 2.0);
         }
@@ -45,7 +45,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Gets the number of degrees of freedom &#x3BD; of the distribution.
         /// </summary>
-        public int DegreesOfFreedom {
+        public double DegreesOfFreedom {
             get {
                 return (nu);
             }
@@ -73,25 +73,25 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         // improve this
         /// <inheritdoc />
-        public override double Moment (int r) {
-            if (r < 0) throw new ArgumentOutOfRangeException("r");
-            if (r == 0) {
-                return (1.0);
-            } else if (r == 1) {
-                return (Mean);
-            } else if (r == 2) {
-                return (nu * (nu + 2.0));
+        public override double RawMoment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException(nameof(r));
+            } else if (r < 16) {
+                // nu ( nu + 2) (nu + 4) \cdots, r times
+                double m = 1.0;
+                for (int k = 0; k < r; k++) {
+                    m *= (nu + 2.0 * k);
+                }
+                return (m);
             } else {
-                // nu ( nu + 2 ) ( nu + 4 ) ... (nu + 2r - 2 )
-                double nu2 = nu / 2.0;
-                return (Math.Exp(r * Global.LogTwo + AdvancedMath.LogGamma(nu2 + r) - AdvancedMath.LogGamma(nu2)));
+                return (AdvancedMath.Pochhammer(nu / 2.0, r) * MoreMath.Pow(2.0, r));
             }
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -114,7 +114,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Cumulant (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (0.0);
             } else {

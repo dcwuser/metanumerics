@@ -82,6 +82,7 @@
     <Compile Include="Core\BigFloat.cs" />
     <Compile Include="Core\Complex.cs" />
     <Compile Include="Core\ComplexMath.cs" />
+    <Compile Include="Core\DIscreteInterval.cs" />
     <Compile Include="Core\DoubleDecomposition.cs" />
     <Compile Include="Core\Exceptions.cs" />
     <Compile Include="Core\Global.cs" />
@@ -164,12 +165,14 @@
     <Compile Include="Statistics\Distributions\DiscreteAsContinuousDistribution.cs" />
     <Compile Include="Statistics\Distributions\DiscreteDistribution.cs" />
     <Compile Include="Statistics\Distributions\DiscreteUniformDistribution.cs" />
-    <Compile Include="Statistics\Distributions\Distribution.cs" />
+    <Compile Include="Statistics\Distributions\ContinuousDistribution.cs" />
     <Compile Include="Statistics\Distributions\ExponentialDistribution.cs" />
     <Compile Include="Statistics\Distributions\FisherDistribution.cs" />
+    <Compile Include="Statistics\Distributions\FrechetDistribution.cs" />
     <Compile Include="Statistics\Distributions\GammaDistribution.cs" />
     <Compile Include="Statistics\Distributions\GeometricDistribution.cs" />
     <Compile Include="Statistics\Distributions\GumbelDistribution.cs" />
+    <Compile Include="Statistics\Distributions\HypergeometricDistribution.cs" />
     <Compile Include="Statistics\Distributions\IDeviateGenerator.cs" />
     <Compile Include="Statistics\Distributions\KendallDistribution.cs" />
     <Compile Include="Statistics\Distributions\KolmogorovAsymptoticDistribution.cs" />

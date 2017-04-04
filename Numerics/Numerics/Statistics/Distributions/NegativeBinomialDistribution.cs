@@ -113,7 +113,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int k) {
+        public override double RawMoment (int k) {
 
             if (k < 0) {
                 throw new ArgumentOutOfRangeException(nameof(k));

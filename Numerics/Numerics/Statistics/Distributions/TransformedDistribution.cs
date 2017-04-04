@@ -2,16 +2,16 @@
 
 namespace Meta.Numerics.Statistics.Distributions {
 
-    internal class TransformedDistribution : Distribution {
+    internal class TransformedDistribution : ContinuousDistribution {
 
-        public TransformedDistribution (Distribution baseDistribution, double shift, double scale) {
+        public TransformedDistribution (ContinuousDistribution baseDistribution, double shift, double scale) {
             if (baseDistribution == null) throw new ArgumentNullException("baseDistribution");
             this.baseDistribution = baseDistribution;
             this.shift = shift;
             this.scale = scale;
         }
 
-        private readonly Distribution baseDistribution;
+        private readonly ContinuousDistribution baseDistribution;
         private readonly double shift;
         private readonly double scale;
 
@@ -75,18 +75,18 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (shift == 0.0) {
-                return (baseDistribution.Moment(r) * MoreMath.Pow(scale, r));
+                return (baseDistribution.RawMoment(r) * MoreMath.Pow(scale, r));
             } else {
                 // If shift is non-zero, we need to do a binomial expansion inovling multiple y-moments.
                 // In that case, just do integral.
-                return(base.Moment(r));
+                return(base.RawMoment(r));
             }
         }
 
-        public override double MomentAboutMean (int r) {
-            return (baseDistribution.MomentAboutMean(r) * MoreMath.Pow(scale, r));
+        public override double CentralMoment (int r) {
+            return (baseDistribution.CentralMoment(r) * MoreMath.Pow(scale, r));
         }
 
         public override double InverseLeftProbability (double P) {

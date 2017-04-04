@@ -238,7 +238,7 @@ namespace Test {
             Assert.IsTrue(chis.Count == 50);
 
             // test whether the chi^2 values are distributed as expected
-            Distribution chiDistribution = new ChiSquaredDistribution(8);
+            ContinuousDistribution chiDistribution = new ChiSquaredDistribution(8);
             TestResult ks = chis.KolmogorovSmirnovTest(chiDistribution);
             Assert.IsTrue(ks.LeftProbability < 0.95);
 
@@ -323,7 +323,7 @@ namespace Test {
             Assert.IsTrue(chis.Count == 50);
 
             // test whether the chi^2 values are distributed as expected
-            Distribution chiDistribution = new ChiSquaredDistribution(7);
+            ContinuousDistribution chiDistribution = new ChiSquaredDistribution(7);
             TestResult ks = chis.KolmogorovSmirnovTest(chiDistribution);
             Assert.IsTrue(ks.LeftProbability < 0.95);
 

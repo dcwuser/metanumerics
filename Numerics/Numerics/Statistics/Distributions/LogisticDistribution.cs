@@ -16,7 +16,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// can be converted to a standard logistic distribution by reparameterzing into z = (x-m)/s.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Logistic_distribution" />
-    public sealed class LogisticDistribution : Distribution {
+    public sealed class LogisticDistribution : ContinuousDistribution {
 
         /// <summary>
         /// Initializes a new standard logistic distribution.
@@ -33,21 +33,30 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// Initializes a new logistic distribution with the given mean and width parameters.
         /// </summary>
         /// <param name="m">The mean.</param>
-        /// <param name="s">The width parameter.</param>
+        /// <param name="s">The scale parameter.</param>
         public LogisticDistribution (double m, double s) {
-            if (s <= 0.0) throw new ArgumentOutOfRangeException("s");
+            if (s <= 0.0) throw new ArgumentOutOfRangeException(nameof(s));
             this.m = m;
             this.s = s;
         }
 
         // mean and width parameter
 
-        private double m, s;
+        private readonly double m, s;
 
         /// <inheritdoc />
         public override double Mean {
             get {
                 return (m);
+            }
+        }
+
+        /// <summary>
+        /// Gets the scale parameter for the distribution.
+        /// </summary>
+        public double Scale {
+            get {
+                return (s);
             }
         }
 
@@ -107,13 +116,13 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             return (InverseProbability(P, 1.0 - P));
         }
 
         /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
-            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
             return (InverseProbability(1.0 - Q, Q));
         }
 
@@ -128,9 +137,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -142,9 +151,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r % 2 != 0) {
@@ -157,7 +166,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Cumulant (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (0.0);
             } else if (r == 1) {

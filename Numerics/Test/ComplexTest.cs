@@ -72,7 +72,7 @@ namespace Test
             // Commutative
             Assert.IsTrue(a * b == b * a);
             // Associative
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(a * (b * c), (a * b) * c));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(a * (b * c), (a * b) * c, TestUtilities.RelativeTarget));
             // Distributive
             Assert.IsTrue(a * (b + c) == (a * b + a * c));
             // Multiplicative identity
@@ -88,9 +88,9 @@ namespace Test
             // Division identity
             Assert.IsTrue(a / Complex.One == a);
             // Associative
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(a / b / c, a / c / b));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(a / b / c, a / c / b, TestUtilities.RelativeTarget));
             // Distributive
-            Assert.IsTrue(TestUtilities.IsNearlyEqual((b + c) / a, b / a + c / a));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual((b + c) / a, b / a + c / a, TestUtilities.RelativeTarget));
         }
 
         [TestMethod]
@@ -112,7 +112,7 @@ namespace Test
             // Commutative
             Assert.IsTrue(a + b == b + a);
             // Associative
-            Assert.IsTrue(TestUtilities.IsNearlyEqual((a + b) + c, a + (b + c)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual((a + b) + c, a + (b + c), TestUtilities.RelativeTarget));
             // Relation of subtration to negation and additon
             Assert.IsTrue(a + (-b) == a - b);
         }
@@ -167,7 +167,7 @@ namespace Test
             Assert.IsTrue(ComplexMath.Pow(Complex.I, Complex.One) == Complex.I);
             Assert.IsTrue(ComplexMath.Pow(a, Complex.One) == a);
 
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(Complex.I, Complex.I), Math.Exp(-Math.PI / 2.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Pow(Complex.I, Complex.I), Math.Exp(-Math.PI / 2.0), TestUtilities.RelativeTarget));
 
         }
 

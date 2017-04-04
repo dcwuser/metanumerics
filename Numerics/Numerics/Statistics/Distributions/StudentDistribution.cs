@@ -15,7 +15,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// sample means arround the population mean, for a normally distributed population.</para></remarks>
     /// <seealso cref="Sample.StudentTTest(Double)"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Student_t_distribution" />
-    public sealed class StudentDistribution : Distribution {
+    public sealed class StudentDistribution : ContinuousDistribution {
 
         private double nu;
 
@@ -24,7 +24,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="nu">The number of degrees of freedom, which must be positive.</param>
         public StudentDistribution (double nu) {
-            if (nu <= 0.0) throw new ArgumentOutOfRangeException("nu");
+            if (nu <= 0.0) throw new ArgumentOutOfRangeException(nameof(nu));
             this.nu = nu;
         }
 
@@ -57,16 +57,14 @@ namespace Meta.Numerics.Statistics.Distributions {
             double t2 = x * x;
             if (x < 0.0) {
                 return ((1.0 + AdvancedMath.LeftRegularizedBeta(1.0 / 2.0, nu / 2.0, t2 / (nu + t2))) / 2.0);
-                //return (0.5 * (1.0 + AdvancedMath.Beta(0.5, 0.5 * nu, t2 / (nu + t2)) / AdvancedMath.Beta(0.5, 0.5 * nu)));
             } else {
                 return (AdvancedMath.LeftRegularizedBeta(nu / 2.0, 1.0 / 2.0, nu / (nu + t2)) / 2.0);
-                //return (0.5 * AdvancedMath.Beta(0.5 * nu, 0.5, nu / (nu + t2)) / AdvancedMath.Beta(0.5, 0.5 * nu));
             }
         }
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
 
             BetaDistribution b = new BetaDistribution(nu / 2.0, 1.0 / 2.0);
             if (P <= 0.5) {
@@ -81,7 +79,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException("rng");
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
 
             // this is a modified form of Box-Mueller due to Bailey
 
@@ -100,8 +98,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
-            if (r < 0) throw new ArgumentOutOfRangeException("r");
+        public override double RawMoment (int r) {
+            if (r < 0) throw new ArgumentOutOfRangeException(nameof(r));
 
             if ((r % 2) == 0) {
                 if (r < nu) {
@@ -124,8 +122,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
-            return (Moment(r));
+        public override double CentralMoment (int r) {
+            return (RawMoment(r));
         }
 
         /// <inheritdoc />
@@ -153,10 +151,21 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Skewness {
             get {
-                if (nu > 3) {
+                if (nu > 3.0) {
                     return (0.0);
                 } else {
                     return (Double.NaN);
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public override double ExcessKurtosis {
+            get {
+                if (nu > 4.0) {
+                    return (6.0 / (nu - 4.0));
+                } else {
+                    return (Double.PositiveInfinity);
                 }
             }
         }

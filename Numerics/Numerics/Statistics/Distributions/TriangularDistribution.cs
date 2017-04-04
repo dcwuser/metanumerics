@@ -17,7 +17,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// likely value for some quantity is known or supposed.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Triangular_distribution" />
-    public sealed class TriangularDistribution : Distribution {
+    public sealed class TriangularDistribution : ContinuousDistribution {
 
         /*
         public TriangularDistribution (Interval range) {
@@ -122,7 +122,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             double Pb = ab / ac;
             if (P < Pb) {
                 return (a + Math.Sqrt(ab * ac * P));
@@ -149,7 +149,6 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override Interval Support {
             get {
                 return (Interval.FromEndpoints(a, c));
-                //return (r);
             }
         }
 
@@ -169,9 +168,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -188,9 +187,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -203,7 +202,6 @@ namespace Meta.Numerics.Statistics.Distributions {
                     t *= s;
                     M += AdvancedIntegerMath.BinomialCoefficient(r, k) * MomentAboutMode(k) * t;
                 }
-                //Console.WriteLine("n={0}, M={1}", n, M);
                 return (M);
             }
         }

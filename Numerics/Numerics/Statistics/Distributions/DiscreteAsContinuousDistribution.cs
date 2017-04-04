@@ -29,7 +29,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents a discrete distribution as a continous distribution.
     /// </summary>
-    internal class DiscreteAsContinuousDistribution : Distribution {
+    internal class DiscreteAsContinuousDistribution : ContinuousDistribution {
 
         /// <summary>
         /// Initializes a new shim that represents a discrete distribution as a continuous distribution.
@@ -137,13 +137,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
-            return (d.Moment(r));
+        public override double RawMoment (int r) {
+            return (d.RawMoment(r));
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
-            return (d.MomentAboutMean(r) * MoreMath.Pow(xSupport.Width / (d.Maximum - d.Minimum), r));
+        public override double CentralMoment (int r) {
+            return (d.CentralMoment(r) * MoreMath.Pow(xSupport.Width / (d.Maximum - d.Minimum), r));
         }
 
 

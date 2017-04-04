@@ -17,7 +17,7 @@ namespace Test {
         public void KolmogorovNullDistributionTest () {
 
             // The distribution is irrelevent; pick one at random 
-            Distribution sampleDistribution = new LognormalDistribution();
+            ContinuousDistribution sampleDistribution = new LognormalDistribution();
 
             // Loop over various sample sizes
             foreach (int n in TestUtilities.GenerateIntegerValues(2, 128, 16)) {
@@ -25,7 +25,7 @@ namespace Test {
                 // Create a sample to hold the KS statistics
                 Sample testStatistics = new Sample();
                 // and a variable to hold the claimed null distribution, which should be the same for each test
-                Distribution nullDistribution = null;
+                ContinuousDistribution nullDistribution = null;
 
                 // Create a bunch of samples, each with n data points
                 for (int i = 0; i < 256; i++) {
@@ -62,7 +62,7 @@ namespace Test {
         public void KuiperNullDistributionTest () {
 
             // The distribution is irrelevent; pick one at random 
-            Distribution sampleDistribution = new NormalDistribution();
+            ContinuousDistribution sampleDistribution = new NormalDistribution();
 
             // Loop over various sample sizes
             foreach (int n in TestUtilities.GenerateIntegerValues(2, 128, 16)) {
@@ -70,7 +70,7 @@ namespace Test {
                 // Create a sample to hold the KS statistics
                 Sample testStatistics = new Sample();
                 // and a variable to hold the claimed null distribution, which should be the same for each test
-                Distribution nullDistribution = null;
+                ContinuousDistribution nullDistribution = null;
 
                 // Create a bunch of samples, each with n+1 data points
                 // We pick n+1 instead of n just to have different sample size values than in the KS test case
@@ -107,7 +107,7 @@ namespace Test {
         [TestMethod]
         public void TwoSampleKolmogorovNullDistributionTest () {
 
-            Distribution population = new ExponentialDistribution();
+            ContinuousDistribution population = new ExponentialDistribution();
 
             int[] sizes = new int[] { 23, 30, 175 };
 
@@ -116,7 +116,7 @@ namespace Test {
                     Console.WriteLine("{0} {1}", na, nb);
 
                     Sample d = new Sample();
-                    Distribution nullDistribution = null;
+                    ContinuousDistribution nullDistribution = null;
                     for (int i = 0; i < 128; i++) {
 
                         Sample a = TestUtilities.CreateSample(population, na, 31415 + na + i);
@@ -137,7 +137,7 @@ namespace Test {
                     Assert.IsTrue(d.PopulationMean.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Mean));
                     Console.WriteLine("{0} {1}", nullDistribution.StandardDeviation, d.PopulationStandardDeviation.ConfidenceInterval(0.99));
                     Assert.IsTrue(d.PopulationStandardDeviation.ConfidenceInterval(0.99).ClosedContains(nullDistribution.StandardDeviation));
-                    Console.WriteLine("{0} {1}", nullDistribution.MomentAboutMean(3), d.PopulationMomentAboutMean(3).ConfidenceInterval(0.99));
+                    Console.WriteLine("{0} {1}", nullDistribution.CentralMoment(3), d.PopulationMomentAboutMean(3).ConfidenceInterval(0.99));
                     //Assert.IsTrue(d.PopulationMomentAboutMean(3).ConfidenceInterval(0.99).ClosedContains(nullDistribution.MomentAboutMean(3)));
 
                     //Console.WriteLine("m {0} {1}", nullDistribution.Mean, d.PopulationMean);
@@ -150,15 +150,15 @@ namespace Test {
         public void SpearmanNullDistributionTest () {
 
             // pick independent distributions for x and y, which needn't be normal and needn't be related
-            Distribution xDistrubtion = new UniformDistribution();
-            Distribution yDistribution = new CauchyDistribution();
+            ContinuousDistribution xDistrubtion = new UniformDistribution();
+            ContinuousDistribution yDistribution = new CauchyDistribution();
             Random rng = new Random(1);
 
             // generate bivariate samples of various sizes
             foreach (int n in TestUtilities.GenerateIntegerValues(4, 64, 8)) {
  
                 Sample testStatistics = new Sample();
-                Distribution testDistribution = null;
+                ContinuousDistribution testDistribution = null;
 
                 for (int i = 0; i < 128; i++) {
 
@@ -187,8 +187,8 @@ namespace Test {
         public void KendallNullDistributionTest () {
 
             // pick independent distributions for x and y, which needn't be normal and needn't be related
-            Distribution xDistrubtion = new LogisticDistribution();
-            Distribution yDistribution = new ExponentialDistribution();
+            ContinuousDistribution xDistrubtion = new LogisticDistribution();
+            ContinuousDistribution yDistribution = new ExponentialDistribution();
             Random rng = new Random(314159265);
 
             // generate bivariate samples of various sizes
@@ -196,7 +196,7 @@ namespace Test {
             foreach (int n in TestUtilities.GenerateIntegerValues(4, 64, 8)) {
 
                 Sample testStatistics = new Sample();
-                Distribution testDistribution = null;
+                ContinuousDistribution testDistribution = null;
 
                 for (int i = 0; i < 128; i++) {
 

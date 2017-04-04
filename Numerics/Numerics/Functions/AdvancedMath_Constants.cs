@@ -29,6 +29,14 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Catalan_constant"/>
         public const double Catalan = 0.915965594177219015054604;
 
+
+        /// <summary>
+        /// Apéry's constant.
+        /// </summary>
+        /// <remarks><para>Apéry's constant is the value of the Riemann Zeta function for the argument 3.</para></remarks>
+        /// <seealso cref="AdvancedMath.RiemannZeta(double)"/>
+        /// <seelaso href="https://en.wikipedia.org/wiki/Ap%C3%A9ry%27s_constant"/>
+        public const double Apery = 1.20205690315959428540;
     }
 }
 

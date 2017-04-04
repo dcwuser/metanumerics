@@ -173,7 +173,7 @@ namespace Test {
         [TestMethod]
         public void JacobiIntegrals () {
 
-            foreach (double k in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 4)) {
+            foreach (double k in TestUtilities.GenerateRealValues(1.0E-1, 1.0, 4)) {
 
                 // DLMF 22.14.18 says
                 //   \int_{0}^{K(k)} \ln(\dn(t, k)) \, dt = \frac{1}{2} K(k) \ln k'
@@ -188,6 +188,8 @@ namespace Test {
                 );
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(I1, K / 2.0 * Math.Log(k1)));
+
+                // If k is small, log(k1) is subject to cancellation error, so don't pick k too small.
 
                 // It also gives values for the analogous integrals with \sn and \cn,
                 // but their values involve K'(k), for which we don't have a method.

@@ -4,7 +4,7 @@ using Meta.Numerics.Functions;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
-    internal class KolmogorovAsymptoticDistribution : Distribution {
+    internal class KolmogorovAsymptoticDistribution : ContinuousDistribution {
 
         // The implementation of this distribution is based on an asymptotic expansion of the CDF
         // for finite-n Kolmogorov-Smirnov distribution
@@ -300,7 +300,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         // The P-series expression for p(x) can be multiplied by x^r and integrated term-by term to give expressions
         // for <x^r> involving powers of 1/k, i.e. zeta series. 
 
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {

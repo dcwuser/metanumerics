@@ -291,7 +291,7 @@ namespace Test {
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedIntegerMath.BellNumber(r),
-                    d.Moment(r)
+                    d.RawMoment(r)
                 ));
             }
 

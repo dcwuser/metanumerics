@@ -62,8 +62,8 @@ namespace Test {
             double x = Double.MaxValue / 8.0;
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                MoreMath.Hypot(3.0 * x, 4.0 * x), 5.0 * x
-            ));
+                MoreMath.Hypot(3.0 * x, 4.0 * x), 5.0 * x,
+            TestUtilities.RelativeTarget));
 
         }
 
@@ -75,8 +75,8 @@ namespace Test {
             double x = 8.0 / Double.MaxValue;
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                MoreMath.Hypot(3.0 * x, 4.0 * x), 5.0 * x
-            ));
+                MoreMath.Hypot(3.0 * x, 4.0 * x), 5.0 * x,
+            TestUtilities.RelativeTarget));
         }
 
         [TestMethod]
@@ -107,8 +107,8 @@ namespace Test {
         public void BigTrig () {
             // An exactly representable double that is extremely close to a multiple of \pi/2
             Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                MoreMath.Cos(6381956970095103.0 * MoreMath.Pow(2.0, 797)), -4.6871659242546276E-19
-            ));
+                MoreMath.Cos(6381956970095103.0 * MoreMath.Pow(2.0, 797)), -4.6871659242546276E-19,
+            TestUtilities.RelativeTarget));
         }
 
         // https://www.csee.umbc.edu/~phatak/645/supl/Ng-ArgReduction.pdf says

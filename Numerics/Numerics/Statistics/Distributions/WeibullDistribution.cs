@@ -20,7 +20,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// model the time-to-failure of industrial componets.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Weibull_distribution" />
-    public sealed class WeibullDistribution : Distribution {
+    public sealed class WeibullDistribution : ContinuousDistribution {
 
         /// <summary>
         /// Initializes a new Weibull distribution.
@@ -142,7 +142,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         // standard deviation inherits from base; nothing special to say about it
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0.0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
@@ -153,7 +153,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
@@ -165,7 +165,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (shape < 2.0) {
                     return (CentralMomentFromRawMoment(r));
                 } else {
-                    return(base.MomentAboutMean(r));
+                    return(base.CentralMoment(r));
                 }
             }
         }
@@ -328,7 +328,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             SymmetricMatrix C = B.CholeskyDecomposition().Inverse();
 
             // Do a KS test to compare sample to best-fit distribution
-            Distribution distribution = new WeibullDistribution(lambda1, k1);
+            ContinuousDistribution distribution = new WeibullDistribution(lambda1, k1);
             TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
             // return the result

@@ -17,7 +17,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// the shape parameter is one, the Gamma distribution reduces to the exponential distribution.</para>
     /// </remarks>
     /// <seealso cref="ExponentialDistribution"/>
-    public sealed class GammaDistribution : Distribution {
+    public sealed class GammaDistribution : ContinuousDistribution {
 
         /// <summary>
         /// Initializes a new instance of a Gamma distribution with the given parameters.
@@ -25,8 +25,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="shape">The shape parameter, which must be positive.</param>
         /// <param name="scale">The scale parameter, which must be positive.</param>
         public GammaDistribution (double shape, double scale) {
-            if (shape <= 0.0) throw new ArgumentOutOfRangeException("shape");
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException("scale");
+            if (shape <= 0.0) throw new ArgumentOutOfRangeException(nameof(shape));
+            if (scale <= 0.0) throw new ArgumentOutOfRangeException(nameof(scale));
             a = shape;
             s = scale;
 
@@ -146,9 +146,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else {
                 // M_r = s^r Gamma(a+r)/Gamma(c), implying M_{r} = s (a+r) M_{r-1}
                 double M = 1.0;
@@ -160,9 +160,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -187,7 +187,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Cumulant (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (0.0);
             } else {
@@ -294,13 +294,13 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             return (s * InverseLeftStandardGamma(P));
         }
 
         /// <inheritdoc />
         public override double GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException("rng");
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
             return (s * gammaRng.GetNext(rng));
         }
 
@@ -321,7 +321,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         public static FitResult FitToSample (Sample sample) {
 
-            if (sample == null) throw new ArgumentNullException("sample");
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
 
             // The log likelyhood of a sample given k and s is

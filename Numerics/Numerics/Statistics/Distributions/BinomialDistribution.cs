@@ -94,7 +94,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
@@ -141,7 +141,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         // Journal of the Royal Statistical Society B, 33 (1971) 444
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {

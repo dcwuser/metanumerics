@@ -100,7 +100,6 @@
     <Compile Include="IntegrateTest.cs" />
     <Compile Include="IntervalTest.cs" />
     <Compile Include="MixedMatrixTest.cs" />
-    <Compile Include="LanczosTest.cs" />
     <Compile Include="MomentMathTest.cs" />
     <Compile Include="MultiExtremumTest.cs" />
     <Compile Include="MultiIntegrateTest.cs" />
@@ -115,6 +114,7 @@
     <Compile Include="OrthogonalPolynomialsTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RootsTest.cs" />
+    <Compile Include="SampleFitTest.cs" />
     <Compile Include="SampleTest.cs" />
     <Compile Include="SparseSquareMatrixTest.cs" />
     <Compile Include="SpinTest.cs" />

@@ -28,9 +28,9 @@ namespace Test {
         public void ComplexSqrt () {
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 32)) {
                 Complex sz = ComplexMath.Sqrt(z);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sqr(sz), z));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Arg(z) / 2.0, ComplexMath.Arg(sz)));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Sqrt(ComplexMath.Abs(z)), ComplexMath.Abs(sz)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sqr(sz), z, TestUtilities.RelativeTarget));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Arg(z) / 2.0, ComplexMath.Arg(sz), TestUtilities.RelativeTarget));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Sqrt(ComplexMath.Abs(z)), ComplexMath.Abs(sz), TestUtilities.RelativeTarget));
             }
         }
 
@@ -39,7 +39,7 @@ namespace Test {
             Assert.IsTrue(ComplexMath.Sqrt(0.0) == Complex.Zero);
             Assert.IsTrue(ComplexMath.Sqrt(1.0) == Complex.One);
             Assert.IsTrue(ComplexMath.Sqrt(-1.0) == Complex.I);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sqrt(Complex.I), (ComplexMath.I + 1.0) / Math.Sqrt(2.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sqrt(Complex.I), (ComplexMath.I + 1.0) / Math.Sqrt(2.0), TestUtilities.RelativeTarget));
         }
 
         [TestMethod]
@@ -48,12 +48,12 @@ namespace Test {
             // Max values
 
             double sqrtMaxValue = Math.Sqrt(Double.MaxValue);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sqrt(Double.MaxValue), sqrtMaxValue));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sqrt(-Double.MaxValue), sqrtMaxValue * Complex.I));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sqrt(Double.MaxValue), sqrtMaxValue, TestUtilities.RelativeTarget));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sqrt(-Double.MaxValue), sqrtMaxValue * Complex.I, TestUtilities.RelativeTarget));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(
                 ComplexMath.Sqrt(Double.MaxValue + Double.MaxValue * Complex.I),
-                Math.Sqrt(Math.Sqrt(2.0)) * sqrtMaxValue * (Math.Cos(Math.PI / 8.0) + Math.Sin(Math.PI / 8.0) * Complex.I)
-            ));
+                Math.Sqrt(Math.Sqrt(2.0)) * sqrtMaxValue * (Math.Cos(Math.PI / 8.0) + Math.Sin(Math.PI / 8.0) * Complex.I),
+            TestUtilities.RelativeTarget));
 
             // One component infinite
 
@@ -90,8 +90,8 @@ namespace Test {
             Assert.IsTrue(ComplexMath.Sin(0.0) == Complex.Zero);
             Assert.IsTrue(ComplexMath.Cos(0.0) == Complex.One);
             Assert.IsTrue(ComplexMath.Tan(0.0) == Complex.Zero);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sin(Math.PI / 2.0), 1.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Tan(Math.PI / 4.0), 1.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Sin(Math.PI / 2.0), 1.0, TestUtilities.RelativeTarget));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(ComplexMath.Tan(Math.PI / 4.0), 1.0, TestUtilities.RelativeTarget));
         }
 
         [TestMethod]

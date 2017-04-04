@@ -13,7 +13,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public virtual double Mean {
             get {
-                return (Moment(1));
+                return (RawMoment(1));
             }
         }
 
@@ -22,7 +22,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public virtual double Variance {
             get {
-                return (MomentAboutMean(2));
+                return (CentralMoment(2));
             }
         }
 
@@ -44,7 +44,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </remarks>
         public virtual double Skewness {
             get {
-                return (MomentAboutMean(3) / Math.Pow(MomentAboutMean(2), 3.0 / 2.0));
+                return (CentralMoment(3) / Math.Pow(CentralMoment(2), 3.0 / 2.0));
             }
         }
 
@@ -66,15 +66,15 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="r">The order of the moment to compute.</param>
         /// <returns>The rth raw moment of the distribution.</returns>
-        /// <seealso cref="Moment" />
-        public abstract double Moment (int r);
+        /// <seealso cref="RawMoment" />
+        public abstract double RawMoment (int r);
 
         // Override this if sets of raw moments are needed and there is a more efficient way to compute a set of them than by
         // computing each individually. This can occur, for example, if they obey a recursion relation.
 
         internal virtual double[] RawMoments (int rMax) {
             double[] M = new double[rMax + 1];
-            for (int r = 0; r < M.Length; r++) M[r] = Moment(r);
+            for (int r = 0; r < M.Length; r++) M[r] = RawMoment(r);
             return (M);
         }
 
@@ -83,8 +83,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="r">The order of the moment to compute.</param>
         /// <returns>The rth central moment of the distribution.</returns>
-        /// <seealso cref="Moment" />
-        public virtual double MomentAboutMean (int r) {
+        /// <seealso cref="RawMoment" />
+        public virtual double CentralMoment (int r) {
             // This is a terrible way to compute central moments, subject to significant cancelations, so replace it if at all possible.
             double[] M = RawMoments(r);
             return(MomentMath.RawToCentral(M, r));
@@ -95,7 +95,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         internal virtual double[] CentralMoments (int rMax) {
             double[] C = new double[rMax + 1];
-            for (int r = 0; r < C.Length; r++) C[r] = MomentAboutMean(r);
+            for (int r = 0; r < C.Length; r++) C[r] = CentralMoment(r);
             return (C);
         }
 

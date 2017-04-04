@@ -7,7 +7,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents the distribution of Pearsons's r statistic.
     /// </summary>
-    public sealed class PearsonRDistribution : Distribution {
+    public sealed class PearsonRDistribution : ContinuousDistribution {
 
         private int n;
 
@@ -58,9 +58,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r % 2 != 0) {
                 return (0.0);
             } else {
@@ -73,8 +73,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
-            return (MomentAboutMean(r));
+        public override double RawMoment (int r) {
+            return (CentralMoment(r));
         }
 
         /// <inheritdoc />

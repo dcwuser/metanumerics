@@ -84,7 +84,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     // n = 6: <t> = 1290643/653184, <t^2> = 1594285/373248, <t^3> = 11686771/1161216 => C2 = 156623190071/426649337856, C3 = 24188301396000379/139340260549066752
     // n = 7: <t> = 7067335/3294172, <t^2> = 298688525/59295096, <t^3> = 2039651983/158120256, => C2 = 42440671868125/97664122490256, C3 = 8138432234802217189/35746935301330176448
 
-    internal class KolmogorovExactDistribution : Distribution {
+    internal class KolmogorovExactDistribution : ContinuousDistribution {
 
         public KolmogorovExactDistribution (int size) {
             if (size < 1) throw new ArgumentOutOfRangeException(nameof(size));
@@ -304,8 +304,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             // compute derivative of H
             SquareMatrix DH = GetDurbinMatrixPrime(k, h);
 
-            //PrintMatrix(DH);
-
             // compute powers of H
             SquareMatrix[] PowerH = new SquareMatrix[n];
             PowerH[1] = GetDurbinMatrix(k, h);
@@ -355,7 +353,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                     default:
                         // value tends toward \sqrt{\pi/2} \log(2) = 0.868731
                         // this will perform numerical integration, which will be very slow
-                        return (base.Moment(1));
+                        return (base.RawMoment(1));
                 }
             }
         }
@@ -390,36 +388,36 @@ namespace Meta.Numerics.Statistics.Distributions {
                         // this will perform numerical integration twice
                         // once to find the mean and again to find the variance
                         // this will be very slow
-                        return (base.MomentAboutMean(2));
+                        return (base.CentralMoment(2));
                 }
             }
         }
 
         ///<inheritdoc />
-        public override double Moment (int m) {
-            if (m < 0) {
-                throw new ArgumentOutOfRangeException("m");
-            } else if (m == 0) {
+        public override double RawMoment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException(nameof(r));
+            } else if (r == 0) {
                 return (1.0);
-            } else if (m == 1) {
+            } else if (r == 1) {
                 return (Mean);
             } else {
-                return (base.Moment(m));
+                return (base.RawMoment(r));
             }
         }
 
         ///<inheritdoc />
-        public override double MomentAboutMean (int m) {
-            if (m < 0) {
-                throw new ArgumentOutOfRangeException("m");
-            } else if (m == 0) {
+        public override double CentralMoment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException(nameof(r));
+            } else if (r == 0) {
                 return (1.0);
-            } else if (m == 1) {
+            } else if (r == 1) {
                 return (0.0);
-            } else if (m == 2) {
+            } else if (r == 2) {
                 return (Variance);
             } else {
-                return (base.MomentAboutMean(m));
+                return (base.CentralMoment(r));
             }
         }
 

@@ -418,7 +418,7 @@ namespace Meta.Numerics.Statistics {
 
             // compute F statistic from sums of squares
             double F = explainedVariance / unexplainedVariance;
-            Distribution fDistribution = new FisherDistribution(explainedDegreesOfFreedom, unexplainedDegreesOfFreedom);
+            ContinuousDistribution fDistribution = new FisherDistribution(explainedDegreesOfFreedom, unexplainedDegreesOfFreedom);
 
             SymmetricMatrix covariance = unexplainedVariance * CD.Inverse();
 

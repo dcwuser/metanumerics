@@ -59,14 +59,7 @@ namespace Test {
         #endregion
 
 
-        private DiscreteDistribution[] distributions = new DiscreteDistribution[] {
-            new BernoulliDistribution(0.1),
-            new BinomialDistribution(0.2, 30), new BinomialDistribution(0.4, 5),
-            new PoissonDistribution(4.5), new PoissonDistribution(400.0),
-            new DiscreteUniformDistribution(5, 11),
-            new GeometricDistribution(0.6),
-            new NegativeBinomialDistribution(7.8, 0.4)
-        };
+        private DiscreteDistribution[] distributions = GetDistributions();
 
         public static DiscreteDistribution[] GetDistributions () {
             return (new DiscreteDistribution[] {
@@ -75,7 +68,8 @@ namespace Test {
                 new PoissonDistribution(4.5), new PoissonDistribution(400.0),
                 new DiscreteUniformDistribution(5, 11),
                 new GeometricDistribution(0.6),
-                new NegativeBinomialDistribution(7.8, 0.4)
+                new NegativeBinomialDistribution(7.8, 0.4),
+                new HypergeometricDistribution(9, 3, 5)
             });
         }
 
@@ -114,7 +108,7 @@ namespace Test {
             foreach (DiscreteDistribution distribution in distributions) {
 
                 // some of these values will be outside the support, but that's fine, our results should still be consistent with probability axioms
-                foreach (int k in TestUtilities.GenerateUniformIntegerValues(-10, +100, 6)) {
+                foreach (int k in TestUtilities.GenerateUniformIntegerValues(-10, +100, 8)) {
 
                     Console.WriteLine("{0} {1}", distribution.GetType().Name, k);
 
@@ -266,14 +260,14 @@ namespace Test {
                 M2 += k * k * D.ProbabilityMass(k);
             }
             Assert.IsTrue(TestUtilities.IsNearlyEqual(P, 1.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(D.Moment(0), 1.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(D.RawMoment(0), 1.0));
 
             double C2 = M2 - M1 * M1;
             Assert.IsTrue(TestUtilities.IsNearlyEqual(M1, D.Mean));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(M1, D.Moment(1)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(M2, D.Moment(2)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(M1, D.RawMoment(1)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(M2, D.RawMoment(2)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(C2, D.Variance));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(C2, D.MomentAboutMean(2)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(C2, D.CentralMoment(2)));
 
             Assert.IsTrue(D.InverseLeftProbability(D.LeftInclusiveProbability(2)) == 2);
 

@@ -90,7 +90,7 @@ namespace Test {
             // Beta with high parameters used to have incorrect inverse probabilty,
             // which in this case resulted in zero median and consistently zero random values.
 
-            Distribution beta = new BetaDistribution(1713.0, 58743.0);
+            ContinuousDistribution beta = new BetaDistribution(1713.0, 58743.0);
             Console.WriteLine(beta.Mean);
             Console.WriteLine(beta.StandardDeviation);
 

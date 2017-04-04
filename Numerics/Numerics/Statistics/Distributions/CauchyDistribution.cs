@@ -16,7 +16,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// with having a convergent integral. For this same reason, none of its moments (above the zeroth) are defined.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Cauchy_distribution"/>
-    public sealed class CauchyDistribution : Distribution {
+    public sealed class CauchyDistribution : ContinuousDistribution {
 
         /// <summary>
         /// Initializes a new standard Cauchy distribution.
@@ -81,7 +81,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
                 throw new ArgumentNullException("r");
             } else if (r == 0) {
@@ -92,7 +92,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
                 throw new ArgumentNullException("r");
             } else if (r == 0) {
@@ -152,9 +152,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         private double InverseProbability (double P, double Q) {
             double z;
             if (P < Q) {
-                z = -1.0 / Math.Tan(Math.PI * P);
+                z = -1.0 / MoreMath.TanPi(P);
             } else {
-                z = 1.0 / Math.Tan(Math.PI * Q);
+                z = 1.0 / MoreMath.TanPi(Q);
             }
             return (mu + z * gamma);
         }

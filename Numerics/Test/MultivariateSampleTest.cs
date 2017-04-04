@@ -20,7 +20,7 @@ namespace Test {
             SquareMatrix A = C.CholeskyDecomposition().SquareRootMatrix();
 
             Random rng = new Random(1);
-            Distribution normal = new NormalDistribution();
+            ContinuousDistribution normal = new NormalDistribution();
 
 
             for (int i = 0; i < n; i++) {
@@ -121,9 +121,9 @@ namespace Test {
             Sample KS = new Sample();
 
             // variables to hold the claimed distribution of teach test statistic
-            Distribution PD = null;
-            Distribution SD = null;
-            Distribution KD = null;
+            ContinuousDistribution PD = null;
+            ContinuousDistribution SD = null;
+            ContinuousDistribution KD = null;
 
             // generate a large number of bivariate samples and conduct our three tests on each
 
@@ -186,7 +186,7 @@ namespace Test {
             double a = 1.0;
             double b0 = -2.0;
             double b1 = 3.0;
-            Distribution noise = new NormalDistribution(0.0, 10.0);
+            ContinuousDistribution noise = new NormalDistribution(0.0, 10.0);
 
             // draw a sample from the model
             Random rng = new Random(1);
@@ -307,9 +307,9 @@ namespace Test {
 
             // create a random sample
             MultivariateSample M = new MultivariateSample(3);
-            Distribution d0 = new NormalDistribution();
-            Distribution d1 = new ExponentialDistribution();
-            Distribution d2 = new UniformDistribution();
+            ContinuousDistribution d0 = new NormalDistribution();
+            ContinuousDistribution d1 = new ExponentialDistribution();
+            ContinuousDistribution d2 = new UniformDistribution();
             Random rng = new Random(1);
             int n = 10;
             for (int i = 0; i < n; i++) {

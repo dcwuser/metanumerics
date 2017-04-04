@@ -9,7 +9,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents the asymptotic distribution of Kuiper's V statistic.
     /// </summary>
-    public sealed class KuiperDistribution : Distribution {
+    public sealed class KuiperDistribution : ContinuousDistribution {
 
         /// <summary>
         /// Initializes a new Kuiper distribution.
@@ -162,7 +162,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
@@ -177,7 +177,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
@@ -229,7 +229,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     //    <x^m>_1 = - \Gamma(m/2 + 1) (m - 3) / 2^{m/2 - 1} \zeta(m - 2)
 
 
-    internal class KuiperAsymptoticDistribution : Distribution {
+    internal class KuiperAsymptoticDistribution : ContinuousDistribution {
 
         public KuiperAsymptoticDistribution (int n) {
             if (n < 2) throw new ArgumentOutOfRangeException(nameof(n));
@@ -276,7 +276,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
@@ -284,7 +284,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (r == 1) {
                 return (Global.SqrtHalfPI * ( 1.0 - 1.0 / 6.0 / sqrt_n));
             } else if (r == 3) {
-                return (Global.SqrtHalfPI * (3.0 / 2.0 * AdvancedMath.RiemannZeta(3.0) - 3.0 / 4.0 / sqrt_n));
+                return (Global.SqrtHalfPI * (3.0 / 2.0 * AdvancedMath.Apery - 3.0 / 4.0 / sqrt_n));
             }  else {
                 // we needed to handle 1st and 3rd moments specially because \zeta divergences but multiplication by zero gives finite result
                 return (AdvancedMath.Gamma(r / 2.0 + 1.0) / Math.Pow(2.0, r / 2.0 - 1.0) *
@@ -469,7 +469,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     // Moments provide an additional check. We should have <1> = 1 and <w> = \frac{n!}{n^n} \sum_{k=0}^{n-1} \frac{n^k}{k!}.
     // So far so good.
 
-    internal class KuiperExactDistribution : Distribution {
+    internal class KuiperExactDistribution : ContinuousDistribution {
 
         public KuiperExactDistribution (int n) {
             if (n < 2) throw new ArgumentOutOfRangeException(nameof(n));
@@ -532,7 +532,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                     default:
                         // \frac{\pi}{2} \left( \frac{\pi}{3} - 1 \right) = 0.074138
                         // this will perform numerical integration, which will be very slow
-                        return (base.MomentAboutMean(2));
+                        return (base.CentralMoment(2));
                 }
             }
         }
@@ -568,7 +568,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         ///<inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
@@ -576,12 +576,12 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (r == 1) {
                 return (Mean);
             } else {
-                return (base.Moment(r));
+                return (base.RawMoment(r));
             }
         }
 
         ///<inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
@@ -591,7 +591,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (r == 2) {
                 return (this.Variance);
             } else {
-                return (base.MomentAboutMean(r));
+                return (base.CentralMoment(r));
             }
         }
 

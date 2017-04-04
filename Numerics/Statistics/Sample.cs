@@ -1097,7 +1097,7 @@ namespace Meta.Numerics.Statistics {
             // which is (a.Count + b.Count!).
             // Since decimal is the built-in type that can hold the largest exact integers, we use it for the computation.
             // Therefore, to generate the exact distribution, the total number of possible orderings must be less than the capacity of a decimal. 
-            Distribution uDistribution;
+            ContinuousDistribution uDistribution;
             double lnTotal = AdvancedIntegerMath.LogFactorial(a.Count + b.Count) - AdvancedIntegerMath.LogFactorial(a.Count) - AdvancedIntegerMath.LogFactorial(b.Count);
             if (lnTotal > Math.Log((double)Decimal.MaxValue)) {
                 double mu = a.Count * b.Count / 2.0;
@@ -1438,14 +1438,14 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There is no data in the sample.</exception>
         /// <seealso cref="KolmogorovDistribution"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
-        public TestResult KolmogorovSmirnovTest (Distribution distribution) {
+        public TestResult KolmogorovSmirnovTest (ContinuousDistribution distribution) {
             if (distribution == null) throw new ArgumentNullException(nameof(distribution));
             if (this.Count < 1) throw new InsufficientDataException();
 
             return (KolmogorovSmirnovTest(distribution, 0));
         }
 
-        private TestResult KolmogorovSmirnovTest (Distribution distribution, int count) {
+        private TestResult KolmogorovSmirnovTest (ContinuousDistribution distribution, int count) {
 
             // compute the D statistic, which is the maximum of the D+ and D- statistics
             double DP, DM;
@@ -1456,7 +1456,7 @@ namespace Meta.Numerics.Statistics {
             // this is heuristic and needs to be changed to deal with specific fits
             int n = data.Count - count;
             
-            Distribution DDistribution;
+            ContinuousDistribution DDistribution;
             if (n < 32) {
                 DDistribution = new TransformedDistribution(new KolmogorovExactDistribution(n), 0.0, 1.0 / n);
             } else {
@@ -1473,7 +1473,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The test result. The test statistic is the V statistic and the chance to obtain such a large
         /// value of V under the assumption that the sample is drawn from the given distribution.</returns>
         /// <remarks>
-        /// <para>Like the Kolmogorov-Smirnov test ((<see cref="KolmogorovSmirnovTest(Distribution)"/>,
+        /// <para>Like the Kolmogorov-Smirnov test ((<see cref="KolmogorovSmirnovTest(ContinuousDistribution)"/>,
         /// Kuiper's test compares the EDF of the sample to the CDF of the given distribution.</para>
         /// <para>For small sample sizes, we compute the null distribution of V exactly. For large sample sizes, we use an accurate
         /// asympototic approximation. Therefore it is safe to use this method for all sample sizes.</para>
@@ -1481,7 +1481,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="distribution"/> is <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException">There is no data in the sample.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Kuiper%27s_test"/>
-        public TestResult KuiperTest (Distribution distribution) {
+        public TestResult KuiperTest (ContinuousDistribution distribution) {
 
             if (distribution == null) throw new ArgumentNullException(nameof(distribution));
             if (data.Count < 1) throw new InsufficientDataException();
@@ -1491,7 +1491,7 @@ namespace Meta.Numerics.Statistics {
             ComputeDStatistics(distribution, out DP, out DM);
             double V = DP + DM;
 
-            Distribution VDistribution;
+            ContinuousDistribution VDistribution;
             if (this.Count < 32) {
                 VDistribution = new TransformedDistribution(new KuiperExactDistribution(this.Count), 0.0, 1.0 / this.Count);
             } else {
@@ -1502,7 +1502,7 @@ namespace Meta.Numerics.Statistics {
         }
 
 
-        private void ComputeDStatistics (Distribution distribution, out double D1, out double D2) {
+        private void ComputeDStatistics (ContinuousDistribution distribution, out double D1, out double D2) {
 
             int[] order = data.GetSortOrder();
 
@@ -1591,7 +1591,7 @@ namespace Meta.Numerics.Statistics {
             // but this limit is known to be approached slowly; we should look into the exact distribution
             // the exact distribution is actually discrete (since steps are guaranteed to be 1/n or 1/m, D will always be an integer times 1/LCM(n,m))
             // the exact distribution is known and fairly simple in the n=m case (and in that case D will always be an integer times 1/n)
-            Distribution nullDistribution;
+            ContinuousDistribution nullDistribution;
             if (AdvancedIntegerMath.BinomialCoefficient(a.Count + b.Count, a.Count) < Int64.MaxValue) {
                 nullDistribution = new DiscreteAsContinuousDistribution(new KolmogorovTwoSampleExactDistribution(a.Count, b.Count), Interval.FromEndpoints(0.0, 1.0));
             } else {
@@ -1652,14 +1652,14 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The result of the fit, containg the parameters that result in the best fit,
         /// covariance matrix among those parameters, and a test of the goodness of fit.</returns>
         /// <seealso href="http://en.wikipedia.org/wiki/Maximum_likelihood"/>
-        public FitResult MaximumLikelihoodFit (Func<IList<double>, Distribution> factory, IList<double> start) {
+        public FitResult MaximumLikelihoodFit (Func<IList<double>, ContinuousDistribution> factory, IList<double> start) {
 
             if (factory == null) throw new ArgumentNullException(nameof(factory));
             if (start == null) throw new ArgumentNullException(nameof(start));
 
             // Define a log likelyhood function
             Func<IList<double>, double> L = (IList<double> parameters) => {
-                Distribution distribution = factory(parameters);
+                ContinuousDistribution distribution = factory(parameters);
                 double lnP = 0.0;
                 foreach (double value in data) {
                     double P = distribution.ProbabilityDensity(value);

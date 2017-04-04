@@ -95,7 +95,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
@@ -106,22 +106,47 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else {
-                // these are simplifications of q (-p)^n + p q^n
+                // Mean is p, so C_r = q (0 - p)^r + p (1 - p)^r = q (-p)^r + p q^r.
+                // For odd r, there is likely to be significant cancelation between the two opposite-signed terms.
+                // These are simplifications of q (-p)^r + p q^r
                 if (r % 2 == 0) {
+                    // For even r, there is no cancelation. Just simplify a bit by pulling out shared factors p and q.
                     return (p * q * (MoreMath.Pow(p, r - 1) + MoreMath.Pow(q, r - 1)));
                 } else {
+                    // For odd r, we have a
+                    return (p * q * DifferenceOfPowers(r - 1));
+                    /* 
                     int m = (r - 1) / 2;
                     double pm = MoreMath.Pow(p, m);
                     double qm = MoreMath.Pow(q, m);
                     return (p * q * (qm - pm) * (qm + pm));
+                    */
                 }
             }
+        }
+
+        // Compute q^m - p^m
+        private double DifferenceOfPowers (int m) {
+            if (m == 0) {
+                return (0.0);
+            } else if (m % 2 == 0) {
+                // If m is even, write q^{2n} - p^{2n} = (q^n - p^n) (q^n + p^n).
+                int n = m / 2;
+                return (DifferenceOfPowers(n) * (MoreMath.Pow(q, n) + MoreMath.Pow(p, n)));
+            } else {
+                // If m is odd, write q^{n + 1} - p^{n + 1} = (p - q) (p^n + p^{n-1} q + p^{n-2} q^2 + \cdots + q^n)
+                // = (p - q) p^n (1 + r + r^2 + \cdots + r^n) where r = q/p.
+                // = (p - q) p^n (1 - r^{n + 1}) / (1 - r) = (p - q) p^{n+1} (1 - (q/p)^{n+1})/(p-q)
+                double s = MoreMath.Pow(q, m) - MoreMath.Pow(p, m);
+                return (s);  
+            }
+
         }
 
         /// <inheritdoc />

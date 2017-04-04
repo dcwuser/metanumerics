@@ -12,7 +12,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents all continuous, univariate probability distribution.
     /// </summary>
-    public abstract class Distribution : UnivariateDistribution {
+    public abstract class ContinuousDistribution : UnivariateDistribution {
 
         /// <summary>
         /// Returns the probability density at the given point.
@@ -103,16 +103,21 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r == 0) {
                 return (1.0);
             } else {
-                return (ExpectationValue(x => MoreMath.Pow(x, r)));
+                // If there will be no cancelation in the integral, use a pure relative accuracy target.
+                IntegrationSettings settings = new IntegrationSettings();
+                if ((r % 2 == 0) || !this.Support.OpenContains(0.0)) settings.AbsolutePrecision = 0.0;
+                IntegrationResult result = FunctionMath.Integrate(x => this.ProbabilityDensity(x) * MoreMath.Pow(x, r), this.Support, settings);
+                return (result.Value);
+                //return (ExpectationValue(x => MoreMath.Pow(x, r)));
             }
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -175,10 +180,10 @@ namespace Meta.Numerics.Statistics.Distributions {
             double m = Mean;
 
             double mm = 1.0;
-            double C = Moment(n);
+            double C = RawMoment(n);
             for (int k = 1; k <= n; k++) {
                 mm = mm * (-m);
-                C += AdvancedIntegerMath.BinomialCoefficient(n, k) * mm * Moment(n - k);
+                C += AdvancedIntegerMath.BinomialCoefficient(n, k) * mm * RawMoment(n - k);
             }
 
             return (C);

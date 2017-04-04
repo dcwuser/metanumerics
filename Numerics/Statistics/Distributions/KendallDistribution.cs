@@ -150,7 +150,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        public override double Moment (int k) {
+        public override double RawMoment (int k) {
             if (k < 0) {
                 throw new ArgumentNullException("k");
             } else {
@@ -162,7 +162,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        public override double MomentAboutMean (int k) {
+        public override double CentralMoment (int k) {
             if (k < 0) {
                 throw new ArgumentOutOfRangeException("k");
             } else {

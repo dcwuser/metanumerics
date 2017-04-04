@@ -16,7 +16,7 @@ namespace Test {
 
         [TestInitialize]
         public void Initialize () {
-            Distribution[] continuous = DistributionTest.GetDistributions();
+            ContinuousDistribution[] continuous = DistributionTest.GetDistributions();
             DiscreteDistribution[] discrete = DiscreteDistributionTest.GetDistributions();
             Distributions = new UnivariateDistribution[continuous.Length + discrete.Length];
             Array.Copy(continuous, 0, Distributions, 0, continuous.Length);
@@ -27,12 +27,12 @@ namespace Test {
         public void UnivariateDistributionRawMomentSpecialCases () {
             foreach (UnivariateDistribution distribution in Distributions) {
                 Console.WriteLine(distribution.GetType().Name);
-                Assert.IsTrue(distribution.Moment(0) == 1.0);
+                Assert.IsTrue(distribution.RawMoment(0) == 1.0);
                 if (Double.IsNaN(distribution.Mean)) {
-                    Assert.IsTrue(Double.IsNaN(distribution.Moment(1)));
+                    Assert.IsTrue(Double.IsNaN(distribution.RawMoment(1)));
                 } else {
                     // near-equality added for Binomial distribution
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Moment(1), distribution.Mean));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.RawMoment(1), distribution.Mean));
                 }
             }
         }
@@ -40,13 +40,13 @@ namespace Test {
         [TestMethod]
         public void UnivariateDistributionCentralMomentSpecialCases () {
             foreach (UnivariateDistribution distribution in Distributions) {
-                Assert.IsTrue(distribution.MomentAboutMean(0) == 1.0);
-                if (!Double.IsNaN(distribution.Mean)) Assert.IsTrue(distribution.MomentAboutMean(1) == 0.0);
+                Assert.IsTrue(distribution.CentralMoment(0) == 1.0);
+                if (!Double.IsNaN(distribution.Mean)) Assert.IsTrue(distribution.CentralMoment(1) == 0.0);
                 if (Double.IsNaN(distribution.Variance)) {
-                    Assert.IsTrue(Double.IsNaN(distribution.MomentAboutMean(2)));
+                    Assert.IsTrue(Double.IsNaN(distribution.CentralMoment(2)));
                 } else {
                     // near equality rather than perfect equality added for Weibull distribution
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.MomentAboutMean(2), distribution.Variance));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.CentralMoment(2), distribution.Variance));
                 }
             }
         }
@@ -76,7 +76,7 @@ namespace Test {
             foreach (UnivariateDistribution distribution in Distributions) {
                 Console.WriteLine(distribution.GetType().Name);
                 if (Double.IsNaN(distribution.ExcessKurtosis)) continue;
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Skewness, distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 3.0 / 2.0)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Skewness, distribution.CentralMoment(3) / Math.Pow(distribution.CentralMoment(2), 3.0 / 2.0)));
             }
         }
 
@@ -94,14 +94,14 @@ namespace Test {
             foreach (UnivariateDistribution distribution in Distributions) {
                 Console.WriteLine(distribution.GetType().Name);
                 // C2 = M2 - M1^2
-                double M1 = distribution.Moment(1);
-                double M2 = distribution.Moment(2);
-                double C2 = distribution.MomentAboutMean(2);
+                double M1 = distribution.RawMoment(1);
+                double M2 = distribution.RawMoment(2);
+                double C2 = distribution.CentralMoment(2);
                 if (Double.IsNaN(M1) || Double.IsNaN(M2)) continue;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(C2 + M1 * M1, M2));
                 // C3 = M3 - 3 M2 M1 + 2 M1^3
-                double M3 = distribution.Moment(3);
-                double C3 = distribution.MomentAboutMean(3);
+                double M3 = distribution.RawMoment(3);
+                double C3 = distribution.CentralMoment(3);
                 if (Double.IsNaN(M3)) continue;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(C3 + 3.0 * M2 * M1, M3 + 2.0 * M1 * M1 * M1));
                 // C4 = M4 - 4 M3 M1 + 6 M2 M1^2 - 3 M1^4
@@ -132,12 +132,12 @@ namespace Test {
                 for (int r = 0; r < n; r++) inK[r] = d.Cumulant(r);
 
                 double[] outC = MomentMath.CumulantToCentral(inK);
-                for (int r = 0; r < n; r++) Console.WriteLine("r={0} K={1} -> C={2} v C={3}", r, inK[r], outC[r], d.MomentAboutMean(r));
-                for (int r = 0; r < n; r++) Assert.IsTrue(TestUtilities.IsNearlyEqual(outC[r], d.MomentAboutMean(r)));
+                for (int r = 0; r < n; r++) Console.WriteLine("r={0} K={1} -> C={2} v C={3}", r, inK[r], outC[r], d.CentralMoment(r));
+                for (int r = 0; r < n; r++) Assert.IsTrue(TestUtilities.IsNearlyEqual(outC[r], d.CentralMoment(r)));
 
                 double[] outM = MomentMath.CumulantToRaw(inK);
-                for (int r = 0; r < n; r++) Console.WriteLine("r={0} K={1} -> M={2} v M={3}", r, inK[r], outM[r], d.Moment(r));
-                for (int r = 0; r < n; r++) Assert.IsTrue(TestUtilities.IsNearlyEqual(outM[r], d.Moment(r)));
+                for (int r = 0; r < n; r++) Console.WriteLine("r={0} K={1} -> M={2} v M={3}", r, inK[r], outM[r], d.RawMoment(r));
+                for (int r = 0; r < n; r++) Assert.IsTrue(TestUtilities.IsNearlyEqual(outM[r], d.RawMoment(r)));
 
             }
         }

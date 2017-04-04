@@ -130,7 +130,7 @@ namespace Meta.Numerics.Statistics {
         public TestResult Result {
             get {
                 double F = (this.SumOfSquares / this.DegreesOfFreedom) / (result.Residual.SumOfSquares / result.Residual.DegreesOfFreedom);
-                Distribution D = new FisherDistribution(this.DegreesOfFreedom, result.Residual.DegreesOfFreedom);
+                ContinuousDistribution D = new FisherDistribution(this.DegreesOfFreedom, result.Residual.DegreesOfFreedom);
                 return (new TestResult("F", F, TestType.RightTailed, D));
             }
         }

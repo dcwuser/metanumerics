@@ -291,7 +291,7 @@ namespace Test {
         public void LjungBoxNullDistribution () {
 
             Sample Qs = new Sample();
-            Distribution d = null;
+            ContinuousDistribution d = null;
             for (int i = 0; i < 100; i++) {
                 TimeSeries series = GenerateMA1TimeSeries(0.0, 1.0, 2.0, 10, i);
                 TestResult lbResult = series.LjungBoxTest(5);

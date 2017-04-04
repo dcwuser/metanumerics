@@ -265,7 +265,7 @@ namespace Test {
             IDeviateGenerator nRng = new LevaNormalGenerator();
 
             //Sample sample = new Sample();
-            Distribution nrm = new NormalDistribution();
+            ContinuousDistribution nrm = new NormalDistribution();
 
             Stopwatch timer = Stopwatch.StartNew();
             double sum = 0.0;
@@ -286,7 +286,7 @@ namespace Test {
 
             Random rng = new Random(1);
             IDeviateGenerator nRng = new CauchyGenerator();
-            Distribution d = new CauchyDistribution();
+            ContinuousDistribution d = new CauchyDistribution();
 
             Sample sample = new Sample();
 
@@ -313,7 +313,7 @@ namespace Test {
             Random rng = new Random(1);
             //IDeviateGenerator nRng = new AhrensDieterGammaGenerator(alpha);
             IDeviateGenerator nRng = new MarsagliaTsangGammaGenerator(new PolarRejectionNormalDeviateGenerator(), alpha);
-            Distribution d = new GammaDistribution(alpha);
+            ContinuousDistribution d = new GammaDistribution(alpha);
 
             //double sum = 0.0;
             Sample sample = new Sample();

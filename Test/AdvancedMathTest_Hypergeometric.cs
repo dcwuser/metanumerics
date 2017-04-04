@@ -12,29 +12,13 @@ namespace Test {
     [TestClass]
     public class AdvancedMathTest_Hypergeometric {
 
-        //double[] abcs = new double[] { -3.0, -0.5, 0.1, 1.0, 1.5, 2.0, 3.1, 4.5, 7.0 };
-        double[] abcs = new double[] { -0.5, 0.1, 1.0, 1.5, 2.0, 3.1, 4.5, 7.0 };
+        double[] abcs = new double[] { -3.0, -0.5, 0.1, 1.0, 1.5, 2.0, 3.1, 4.5, 7.0 };
+        //double[] abcs = new double[] { -0.5, 0.1, 1.0, 1.5, 2.0, 3.1, 4.5, 7.0 };
         double[] xs = new double[] { -5.0, -0.6, -0.2, 0.0, 0.3, 0.5, 0.8 };
 
-
-        [TestMethod]
-        public void Compute() {
-
-            foreach (double a in abcs) {
-                foreach (double b in abcs) {
-                    foreach (double c in abcs) {
-                        foreach (double x in xs) {
-                            double F = AdvancedMath.Hypergeometric2F1(a, b, c, x);
-                            if (Double.IsNaN(F) || Double.IsInfinity(F)) {
-                                Console.WriteLine($"{a}, {b}, {c}, {x}");
-                            }
-                        }
-                    }
-                }
-            }
-        
+        private static bool IsNonpositiveInteger (double x) {
+            return ((x <= 0.0) && (Math.Round(x) == x));
         }
-
 
         [TestMethod]
         public void HypergeometrticRecurrenceA () {
@@ -50,10 +34,12 @@ namespace Test {
                             double F0 = AdvancedMath.Hypergeometric2F1(a, b, c, x);
                             double FP = AdvancedMath.Hypergeometric2F1(a + 1.0, b, c, x);
 
+                            if ((c == a) && Double.IsNaN(FM)) continue;
+
                             Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
                                 new double[] { (c - a) * FM, (2.0 * a - c - a * x + b * x) * F0 },
                                 -a * (x - 1.0) * FP,
-                                new EvaluationSettings() { RelativePrecision = 1.0E-12, AbsolutePrecision = 1.0E-16 }
+                                new EvaluationSettings() { RelativePrecision = 1.0E-12, AbsolutePrecision = 1.0E-15 }
                             ));
 
                         }
@@ -77,7 +63,8 @@ namespace Test {
                             double F0 = AdvancedMath.Hypergeometric2F1(a, b, c, x);
                             double FP = AdvancedMath.Hypergeometric2F1(a, b, c + 1.0, x);
 
-                            if (Double.IsNaN(FM)) continue;
+                            if (Double.IsNaN(FM) && ((c == 0.0) || (c == 1.0))) continue;
+                            if (Double.IsNaN(FP) && ((c == a) || (c == b))) continue;
 
                             Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
                                 new double[] { c * (c - 1.0) * (x - 1.0) * FM, c * (c - 1.0 - (2.0 * c - a - b - 1.0) * x) * F0 },
@@ -159,7 +146,7 @@ namespace Test {
             // F(a, b, c, x) = \frac{\Gamma(c)}{\Gamma(b) \Gamma(c - b)} 
             // \int_{0}^{1} \! dt \, t^{b-1} (1 - t)^{c - b - 1} (1 - x t)^{-a}
 
-            // Choose limits on a, b, c so that singularities in integral are numerically integrable.
+            // Choose limits on a, b, c so that singularities of integrand are numerically integrable.
 
             foreach (double a in TestUtilities.GenerateRealValues(1.0, 10.0, 2)) {
                 foreach (double b in TestUtilities.GenerateRealValues(0.5, 10.0, 2)) {
@@ -190,22 +177,12 @@ namespace Test {
                 foreach (double b in abcs) {
                     foreach (double c in abcs) {
 
+                        // Formula only hold for positive real c-a-b
                         if ((c - a - b) <= 0.0) continue;
-                        /*
-                        try {
 
-                            double f = AdvancedMath.Hypergeometric2F1(a, b, c, 1.0);
-                            double g = AdvancedMath.Gamma(c) * AdvancedMath.Gamma(c - a - b) / AdvancedMath.Gamma(c - a) / AdvancedMath.Gamma(c - b);
+                        // Formula is still right for non-positive c, but to handle it we would need to deal with canceling infinite Gammas
+                        if (IsNonpositiveInteger(c)) continue;
 
-                            if (!TestUtilities.IsNearlyEqual(f, g)) {
-                                Console.WriteLine("F({0},{1},{2},1) = {3} v {4}", a, b, c, f, g);
-                            }
-
-                        } catch {
-                            Console.WriteLine("F({0},{1},{2},1) ERROR", a, b, c);
-                            continue;
-                        }
-                        */
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(
                             AdvancedMath.Hypergeometric2F1(a, b, c, 1.0),
                             AdvancedMath.Gamma(c) * AdvancedMath.Gamma(c - a - b) / AdvancedMath.Gamma(c - a) / AdvancedMath.Gamma(c - b)
@@ -222,6 +199,8 @@ namespace Test {
 
             foreach (double a in abcs) {
 
+                if ((a <= 0.0) && (Math.Round(a) == a)) continue;
+
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedMath.Hypergeometric2F1(1.0, a, a + 1.0, -1.0),
                     a / 2.0 * (AdvancedMath.Psi((a + 1.0)/2.0) - AdvancedMath.Psi(a / 2.0))
@@ -232,11 +211,13 @@ namespace Test {
                     double c = a - b + 1.0;
                     if ((c <= 0.0) && (Math.Round(c) == c)) continue;
 
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        AdvancedMath.Hypergeometric2F1(a, b, a - b + 1.0, -1.0),
-                        AdvancedMath.Gamma(a - b + 1.0) * AdvancedMath.Gamma(a / 2.0 + 1.0) / AdvancedMath.Gamma(a + 1.0) / AdvancedMath.Gamma(a / 2.0 - b + 1.0)
-                    ));
-
+                    // If result vanishes, returned value may just be very small.
+                    double R = AdvancedMath.Gamma(a - b + 1.0) * AdvancedMath.Gamma(a / 2.0 + 1.0) / AdvancedMath.Gamma(a + 1.0) / AdvancedMath.Gamma(a / 2.0 - b + 1.0);
+                    if (R == 0.0) {
+                        Assert.IsTrue(Math.Abs(AdvancedMath.Hypergeometric2F1(a, b, a - b + 1.0, -1.0)) <= 1.0E-14);
+                    } else {
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Hypergeometric2F1(a, b, a - b + 1.0, -1.0), R));
+                    }
                 }
             }
 
@@ -249,14 +230,14 @@ namespace Test {
                 foreach (double b in abcs) {
 
                     double c = (a + b + 1.0) / 2.0;
-                    if (!((c <= 0.0) && (Math.Round(c) == c))) {
+                    if (!IsNonpositiveInteger(c)) {
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(
                             AdvancedMath.Hypergeometric2F1(a, b, c, 0.5),
                             Math.Sqrt(Math.PI) * AdvancedMath.Gamma(c) / AdvancedMath.Gamma((a + 1.0) / 2.0) / AdvancedMath.Gamma((b + 1.0) / 2.0)
                         ));
                     }
 
-                    if (!((b <= 0.0) && (Math.Round(b) == b))) {
+                    if (!IsNonpositiveInteger(b)) {
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(
                             AdvancedMath.Hypergeometric2F1(a, 1.0 - a, b, 0.5),
                             Math.Sqrt(Math.PI) * Math.Pow(2.0, 1.0 - b) * AdvancedMath.Gamma(b) / AdvancedMath.Gamma((a + b) / 2.0) / AdvancedMath.Gamma((b - a + 1.0) / 2.0)
@@ -330,25 +311,100 @@ namespace Test {
         }
 
         [TestMethod]
+        public void HypergeometricLinearTransforms () {
+
+            foreach (double a in abcs) {
+                foreach (double b in abcs) {
+                    foreach (double c in abcs) {
+                        if (IsNonpositiveInteger(c)) continue;
+                        foreach (double x in xs) {
+
+                            double F = AdvancedMath.Hypergeometric2F1(a, b, c, x);
+
+                            // A&S 15.3.3
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(F, AdvancedMath.Hypergeometric2F1(c - a, c - b, c, x) * Math.Pow(1.0 - x, c - a - b)));
+
+                            // A&S 15.3.4
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(F, AdvancedMath.Hypergeometric2F1(a, c - b, c, x / (x - 1.0)) * Math.Pow(1.0 - x, -a)));
+
+                            // A&S 15.3.5
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(F, AdvancedMath.Hypergeometric2F1(b, c - a, c, x / (x - 1.0)) * Math.Pow(1.0 - x, -b)));
+
+                            // A&S 15.3.6
+                            if (!IsNonpositiveInteger(c - a - b) && !IsNonpositiveInteger(a + b - c) && (x > 0.0)) {
+                                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                                    new double[] {
+                                        AdvancedMath.Gamma(c) * AdvancedMath.Gamma(c - a - b) / AdvancedMath.Gamma(c - a) / AdvancedMath.Gamma(c - b) *
+                                        AdvancedMath.Hypergeometric2F1(a, b, a + b - c + 1.0, 1.0 - x),
+                                        AdvancedMath.Gamma(c) * AdvancedMath.Gamma(a + b - c) / AdvancedMath.Gamma(a) / AdvancedMath.Gamma(b) *
+                                        AdvancedMath.Hypergeometric2F1(c - a, c - b, c - a - b + 1.0, 1.0 - x) *
+                                        Math.Pow(1.0 - x, c - a - b)
+                                    }, F
+                                ));
+                            }
+
+                            // A&S 15.3.7
+                            if (!IsNonpositiveInteger(a - b) && !IsNonpositiveInteger(b - a) && (x < 0.0)) {
+                                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                                    new double[] {
+                                        AdvancedMath.Gamma(c) * AdvancedMath.Gamma(b - a) / AdvancedMath.Gamma(b) / AdvancedMath.Gamma(c - a) *
+                                        AdvancedMath.Hypergeometric2F1(a, 1.0 - c + a, 1.0 - b + a, 1.0 / x) * Math.Pow(-x, -a),
+                                        AdvancedMath.Gamma(c) * AdvancedMath.Gamma(a - b) / AdvancedMath.Gamma(a) / AdvancedMath.Gamma(c - b) *
+                                        AdvancedMath.Hypergeometric2F1(b, 1.0 - c + b, 1.0 - a + b, 1.0 / x) * Math.Pow(-x, -b)
+                                    }, F
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
         public void HypergeometricQuadraticTransforms () {
 
             foreach (double a in abcs) {
                 foreach (double b in abcs) {
                     foreach (double x in xs) {
 
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                            AdvancedMath.Hypergeometric2F1(a, b, 2.0 * b, x),
-                            AdvancedMath.Hypergeometric2F1(0.5 * a, b - 0.5 * a, b + 0.5, -1.0 / 4.0 * x * x / (1.0 - x)) / Math.Pow(1.0 - x, 0.5 * a),
-                            TestUtilities.TargetPrecision * 1000.0
-                        ));
+                        if (!IsNonpositiveInteger(2.0 * b)) {
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                                AdvancedMath.Hypergeometric2F1(a, b, 2.0 * b, x),
+                                AdvancedMath.Hypergeometric2F1(0.5 * a, b - 0.5 * a, b + 0.5, x * x / (x - 1.0) / 4.0) / Math.Pow(1.0 - x, 0.5 * a),
+                                TestUtilities.TargetPrecision * 1000.0
+                            ));
+                        }
 
+                        // Wrong sign, but Mathematica agrees with values!
                         /*
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                            AdvancedMath.Hypergeometric2F1(a, b, a - b + 1.0, x),
-                            AdvancedMath.Hypergeometric2F1(0.5 * a, 0.5 * a - b + 0.5, a - b + 1.0, - 4.0 * x / MoreMath.Sqr(1.0 - x)) / Math.Pow(1.0 - x, a)
-                        ));
+                        if (!IsNonpositiveInteger(a - b + 1.0)) {
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                                AdvancedMath.Hypergeometric2F1(a, b, a - b + 1.0, x),
+                                AdvancedMath.Hypergeometric2F1(0.5 * a, 0.5 * a - b + 0.5, a - b + 1.0, -4.0 * x / MoreMath.Sqr(1.0 - x)) / Math.Pow(1.0 - x, a)
+                            ));
+                        }
                         */
                     }
+                }
+            }
+
+        }
+
+        [TestMethod]
+        public void HypergeometricCubicTransforms () {
+
+            foreach (double a in abcs) {
+                foreach (double x in xs) {
+
+                    // DLMF 15.8.31
+                    if ((a == 7.0) && (x == 0.8)) continue;
+                    if (x < 8.0 / 9.0) {
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                            AdvancedMath.Hypergeometric2F1(3.0 * a, 3.0 * a + 0.5, 4.0 * a + 2.0 / 3.0, x),
+                            AdvancedMath.Hypergeometric2F1(a, a + 0.5, 2.0 * a + 5.0 / 6.0, 27.0 * x * x * (x - 1.0) / MoreMath.Sqr(9.0 * x - 8.0)) * Math.Pow(1.0 - 9.0 / 8.0 * x, -2.0 * a)
+                        ));
+                    }
+
                 }
             }
 
@@ -398,10 +454,10 @@ namespace Test {
             yield return Tuple.Create(500.0, 500.0, 500.0, -0.6, 8.709809816217217E-103);
             yield return Tuple.Create(-1000.0, -2000.0, -4000.1, -0.5, 5.233580403196932E94);
             yield return Tuple.Create(-100.0, -200.0, -300.0 + 1.0E-9, 0.5 * Math.Sqrt(2.0), 2.653635302903707E-31);
+            */
             yield return Tuple.Create(300.0, 10.0, 5.0, 0.5, 3.912238919961547E98);
             //yield return Tuple.Create(5.0, -300.0, 10.0, 0.5, 1.661006238211309E-7);
             //yield return Tuple.Create(10.0, 5.0, -300.5, 0.5, -3.852027081523919E32);
-            */
             yield return Tuple.Create(2.25, 3.75, -0.5, -1.0, -0.631220676949703);
 
         }

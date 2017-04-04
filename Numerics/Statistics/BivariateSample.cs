@@ -363,7 +363,7 @@ namespace Meta.Numerics.Statistics {
         public TestResult PearsonRTest () {
             if (Count < 3) throw new InsufficientDataException();
             double r = this.Covariance / Math.Sqrt(xData.Variance * yData.Variance);
-            Distribution p = new PearsonRDistribution(Count);
+            ContinuousDistribution p = new PearsonRDistribution(Count);
             return (new TestResult(r, p));
         }
 
@@ -404,7 +404,7 @@ namespace Meta.Numerics.Statistics {
             double rho = C / V;
 
             // for small enough sample, use the exact distribution
-            Distribution rhoDistribution;
+            ContinuousDistribution rhoDistribution;
             if (Count <= 10) {
                 // for small enough sample, use the exact distribution
                 // it would be nice to do this for at least slightly higher n, but computation time grows dramatically
@@ -479,7 +479,7 @@ namespace Meta.Numerics.Statistics {
             double t = 1.0 * (C - D) / (C + D);
 
             // compute tau distribution
-            Distribution tauDistribution;
+            ContinuousDistribution tauDistribution;
             if (n <= 20) {
                 tauDistribution = new DiscreteAsContinuousDistribution(new KendallExactDistribution(n), Interval.FromEndpoints(-1.0, 1.0));
             } else {
@@ -572,15 +572,18 @@ namespace Meta.Numerics.Statistics {
 
             // Compute residuals and other sum-of-squares
             double SSR = 0.0;
+            double SSF = 0.0;
             BivariateSample residuals = new BivariateSample();
             foreach (XY point in this) {
-                double z = point.Y - (a + b * point.X);
+                double y = a + b * point.X;
+                double z = point.Y - y;
                 SSR += z * z;
                 residuals.Add(point.X, z);
+                SSF += MoreMath.Sqr(y - my);
             }
             residuals.IsReadOnly = true;
             double SST = cyy * n;
-            double SSF = SST - SSR;
+            // Note SST = SSF + SSR because \sum_{i} ( y_i - \bar{y})^2 = \sum_i (y_i - f_i)^2 + \sum_i (f_i - \bar{y})^2
 
             // Use sums-of-squares to do ANOVA
             AnovaRow fit = new AnovaRow(SSF, 1);

@@ -268,7 +268,7 @@ namespace Meta.Numerics.Statistics {
                 chi2 += MoreMath.Sqr(lastObservedCounts - lastExpectedCounts) / lastExpectedCounts;
             }
 
-            Distribution nullDistribution = new ChiSquaredDistribution(dof);
+            ContinuousDistribution nullDistribution = new ChiSquaredDistribution(dof);
             return (new TestResult("ChiSquared", chi2, TestType.RightTailed, nullDistribution));
 
         }

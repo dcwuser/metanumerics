@@ -11,6 +11,10 @@ namespace Test {
 
     internal static class TestUtilities {
 
+        public static EvaluationSettings RelativeTarget = new EvaluationSettings() {
+            RelativePrecision = 1.0E-13, AbsolutePrecision = 0.0
+        };
+
         public static bool IsNearlyEqual (double x, double y, EvaluationSettings s) {
             if (Double.IsPositiveInfinity(x) && Double.IsPositiveInfinity(y)) return (true);
             if (Double.IsNegativeInfinity(x) && Double.IsNegativeInfinity(y)) return (true);
@@ -41,31 +45,18 @@ namespace Test {
         // equality of reals
 
         public static bool IsNearlyEqual (double x, double y) {
-            return (IsNearlyEqual(x, y, TargetPrecision));
+            return (IsNearlyEqual(x, y, RelativeTarget));
+            //return (IsNearlyEqual(x, y, TargetPrecision));
         }
 
         public static bool IsNearlyEqual (double x, double y, double e) {
-
             return (IsNearlyEqual(x, y, new EvaluationSettings() { RelativePrecision = e, AbsolutePrecision = e }));
-            /*
-            if (Double.IsPositiveInfinity(x) || Double.IsPositiveInfinity(y)) return (true);
-            if (Double.IsNegativeInfinity(x) || Double.IsNegativeInfinity(y)) return (true);
-            if (2.0 * Math.Abs(x - y) <= e * (Math.Abs(x) + Math.Abs(y))) {
-                return (true);
-            } else {
-                if (Math.Abs(x - y) <= e) {
-                    return (true);
-                } else {
-                    return (false);
-                }
-            }
-            */
         }
 
         // equality of complexes
 
         public static bool IsNearlyEqual (Complex u, Complex v) {
-            return (IsNearlyEqual(u, v, TargetPrecision));
+            return (IsNearlyEqual(u, v, RelativeTarget));
         }
 
         public static bool IsNearlyEqual (Complex u, Complex v, double e) {
@@ -124,6 +115,7 @@ namespace Test {
                 sum += x;
                 norm += Math.Abs(x);
             }
+            if (Double.IsNaN(sum) && Double.IsNaN(y)) return (true);
             double tol = settings.AbsolutePrecision + settings.RelativePrecision * norm;
             return (Math.Abs(sum - y) <= tol);
 
@@ -392,11 +384,11 @@ namespace Test {
             return (result);
         }
 
-        public static Sample CreateSample (Distribution distribution, int count) {
+        public static Sample CreateSample (ContinuousDistribution distribution, int count) {
             return (CreateSample(distribution, count, 1));
         }
 
-        public static Sample CreateSample (Distribution distribution, int count, int seed) {
+        public static Sample CreateSample (ContinuousDistribution distribution, int count, int seed) {
 
             Sample sample = new Sample();
 

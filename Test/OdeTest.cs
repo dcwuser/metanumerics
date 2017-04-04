@@ -24,9 +24,9 @@ namespace Test {
             double cy = 0.0;
 
             Random rng = new Random(1001110000);
-            Distribution xDistribution = new UniformDistribution(Interval.FromEndpoints(-4.0, 8.0));
-            Distribution yDistribution = new UniformDistribution(Interval.FromEndpoints(-8.0, 4.0));
-            Distribution eDistribution = new NormalDistribution();
+            ContinuousDistribution xDistribution = new UniformDistribution(Interval.FromEndpoints(-4.0, 8.0));
+            ContinuousDistribution yDistribution = new UniformDistribution(Interval.FromEndpoints(-8.0, 4.0));
+            ContinuousDistribution eDistribution = new NormalDistribution();
 
             Sample r2Sample = new Sample();
 
@@ -56,7 +56,7 @@ namespace Test {
 
             Console.WriteLine("{0} {1} {2} {3} {4}", r2Sample.Count, r2Sample.PopulationMean, r2Sample.StandardDeviation, r2Sample.Minimum, r2Sample.Maximum);
 
-            Distribution r2Distribution = new BetaDistribution((3 - 1) / 2.0, (12 - 3) / 2.0);
+            ContinuousDistribution r2Distribution = new BetaDistribution((3 - 1) / 2.0, (12 - 3) / 2.0);
             //Distribution r2Distribution = new BetaDistribution((10 - 2) / 2.0, (2 - 1) / 2.0);
             Console.WriteLine("{0} {1}", r2Distribution.Mean, r2Distribution.StandardDeviation);
 
@@ -74,8 +74,8 @@ namespace Test {
             double b0 = 0.0;
 
             Random rng = new Random(1001110000);
-            Distribution xDistribution = new UniformDistribution(Interval.FromEndpoints(-2.0, 4.0));
-            Distribution eDistribution = new NormalDistribution();
+            ContinuousDistribution xDistribution = new UniformDistribution(Interval.FromEndpoints(-2.0, 4.0));
+            ContinuousDistribution eDistribution = new NormalDistribution();
 
             Sample r2Sample = new Sample();
 
@@ -103,7 +103,7 @@ namespace Test {
 
             Console.WriteLine("{0} {1} {2} {3} {4}", r2Sample.Count, r2Sample.PopulationMean, r2Sample.StandardDeviation, r2Sample.Minimum, r2Sample.Maximum);
 
-            Distribution r2Distribution = new BetaDistribution((2 - 1) / 2.0, (10 - 2) / 2.0);
+            ContinuousDistribution r2Distribution = new BetaDistribution((2 - 1) / 2.0, (10 - 2) / 2.0);
             //Distribution r2Distribution = new BetaDistribution((10 - 2) / 2.0, (2 - 1) / 2.0);
             Console.WriteLine("{0} {1}", r2Distribution.Mean, r2Distribution.StandardDeviation);
 

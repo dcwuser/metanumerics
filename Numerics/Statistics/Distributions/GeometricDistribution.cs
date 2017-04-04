@@ -134,7 +134,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         // anyway for cumulants, we will use them for raw moments, too.
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {

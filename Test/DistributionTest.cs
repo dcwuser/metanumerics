@@ -19,9 +19,9 @@ namespace Test {
         // This appears to occur whether we use inverse CDF or x/(x+y) to generate beta deviates.
         // Perhaps it indicates a problem with P computation for beta in this region?
 
-        private static List<Distribution> CreateDistributions () {
+        private static List<ContinuousDistribution> CreateDistributions () {
 
-            List<Distribution> distributions = new List<Distribution>( new Distribution[] {
+            List<ContinuousDistribution> distributions = new List<ContinuousDistribution>( new ContinuousDistribution[] {
                 new CauchyDistribution(1.0, 2.0),
                 new UniformDistribution(Interval.FromEndpoints(-2.0,1.0)), new UniformDistribution(Interval.FromEndpoints(7.0, 9.0)),
                 new NormalDistribution(3.0,2.0),
@@ -40,7 +40,8 @@ namespace Test {
                 new WaldDistribution(3.0, 1.0),
                 new PearsonRDistribution(7),
                 new GammaDistribution(0.8), new GammaDistribution(3.0, 5.0), new GammaDistribution(96.2),
-                new GumbelDistribution(1.2, 2.3)
+                new GumbelDistribution(1.2, 2.3),
+                new LaplaceDistribution(4.5, 6.0)
             });
 
             // Add some distributions that come from tests.
@@ -60,10 +61,10 @@ namespace Test {
             return (distributions);
         }
 
-        private static IEnumerable<Distribution> distributions = CreateDistributions();
+        private static IEnumerable<ContinuousDistribution> distributions = CreateDistributions();
 
-        public static Distribution[] GetDistributions () {
-            return (new Distribution[] {
+        public static ContinuousDistribution[] GetDistributions () {
+            return (new ContinuousDistribution[] {
             new CauchyDistribution(1.0, 2.0),
             new UniformDistribution(Interval.FromEndpoints(-2.0,1.0)), new UniformDistribution(Interval.FromEndpoints(7.0, 9.0)),
             new NormalDistribution(3.0,2.0),
@@ -91,7 +92,7 @@ namespace Test {
 
         [TestMethod]
         public void DistributionMedian () {
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Median, distribution.InverseLeftProbability(0.5)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Median, distribution.InverseRightProbability(0.5)));
             }
@@ -100,12 +101,12 @@ namespace Test {
 
         [TestMethod]
         public void DistributionSkewness () {
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
                 Console.WriteLine(distribution.GetType().FullName);
                 if (!Double.IsNaN(distribution.Skewness)) {
                     //Console.WriteLine("{0} {1} {2} {3}", distribution.Skewness, distribution.MomentAboutMean(3), distribution.MomentAboutMean(2), distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 1.5));
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        distribution.Skewness, distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 3.0 / 2.0)
+                        distribution.Skewness, distribution.CentralMoment(3) / Math.Pow(distribution.CentralMoment(2), 3.0 / 2.0)
                     ));
                 }
             }
@@ -113,7 +114,7 @@ namespace Test {
 
         [TestMethod]
         public void DistributionCentralInequality () {
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
                 double mean = distribution.Mean;
                 if (Double.IsNaN(mean)) continue;
                 double median = distribution.Median;
@@ -124,7 +125,7 @@ namespace Test {
 
         [TestMethod]
         public void DistributionMonotonicity () {
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
                 for (int i = 0; i < (probabilities.Length - 1); i++) {
                     Console.WriteLine("{0} {1}", distribution.GetType().Name, probabilities[i]);
                     Assert.IsTrue(distribution.InverseLeftProbability(probabilities[i]) < distribution.InverseLeftProbability(probabilities[i+1]));
@@ -135,7 +136,7 @@ namespace Test {
 
         [TestMethod]
         public void DistributionProbability () {
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
                 // some of these x's will be outside range,
                 // but that should just produce zero probability values
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5, 3)) {
@@ -145,7 +146,7 @@ namespace Test {
             }
         }
 
-        private void DistributionProbabilityTestHelper (Distribution distribution, double x) {
+        private void DistributionProbabilityTestHelper (ContinuousDistribution distribution, double x) {
             Console.WriteLine("{0} {1}", distribution.GetType().Name, x);
             double P = distribution.LeftProbability(x);
             double Q = distribution.RightProbability(x);
@@ -162,7 +163,7 @@ namespace Test {
 
         [TestMethod]
         public void DistributionUnitarityIntegral () {
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
                 // Gamma distribution has a power law divergence at zero, which our integrator is documented not to handle (look for lower precision)
                 if ((distribution is GammaDistribution) && (((GammaDistribution) distribution).ShapeParameter < 1.0)) continue;
                 Console.WriteLine(distribution.GetType().Name);
@@ -174,7 +175,7 @@ namespace Test {
 
         [TestMethod]
         public void DistributionMeanIntegral () {
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
                 double mean = distribution.Mean;
                 if (Double.IsNaN(mean) || Double.IsInfinity(mean)) continue;
                 Func<double, double> f = delegate(double x) {
@@ -193,7 +194,7 @@ namespace Test {
         // test variance
         [TestMethod]
         public void DistributionVarianceIntegral () {
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
                 if (Double.IsNaN(distribution.Variance) || Double.IsInfinity(distribution.Variance)) continue;
                 double e = TestUtilities.TargetPrecision;
                 // since a Gamma distribution with \alpha < 1 has a power law singularity and numerical integration cannot achieve full precision with such a singularity,
@@ -214,24 +215,26 @@ namespace Test {
 
         [TestMethod]
         public void DistributionRawMomentIntegral () {
-            foreach (Distribution distribution in distributions) {
-                // range of moments is about 3 to 30
-                foreach (int n in TestUtilities.GenerateIntegerValues(3, 30, 10)) {
-                    double M = distribution.Moment(n);
+            foreach (ContinuousDistribution distribution in distributions) {
+                foreach (int r in TestUtilities.GenerateIntegerValues(2, 32, 8)) {
+                    double M = distribution.RawMoment(r);
                     if (Double.IsInfinity(M) || Double.IsNaN(M)) continue; // don't try to do a non-convergent integral
                     Func<double, double> f = delegate(double x) {
-                        return (distribution.ProbabilityDensity(x) * Math.Pow(x, n));
+                        return (distribution.ProbabilityDensity(x) * Math.Pow(x, r));
                     };
                     try {
-                        double MI = FunctionMath.Integrate(f, distribution.Support);
-                        Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, n, M, MI);
+                        IntegrationResult MI = FunctionMath.Integrate(f, distribution.Support, new IntegrationSettings());
+                        Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, r, M, MI);
+                        Assert.IsTrue(MI.Estimate.ConfidenceInterval(0.99).ClosedContains(M));
+                        /*
                         if (M == 0.0) {
                             Assert.IsTrue(Math.Abs(MI) < TestUtilities.TargetPrecision);
                         } else {
                             Assert.IsTrue(TestUtilities.IsNearlyEqual(M, MI));
                         }
+                        */
                     } catch (NonconvergenceException) {
-                        Console.WriteLine("{0} {1} {2} NC", distribution.GetType().Name, n, M);
+                        Console.WriteLine("{0} {1} {2} NC", distribution.GetType().Name, r, M);
                     }
                 }
             }
@@ -240,11 +243,11 @@ namespace Test {
         // test higher central moments
         [TestMethod]
         public void DistributionCentralMomentIntegral () {
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
                 foreach (int n in TestUtilities.GenerateIntegerValues(2, 24, 8)) {
 
                     // get the predicted central moment
-                    double C = distribution.MomentAboutMean(n);
+                    double C = distribution.CentralMoment(n);
 
                     // don't try to integrate infinite moments
                     if (Double.IsInfinity(C) || Double.IsNaN(C)) continue;
@@ -300,7 +303,7 @@ namespace Test {
             // if integral is very small, we still want to get it very accurately
             IntegrationSettings settings = new IntegrationSettings() { AbsolutePrecision = 0.0 };
 
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
 
                 if (distribution is TriangularDistribution) continue;
 
@@ -345,7 +348,7 @@ namespace Test {
         [TestMethod]
         public void DistributionInvalidProbabilityInput () {
 
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
 
                 try {
                     distribution.InverseLeftProbability(1.1);
@@ -377,7 +380,7 @@ namespace Test {
             Sample tSample = new Sample();
 
             // begin with an underlying normal distribution
-            Distribution xDistribution = new NormalDistribution();
+            ContinuousDistribution xDistribution = new NormalDistribution();
 
             // compute a bunch of t satistics from the distribution
             for (int i = 0; i < 100000; i++) {
@@ -399,7 +402,7 @@ namespace Test {
 
             }
 
-            Distribution tDistribution = new StudentDistribution(5);
+            ContinuousDistribution tDistribution = new StudentDistribution(5);
             TestResult result = tSample.KolmogorovSmirnovTest(tDistribution);
             Console.WriteLine(result.LeftProbability);
 
@@ -414,7 +417,7 @@ namespace Test {
             Sample tSample = new Sample();
 
             // begin with an underlying normal distribution
-            Distribution xDistribution = new NormalDistribution(1.0, 2.0);
+            ContinuousDistribution xDistribution = new NormalDistribution(1.0, 2.0);
 
             // compute a bunch of t satistics from the distribution
             for (int i = 0; i < 200000; i++) {
@@ -436,7 +439,7 @@ namespace Test {
             }
 
             // t's should be t-distrubuted; use a KS test to check this
-            Distribution tDistribution = new StudentDistribution(4);
+            ContinuousDistribution tDistribution = new StudentDistribution(4);
             TestResult result = tSample.KolmogorovSmirnovTest(tDistribution);
             Console.WriteLine(result.LeftProbability);
             //Assert.IsTrue(result.LeftProbability < 0.95);
@@ -458,8 +461,8 @@ namespace Test {
             int n2 = 2;
 
             // define chi squared distributions
-            Distribution d1 = new ChiSquaredDistribution(n1);
-            Distribution d2 = new ChiSquaredDistribution(n2);
+            ContinuousDistribution d1 = new ChiSquaredDistribution(n1);
+            ContinuousDistribution d2 = new ChiSquaredDistribution(n2);
 
             // create a sample of chi-squared variates
             Sample s = new Sample();
@@ -471,13 +474,13 @@ namespace Test {
             }
 
             // it should match a Fisher distribution with the appropriate parameters
-            Distribution f0 = new FisherDistribution(n1, n2);
+            ContinuousDistribution f0 = new FisherDistribution(n1, n2);
             TestResult t0 = s.KuiperTest(f0);
             Console.WriteLine(t0.LeftProbability);
             Assert.IsTrue(t0.LeftProbability < 0.95);
 
             // it should be distinguished from a Fisher distribution with different parameters
-            Distribution f1 = new FisherDistribution(n1 + 1, n2);
+            ContinuousDistribution f1 = new FisherDistribution(n1 + 1, n2);
             TestResult t1 = s.KuiperTest(f1);
             Console.WriteLine(t1.LeftProbability);
             Assert.IsTrue(t1.LeftProbability > 0.95);
@@ -643,7 +646,7 @@ namespace Test {
 
         [TestMethod]
         public void DistributionRandomDeviates () {
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
                 Console.WriteLine(distribution.GetType().Name);
                 Sample s = TestUtilities.CreateSample(distribution, 128);
                 TestResult r = s.KolmogorovSmirnovTest(distribution);
@@ -655,7 +658,7 @@ namespace Test {
 
         [TestMethod]
         public void OutsideDistributionSupport () {
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
                 Interval support = distribution.Support;
                 if (support.LeftEndpoint > Double.NegativeInfinity) {
                     Assert.IsTrue(distribution.ProbabilityDensity(support.LeftEndpoint - 1.0) == 0.0);
@@ -675,8 +678,8 @@ namespace Test {
 
             // test that implementations on base Distribution classes function and agree with overridden implementations
 
-            Distribution d = new TestDistribution();
-            Distribution t = new TriangularDistribution(0.0, 1.0, 1.0);
+            ContinuousDistribution d = new TestDistribution();
+            ContinuousDistribution t = new TriangularDistribution(0.0, 1.0, 1.0);
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(d.Mean, t.Mean));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(d.StandardDeviation, t.StandardDeviation));
@@ -741,17 +744,17 @@ namespace Test {
 
             int n = 4;
 
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
 
                 if (Double.IsNaN(distribution.Mean)) continue;
                 Console.Write(distribution.GetType().Name);
 
                 // Convert central moments to raw moments
                 double[] centralInputs = new double[n];
-                for (int k = 0; k < n; k++) centralInputs[k] = distribution.MomentAboutMean(k);
+                for (int k = 0; k < n; k++) centralInputs[k] = distribution.CentralMoment(k);
                 double[] rawOutputs = MomentMath.CentralToRaw(distribution.Mean, centralInputs);
                 Assert.IsTrue(rawOutputs.Length == n);
-                for (int k = 0; k < n; k++) Assert.IsTrue(TestUtilities.IsNearlyEqual(rawOutputs[k], distribution.Moment(k)));
+                for (int k = 0; k < n; k++) Assert.IsTrue(TestUtilities.IsNearlyEqual(rawOutputs[k], distribution.RawMoment(k)));
 
                 // Convert cumulants to central moments
 
@@ -762,7 +765,7 @@ namespace Test {
 
         [TestMethod]
         public void TimeOperations () {
-            foreach (Distribution d in distributions) {
+            foreach (ContinuousDistribution d in distributions) {
 
                 Stopwatch s = Stopwatch.StartNew();
                 Random rng = new Random(0);
@@ -851,7 +854,7 @@ namespace Test {
     // Distribution base class. Most of these methods are not invoked by our "real" distribution classes,
     // because we override them with better implementations.
 
-    public class TestDistribution : Distribution {
+    public class TestDistribution : ContinuousDistribution {
 
         public override Interval Support {
             get {

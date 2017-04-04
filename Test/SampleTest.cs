@@ -80,11 +80,11 @@ namespace Test {
 
         }
 
-        private static Sample CreateSample (Distribution distribution, int count) {
+        public static Sample CreateSample (ContinuousDistribution distribution, int count) {
             return (CreateSample(distribution, count, 1));
         }
 
-        private static Sample CreateSample (Distribution distribution, int count, int seed) {
+        public static Sample CreateSample (ContinuousDistribution distribution, int count, int seed) {
 
             Sample sample = new Sample();
 
@@ -97,7 +97,7 @@ namespace Test {
             return (sample);
         }
 
-        private Distribution[] distributions = new Distribution[] {
+        private ContinuousDistribution[] distributions = new ContinuousDistribution[] {
             new UniformDistribution(Interval.FromEndpoints(-2.0,1.0)),
             new NormalDistribution(3.0,2.0),
             new ExponentialDistribution(2.0),
@@ -105,7 +105,7 @@ namespace Test {
 
         [TestMethod]
         public void SampleMoments () {
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
 
                 Console.WriteLine(distribution.GetType().Name);
                 
@@ -126,13 +126,13 @@ namespace Test {
                 for (int n = 0; n < 8; n++) {
                     UncertainValue c = sample.PopulationMomentAboutMean(n);
                     Interval ci = c.ConfidenceInterval(0.95);
-                    Console.WriteLine("C{0} {1} {2}", n, ci, distribution.MomentAboutMean(n));
-                    Assert.IsTrue(ci.ClosedContains(distribution.MomentAboutMean(n)));
+                    Console.WriteLine("C{0} {1} {2}", n, ci, distribution.CentralMoment(n));
+                    Assert.IsTrue(ci.ClosedContains(distribution.CentralMoment(n)));
 
                     UncertainValue r = sample.PopulationMoment(n);
                     Interval ri = r.ConfidenceInterval(0.95);
-                    Console.WriteLine("M{0} {1} {2}", n, ri, distribution.Moment(n));
-                    Assert.IsTrue(ri.ClosedContains(distribution.Moment(n)));
+                    Console.WriteLine("M{0} {1} {2}", n, ri, distribution.RawMoment(n));
+                    Assert.IsTrue(ri.ClosedContains(distribution.RawMoment(n)));
                 }
             }
 
@@ -142,7 +142,7 @@ namespace Test {
         [TestMethod]
         public void SamplePopulationMomentEstimateVariances () {
 
-            Distribution d = new LognormalDistribution();
+            ContinuousDistribution d = new LognormalDistribution();
 
             // for various sample sizes...
             foreach (int n in TestUtilities.GenerateIntegerValues(4, 32, 8)) {
@@ -195,7 +195,7 @@ namespace Test {
 
         [TestMethod]
         public void SampleInterquartileRange () {
-            foreach (Distribution distribution in distributions) {
+            foreach (ContinuousDistribution distribution in distributions) {
                 
                 Sample sample = CreateSample(distribution, 100);
 
@@ -205,155 +205,6 @@ namespace Test {
             }
 
         }
-
-        [TestMethod]
-        public void NormalFit () {
-
-            // pick mu >> sigma so that we get no negative values;
-            // otherwise the attempt to fit to an exponential will fail
-            Distribution distribution = new NormalDistribution(6.0, 2.0);
-            Sample sample = CreateSample(distribution, 100);
-
-            // fit to normal should be good
-            FitResult nfit = NormalDistribution.FitToSample(sample);
-            Console.WriteLine("P_n = {0}", nfit.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(nfit.GoodnessOfFit.LeftProbability < 0.95);
-            Assert.IsTrue(nfit.Parameter(0).ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
-            Assert.IsTrue(nfit.Parameter(1).ConfidenceInterval(0.95).ClosedContains(distribution.StandardDeviation));
-
-            // fit to exponential should be bad
-            FitResult efit = ExponentialDistribution.FitToSample(sample);
-            Console.WriteLine("P_e = {0}", efit.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(efit.GoodnessOfFit.LeftProbability > 0.95);
-
-        }
-
-        [TestMethod]
-        public void NormalFitUncertainties () {
-
-            NormalDistribution N = new NormalDistribution(-1.0, 2.0);
-
-            // Create a bivariate sample to hold our fitted best mu and sigma values
-            // so we can determine their covariance as well as their means and variances
-            BivariateSample fits = new BivariateSample();
-
-            double cmm = 0.0, css = 0.0, cms = 0.0;
-
-            // A bunch of times, create a normal sample
-            for (int i = 0; i < 64; i++) {
-
-                // we will use small samples so the variation in mu and sigma will be more substantial
-                Sample s = TestUtilities.CreateSample(N, 16, i);
-
-                // fit each sample to a normal distribution
-                FitResult fit = NormalDistribution.FitToSample(s);
-
-                // and record the mu and sigma values from the fit into our bivariate sample
-                fits.Add(fit.Parameter(0).Value, fit.Parameter(1).Value);
-
-                // also record the claimed covariances among these parameters
-                cmm += fit.Covariance(0, 0); css += fit.Covariance(1, 1); cms += fit.Covariance(0, 1);
-
-            }
-
-            cmm /= fits.Count; css /= fits.Count; cms /= fits.Count;
-
-
-            // the mean fit values should agree with the population distribution
-            Console.WriteLine("{0} {1}", fits.X.PopulationMean, N.Mean);
-            Assert.IsTrue(fits.X.PopulationMean.ConfidenceInterval(0.95).ClosedContains(N.Mean));
-            Console.WriteLine("{0} {1}", fits.Y.PopulationMean, N.StandardDeviation);
-            Assert.IsTrue(fits.Y.PopulationMean.ConfidenceInterval(0.95).ClosedContains(N.StandardDeviation));
-
-            // but also the covariances of those fit values should agree with the claimed covariances
-            Console.WriteLine("{0} {1}", fits.X.PopulationVariance, cmm);
-            Assert.IsTrue(fits.X.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(cmm));
-            Console.WriteLine("{0} {1}", fits.Y.PopulationVariance, css);
-            Assert.IsTrue(fits.Y.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(css));
-            Console.WriteLine("{0} {1}", fits.PopulationCovariance, cms);
-            Assert.IsTrue(fits.PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(cms));
-
-            /*
-            Random rng = new Random(2718281);
-            BivariateSample P = new BivariateSample();
-            double cmm = 0.0;
-            double css = 0.0;
-            double cms = 0.0;
-            for (int i = 0; i < 64; i++) {
-                Sample s = new Sample();
-                for (int j = 0; j < 16; j++) {
-                    s.Add(N.GetRandomValue(rng));
-                }
-                FitResult r = NormalDistribution.FitToSample(s);
-                P.Add(r.Parameter(0).Value, r.Parameter(1).Value);
-                cmm += r.Covariance(0, 0);
-                css += r.Covariance(1, 1);
-                cms += r.Covariance(0, 1);
-            }
-            cmm /= P.Count;
-            css /= P.Count;
-            cms /= P.Count;
-
-            Console.WriteLine("{0} {1}", P.X.PopulationMean, P.Y.PopulationMean);
-
-            Assert.IsTrue(P.X.PopulationMean.ConfidenceInterval(0.95).ClosedContains(N.Mean));
-            Assert.IsTrue(P.Y.PopulationMean.ConfidenceInterval(0.95).ClosedContains(N.StandardDeviation));
-
-            Assert.IsTrue(P.X.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(cmm));
-            Assert.IsTrue(P.Y.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(css));
-            Assert.IsTrue(P.PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(cms));
-            */
-
-        }
-
-        [TestMethod]
-        public void ExponentialFit () {
-
-            ExponentialDistribution distribution = new ExponentialDistribution(5.0);
-            Sample sample = CreateSample(distribution, 100);
-
-            // fit to normal should be bad
-            FitResult nfit = NormalDistribution.FitToSample(sample);
-            Console.WriteLine("P_n = {0}", nfit.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(nfit.GoodnessOfFit.LeftProbability > 0.95);
-
-            // fit to exponential should be good
-            FitResult efit = ExponentialDistribution.FitToSample(sample);
-            Console.WriteLine("P_e = {0}", efit.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(efit.GoodnessOfFit.LeftProbability < 0.95);
-            Assert.IsTrue(efit.Parameter(0).ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
-
-        }
-
-        [TestMethod]
-        public void ExponentialFitUncertainty () {
-
-            // check that the uncertainty in reported fit parameters is actually meaningful
-            // it should be the standard deviation of fit parameter values in a sample of many fits
-
-            // define a population distribution 
-            Distribution distribution = new ExponentialDistribution(4.0);
-
-            // draw a lot of samples from it; fit each sample and
-            // record the reported parameter value and error of each
-            Sample values = new Sample();
-            Sample uncertainties = new Sample();
-            for (int i = 0; i < 50; i++) {
-                Sample sample = CreateSample(distribution, 10, i);
-                FitResult fit = ExponentialDistribution.FitToSample(sample);
-                UncertainValue lambda = fit.Parameter(0);
-                values.Add(lambda.Value);
-                uncertainties.Add(lambda.Uncertainty);
-            }
-
-            Console.WriteLine(uncertainties.Mean);
-            Console.WriteLine(values.PopulationStandardDeviation);
-
-            // the reported errors should agree with the standard deviation of the reported parameters
-            Assert.IsTrue(values.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.Mean));
-
-        }
-
 
         [TestMethod]
         public void LognormalFit () {
@@ -402,7 +253,7 @@ namespace Test {
             // it should be the standard deviation of fit parameter values in a sample of many fits
 
             // define a population distribution 
-            Distribution distribution = new BetaDistribution(1.0 / 3.0, 2.0);
+            ContinuousDistribution distribution = new BetaDistribution(1.0 / 3.0, 2.0);
 
             // draw a lot of samples from it; fit each sample and
             // record the reported parameter value and error of each
@@ -448,7 +299,7 @@ namespace Test {
             // it should be the standard deviation of fit parameter values in a sample of many fits
 
             // define a population distribution 
-            Distribution distribution = new GammaDistribution(1.5, 2.0);
+            ContinuousDistribution distribution = new GammaDistribution(1.5, 2.0);
 
             // draw a lot of samples from it; fit each sample and
             // record the reported parameter value and error of each
@@ -469,51 +320,12 @@ namespace Test {
 
         }
 
-        [TestMethod]
-        public void WaldFitUncertainties () {
 
-            WaldDistribution wald = new WaldDistribution(3.5, 2.5);
-
-            Random rng = new Random(314159);
-            BivariateSample P = new BivariateSample();
-            double cmm = 0.0;
-            double css = 0.0;
-            double cms = 0.0;
-            for (int i = 0; i < 50; i++) {
-                Sample s = new Sample();
-                for (int j = 0; j < 50; j++) {
-                    s.Add(wald.GetRandomValue(rng));
-                }
-                FitResult r = WaldDistribution.FitToSample(s);
-                P.Add(r.Parameter(0).Value, r.Parameter(1).Value);
-                cmm += r.Covariance(0, 0);
-                css += r.Covariance(1, 1);
-                cms += r.Covariance(0, 1);
-            }
-            cmm /= P.Count;
-            css /= P.Count;
-            cms /= P.Count;
-
-            Console.WriteLine("{0} {1}", P.X.PopulationMean, P.Y.PopulationMean);
-
-            Assert.IsTrue(P.X.PopulationMean.ConfidenceInterval(0.95).ClosedContains(wald.Mean));
-            Assert.IsTrue(P.Y.PopulationMean.ConfidenceInterval(0.95).ClosedContains(wald.ShapeParameter));
-            // the ML shape parameter estimate appears to be asymptoticly unbiased, as it must be according to ML fit theory,
-            // but detectably upward biased for small n. we now correct for this.
-
-            Console.WriteLine("{0} {1} {2}", P.X.PopulationVariance, P.Y.PopulationVariance, P.PopulationCovariance);
-            Console.WriteLine("{0} {1} {2}", cmm, css, cms);
-
-            Assert.IsTrue(P.X.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(cmm));
-            Assert.IsTrue(P.Y.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(css));
-            Assert.IsTrue(P.PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(cms));
-
-        }
 
         [TestMethod]
         public void SampleFitChiSquaredTest () {
 
-            Distribution distribution = new ChiSquaredDistribution(4);
+            ContinuousDistribution distribution = new ChiSquaredDistribution(4);
             Sample sample = CreateSample(distribution, 100);
 
             // fit to normal should be bad
@@ -566,7 +378,7 @@ namespace Test {
             // it should be the standard deviation of fit parameter values in a sample of many fits
 
             // define a population distribution 
-            Distribution distribution = new WeibullDistribution(2.5, 1.5);
+            ContinuousDistribution distribution = new WeibullDistribution(2.5, 1.5);
 
             // draw a lot of samples from it; fit each sample and
             // record the reported parameter value and error of each
@@ -593,7 +405,7 @@ namespace Test {
         public void TTestDistribution () {
 
             // start with a normally distributed population
-            Distribution xDistribution = new NormalDistribution(2.0, 3.0);
+            ContinuousDistribution xDistribution = new NormalDistribution(2.0, 3.0);
             Random rng = new Random(1);
 
             // draw 100 samples from it and compute the t statistic for each
@@ -616,7 +428,7 @@ namespace Test {
             Assert.IsTrue(tSample.Count == 100);
 
             // check that the t statistics are distributed as expected
-            Distribution tDistribution = new StudentDistribution(9);
+            ContinuousDistribution tDistribution = new StudentDistribution(9);
 
             // check on the mean
             Console.WriteLine("m = {0} vs. {1}", tSample.PopulationMean, tDistribution.Mean);
@@ -638,7 +450,7 @@ namespace Test {
         public void SignTestDistribution () {
 
             // start with a non-normally distributed population
-            Distribution xDistribution = new ExponentialDistribution();
+            ContinuousDistribution xDistribution = new ExponentialDistribution();
             Random rng = new Random(1);
 
             // draw 100 samples from it and compute the t statistic for each
@@ -670,12 +482,12 @@ namespace Test {
             Assert.IsTrue(wSample.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(wDistribution.StandardDeviation));
 
             // check on the skew
-            Console.WriteLine("t = {0} vs. {1}", wSample.PopulationMomentAboutMean(3), wDistribution.MomentAboutMean(3));
-            Assert.IsTrue(wSample.PopulationMomentAboutMean(3).ConfidenceInterval(0.95).ClosedContains(wDistribution.MomentAboutMean(3)));
+            Console.WriteLine("t = {0} vs. {1}", wSample.PopulationMomentAboutMean(3), wDistribution.CentralMoment(3));
+            Assert.IsTrue(wSample.PopulationMomentAboutMean(3).ConfidenceInterval(0.95).ClosedContains(wDistribution.CentralMoment(3)));
 
             // check on the kuritosis
-            Console.WriteLine("u = {0} vs. {1}", wSample.PopulationMomentAboutMean(4), wDistribution.MomentAboutMean(4));
-            Assert.IsTrue(wSample.PopulationMomentAboutMean(4).ConfidenceInterval(0.95).ClosedContains(wDistribution.MomentAboutMean(4)));
+            Console.WriteLine("u = {0} vs. {1}", wSample.PopulationMomentAboutMean(4), wDistribution.CentralMoment(4));
+            Assert.IsTrue(wSample.PopulationMomentAboutMean(4).ConfidenceInterval(0.95).ClosedContains(wDistribution.CentralMoment(4)));
 
             // KS tests are only for continuous distributions            
 
@@ -730,7 +542,7 @@ namespace Test {
 
         }
 
-        public void TestMoments (Distribution d) {
+        public void TestMoments (ContinuousDistribution d) {
 
             // the support gives the limits of integration
             Interval support = d.Support;
@@ -745,7 +557,7 @@ namespace Test {
                 // integrate it
                 M[n] = FunctionMath.Integrate(raw, support);
                 // compare with the claimed result
-                Console.WriteLine("M{0} {1} v. {2}", n, M[n], d.Moment(n));
+                Console.WriteLine("M{0} {1} v. {2}", n, M[n], d.RawMoment(n));
             }
 
             // central moments
@@ -758,7 +570,7 @@ namespace Test {
                 // integrate it
                 C[n] = FunctionMath.Integrate(central, support);
                 // compare with the claimed result
-                Console.WriteLine("C{0} {1} v. {2}", n, C[n], d.MomentAboutMean(n));
+                Console.WriteLine("C{0} {1} v. {2}", n, C[n], d.CentralMoment(n));
             }
 
             Console.WriteLine("Mean {0} v. {1}", M[1], d.Mean);
@@ -775,11 +587,11 @@ namespace Test {
             // comparing it to the claimed Kolmogorov distribution
 
             // start with any 'ol underlying distribution
-            Distribution distribution = new UniformDistribution(Interval.FromEndpoints(-2.0, 4.0));
+            ContinuousDistribution distribution = new UniformDistribution(Interval.FromEndpoints(-2.0, 4.0));
 
             // generate some samples from it, and for each one get a D statistic from a KS test
             Sample DSample = new Sample();
-            Distribution DDistribution = null;
+            ContinuousDistribution DDistribution = null;
             for (int i = 0; i < 25; i++) {
                 // the sample size must be large enough that the asymptotic assumptions are satistifed
                 // at the moment this test fails if we make the sample size much smaller; we should
@@ -823,11 +635,11 @@ namespace Test {
             // comparing it to the claimed Kuiper distribution
             
             // start with any 'ol underlying distribution
-            Distribution distribution = new ExponentialDistribution(2.0);
+            ContinuousDistribution distribution = new ExponentialDistribution(2.0);
 
             // generate some samples from it, and for each one get a V statistic from a KS test
             Sample VSample = new Sample();
-            Distribution VDistribution = null;
+            ContinuousDistribution VDistribution = null;
             for (int i = 0; i < 25; i++) {
                 // the sample size must be large enough that the asymptotic assumptions are satistifed
                 // at the moment this test fails if we make the sample size much smaller; we should
@@ -866,7 +678,7 @@ namespace Test {
             // create a normal sample
             double mu = -1.0;
             double sigma = 2.0;
-            Distribution d = new NormalDistribution(mu, sigma);
+            ContinuousDistribution d = new NormalDistribution(mu, sigma);
             Sample s = CreateSample(d, 1024);
 
             // do an explicit maximum likelyhood fit to a normal distribution
@@ -895,7 +707,7 @@ namespace Test {
 
             double mu = -1.0;
             double sigma = 2.0;
-            Distribution nd = new NormalDistribution(mu, sigma);
+            ContinuousDistribution nd = new NormalDistribution(mu, sigma);
             Sample ns = CreateSample(nd, 500);
             //FitResult nr = ns.MaximumLikelihoodFit(new NormalDistribution(mu + 1.0, sigma + 1.0));
             FitResult nr = ns.MaximumLikelihoodFit((IList<double> p) => new NormalDistribution(p[0], p[1]), new double[] { mu + 1.0, sigma + 1.0 });
@@ -920,7 +732,7 @@ namespace Test {
             
             Console.WriteLine("exponential");
             double em = 3.0;
-            Distribution ed = new ExponentialDistribution(em);
+            ContinuousDistribution ed = new ExponentialDistribution(em);
             Sample es = CreateSample(ed, 100);
             //FitResult er = es.MaximumLikelihoodFit(new ExponentialDistribution(em + 1.0));
             FitResult er = es.MaximumLikelihoodFit((IList<double> p) => new ExponentialDistribution(p[0]), new double[] { em + 1.0 });
@@ -942,7 +754,7 @@ namespace Test {
             double l1 = -4.0;
             double l2 = 5.0;
 
-            Distribution ld = new LognormalDistribution(l1, l2);
+            ContinuousDistribution ld = new LognormalDistribution(l1, l2);
             Sample ls = CreateSample(ld, 100);
             //FitResult lr = ls.MaximumLikelihoodFit(new LognormalDistribution(l1 + 1.0, l2 + 1.0));
             FitResult lr = ls.MaximumLikelihoodFit((IList<double> p) => new LognormalDistribution(p[0], p[1]), new double[] { l1 + 1.0, l2 + 1.0 });
@@ -977,7 +789,7 @@ namespace Test {
 
             double logistic_m = -3.0;
             double logistic_s = 2.0;
-            Distribution logistic_distribution = new LogisticDistribution(logistic_m, logistic_s);
+            ContinuousDistribution logistic_distribution = new LogisticDistribution(logistic_m, logistic_s);
             Sample logistic_sample = CreateSample(logistic_distribution, 100);
             //FitResult logistic_result = logistic_sample.MaximumLikelihoodFit(new LogisticDistribution());
             FitResult logistic_result = logistic_sample.MaximumLikelihoodFit((IList<double> p) => new LogisticDistribution(p[0], p[1]), new double[] { 2.0, 3.0 });
@@ -1064,8 +876,8 @@ namespace Test {
         public void SampleMannWhitneyTest () {
 
             // define two non-normal distributions
-            Distribution d1 = new ExponentialDistribution(2.0);
-            Distribution d2 = new ExponentialDistribution(3.0);
+            ContinuousDistribution d1 = new ExponentialDistribution(2.0);
+            ContinuousDistribution d2 = new ExponentialDistribution(3.0);
 
             // create three samples from them
             Sample s1a = CreateSample(d1, 20, 1);
@@ -1113,7 +925,7 @@ namespace Test {
         [TestMethod]
         public void AnovaDistribution () {
 
-            Distribution sDistribution = new NormalDistribution();
+            ContinuousDistribution sDistribution = new NormalDistribution();
             Random rng = new Random(1);
 
             Sample fSample = new Sample();
@@ -1137,7 +949,7 @@ namespace Test {
             }
 
             // compare the distribution of F statistics to the expected distribution
-            Distribution fDistribution = new FisherDistribution(3, 8);
+            ContinuousDistribution fDistribution = new FisherDistribution(3, 8);
             Console.WriteLine("m={0} s={1}", fSample.PopulationMean, fSample.PopulationStandardDeviation);
             TestResult kResult = fSample.KolmogorovSmirnovTest(fDistribution);
             Console.WriteLine(kResult.LeftProbability);
@@ -1177,7 +989,7 @@ namespace Test {
             Random rng = new Random(1);
 
             // define the sampling population (which must be normal for a z-test)
-            Distribution population = new NormalDistribution(2.0, 3.0);
+            ContinuousDistribution population = new NormalDistribution(2.0, 3.0);
 
             // collect 100 samples
             Sample zSample = new Sample();

@@ -19,14 +19,14 @@ namespace Meta.Numerics.Statistics {
     public class TestResult {
 
         private readonly double statistic;
-        private readonly Distribution distribution;
+        private readonly ContinuousDistribution distribution;
 
-        internal TestResult (double statistic, Distribution distribution) {
+        internal TestResult (double statistic, ContinuousDistribution distribution) {
             this.statistic = statistic;
             this.distribution = distribution;
         }
 
-        internal TestResult (string name, double statistic, TestType type, Distribution distribution) : this(statistic, distribution) {
+        internal TestResult (string name, double statistic, TestType type, ContinuousDistribution distribution) : this(statistic, distribution) {
             this.name = name;
             this.type = type;
         }
@@ -43,7 +43,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the distribution of the test statistic under the null hypothesis.
         /// </summary>
-        public Distribution Distribution {
+        public ContinuousDistribution Distribution {
             get {
                 return (distribution);
             }

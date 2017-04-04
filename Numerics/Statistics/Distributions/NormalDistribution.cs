@@ -24,7 +24,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>The normal distribution is sometimes called a Gaussian distribtuion, after the mathematician Friedrich Gauss.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Normal_distribution"/>
-    public sealed class NormalDistribution : Distribution {
+    public sealed class NormalDistribution : ContinuousDistribution {
 
         private readonly double mu, sigma;
 
@@ -38,7 +38,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="sigma">The standard deviation, which must be positive.</param>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="sigma"/> is less than or equal to zero.</exception>
         public NormalDistribution (double mu, double sigma) {
-            if (sigma <= 0.0) throw new ArgumentOutOfRangeException("sigma");
+            if (sigma <= 0.0) throw new ArgumentOutOfRangeException(nameof(sigma));
             this.mu = mu;
             this.sigma = sigma;
             this.normalRng = DeviateGeneratorFactory.GetNormalGenerator();
@@ -80,9 +80,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -94,9 +94,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if ((r % 2) == 0) {
@@ -123,7 +123,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Cumulant (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (0.0);
             } else if (r == 1) {
@@ -172,21 +172,21 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             double z = AdvancedMath.Probit(P, 1.0 - P);
             return (mu + sigma * z);
         }
 
         /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
-            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
             double z = AdvancedMath.Probit(1.0 - Q, Q);
             return (mu + sigma * z);
         }
 
         /// <inheritdoc />
         public override double GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException("rng");
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
             double z = normalRng.GetNext(rng);
             return (mu + sigma * z);
         }
@@ -205,7 +205,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         public static FitResult FitToSample (Sample sample) {
 
-            if (sample == null) throw new ArgumentNullException("sample");
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
 
             // maximum likelyhood estimates are guaranteed to be asymptotically unbiased, but not necessarily unbiased
@@ -216,7 +216,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             UncertainValue mu = sample.PopulationMean;
             UncertainValue sigma = sample.PopulationStandardDeviation;
 
-            Distribution distribution = new NormalDistribution(mu.Value, sigma.Value);
+            ContinuousDistribution distribution = new NormalDistribution(mu.Value, sigma.Value);
             TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
             // the best-fit sigma and mu are known to be uncorrelated

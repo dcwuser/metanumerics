@@ -110,7 +110,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else {
@@ -119,7 +119,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                     return (0.0);
                 } else {
                     // Express using Hurwitz Zeta or Bernoulli polynomial
-                    return (base.MomentAboutMean(r));
+                    return (base.CentralMoment(r));
                 }
             }
         }

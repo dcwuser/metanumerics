@@ -21,7 +21,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <img src="../images/FisherBeta.png" />
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/F_distribution"/>
-    public sealed class FisherDistribution : Distribution {
+    public sealed class FisherDistribution : ContinuousDistribution {
 
         /// <summary>
         /// Initializes a new Fisher distribution.
@@ -30,16 +30,20 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="nu2">The number of degrees of freedom in the denominator, which must be positive.</param>
         /// <seealso cref="Sample.FisherFTest"/>
         public FisherDistribution (double nu1, double nu2) {
-            if (nu1 <= 0.0) throw new ArgumentOutOfRangeException("nu1");
-            if (nu2 <= 0.0) throw new ArgumentOutOfRangeException("nu2");
+            if (nu1 <= 0.0) throw new ArgumentOutOfRangeException(nameof(nu1));
+            if (nu2 <= 0.0) throw new ArgumentOutOfRangeException(nameof(nu2));
             this.nu1 = nu1;
             this.nu2 = nu2;
             this.beta = new BetaDistribution(nu1 / 2.0, nu2 / 2.0);
         }
 
-        private double nu1;
-        private double nu2;
-        private BetaDistribution beta;
+        private readonly double nu1;
+        private readonly double nu2;
+
+        // The expressions for probabilities involve products and quotients of Gamma functions and powers
+        // that can easily overflow. We have dealt with these problems for Beta distribution, so we just
+        // use the corresponding Beta distribution to compute them here.
+        private readonly BetaDistribution beta;
 
         /// <summary>
         /// Gets the number of degrees of freedom in the numerator.
@@ -69,11 +73,6 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double y = p / q;
                 double u = nu1 * nu2 / (q * q);
                 return (u * beta.ProbabilityDensity(y));
-                /*
-                double N = Math.Pow(nu1, 0.5 * nu1) * Math.Pow(nu2, 0.5 * nu2) /
-                    AdvancedMath.Beta(0.5 * nu1, 0.5 * nu2);
-                return (N * Math.Pow(x, 0.5 * nu1 - 1.0) * Math.Pow(nu2 + nu1 * x, -0.5 * (nu1 + nu2)));
-                 */
             }
 		}
 
@@ -86,7 +85,6 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double q = nu2 + p;
                 double y = p / q;
                 return (beta.LeftProbability(y));
-                //return (AdvancedMath.Beta(nu1 / 2.0, nu2 / 2.0, nu1 * x / (nu2 + nu1 * x)) / AdvancedMath.Beta(0.5 * nu1, 0.5 * nu2));
             }
 		}
 
@@ -99,12 +97,10 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double q = nu2 + p;
                 double y = p / q;
                 return (beta.RightProbability(y));
-                //return (AdvancedMath.Beta(0.5 * nu2, 0.5 * nu1, nu2 / (nu2 + nu1 * x)) / AdvancedMath.Beta(0.5 * nu2, 0.5 * nu1));
             }
 		}
 
-        // moments are not directly calculable from relationship to Beta distribution
-        // is there some way to do this that I don't know about?
+        // Moments are not directly calculable from relationship to Beta distribution.
 
         /// <inheritdoc />
         public override double Mean {
@@ -112,7 +108,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (nu2 > 2.0) {
                     return (nu2 / (nu2 - 2.0)); 
                 } else {
-                    return (System.Double.PositiveInfinity);
+                    return (Double.PositiveInfinity);
                 }
 			}
 		}
@@ -124,18 +120,18 @@ namespace Meta.Numerics.Statistics.Distributions {
                     double m = Mean;
                     return (2.0 * m * m * (nu1 + nu2 - 2.0) / nu1 / (nu2 - 4.0));
                 } else {
-                    return (System.Double.PositiveInfinity);
+                    return (Double.PositiveInfinity);
                 }
             }
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else {
                 if (nu2 <= 2.0 * r) {
-                    return (System.Double.PositiveInfinity);
+                    return (Double.PositiveInfinity);
                 } else {
 
                     // (nu2)^n  Gamma(nu1/2 + n)  Gamma(nu2/2 - n)
@@ -163,10 +159,10 @@ namespace Meta.Numerics.Statistics.Distributions {
         // We implement this recursion here.
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
 
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else {

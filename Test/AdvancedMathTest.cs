@@ -128,7 +128,11 @@ namespace Test {
                     };
                     double J = FunctionMath.Integrate(f, r) / Math.PI;
                     Console.WriteLine("n={0} x={1} J={2} I={3}", n, x, AdvancedMath.BesselJ(n, x), J);
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselJ(n, x), J));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        AdvancedMath.BesselJ(n, x), J,
+                        new EvaluationSettings() { AbsolutePrecision = 1.0E-15, RelativePrecision = 0.0 }
+                    ));
+                    // The integral can produce signifiant cancelation, so use an absolute criterion.
                 }
             }
         }

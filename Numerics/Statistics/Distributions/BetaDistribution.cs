@@ -30,7 +30,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Beta_distribution"/>
     /// <seealso href="http://mathworld.wolfram.com/BetaDistribution.html"/>
-    public sealed class BetaDistribution : Distribution {
+    public sealed class BetaDistribution : ContinuousDistribution {
 
         /// <summary>
         /// Initializes a new &#x3B2; distribution.
@@ -148,7 +148,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else {
@@ -171,7 +171,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         // This recurrence appears to work and not suffer from the cancelation errors that computation from the raw moments does.
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
@@ -186,16 +186,46 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double betaMinusAlpha = beta - alpha;
                 double u = alpha * beta / alphaPlusBeta;
 
-                double C0 = 1.0;
-                double C1 = 0.0;
-                for (int i = 1; i < r; i++) {
-                    double C2 = i / (alphaPlusBeta + i) / alphaPlusBeta * (betaMinusAlpha * C1 + u * C0);
-                    C0 = C1;
-                    C1 = C2;
+                double CM = 1.0;
+                double C0 = 0.0;
+                for (int k = 1; k < r; k++) {
+                    double CP = k / (alphaPlusBeta + k) / alphaPlusBeta * (betaMinusAlpha * C0 + u * CM);
+                    CM = C0;
+                    C0 = CP;
                 }
-                return (C1);
+                return (C0);
 
             }
+        }
+
+        internal override double[] CentralMoments (int rMax) {
+            double[] central = new double[rMax + 1];
+            IEnumerator<double> iterator = CentralMoments();
+            for (int k = 0; k < central.Length; k++) {
+                iterator.MoveNext();
+                central[k] = iterator.Current;
+            }
+            return (central);
+        }
+
+        private IEnumerator<double> CentralMoments () {
+
+            yield return (1.0);
+            yield return (0.0);
+
+            double alphaPlusBeta = alpha + beta;
+            double betaMinusAlpha = beta - alpha;
+            double u = alpha * beta / alphaPlusBeta;
+
+            double CM = 1.0;
+            double C0 = 0.0;
+            for (int i = 1; true; i++) {
+                double CP = i / (alphaPlusBeta + i) / alphaPlusBeta * (betaMinusAlpha * C0 + u * CM);
+                CM = C0;
+                C0 = CP;
+                yield return (C0);
+            }
+
         }
 
         // inverse CDF

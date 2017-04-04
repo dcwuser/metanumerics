@@ -10,8 +10,8 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </summary>
     /// <remarks><para>The D statistic in a Kolmogorov-Smirnov test is distributed (under the null hypothesis) according to a Kolmogorov disribution, in
     /// the limit of a large sample size.</para></remarks>
-    /// <seealse cref="Sample.KolmogorovSmirnovTest(Meta.Numerics.Statistics.Distributions.Distribution)" />
-    public sealed class KolmogorovDistribution : Distribution {
+    /// <seealse cref="Sample.KolmogorovSmirnovTest(Meta.Numerics.Statistics.Distributions.ContinuousDistribution)" />
+    public sealed class KolmogorovDistribution : ContinuousDistribution {
 
         /// <summary>
         /// Initializes a new asymptotic Kolmogorov distribution.
@@ -155,9 +155,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -168,16 +168,16 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
                 return (0.0);
             } else {
                 // Use integration; computation from raw moments suffers from cancelation.
-                return (base.MomentAboutMean(r));
+                return (base.CentralMoment(r));
             }
         }
 

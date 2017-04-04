@@ -188,7 +188,10 @@ namespace Meta.Numerics.Analysis {
                 }
 
                 // if our error is small enough, return
-                if ((vTotal.Uncertainty <= Math.Abs(vTotal.Value) * settings.RelativePrecision) || (vTotal.Uncertainty <= settings.AbsolutePrecision)) {
+                double tol = settings.ComputePrecision(vTotal.Value);
+                if (vTotal.Uncertainty <= tol) {
+                    // Don't claim uncertainty significantly less than tol.
+                    if (vTotal.Uncertainty < tol / 2.0) vTotal = new UncertainValue(vTotal.Value, tol / 2.0);
                     return (new IntegrationResult(vTotal, n, settings));
                 }
 

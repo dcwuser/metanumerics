@@ -10,7 +10,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents a uniform distribution over an interval.
     /// </summary>
     /// <seealso href="http://en.wikipedia.org/wiki/Uniform_distribution_(continuous)"/>
-    public sealed class UniformDistribution : Distribution {
+    public sealed class UniformDistribution : ContinuousDistribution {
 
         private readonly Interval range;
 
@@ -55,13 +55,13 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             return (InverseProbability(P, 1.0 - P));
         }
 
         /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
-            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
             return(InverseProbability(1.0 - Q, Q));
         }
 
@@ -70,9 +70,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else {
@@ -135,9 +135,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if ((r % 2) != 0) {
                 return (0.0);
             } else {
@@ -148,7 +148,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Cumulant (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (0.0);
             } else if (r == 1) {

@@ -309,7 +309,7 @@ namespace Test {
 
             double[] xValues = TestUtilities.GenerateUniformRealValues(1.0, 8.0, 10);
 
-            Distribution eDistribuiton = new NormalDistribution();
+            ContinuousDistribution eDistribuiton = new NormalDistribution();
 
             Sample zSample = new Sample();
             Sample vSample = new Sample();
@@ -342,11 +342,11 @@ namespace Test {
                 pSample.Add(a, b);
 
                 double r = cxy / Math.Sqrt(cxx * cyy);
-                Distribution rDistribution = new PearsonRDistribution(n);
+                ContinuousDistribution rDistribution = new PearsonRDistribution(n);
                 double pr = rDistribution.RightProbability(r) * 2.0;
 
                 double F = r * r / (1.0 - r * r) * (n - 2);
-                Distribution fDistribution = new FisherDistribution(1, n - 2);
+                ContinuousDistribution fDistribution = new FisherDistribution(1, n - 2);
                 double pF = fDistribution.RightProbability(F);
 
                 BivariateSample residuals = new BivariateSample();

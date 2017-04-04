@@ -23,7 +23,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </remarks>
     /// <seealso href="WeibullDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Exponential_distribution"/>
-    public sealed class ExponentialDistribution : Distribution {
+    public sealed class ExponentialDistribution : ContinuousDistribution {
 
         private readonly double mu;
 
@@ -93,7 +93,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
@@ -104,7 +104,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
@@ -196,17 +196,24 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) throw new InsufficientDataException();
 
-            // none of the data is allowed to be negative
+            // None of the data is allowed to be negative.
             foreach (double value in sample) {
                 if (value < 0.0) throw new InvalidOperationException();
             }
 
-            // the best-fit exponential's mean is the sample mean, with corresponding uncertainly
+            // It's easy to show that the MLE estimator of \mu is the sample mean and that its variance 
+            // is \mu^2 / n, which is just the the variance of the mean, since the variance of the individual
+            // values is \mu^2.
+
+            // We can do better than an asymptotic result, though. Since we know that the sum
+            // of exponential-distributed values is Gamma-distributed, we know the exact
+            // distribution of the mean is Gamma(n, \mu / n). This has mean \mu and variance
+            // \mu^2 / n, so the asymptotic results are actually exact.
 
             double lambda = sample.Mean;
             double dLambda = lambda / Math.Sqrt(sample.Count);
 
-            Distribution distribution = new ExponentialDistribution(lambda);
+            ContinuousDistribution distribution = new ExponentialDistribution(lambda);
             TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
             return (new FitResult(lambda, dLambda, test));

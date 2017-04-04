@@ -224,7 +224,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="r">The order of the moment.</param>
         /// <returns>The raw moment M<sub>r</sub>.</returns>
-        public override double Moment (int r) {
+        public override double RawMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException("r");
             } else if (r == 0) {
@@ -239,7 +239,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="r">The order of the moment.</param>
         /// <returns>The central moment C<sub>r</sub>.</returns>
-        public override double MomentAboutMean (int r) {
+        public override double CentralMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException("r");
             } else if (r == 0) {

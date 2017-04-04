@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
+using Meta.Numerics.Analysis;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
@@ -215,8 +216,8 @@ namespace Test {
             for (int k = 0; k < 128; k++) {
 
                 // we should be able to draw x's from any distribution; noise should be drawn from a normal distribution
-                Distribution xd = new LogisticDistribution();
-                Distribution nd = new NormalDistribution(0.0, 2.0);
+                ContinuousDistribution xd = new LogisticDistribution();
+                ContinuousDistribution nd = new NormalDistribution(0.0, 2.0);
 
                 // generate a synthetic data set
                 BivariateSample sample = new BivariateSample();
@@ -298,10 +299,10 @@ namespace Test {
             Sample fs = new Sample();
 
             Sample rSample = new Sample();
-            Distribution rDistribution = null;
+            ContinuousDistribution rDistribution = null;
 
             Sample fSample = new Sample();
-            Distribution fDistribution = null;
+            ContinuousDistribution fDistribution = null;
 
             for (int i = 0; i < 127; i++) {
 
@@ -322,11 +323,14 @@ namespace Test {
 
                 Assert.IsTrue(result.F.Statistic == result.Anova.Result.Statistic);
 
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.R.Probability, result.F.Probability));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    result.R.Probability, result.F.Probability,
+                    new EvaluationSettings() { RelativePrecision = 1.0E-14, AbsolutePrecision = 1.0E-16 }
+                ));
 
             }
 
-            Distribution fd = new FisherDistribution(1, 5);
+            ContinuousDistribution fd = new FisherDistribution(1, 5);
             Console.WriteLine("{0} v. {1}", fs.PopulationMean, fd.Mean);
             TestResult t = fs.KolmogorovSmirnovTest(fd);
             Console.WriteLine(t.LeftProbability);
@@ -363,8 +367,8 @@ namespace Test {
             for (int k = 0; k < 100; k++) {
 
                 // we should be able to draw x's from any distribution; noise should be drawn from a normal distribution
-                Distribution xd = new CauchyDistribution();
-                Distribution nd = new NormalDistribution(0.0, 4.0);
+                ContinuousDistribution xd = new CauchyDistribution();
+                ContinuousDistribution nd = new NormalDistribution(0.0, 4.0);
 
                 // generate a synthetic data set
                 BivariateSample s = new BivariateSample();
@@ -445,8 +449,8 @@ namespace Test {
             double a = 2.7;
             double b = 3.1;
 
-            Distribution xDistribution = new ExponentialDistribution(2.0);
-            Distribution eDistribution = new NormalDistribution(0.0, 4.0);
+            ContinuousDistribution xDistribution = new ExponentialDistribution(2.0);
+            ContinuousDistribution eDistribution = new NormalDistribution(0.0, 4.0);
 
             MultivariateSample parameters = new MultivariateSample("a", "b");
             MultivariateSample covariances = new MultivariateSample(3);

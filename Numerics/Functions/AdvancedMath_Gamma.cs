@@ -28,7 +28,6 @@ namespace Meta.Numerics.Functions {
             } else {
                 // For large arguments, the asymptotic series is even faster than the Lanczos approximation.
                 return (Stirling.LogGamma(x));
-                //return (LogGamma_Stirling(x));
             }
 		}
 
@@ -41,8 +40,9 @@ namespace Meta.Numerics.Functions {
         /// <para>The Gamma function is a generalization of the factorial (see <see cref="AdvancedIntegerMath.Factorial"/>) to arbitrary real values.</para>
         /// <img src="../images/GammaIntegral.png" />
         /// <para>For positive integer arguments, this integral evaluates to &#x393;(n+1)=n!, but it can also be evaluated for non-integer z.</para>
-        /// <para>Because &#x393;(x) grows beyond the largest value that can be represented by a <see cref="System.Double" /> at quite
-        /// moderate values of x, you may find it useful to work with the <see cref="LogGamma" /> method, which returns ln(&#x393;(x)).</para>
+        /// <para>Like the factorial, &#x393;(x) grows rapidly with increasing x; &#x393;(x) overflows <see cref="System.Double" /> 
+        /// for all x larger than ~171. For arguments in this range, you may find it useful to work with the <see cref="LogGamma" /> method, which
+        /// returns accurate values for ln(&#x393;(x)) even in the range for which &#x393;(x) overflows.</para>
         /// <para>To evaluate the Gamma function for a complex argument, use <see cref="AdvancedComplexMath.Gamma" />.</para>
         /// <h2>Domain, Range, and Accuracy</h2>
         /// <para>The function is defined for all x. It has poles at all negative integers and at zero; the method returns <see cref="Double.NaN"/> for these arguments. For positive
@@ -59,11 +59,7 @@ namespace Meta.Numerics.Functions {
         public static double Gamma (double x) {
             if (x < 0.25) {
                 // Use \Gamma(x) \Gamma(1-x) = \frac{\pi}{\sin(\pi x)} to move values close to and left of origin to x > 0
-                long y0;
-                double y1;
-                RangeReduction.ReduceByOnes(2.0 * x, out y0, out y1);
-                double s = RangeReduction.Sin(y0, y1);
-                return (Math.PI / s / Gamma(1.0 - x));
+                return (Math.PI / MoreMath.SinPi(x) / Gamma(1.0 - x));
             } else if (x < 16.0) {
                 return (Lanczos.Gamma(x));
             } else {
@@ -79,25 +75,21 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The psi function, also called the digamma function, is the logrithmic derivative of the &#x393; function.</para>
         /// <img src="../images/DiGamma.png" />
-        /// <para>To evaluate the Psi function for complex arguments, use <see cref="AdvancedComplexMath.Psi" />.</para>
+        /// <para>Because it is defined as a <i>logarithmic</i> derivative, the digamma function does not overflow <see cref="System.Double"/>
+        /// even for arguments for which <see cref="Gamma(double)"/> does.</para>
+        /// <para>To evaluate the psi function for complex arguments, use <see cref="AdvancedComplexMath.Psi" />.</para>
         /// </remarks>
         /// <seealso cref="Gamma(double)"/>
         /// <seealso cref="AdvancedComplexMath.Psi"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Digamma_function" />
         /// <seealso href="http://mathworld.wolfram.com/DigammaFunction.html" />
 		public static double Psi (double x) {
-            if (x <= 0.0) {
-                if (x == Math.Ceiling(x)) {
-                    // there are poles at zero and negative integers
-                    return (Double.NaN);
-                } else {
-                    // use the reflection formula to change to a positive x
-                    return (Psi(1.0 - x) - Math.PI / Math.Tan(Math.PI * x));
-                }
+            if (x < 0.25) {
+                return (Psi(1.0 - x) - Math.PI / MoreMath.TanPi(x));
             } else if (x < 16.0) {
                 return (Lanczos.Psi(x));
             } else {
-                // for large arguments, the Stirling asymptotic expansion is faster than the Lanzcos approximation
+                // For large arguments, the Stirling asymptotic expansion is faster than the Lanzcos approximation
                 return (Stirling.Psi(x));
             }
 		}
@@ -263,8 +255,8 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The Pochhammer symbol is defined as a ratio of Gamma functions.</para>
         /// <para>For positive integer y, this is equal to a rising factorial product.</para>
-        /// <para>Note that while the Pochhammer symbol notation is very common, combinatorialists use the same notation
-        /// for a falling factorial.</para>
+        /// <para>Note that while the Pochhammer symbol notation is very common, combinatorialists sometimes
+        /// use the same notation for a falling factorial.</para>
         /// <para>If you need to compute a ratio of Gamma functions, in most cases you should compute it by calling this
         /// function instead of taking the quotient of two calls to the <see cref="Gamma(double)"/> function,
         /// because there is a large fraction of the parameter space where Gamma(x+y) and Gamma(x) overflow,
@@ -727,10 +719,9 @@ namespace Meta.Numerics.Functions {
             if (z.Re < 0.5) {
                 // 1-z form
                 return (Math.PI / Gamma(1.0 - z) / ComplexMath.Sin(Math.PI * z));
-                // -z form
-                //return (-Math.PI / Gamma(-z) / z / ComplexMath.Sin(Math.PI * z));
+            } else {
+                return (ComplexMath.Exp(LogGamma(z)));
             }
-            return (ComplexMath.Exp(LogGamma(z)));
         }
 
         /// <summary>

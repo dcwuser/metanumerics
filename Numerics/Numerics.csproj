@@ -82,7 +82,7 @@
     <Compile Include="Core\BigFloat.cs" />
     <Compile Include="Core\Complex.cs" />
     <Compile Include="Core\ComplexMath.cs" />
-    <Compile Include="Core\DIscreteInterval.cs" />
+    <Compile Include="Core\DiscreteInterval.cs" />
     <Compile Include="Core\DoubleDecomposition.cs" />
     <Compile Include="Core\Exceptions.cs" />
     <Compile Include="Core\Global.cs" />

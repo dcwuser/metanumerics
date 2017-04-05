@@ -25,9 +25,9 @@ namespace Meta.Numerics.Analysis {
         /// <para>See <see cref="Integrate(Func{double, double}, Interval, IntegrationSettings)"/> for detailed remarks on
         /// numerical integration.</para>
         /// </remarks>
-        public static double Integrate (Func<double, double> integrand, Interval range) {
+        public static IntegrationResult Integrate (Func<double, double> integrand, Interval range) {
             IntegrationSettings settings = new IntegrationSettings();
-            return (Integrate(integrand, range, settings).Value);
+            return (Integrate(integrand, range, settings));
         }
 
         internal static IntegrationSettings SetIntegrationDefaults (IntegrationSettings settings) {

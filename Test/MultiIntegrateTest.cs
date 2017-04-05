@@ -55,7 +55,6 @@ namespace Test {
                 // Result gets very small, so rely on relative rather than absolute precision.
                 IntegrationSettings s = new IntegrationSettings() { AbsolutePrecision = 0, RelativePrecision = Math.Pow(10.0, -(6.0 - d / 2.0)) };
                 IntegrationResult r = MultiFunctionMath.Integrate(f, UnitCube(d), s);
-                Console.WriteLine("{0}: {1} ({2}) ?= {3}", r.EvaluationCount, r.Value, r.Precision, 1.0 / AdvancedIntegerMath.Factorial(d));
                 Assert.IsTrue(r.Estimate.ConfidenceInterval(0.95).ClosedContains(1.0 / AdvancedIntegerMath.Factorial(d)));
             }
 
@@ -92,7 +91,6 @@ namespace Test {
 
         }
 
-        //[Ignore]
         [TestMethod]
         public void ZetaIntegrals () {
 
@@ -111,7 +109,6 @@ namespace Test {
             for (int d = 2; d <= 15; d++) {
                 Console.WriteLine(d);
                 IntegrationResult result = MultiFunctionMath.Integrate(f, UnitCube(d));
-                Console.WriteLine("{0} ({1}) {2}", result.Value, result.Precision, AdvancedMath.RiemannZeta(d));
                 Assert.IsTrue(result.Estimate.ConfidenceInterval(0.95).ClosedContains(AdvancedMath.RiemannZeta(d)));
             }
 
@@ -134,7 +131,6 @@ namespace Test {
                 (IList<double> x) => 1.0 / (1.0 - x[0] * x[0] * x[1] * x[1]),
                 UnitCube(2)
             );
-            Console.WriteLine("{0} ({1})", i1.Value, i1.Precision);
             Assert.IsTrue(i1.Estimate.ConfidenceInterval(0.95).ClosedContains(Math.PI * Math.PI / 8.0));
 
             IntegrationResult i2 = MultiFunctionMath.Integrate(
@@ -142,7 +138,6 @@ namespace Test {
                 UnitCube(2),
                 new IntegrationSettings() { RelativePrecision = 1.0E-6 }
             );
-            Console.WriteLine("{0} ({1})", i2.Value, i2.Precision);
             Assert.IsTrue(i2.Estimate.ConfidenceInterval(0.95).ClosedContains(4.0 * AdvancedMath.Catalan));
             // For higher precision demands on this integral, we start getting Infinity +/- NaN for estimate and never terminate, look into this.
 
@@ -150,7 +145,6 @@ namespace Test {
                 (IList<double> x) => (x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1]),
                 UnitCube(2)
             );
-            Console.WriteLine("{0} ({1})", i3.Value, i3.Precision);
             Assert.IsTrue(i3.Estimate.ConfidenceInterval(0.95).ClosedContains(AdvancedMath.EulerGamma));
 
         }
@@ -539,9 +533,7 @@ namespace Test {
                 IntegrationResult I = MultiFunctionMath.Integrate(f, volume, settings);
 
                 // Compare to the analytic result
-                Console.WriteLine("{0} ({1}) {2}", I.Value, I.Precision, Math.Sqrt(MoreMath.Pow(Math.PI, d) / detA));
                 Assert.IsTrue(I.Estimate.ConfidenceInterval(0.95).ClosedContains(Math.Sqrt(MoreMath.Pow(Math.PI, d) / detA)));
-                //Assert.IsTrue(TestUtilities.IsNearlyEqual(I.Value, Math.Sqrt(MoreMath.Pow(Math.PI, d) / detA), new EvaluationSettings() { AbsolutePrecision = 2.0 * I.Precision }));
             }
 
         }

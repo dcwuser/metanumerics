@@ -45,12 +45,10 @@ namespace Meta.Numerics.Analysis {
         }
 
         /// <summary>
-        /// Gets the estimated precision of the evaluated value.
+        /// Gets the estimated value.
         /// </summary>
-        public double Precision {
-            get {
-                return (estimate.Uncertainty);
-            }
+        public static implicit operator double (IntegrationResult result) {
+            return (result.Value);
         }
 
     }

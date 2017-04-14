@@ -23,6 +23,11 @@ namespace Test {
         [TestMethod]
         public void Decomp () {
 
+            BivariateSample sample = new BivariateSample();
+            sample.Add(new double[] {1, 1, 2, 3, 5}, new double[] {0, 1, 1, 2, 3});
+            LinearRegressionResult linear = sample.LinearRegression();
+            PolynomialRegressionResult polynomial = sample.PolynomialRegression(2);
+
         }
 
         [TestMethod]
@@ -307,7 +312,7 @@ namespace Test {
             double a0 = -2.0;
             double b0 = 3.0;
 
-            double[] xValues = TestUtilities.GenerateUniformRealValues(1.0, 8.0, 10);
+            double[] xValues = TestUtilities.GenerateUniformRealValues(1.0, 10.0, 8);
 
             ContinuousDistribution eDistribuiton = new NormalDistribution();
 

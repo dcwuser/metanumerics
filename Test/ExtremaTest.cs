@@ -136,29 +136,49 @@ namespace Test {
         [TestMethod]
         public void FindMinimumOfGamma () {
 
-            Func<double, double> f = new Func<double, double>(AdvancedMath.Gamma);
-            Extremum minimum = FunctionMath.FindMinimum(f, 1.5);
+            int count = 0;
+            ExtremumSettings settings = new ExtremumSettings() { Listener = r => { count++; } };
 
-            Console.WriteLine(minimum.Location);
+            Func<double, double> f = new Func<double, double>(AdvancedMath.Gamma);
+            Extremum minimum = FunctionMath.FindMinimum(f, 1.5, settings);
+
             Assert.IsTrue(TestUtilities.IsNearlyEqual(minimum.Location, 1.46163214496836234126, Math.Sqrt(TestUtilities.TargetPrecision)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(minimum.Value, 0.88560319441088870028));
-            Console.WriteLine(minimum.Curvature);
-            // add test for known curvature 0.8569736317111708
-
-            /*
-            // test conversion to space extremum
-            SpaceExtremum space = minimum;
-            Assert.IsTrue(space.Dimension == 1);
-            double[] location = space.Location();
-            Assert.IsTrue(location.Length == 1);
-            Assert.IsTrue(location[0] == minimum.Location);
-            Assert.IsTrue(space.Value == minimum.Value);
-            SymmetricMatrix curvature = space.Curvature();
-            Assert.IsTrue(curvature.Dimension == 1);
-            Assert.IsTrue(curvature[0, 0] == minimum.Curvature);
-            */
-
+            //Assert.IsTrue(TestUtilities.IsNearlyEqual(minimum.Curvature, Math.Sqrt(Math.Sqrt(0.8569736317111708))));
+            Assert.IsTrue(count > 0);
             
+        }
+
+        [TestMethod]
+        public void FindExtremaNegativeGamma () {
+
+            // https://en.wikipedia.org/wiki/Particular_values_of_the_Gamma_function#Other_constants
+
+            Tuple<double, double>[] extrema = new Tuple<double, double>[] {
+                Tuple.Create(-0.5040830082644554092582693045, -3.5446436111550050891219639933),
+                Tuple.Create(-1.5734984731623904587782860437, 2.3024072583396801358235820396),
+                Tuple.Create(-2.6107208684441446500015377157, -0.8881363584012419200955280294),
+                Tuple.Create(-3.6352933664369010978391815669, 0.2451275398343662504382300889)
+            };
+
+            foreach(Tuple<double, double> extremum in extrema) {
+
+                // We use brackets since we know the extremum must lie between the singularities.
+                // We should be able to use the actual singularities at endpoints, but this doesn't work; look into it.
+
+                Interval bracket = Interval.FromEndpoints(Math.Floor(extremum.Item1) + 0.01, Math.Ceiling(extremum.Item1) - 0.01);
+                Extremum result;
+                if (extremum.Item2 < 0.0) {
+                    result = FunctionMath.FindMaximum(AdvancedMath.Gamma, bracket);
+                } else {
+                    result = FunctionMath.FindMinimum(AdvancedMath.Gamma, bracket);
+                }
+                Assert.IsTrue(result.Bracket.OpenContains(extremum.Item1));
+                Assert.IsTrue(result.Bracket.OpenContains(result.Location));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Value, extremum.Item2));
+
+            }
+
         }
 
         // Some standard minimization test functions: http://www.zsd.ict.pwr.wroc.pl/files/docs/functions.pdf

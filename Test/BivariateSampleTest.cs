@@ -228,7 +228,7 @@ namespace Test {
                 }
 
                 // do the regression
-                LinearRegressionFitResult result = sample.LinearRegression();
+                LinearRegressionResult result = sample.LinearRegression();
 
                 // test consistancy
                 Assert.IsTrue(result.Intercept == result.Parameter(0));
@@ -258,7 +258,7 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(SST, result.Anova.Total.SumOfSquares));
 
                 double SSR = 0.0;
-                foreach (double z in result.Residuals().Y) SSR += z * z;
+                foreach (double z in result.Residuals) SSR += z * z;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(SSR, result.Anova.Residual.SumOfSquares));
 
             }
@@ -310,7 +310,7 @@ namespace Test {
                 for (int j = 0; j < 7; j++) {
                     sample.Add(xd.GetRandomValue(rng), yd.GetRandomValue(rng));
                 }
-                LinearRegressionFitResult result = sample.LinearRegression();
+                LinearRegressionResult result = sample.LinearRegression();
 
                 double f = result.GoodnessOfFit.Statistic;
                 fs.Add(f);

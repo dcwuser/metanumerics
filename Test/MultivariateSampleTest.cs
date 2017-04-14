@@ -320,14 +320,14 @@ namespace Test {
             for (int i = 0; i < 3; i++) {
                 int[] p = new int[3];
                 p[i] = 1;
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(M.Column(i).Mean, M.Moment(p)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(M.Column(i).Mean, M.RawMoment(p)));
                 p[i] = 2;
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(M.Column(i).Variance, M.MomentAboutMean(p)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(M.Column(i).Variance, M.CentralMoment(p)));
                 for (int j = 0; j < i; j++) {
                     int[] q = new int[3];
                     q[i] = 1;
                     q[j] = 1;
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(M.TwoColumns(i, j).Covariance, M.MomentAboutMean(q)));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(M.TwoColumns(i, j).Covariance, M.CentralMoment(q)));
                 }
             }
 
@@ -472,5 +472,41 @@ namespace Test {
 
         }
 
+
+        [TestMethod]
+        public void MeansClustering () {
+
+            // Re-create the mouse test
+
+            double[] x = new double[3];
+            double[] y = new double[3];
+            double[] s = new double[3];
+
+            x[0] = 0.25;
+            y[0] = 0.75;
+            s[0] = 0.05;
+
+            x[1] = 0.75;
+            y[1] = 0.75;
+            s[1] = 0.05;
+
+            x[2] = 0.5;
+            y[2] = 0.5;
+            s[2] = 0.1;
+
+            MultivariateSample points = new MultivariateSample(2);
+            Random rng = new Random(1);
+            NormalDistribution d = new NormalDistribution();
+            for (int i = 0; i < 1000; i++) {
+                int k = rng.Next(3);
+                points.Add(x[k] + s[k] * d.GetRandomValue(rng), y[k] + s[k] * d.GetRandomValue(rng));
+            }
+
+            points.MeansClustering(3);
+
+        }
+
+
     }
+
 }

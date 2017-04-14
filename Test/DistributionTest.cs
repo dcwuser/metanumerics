@@ -223,7 +223,7 @@ namespace Test {
                         return (distribution.ProbabilityDensity(x) * Math.Pow(x, r));
                     };
                     try {
-                        IntegrationResult MI = FunctionMath.Integrate(f, distribution.Support, new IntegrationSettings());
+                        IntegrationResult MI = FunctionMath.Integrate(f, distribution.Support);
                         Console.WriteLine("{0} {1} {2} {3}", distribution.GetType().Name, r, M, MI);
                         Assert.IsTrue(MI.Estimate.ConfidenceInterval(0.99).ClosedContains(M));
                         /*

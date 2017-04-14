@@ -28,7 +28,16 @@ namespace Meta.Numerics.Analysis {
         // An evaluation budget of 32 is sufficient for all our test cases except for |x|, which requires 82 (!) evaluations to converge. Parabolic fitting just does a very poor job
         // for this function (at all scales, since it is scale invariant).
 
-        private static readonly EvaluationSettings DefaultExtremaSettings = new EvaluationSettings() { EvaluationBudget = 128, RelativePrecision = 0.0, AbsolutePrecision = 0.0 };
+        private static readonly ExtremumSettings DefaultExtremaSettings = new ExtremumSettings() { EvaluationBudget = 128, RelativePrecision = 0.0, AbsolutePrecision = 0.0 };
+
+        private static ExtremumSettings SetExtremumDefaults (ExtremumSettings settings) {
+            ExtremumSettings result = new ExtremumSettings();
+            result.EvaluationBudget = (settings.EvaluationBudget < 0) ? 128 : settings.EvaluationBudget;
+            result.RelativePrecision = (settings.RelativePrecision < 0.0) ? 0.0 : settings.RelativePrecision;
+            result.AbsolutePrecision = (settings.AbsolutePrecision < 0.0) ? 0.0 : settings.AbsolutePrecision;
+            result.Listener = settings.Listener;
+            return (result);
+        }
 
         /// <summary>
         /// Maximizes a function in the vicinity of a given point.
@@ -60,9 +69,9 @@ namespace Meta.Numerics.Analysis {
         /// argument value &#x3B4;x &#x223C; &#x221A;&#x3B5;. If you supply zero values for both precision settings, the method will adaptively approximate the best attainable precision for
         /// the supplied function and locate the extremum to that resolution. This is our suggested practice unless you know that you require a less precise determination.</para>
         /// </remarks>
-        public static Extremum FindMaximum (Func<double, double> f, double x, EvaluationSettings settings) {
-            if (f == null) throw new ArgumentNullException("f");
-            if (settings == null) throw new ArgumentNullException("settings");
+        public static Extremum FindMaximum (Func<double, double> f, double x, ExtremumSettings settings) {
+            if (f == null) throw new ArgumentNullException(nameof(f));
+            if (settings == null) throw new ArgumentNullException(nameof(settings));
             return (FindMinimum(new Functor(f, true), x, settings).Negate());
         }
 
@@ -95,20 +104,23 @@ namespace Meta.Numerics.Analysis {
         /// argument value &#x3B4;x &#x223C; &#x221A;&#x3B5;. If you supply zero values for both precision settings, the method will adaptively approximate the best attainable precision for
         /// the supplied function and locate the extremum to that resolution. This is our suggested practice unless you know that you require a less precise determination.</para>
         /// <para>Since the search algorithm begins by evaluating <paramref name="f"/> at points near <paramref name="x"/>, it can fail if <paramref name="x"/> is near a singularity
-        /// or other point at which the evaluation of <paramref name="f"/> could fail. If you can reliably bracket an extremum, the <see cref="FindMinimum(Func{Double,Double},Interval,EvaluationSettings)"/>
+        /// or other point at which the evaluation of <paramref name="f"/> could fail. If you can reliably bracket an extremum, the <see cref="FindMinimum(Func{Double,Double},Interval,ExtremumSettings)"/>
         /// overload of this method is safer and, if your bracket is any good, usually slightly faster.</para>
         /// </remarks>
-        public static Extremum FindMinimum (Func<double, double> f, double x, EvaluationSettings settings) {
+        public static Extremum FindMinimum (Func<double, double> f, double x, ExtremumSettings settings) {
             
-            if (f == null) throw new ArgumentNullException("f");
-            if (settings == null) throw new ArgumentNullException("settings");
+            if (f == null) throw new ArgumentNullException(nameof(f));
+            if (settings == null) throw new ArgumentNullException(nameof(settings));
 
             return (FindMinimum(new Functor(f), x, settings));
         }
 
-        private static Extremum FindMinimum (Functor f, double x, EvaluationSettings settings) {
+        private static Extremum FindMinimum (Functor f, double x, ExtremumSettings settings) {
 
-            Debug.Assert(f != null); Debug.Assert(settings != null);
+            Debug.Assert(f != null);
+            Debug.Assert(settings != null);
+
+            settings = SetExtremumDefaults(settings);
 
             // To call the bracketing function, we need an initial value and an initial step.
             double fx = f.Evaluate(x);
@@ -119,7 +131,7 @@ namespace Meta.Numerics.Analysis {
 
         }
 
-        private static Extremum FindMinimum (Functor f, double x, double fx, double d, EvaluationSettings settings) {
+        private static Extremum FindMinimum (Functor f, double x, double fx, double d, ExtremumSettings settings) {
 
             // This function brackets a minimum by starting from x and taking increasing steps downhill until it moves uphill again.
 
@@ -127,7 +139,9 @@ namespace Meta.Numerics.Analysis {
             // to do a line fit for Powell's multi-dimensional minimization routine, that is the case and
             // we don't want to do a superfluous evaluation.
 
-            Debug.Assert(f != null); Debug.Assert(d > 0.0); Debug.Assert(settings != null);
+            Debug.Assert(f != null);
+            Debug.Assert(d > 0.0);
+            Debug.Assert(settings != null);
 
             // evaluate at x + d
             double y = x + d;
@@ -199,9 +213,9 @@ namespace Meta.Numerics.Analysis {
         /// argument value &#x3B4;x &#x223C; &#x221A;&#x3B5;. If you supply zero values for both precision settings, the method will adaptively approximate the best attainable precision for
         /// the supplied function and locate the extremum to that resolution. This is our suggested practice unless you know that you require a less precise determination.</para>
         /// </remarks>
-        public static Extremum FindMaximum (Func<double, double> f, Interval r, EvaluationSettings settings) {
-            if (f == null) throw new ArgumentNullException("f");
-            if (settings == null) throw new ArgumentNullException("settings");
+        public static Extremum FindMaximum (Func<double, double> f, Interval r, ExtremumSettings settings) {
+            if (f == null) throw new ArgumentNullException(nameof(f));
+            if (settings == null) throw new ArgumentNullException(nameof(settings));
             return (FindMinimum(new Functor(f, true), r.LeftEndpoint, r.RightEndpoint, settings).Negate());
         }
 
@@ -234,16 +248,16 @@ namespace Meta.Numerics.Analysis {
         /// argument value &#x3B4;x &#x223C; &#x221A;&#x3B5;. If you supply zero values for both precision settings, the method will adaptively approximate the best attainable precision for
         /// the supplied function and locate the extremum to that resolution. This is our suggested practice unless you know that you require a less precise determination.</para>
         /// </remarks>
-        public static Extremum FindMinimum (Func<double, double> f, Interval r, EvaluationSettings settings) {
-            if (f == null) throw new ArgumentNullException("f");
-            if (settings == null) throw new ArgumentNullException("settings");
+        public static Extremum FindMinimum (Func<double, double> f, Interval r, ExtremumSettings settings) {
+            if (f == null) throw new ArgumentNullException(nameof(f));
+            if (settings == null) throw new ArgumentNullException(nameof(settings));
             return (FindMinimum(new Functor(f), r.LeftEndpoint, r.RightEndpoint, settings));
         }
 
         private static Extremum FindMinimum (
             Functor f,
             double a, double b,
-            EvaluationSettings settings
+            ExtremumSettings settings
         ) {
 
             // evaluate three points within the bracket
@@ -283,38 +297,48 @@ namespace Meta.Numerics.Analysis {
             Functor f,
             double a, double b,
             double u, double fu, double v, double fv, double w, double fw,
-            EvaluationSettings settings
+            ExtremumSettings settings
         ) {
 
-            double tol = 0.0; double fpp = Double.NaN;
+            settings = SetExtremumDefaults(settings);
+
+            double tol = 0.0;
+            double fpp = Double.NaN;
 
             while (f.EvaluationCount < settings.EvaluationBudget) {
 
                 Debug.WriteLine(String.Format("n={0} tol={1}", f.EvaluationCount, tol));
                 Debug.WriteLine(String.Format("[{0}  f({1})={2}  f({3})={4}  f({5})={6}  {7}]", a, u, fu, v, fv, w, fw, b));
 
-                // While a < u < b is guaranteed, a < v, w < b is not guaranteed, since the bracket can sometimes be made tight enough to exclude v or w.
+                // While a <= u <= b is guaranteed, a < v, w < b is not guaranteed, since the bracket can sometimes be made tight enough to exclude v or w.
                 // For example, if u < v < w, then we can set b = v, placing w outside the bracket.
 
                 Debug.Assert(a < b);
                 Debug.Assert((a <= u) && (u <= b));
                 Debug.Assert((fu <= fv) && (fv <= fw));
 
+                if (settings.Listener != null) {
+                    Extremum result = new Extremum(u, fu, fpp, a, b, f.EvaluationCount, settings);
+                    settings.Listener(result);
+                }
+
                 // Expected final situation is a<tol><tol>u<tol><tol>b, leaving no point left to evaluate that is not within tol of an existing point.
 
-                if ((b - a) <= 4.0 * tol) return (new Extremum(u, fu, fpp, f.EvaluationCount, settings));
+                if ((b - a) <= 4.0 * tol) {
+                    return (new Extremum(u, fu, fpp, a, b, f.EvaluationCount, settings));
+                }
 
                 double x; ParabolicFit(u, fu, v, fv, w, fw, out x, out fpp);
                 Debug.WriteLine(String.Format("parabolic x={0} f''={1}", x, fpp));
 
                 if (Double.IsNaN(fpp) || (fpp <= 0.0) || (x < a) || (x > b)) {
 
-                    // the parabolic fit didn't work out, so do a golden section reduction instead
+                    // The parabolic fit didn't work out, so do a golden section reduction instead.
 
-                    // to get the most reduction of the bracket, pick the larger of au and ub
-                    // for self-similarity, pick a point inside it that divides it into two segments in the golden section ratio,
-                    // i.e. 0.3820 = \frac{1}{\phi + 1} and 0.6180 = \frac{\phi}{\phi+1}
-                    // put the smaller segment closer to u so that x is closer to u, the best minimum so far
+                    // To get the most reduction of the bracket, pick the larger of au and ub.
+                    // For self-similarity, pick a point inside it that divides it into two segments in the golden section ratio,
+                    // i.e. 0.3820 = \frac{1}{\phi + 1} and 0.6180 = \frac{\phi}{\phi+1}.
+                    // Put the smaller segment closer to u, so that x is closer to u, the best minimum so far.
 
                     double au = u - a;
                     double ub = b - u;
@@ -329,21 +353,21 @@ namespace Meta.Numerics.Analysis {
 
                 }
 
-                // ensure we don't evaluate within tolerance of an existing point
+                // Ensure we don't evaluate within tolerance of an existing point.
                 if (Math.Abs(x - u) < tol) { Debug.WriteLine(String.Format("shift from u (x={0})", x)); x = (x > u) ? u + tol : u - tol; }
                 if ((x - a) < tol) { Debug.WriteLine(String.Format("shift from a (x={0})", x)); x = a + tol; }
                 if ((b - x) < tol) { Debug.WriteLine(String.Format("shift from b (x={0})", x)); x = b - tol; }
 
-                // evaluate the function at the new point x
+                // Evaluate the function at the new point x.
                 double fx = f.Evaluate(x);
                 Debug.WriteLine(String.Format("f({0}) = {1}", x, fx));
                 Debug.WriteLine(String.Format("delta={0}", fu - fx));
 
-                // update a, b and u, v, w based on new point x
+                // Update a, b and u, v, w based on new point x.
 
                 if (fx < fu) {
 
-                    // the new point is lower than all the others; this is success 
+                    // The new point is lower than all the others; this is success 
 
                     // u now becomes a bracket point
                     if (u < x) {
@@ -368,8 +392,8 @@ namespace Meta.Numerics.Analysis {
 
                     if (fx < fv) {
 
-                        // the new point is higher than u, but still lower than v and w
-                        // this isn't what we expected, but we have lower points that before
+                        // The new point is higher than u, but still lower than v and w.
+                        // This isn't what we expected, but we have lower points that before.
 
                         // x -> v -> w
                         w = v; fw = fv;
@@ -382,13 +406,13 @@ namespace Meta.Numerics.Analysis {
 
                     } else {
 
-                        // the new point is higher than all our other points; this is the worst case
+                        // The new point is higher than all our other points; this is the worst case.
 
-                        // we might still want to replace w with x because
-                        // (i) otherwise a parabolic fit will reproduce the same x and
-                        // (ii) w is quite likely far outside the new bracket and not telling us much about the behavior near u
+                        // We might still want to replace w with x because
+                        //   (i) otherwise a parabolic fit will reproduce the same x and
+                        //   (ii) w is quite likely far outside the new bracket and not telling us much about the behavior near u
+                        // But, tests with Rosenbrock function indicate this increases evaluation count, so hold off on this idea for now.
                         // w = x; fw = fx;
-                        // but tests with Rosenbrock function indicate this increases evaluation count
 
                         Debug.WriteLine("bad point");
 
@@ -396,15 +420,15 @@ namespace Meta.Numerics.Analysis {
 
                 }
 
-                // if the user has specified a tollerance, use it
                 if ((settings.RelativePrecision > 0.0 || settings.AbsolutePrecision > 0.0)) {
+                    // If the user has specified a tollerance, use it.
                     tol = Math.Max(Math.Abs(u) * settings.RelativePrecision, settings.AbsolutePrecision);
                 } else {
-                    // otherwise, try to get the tollerance from the curvature
+                    // Otherwise, try to get the tollerance from the curvature.
                     if (fpp > 0.0) {
                         tol = Math.Sqrt(2.0 * Global.Accuracy * (Math.Abs(fu) + Global.Accuracy) / fpp);
                     } else {
-                        // but if we don't have a useable curvature either, wing it
+                        // But if we don't have a useable curvature either, just wing it.
                         if (tol == 0.0) tol = Math.Sqrt(Global.Accuracy);
                     }
                 }

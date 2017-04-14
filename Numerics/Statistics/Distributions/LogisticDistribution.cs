@@ -163,6 +163,18 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+        internal override double[] CentralMoments (int rMax) {
+            // This is just a recursive formulation of the direct formula.
+            double[] C = new double[rMax + 1];
+            C[0] = 1.0;
+            double t = 1.0; // Keep track of r! s^r
+            for (int r = 2; r <= rMax; r += 2) {
+                t *= r * (r - 1) * (s * s);
+                C[r] = 2.0 * t * AdvancedMath.DirichletEta(r);
+            }
+            return (C);
+        }
+
         /// <inheritdoc />
         public override double Cumulant (int r) {
             if (r < 0) {

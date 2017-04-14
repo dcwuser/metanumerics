@@ -12,31 +12,21 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Describes the result of a linear regression.
     /// </summary>
-    public class LinearRegressionFitResult : FitResult {
+    public class LinearRegressionResult : RegressionResult {
 
-        internal LinearRegressionFitResult (
+        internal LinearRegressionResult (
             ColumnVector v,
             SymmetricMatrix C,
             TestResult rTest,
             OneWayAnovaResult anova,
-            BivariateSample residuals,
+            Sample residuals,
             Func<double, UncertainValue> predict
-        ) : base(v, C, anova.Result) {
-            Debug.Assert(residuals != null);
-            Debug.Assert(rTest != null);
-            Debug.Assert(anova != null);
-            Debug.Assert(predict != null);
-            this.residuals = residuals;
+        ) : base(v, C, anova, residuals) {
             this.rTest = rTest;
-            this.anova = anova;
             this.predict = predict;
         }
 
-        private readonly BivariateSample residuals;
-
         private readonly Func<double, UncertainValue> predict;
-
-        private readonly OneWayAnovaResult anova;
 
         private readonly TestResult rTest;
 
@@ -58,22 +48,6 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        /*
-        public UncertainValue Error {
-            get {
-                return (new UncertainValue(Math.Sqrt(s2), Math.Sqrt(s2 / n)));
-            }
-        }
-        */
-
-        /// <summary>
-        /// Returns the residuals.
-        /// </summary>
-        /// <returns>A bivariate sample of residuals of the fit.</returns>
-        public BivariateSample Residuals () {
-            return (residuals);
-        }
-
         /// <summary>
         /// Predicts the Y value at a new X value.
         /// </summary>
@@ -89,24 +63,6 @@ namespace Meta.Numerics.Statistics {
         public TestResult R {
             get {
                 return (rTest);
-            }
-        }
-
-        /// <summary>
-        /// Gets the Fisher F test for the linear regression.
-        /// </summary>
-        public TestResult F {
-            get {
-                return (this.Anova.Result);
-            }
-        }
-
-        /// <summary>
-        /// Gets an analysis of variance for the linear regression.
-        /// </summary>
-        public OneWayAnovaResult Anova {
-            get {
-                return (anova);
             }
         }
 

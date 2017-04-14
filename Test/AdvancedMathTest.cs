@@ -543,8 +543,7 @@ namespace Test {
         [TestMethod]
         public void GammaRecurrsion () {
             // limit x to avoid overflow
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E2,16)) {
-                Console.WriteLine("x={0}, G={1}", x, AdvancedMath.Gamma(x));
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E2, 16)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(x + 1.0), x * AdvancedMath.Gamma(x)));
             }
         }
@@ -553,7 +552,7 @@ namespace Test {
         public void GammaSpecialCases () {
             // it would be nice to be able to make some of these comparisons exact
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(0.5), Math.Sqrt(Math.PI)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(1.0), 1.0));
+            Assert.IsTrue(AdvancedMath.Gamma(1.0) == 1.0);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(1.5), Math.Sqrt(Math.PI) / 2.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(2.0), 1.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(3.0), 2.0));
@@ -562,7 +561,7 @@ namespace Test {
 
         [TestMethod]
         public void GammaReflection () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E2,16)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E2, 16)) {
                 // don't try a large near-integer, because trig functions of large numbers aren't accurate enough 
                 if ((x > 20) && (Math.Abs(x - Math.Round(x)) < 0.05)) continue;
                 double GP = AdvancedMath.Gamma(x);
@@ -575,7 +574,7 @@ namespace Test {
 
         [TestMethod]
         public void GammaInequality () {
-            foreach (double x in TestUtilities.GenerateRealValues(2.0,1.0E2,16)) {
+            foreach (double x in TestUtilities.GenerateRealValues(2.0, 1.0E2, 16)) {
                 // for x >= 2
                 double lower = Math.Pow(x / Math.E, x - 1.0);
                 double upper = Math.Pow(x / 2.0, x - 1.0);
@@ -598,12 +597,51 @@ namespace Test {
         [TestMethod]
         public void GammaTrottIdentity () {
 
+            // http://mathworld.wolfram.com/GammaFunction.html
+
             double G1 = AdvancedMath.Gamma(1.0 / 24.0);
             double G5 = AdvancedMath.Gamma(5.0 / 24.0);
             double G7 = AdvancedMath.Gamma(7.0 / 24.0);
             double G11 = AdvancedMath.Gamma(11.0 / 24.0);
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual((G1 * G11) / (G5 * G7), Math.Sqrt(3.0) * Math.Sqrt(2.0 + Math.Sqrt(3.0)))); 
+        }
+
+        private double GammaProduct (int r) {
+            double p = 1.0;
+            for (int i = 1; i < r; i++) {
+                p *= AdvancedMath.Gamma(((double) i) / r);
+            }
+            return (p);
+        }
+
+        [TestMethod]
+        public void GammaProducts () {
+            // https://en.wikipedia.org/wiki/Particular_values_of_the_Gamma_function#Products
+            // http://mathworld.wolfram.com/GammaFunction.html
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(GammaProduct(3), 2.0 * Math.PI / Math.Sqrt(3.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(GammaProduct(4), Math.Sqrt(2.0 * Math.PI * Math.PI * Math.PI)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(GammaProduct(5), 4.0 * Math.PI * Math.PI / Math.Sqrt(5.0)));
+        }
+
+        [TestMethod]
+        public void GammaMultiplication () {
+
+            foreach(int k in new int[] { 2, 3, 4 }) {
+                foreach (double z in TestUtilities.GenerateRealValues(1.0E-2, 10.0, 4)) {
+
+                    double p = AdvancedMath.Gamma(z);
+                    for (int i = 1; i < k; i++) {
+                        p *= AdvancedMath.Gamma(z + ((double) i )/ k);
+                    }
+
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        p, Math.Pow(2.0 * Math.PI, (k - 1) / 2.0) * Math.Pow(k, 0.5 - k * z) * AdvancedMath.Gamma(k * z)
+                    ));
+
+                }
+            }
+
         }
 
         [TestMethod]

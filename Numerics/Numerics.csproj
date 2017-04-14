@@ -59,6 +59,7 @@
     <Compile Include="Analysis\EvaluationResult.cs" />
     <Compile Include="Analysis\EvaluationSettings.cs" />
     <Compile Include="Analysis\Extremum.cs" />
+    <Compile Include="Analysis\ExtremumSettings.cs" />
     <Compile Include="Analysis\FunctionMath_Odes.cs" />
     <Compile Include="Analysis\FunctionMath_Roots.cs" />
     <Compile Include="Analysis\IntegrationSettings.cs" />
@@ -204,6 +205,7 @@
     <Compile Include="Statistics\Histogram.cs" />
     <Compile Include="Statistics\InsufficientDataException.cs" />
     <Compile Include="Statistics\MultivariateSample.cs" />
+    <Compile Include="Statistics\PolynomialRegressionResult.cs" />
     <Compile Include="Statistics\PrincipalComponentAnalysis.cs" />
     <Compile Include="Statistics\Sample.cs" />
     <Compile Include="Statistics\StreamingSampleSummary.cs" />

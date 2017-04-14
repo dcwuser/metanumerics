@@ -9,15 +9,18 @@ namespace Meta.Numerics.Analysis {
     /// </summary>
     public sealed class Extremum : EvaluationResult {
 
-        internal Extremum (double x, double f, double f2, int count, EvaluationSettings settings) : base(count, settings) {
+        internal Extremum (double x, double f, double f2, double a, double b, int count, EvaluationSettings settings) : base(count, settings) {
             this.x = x;
             this.f = f;
             this.f2 = f2;
+            this.a = a;
+            this.b = b;
         }
 
         private readonly double x;
         private readonly double f;
         private readonly double f2;
+        private readonly double a, b;
 
         /// <summary>
         /// Gets the location (x-value) of the extremum.
@@ -46,6 +49,15 @@ namespace Meta.Numerics.Analysis {
         }
 
         /// <summary>
+        /// Gets a bracket specifying how accurately the location of the extremum is determined.
+        /// </summary>
+        public Interval Bracket {
+            get {
+                return (Interval.FromEndpoints(a, b));
+            }
+        }
+
+        /// <summary>
         /// Gets the curvature at the extremum.
         /// </summary>
         /// <remarks>
@@ -65,7 +77,7 @@ namespace Meta.Numerics.Analysis {
         }
 
         internal Extremum Negate () {
-            return (new Extremum(x, -f, f2, base.EvaluationCount, base.Settings));
+            return (new Extremum(x, -f, f2, a, b, base.EvaluationCount, base.Settings));
         }
 
         /*

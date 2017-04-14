@@ -550,52 +550,54 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         public double Skewness {
             get {
-                return (MomentAboutMean(3) / Math.Pow(Variance, 3.0 / 2.0));
+                return (CentralMoment(3) / Math.Pow(Variance, 3.0 / 2.0));
             }
         }
 
         /// <summary>
-        /// Computes the given sample moment.
+        /// Computes the given sample raw moment.
         /// </summary>
-        /// <param name="n">The order of the moment to compute.</param>
-        /// <returns>The <paramref name="n"/>th moment of the sample.</returns>
-        public double Moment (int n) {
-            if (n == 0) {
+        /// <param name="r">The order of the moment to compute.</param>
+        /// <returns>The <paramref name="r"/>th raw moment of the sample.</returns>
+        public double RawMoment (int r) {
+             if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (Mean);
-            } else if (n == 2) {
+            } else if (r == 2) {
                 return (Variance + MoreMath.Sqr(Mean));
             } else {
+                // Negative moments are okay.
                 double M = 0.0;
                 for (int i = 0; i < data.Count; i++) {
-                    M += MoreMath.Pow(data[i], n);
+                    M += MoreMath.Pow(data[i], r);
                 }
                 return (M / data.Count);
             }
         }
 
         /// <summary>
-        /// Computes the given sample moment about its mean.
+        /// Computes the given sample central moment.
         /// </summary>
-        /// <param name="n">The order of the moment to compute.</param>
-        /// <returns>The <paramref name="n"/>th moment about its mean of the sample.</returns>
+        /// <param name="r">The order of the moment to compute.</param>
+        /// <returns>The <paramref name="r"/>th central moment.</returns>
         /// <remarks>
         /// <para>This method computes the central momements of the sample data, not the estiamted
-        /// central moments of the underlying population; to obtain the latter, use <see cref="PopulationMomentAboutMean(int)"/>.</para>
+        /// central moments of the underlying population; to obtain the latter, use <see cref="PopulationCentralMoment(int)"/>.</para>
         /// </remarks>
-        public double MomentAboutMean (int n) {
-            if (n == 0) {
+        public double CentralMoment (int r) {
+            if (r == 0) {
                 return (1.0);
-            } else if (n == 1) {
+            } else if (r == 1) {
                 return (0.0);
-            } else if (n == 2) {
+            } else if (r == 2) {
                 return (Variance);
             } else {
+                // Negative moments are okay
                 double mu = Mean;
                 double C = 0.0;
                 for (int i = 0; i < data.Count; i++) {
-                    C += MoreMath.Pow(data[i] - mu, n);
+                    C += MoreMath.Pow(data[i] - mu, r);
                 }
                 return (C / data.Count);
             }
@@ -711,52 +713,53 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Estimates the given population moment using the sample.
+        /// Estimates the given population raw moment from the sample.
         /// </summary>
-        /// <param name="n">The order of the moment.</param>
-        /// <returns>An estimate of the <paramref name="n"/>th moment of the population.</returns>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
-        public UncertainValue PopulationMoment (int n) {
-            if (n < 0) {
+        /// <param name="r">The order of the moment.</param>
+        /// <returns>An estimate of the <paramref name="r"/>th raw moment of the population.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="r"/> is negative.</exception>
+        public UncertainValue PopulationRawMoment (int r) {
+            if (r < 0) {
                 // we don't do negative moments
-                throw new ArgumentOutOfRangeException(nameof(n));
-            } else if (n == 0) {
+                throw new ArgumentOutOfRangeException(nameof(r));
+            } else if (r == 0) {
                 // the zeroth moment is exactly one for any distribution
                 return (new UncertainValue(1.0, 0.0));
-            } else if (n == 1) {
+            } else if (r == 1) {
                 // the first momemt is just the mean
                 return (EstimateFirstCumulant());
             } else {
                 // moments of order two and higher
-                double M_n = Moment(n);
-                double M_2n = Moment(2 * n);
-                return (new UncertainValue(M_n, Math.Sqrt((M_2n - M_n * M_n) / data.Count)));
+                int n = data.Count;
+                double M_r = RawMoment(r);
+                double M_2r = RawMoment(2 * r);
+                return (new UncertainValue(M_r, Math.Sqrt((M_2r - M_r * M_r) / n)));
             }
         }
 
         /// <summary>
-        /// Estimates the given population moment about the mean using the sample.
+        /// Estimates the given population central moment from the sample.
         /// </summary>
-        /// <param name="n">The order of the moment.</param>
-        /// <returns>An estimate, with uncertainty, of the <paramref name="n"/>th moment about the mean
+        /// <param name="r">The order of the moment.</param>
+        /// <returns>An estimate, with uncertainty, of the <paramref name="r"/>th moment about the mean
         /// of the underlying population.</returns>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
-        public UncertainValue PopulationMomentAboutMean (int n) {
-            if (n < 0) {
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="r"/> is negative.</exception>
+        public UncertainValue PopulationCentralMoment (int r) {
+            if (r < 0) {
                 // we don't do negative moments
-                throw new ArgumentOutOfRangeException(nameof(n));
-            } else if (n == 0) {
+                throw new ArgumentOutOfRangeException(nameof(r));
+            } else if (r == 0) {
                 // the zeroth moment is exactly one for any distribution
                 return (new UncertainValue(1.0, 0.0));
-            } else if (n == 1) {
+            } else if (r == 1) {
                 // the first moment about the mean is exactly zero by the defintion of the mean
                 return (new UncertainValue(0.0, 0.0));
-            } else if (n == 2) {
+            } else if (r == 2) {
                 return (EstimateSecondCumulant());
-            } else if (n == 3) {
+            } else if (r == 3) {
                 return (EstimateThirdCumulant());
             } else {
-                return (EstimateCentralMoment(n));
+                return (EstimateCentralMoment(r));
             }
 
         }
@@ -778,7 +781,7 @@ namespace Meta.Numerics.Statistics {
             int n = this.Count;
             if (n < 2) throw new InsufficientDataException();
             double c2 = this.Variance;
-            double c4 = this.MomentAboutMean(4);
+            double c4 = this.CentralMoment(4);
             return (new UncertainValue(c2 * n / (n - 1), Math.Sqrt((c4 - c2 * c2 * (n - 3) / (n - 1)) / n)));
         }
 
@@ -786,9 +789,9 @@ namespace Meta.Numerics.Statistics {
             int n = this.Count;
             if (n < 3) throw new InsufficientDataException();
             double c2 = this.Variance;
-            double c3 = this.MomentAboutMean(3);
-            double c4 = this.MomentAboutMean(4);
-            double c6 = this.MomentAboutMean(6);
+            double c3 = this.CentralMoment(3);
+            double c4 = this.CentralMoment(4);
+            double c6 = this.CentralMoment(6);
             return (new UncertainValue(
                 c3 * n * n / (n - 1) / (n - 2),
                 Math.Sqrt((c6 - c4 * c2 * 3 * (2 * n - 5) / (n - 1) - c3 * c3 * (n - 10) / (n - 1) + c2 * c2 * c2 * 3 * (3 * n * n - 12 * n + 20) / (n - 1) / (n - 2)) / n)
@@ -808,12 +811,12 @@ namespace Meta.Numerics.Statistics {
             // we need all these sample moments
             int n = data.Count;
             if (n < 3) throw new InsufficientDataException();
-            double c_2 = MomentAboutMean(2);
-            double c_rm2 = MomentAboutMean(r - 2);
-            double c_rm1 = MomentAboutMean(r - 1);
-            double c_r = MomentAboutMean(r);
-            double c_rp1 = MomentAboutMean(r + 1);
-            double c_2r = MomentAboutMean(2 * r);
+            double c_2 = CentralMoment(2);
+            double c_rm2 = CentralMoment(r - 2);
+            double c_rm1 = CentralMoment(r - 1);
+            double c_r = CentralMoment(r);
+            double c_rp1 = CentralMoment(r + 1);
+            double c_2r = CentralMoment(2 * r);
 
             return (new UncertainValue(
                 c_r - r * (c_2 * c_rm2 * (r - 1) / 2 - c_r) / n,

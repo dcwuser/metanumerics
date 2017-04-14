@@ -124,12 +124,12 @@ namespace Test {
                 Assert.IsTrue(si.ClosedContains(distribution.StandardDeviation));
 
                 for (int n = 0; n < 8; n++) {
-                    UncertainValue c = sample.PopulationMomentAboutMean(n);
+                    UncertainValue c = sample.PopulationCentralMoment(n);
                     Interval ci = c.ConfidenceInterval(0.95);
                     Console.WriteLine("C{0} {1} {2}", n, ci, distribution.CentralMoment(n));
                     Assert.IsTrue(ci.ClosedContains(distribution.CentralMoment(n)));
 
-                    UncertainValue r = sample.PopulationMoment(n);
+                    UncertainValue r = sample.PopulationRawMoment(n);
                     Interval ri = r.ConfidenceInterval(0.95);
                     Console.WriteLine("M{0} {1} {2}", n, ri, distribution.RawMoment(n));
                     Assert.IsTrue(ri.ClosedContains(distribution.RawMoment(n)));
@@ -160,8 +160,8 @@ namespace Test {
 
                     UncertainValue M1 = s.PopulationMean;
                     UncertainValue C2 = s.PopulationVariance;
-                    UncertainValue C3 = s.PopulationMomentAboutMean(3);
-                    UncertainValue C4 = s.PopulationMomentAboutMean(4);
+                    UncertainValue C3 = s.PopulationCentralMoment(3);
+                    UncertainValue C4 = s.PopulationCentralMoment(4);
                     estimates.Add(M1.Value, C2.Value, C3.Value, C4.Value);
                     variances.Add(MoreMath.Sqr(M1.Uncertainty), MoreMath.Sqr(C2.Uncertainty), MoreMath.Sqr(C3.Uncertainty), MoreMath.Sqr(C4.Uncertainty));
 
@@ -482,12 +482,12 @@ namespace Test {
             Assert.IsTrue(wSample.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(wDistribution.StandardDeviation));
 
             // check on the skew
-            Console.WriteLine("t = {0} vs. {1}", wSample.PopulationMomentAboutMean(3), wDistribution.CentralMoment(3));
-            Assert.IsTrue(wSample.PopulationMomentAboutMean(3).ConfidenceInterval(0.95).ClosedContains(wDistribution.CentralMoment(3)));
+            Console.WriteLine("t = {0} vs. {1}", wSample.PopulationCentralMoment(3), wDistribution.CentralMoment(3));
+            Assert.IsTrue(wSample.PopulationCentralMoment(3).ConfidenceInterval(0.95).ClosedContains(wDistribution.CentralMoment(3)));
 
             // check on the kuritosis
-            Console.WriteLine("u = {0} vs. {1}", wSample.PopulationMomentAboutMean(4), wDistribution.CentralMoment(4));
-            Assert.IsTrue(wSample.PopulationMomentAboutMean(4).ConfidenceInterval(0.95).ClosedContains(wDistribution.CentralMoment(4)));
+            Console.WriteLine("u = {0} vs. {1}", wSample.PopulationCentralMoment(4), wDistribution.CentralMoment(4));
+            Assert.IsTrue(wSample.PopulationCentralMoment(4).ConfidenceInterval(0.95).ClosedContains(wDistribution.CentralMoment(4)));
 
             // KS tests are only for continuous distributions            
 

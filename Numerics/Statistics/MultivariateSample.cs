@@ -276,8 +276,8 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="powers">The power to which each component should be raised.</param>
         /// <returns>The specified moment.</returns>
-        public double Moment (params int[] powers) {
-            return (Moment((IList<int>) powers));
+        public double RawMoment (params int[] powers) {
+            return (RawMoment((IList<int>) powers));
 
         }
 
@@ -289,7 +289,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="powers"/> is null.</exception>
         /// <exception cref="DimensionMismatchException">The length of <paramref name="powers"/> is not
         /// equal to the <see cref="Dimension"/> of the multivariate sample.</exception>
-        public double Moment (IList<int> powers) {
+        public double RawMoment (IList<int> powers) {
             if (powers == null) throw new ArgumentNullException(nameof(powers));
             if (powers.Count != Dimension) throw new DimensionMismatchException();
 
@@ -315,7 +315,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="powers"/> is null.</exception>
         /// <exception cref="DimensionMismatchException">The length of <paramref name="powers"/> is not
         /// equal to the <see cref="Dimension"/> of the multivariate sample.</exception>
-        public double MomentAboutMean (IList<int> powers) {
+        public double CentralMoment (IList<int> powers) {
             if (powers == null) throw new ArgumentNullException(nameof(powers));
             if (powers.Count != Dimension) throw new DimensionMismatchException();
 
@@ -338,91 +338,70 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="powers">The power to which each component should be raised.</param>
         /// <returns>The specified moment.</returns>
-        public double MomentAboutMean (params int[] powers) {
-            return (MomentAboutMean((IList<int>) powers));
+        public double CentralMoment (params int[] powers) {
+            return (CentralMoment((IList<int>) powers));
         }
 
         // the internal linear regression routine, which assumes inputs are entirely valid
+        
+        private MultiLinearRegressionResult LinearRegression_Internal (int outputIndex) {
 
-        private FitResult LinearRegression_Internal (int outputIndex) {
-
-            // to do a fit, we need more data than parameters
+            // To do a fit, we need more data than parameters.
             if (Count < Dimension) throw new InsufficientDataException();
 
-            // construct the design matrix
-            SymmetricMatrix D = new SymmetricMatrix(Dimension);
-            for (int i = 0; i < Dimension; i++) {
-                for (int j = 0; j <= i; j++) {
-                    if (i == outputIndex) {
-                        if (j == outputIndex) {
-                            D[i, j] = Count;
-                        } else {
-                            D[i, j] = storage[j].Mean * Count;
-                        }
+            // Compute the design matrix X.
+            int n = Count;
+            int m = Dimension;
+            RectangularMatrix X = new RectangularMatrix(n, m);
+            ColumnVector y = new ColumnVector(n);
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < m; j++) {
+                    if (j == outputIndex) {
+                        X[i, j] = 1.0;
                     } else {
-                        if (j == outputIndex) {
-                            D[i, j] = storage[i].Mean * Count;
-                        } else {
-                            double Dij = 0.0;
-                            for (int k = 0; k < Count; k++) {
-                                Dij += storage[i][k] * storage[j][k];
-                            }
-                            D[i, j] = Dij;
-                        }
+                        X[i, j] = storage[j][i];
                     }
+                }
+                y[i] = storage[outputIndex][i];
+            }
+
+            // Use X = QR to solve X b = y and compute C.
+            ColumnVector b;
+            SymmetricMatrix C;
+            QRDecomposition.SolveLinearSystem(X, y, out b, out C);
+
+            // Compute residuals
+            double SSR = 0.0;
+            double SSF = 0.0;
+            ColumnVector yHat = X * b;
+            Sample residuals = new Sample();
+            for (int i = 0; i < n; i++) {
+                double z = storage[outputIndex][i] - yHat[i];
+                residuals.Add(z);
+                SSR += z * z;
+                SSF += MoreMath.Sqr(yHat[i] - storage[outputIndex].Mean);
+            }
+            double sigma2 = SSR / (n - m);
+
+
+            // Scale up C by \sigma^2
+            // (It sure would be great to be able to overload *=.)
+            for (int i = 0; i < m; i++) {
+                for (int j = i; j < m; j++) {
+                    C[i, j] = C[i, j] * sigma2;
                 }
             }
 
-            // construct the right hand side
-            ColumnVector b = new ColumnVector(Dimension);
-            for (int i = 0; i < Dimension; i++) {
-                if (i == outputIndex) {
-                    b[i] = storage[i].Mean * Count;
-                } else {
-                    double bi = 0.0;
-                    for (int k = 0; k < Count; k++) {
-                        bi += storage[outputIndex][k] * storage[i][k];
-                    }
-                    b[i] = bi;
-                }
-            }
+            // Compute remaing sums-of-squares
+            double SST = storage[outputIndex].Variance * n;
 
-            // solve the system for the linear model parameters
-            CholeskyDecomposition CD = D.CholeskyDecomposition();
-            if (CD == null) throw new DivideByZeroException();
-            ColumnVector parameters = CD.Solve(b);
+            // Use sums-of-squares to do ANOVA
+            AnovaRow fit = new AnovaRow(SSF, m - 1);
+            AnovaRow residual = new AnovaRow(SSR, n - m);
+            AnovaRow total = new AnovaRow(SST, n - 1);
+            OneWayAnovaResult anova = new OneWayAnovaResult(fit, residual, total);
 
-            // find total sum of squares, with dof = # points - 1 (minus one for the variance-minimizing mean)
-            double totalSumOfSquares = storage[outputIndex].Variance * Count;
-
-            // find remaining unexplained sum of squares, with dof = # points - # parameters
-            double unexplainedSumOfSquares = 0.0;
-            for (int r = 0; r < Count; r++) {
-                double y = 0.0;
-                for (int c = 0; c < Dimension; c++) {
-                    if (c == outputIndex) {
-                        y += parameters[c];
-                    } else {
-                        y += parameters[c] * storage[c][r];
-                    }
-                }
-                unexplainedSumOfSquares += MoreMath.Sqr(y - storage[outputIndex][r]);
-            }
-            int unexplainedDegreesOfFreedom = Count - Dimension;
-            double unexplainedVariance = unexplainedSumOfSquares / unexplainedDegreesOfFreedom;
-
-            // find explained sum of squares, with dof = # parameters - 1
-            double explainedSumOfSquares = totalSumOfSquares - unexplainedSumOfSquares;
-            int explainedDegreesOfFreedom = Dimension - 1;
-            double explainedVariance = explainedSumOfSquares / explainedDegreesOfFreedom;
-
-            // compute F statistic from sums of squares
-            double F = explainedVariance / unexplainedVariance;
-            ContinuousDistribution fDistribution = new FisherDistribution(explainedDegreesOfFreedom, unexplainedDegreesOfFreedom);
-
-            SymmetricMatrix covariance = unexplainedVariance * CD.Inverse();
-
-            return (new FitResult(parameters, covariance, new TestResult("F", F, TestType.RightTailed, fDistribution)));
+            return (new MultiLinearRegressionResult(b, C, anova, residuals));
 
         }
 
@@ -504,7 +483,7 @@ namespace Meta.Numerics.Statistics {
         /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
         /// <seealso cref="LinearRegression(int)"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Linear_regression"/>
-        public FitResult LinearRegression (int outputIndex) {
+        public MultiLinearRegressionResult LinearRegression (int outputIndex) {
 
             if ((outputIndex < 0) || (outputIndex >= Dimension)) throw new ArgumentOutOfRangeException(nameof(outputIndex));
 
@@ -650,6 +629,89 @@ namespace Meta.Numerics.Statistics {
             
         }
 
+        /// <summary>
+        /// Compute k-means clusters of the data.
+        /// </summary>
+        /// <param name="m">The number of clusters to compute.</param>
+        public MeansClusteringResult MeansClustering (int m) {
+
+            if ((m <= 0) || (m >= this.Count)) throw new ArgumentOutOfRangeException(nameof(m));
+
+            double[][] centroids = new double[m][];
+            int[] assigments = new int[this.Count];
+            int[] counts = new int[m];
+
+
+            // i = 0 ... Count ranges over data rows
+            // j = 0 ... Dimension ranges over data columns
+            // k = 0 ... m ranges over clusters
+
+            // Create initial clusters
+            for (int k = 0; k < m; k++) {
+                double[] centroid = new double[this.Dimension];
+                for (int j = 0; j < centroid.Length; j++) {
+                    centroid[j] = storage[j][k];
+                }
+                centroids[k] = centroid;
+            }
+
+            while (true) {
+
+                bool stable = true;
+
+                // Assignment
+                for (int k = 0; k < m; k++) {
+                    counts[k] = 0;
+                }
+
+                for (int i = 0; i < this.Count; i++) {
+                    double minD = Double.MaxValue;
+                    int minK = -1;
+                    for (int k = 0; k < m; k++) {
+                        double D = 0.0;
+                        for (int j = 0; j < this.Dimension; j++) {
+                            D += MoreMath.Sqr(centroids[k][j] - storage[j][i]);
+                        }
+                        if (D < minD) {
+                            minD = D;
+                            minK = k;
+                        }
+                    }
+                    if (assigments[i] != minK) {
+                        assigments[i] = minK;
+                        stable = false;
+                    }
+                    counts[minK]++;
+                }
+
+                if (stable) return new MeansClusteringResult(centroids);
+
+                // Update
+                for (int k = 0; k < m; k++) {
+                    for (int j = 0; j < this.Dimension; j++) {
+                        centroids[k][j] = 0.0;
+                    }
+                }
+
+                for (int i = 0; i < this.Count; i++) {
+                    int k = assigments[i];
+                    for (int j = 0; j < this.Dimension; j++) {
+                        centroids[k][j] += storage[j][i];
+                    }
+                }
+
+                for (int k = 0; k < m; k++) {
+                    for (int j = 0; j < this.Dimension; j++) {
+                        centroids[k][j] /= counts[k];
+                    }
+                }
+
+            }
+        }
+
+
+    
+
 #if !SILVERLIGHT
         /// <summary>
         /// Loads values from a data reader.
@@ -693,6 +755,74 @@ namespace Meta.Numerics.Statistics {
             Load(reader, (IList<int>)dbIndexes);
         }
 #endif
+
+    }
+
+    /// <summary>
+    /// Represents the result of a k-means clustering analysis.
+    /// </summary>
+    /// <seealso cref="MultivariateSample.MeansClustering(int)"/>
+    public sealed class MeansClusteringResult {
+
+        internal MeansClusteringResult (double[][] centroids) {
+            this.centroids = centroids;
+        }
+
+        private double[][] centroids;
+
+        /// <summary>
+        /// Gets the dimension of the space.
+        /// </summary>
+        public int Dimension {
+            get {
+                return (centroids[0].Length);
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of clusters.
+        /// </summary>
+        public int Count {
+            get {
+                return (centroids.Length);
+            }
+        }
+
+        /// <summary>
+        /// Assign a vector to a cluster.
+        /// </summary>
+        /// <param name="values">The vector to classify.</param>
+        /// <returns>The index of the cluster to which the vector belongs.</returns>
+        public int Classify (IList<double> values) {
+
+            if (values == null) throw new ArgumentNullException(nameof(values));
+            if (values.Count != this.Dimension) throw new DimensionMismatchException();
+
+            double D_min = Double.MaxValue;
+            int k_min = -1;
+            for (int k = 0; k < centroids.Length; k++) {
+                double D = 0.0;
+                for (int j = 0; k < values.Count; j++) {
+                    D += MoreMath.Sqr(values[j] - centroids[k][j]);
+                }
+                if (D < D_min) {
+                    D_min = D;
+                    k_min = k;
+                }
+            }
+
+            return (k_min);
+        }
+
+        /// <summary>
+        /// Get the centroid of the given cluster.
+        /// </summary>
+        /// <param name="k">The index of the cluster, which must lie between zero and the cluster count.</param>
+        /// <returns>The centroid of the given index.</returns>
+        public ColumnVector Centroid (int k) {
+            if ((k < 0) || (k >= centroids.Length)) throw new ArgumentOutOfRangeException(nameof(k));
+            return (new ColumnVector(centroids[k], 0, 1, centroids[k].Length, true));
+        }
 
     }
 

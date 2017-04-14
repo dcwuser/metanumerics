@@ -137,7 +137,7 @@ namespace Test {
                     Assert.IsTrue(d.PopulationMean.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Mean));
                     Console.WriteLine("{0} {1}", nullDistribution.StandardDeviation, d.PopulationStandardDeviation.ConfidenceInterval(0.99));
                     Assert.IsTrue(d.PopulationStandardDeviation.ConfidenceInterval(0.99).ClosedContains(nullDistribution.StandardDeviation));
-                    Console.WriteLine("{0} {1}", nullDistribution.CentralMoment(3), d.PopulationMomentAboutMean(3).ConfidenceInterval(0.99));
+                    Console.WriteLine("{0} {1}", nullDistribution.CentralMoment(3), d.PopulationCentralMoment(3).ConfidenceInterval(0.99));
                     //Assert.IsTrue(d.PopulationMomentAboutMean(3).ConfidenceInterval(0.99).ClosedContains(nullDistribution.MomentAboutMean(3)));
 
                     //Console.WriteLine("m {0} {1}", nullDistribution.Mean, d.PopulationMean);

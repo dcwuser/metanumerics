@@ -213,7 +213,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         void ICollection<XY>.CopyTo (XY[] array, int start) {
-            if (array == null) throw new ArgumentNullException("array");
+            if (array == null) throw new ArgumentNullException(nameof(array));
             // this is not fast; move implementation to SampleStorage and use CopyTo for underlying List
             for (int i = 0; i < this.Count; i++) {
                 array[start + i] = new XY(xData[i], yData[i]);
@@ -542,7 +542,7 @@ namespace Meta.Numerics.Statistics {
         /// unexplained variance.</para>
         /// </remarks>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
-        public LinearRegressionFitResult LinearRegression () {
+        public LinearRegressionResult LinearRegression () {
 
             int n = this.Count;
             if (n < 3) throw new InsufficientDataException();
@@ -573,15 +573,14 @@ namespace Meta.Numerics.Statistics {
             // Compute residuals and other sum-of-squares
             double SSR = 0.0;
             double SSF = 0.0;
-            BivariateSample residuals = new BivariateSample();
+            Sample residuals = new Sample();
             foreach (XY point in this) {
                 double y = a + b * point.X;
                 double z = point.Y - y;
                 SSR += z * z;
-                residuals.Add(point.X, z);
+                residuals.Add(z);
                 SSF += MoreMath.Sqr(y - my);
             }
-            residuals.IsReadOnly = true;
             double SST = cyy * n;
             // Note SST = SSF + SSR because \sum_{i} ( y_i - \bar{y})^2 = \sum_i (y_i - f_i)^2 + \sum_i (f_i - \bar{y})^2
 
@@ -606,98 +605,76 @@ namespace Meta.Numerics.Statistics {
             // Prepare the prediction function
             Func<double, UncertainValue> predict = (double x) => {
                 double y = a + b * x;
-                return (new UncertainValue(y, Math.Sqrt(s2 * (1.0 + 1.0 / n + MoreMath.Sqr(x - mx) / cxx))));
+                return (new UncertainValue(y, Math.Sqrt(s2 * (1.0 + (1.0 + MoreMath.Sqr(x - mx) / cxx) / n))));
             };
 
-            return (new LinearRegressionFitResult(v, C, rTest, anova, residuals, predict));
+            return (new LinearRegressionResult(v, C, rTest, anova, residuals, predict));
 
-            /*
-            int n = Count;
-            if (n < 3) throw new InsufficientDataException();
-
-            double b = this.Covariance / xData.Variance;
-            double a = yData.Mean - b * xData.Mean;
-
-            // since cov(x,y) = (n S_xy - S_x S_y)/n^2 and var(x) = (n S_xx - S_x^2) / n^2 this is equivilent
-            // to the usual formulas for a and b involving sums, but it is more stable against round-off
-
-            double SSR = 0.0;
-            double SXX = 0.0;
-            for (int i = 0; i < n; i++) {
-                double z = a + b * xData[i] - yData[i];
-                SSR += z * z;
-                SXX += MoreMath.Pow2(xData[i]);
-            }
-
-            double cbb = SSR / xData.Variance / n / (n - 2);
-            double cab = -xData.Mean * cbb;
-            double caa = SXX / n * cbb;
-
-            // compute F-statistic
-            // total variance dof = n - 1, explained variance dof = 1, unexplained variance dof = n - 2
-            double totalVarianceSum = yData.Variance * n;
-            double unexplainedVarianceSum = SSR;
-            double explainedVarianceSum = totalVarianceSum - unexplainedVarianceSum;
-            double F = (explainedVarianceSum / 1) / (unexplainedVarianceSum / (n - 2));
-            TestResult test = new TestResult("F", F, TestType.RightTailed, new FisherDistribution(1, n - 2));
-
-            return (new FitResult(a, Math.Sqrt(caa), b, Math.Sqrt(cbb), cab, test));
-            */
         }
 
         /// <summary>
         /// Computes the polynomial of given degree which best fits the data.
         /// </summary>
-        /// <param name="m">The degree,  which must be non-negative.</param>
+        /// <param name="m">The degree, which must be non-negative.</param>
         /// <returns>The fit result.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="m"/> is negative.</exception>
         /// <exception cref="InsufficientDataException">There are fewer data points than coefficients to be fit.</exception>
-        public FitResult PolynomialRegression (int m) {
+        public PolynomialRegressionResult PolynomialRegression (int m) {
 
             if (m < 0) throw new ArgumentOutOfRangeException(nameof(m));
 
             int n = Count;
-            if (n < m + 1) throw new InsufficientDataException();
+            if (n < (m + 1)) throw new InsufficientDataException();
 
-            // Construct the n X m design matrix A_{ij} = x_{i}^{j}
-            RectangularMatrix A = new RectangularMatrix(n, m + 1);
+            // Construct the n X m design matrix X_{ij} = x_{i}^{j}
+            RectangularMatrix X = new RectangularMatrix(n, m + 1);
             ColumnVector y = new ColumnVector(n);
             for (int i = 0; i < n; i++) {
                 double x = xData[i];
-                A[i, 0] = 1.0;
+                X[i, 0] = 1.0;
                 for (int j = 1; j <= m; j++) {
-                    A[i, j] = A[i, j - 1] * x;
+                    X[i, j] = X[i, j - 1] * x;
                 }
                 y[i] = yData[i];
             }
 
-            ColumnVector a;
+            // Use X = QR to solve X b = y and compute C
+            ColumnVector b;
             SymmetricMatrix C;
-            QRDecomposition.SolveLinearSystem(A, y, out a, out C);
+            QRDecomposition.SolveLinearSystem(X, y, out b, out C);
 
-            // Compute the residual vector r and s^2 = r^2 / dof
-            ColumnVector r = A * a - y;
-            double V = r.Transpose() * r;
-            double ss2 = V / (n - (m + 1));
+            // Compute residuals
+            double SSR = 0.0;
+            double SSF = 0.0;
+            ColumnVector yHat = X * b;
+            Sample residuals = new Sample();
+            for (int i = 0; i < n; i++) {
+                double z = yData[i] - yHat[i];
+                residuals.Add(z);
+                SSR += z * z;
+                SSF += MoreMath.Sqr(yHat[i] - yData.Mean);
+            }
+            double sigma2 = SSR / (n - (m + 1));
 
-            // Scale up the covariance by s^2
+            // Scale up C by \sigma^2
+            // (It sure would be great to be able to overload *=.)
             for (int i = 0; i <= m; i++) {
                 for (int j = i; j <= m; j++) {
-                    C[i, j] = C[i, j] * ss2;
+                    C[i, j] = C[i, j] * sigma2;
                 }
             }
 
-            // compute F-statistic
-            // total variance dof = n - 1, explained variance dof = m, unexplained variance dof = n - (m + 1)
-            double totalVarianceSum = yData.Variance * n;
-            double unexplainedVarianceSum = V;
-            double explainedVarianceSum = totalVarianceSum - unexplainedVarianceSum;
-            double unexplainedVarianceDof = n - (m + 1);
-            double explainedVarianceDof = m;
-            double F = (explainedVarianceSum / explainedVarianceDof) / (unexplainedVarianceSum / unexplainedVarianceDof);
-            TestResult test = new TestResult("F", F, TestType.RightTailed, new FisherDistribution(explainedVarianceDof, unexplainedVarianceDof));
+            // Compute remaing sums-of-squares
+            double SST = yData.Variance * n;
 
-            return (new FitResult(a, C, test));
+            // Use sums-of-squares to do ANOVA
+            AnovaRow fit = new AnovaRow(SSF, m);
+            AnovaRow residual = new AnovaRow(SSR, n - (m + 1));
+            AnovaRow total = new AnovaRow(SST, n - 1);
+            OneWayAnovaResult anova = new OneWayAnovaResult(fit, residual, total);
+
+            return (new PolynomialRegressionResult(b, C, anova, residuals));
+
         }
 
 

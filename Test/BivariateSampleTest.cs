@@ -78,43 +78,6 @@ namespace Test {
         }
 
         [TestMethod]
-        public void PearsonRDistribution () {
-
-            Random rng = new Random(1);
-
-            // pick some underlying distributions for the sample variables, which must be normal but can have any parameters
-            NormalDistribution xDistribution = new NormalDistribution(1, 2);
-            NormalDistribution yDistribution = new NormalDistribution(3, 4);
-
-            // try this for several sample sizes, all low so that we see the difference from the normal distribution
-            // n = 3 maxima at ends; n = 4 uniform; n = 5 semi-circular "mound"; n = 6 parabolic "mound"
-            foreach (int n in new int[] { 3, 4, 5, 6, 8 }) {
-                Console.WriteLine("n={0}", n);
-
-                // find r values
-                Sample rSample = new Sample();
-                for (int i = 0; i < 100; i++) {
-
-                    // to get each r value, construct a bivariate sample of the given size with no cross-correlation
-                    BivariateSample xySample = new BivariateSample();
-                    for (int j = 0; j < n; j++) {
-                        xySample.Add(xDistribution.GetRandomValue(rng), yDistribution.GetRandomValue(rng));
-                    }
-                    double r = xySample.PearsonRTest().Statistic;
-                    rSample.Add(r);
-
-                }
-
-                // check whether r is distributed as expected
-                TestResult result = rSample.KolmogorovSmirnovTest(new PearsonRDistribution(n));
-                Console.WriteLine("P={0}", result.LeftProbability);
-                Assert.IsTrue(result.LeftProbability < 0.95);
-            }
-
-
-        }
-
-        [TestMethod]
         public void LinearLogisticRegression () {
 
             // do a set of logistic regression fits

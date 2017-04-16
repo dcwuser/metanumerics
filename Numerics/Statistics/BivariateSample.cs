@@ -530,6 +530,50 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
+        /// Performs a Wilcoxon signed rank test.
+        /// </summary>
+        /// <returns>The result of the test.</returns>
+        /// <remarks>
+        /// <para>The Wilcoxon signed rank test is a non-parametric alternative to the
+        /// paired t-test (<see cref="PairedStudentTTest"/>). Given two measurements on
+        /// the same subjects, this method tests for changes in the distribution between
+        /// the two measurements. It is sensitive primarily to shifts in the median.
+        /// Note that the distributions of the individual measurements
+        /// may be far from normal, and may be different for each subject.</para>
+        /// </remarks>
+        /// <seealso href="https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test"/>
+        public TestResult WilcoxonSignedRankTest () {
+
+            int n = this.Count;
+            if (n < 2) throw new InsufficientDataException();
+
+            double[] z = new double[n];
+            for (int i = 0; i < z.Length; i++) {
+                z[i] = xData[i] - yData[i];
+            }
+
+            Array.Sort(z, (x, y) => Math.Abs(x).CompareTo(Math.Abs(y)));
+
+            int W = 0;
+            for (int i = 0; i < z.Length; i++) {
+                if (z[i] > 0.0) W += (i + 1);
+            }
+
+            ContinuousDistribution nullDistribution;
+            if (Count < 32) {
+                DiscreteDistribution wilcoxon = new WilcoxonDistribution(n);
+                nullDistribution = new DiscreteAsContinuousDistribution(wilcoxon);
+            } else {
+                double mu = n * (n + 1.0) / 4.0;
+                double sigma = Math.Sqrt(mu * (2.0 * n + 1.0) / 6.0);
+                nullDistribution = new NormalDistribution(mu, sigma);  
+            }
+
+            return (new TestResult("W", W, TestType.TwoTailed, nullDistribution));
+
+        }
+
+        /// <summary>
         /// Computes the best-fit linear regression from the data.
         /// </summary>
         /// <returns>The result of the fit.</returns>

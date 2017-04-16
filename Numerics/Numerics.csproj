@@ -201,6 +201,7 @@
     <Compile Include="Statistics\Distributions\UnivariateDistribution.cs" />
     <Compile Include="Statistics\Distributions\WaldDistribution.cs" />
     <Compile Include="Statistics\Distributions\WeibullDistribution.cs" />
+    <Compile Include="Statistics\Distributions\WilcoxonExactDistribution.cs" />
     <Compile Include="Statistics\FitResult.cs" />
     <Compile Include="Statistics\Histogram.cs" />
     <Compile Include="Statistics\InsufficientDataException.cs" />

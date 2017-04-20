@@ -22,6 +22,7 @@ namespace Test {
         private static List<ContinuousDistribution> CreateDistributions () {
 
             List<ContinuousDistribution> distributions = new List<ContinuousDistribution>( new ContinuousDistribution[] {
+                new NoncentralChiSquaredDistribution(2, 3.0),
                 new CauchyDistribution(1.0, 2.0),
                 new UniformDistribution(Interval.FromEndpoints(-2.0,1.0)), new UniformDistribution(Interval.FromEndpoints(7.0, 9.0)),
                 new NormalDistribution(3.0,2.0),
@@ -63,8 +64,7 @@ namespace Test {
 
         private static IEnumerable<ContinuousDistribution> distributions = CreateDistributions();
 
-        public static ContinuousDistribution[] GetDistributions () {
-            return (new ContinuousDistribution[] {
+        public static ContinuousDistribution[] GetDistributions () { return (new ContinuousDistribution[] {
             new CauchyDistribution(1.0, 2.0),
             new UniformDistribution(Interval.FromEndpoints(-2.0,1.0)), new UniformDistribution(Interval.FromEndpoints(7.0, 9.0)),
             new NormalDistribution(3.0,2.0),
@@ -153,10 +153,6 @@ namespace Test {
             Assert.IsTrue((0.0 <= P) && (P <= 1.0));
             Assert.IsTrue((0.0 <= Q) && (Q <= 1.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(P + Q, 1.0));
-            // this is a rather poor test; we can do much more when we get integration
-            // update: we have integration now, and tests like DistributionUnitarityIntegralTest,
-            // DistributionMeanIntegralTest, DistributionVarianceIntegralTest, DistributionRawMomentIntegralTest,
-            // and DistributionCentralMomentIntegralTest use it
             double p = distribution.ProbabilityDensity(x);
             Assert.IsTrue(p >= 0.0);
         }

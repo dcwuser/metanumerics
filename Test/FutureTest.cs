@@ -23,15 +23,65 @@ namespace Test {
         [TestMethod]
         public void Decomp () {
 
-            BivariateSample sample = new BivariateSample();
-            sample.Add(new double[] {1, 1, 2, 3, 5}, new double[] {0, 1, 1, 2, 3});
-            LinearRegressionResult linear = sample.LinearRegression();
-            PolynomialRegressionResult polynomial = sample.PolynomialRegression(2);
-
         }
 
 
-       
+        [TestMethod]
+        public void AiryZeros () {
+
+            for (int k = 1; k < 4; k++) {
+
+                double t = 3.0 / 8.0 * Math.PI * (4 * k - 3);
+                double x0 = -AiryZeroT(t);
+                double x1 = FunctionMath.FindZero(AdvancedMath.AiryBi, x0);
+                Debug.WriteLine($"{k} {x0} {x1}");
+
+            }
+
+        }
+
+        public static double AiryAiZero (int k) {
+
+            if (k < 1) throw new ArgumentOutOfRangeException(nameof(k));
+
+            //double t = 3.0 / 8.0 * Math.PI * (4 * k - 1);
+            //double x0 = -AiryZeroT(t);
+            //double x1 = FunctionMath.FindZero(AdvancedMath.AiryAi, x0);
+
+            double a = AiryZeroT( 3.0 / 8.0 * Math.PI * (4 * k + 0) );
+            double b = AiryZeroT( 3.0 / 8.0 * Math.PI * (4 * k - 2) );
+            Interval ab = Interval.FromEndpoints(-a, -b);
+            double x = FunctionMath.FindZero(AdvancedMath.AiryAi, ab);
+
+            return (x);
+
+        }
+
+        public static double AiryBiZero (int k) {
+
+            if (k < 1) throw new ArgumentOutOfRangeException(nameof(k));
+
+            //double t = 3.0 / 8.0 * Math.PI * (4 * k - 3);
+            //double x0 = -AiryZeroT(t);
+            //double x1 = FunctionMath.FindZero(AdvancedMath.AiryBi, x0);
+
+            // Problem for k = 0, makes b NaN
+            double a = AiryZeroT( 3.0 / 8.0 * Math.PI * (4 * k - 2) );
+            double b = AiryZeroT( 3.0 / 8.0 * Math.PI * (4 * k - 4) );
+            Interval ab = Interval.FromEndpoints(-a, -b);
+            double x = FunctionMath.FindZero(AdvancedMath.AiryBi, ab);
+
+            return (x);
+
+        }
+
+        private static double AiryZeroT (double t) {
+
+            double t2 = 1.0 / (t * t);
+            double s = 1.0 + t2 * (5.0 / 48.0 + t2 *(-5.0 / 36.0 + t2 * 77125.0 / 82944.0));
+            return (Math.Pow(t, 2.0 / 3.0) * s);
+
+        }
 
         [TestMethod]
         public void NonlinearRegressionTest () {

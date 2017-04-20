@@ -20,8 +20,8 @@ namespace Meta.Numerics.Functions {
         /// <img src="../images/ModifiedBesselODE.png" />
         /// </remarks>
         public static SolutionPair ModifiedBessel (double nu, double x) {
-            if (nu < 0.0) throw new ArgumentOutOfRangeException("nu");
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
+            if (nu < 0.0) throw new ArgumentOutOfRangeException(nameof(nu));
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
 
             if (x == 0.0) {
                 return (Bessel_Zero(nu));
@@ -32,7 +32,7 @@ namespace Meta.Numerics.Functions {
                 ModifiedBesselI_Series(nu, x, out I, out IP);
 
                 // use series to determine K and K' at -1/2 <= mu <= 1/2 that is an integer offset from nu
-                int n = (int)Math.Floor(nu + 0.5);
+                int n = (int) Math.Round(nu);
                 double mu = nu - n;
 
                 double K, K1;
@@ -60,21 +60,22 @@ namespace Meta.Numerics.Functions {
                 double mu = nu - n;
 
                 // compute K, K' at this point (which is beyond the turning point because mu is small) using CF2
-                double K, KP, g;
-                ModifiedBessel_CF_K(mu, x, out K, out g);
-                KP = g * K;
+                double sK, g;
+                ModifiedBessel_CF_K(mu, x, out sK, out g);
+                double sKP = g * sK;
 
                 // recurse upward to order nu
-                ModifiedBesselK_RecurrUpward(mu, x, ref K, ref KP, n);
+                ModifiedBesselK_RecurrUpward(mu, x, ref sK, ref sKP, n);
 
                 // determine I'/I at the desired point
                 double f = ModifiedBessel_CF1(nu, x);
 
                 // Use the wronskian relationship K I' - I K' = 1/x to determine I and I' seperately
-                double I = 1.0 / (f * K - KP) / x;
-                double IP = f * I;
+                double sI = 1.0 / (f * sK - sKP) / x;
+                double sIP = f * sI;
 
-                return (new SolutionPair(I, IP, K, KP));
+                double e = Math.Exp(x);
+                return (new SolutionPair(e * sI, e * sIP, sK / e, sKP / e));
 
             }
 
@@ -111,27 +112,33 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="ModifiedBesselK"/>
         public static double ModifiedBesselI (double nu, double x) {
 
-            // reflect negative nu to positive nu
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
+
+            // Reflect negative nu to positive nu.
             if (nu < 0.0) {
                 if (Math.Round(nu) == nu) {
                     return (ModifiedBesselI(-nu, x));
                 } else {
-                    return (ModifiedBesselI(-nu, x) + 2.0 / Math.PI * Sin(0.0, -nu) * ModifiedBesselK(-nu, x));
+                    return (ModifiedBesselI(-nu, x) + 2.0 / Math.PI * MoreMath.SinPi(-nu) * ModifiedBesselK(-nu, x));
                 }
             }
 
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
-
-            if (x < 4.0 + 2.0 * Math.Sqrt(nu)) {
-                // close to the origin, use series
+            if (x == 0.0) {
+                if (nu == 0.0) {
+                    return (1.0);
+                } else {
+                    return (0.0);
+                }
+            } else if (x < 4.0 + 2.0 * Math.Sqrt(nu)) {
+                // Close to the origin, use the power series.
                 return (ModifiedBesselI_Series(nu, x));
             } else if (x > 32.0 + nu * nu / 2.0) {
-                // far from the origin, use asymptotic expansion
+                // Far from the origin, use the asymptotic expansion.
                 double sI, sIP, sK, sKP;
                 ModifiedBessel_Asymptotic(nu, x, out sI, out sIP, out sK, out sKP);
                 return (Math.Exp(x) * sI);
             } else {
-                // beyond the turning point, we will use CF1 + CF2 in a slightly different way than for the Bessel functions
+                // In the intermediate region, we will use CF1 + CF2 in a slightly different way than for the Bessel functions
 
                 // find 0 <= mu < 1 with same fractional part as nu
                 // this is necessary because CF2 does not produce K with good accuracy except at very low orders
@@ -139,30 +146,19 @@ namespace Meta.Numerics.Functions {
                 double mu = nu - n;
 
                 // compute K, K' at this point (which is beyond the turning point because mu is small) using CF2
-                //double K, KP, g;
-                double K, g;
-                ModifiedBessel_CF_K(mu, x, out K, out g);
-                //KP = g * K;
+                double sK, g;
+                ModifiedBessel_CF_K(mu, x, out sK, out g);
+                double sKP = g * sK;
 
-                // recurse K, K' upward to nu
-                for (int k = 0; k < n; k++) {
-                    //double Kp1 = -KP + (mu / x) * K;
-                    double Kp1 = (mu / x - g) * K;
-                    mu += 1.0;
-                    //KP = -K - (mu / x) * Kp1;
-                    g = -(mu / x + K / Kp1);
-                    K = Kp1;
-                }
+                ModifiedBesselK_RecurrUpward(mu, x, ref sK, ref sKP, n);
 
                 // determine I'/I at the desired point
                 double f = ModifiedBessel_CF1(nu, x);
 
                 // use the Wronskian to determine I from (I'/I), (K'/K), and K
-                //double I = 1.0 / (f * K - KP) / x;
-                double I = 1.0 / (f - g) / K / x;
+                double sI = 1.0 / (f * sK - sKP) / x;
 
-                return (I);
-
+                return (Math.Exp(x) * sI);
             }
 
         }
@@ -179,44 +175,43 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         public static double ModifiedBesselK (double nu, double x) {
 
-            if (nu < 0.0) return (ModifiedBesselI(-nu, x));
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
 
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
+            if (nu < 0.0) return (ModifiedBesselK(-nu, x));
 
             if (x == 0.0) {
                 return (Double.NegativeInfinity);
+            } else if (x < 2.0) {
+                // For small x, determine the value at small mu using the series and recurr up.
+                int n = (int) Math.Round(nu);
+                double mu = nu - n;
+
+                double K, K1;
+                ModifiedBesselK_Series(mu, x, out K, out K1);
+                if (n == 0) {
+                    return (K);
+                } else if (n == 1) {
+                    return (K1);
+                } else {
+                    double KP = (mu / x) * K - K1;
+                    ModifiedBesselK_RecurrUpward(mu, x, ref K, ref KP, n);
+                    return (K);
+                }
             } else if (x > 32.0 + nu * nu / 2.0) {
-                // for large x, use asymptotic series
+                // For large x, use the asymptotic series.
                 double sI, sIP, sK, sKP;
                 ModifiedBessel_Asymptotic(nu, x, out sI, out sIP, out sK, out sKP);
                 return(Math.Exp(-x) * sK);
             } else {
-                // otherwise, reduce to a problem with -1/2 <= mu <= 1/2 and recurse up
-
-                // determine mu
-                int n = (int)Math.Floor(nu + 0.5);
+                // In the intermediate region, determine the value at small mu using continued fraction and recurr up.
+                int n = (int) Math.Round(nu);
                 double mu = nu - n;
 
-                // determine K and K' for mu
-                double K, g;
-                if (x < 2.0) {
-                    double Kp1;
-                    ModifiedBesselK_Series(mu, x, out K, out Kp1);
-                    g = -Kp1 / K + mu / x;
-                } else {
-                    ModifiedBessel_CF_K(mu, x, out K, out g);
-                }
-
-                // recurse upward to nu
-                for (int k = 0; k < n; k++) {
-                    double Kp1 = (mu / x - g) * K;
-                    mu += 1.0;
-                    g = -(mu / x + K / Kp1);
-                    K = Kp1;
-                }
-
-                return (K);
-
+                double sK, g;
+                ModifiedBessel_CF_K(mu, x, out sK, out g);
+                double sKP = g * sK;
+                ModifiedBesselK_RecurrUpward(mu, x, ref sK, ref sKP, n);
+                return (Math.Exp(-x) * sK);
             }
 
         }
@@ -409,7 +404,6 @@ namespace Meta.Numerics.Functions {
             double q1 = 1.0;
             double Q = C * q1;
             double S = 1.0 + Q * Df;
-            //decimal S = (decimal) (1.0 + Q * Df);
 
             for (int k = 2; k < Global.SeriesMax; k++) {
 
@@ -431,12 +425,11 @@ namespace Meta.Numerics.Functions {
                 C = -a / k * C;
                 double q2 = (q0 - (b - 2.0) * q1) / a;
                 Q += C * q2;
-                //S += (decimal) (Q * Df);
                 S += Q * Df;
 
                 if ((S == S_old) && (f == f_old)) {
                     g = -((x + 0.5) + (nu + 0.5) * (nu - 0.5) * f) / x;
-                    K = Math.Sqrt(Math.PI / 2.0 / x) * Math.Exp(-x) / ((double) S);
+                    K = Math.Sqrt(Math.PI / 2.0 / x) / S;
                     return;
                 }
 
@@ -493,33 +486,25 @@ namespace Meta.Numerics.Functions {
             double GP = Gamma(1.0 + nu);
             double GM = Gamma(1.0 - nu);
 
-            double p = Math.Pow(x / 2.0, -nu) * GP / 2.0;
-            double q = Math.Pow(x / 2.0, +nu) * GM / 2.0;
+            double y = x / 2.0;
+            double z = Math.Pow(y, nu);
+
+            double p = 0.5 / z * GP;
+            double q = 0.5 * z * GM;
 
             // determine initial f; this is rather complicated
 
-            double s = nu * Math.Log(2.0 / x);
-            double C1, C2;
-            if (Math.Abs(s) < 1.0e-3) {
-                C1 = 1.0 + s * s / 2.0 + s * s * s * s / 24;
-                C2 = 1.0 + s * s / 6.0 + s * s * s * s / 120.0;
-            } else {
-                C1 = Math.Cosh(s);
-                C2 = Math.Sinh(s) / s;
-            }
+            double ln = -Math.Log(y);
 
-            double G1, G2, F;
-            if (Math.Abs(nu) < 1.0e-5) {
-                G1 = -EulerGamma;
-                G2 = 1.0;
-                F = 1.0;
-            } else {
-                G1 = (1.0 / GM - 1.0 / GP) / (2.0 * nu);
-                G2 = (1.0 / GM + 1.0 / GP) / 2.0;
-                F = (nu * Math.PI) / Math.Sin(nu * Math.PI);
-            }
+            double s = nu * ln;
+            double C1 = Math.Cosh(s);
+            double C2 = (s == 0.0) ? 1.0 : Math.Sinh(s) / s;
 
-            double f = F * (C1 * G1 + C2 * G2 * Math.Log(2.0 / x));
+            double G1 = (Math.Abs(nu) < 0.25) ? NewG(1.0 - nu, 2.0 * nu) : (1.0 / GM - 1.0 / GP) / (2.0 * nu);
+            double G2 = (1.0 / GM + 1.0 / GP) / 2.0;
+            double F = (nu == 0.0) ? 1.0 : (nu * Math.PI) / MoreMath.SinPi(nu);
+
+            double f = F * (C1 * G1 + C2 * G2 * ln);
 
             // run the series
 

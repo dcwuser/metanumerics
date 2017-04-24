@@ -61,7 +61,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Gets the shape parameter for the distribution.
         /// </summary>
-        public double ShapeParameter {
+        public double Shape {
             get {
                 return (a);
             }
@@ -70,7 +70,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Gets the scale parameter for the distribution.
         /// </summary>
-        public double ScaleParameter {
+        public double Scale {
             get {
                 return (s);
             }
@@ -312,7 +312,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="sample">The sample to fit.</param>
         /// <returns>The best fit parameters.</returns>
         /// <remarks>
-        /// <para>The returned fit parameters are the <see cref="ShapeParameter"/> and <see cref="ScaleParameter"/>, in that order.
+        /// <para>The returned fit parameters are the <see cref="Shape"/> and <see cref="Scale"/>, in that order.
         /// These are the same parameters, in the same order, that are required by the <see cref="GammaDistribution(double,double)"/> constructor to
         /// specify a new Gamma distribution.</para>
         /// </remarks>

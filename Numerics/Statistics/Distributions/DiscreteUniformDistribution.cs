@@ -26,27 +26,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             this.n = b - a + 1;
         }
 
-        private int a, b, n;
+        private readonly int a, b, n;
 
-#if PAST
         /// <inheritdoc />
         public override DiscreteInterval Support {
-            get { return (DiscreteInterval.FromEndpoints(a, b)); }
-        }
-#endif
-
-        /// <inheritdoc />
-        public override int Minimum {
-            get {
-                return (a);
-            }
-        }
-
-        /// <inheritdoc />
-        public override int Maximum {
-            get {
-                return (b);
-            }
+            get { return (new DiscreteInterval(a, b)); }
         }
 
         /// <inheritdoc />
@@ -105,7 +89,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override int InverseLeftProbability (double P) {
-            if ((P < 0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             return (a + (int) Math.Floor(n * P));
         }
 

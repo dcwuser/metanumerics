@@ -1,63 +1,17 @@
 ﻿using System;
+using System.Diagnostics;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
-using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 
 
 namespace Test {
     
-    [TestClass()]
+    [TestClass]
     public class DiscreteDistributionTest {
-
-
-        private TestContext testContextInstance;
-
-        /// <summary>
-        ///Gets or sets the test context which provides
-        ///information about and functionality for the current test run.
-        ///</summary>
-        public TestContext TestContext {
-            get {
-                return testContextInstance;
-            }
-            set {
-                testContextInstance = value;
-            }
-        }
-
-        #region Additional test attributes
-        // 
-        //You can use the following additional attributes as you write your tests:
-        //
-        //Use ClassInitialize to run code before running the first test in the class
-        //[ClassInitialize()]
-        //public static void MyClassInitialize(TestContext testContext)
-        //{
-        //}
-        //
-        //Use ClassCleanup to run code after all tests in a class have run
-        //[ClassCleanup()]
-        //public static void MyClassCleanup()
-        //{
-        //}
-        //
-        //Use TestInitialize to run code before running each test
-        //[TestInitialize()]
-        //public void MyTestInitialize()
-        //{
-        //}
-        //
-        //Use TestCleanup to run code after each test has run
-        //[TestCleanup()]
-        //public void MyTestCleanup()
-        //{
-        //}
-        //
-        #endregion
-
 
         private DiscreteDistribution[] distributions = GetDistributions();
 
@@ -72,7 +26,6 @@ namespace Test {
                 new HypergeometricDistribution(9, 3, 5)
             });
         }
-
 
         [TestMethod]
         public void DiscreteDistributionUnitarity () {
@@ -198,15 +151,18 @@ namespace Test {
         [TestMethod]
         public void OutsideDiscreteDistributionSupport () {
             foreach (DiscreteDistribution distribution in distributions) {
-                if (distribution.Minimum > Int32.MinValue) {
-                    Assert.IsTrue(distribution.ProbabilityMass(distribution.Minimum - 1) == 0.0);
-                    Assert.IsTrue(distribution.LeftInclusiveProbability(distribution.Minimum - 1) == 0.0);
-                    Assert.IsTrue(distribution.RightExclusiveProbability(distribution.Minimum - 1) == 1.0);
+                int min = distribution.Support.LeftEndpoint;
+                int max = distribution.Support.RightEndpoint;
+                if (min > Int32.MinValue) {
+                    Assert.IsTrue(distribution.ProbabilityMass(min - 1) == 0.0);
+                    Assert.IsTrue(distribution.LeftInclusiveProbability(min - 1) == 0.0);
+                    Assert.IsTrue(distribution.RightExclusiveProbability(min - 1) == 1.0);
+                    Assert.IsTrue(distribution.LeftExclusiveProbability(min) == 0.0);
                 }
-                if (distribution.Maximum < Int32.MaxValue) {
-                    Assert.IsTrue(distribution.ProbabilityMass(distribution.Maximum + 1) == 0.0);
-                    Assert.IsTrue(distribution.LeftInclusiveProbability(distribution.Maximum + 1) == 1.0);
-                    Assert.IsTrue(distribution.RightExclusiveProbability(distribution.Maximum + 1) == 0.0);
+                if (distribution.Support.RightEndpoint < Int32.MaxValue) {
+                    Assert.IsTrue(distribution.ProbabilityMass(max + 1) == 0.0);
+                    Assert.IsTrue(distribution.LeftInclusiveProbability(max + 1) == 1.0);
+                    Assert.IsTrue(distribution.RightExclusiveProbability(max) == 0.0);
                 }
             }
         }
@@ -225,9 +181,9 @@ namespace Test {
 
             foreach (DiscreteDistribution distribution in distributions) {
 
-                int max;
-                if (distribution.Maximum < 128) {
-                    max = distribution.Maximum + 1;
+                int max = distribution.Support.RightEndpoint;
+                if (max < 128) {
+                    max = max + 1;
                 } else {
                     max = (int) Math.Round(distribution.Mean + 2.0 * distribution.StandardDeviation);
                 }
@@ -246,26 +202,19 @@ namespace Test {
         }
 
         [TestMethod]
-        [Ignore]
         public void DiscreteDistributionBase () {
 
             DiscreteDistribution D = new DiscreteTestDistribution();
 
-            double P = 0.0;
-            double M1 = 0.0;
-            double M2 = 0.0;
-            for (int k = 1; k <= 3; k++) {
-                P += D.ProbabilityMass(k);
-                M1 += k * D.ProbabilityMass(k);
-                M2 += k * k * D.ProbabilityMass(k);
-            }
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(P, 1.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(D.RawMoment(0), 1.0));
+            double M0 = D.ExpectationValue(k => 1.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(M0, 1.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(M0, D.RawMoment(0)));
 
-            double C2 = M2 - M1 * M1;
+            double M1 = D.ExpectationValue(k => k);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(M1, D.Mean));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(M1, D.RawMoment(1)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(M2, D.RawMoment(2)));
+
+            double C2 = D.ExpectationValue(k => MoreMath.Sqr(k - M1));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(C2, D.Variance));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(C2, D.CentralMoment(2)));
 
@@ -279,18 +228,8 @@ namespace Test {
 
     public class DiscreteTestDistribution : DiscreteDistribution {
 
-#if PAST
         public override DiscreteInterval Support {
             get { return DiscreteInterval.FromEndpoints(1, 3); }
-        }
-#endif
-
-        public override int Minimum {
-            get { return (1); }
-        }
-
-        public override int Maximum {
-            get { return (3); }
         }
 
         public override double ProbabilityMass (int k) {

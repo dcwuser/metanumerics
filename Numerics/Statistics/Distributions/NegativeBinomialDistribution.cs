@@ -35,20 +35,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             this.q = 1.0 - p;
         }
 
-        private double r;
-        private double p, q;
+        private readonly double r;
+        private readonly double p, q;
 
         /// <inheritdoc />
-        public override int Maximum {
+        public override DiscreteInterval Support {
             get {
-                return (Int32.MaxValue);
-            }
-        }
-
-        /// <inheritdoc />
-        public override int Minimum {
-            get {
-                return (0);
+                return (new DiscreteInterval(0, Int32.MaxValue));
             }
         }
 
@@ -138,6 +131,29 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (M);
 
             }
+        }
+
+        /// <inheritdoc />
+        public override int InverseLeftProbability (double P) {
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
+
+            double Q = 1.0 - P;
+            if (Q == 0.0) return (Int32.MaxValue);
+
+            // Find the Markov upper bound on k.
+            int kmax = (int) Math.Min(Math.Ceiling(this.Mean / Q), Int32.MaxValue);
+
+            // If kmax is small enough, we should use direct summation.
+
+            // We should use the median bounds.
+            // Payton, Young, and Young, "Bounds for the Difference between Median and Mean
+            // of Beta and Negative Binomial Distributions", Metrika 36 (1989) 346-354
+            // In our noation, if p > 1/2
+            //   \mu - p / q \le m le \mu
+            // and if p < 1/2, \mu - 1 \le m \le \mu.
+
+            return (InverseLeftProbability(0, kmax, P));
+
         }
 
     }

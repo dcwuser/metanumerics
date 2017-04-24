@@ -11,7 +11,7 @@ namespace Meta.Numerics {
     /// </summary>
     public struct DiscreteInterval {
 
-        public DiscreteInterval (int min, int max) {
+        internal DiscreteInterval (int min, int max) {
             this.min = min;
             this.max = max;
         }
@@ -19,6 +19,10 @@ namespace Meta.Numerics {
         private readonly int min;
 
         private readonly int max;
+
+        public static DiscreteInterval FromEndpoints (int a, int b) {
+            return (new DiscreteInterval(Math.Min(a, b), Math.Max(a, b)));
+        }
 
         /// <summary>
         /// Gets the minimum value on the interval.
@@ -41,9 +45,13 @@ namespace Meta.Numerics {
         /// <summary>
         /// Gets the width of the interval.
         /// </summary>
-        public int Width {
+        internal int Width {
             get {
-                return (max - min);
+                // For [0, Int32.MaxValue], w will overflow. Since Int32.MaxValue is our integer "infinity",
+                // just reset it to that value.
+                int w = max - min + 1;
+                if (w < 0) w = Int32.MaxValue;
+                return (w);
             }
         }
 

@@ -562,7 +562,7 @@ namespace Test {
 
             // The solution should still hold
             SolutionPair s1 = AdvancedMath.Airy(x1);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y, a * s1.FirstSolutionValue + b * s1.SecondSolutionValue));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y, a * s1.FirstSolutionValue + b * s1.SecondSolutionValue, result.Settings));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result.YPrime, a * s1.FirstSolutionDerivative + b * s1.SecondSolutionDerivative, result.Settings));
 
         }

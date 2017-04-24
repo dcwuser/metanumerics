@@ -43,7 +43,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Gets the location parameter of the distribution.
         /// </summary>
-        public double LocationParameter {
+        public double Location {
             get {
                 return (m);
             }
@@ -52,7 +52,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Gets the scale parameter of the distribution.
         /// </summary>
-        public double ScaleParameter {
+        public double Scale {
             get {
                 return (s);
             }

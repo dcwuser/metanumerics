@@ -38,7 +38,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         public DiscreteAsContinuousDistribution (DiscreteDistribution distribution) {
             if (distribution == null) throw new ArgumentNullException(nameof(distribution)); 
             this.d = distribution;
-            this.xSupport = Interval.FromEndpoints(d.Minimum, d.Maximum);
+            this.xSupport = Interval.FromEndpoints(d.Support.LeftEndpoint, d.Support.RightEndpoint);
         }
 
         /// <summary>
@@ -57,16 +57,16 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         private void ComputeEffectiveBin (double x, out int ki, out double kf) {
             double z = (x - xSupport.LeftEndpoint) / xSupport.Width;
-            double k = d.Minimum + z * (d.Maximum - d.Minimum + 1);
+            double k = d.Support.LeftEndpoint + z * d.Support.Width;
             ki = (int) Math.Floor(k);
             kf = k - ki;
         }
 
         private double ComputeEffectivePoint (double k) {
-            int dSupportWidth = d.Maximum - d.Minimum + 1;
+            int dSupportWidth = d.Support.Width;
             double x =
-                xSupport.LeftEndpoint * (d.Maximum - k + 1) / dSupportWidth +
-                xSupport.RightEndpoint * (k - d.Minimum) / dSupportWidth;
+                xSupport.LeftEndpoint * (d.Support.RightEndpoint - k + 1) / dSupportWidth +
+                xSupport.RightEndpoint * (k - d.Support.LeftEndpoint) / dSupportWidth;
             return (x);
         }
 
@@ -111,21 +111,23 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (0.0);
             } else {
                 int ki; double kf; ComputeEffectiveBin(x, out ki, out kf);
-                return (d.ProbabilityMass(ki) * (d.Maximum - d.Minimum + 1) / xSupport.Width);
+                return (d.ProbabilityMass(ki) * d.Support.Width / xSupport.Width);
             }
         }
 
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (xSupport.LeftEndpoint + (d.Mean - d.Minimum) * xSupport.Width / (d.Maximum - d.Minimum));
+                int w = d.Support.RightEndpoint - d.Support.LeftEndpoint;
+                return (((d.Support.RightEndpoint - d.Mean) * xSupport.LeftEndpoint + (d.Mean - d.Support.LeftEndpoint) * xSupport.RightEndpoint) / w);
             }
         }
 
         /// <inheritdoc />
         public override double Variance {
             get {
-                return (d.Variance * MoreMath.Pow(xSupport.Width / (d.Maximum - d.Minimum), 2));
+                int w = d.Support.RightEndpoint - d.Support.LeftEndpoint;
+                return (d.Variance * MoreMath.Pow(xSupport.Width / w, 2));
             }
         }
 
@@ -143,7 +145,8 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double CentralMoment (int r) {
-            return (d.CentralMoment(r) * MoreMath.Pow(xSupport.Width / (d.Maximum - d.Minimum), r));
+            int w = d.Support.RightEndpoint - d.Support.LeftEndpoint;
+            return (d.CentralMoment(r) * MoreMath.Pow(xSupport.Width / w, r));
         }
 
 

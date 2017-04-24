@@ -37,26 +37,10 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-#if PAST
         /// <inheritdoc />
         public override DiscreteInterval Support {
             get {
-                return (DiscreteInterval.FromEndpoints(0, Int32.MaxValue));
-            }
-        }
-#endif
-
-        /// <inheritdoc />
-        public override int Minimum {
-            get {
-                return (0);
-            }
-        }
-
-        /// <inheritdoc />
-        public override int Maximum {
-            get {
-                return (Int32.MaxValue);
+                return (new DiscreteInterval(0, Int32.MaxValue));
             }
         }
 
@@ -155,7 +139,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             // we can quickly compute to avoid extra evaluations of the CDF.
 
             // We can use the median bounds
-            //   mu - \log 2 \e \nu \le mu + 1/3
+            //   mu - \log 2 \ge \nu \le mu + 1/3
             // to quickly set a limit based on whether P is below or above 1/2.
             int kmin;
             if (P < 0.5) {

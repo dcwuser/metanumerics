@@ -161,7 +161,7 @@ namespace Test {
         public void DistributionUnitarityIntegral () {
             foreach (ContinuousDistribution distribution in distributions) {
                 // Gamma distribution has a power law divergence at zero, which our integrator is documented not to handle (look for lower precision)
-                if ((distribution is GammaDistribution) && (((GammaDistribution) distribution).ShapeParameter < 1.0)) continue;
+                if ((distribution is GammaDistribution) && (((GammaDistribution) distribution).Shape < 1.0)) continue;
                 Console.WriteLine(distribution.GetType().Name);
                 double M0 = FunctionMath.Integrate(distribution.ProbabilityDensity, distribution.Support);
                 Console.WriteLine("  1 {0}", M0);
@@ -195,7 +195,7 @@ namespace Test {
                 double e = TestUtilities.TargetPrecision;
                 // since a Gamma distribution with \alpha < 1 has a power law singularity and numerical integration cannot achieve full precision with such a singularity,
                 // we reduce our precision requirement in this case
-                GammaDistribution gammaDistribution = distribution as GammaDistribution; if ((gammaDistribution != null) && (gammaDistribution.ShapeParameter < 1.0)) e = Math.Sqrt(e);
+                GammaDistribution gammaDistribution = distribution as GammaDistribution; if ((gammaDistribution != null) && (gammaDistribution.Shape < 1.0)) e = Math.Sqrt(e);
                 Console.WriteLine(distribution.GetType().Name);
                 Func<double, double> f = delegate(double x) {
                     double z = x - distribution.Mean;

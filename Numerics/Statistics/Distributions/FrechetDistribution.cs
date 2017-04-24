@@ -12,21 +12,43 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Initializes a new instance of a Fréchet distribution with the given shape parameter.
         /// </summary>
-        /// <param name="shape"></param>
-        public FrechetDistribution (double shape) : this(shape, 1.0, 0.0) {
+        /// <param name="shape">The shape parameter, which must be positive.</param>
+        public FrechetDistribution (double shape) : this(shape, 1.0) {
 
         }
 
-        internal FrechetDistribution (double shape, double scale, double location) {
+        /// <summary>
+        /// Initializes a new instance of a Fréchet distribution with the given shape and scale parameters.
+        /// </summary>
+        /// <param name="shape">The shape parameter, which must be positive.</param>
+        /// <param name="scale">The scale parameter, which must be positive.</param>
+        public FrechetDistribution (double shape, double scale) {
             if (shape <= 0.0) throw new ArgumentOutOfRangeException(nameof(shape));
             if (scale <= 0.0) throw new ArgumentOutOfRangeException(nameof(scale));
             this.a = shape;
-            this.m = location;
             this.s = scale;
+            this.m = 0.0;
         }
 
-        private readonly double a, m, s;
+        private readonly double a, s, m;
 
+        /// <summary>
+        /// Gets the shape parameter of the distribution.
+        /// </summary>
+        public double Shape {
+            get {
+                return(a);
+            }
+        }
+
+        /// <summary>
+        /// Gets the scale parameter of the distribution.
+        /// </summary>
+        public double Scale {
+            get {
+                return (s);
+            }
+        }
 
         /// <inheritdoc/>
         public override Interval Support {

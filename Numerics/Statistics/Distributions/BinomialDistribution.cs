@@ -48,26 +48,10 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-#if PAST
         /// <inheritdoc />
         public override DiscreteInterval Support {
             get {
-                return (DiscreteInterval.FromEndpoints(0, m));
-            }
-        }
-#endif
-
-        /// <inheritdoc />
-        public override int Minimum {
-            get {
-                return (0);
-            }
-        }
-
-        /// <inheritdoc />
-        public override int Maximum {
-            get {
-                return (n);
+                return (new DiscreteInterval(0, n));
             }
         }
 
@@ -158,9 +142,7 @@ namespace Meta.Numerics.Statistics.Distributions {
  
             double[] C = new double[rMax + 1];
             C[0] = 1.0;
-
             if (rMax == 0) return (C);
-
             C[1] = 0.0;
 
             for (int r = 2; r <= rMax; r++) {

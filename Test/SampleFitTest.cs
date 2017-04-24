@@ -133,8 +133,8 @@ namespace Test {
             }
 
             // The reported parameters should agree with the underlying parameters
-            Assert.IsTrue(parameters.Column(0).PopulationMean.ConfidenceInterval(0.99).ClosedContains(d.LocationParameter));
-            Assert.IsTrue(parameters.Column(1).PopulationMean.ConfidenceInterval(0.99).ClosedContains(d.ScaleParameter));
+            Assert.IsTrue(parameters.Column(0).PopulationMean.ConfidenceInterval(0.99).ClosedContains(d.Location));
+            Assert.IsTrue(parameters.Column(1).PopulationMean.ConfidenceInterval(0.99).ClosedContains(d.Scale));
 
             // The reported covariances should agree with the observed covariances
             Assert.IsTrue(parameters.Column(0).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(variances.Column(0).Mean));
@@ -162,7 +162,7 @@ namespace Test {
             }
 
             Assert.IsTrue(parameters.X.PopulationMean.ConfidenceInterval(0.99).ClosedContains(wald.Mean));
-            Assert.IsTrue(parameters.Y.PopulationMean.ConfidenceInterval(0.99).ClosedContains(wald.ShapeParameter));
+            Assert.IsTrue(parameters.Y.PopulationMean.ConfidenceInterval(0.99).ClosedContains(wald.Shape));
 
             Assert.IsTrue(parameters.X.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(variances.Column(0).Median));
             Assert.IsTrue(parameters.Y.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(variances.Column(1).Median));

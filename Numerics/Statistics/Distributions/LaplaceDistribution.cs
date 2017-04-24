@@ -33,6 +33,24 @@ namespace Meta.Numerics.Statistics.Distributions {
         // Scale paramter
         private readonly double b;
 
+        /// <summary>
+        /// Gets the location parmater of the distribution.
+        /// </summary>
+        public double Location {
+            get {
+                return (a);
+            }
+        }
+
+        /// <summary>
+        /// Gets the scale parameter of the distribution.
+        /// </summary>
+        public double Scale {
+            get {
+                return (b);
+            }
+        }
+
         /// <inheritdoc/>
         public override Interval Support {
             get {

@@ -120,15 +120,10 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (sum);
         }
 
-        public override int Minimum {
+        /// <inheritdoc />
+        public override DiscreteInterval Support {
             get {
-                return (0);
-            }
-        }
-
-        public override int Maximum {
-            get {
-                return (n * (n - 1) / 2);
+                return (new DiscreteInterval(0, n * (n - 1) / 2));
             }
         }
 

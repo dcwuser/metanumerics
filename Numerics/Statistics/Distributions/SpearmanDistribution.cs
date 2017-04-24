@@ -131,15 +131,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        public override int Minimum {
+        public override DiscreteInterval Support {
             get {
-                return (sMin);
-            }
-        }
-
-        public override int Maximum {
-            get {
-                return (sMax);
+                return (new DiscreteInterval(sMin, sMax));
             }
         }
 

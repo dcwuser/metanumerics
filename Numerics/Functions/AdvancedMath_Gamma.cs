@@ -387,7 +387,7 @@ namespace Meta.Numerics.Functions {
         /// <para>This function accurately computes ln(B(a,b)) even for values of a and b for which B(a,b) is
         /// too small or large to be represented by a double.</para>
         /// </remarks>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is non-positive.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is negative or zero.</exception>
         /// <seealso cref="Beta(System.Double,System.Double)"/>
         public static double LogBeta (double a, double b) {
             if (a <= 0.0) throw new ArgumentOutOfRangeException(nameof(a));
@@ -404,7 +404,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="a">The shape parameter, which must be positive.</param>
         /// <param name="x">The argument, which must be non-negative.</param>
-        /// <returns>The value of &#x3B3;(a,x)/&#x393;(x).</returns>
+        /// <returns>The value of &#x3B3;(a,x)/&#x393;(a).</returns>
         /// <remarks><para>The incomplete Gamma function is obtained by carrying out the Gamma function integration from zero to some
         /// finite value x, instead of to infinity. The function is normalized by dividing by the complete integral, so the
         /// function ranges from 0 to 1 as x ranges from 0 to infinity.</para>
@@ -412,8 +412,7 @@ namespace Meta.Numerics.Functions {
         /// in this region, use the complementary function <see cref="RightRegularizedGamma"/>.</para>
         /// <para>For a=&#x3BD;/2 and x=&#x3C7;<sup>2</sup>/2, this function is the CDF of the &#x3C7;<sup>2</sup> distribution with &#x3BD; degrees of freedom.</para>
         /// </remarks>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> is negative or zero.</exception>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> is negative or zero, or <paramref name="x"/> is negative.</exception>
         /// <seealso cref="RightRegularizedGamma" />
         public static double LeftRegularizedGamma (double a, double x) {
 			if (a <= 0) throw new ArgumentOutOfRangeException(nameof(a));
@@ -422,7 +421,7 @@ namespace Meta.Numerics.Functions {
                 double P, Q;
                 Gamma_Temme(a, x, out P, out Q);
                 return (P);
-            } else if (x<(a+1.0)) {
+            } else if (x < (a + 1.0)) {
 				return( GammaP_Series(a, x) );
 			} else {
 				return( 1.0 - GammaQ_ContinuedFraction(a, x) );
@@ -434,12 +433,11 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="a">The shape paraemter, which must be positive.</param>
         /// <param name="x">The argument, which must be non-negative.</param>
-        /// <returns>The value of &#x393;(a,x)/&#x393;(x).</returns>
+        /// <returns>The value of &#x393;(a,x)/&#x393;(a).</returns>
         /// <remarks>
         /// <para>This function is the complement of the left incomplete Gamma function <see cref="LeftRegularizedGamma"/>.</para>
         /// </remarks>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> is negative or zero.</exception>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> is negative or zero, or <paramref name="x"/> is negative.</exception>
         /// <seealso cref="LeftRegularizedGamma"/>
 		public static double RightRegularizedGamma (double a, double x) {
 			if (a <= 0) throw new ArgumentOutOfRangeException(nameof(a));
@@ -448,7 +446,7 @@ namespace Meta.Numerics.Functions {
                 double P, Q;
                 Gamma_Temme(a, x, out P, out Q);
                 return (Q);
-            } else if (x < (a+1.0)) {
+            } else if (x < (a + 1.0)) {
 				return( 1.0 - GammaP_Series(a, x) );
 			} else {
 				return( GammaQ_ContinuedFraction(a, x) );
@@ -465,9 +463,9 @@ namespace Meta.Numerics.Functions {
         /// <para>The incomplete Gamma function is defined by the same integrand as the Gamma function (<see cref="Gamma(double)"/>),
         /// but the integral is not taken over the full positive real axis.</para>
         /// <img src="../images/UpperIncompleteGammaIntegral.png" />
-        /// <para>Like the &#x393; function itself, this function gets large very quickly. For most
+        /// <para>Like the &#x393; function itself, this function gets large very quickly. For many
         /// purposes, you will prefer to use the regularized incomplete gamma functions <see cref="LeftRegularizedGamma"/> and
-        /// <see cref="RightRegularizedGamma"/>.</para>
+        /// <see cref="RightRegularizedGamma"/>, which are accurately computed even in regions for which this function overflows.</para>
         /// </remarks>
         /// <seealso cref="Gamma(double)"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Incomplete_Gamma_function"/>
@@ -488,6 +486,16 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value of B<sub>x</sub>(a, b).</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is negative, or
         /// <paramref name="x"/> lies outside [0, 1].</exception>
+        /// <remarks>
+        /// <para>This function is defined by the same integral that defines the Beta function (<see cref="Beta(double, double)"/>, but
+        /// with the integral taken from 0 to x instead of from 0 to 1.</para>
+        /// <para>Note that in most mathematical literature, <paramref name="x"/> is regarded as the first argument. We, however,
+        /// follow the programming convention that optional arguments follow required ones, so <paramref name="x"/> is the last
+        /// argument of the method.</para>
+        /// <para>If you actually require the regularized function, use <see cref="LeftRegularizedBeta(double, double, double)"/>
+        /// to obtain it directly.</para>
+        /// </remarks>
+        /// <seealso href="https://en.wikipedia.org/wiki/Beta_function#Incomplete_beta_function"/>
         /// <seealso href="http://mathworld.wolfram.com/IncompleteBetaFunction.html"/>
         public static double Beta (double a, double b, double x) {
             if (a < 0.0) throw new ArgumentOutOfRangeException(nameof(a));
@@ -503,9 +511,19 @@ namespace Meta.Numerics.Functions {
 		}
 
         internal static double RegularizedBeta_ContinuedFraction (double a, double b, double x) {
-            // evaluate via continued fraction via Steed's method
+
+            // Use the continued fraction (DLMF 8.17.22,  http://dlmf.nist.gov/8.17#v)
+            //   B(a, b, x) = x^a (1-x)^b BCF(a, b, x)
+            //   BCF(a, b, x) = \frac{1}{a} \left[ \frac{1}{1+} \frac{d_1}{1+} \frac{d_2}{1+} \cdots \right]
+            // where
+            //   d_{2m} = \frac{x m (b-m)}{(a + 2m - 1)(a + k)}
+            //   d_{2m+1} = -\frac{x (a + m) (a + b + m)}{(a + m)(a + 2m + 1)}
+            // which is good for x < (a + 1) / (a + b + 2). For larger x, compute compliment and subtract.
+
+            // Evaluate via Steed's method. Can we do better because of particular form?
+
             double aa = 1.0;			// a_1
-            double bb = 1.0;			// b_1
+            const double bb = 1.0;      // b_1
             double D = 1.0;			    // D_1 = 1 / b_1
             double Df = aa / bb;		// Df_1 = f_1 - f_0 = a_1 / b_1
             double f = 0.0 + Df;		// f_1 = f_0 + Df_1 = b_0 + Df_1
@@ -534,6 +552,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="b">The right shape paraemter, which must be non-negative.</param>
         /// <param name="x">The integral endpoint, which must lie in [0,1].</param>
         /// <returns>The value of I<sub>x</sub>(a, b) = B<sub>x</sub>(a, b) / B(a, b).</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is negative or zero,
+        /// or <paramref name="x"/> lies outside [0, 1].</exception>
         public static double LeftRegularizedBeta (double a, double b, double x) {
             if (a <= 0.0) throw new ArgumentOutOfRangeException(nameof(a));
             if (b <= 0.0) throw new ArgumentOutOfRangeException(nameof(b));
@@ -1011,11 +1031,11 @@ namespace Meta.Numerics.Functions {
 
             double xx = x * x; // x^2 
             double xk = x; // tracks x^{2k - 1}
-            double f = AdvancedIntegerMath.Bernoulli[1] / 2.0 / xk; // k = 1 term
+            double f = AdvancedIntegerMath.Bernoulli[1] / (2.0 * xk); // k = 1 term
             for (int k = 2; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
                 double f_old = f;
                 xk *= xx;
-                f += AdvancedIntegerMath.Bernoulli[k] / (2 * k) / (2 * k - 1) / xk;
+                f += AdvancedIntegerMath.Bernoulli[k] / ((2 * k) * (2 * k - 1)) / xk;
                 if (f == f_old) return (f);
             }
 
@@ -1027,7 +1047,7 @@ namespace Meta.Numerics.Functions {
 
             double xx = x * x;
             double xk = xx; // tracks x^{2k}
-            double f = -AdvancedIntegerMath.Bernoulli[1] / 2.0 / xk; // k=1 term
+            double f = -AdvancedIntegerMath.Bernoulli[1] / (2.0 * xk); // k=1 term
             for (int k = 2; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
                 double f_old = f;
                 xk *= xx;
@@ -1044,11 +1064,11 @@ namespace Meta.Numerics.Functions {
             double L = MoreMath.ReducedLogOnePlus(1.0 / x, y);
             double xx = x * x;
             double xk = x;
-            double f = AdvancedIntegerMath.Bernoulli[1] / 2.0 / xk * MoreMath.ReducedExpMinusOne(-L, y);
+            double f = AdvancedIntegerMath.Bernoulli[1] / (2.0 * xk) * MoreMath.ReducedExpMinusOne(-L, y);
             for (int k = 2; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
                 double f_old = f;
                 xk *= xx;
-                f += AdvancedIntegerMath.Bernoulli[k] / (2 * k) / (2 * k - 1) / xk * MoreMath.ReducedExpMinusOne((1 - 2 * k) * L, y);
+                f += AdvancedIntegerMath.Bernoulli[k] / ((2 * k) * (2 * k - 1)) / xk * MoreMath.ReducedExpMinusOne((1 - 2 * k) * L, y);
                 if (f == f_old) return (f);
             }
             throw new NonconvergenceException();

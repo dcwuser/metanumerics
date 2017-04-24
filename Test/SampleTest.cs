@@ -286,8 +286,8 @@ namespace Test {
             // Fit the sample to a gamma distribution
             // The fit should agree with the population and the fit should be good
             FitResult R = GammaDistribution.FitToSample(S);
-            Assert.IsTrue(R.Parameter(0).ConfidenceInterval(0.95).ClosedContains(B.ShapeParameter));
-            Assert.IsTrue(R.Parameter(1).ConfidenceInterval(0.95).ClosedContains(B.ScaleParameter));
+            Assert.IsTrue(R.Parameter(0).ConfidenceInterval(0.95).ClosedContains(B.Shape));
+            Assert.IsTrue(R.Parameter(1).ConfidenceInterval(0.95).ClosedContains(B.Scale));
             Assert.IsTrue(R.GoodnessOfFit.LeftProbability < 0.95);
 
         }
@@ -348,9 +348,9 @@ namespace Test {
                 WeibullDistribution W = new WeibullDistribution(2.2, alpha);
                 Sample S = CreateSample(W, 50);
                 FitResult R = WeibullDistribution.FitToSample(S);
-                Console.WriteLine("{0} ?= {1}, {2} ?= {3}", R.Parameter(0), W.ScaleParameter, R.Parameter(1), W.ShapeParameter);
-                Assert.IsTrue(R.Parameter(0).ConfidenceInterval(0.99).ClosedContains(W.ScaleParameter));
-                Assert.IsTrue(R.Parameter(1).ConfidenceInterval(0.99).ClosedContains(W.ShapeParameter));
+                Console.WriteLine("{0} ?= {1}, {2} ?= {3}", R.Parameter(0), W.Scale, R.Parameter(1), W.Shape);
+                Assert.IsTrue(R.Parameter(0).ConfidenceInterval(0.99).ClosedContains(W.Scale));
+                Assert.IsTrue(R.Parameter(1).ConfidenceInterval(0.99).ClosedContains(W.Shape));
             }
 
         }
@@ -367,7 +367,7 @@ namespace Test {
 
             WeibullDistribution w = new WeibullDistribution(2.2, 0.031);
 
-            s.Transform(x => w.ScaleParameter * Math.Pow(-Math.Log(1.0 - x), 1.0 / w.ShapeParameter));
+            s.Transform(x => w.Scale * Math.Pow(-Math.Log(1.0 - x), 1.0 / w.Shape));
 
         }
 
@@ -781,8 +781,8 @@ namespace Test {
             Console.WriteLine(w_r.Parameter(1));
             Console.WriteLine(w_r.Covariance(0, 1));
 
-            Assert.IsTrue(w_r.Parameter(0).ConfidenceInterval(0.95).ClosedContains(w_d.ScaleParameter));
-            Assert.IsTrue(w_r.Parameter(1).ConfidenceInterval(0.95).ClosedContains(w_d.ShapeParameter));
+            Assert.IsTrue(w_r.Parameter(0).ConfidenceInterval(0.95).ClosedContains(w_d.Scale));
+            Assert.IsTrue(w_r.Parameter(1).ConfidenceInterval(0.95).ClosedContains(w_d.Shape));
 
             // logistic distribution
             Console.WriteLine("logistic");

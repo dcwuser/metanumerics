@@ -8,8 +8,11 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents the distribution of the Kolmogorov-Smirnov D statistic.
     /// </summary>
-    /// <remarks><para>The D statistic in a Kolmogorov-Smirnov test is distributed (under the null hypothesis) according to a Kolmogorov disribution, in
-    /// the limit of a large sample size.</para></remarks>
+    /// <remarks>
+    /// <para>In the limit of large sample size, the D statistic of the Kolmogorov-Smirnov test (<see cref="Sample.KolmogorovSmirnovTest(ContinuousDistribution)"/>)
+    /// follows this distribution.</para>
+    /// </remarks>
+    /// <seealso href="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test"/>
     /// <seealse cref="Sample.KolmogorovSmirnovTest(Meta.Numerics.Statistics.Distributions.ContinuousDistribution)" />
     public sealed class KolmogorovDistribution : ContinuousDistribution {
 

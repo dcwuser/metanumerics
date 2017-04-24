@@ -23,14 +23,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         public abstract double ProbabilityMass (int k);
 
         /// <summary>
-        /// Gets the smallest value in the distribution.
+        /// Gets the interval over which the distribution is nonvanishing.
         /// </summary>
-        public abstract int Minimum { get; }
-
-        /// <summary>
-        /// Gets the largest value in the distribution.
-        /// </summary>
-        public abstract int Maximum { get; }
+        public abstract DiscreteInterval Support { get; }
 
         /// <summary>
         /// Computes the probability of obtaining a value less than the given value.
@@ -39,13 +34,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The total probability of obtaining a value strictly less than <paramref name="k"/>.</returns>
         /// <seealso cref="RightExclusiveProbability"/>
         public virtual double LeftExclusiveProbability (int k) {
-            if (k <= Minimum) {
+            if (k <= Support.LeftEndpoint) {
                 return (0.0);
-            } if (k > Maximum) {
+            } if (k > Support.RightEndpoint) {
                 return (1.0);
             } else {
                 double P = 0.0;
-                for (int j = Minimum; j < k; j++) {
+                for (int j = Support.LeftEndpoint; j < k; j++) {
                     P += ProbabilityMass(j);
                 }
                 return (P);
@@ -58,9 +53,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="k">The value.</param>
         /// <returns>The total probability of obtaining a value les than or equal to <paramref name="k"/>.</returns>
         public virtual double LeftInclusiveProbability (int k) {
-            if (k < Minimum) {
+            if (k < Support.LeftEndpoint) {
                 return (0.0);
-            } else if (k >= Maximum) {
+            } else if (k >= Support.RightEndpoint) {
                 return (1.0);
             } else {
                 return (LeftExclusiveProbability(k) + ProbabilityMass(k));
@@ -74,13 +69,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The total probability of obtaining a value strictly greater than <paramref name="k"/>.</returns>
         /// <seealso cref="LeftExclusiveProbability"/>
         public virtual double RightExclusiveProbability (int k) {
-            if (k < Minimum) {
+            if (k < Support.LeftEndpoint) {
                 return (1.0);
-            } else if (k >= Maximum) {
+            } else if (k >= Support.RightEndpoint) {
                 return (0.0);
             } else {
                 double Q = 0.0;
-                for (int j = k + 1; j <= Maximum; j++) {
+                for (int j = k + 1; j <= Support.RightEndpoint; j++) {
                     Q += ProbabilityMass(j);
                 }
                 return (Q);
@@ -96,7 +91,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
 
-            return (InverseLeftProbability(Minimum, Maximum, P));
+            return (InverseLeftProbability(Support.LeftEndpoint, Support.RightEndpoint, P));
 
             /*
             double PP = 0.0;
@@ -144,11 +139,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The expectation value of the function.</returns>
         public virtual double ExpectationValue (Func<int, double> f) {
 
-            if (f == null) throw new ArgumentNullException("f");
+            if (f == null) throw new ArgumentNullException(nameof(f));
 
             // If the support is small enough, just take the expectation directly.
-            int w = this.Maximum - this.Minimum;
-            if (w < 32) return (ExpectationValue(f, this.Minimum, this.Maximum));
+            int w = Support.Width;
+            if (w < 32) return (ExpectationValue(f, Support.LeftEndpoint, Support.RightEndpoint));
 
             // If the support is big (e.g. all 2 billion integers), naive direct computation
             // will be too slow. 
@@ -181,13 +176,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             
 
             double s_left = 0.0;
-            for (int i = i0 - 1; i >= Minimum; i--) {
+            for (int i = i0 - 1; i >= Support.LeftEndpoint; i--) {
                 double s_left_old = s_left;
                 s_left += f(i) * ProbabilityMass(i);
                 if (s_left == s_left_old) break;
             }
             double s_right = 0.0;
-            for (int i = i0 + 1; i <= Maximum; i++) {
+            for (int i = i0 + 1; i <= Support.RightEndpoint; i++) {
                 double s_right_old = s_right;
                 s_right += f(i) * ProbabilityMass(i);
                 if (s_right == s_right_old) break;
@@ -226,11 +221,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The raw moment M<sub>r</sub>.</returns>
         public override double RawMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else {
-                return (ExpectationValue(delegate(int k) { return (MoreMath.Pow(k, r)); }));
+                return (ExpectationValue((int k) => MoreMath.Pow(k, r)));
             } 
         }
 
@@ -241,7 +236,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The central moment C<sub>r</sub>.</returns>
         public override double CentralMoment (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
@@ -258,7 +253,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="rng">A random number generator.</param>
         /// <returns>A random integer drawn from the distribution.</returns>
         public virtual int GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException("rng");
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
             return (InverseLeftProbability(rng.NextDouble()));
         }
 

@@ -40,7 +40,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Gets the shape parameter of the distribution.
         /// </summary>
-        public double ShapeParameter {
+        public double Shape {
             get {
                 return (lambda);
             }
@@ -187,7 +187,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="sample">The sample to fit.</param>
         /// <returns>The fit.</returns>
         /// <remarks>
-        /// <para>The returned fit parameters are the <see cref="Mean"/> and <see cref="ShapeParameter"/>, in that order.
+        /// <para>The returned fit parameters are the <see cref="Mean"/> and <see cref="Shape"/>, in that order.
         /// These are the same parameters, in the same order, that are required by the <see cref="WaldDistribution(double,double)"/> constructor to
         /// specify a new Wald distribution.</para>
         /// </remarks>

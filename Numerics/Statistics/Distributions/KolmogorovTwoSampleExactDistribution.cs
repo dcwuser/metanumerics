@@ -52,18 +52,10 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         }
 
-        public override int Maximum {
+        public override DiscreteInterval Support {
             get {
-                return ((int) AdvancedIntegerMath.LCM(n, m));
-                //return (m * n);
-            }
-        }
-
-        public override int Minimum {
-            get {
-                return (0);
-                //return (m * ((int) AdvancedIntegerMath.GCF(n, m)));
-                //return (m);
+                // It may be possible to improve these bounds with a little more work.
+                return (new DiscreteInterval(0, (int) AdvancedIntegerMath.LCM(n, m)));
             }
         }
 
@@ -72,9 +64,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         public override double LeftInclusiveProbability (int k) {
-            if (k < Minimum) {
+            if (k < Support.LeftEndpoint) {
                 return (0.0);
-            } else if (k >= Maximum) {
+            } else if (k >= Support.RightEndpoint) {
                 return (1.0);
             } else {
                 return (LatticePathSum(k * ((int) AdvancedIntegerMath.GCF(n, m))) / AdvancedIntegerMath.BinomialCoefficient(n + m, n));
@@ -82,7 +74,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         public override double ProbabilityMass (int k) {
-            if ((k < Minimum) || (k > Maximum)) {
+            if ((k < Support.LeftEndpoint) || (k > Support.RightEndpoint)) {
                 return (0.0);
             } else {
                 int c = k * ((int) AdvancedIntegerMath.GCF(n, m));
@@ -96,7 +88,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double Mean {
             get {
                 double M1 = 0.0;
-                for (int k = Minimum; k <= Maximum; k++) {
+                for (int k = Support.LeftEndpoint; k <= Support.RightEndpoint; k++) {
                     M1 += ProbabilityMass(k) * k;
                 }
                 return (M1);
@@ -107,13 +99,14 @@ namespace Meta.Numerics.Statistics.Distributions {
             get {
                 double M1 = Mean;
                 double C2 = 0.0;
-                for (int k = Minimum; k <= Maximum; k++) {
+                for (int k = Support.LeftEndpoint; k <= Support.RightEndpoint; k++) {
                     C2 += ProbabilityMass(k) * MoreMath.Sqr(k - M1);
                 }
                 return (C2);
             }
         }
 
+        /*
         public override double ExpectationValue (Func<int, double> f) {
             double s = 0.0;
             for (int k = 0; k <= Maximum; k++) {
@@ -121,6 +114,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
             return (s);
         }
+        */
     }
 
 }

@@ -21,12 +21,6 @@ namespace Test {
     public class FutureTest {
 
         [TestMethod]
-        public void Decomp () {
-
-        }
-
-
-        [TestMethod]
         public void AiryZeros () {
 
             for (int k = 1; k < 4; k++) {

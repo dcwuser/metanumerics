@@ -42,7 +42,8 @@ namespace Test {
                 new PearsonRDistribution(7),
                 new GammaDistribution(0.8), new GammaDistribution(3.0, 5.0), new GammaDistribution(96.2),
                 new GumbelDistribution(1.2, 2.3),
-                new LaplaceDistribution(4.5, 6.0)
+                new LaplaceDistribution(4.5, 6.0),
+                new ChiDistribution(1), new ChiDistribution(4)
             });
 
             // Add some distributions that come from tests.

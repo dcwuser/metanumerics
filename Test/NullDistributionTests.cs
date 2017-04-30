@@ -324,5 +324,30 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void ShapiroFranciaNullDistribution () {
+
+            Random rng = new Random(57721);
+            foreach (int n in TestUtilities.GenerateIntegerValues(16, 128, 4)) {
+
+                Sample vSample = new Sample();
+                ContinuousDistribution vDistribution = null;
+                NormalDistribution zDistribution = new NormalDistribution(-2.0, 3.0);
+                for (int i = 0; i < 256; i++) {
+                    Sample zSample = TestUtilities.CreateSample(zDistribution, n, i);
+                    TestResult sf = zSample.ShapiroFranciaTest();
+                    vSample.Add(sf.Statistic);
+                    vDistribution = sf.Distribution;
+                }
+
+                TestResult ks = vSample.KolmogorovSmirnovTest(vDistribution);
+
+                Assert.IsTrue(ks.Probability > 0.01);
+
+                // The returned SF null distribution is approximate, so we can't
+                // make arbitrarily stringent P demands for arbitrarily large samples.
+            }
+        }
+
     }
 }

@@ -509,7 +509,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             double xMin = 0.0;
             double xMax = 1.0;
 
-            for (int k = 0; k < 24; k++) {
+            for (int k = 0; k < 32; k++) {
 
                 // Remember old coordinates
                 double x_old = x;

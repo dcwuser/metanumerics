@@ -1680,6 +1680,98 @@ namespace Meta.Numerics.Statistics {
 
         }
 
+        /// <summary>
+        /// Performs a Shapiro-Francia test of normality on the sample.
+        /// </summary>
+        /// <returns>The result of the test.</returns>
+        /// <seealso href="https://en.wikipedia.org/wiki/Shapiro%E2%80%93Francia_test"/>
+        public TestResult ShapiroFranciaTest () {
+
+            int n = this.Count;
+            if (n < 3) throw new InsufficientDataException();
+
+            // Determine V = 1 - r^2
+            double mx = this.Mean;
+            double cxx = 0.0;
+            double cmm = 0.0;
+            double cmx = 0.0;
+            int[] order = data.GetSortOrder();
+            for (int i = 0; i < n; i++) {
+                double zx = data[order[i]] - mx;
+                // We could use symmetry to make half as many calls to NormalOrderStatistic,
+                // but the code would be less straightforward, because we can't proceed linearly
+                // through the data.
+                double m = NormalOrderStatistic(i + 1, n);
+                cxx += zx * zx;
+                cmm += m * m;
+                cmx += zx * m;
+            }
+            // W = r^2 = cmx / sqrt(cxx * cmm). But if we compute r^2 like this and then 1 - r^2, we will
+            // get significant cancellation errors. So re-form V = 1 - r^2 analytically.
+            double q = cxx * cmm;
+            double p = Math.Sqrt(cxx * cmm);
+            double lnV = Math.Log((p - cmx) * (p + cmx) / q);
+
+            // The observed mean and variance of log(1 - W) can be fit to six digits over n=16-8192
+            // by simple polynomials in log(n). To get these results, I ran simulations for n = 16, 24, 32, 48, 64, ..., 8192.
+            // The number of simulated samples was 10^8 for n=10-100, 10^7 for n=100-1000, and 10^6 for n=1000-10000.
+            // Folloying Royston, I transformed to log(1 - W) and did polynomial fits to K1 and log(K2) as
+            // functions of log(n), increasing the order until I was able to reproduce both cumulants to
+            // within errors for all n=16-8192. Note that K3 is detectably non-zero, so we really should
+            // introduce a correction for the remaining skewness, perhaps via an Edgeworth-style expansion.
+            double t = Math.Log(n);
+            double mu = -2.41348986 + t * (0.34785948 + t * (-0.31462118 + t * (0.04298010 + t * (-0.00311513 + t * 0.00009230))));
+            double sigma = Math.Exp((0.56767288 + t * (-1.18529022 + t * (0.31916472 + t * (-0.04912452 + t * (0.00383692 + t * -0.00011891))))) / 2.0);
+            NormalDistribution nullDistribution = new NormalDistribution(mu, sigma);
+
+            // Need to handle 3-15 seperately.
+
+            // N = 3: W' = W, 3/4 <= W <= 1, P = (6 / Pi)(Asin(Sqrt(W)) - Asin(Sqrt(3/4)))
+
+            return (new TestResult("ln(1-W')", lnV, TestType.RightTailed, nullDistribution));
+
+        }
+
+        private static double NormalOrderStatistic (int i, int n) {
+
+            // This uses the David and Johnson asymptotic expansion, as presented
+            // in Arnold, Balakrishnan, and Nagaraja, "A First Course in Order Statistics",
+            // Section 5.5, specialized to the normal distribution.
+            
+            // It is more accurate than simpler approximations, but still looses
+            // accuracy in the tails. I have verified that dropping the last term
+            // doesn't change the moments in my simulations to within their accuracy,
+            // so it's not necessary to add more terms. If we ever do want to add
+            // another term, see Childs and Balakrisnan, "Series approximations
+            // for moments of order statistics using MAPLE", Computations Statistics
+            // and Data Analysis 38 (2002) 331, which gives the lengthy next term.
+
+            double p = (double) i / (n + 1);
+            double q = (double) (n - i + 1) / (n + 1);
+
+            double f0 = AdvancedMath.Probit(p, q);
+            double p0 = Math.Exp(-f0 * f0 / 2.0) / Global.SqrtTwoPI;
+
+            double f2 = f0 / (p0 * p0);
+            double f3 = (1.0 + 2.0 * f0 * f0) / (p0 * p0 * p0);
+            double f4 = f0 * (7.0 + 6.0 * f0 * f0) / (p0 * p0 * p0 * p0);
+            double f5 = (7.0 + 46.0 * f0 * f0 + 24.0 * f0 * f0 * f0 * f0) / (p0 * p0 * p0 * p0 * p0);
+            double f6 = f0 * (127.0 + 326.0 * f0 * f0 + 120.0 * f0 * f0 * f0 * f0) / (p0 * p0 * p0 * p0 * p0 * p0);
+
+            double qmp = q - p;
+
+            double m = f0;
+
+            m += p * q / (n + 2) * f2 / 2.0;
+
+            m += p * q / (n + 2) / (n + 2) * (qmp / 3.0 * f3 + p * q / 8.0 * f4);
+
+            m += p * q / (n + 2) / (n + 2) / (n + 2) * (-qmp / 3.0 * f3 + (qmp * qmp - p * q) / 4.0 * f4 + p * q * qmp / 6.0 * f5 + p * p * q * q / 48.0 * f6);
+
+            return (m);
+
+        }
+
 #if !SILVERLIGHT
         /// <summary>
         /// Loads values from a data reader.

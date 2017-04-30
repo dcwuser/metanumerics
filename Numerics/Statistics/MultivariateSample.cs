@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 #if !SILVERLIGHT
 using System.Data;
 #endif
@@ -637,25 +638,16 @@ namespace Meta.Numerics.Statistics {
 
             if ((m <= 0) || (m >= this.Count)) throw new ArgumentOutOfRangeException(nameof(m));
 
-            double[][] centroids = new double[m][];
-            int[] assigments = new int[this.Count];
-            int[] counts = new int[m];
-
+            double[][] centroids = InitializeCentroids(m);
 
             // i = 0 ... Count ranges over data rows
             // j = 0 ... Dimension ranges over data columns
             // k = 0 ... m ranges over clusters
 
-            // Create initial clusters
-            for (int k = 0; k < m; k++) {
-                double[] centroid = new double[this.Dimension];
-                for (int j = 0; j < centroid.Length; j++) {
-                    centroid[j] = storage[j][k];
-                }
-                centroids[k] = centroid;
-            }
+            int[] assigments = new int[this.Count];
+            int[] counts = new int[m];
 
-            while (true) {
+            for (int count = 0; count < Global.SeriesMax; count++) {
 
                 bool stable = true;
 
@@ -707,9 +699,61 @@ namespace Meta.Numerics.Statistics {
                 }
 
             }
+
+            throw new NonconvergenceException();
         }
 
+        private double[][] InitializeCentroids (int m) {
 
+            Debug.Assert((m > 0) && (m < this.Count));
+
+            // Use the first point for the first centroid.
+            double[][] centroids = new double[m][];
+            for (int k = 0; k < m; k++) centroids[k] = new double[this.Dimension];
+            for (int j = 0; j < this.Dimension; j++) centroids[0][j] = storage[j][0];
+
+            // Choose the remaining centroids
+            for (int k = 1; k < m; k++) {
+
+                // For the next centroid, use the point with the largest
+                // minimum distance from all the previous centroids.
+
+                int iBest = -1;
+                double maxDistance = 0.0;
+                for (int i = 0; i < this.Count; i++) {
+
+                    // Determine the smallest distance to an existing centroid
+                    double minDistance = Double.PositiveInfinity;
+                    for (int k1 = 0; k1 < k; k1++) {
+                        double distance = 0.0;
+                        for (int j = 0; j < this.Dimension; j++) {
+                            distance += MoreMath.Sqr(centroids[k1][j] - storage[j][i]);
+                        }
+                        if (distance < minDistance) minDistance = distance;
+                    } 
+
+                    // If this distance is larger than any measured before, this
+                    // is point is the best candidate.
+                    if (minDistance > maxDistance) {
+                        maxDistance = minDistance;
+                        iBest = i;
+                    }
+
+                }
+
+                // Use the best point found as the next centroid.
+                for (int j = 0; j < this.Dimension; j++) {
+                    centroids[k][j] = storage[j][iBest];
+                }
+
+            }
+
+            // This algorithms produces good candidates, but it's relatively expensive,
+            // order m^2 * n * d. This is particularly bad for large m.
+
+            return (centroids);
+
+        }
     
 
 #if !SILVERLIGHT
@@ -765,6 +809,8 @@ namespace Meta.Numerics.Statistics {
     public sealed class MeansClusteringResult {
 
         internal MeansClusteringResult (double[][] centroids) {
+            Debug.Assert(centroids != null);
+            Debug.Assert(centroids.Length > 0);
             this.centroids = centroids;
         }
 
@@ -798,20 +844,20 @@ namespace Meta.Numerics.Statistics {
             if (values == null) throw new ArgumentNullException(nameof(values));
             if (values.Count != this.Dimension) throw new DimensionMismatchException();
 
-            double D_min = Double.MaxValue;
-            int k_min = -1;
+            double minDistance = Double.MaxValue;
+            int kMin = -1;
             for (int k = 0; k < centroids.Length; k++) {
-                double D = 0.0;
+                double distance = 0.0;
                 for (int j = 0; k < values.Count; j++) {
-                    D += MoreMath.Sqr(values[j] - centroids[k][j]);
+                    distance += MoreMath.Sqr(values[j] - centroids[k][j]);
                 }
-                if (D < D_min) {
-                    D_min = D;
-                    k_min = k;
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    kMin = k;
                 }
             }
 
-            return (k_min);
+            return (kMin);
         }
 
         /// <summary>

@@ -162,6 +162,7 @@
     <Compile Include="Statistics\Distributions\BetaDistribution.cs" />
     <Compile Include="Statistics\Distributions\BinomialDistribution.cs" />
     <Compile Include="Statistics\Distributions\CauchyDistribution.cs" />
+    <Compile Include="Statistics\Distributions\ChiDistribution.cs" />
     <Compile Include="Statistics\Distributions\ChiSquaredDistribution.cs" />
     <Compile Include="Statistics\Distributions\DiscreteAsContinuousDistribution.cs" />
     <Compile Include="Statistics\Distributions\DiscreteDistribution.cs" />

@@ -484,25 +484,28 @@ namespace Test {
 
             x[0] = 0.25;
             y[0] = 0.75;
-            s[0] = 0.05;
+            s[0] = 0.1;
 
             x[1] = 0.75;
             y[1] = 0.75;
-            s[1] = 0.05;
+            s[1] = 0.1;
 
             x[2] = 0.5;
             y[2] = 0.5;
-            s[2] = 0.1;
+            s[2] = 0.2;
 
             MultivariateSample points = new MultivariateSample(2);
             Random rng = new Random(1);
             NormalDistribution d = new NormalDistribution();
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 100; i++) {
                 int k = rng.Next(3);
                 points.Add(x[k] + s[k] * d.GetRandomValue(rng), y[k] + s[k] * d.GetRandomValue(rng));
             }
 
-            points.MeansClustering(3);
+            MeansClusteringResult result = points.MeansClustering(3);
+
+            Assert.IsTrue(result.Count == 3);
+            Assert.IsTrue(result.Dimension == 2);
 
         }
 

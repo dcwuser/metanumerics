@@ -492,7 +492,7 @@ namespace Meta.Numerics.Functions {
         /// <para>Note that in most mathematical literature, <paramref name="x"/> is regarded as the first argument. We, however,
         /// follow the programming convention that optional arguments follow required ones, so <paramref name="x"/> is the last
         /// argument of the method.</para>
-        /// <para>If you actually require the regularized function, use <see cref="LeftRegularizedBeta(double, double, double)"/>
+        /// <para>If you require the regularized function, use <see cref="LeftRegularizedBeta(double, double, double)"/>
         /// to obtain it directly.</para>
         /// </remarks>
         /// <seealso href="https://en.wikipedia.org/wiki/Beta_function#Incomplete_beta_function"/>
@@ -520,23 +520,26 @@ namespace Meta.Numerics.Functions {
             //   d_{2m+1} = -\frac{x (a + m) (a + b + m)}{(a + m)(a + 2m + 1)}
             // which is good for x < (a + 1) / (a + b + 2). For larger x, compute compliment and subtract.
 
-            // Evaluate via Steed's method. Can we do better because of particular form?
+            // Evaluate via Steed's method.
+            // We can simplify slightly due to this being a Stieltjes CF (denominator always 1).
+            // Do k = 0 and k = 1 explicitly, since simplifications are possible for those terms.
 
-            double aa = 1.0;			// a_1
-            const double bb = 1.0;      // b_1
-            double D = 1.0;			    // D_1 = 1 / b_1
-            double Df = aa / bb;		// Df_1 = f_1 - f_0 = a_1 / b_1
-            double f = 0.0 + Df;		// f_1 = f_0 + Df_1 = b_0 + Df_1
-            for (int k = 1; k < Global.SeriesMax; k++) {
+            double ab = a + b;
+            double p = -x * ab / (a + 1.0);
+            double D = 1.0 / (1.0 + p);
+            double Df = -p * D;
+            double f = 1.0 + Df;
+            for (int k = 2; k < Global.SeriesMax; k++) {
                 double f_old = f;
                 int m = k / 2;
+                p = x / ((a + (k - 1)) * (a + k));
                 if ((k % 2) == 0) {
-                    aa = x * m * (b - m) / ((a + k - 1) * (a + k));
+                    p *= m * (b - m);
                 } else {
-                    aa = -x * (a + m) * (a + b + m) / ((a + k - 1) * (a + k));
+                    p *= -(a + m) * (ab + m);
                 }
-                D = 1.0 / (bb + aa * D);
-                Df = (bb * D - 1.0) * Df;
+                D = 1.0 / (1.0 + p * D);
+                Df = (D - 1.0) * Df;
                 f += Df;
                  if (f == f_old) {
                     return (f / a);

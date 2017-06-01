@@ -229,8 +229,8 @@ namespace Test {
 
             BivariateSample bs = new BivariateSample();
             for (int i = 0; i < 10; i++) bs.Add(X_axis[i], Y_axis[i]);
-            FitResult bsFit = bs.PolynomialRegression(3);
-            for (int i = 0; i < bsFit.Dimension; i++) Console.WriteLine(bsFit.Parameter(i));
+            PolynomialRegressionResult bsFit = bs.PolynomialRegression(3);
+            foreach (Parameter p in bsFit.Parameters) Console.WriteLine(p);
 
         }
 

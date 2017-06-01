@@ -154,9 +154,9 @@ namespace Test {
                 MultivariateSample variances = new MultivariateSample("M1", "C2", "C3", "C4");
 
                 // create a bunch of samples
-                for (int i = 0; i < 256; i++) {
+                for (int i = 0; i < 4096; i++) {
 
-                    Sample s = TestUtilities.CreateSample(d, n, 512 * n + i + 1);
+                    Sample s = TestUtilities.CreateSample(d, n, 16384 * n + i + 1);
 
                     UncertainValue M1 = s.PopulationMean;
                     UncertainValue C2 = s.PopulationVariance;

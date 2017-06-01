@@ -43,7 +43,8 @@ namespace Test {
                 new GammaDistribution(0.8), new GammaDistribution(3.0, 5.0), new GammaDistribution(96.2),
                 new GumbelDistribution(1.2, 2.3),
                 new LaplaceDistribution(4.5, 6.0),
-                new ChiDistribution(1), new ChiDistribution(4)
+                new ChiDistribution(1), new ChiDistribution(4),
+                new RayleighDistribution(3.0)
             });
 
             // Add some distributions that come from tests.
@@ -295,16 +296,14 @@ namespace Test {
         // test P values
         [TestMethod]
         public void DistributionProbabilityIntegral () {
-            Random rng = new Random(4);
+            Random rng = new Random(1);
 
             // if integral is very small, we still want to get it very accurately
             IntegrationSettings settings = new IntegrationSettings() { AbsolutePrecision = 0.0 };
 
             foreach (ContinuousDistribution distribution in distributions) {
 
-                if (distribution is TriangularDistribution) continue;
-
-                for (int i = 0; i < 3; i++) {
+                for (int i = 0; i < 4; i++) {
                     double x;
                     if (Double.IsNegativeInfinity(distribution.Support.LeftEndpoint) && Double.IsPositiveInfinity(distribution.Support.RightEndpoint)) {
                         // pick an exponentially distributed random point with a random sign
@@ -331,9 +330,6 @@ namespace Test {
                         Console.WriteLine("skip (P={0}, Q={1})", P, Q);
                         continue;
                     }
-
-                    Console.WriteLine("  {0} v. {1}", P, distribution.LeftProbability(x));
-                    Console.WriteLine("  {0} v. {1}", Q, distribution.RightProbability(x));
 
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(P, distribution.LeftProbability(x)));
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(Q, distribution.RightProbability(x)));

@@ -194,23 +194,23 @@ namespace Test {
                 LinearRegressionResult result = sample.LinearRegression();
 
                 // test consistancy
-                Assert.IsTrue(result.Intercept == result.Parameter(0));
-                Assert.IsTrue(result.Intercept.Value == result.Parameters[0]);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Intercept.Uncertainty, Math.Sqrt(result.CovarianceMatrix[0, 0])));
-                Assert.IsTrue(result.Slope == result.Parameter(1));
-                Assert.IsTrue(result.Slope.Value == result.Parameters[1]);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Slope.Uncertainty, Math.Sqrt(result.CovarianceMatrix[1, 1])));
+                Assert.IsTrue(result.Intercept == result.Parameters[0].Estimate);
+                Assert.IsTrue(result.Intercept.Value == result.Parameters.Best[0]);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Intercept.Uncertainty, Math.Sqrt(result.Parameters.Covariance[0, 0])));
+                Assert.IsTrue(result.Slope == result.Parameters[1].Estimate);
+                Assert.IsTrue(result.Slope.Value == result.Parameters.Best[1]);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Slope.Uncertainty, Math.Sqrt(result.Parameters.Covariance[1, 1])));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(result.R.Statistic, sample.CorrelationCoefficient));
 
                 // record best fit parameters
-                double a = result.Parameter(0).Value;
-                double b = result.Parameter(1).Value;
+                double a = result.Parameters.Best[0];
+                double b = result.Parameters.Best[1];
                 pSample.Add(a, b);
 
                 // record estimated covariances
-                caa += result.Covariance(0, 0);
-                cbb += result.Covariance(1, 1);
-                cab += result.Covariance(0, 1);
+                caa += result.Parameters.Covariance[0, 0];
+                cbb += result.Parameters.Covariance[1, 1];
+                cab += result.Parameters.Covariance[0, 1];
 
                 UncertainValue yPredict = result.Predict(x0);
                 ySample.Add(yPredict.Value);
@@ -275,7 +275,7 @@ namespace Test {
                 }
                 LinearRegressionResult result = sample.LinearRegression();
 
-                double f = result.GoodnessOfFit.Statistic;
+                double f = result.F.Statistic;
                 fs.Add(f);
 
                 rSample.Add(result.R.Statistic);
@@ -345,19 +345,19 @@ namespace Test {
                 }
 
                 // do the regression
-                FitResult r = s.PolynomialRegression(a.Length - 1);
+                PolynomialRegressionResult r = s.PolynomialRegression(a.Length - 1);
 
-                ColumnVector ps = r.Parameters;
+                ColumnVector ps = r.Parameters.Best;
                 //Console.WriteLine("{0} {1} {2}", ps[0], ps[1], ps[2]);
 
                 // record best fit parameters
                 A.Add(ps);
 
                 // record estimated covariances
-                C += r.CovarianceMatrix;
+                C += r.Parameters.Covariance;
 
                 // record the fit statistic
-                F.Add(r.GoodnessOfFit.Statistic);
+                F.Add(r.F.Statistic);
                 //Console.WriteLine("F={0}", r.GoodnessOfFit.Statistic);
 
             }
@@ -394,11 +394,10 @@ namespace Test {
             B.Add(1.0, 7.0);
             B.Add(4.0, 8.0);
             B.Add(2.0, 9.0);
-            FitResult PR = B.PolynomialRegression(1);
-            FitResult LR = B.LinearRegression();
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.Parameters, LR.Parameters));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.CovarianceMatrix, LR.CovarianceMatrix));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.GoodnessOfFit.Statistic, LR.GoodnessOfFit.Statistic));
+            RegressionResult PR = B.PolynomialRegression(1);
+            RegressionResult LR = B.LinearRegression();
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.Parameters.Best, LR.Parameters.Best));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.Parameters.Covariance, LR.Parameters.Covariance));
 
         }
 

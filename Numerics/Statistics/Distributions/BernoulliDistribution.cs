@@ -180,6 +180,43 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (q * f(0) + p * f(1));
         }
 
+        /// <summary>
+        /// Finds the Bernoulli distribution that best fits the given counts.
+        /// </summary>
+        /// <param name="n0">The count of zeros, which must be non-negative.</param>
+        /// <param name="n1">The count of ones, which must be non-negative.</param>
+        /// <returns>The best-fit Bernoulli distribution parameters.</returns>
+        public static FitResult FitToSample (int n0, int n1) {
+
+            if (n0 < 0) throw new ArgumentOutOfRangeException(nameof(n0));
+            if (n1 < 0) throw new ArgumentOutOfRangeException(nameof(n1));
+
+            int n = n0 + n1;
+            if (n < 2) throw new InsufficientDataException();
+
+            // The only parameter is p. Maximum likelyhood is straightforward.
+            //    \ln L = \sum_i \ln P_i = n_0 \ln q + n_1 \ln p = n_0 \ln (1 - p) + n_1 \ln p
+            //    \frac{\partial \ln L}{\partial p} = \frac{-n_0}{1-p} + \frac{n_1}{p}
+            // Set equal to zero to obtain
+            //    p = \frac{n_1}{n_0 + n_1} = \frac{n_1}{n}
+            // as would be expected. Continue taking derivatives
+            //    \frac{\partial^2 \ln L}{\partial p^2} = \frac{-n_0}{(1-p)^2} - \frac{n_1}{p^2}
+            //        = - \frac{(n_0 + n_1)^3}{n_0 n_1} = - \frac{n}{p q}
+            // so (\delta p)^2 = \frac{p q}{n}
+            
+            // When X ~ Bernoulli(p), \sum_{i=1}^{n} X_i ~ Binomial(n, p). We know that Binomial(n, p)
+            // has mean n p and variance n p q, so the MLE results are exact and unbiased.
+
+            double p = ((double) n1) / ((double) n);
+            double q = ((double) n0) / ((double) n);
+            double vp = p * q / n;
+
+            double chi2 = MoreMath.Sqr(n * q - n0) + MoreMath.Sqr(n * p - n1);
+            TestResult test = new TestResult("chi2", chi2, TestType.RightTailed, new ChiSquaredDistribution(1));
+
+            return (new FitResult(p, Math.Sqrt(vp), test));
+        }
+
     }
 
 }

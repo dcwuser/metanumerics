@@ -9,16 +9,16 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </summary>
     public sealed class PearsonRDistribution : ContinuousDistribution {
 
-        private int n;
-
         /// <summary>
-        /// Initializes a new instance of the Pearson r distribution for the given number of pairs.
+        /// Initializes a new instance of the Pearson r distribution for the sample size.
         /// </summary>
         /// <param name="n">The number of pairs, which must be three or more.</param>
         public PearsonRDistribution (int n) {
-            if (n < 3) throw new ArgumentOutOfRangeException("n");
+            if (n < 3) throw new ArgumentOutOfRangeException(nameof(n));
             this.n = n;
         }
+
+        private readonly int n;
 
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
@@ -44,9 +44,16 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
+        public override double Median {
+            get {
+                return(0.0);
+            }
+        }
+
+        /// <inheritdoc />
         public override double Variance {
             get {
-                return (1.0 / (n-1));
+                return (1.0 / (n - 1));
             }
         }
 
@@ -88,6 +95,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else {
                 return (1.0);
             }
+        }
+
+        /// <inheritdoc />
+        public override double RightProbability (double x) {
+            return (LeftProbability(-x));
         }
 
         // central probability between -x and x is I_{\sqrt{x}}(1/2, a+1)

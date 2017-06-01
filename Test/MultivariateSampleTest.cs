@@ -200,22 +200,15 @@ namespace Test {
             }
 
             // do a linear regression fit on the model
-            FitResult result = sample.LinearRegression(2);
+            ParameterCollection result = sample.LinearRegression(2).Parameters;
 
             // the result should have the appropriate dimension
-            Assert.IsTrue(result.Dimension == 3);
-
-            // the result should be significant
-            Console.WriteLine("{0} {1}", result.GoodnessOfFit.Statistic, result.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(result.GoodnessOfFit.LeftProbability > 0.95);
+            Assert.IsTrue(result.Count == 3);
 
             // the parameters should match the model
-            Console.WriteLine(result.Parameter(0));
-            Assert.IsTrue(result.Parameter(0).ConfidenceInterval(0.90).ClosedContains(b0));
-            Console.WriteLine(result.Parameter(1));
-            Assert.IsTrue(result.Parameter(1).ConfidenceInterval(0.90).ClosedContains(b1));
-            Console.WriteLine(result.Parameter(2));
-            Assert.IsTrue(result.Parameter(2).ConfidenceInterval(0.90).ClosedContains(a));
+            Assert.IsTrue(result[0].Estimate.ConfidenceInterval(0.90).ClosedContains(b0));
+            Assert.IsTrue(result[1].Estimate.ConfidenceInterval(0.90).ClosedContains(b1));
+            Assert.IsTrue(result[2].Estimate.ConfidenceInterval(0.90).ClosedContains(a));
 
         }
 
@@ -353,8 +346,8 @@ namespace Test {
                     }
                     ms.Add(x);
                 }
-                FitResult r = ms.LinearRegression(0);
-                fs.Add(r.GoodnessOfFit.Statistic);
+                RegressionResult r = ms.LinearRegression(0);
+                fs.Add(r.F.Statistic);
             }
 
             // conduct a KS test to check that F follows the expected distribution
@@ -372,27 +365,25 @@ namespace Test {
             for (int i = 0; i < 10; i++) {
                 SA.Add(rng.NextDouble(), rng.NextDouble());
             }
-            FitResult RA = SA.LinearRegression(0);
-            ColumnVector PA = RA.Parameters;
-            SymmetricMatrix CA = RA.CovarianceMatrix;
+            RegressionResult RA = SA.LinearRegression(0);
+            ColumnVector PA = RA.Parameters.Best;
+            SymmetricMatrix CA = RA.Parameters.Covariance;
 
             MultivariateSample SB = SA.Columns(1, 0);
-            FitResult RB = SB.LinearRegression(1);
-            ColumnVector PB = RB.Parameters;
-            SymmetricMatrix CB = RB.CovarianceMatrix;
+            RegressionResult RB = SB.LinearRegression(1);
+            ColumnVector PB = RB.Parameters.Best;
+            SymmetricMatrix CB = RB.Parameters.Covariance;
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(PA[0], PB[1])); Assert.IsTrue(TestUtilities.IsNearlyEqual(PA[1], PB[0]));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 0], CB[1, 1])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 1], CB[1, 0])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[1, 1], CB[0, 0]));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(RA.GoodnessOfFit.Statistic, RB.GoodnessOfFit.Statistic));
 
             BivariateSample SC = SA.TwoColumns(1, 0);
-            FitResult RC = SC.LinearRegression();
-            ColumnVector PC = RC.Parameters;
-            SymmetricMatrix CC = RC.CovarianceMatrix;
+            RegressionResult RC = SC.LinearRegression();
+            ColumnVector PC = RC.Parameters.Best;
+            SymmetricMatrix CC = RC.Parameters.Covariance;
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(PA, PC));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(CA, CC));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(RA.GoodnessOfFit.Statistic, RC.GoodnessOfFit.Statistic));
 
         }
 

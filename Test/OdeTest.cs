@@ -39,10 +39,10 @@ namespace Test {
                     double z = cx * x + cy * y + cz + eDistribution.GetRandomValue(rng);
                     xyzSample.Add(x, y, z);
                 }
-                FitResult fit = xyzSample.LinearRegression(2);
-                double fcx = fit.Parameters[0];
-                double fcy = fit.Parameters[1];
-                double fcz = fit.Parameters[2];
+                MultiLinearRegressionResult fit = xyzSample.LinearRegression(2);
+                double fcx = fit.Parameters.Best[0];
+                double fcy = fit.Parameters.Best[1];
+                double fcz = fit.Parameters.Best[2];
 
                 double ss2 = 0.0;
                 double ss1 = 0.0;
@@ -87,9 +87,9 @@ namespace Test {
                     double y = a0 + b0 * x + eDistribution.GetRandomValue(rng);
                     xySample.Add(x, y);
                 }
-                FitResult fit = xySample.LinearRegression();
-                double a = fit.Parameters[0];
-                double b = fit.Parameters[1];
+                LinearRegressionResult fit = xySample.LinearRegression();
+                double a = fit.Intercept.Value;
+                double b = fit.Slope.Value;
 
                 double ss2 = 0.0;
                 double ss1 = 0.0;
@@ -97,7 +97,7 @@ namespace Test {
                     ss2 += MoreMath.Sqr(xy.Y - (a + b * xy.X));
                     ss1 += MoreMath.Sqr(xy.Y - xySample.Y.Mean);
                 }
-                double r2 = 1.0 - ss2 / ss1;
+                double r2 = fit.RSquared;
                 r2Sample.Add(r2);
             }
 

@@ -20,6 +20,182 @@ namespace Test {
     [TestClass]
     public class FutureTest {
 
+        //[TestMethod]
+        public void FranciaShapiro () {
+
+            Random rng = new Random(1);
+            NormalDistribution d = new NormalDistribution();
+            Sample w = new Sample();
+
+            int n = 2048;
+            for (int i = 0; i < 1000000; i++) {
+
+                Sample s = new Sample();
+                for (int j = 0; j < n; j++) {
+                    s.Add(d.GetRandomValue(rng));
+                }
+                TestResult r = s.ShapiroFranciaTest();
+                w.Add(r.Statistic);
+            }
+
+        }
+
+        //[TestMethod]
+        public void StandardDeviation () {
+
+            Random rng = new Random(21212);
+            ContinuousDistribution d = new ExponentialDistribution();
+            //ContinuousDistribution d = new NormalDistribution();
+            //ContinuousDistribution d = new ChiSquaredDistribution(2.0);
+            Sample a = new Sample();
+            Sample b = new Sample();
+
+            int n = 100;
+            for (int i = 0; i < 10000; i++) {
+                Sample s = new Sample();
+                for (int j = 0; j < n; j++) {
+                    s.Add(d.GetRandomValue(rng));
+                }
+                a.Add(s.PopulationStandardDeviation.Value);
+                double c2 = s.CentralMoment(2);
+                double c4 = s.CentralMoment(4);
+                double u = Math.Sqrt(c2 * n / (n - 1)) * (1.0 + (c4 - c2 * c2) / (8.0 * c2 * c2 * n));
+                b.Add(u);
+            }
+
+        }
+
+        [TestMethod]
+        public void SkewnessVariance () {
+
+            int n = 100;
+            Random rng = new Random(11111);
+            //ContinuousDistribution d = new BetaDistribution(0.75, 0.25);
+            ContinuousDistribution d = new NormalDistribution();
+            double C2 = d.CentralMoment(2);
+            double C3 = d.CentralMoment(3);
+            double C4 = d.CentralMoment(4);
+            double C5 = d.CentralMoment(5);
+            double C6 = d.CentralMoment(6);
+            double V2 = (C4 - C2 * C2) / n;
+            double V3 = (C6 - C3 * C3 + 9.0 * C2 * C2 * C2 - 6.0 * C4 * C2) / n;
+            double V23 = (C5 - 4.0 * C3 * C2) / n;
+            double VG = (V3 + 9.0 / 4.0 * MoreMath.Sqr(C3 / C2) * V2 - 3.0 * (C3 / C2) * V23) / (C2 * C2 * C2);
+
+            Sample us = new Sample();
+            Sample k2s = new Sample();
+            Sample k3s = new Sample();
+            Sample g0s = new Sample();
+            Sample g1s = new Sample();
+
+            for (int i = 0; i < 10000; i++) {
+                Sample s = new Sample();
+                for (int j = 0; j < n; j++) {
+                    s.Add(d.GetRandomValue(rng));
+                }
+                double u = s.Skewness;
+                us.Add(u);
+
+                double c2 = s.CentralMoment(2);
+                double c3 = s.CentralMoment(3);
+                double c4 = s.CentralMoment(4);
+                double c5 = s.CentralMoment(5);
+                double c6 = s.CentralMoment(6);
+                double v2 = (c4 - c2 * c2) / n;
+                double v3 = (c6 - c3 * c3 + 9.0 * c2 * c2 * c2 - 6.0 * c4 * c2) / n;
+                double v32 = (c5 - 4.0 * c3 * c2) / n;
+
+                double k2 = c2 * n / (n - 1);
+                double k3 = c3 * n * n / (n - 1) / (n - 2);
+                double g0 = k3 / Math.Pow(k2, 1.5);
+                double g1 = g0 * (1.0 - 15.0 / 8.0 * v2 / (c2 * c2) + 3.0 / 2.0 * v32 / (c3 * c2));
+
+                k2s.Add(k2);
+                k3s.Add(k3);
+                g0s.Add(g0);
+                g1s.Add(g1);
+
+                //double v = (u * u / n) * (v3 / (c3 * c3) + 9.0 / 4.0 * v2 / (c2 * c2) - 3.0 * v32 / (c3 * c2));
+            }
+
+        }
+
+        private int PoissonDeviate (double lambda, Random rng) {
+            double t0 = Math.Exp(-lambda);
+            int k = 0;
+            double t = rng.NextDouble();
+            while (t > t0) {
+                k++;
+                t *= rng.NextDouble();
+            }
+            return (k);
+        }
+
+        private int PoissonDeviateNR (double lambda, Random rng) {
+
+            double sqlam = Math.Sqrt(lambda);
+            double loglam = Math.Log(lambda);
+
+            while (true) {
+                double u = 0.64 * rng.NextDouble();
+                double v = -0.68 + 1.28 * rng.NextDouble();
+                int k = (int) Math.Floor(sqlam * (v / u) + lambda + 0.5);
+                if (k < 0) continue;
+                double u2 = u * u;
+                double lfac = AdvancedIntegerMath.LogFactorial(k);
+                double p = sqlam * Math.Exp(-lambda + k * loglam - lfac);
+                if (u2 < p) return (k);
+            }
+
+        }
+
+        private int PoissonDeviatePRUA (double lambda, Random rng) {
+            double c = 1.715527770; // 2.0 * Math.Sqrt(2.0 / Math.E); // 1.7155
+            double d = 0.898916162; //  3.0 - 2.0 * Math.Sqrt(3.0 / Math.E); // 0.8989
+            double a = lambda + 0.5;
+            double r = Math.Sqrt(a);
+            double h = c * r + d;
+            double logLambda = Math.Log(lambda);
+
+            while (true) {
+                double u = rng.NextDouble();
+                double v = rng.NextDouble();
+                double x = a + h * (v - 0.5) / u;
+                if (x < 0.0) continue;
+                // test x >= b
+                int k = (int) Math.Floor(x);
+                // fast accept
+                // fast reject
+                double t = k * logLambda - AdvancedIntegerMath.LogFactorial(k) - lambda;
+                if (u * u < Math.Exp(t)) return (k);
+            }
+
+        }
+
+        [TestMethod]
+        public void ComparePoissonGenerators () {
+
+            int n = 10000000;
+            double lambda = 15.0;
+            Random rng = new Random(1);
+
+            PoissonDistribution p = new PoissonDistribution(lambda);
+
+            int s0 = 0;
+            Stopwatch t0 = Stopwatch.StartNew();
+            for (int i = 0; i < n; i++) {
+                s0 += p.GetRandomValue(rng);
+            }
+            t0.Stop();
+
+            int s1 = 0;
+            Stopwatch t1 = Stopwatch.StartNew();
+            for (int i = 0; i < n; i++) {
+                s1 += PoissonDeviateNR(lambda, rng);
+            }
+            t1.Stop();
+        }
+
         [TestMethod]
         public void AiryZeros () {
 
@@ -86,7 +262,7 @@ namespace Test {
             s.Add(3.0, 4.0);
             s.Add(5.0, 4.0);
 
-            FitResult linearFit = s.LinearRegression();
+            LinearRegressionResult linearFit = s.LinearRegression();
             FitResult nonlinearFit = s.NonlinearRegression(
                 (IList<double> c, double x) => c[0] + c[1] * x,
                 new double[] { 1.0, 1.0 } 
@@ -420,15 +596,15 @@ namespace Test {
                 cabSample.Add(cab);
                 caaSample.Add(caa);
 
-                FitResult fit = sample.LinearRegression();
+                LinearRegressionResult fit = sample.LinearRegression();
 
                 double x0 = 0.0;
-                double yp = fit.Parameters[0] + x0 * fit.Parameters[1];
+                double yp = fit.Intercept.Value + x0 * fit.Slope.Value;
                 double y0 = a0 + b0 * x0 + eDistribuiton.GetRandomValue(rng);
                 zSample.Add(yp - y0);
 
                 ColumnVector c = new ColumnVector(1.0, x0);
-                double v = c.Transpose() * (fit.CovarianceMatrix) * c;
+                double v = c.Transpose() * (fit.Parameters.Covariance) * c;
                 vSample.Add(v);
 
                 double u = s2 * (1.0 + 1.0 / n + MoreMath.Sqr(x0 - mx) / (cxx * n));

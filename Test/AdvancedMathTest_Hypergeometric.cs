@@ -149,8 +149,8 @@ namespace Test {
             // Choose limits on a, b, c so that singularities of integrand are numerically integrable.
 
             foreach (double a in TestUtilities.GenerateRealValues(1.0, 10.0, 2)) {
-                foreach (double b in TestUtilities.GenerateRealValues(0.5, 10.0, 2)) {
-                    foreach (double c in TestUtilities.GenerateRealValues(b + 0.5, 10.0, 2)) {
+                foreach (double b in TestUtilities.GenerateRealValues(0.6, 10.0, 2)) {
+                    foreach (double c in TestUtilities.GenerateRealValues(b + 0.6, 10.0, 2)) {
                         foreach (double x in xs) {
 
                             double I = FunctionMath.Integrate(
@@ -231,17 +231,25 @@ namespace Test {
 
                     double c = (a + b + 1.0) / 2.0;
                     if (!IsNonpositiveInteger(c)) {
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                            AdvancedMath.Hypergeometric2F1(a, b, c, 0.5),
-                            Math.Sqrt(Math.PI) * AdvancedMath.Gamma(c) / AdvancedMath.Gamma((a + 1.0) / 2.0) / AdvancedMath.Gamma((b + 1.0) / 2.0)
-                        ));
+                        if (IsNonpositiveInteger((a + 1.0) / 2.0) || IsNonpositiveInteger((b + 1.0) / 2.0)) {
+                            Assert.IsTrue(Math.Abs(AdvancedMath.Hypergeometric2F1(a, b, c, 0.5)) < TestUtilities.TargetPrecision);
+                        } else {
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                                AdvancedMath.Hypergeometric2F1(a, b, c, 0.5),
+                                Math.Sqrt(Math.PI) * AdvancedMath.Gamma(c) / AdvancedMath.Gamma((a + 1.0) / 2.0) / AdvancedMath.Gamma((b + 1.0) / 2.0)
+                            ));
+                        }
                     }
 
                     if (!IsNonpositiveInteger(b)) {
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                            AdvancedMath.Hypergeometric2F1(a, 1.0 - a, b, 0.5),
-                            Math.Sqrt(Math.PI) * Math.Pow(2.0, 1.0 - b) * AdvancedMath.Gamma(b) / AdvancedMath.Gamma((a + b) / 2.0) / AdvancedMath.Gamma((b - a + 1.0) / 2.0)
-                        ));
+                        if (IsNonpositiveInteger((a + b) / 2.0) || IsNonpositiveInteger((b - a + 1.0) / 2.0)) {
+                            Assert.IsTrue(Math.Abs(AdvancedMath.Hypergeometric2F1(a, b, c, 0.5)) < TestUtilities.TargetPrecision);
+                        } else {
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                                AdvancedMath.Hypergeometric2F1(a, 1.0 - a, b, 0.5),
+                                Math.Sqrt(Math.PI) * Math.Pow(2.0, 1.0 - b) * AdvancedMath.Gamma(b) / AdvancedMath.Gamma((a + b) / 2.0) / AdvancedMath.Gamma((b - a + 1.0) / 2.0)
+                            ));
+                        }
                     }
 
                 }

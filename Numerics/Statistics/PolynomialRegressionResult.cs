@@ -1,71 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Statistics {
 
-
-    /// <summary>
-    /// Represents the result of a regression fit.
-    /// </summary>
-    public class RegressionResult : FitResult {
-
-        internal RegressionResult (ColumnVector b, SymmetricMatrix C, OneWayAnovaResult anova, Sample residuals) : base(b, C, anova.Result) {
-            this.anova = anova;
-            this.residuals = residuals;
-            //residuals.IsReadOnly = true;
-        }
-
-        private OneWayAnovaResult anova;
-
-        private Sample residuals;
-
-        /// <summary>
-        /// Gets r<sup>2</sup> for the regression. 
-        /// </summary>
-        public virtual double RSquared {
-            get {
-                return (this.Anova.Factor.SumOfSquares / this.Anova.Total.SumOfSquares);
-            }
-        }
-
-
-        /// <summary>
-        /// Gets an F-test for the regression.
-        /// </summary>
-        public virtual TestResult F {
-            get {
-                return (this.Anova.Factor.Result);
-            }
-        }
-
-        /// <summary>
-        /// Gets an ANOVA analysis of the regression.
-        /// </summary>
-        public virtual OneWayAnovaResult Anova {
-            get {
-                return (anova);
-            }
-        }
-
-        /// <summary>
-        /// Gets the residuals.
-        /// </summary>
-        public virtual Sample Residuals {
-            get {
-                return (residuals);
-            }
-        }
-
-    }
-
     /// <summary>
     /// Represents the result of a multiple linear regression fit.
     /// </summary>
-    public class MultiLinearRegressionResult : RegressionResult {
+    public sealed class MultiLinearRegressionResult : RegressionResult {
 
-        internal MultiLinearRegressionResult (ColumnVector b, SymmetricMatrix C, OneWayAnovaResult anova, Sample residuals) : base(b, C, anova, residuals) {
+        internal MultiLinearRegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, Sample residuals) : base(parameters, anova, residuals) {
 
         }
 
@@ -78,7 +24,7 @@ namespace Meta.Numerics.Statistics {
         /// <para>Note that the <paramref name="k"/>=0 term is the intercept.</para>
         /// </remarks>
         public UncertainValue Coefficient (int k) {
-            return (this.Parameter(k));
+            return (this.Parameters[k].Estimate);
         }
 
 
@@ -91,11 +37,11 @@ namespace Meta.Numerics.Statistics {
 
             ColumnVector v = new ColumnVector(x);
 
-            double y = v.Transpose() * this.Parameters;
+            double y = v.Transpose() * this.Parameters.Best;
 
             double sigma2 = this.Anova.Residual.SumOfSquares / this.Anova.Residual.DegreesOfFreedom;
 
-            double vCv = v.Transpose() * this.CovarianceMatrix * v;
+            double vCv = v.Transpose() * this.Parameters.Covariance * v;
 
             double dy = Math.Sqrt(sigma2 + vCv);
 
@@ -111,7 +57,7 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     public class PolynomialRegressionResult : RegressionResult {
 
-        internal PolynomialRegressionResult (ColumnVector b, SymmetricMatrix C, OneWayAnovaResult anova, Sample residuals) : base(b, C, anova, residuals) {
+        internal PolynomialRegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, Sample residuals) : base(parameters, anova, residuals) {
 
         }
 
@@ -124,7 +70,7 @@ namespace Meta.Numerics.Statistics {
         /// <para>Note that the <paramref name="k"/>=0 term is the intercept.</para>
         /// </remarks>
         public UncertainValue Coefficient (int k) {
-            return (this.Parameter(k));
+            return (this.Parameters[k].Estimate);
         }
 
 
@@ -135,7 +81,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The value predicted by the model, with uncertainty.</returns>
         public UncertainValue Predict (double x) {
 
-            double[] vStore = new double[this.Dimension];
+            double[] vStore = new double[this.Parameters.Count];
             double xk = 1.0;
             vStore[0] = xk;
             for (int k = 1; k < vStore.Length; k++) {
@@ -144,11 +90,11 @@ namespace Meta.Numerics.Statistics {
             }
             ColumnVector v = new ColumnVector(vStore, vStore.Length);
 
-            double y = v.Transpose() * this.Parameters;
+            double y = v.Transpose() * this.Parameters.Best;
 
             double sigma2 = this.Anova.Residual.SumOfSquares / this.Anova.Residual.DegreesOfFreedom;
 
-            double vCv = v.Transpose() * this.CovarianceMatrix * v;
+            double vCv = v.Transpose() * this.Parameters.Covariance * v;
 
             double dy = Math.Sqrt(sigma2 + vCv);
 

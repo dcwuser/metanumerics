@@ -64,6 +64,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
+        public override Interval Support {
+            get {
+                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+            }
+        }
+
+        /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             if (x <= 0.0) {
                 return (0.0);

@@ -41,10 +41,10 @@ namespace Test {
             MultivariateSample covariances = new MultivariateSample(3); 
 
             // A bunch of times, create a normal sample
-            for (int i = 0; i < 64; i++) {
+            for (int i = 0; i < 128; i++) {
 
                 // We use small samples so the variation in mu and sigma will be more substantial.
-                Sample s = TestUtilities.CreateSample(N, 16, i);
+                Sample s = TestUtilities.CreateSample(N, 8, i);
 
                 // Fit each sample to a normal distribution
                 FitResult fit = NormalDistribution.FitToSample(s);
@@ -97,8 +97,8 @@ namespace Test {
             // record the reported parameter value and error of each
             Sample values = new Sample();
             Sample uncertainties = new Sample();
-            for (int i = 0; i < 50; i++) {
-                Sample sample = SampleTest.CreateSample(distribution, 10, i);
+            for (int i = 0; i < 128; i++) {
+                Sample sample = SampleTest.CreateSample(distribution, 8, i);
                 FitResult fit = ExponentialDistribution.FitToSample(sample);
                 UncertainValue lambda = fit.Parameter(0);
                 values.Add(lambda.Value);
@@ -167,6 +167,30 @@ namespace Test {
             Assert.IsTrue(parameters.X.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(variances.Column(0).Median));
             Assert.IsTrue(parameters.Y.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(variances.Column(1).Median));
             Assert.IsTrue(parameters.PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(variances.Column(2).Median));
+
+        }
+
+        [TestMethod]
+        public void RayleighFit () {
+
+            RayleighDistribution rayleigh = new RayleighDistribution(3.2);
+
+            Sample parameter = new Sample();
+            Sample variance = new Sample();
+
+            for (int i = 0; i < 128; i++) {
+                // We pick a quite-small sample, because we have a finite-n unbiased estimator.
+                Sample s = SampleTest.CreateSample(rayleigh, 8, i);
+
+                FitResult r = RayleighDistribution.FitToSample(s);
+                parameter.Add(r.Parameters[0]);
+                variance.Add(r.Covariance(0, 0));
+
+                Assert.IsTrue(r.GoodnessOfFit.Probability > 0.01);
+            }
+
+            Assert.IsTrue(parameter.PopulationMean.ConfidenceInterval(0.99).ClosedContains(rayleigh.Scale));
+            Assert.IsTrue(parameter.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(variance.Median));
 
         }
 

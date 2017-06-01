@@ -17,10 +17,20 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument, which must be less than or equal to one.</param>
         /// <returns>The value of <sub>2</sub>F<sub>2</sub>(a, b; c; x).</returns>
         /// <remarks>
-        /// <para>The Gauss Hypergeometric function is defined by...</para>
+        /// <para>The Gauss Hypergeometric function is defined by the hypergeometric series:</para>
+        /// <img src="Hypergeometric2F1.png" />
         /// <para>For generic values of a, b, and c, the Gauss hypergeometric function becomes complex for x > 1.
         /// There are specific cases, most commonly for negative integer values of a and b, for which the
         /// function remains real in this range.</para>
+        /// <para>For some arguments, the value of the function depends on the order in which the arguments are
+        /// regarded as approaching their values. For example, in general, if x = 0, F = 1. On the other hand,
+        /// in general, if c = -1, F is infinite. If x = 0 and c = -1, the value depends on which limit is taken first.
+        /// </para>
+        /// <para>Our implemenation does not achieve full precision in all parameter regions.
+        /// For |x| &lt; 1/2 and |a|, |b| &lt; 10, we achieve approximately full precision.
+        /// For |x| &gt; 1/2, we loose about a decimal digit of precision, and for
+        /// every order of magnitude that |a| or |b| exceeds 10, we loose about one decimal digit of precision.
+        /// </para>
         /// </remarks>
         /// <seealso href="https://en.wikipedia.org/wiki/Hypergeometric_function"/>
         public static double Hypergeometric2F1 (double a, double b, double c, double x) {
@@ -169,27 +179,58 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        // e G_{e}(z) = \frac{1}{\Gamma(z)} - \frac{1}{\Gamma(z+e)}
-        //            = \frac{1}{\Gamma(z + e)} \left[ \frac{\Gamma(z + e)}{\Gamma(z)} - 1\right]
-        //            = \frac{e P_{e}(z)}{\Gamma(z + e)}
+        // The point of this method is to compute
+        //   e G_{e}(x) = \frac{1}{\Gamma(x)} - \frac{1}{\Gamma(x + e)}
+        // To do this, we will re-use machinery that we developed to accurately compute the Pochhammer symbol
+        //   (x)_e = \frac{\Gamma(x + e)}{\Gamma(x)}
+        // To do this, we use the reduced log Pochhammer function L_{e}(x).
+        //   \ln((x)_e) = e L_{e}(x)
+        // To see why we developed this function, see the Pochhamer code. The Lanczos apparatus allows us to compute
+        // L_{e}(x) accurately, even in the small-e limit. To see how look at the Pochhammer code.
 
-        // e P_{e}(z) = \frac{\Gamma(z + e)}{\Gamma(z)} - 1
+        // To connect G_{e}(x) to L_{e}(x), write
+        //   e G_{e}(x) = \frac{(x)_e - 1}{\Gamma(x + e)}
+        //              = \frac{\exp(\ln((x)_e)) - 1}{\Gamma(x + e)}
+        //              = \frac{\exp(e L_{e}(x)) - 1}{\Gamma(x + e)}
+        //     G_{e}(x) = \frac{E_{e}(L_{e}(x))}{\Gamma(x + e)}
+        // where e E_{e}(x) = \exp(e x) - 1, which we also know how to compute accurately even in the small-e limit.
 
-        // e L_{e}(z) = \ln \left( \frac{\Gamma(z + e)}{\Gamma(z)} \right) = \ln \Gamma(z + e) - \ln \Gamma(z)
+        // This deals with G_{e}(x) for positive x. But L_{e}(x) and \Gamma(x + e) still blow up for x or x + e
+        // near a nonpositive integer, and our Lanczos machinery for L_{e}(x) assumes positive x. To deal with
+        // the left half-plane, use the reflection formula
+        //   \Gamma(z) \Gamma(1 - z) = \frac{\pi}{\sin(\pi z)}
+        // on both Gamma functions in the definition of G_{e}(x) to get
+        //   e G_{e}(x) = \frac{\sin(\pi x)}{\pi} \Gamma(1 - x) - \frac{\sin(\pi x + \pi e)}{\pi} \Gamma(1 - x - e)
+        // Use the angle addition formula on the second \sin and the definition of the Pochhammer symbol
+        // to get all terms proportional to one Gamma function with a guarnateed positive argument.
+        //   \frac{e G_{e}(x)}{\Gamma(1 - x - e)} =
+        //     \frac{\sin(\pi x)}{\pi} \left[ (1 - x - e)_{e} - \cos(\pi e) \right] -  \frac{\cos(\pi x) \sin(\pi e)}{\pi}
+        // We need the RHS ~e to for small e. That's manifestly true for the second term because of the factor \sin(\pi e).
+        // It's true for the second term because (1 - x - e)_{e} and \cos(\pi e) are both 1 + O(e), but to avoid cancelation
+        // we need to make it manifest. Write
+        //   (y)_{e} = \exp(e L_{e}(y)) - 1 + 1 = e E_{e}(L_{e}(y)) + 1
+        // and
+        //   1 - \cos(\pi e) = 2 \sin^2(\half \pi /e)
+        // Now we can divide through by e.
+        //   \frac{G_{e}(x)}{\Gamma(y)} =
+        //     \sin(\pi x) \left[ \frac{E_{e}(L_{e}(y))}{\pi} + \frac{\sin^2(\half \pi e)}{\half \pi e} \right] -
+        //     \cos(\pi x) \frac{\sin(\pi e)}{\pi e}
+        // and everything can be safely computed.
 
-        // Lanczos allows us to compute this is a way that the leading e-independent terms cancel analytically,
-        // leaving us with an analytic expression for proportional to e.
+        // This is a different approach than the one in the Michel & Stoitsov paper. Their approach also used
+        // the Lanczos evaluation of the Pochhammer symbol, but had some deficiencies.
+        // For example, for e <~ 1.0E-15 and x near a negative integer, it gives totally wrong
+        // answers, and the answers loose accuracy for even larger e. This is because the
+        // computation relies on a ratio of h to Gamma, both of which blow up in this region.
 
         private static double NewG(double x, double e) {
 
             Debug.Assert(Math.Abs(e) <= 0.5);
 
-            // This implementation is based on the paper, but it has some definite deficiencies.
-            // For example, for e <~ 1.0E-15 and x near a negative integer, it gives totally wrong
-            // answers, and the answers loose accuracy for even larger e. This is because the
-            // computation relies on a ratio of h to Gamma, both of which blow up in this region.
-
             // It would be better to compute G outright from Lanczos, rather than via h. Can we do this?
+
+            // Also, we should probably pick larger of 1 - x and 1 - x - e to use as argument of
+            // Gamma function factor.
 
             double y = x + e;
             if ((x < 0.5) || (y < 0.5)) {
@@ -206,36 +247,10 @@ namespace Meta.Numerics.Functions {
                     return (AdvancedMath.Gamma(1.0 - y) * t);
                 }
 
-                /*
-                if (Math.Abs(Math.Round(x) - x) > Math.Abs(Math.Round(y) - y)) {
-                    Global.Swap(ref x, ref y);
-                    e = -e;
-                }
-
-                double h = MoreMath.ReducedExpMinusOne(Lanczos.ReducedLogPochhammer(1.0 - x, -e), -e);
-                h = h * (MoreMath.CosPi(e) + MoreMath.SinPi(e) / Math.Tan(Math.PI * x));
-                if (e == 0.0) {
-                    h = h - 1.0 / Math.Tan(Math.PI * x);
-                } else {
-                    h = h + 2.0 * MoreMath.Sqr(MoreMath.SinPi(e / 2.0)) / e - MoreMath.SinPi(e) / e / Math.Tan(Math.PI * x);
-                }
-                h = h / (1.0 - e * h);
-                return (h / AdvancedMath.Gamma(y));
-                */
             }
-
-            //if (x < 1.0) {
-            //    double y = x + e;
-            //    if (IsNonPositiveInteger(x)) return (-1.0 / AdvancedMath.Gamma(y));
-            //    if (IsNonPositiveInteger(y)) return (1.0 / AdvancedMath.Gamma(x));
-            //}
-
-            // if x < 1/2, need to use transformation
-            // should pick larger of x, x + e as denominator
 
             return (MoreMath.ReducedExpMinusOne(Lanczos.ReducedLogPochhammer(x, e), e) / AdvancedMath.Gamma(x + e));
 
-            //return ((1.0 / AdvancedMath.Gamma(x) - 1.0 / AdvancedMath.Gamma(x + e)) / e);
         }
 
         // Our approach to evaluating the transformed series is taken from Michel & Stoitsov, "Fast computation of the
@@ -245,49 +260,43 @@ namespace Meta.Numerics.Functions {
 
         // The basic idea is an old one: use the linear transformation formulas (A&S 15.3.3-15.3.9) to map all x into
         // the region [0, 1/2]. The x -> (1-x) transformation, for example, looks like
-
-        // F(a, b, c, x) =
-        //   \frac{\Gamma(c) \Gamma(c-a-b)}{\Gamma(c-a) \Gamma(c-b)} F(a, b, a+b-c+1, 1-x) +
-        //   \frac{\Gamma(c) \Gamma(a+b-c)}{\Gamma(a) \Gamma(b)} F(c-a, c-b, c-a-b, 1-x) (1-x)^{c-a-b}
+        //   F(a, b, c, x) =
+        //     \frac{\Gamma(c) \Gamma(c-a-b)}{\Gamma(c-a) \Gamma(c-b)} F(a, b, a+b-c+1, 1-x) +
+        //     \frac{\Gamma(c) \Gamma(a+b-c)}{\Gamma(a) \Gamma(b)} F(c-a, c-b, c-a-b, 1-x) (1-x)^{c-a-b}
 
         // When c-a-b is close to an integer, though, there is a problem. Write c = a + b + m + e, where m is a positive integer
         // and |e| <= 1/2. The transformed expression becomes:
-
-        // \frac{F(a, b, c, x)}{\Gamma(c)} =
-        //   \frac{\Gamma(m + e)}{\Gamma(b + m + e) \Gamma(a + m + e)} F(a, b, 1 - m - e, 1 - x) +
-        //   \frac{\Gamma(-m - e)}{\Gamma(a) \Gamma(b)} F(b + m + e, a + m + e, 1 + m + e, 1 - x) (1-x)^{m + e}
-
-        // In the first term, the F-function blows up as e-> 0 (or \Gamma(m+e), if m=0), and in the second term 
+        //   \frac{F(a, b, c, x)}{\Gamma(c)} =
+        //     \frac{\Gamma(m + e)}{\Gamma(b + m + e) \Gamma(a + m + e)} F(a, b, 1 - m - e, 1 - x) +
+        //     \frac{\Gamma(-m - e)}{\Gamma(a) \Gamma(b)} F(b + m + e, a + m + e, 1 + m + e, 1 - x) (1-x)^{m + e}
+        // In the first term, the F-function blows up as e->0 (or, if m=0, \Gamma(m+e) blows up), and in the second term 
         // \Gamma(-m-e) blows up in that limit. By finding the divergent O(1/e) and the sub-leading O(1) terms, it's not too
-        // hard to show that the divgences cancel leaving a finite result, and to derive those results for e=0. (A&S give some
-        // of them.) But we still have a problem for e small-but-not-zero: the pre-limit expressions have large cancelations,
-        // and developing a series is e is unworkable (higher derivatives rapidly become complex and unwieldy).
+        // hard to show that the divgences cancel, leaving a finite result, and to derive that finite result for e=0.
+        // (A&S gives the result, and similiar ones for the divergent limits of other linear transformations.)
+        // But we still have a problem for e small-but-not-zero. The pre-limit expressions will have large cancelations.
+        // We can't ignore O(e) and higher terms, but developing a series in e in unworkable -- the higher derivatives
+        // rapidly become complicated and unwieldy. No expressions in A&S get around this problem,  but we will now
+        // develop an approach that does.
 
         // Notice the divergence of F(a, b, 1 - m - e, 1 - x) is at the mth term, where (1 - m - e)_{m} ~ e. Pull out
         // the finite sum up to the (m-1)th term
-
-        // \frac{F_0}{\Gamma(c)} = \frac{\Gamma(m+e)}{\Gamma(b + m + e) \Gamma(a + m + e)}
-        //    \sum_{k=0}^{m-1} \frac{(a)_k (b)_k}{(1 - m - e)_{k}} \frac{(1-x)^k}{k!}
-
+        //   \frac{F_0}{\Gamma(c)} = \frac{\Gamma(m+e)}{\Gamma(b + m + e) \Gamma(a + m + e)}
+        //     \sum_{k=0}^{m-1} \frac{(a)_k (b)_k}{(1 - m - e)_{k}} \frac{(1-x)^k}{k!}
         // The remainder, which contains the divergences, is:
-
-        // \frac{F_1}{\Gamma(c)} =
-        //    \frac{\Gamma(m + e)}{\Gamma(b + m + e) \Gamma(a + m + e)} \sum_{k=0}^{\infty} \frac{(1-x)^{m + k}}{\Gamma(1 + m + k)}
-        //    \frac{\Gamma(a + m + k) \Gamma(b + m +  k) \Gamma(1 - m - e}{\Gamma(a) \Gamma(b) \Gamma(1 - e + k)} +
-        //    \frac{\Gamma(-m - e)}{\Gamma(a) \Gamma(b)} \sum_{k=0}^{\infty} \frac{(1-x)^{m + e + k}}{\Gamma(1 + k)}
-        //    \frac{\Gamma(b + m + e + k) \Gamma(a + m + e + k) \Gamma(1 + m + e)}{\Gamma(b + m + e) \Gamma(a + m + e) \Gamma(1 + m + e + k)}
-
-        // where we have shifted k by m in the first sum. Use
-        //    \Gamma(m + e) \Gamma(1 - m - e) = \frac{\pi}{\sin(\pi(m + e))} = \frac{(-1)^m \pi}{\sin(\pi e)}
-        //    \Gamma(-m - e) \Gamma(1 + m + e) = \frac{\pi}(\sin(-\pi(m + e))} = -\frac{(-1)^m \pi}{\sin(\pi e)}
-        // to get
-
-        // \frac{F_1}{\Gamma(c)} =
-        //    \frac{(-1)^m \pi}{\sin(\pi e)} \sum_{k=0}^{\infty} \frac{(1-x)^{m + k}}{\Gamma(a) \Gamma(b) \Gamma(a + m + e) \Gamma(b + m + e)}
-        //    \left[ \frac{\Gamma(a + m + k) \Gamma(b + m + k)}{\Gamma(1 + k - e) \Gamma(1 + m + k)} -
-        //           \frac{\Gamma(a + m + k + e) \Gamma(b + m + k + e)}{\Gamma(1 + k) \Gamma(1 + m + k + e)} (1-x)^e \right]
-
-        // Notice that \frac{\pi}P\sin(\pi e)} diverges like ~1/e. And that the two terms in parenthesis contain exactly the
+        //   \frac{F_1}{\Gamma(c)} =
+        //     \frac{\Gamma(m + e)}{\Gamma(b + m + e) \Gamma(a + m + e)} \sum_{k=0}^{\infty} \frac{(1-x)^{m + k}}{\Gamma(1 + m + k)}
+        //     \frac{\Gamma(a + m + k) \Gamma(b + m +  k) \Gamma(1 - m - e}{\Gamma(a) \Gamma(b) \Gamma(1 - e + k)} +
+        //     \frac{\Gamma(-m - e)}{\Gamma(a) \Gamma(b)} \sum_{k=0}^{\infty} \frac{(1-x)^{m + e + k}}{\Gamma(1 + k)}
+        //     \frac{\Gamma(b + m + e + k) \Gamma(a + m + e + k) \Gamma(1 + m + e)}{\Gamma(b + m + e) \Gamma(a + m + e) \Gamma(1 + m + e + k)}
+        // where we have shifted k by m in the first sum. Use the \Gamma reflection formulae
+        //   \Gamma(m + e) \Gamma(1 - m - e) = \frac{\pi}{\sin(\pi(m + e))} = \frac{(-1)^m \pi}{\sin(\pi e)}
+        //   \Gamma(-m - e) \Gamma(1 + m + e) = \frac{\pi}(\sin(-\pi(m + e))} = -\frac{(-1)^m \pi}{\sin(\pi e)}
+        // to make this
+        //   \frac{F_1}{\Gamma(c)} =
+        //     \frac{(-1)^m \pi}{\sin(\pi e)} \sum_{k=0}^{\infty} \frac{(1-x)^{m + k}}{\Gamma(a) \Gamma(b) \Gamma(a + m + e) \Gamma(b + m + e)}
+        //     \left[ \frac{\Gamma(a + m + k) \Gamma(b + m + k)}{\Gamma(1 + k - e) \Gamma(1 + m + k)} -
+        //            \frac{\Gamma(a + m + k + e) \Gamma(b + m + k + e)}{\Gamma(1 + k) \Gamma(1 + m + k + e)} (1-x)^e \right]
+        // Notice that \frac{\pi}{\sin(\pi e)} diverges like ~1/e. And that the two terms in parenthesis contain exactly the
         // same products of \Gamma functions, execpt for having their arguments shifted by e. Therefore in the e->0
         // limit their leading terms must cancel, leaving terms ~e, which will cancel the ~1/e divergence, leaving a finite result.
 
@@ -309,11 +318,11 @@ namespace Meta.Numerics.Functions {
         // I played around with a few others, e.g. the perhaps more obvious choice \frac{\Gamma(z+e)}{\Gamma(z)} = 1 + e P_{e}(z),
         // but the key advantage of G_{e}(z) is that it is perfectly finite even for non-positive-integer values of z and z+e,
         // because it uses the recriprocol \Gamma function. (I actually had a mostly-working algorithm using P_{e}(z), but it
-        // broke down because P_{e}(z) itself still diverged for the problematic z values.)
+        // broke down at non-positive-integer z, because P_{e}(z) itself still diverged for those values.)
 
         // For a discussion of how to actually compute G_{e}(z), refer to the method notes.
 
-        // The next trick Michel & Stoistov use to it first concentrate just on the k=0 term. The relevent factor is
+        // The next trick Michel & Stoistov use is to first concentrate just on the k=0 term. The relevent factor is
         //   t = \frac{1}{\Gamma(a) \Gamma(b) \Gamma(a + m + e) \Gamma(b + m + e)}
         //       \left[ \frac{\Gamma(a + m) \Gamma(b + m)}{\Gamma(1 - e) \Gamma(1 + m)} -
         //              \frac{\Gamma(a + m + e) \Gamma(b + m + e)}{\Gamma(1) \Gamma(1 + m + e)} (1-x)^e \right]
@@ -330,8 +339,7 @@ namespace Meta.Numerics.Functions {
         // eliminate every \Gamma(z + e) in favor of G_e(z) and \Gamma(z), but by doing so we
         // would end up with terms containing two and more explicit powers of e, and products
         // of different G_e(z). That would be perfectly correct, but we end up with a nicer
-        // expression if we "peel off" only one e-shifted function at a time, like this...
-
+        // expression if we instead "peel off" only one e-shifted function at a time, like this...
         //   \frac{1}{\Gamma(a + m + e) \Gamma(b + m + e) \Gamma(1 + m) \Gamma(1 - e)} =
         //     \frac{1}{\Gamma(a + m + e) \Gamma(b + m + e) \Gamma(1 + m) \Gamma(1)} +
         //     \frac{e G_{-e}(1)}{\Gamma(a + m + e) \Gamma(b + m + e) \Gamma(1 + m)}
@@ -344,22 +352,22 @@ namespace Meta.Numerics.Functions {
         //   \frac{1}{\Gamma(a + m + e) \Gamma(b + m + e) \Gamma(1 + m + e)} =
         //     \frac{1}{\Gamma(a + m + e) \Gamma(b + m + e) \Gamma(1 + m)} -
         //     \frac{e G_e(1 + m)}{\Gamma(a + m + e) \Gamma(b + m + e)}
-
         // Putting this all together, we have
         //   t = \frac{1}{\Gamma(a + m + e) \Gamma(b + m + e)} \left[ \frac{e G_{-e}(1)}{\Gamma(1 + m) + e G_e(1 + m) \right]
         //     - \frac{1}{\Gamma(1 + m + e)} \left[ \frac{e G_e(a + m)}{\Gamma(b + m)} + \frac{e G_e(b+m)}{\Gamma(a + m + e)} \right]
         //     - \frac{1}{\Gamma(a + m + e) \Gamma(b + m + e) \Gamma(1 + m + e)} e E_e(\ln(1-x))
-        // which is proportional to e. For some a, b, m, and e, some of these \Gamma functions will blow up, but they are
+        // which is, as promised, proportional to e. For some a, b, m, and e, some of these \Gamma functions will blow up, but they are
         // all in the denoninator, so that will just zero some terms. The G_e(z) that appear in the numerator are finite for all z.
 
-        // So now we have the k=0 term, what about higer k terms? We could repeat this analysis, carrying along the k's,
+        // So now we have the k=0 term. What about higer k terms? We could repeat this analysis, carrying along the k's,
         // and get an expression involving G_e(z) and E_e(z) for each k. Michel & Stoistov's last trick is to realize
         // we don't have to do this, but can instead use our original expressions for each term as a ratio of \Gamma
         // functions to derive a recurrence. Let u_k be the first term, v_k be the second term, so t_k = u_k + v_k.
-        // Let r_k = u_{k+1} / u_{k} and s_k = v_{k+1} / v_{k}. It's easy to see r_k and s_k by inspection
+        // Let r_k = u_{k+1} / u_{k} and s_k = v_{k+1} / v_{k}. It's easy to write down r_k and s_k because they
+        // follow immediately from the \Gamma function recurrence.
         //    r_{k} = \frac{(a + m + k)(b + m + k)}{(1 + k - e)(1 + m + k)}
         //    s_{k} = \frac{(a + m + k + e)(b + m + k + e)}{(1 + k)(1 + m + k + e)}
-        // Notice that r_k and s_k are almost, but not quite, equal. To advance t_k, use
+        // Notice that r_k and s_k are almost equal, but not quite: they differ by O(e). To advance t_k, use
         //    t_{k+1} = u_{k+1} + v_{k+1} = r_k u_k + s_k v_k = s_k (u_k + v_k) + (r_k - s_k) u_k
         //            = s_k t_k + d_k * u_k
         // where d_k = r_k - s_k, which will be O(e), since r_k and s_k only differ by e-shifted arguments.

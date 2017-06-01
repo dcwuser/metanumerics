@@ -402,7 +402,17 @@ namespace Meta.Numerics.Statistics {
             AnovaRow total = new AnovaRow(SST, n - 1);
             OneWayAnovaResult anova = new OneWayAnovaResult(fit, residual, total);
 
-            return (new MultiLinearRegressionResult(b, C, anova, residuals));
+            string[] names = new string[m];
+            for (int j = 0; j < m; j++) {
+                if (j == outputIndex) {
+                    names[j] = "Intercept";
+                } else {
+                    names[j] = $"[{j}]";
+                }
+            }
+            ParameterCollection parameters = new ParameterCollection(names, b, C);
+
+            return (new MultiLinearRegressionResult(parameters, anova, residuals));
 
         }
 

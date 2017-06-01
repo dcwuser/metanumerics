@@ -208,23 +208,61 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
 
+            // Maximum likelyhood estimate is straightforward.
+            //   p_i = \frac{1}{\sqrt{2\pi}\sigma} \exp \left[ -\frac{1}{2} \left( \frac{x_i - \mu}{\sigma} \right)^2 \right]
+            //   \ln p_i = - \frac{1}{2} \ln (2 \pi) - \ln \sigma - \frac{1}{2} \left( \frac{x_i - \mu}{\sigma} \right)^2
+            //   \ln L = \sum_i \ln p_i
+            //  so
+            //    \frac{\partial \ln L}{\partial \mu} =
+
+            // These are guaranteed to be asymptotically unbiased, but they are biased for finite n. You can see that
+            // must be the case because the denominator in the formula for \sigma is n instead of n-1.
+
+            // To get unbiased formulas, we will derive exact distributions for the estimators.
+
+            // First the mean estimator. Start from x_i \sim N(\mu, \sigma). By the addition of normal deviates,
+            // \sum_i x_i \sim N(n \mu, \sqrt{n} \sigma). So
+            //   m  = \frac{1}{n} \sum_i x_i \sim N(\mu, \sigma / \sqrt{n}).
+            // which means the estimator m is normally distributed with mean \mu and standard deviation \sigma / \sqrt{n}.
+
+            int n = sample.Count;
+            double m = sample.Mean;
+            double v = sample.Variance;
+            double dm = Math.Sqrt(v / n);
+
+            // Next the variance estimator. By the definition of the chi squared distribution and a bit of algebra that
+            // reduces the degrees of freedom by one, \sum_i ( \frac{x_i - m}{\sigma} )^2 \sim \chi^2(n - 1), which has
+            // mean n - 1 and variance 2(n-1). Therefore the estimator
+            //   v = \frac{1}{n-1} \sum_i ( x_i - m )^2
+            // has mean \sigma^2 and variance 
+
+            // If we consider \sigma^2 the parameter, we are done. But we don't consider the parameter \sigma^2, we consider it
+            // \sigma. The mean of the square root is not the square root of the mean, so the square root of an unibiased
+            // estimator of \sigma^2 will not be an unbiased estimator of \sigma. If we want an unbiased estimator of \sigma
+            // itself, we need to go a bit further.
+
+            ChiDistribution d = new ChiDistribution(n - 1);
+            double s = Math.Sqrt(n * v) / d.Mean;
+            double ds = Math.Sqrt(d.Variance) / d.Mean * s;
+
             // maximum likelyhood estimates are guaranteed to be asymptotically unbiased, but not necessarily unbiased
             // this hits home for the maximum likelyhood estimate of the variance of a normal distribution, which fails
             // to include the N/(N-1) correction factor. since we know the bias, there is no reason for us not to correct
             // it, and we do so here
 
-            UncertainValue mu = sample.PopulationMean;
-            UncertainValue sigma = sample.PopulationStandardDeviation;
-
-            ContinuousDistribution distribution = new NormalDistribution(mu.Value, sigma.Value);
-            TestResult test = sample.KolmogorovSmirnovTest(distribution);
+            //UncertainValue mu = sample.PopulationMean;
+            //UncertainValue sigma = sample.PopulationStandardDeviation;
+            //ContinuousDistribution distribution = new NormalDistribution(mu.Value, sigma.Value);
+            //TestResult test = sample.KolmogorovSmirnovTest(distribution);
+            TestResult test = sample.KolmogorovSmirnovTest(new NormalDistribution(m, s));
 
             // the best-fit sigma and mu are known to be uncorrelated
             // you can prove this by writing down the log likelyhood function and
             // computing its mixed second derivative, which you will see vanishes
             // at the minimum
 
-            return (new FitResult(mu.Value, mu.Uncertainty, sigma.Value, sigma.Uncertainty, 0.0, test));
+            //return (new FitResult(mu.Value, mu.Uncertainty, sigma.Value, sigma.Uncertainty, 0.0, test));
+            return (new FitResult(m, dm, s, ds, 0.0, test));
 
         }
 

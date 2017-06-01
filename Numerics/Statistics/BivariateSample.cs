@@ -646,13 +646,18 @@ namespace Meta.Numerics.Statistics {
             C[0, 1] = cab;
             C.IsReadOnly = true;
 
+            // Package the parameters
+            ParameterCollection parameters = new ParameterCollection(
+                new string[] { "Intercept", "Slope" }, v, C
+            );
+
             // Prepare the prediction function
             Func<double, UncertainValue> predict = (double x) => {
                 double y = a + b * x;
                 return (new UncertainValue(y, Math.Sqrt(s2 * (1.0 + (1.0 + MoreMath.Sqr(x - mx) / cxx) / n))));
             };
 
-            return (new LinearRegressionResult(v, C, rTest, anova, residuals, predict));
+            return (new LinearRegressionResult(parameters, rTest, anova, residuals, predict));
 
         }
 
@@ -717,7 +722,13 @@ namespace Meta.Numerics.Statistics {
             AnovaRow total = new AnovaRow(SST, n - 1);
             OneWayAnovaResult anova = new OneWayAnovaResult(fit, residual, total);
 
-            return (new PolynomialRegressionResult(b, C, anova, residuals));
+            string[] names = new string[m + 1];
+            names[0] = "1";
+            if (m > 0) names[1] = "x";
+            for (int i = 2; i <= m; i++) names[i] = $"x^{i}";
+            ParameterCollection parameters = new ParameterCollection(names, b, C);
+
+            return (new PolynomialRegressionResult(parameters, anova, residuals));
 
         }
 

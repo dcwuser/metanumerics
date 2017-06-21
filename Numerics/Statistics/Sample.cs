@@ -332,7 +332,7 @@ namespace Meta.Numerics.Statistics {
         /// Initializes a new, empty sample with the given name.
         /// </summary>
         /// <param name="name">The name of the sample.</param>
-        public Sample (string name) : this () {
+        public Sample (string name) : this() {
             this.data.Name = name;
         }
 
@@ -350,7 +350,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="values">Values to add to the sample.</param>
         public Sample (params double[] values) : this() {
-            Add((IEnumerable<double>)values);
+            Add((IEnumerable<double>) values);
         }
 
         internal Sample (SampleStorage data, bool isReadOnly) {
@@ -560,7 +560,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="r">The order of the moment to compute.</param>
         /// <returns>The <paramref name="r"/>th raw moment of the sample.</returns>
         public double RawMoment (int r) {
-             if (r == 0) {
+            if (r == 0) {
                 return (1.0);
             } else if (r == 1) {
                 return (Mean);
@@ -706,9 +706,22 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets an estimate of the population standard deviation from the sample.
         /// </summary>
+        /// <remarks>
+        /// <para>Note that the value returned by this method is not exactly the square root
+        /// of the value returned by <see cref="PopulationVariance"/>. This is not an error.</para>
+        /// </remarks>
         public UncertainValue PopulationStandardDeviation {
             get {
                 return (EstimateStandardDeviation());
+            }
+        }
+
+        /// <summary>
+        /// Gets an estimate of the population skewness from the sample.
+        /// </summary>
+        public UncertainValue PopulationSkewness {
+            get {
+                return (EstimateSkewness());
             }
         }
 
@@ -818,7 +831,7 @@ namespace Meta.Numerics.Statistics {
             double k2 = c2 * n / (n - 1);
             double v = c4 - c2 * c2;
             Debug.Assert(v >= 0.0);
-            return (new UncertainValue(k2, Math.Sqrt(v / (n-1))));
+            return (new UncertainValue(k2, Math.Sqrt(v / (n - 1))));
         }
 
         // The third cumulant, which characterizes skew:
@@ -899,6 +912,32 @@ namespace Meta.Numerics.Statistics {
             double s = Math.Sqrt(c2 * n / (n - 1)) * (1.0 + v / (8.0 * c2 * c2));
             double ds = 0.5 * Math.Sqrt(v) / s;
             return (new UncertainValue(s, ds));
+        }
+
+        private UncertainValue EstimateSkewness () {
+            int n = this.Count;
+            if (n < 4) throw new InsufficientDataException();
+
+            // Compute the moments we need
+            double c2 = this.CentralMoment(2);
+            double c3 = this.CentralMoment(3);
+            double c4 = this.CentralMoment(4);
+            double c5 = this.CentralMoment(5);
+            double c6 = this.CentralMoment(6);
+
+            // Compute the vairance of c3 and c2 and c2, c3 covariance to leading order
+            double v2 = (c4 - c2 * c2) / (n - 1);
+            double v3 = (c6 - c3 * c3 + 9.0 * c2 * c2 * c2 - 6.0 * c4 * c2) / (n - 1);
+            double v32 = (c5 - 4.0 * c3 * c2) / (n - 1);
+
+            // Use these to compute the leading-order bias correction for skewness, and estimated variance
+            double g0 = c3 * n * n / (n - 1) / (n - 2) / Math.Pow(c2 * n / (n - 1), 1.5);
+            double g1 = g0 * (1.0 - 15.0 / 8.0 * v2 / (c2 * c2) + 3.0 / 2.0 * v32 / (c3 * c2));
+            double vg = g0 * g0 * (v3 / (c3 * c3) - 3.0 * v32 / (c3 * c2) + 9.0 / 4.0 * v2 / (c2 * c2));
+            Debug.Assert(vg >= 0.0);
+
+            return (new UncertainValue(g1, Math.Sqrt(vg)));
+
         }
 
         // statistical tests

@@ -101,14 +101,16 @@ namespace Test {
                 double c4 = s.CentralMoment(4);
                 double c5 = s.CentralMoment(5);
                 double c6 = s.CentralMoment(6);
-                double v2 = (c4 - c2 * c2) / n;
-                double v3 = (c6 - c3 * c3 + 9.0 * c2 * c2 * c2 - 6.0 * c4 * c2) / n;
-                double v32 = (c5 - 4.0 * c3 * c2) / n;
+                double v2 = (c4 - c2 * c2) / (n - 1);
+                double v3 = (c6 - c3 * c3 + 9.0 * c2 * c2 * c2 - 6.0 * c4 * c2) / (n - 1);
+                double v32 = (c5 - 4.0 * c3 * c2) / (n - 1);
 
                 double k2 = c2 * n / (n - 1);
                 double k3 = c3 * n * n / (n - 1) / (n - 2);
                 double g0 = k3 / Math.Pow(k2, 1.5);
+                double r = c3 / c2;
                 double g1 = g0 * (1.0 - 15.0 / 8.0 * v2 / (c2 * c2) + 3.0 / 2.0 * v32 / (c3 * c2));
+                double vg = g0 * g0 * (v3 / (c3 * c3) - 3.0 * v32 / (c3 * c2) + 9.0 / 4.0 * v2 / (c2 * c2));
 
                 k2s.Add(k2);
                 k3s.Add(k3);

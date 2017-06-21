@@ -87,7 +87,10 @@
     <Compile Include="ComplexMathTest.cs" />
     <Compile Include="ComplexTest.cs" />
     <Compile Include="ContingencyTableTest.cs" />
+    <Compile Include="DataFrameTests.cs" />
+    <Compile Include="DataListTests.cs" />
     <Compile Include="DataSetTest.cs" />
+    <Compile Include="DataViewTests.cs" />
     <Compile Include="DbTest.cs" />
     <Compile Include="DiscreteDistributionTest.cs" />
     <Compile Include="DiscreteIntervalTest.cs" />
@@ -157,6 +160,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Bug8021.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="train.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

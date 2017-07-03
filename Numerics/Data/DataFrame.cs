@@ -11,6 +11,7 @@ namespace Meta.Numerics.Data
     // Supported data types: continuous, count, ordinal, categorical
     // Supported addenda: iid, series, circular
 
+    /*
     public abstract class DataView<R, C>
     {
         public abstract DataView<R, C> Select(params C[] columns);
@@ -36,6 +37,7 @@ namespace Meta.Numerics.Data
         public abstract DataRow Row(R row);
 
     }
+    */
 
     /*
     public class DataViewImplementation<R, C> : DataView<R, C>

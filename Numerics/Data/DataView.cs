@@ -94,16 +94,37 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
-        /// Constructs a new view, with rows sorted by the given column.
+        /// Sort the rows by the values in the given column.
         /// </summary>
         /// <param name="columnName">The name of the column to sort by.</param>
-        /// <returns>A view of the data sorted by the given column.</returns>
+        /// <returns>A new view, with rows sorted by the values in the given column.</returns>
         public DataView OrderBy(string columnName) {
             if (columnName == null) throw new ArgumentNullException(nameof(columnName));
+
             int columnIndex = GetColumnIndex(columnName);
+            DataList column = columns[columnIndex];
             List<int> newMap = new List<int>(map);
-            newMap.Sort((i, j) => ((IComparable)columns[columnIndex].GetItem(i)).CompareTo(columns[columnIndex].GetItem(j)));
+            newMap.Sort((i, j) => NullableComparer((IComparable) column.GetItem(i), (IComparable) column.GetItem(j)));
+            //newMap.Sort((i, j) => ((IComparable)columns[columnIndex].GetItem(i)).CompareTo(columns[columnIndex].GetItem(j)));
             return (new DataView(this.columns, newMap));
+        }
+
+        // This comparer is able to deal with null values.
+
+        private static int NullableComparer (IComparable a, IComparable b) {
+            if (a == null) {
+                if (b == null) {
+                    return (0);
+                } else {
+                    return (-1);
+                }
+            } else {
+                if (b == null) {
+                    return (+1);
+                } else {
+                    return (a.CompareTo(b));
+                }
+            }
         }
 
         /// <summary>
@@ -130,7 +151,7 @@ namespace Meta.Numerics.Data
         /// Sorts all rows by the given function.
         /// </summary>
         /// <param name="comparer">A row comparison function.</param>
-        /// <returns>A view of the data sorted by the given function.</returns>
+        /// <returns>A new view, with rows sorted by the given function.</returns>
         public DataView OrderBy(Comparison<DataRow> comparer) {
             if (comparer == null) throw new ArgumentNullException(nameof(comparer));
 
@@ -140,10 +161,10 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
-        /// Constructs a new view, containg only the rows accepted by a selector function.
+        /// Selects rows matching the given criteria.
         /// </summary>
         /// <param name="selector">A function which accepts or rejects rows.</param>
-        /// <returns>A view of the data containing only the selected rows.</returns>
+        /// <returns>A new view, containing only those rows which were accepted by the <paramref name="selector"/> function.</returns>
         public DataView Where (Func<DataRow, bool> selector) {
             if (selector == null) throw new ArgumentNullException(nameof(selector));
 
@@ -157,12 +178,13 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
-        /// Constructs a new view, containingly only the rows in which the values of a given column are accepted by a selector function.
+        /// Selects rows in which the value of the given column matches the given criteria.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="columnName"></param>
-        /// <param name="selector"></param>
-        /// <returns></returns>
+        /// <typeparam name="T">The type of the row data.</typeparam>
+        /// <param name="columnName">The name of the column.</param>
+        /// <param name="selector">A function which accepts or rejects values.</param>
+        /// <returns>A new view, containing only those rows in which the <paramref name="columnName"/> value was accepted by
+        /// the <paramref name="selector"/>.</returns>
         public DataView Where<T> (string columnName, Func<T, bool> selector) {
             if (columnName == null) throw new ArgumentNullException(nameof(columnName));
             if (selector == null) throw new ArgumentNullException(nameof(selector));
@@ -180,6 +202,11 @@ namespace Meta.Numerics.Data
             return (new DataView(this.columns, newMap));
         }
 
+        /// <summary>
+        /// Removes any rows that have null values in the named columns.
+        /// </summary>
+        /// <param name="columnNames">The columns to check for null values.</param>
+        /// <returns>A new view, without the rows that have null values in the named columns.</returns>
         public DataView DiscardNulls(params string[] columnNames)
         {
             if (columnNames == null) throw new ArgumentNullException(nameof(columnNames));

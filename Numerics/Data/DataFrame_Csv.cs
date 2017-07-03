@@ -267,6 +267,11 @@ namespace Meta.Numerics.Data {
     internal class TimeSpanAdaptor : TypeAdaptor {
 
         public override bool IsParsable (string text) {
+            Debug.Assert(text != null);
+            // TimeSpan's parse will accept pure ints or doubles as timespans.
+            // Since we don't want a coulumn of ints or doubles to become timespans,
+            // we require a colon before we even try.
+            if (!text.Contains(":")) return (false);
             TimeSpan value;
             bool isParsalbe = TimeSpan.TryParse(text, out value);
             return (isParsalbe);

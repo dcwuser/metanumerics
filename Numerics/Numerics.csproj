@@ -84,7 +84,6 @@
     <Compile Include="Core\Complex.cs" />
     <Compile Include="Core\ComplexMath.cs" />
     <Compile Include="Core\DiscreteInterval.cs" />
-    <Compile Include="Core\DoubleDecomposition.cs" />
     <Compile Include="Core\Exceptions.cs" />
     <Compile Include="Core\Global.cs" />
     <Compile Include="Core\Interval.cs" />
@@ -107,6 +106,10 @@
     <Compile Include="Data\DataRowCollection.cs" />
     <Compile Include="Data\DataView.cs" />
     <Compile Include="Data\IReadOnlyDataList.cs" />
+    <Compile Include="Extended\AdvancedDoubleDoubleMath.cs" />
+    <Compile Include="Extended\DoubleDouble.cs" />
+    <Compile Include="Extended\DoubleInfo.cs" />
+    <Compile Include="Extended\ExtendedMath.cs" />
     <Compile Include="Functions\AdvancedIntegerMath.cs" />
     <Compile Include="Functions\AdvancedIntegerMath_Partitions.cs" />
     <Compile Include="Functions\AdvancedMath.cs" />
@@ -230,6 +233,7 @@
     <Compile Include="Statistics\TimeSeries.cs" />
     <Compile Include="Statistics\UncertainMeasurement.cs" />
     <Compile Include="Statistics\UncertainMeasurementSample.cs" />
+    <Compile Include="Statistics\Univariate.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="bin\" />

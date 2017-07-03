@@ -95,6 +95,8 @@
     <Compile Include="DiscreteDistributionTest.cs" />
     <Compile Include="DiscreteIntervalTest.cs" />
     <Compile Include="DistributionTest.cs" />
+    <Compile Include="DoubleDoubleTest.cs" />
+    <Compile Include="DoubleInfoTest.cs" />
     <Compile Include="ExtremaTest.cs" />
     <Compile Include="DifferentiateTest.cs" />
     <Compile Include="FourierTest.cs" />

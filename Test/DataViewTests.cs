@@ -44,7 +44,7 @@ namespace DataTest
         }
 
         [TestMethod]
-        public void DataViewOrderByClause ()
+        public void DataViewOrderByColumn ()
         {
             DataView original = GetTestFrame();
 
@@ -59,6 +59,28 @@ namespace DataTest
                 IComparable previous = (IComparable) reordered.Rows[i-1][columnName];
                 IComparable current = (IComparable) reordered.Rows[i][columnName];
                 Assert.IsTrue(previous.CompareTo(current) <= 0);
+            }
+
+        }
+
+        [TestMethod]
+        public void DataViewOrderByColumnFunc () {
+
+            DataView original = GetTestFrame();
+
+            // This should support nulls
+            DataView reordered = original.OrderBy("name");
+            //DataView reordered = original.OrderBy<string>("name", String.Compare);
+            Assert.IsTrue(reordered.Columns.Count == original.Columns.Count);
+            Assert.IsTrue(reordered.Rows.Count == original.Rows.Count);
+
+            List<string> reorderedCopy = original.Column<string>("name").ToList();
+            reorderedCopy.Sort();
+
+            DataColumn<string> reorderedColumn = reordered.Column<string>("name");
+
+            for (int i = 0; i < reorderedColumn.Count; i++) {
+                Assert.IsTrue(reorderedColumn[i] == reorderedCopy[i]);
             }
 
         }

@@ -98,9 +98,9 @@ namespace Meta.Numerics {
         /// to ease interoperation, we provide an implicit cast that converts the .NET Framework Complex type into
         /// the Meta.Numerics Complex type.</para>
         /// </remarks>
-        //public static implicit operator Complex (System.Numerics.Complex value) {
-        //    return (new Complex(value.Real, value.Imaginary));
-        //}
+        public static implicit operator Complex (System.Numerics.Complex value) {
+           return (new Complex(value.Real, value.Imaginary));
+        }
 
 		// printing
 

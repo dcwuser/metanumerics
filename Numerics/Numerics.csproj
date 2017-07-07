@@ -94,6 +94,7 @@
     <Compile Include="Core\UncertainMath.cs" />
     <Compile Include="Core\UncertainValue.cs" />
     <Compile Include="Data\ComputedColumn.cs" />
+    <Compile Include="Data\DataAdaptor.cs" />
     <Compile Include="Data\DataColumn.cs" />
     <Compile Include="Data\DataColumnCollection.cs" />
     <Compile Include="Data\DataFrame.cs" />

@@ -21,5 +21,14 @@ namespace Test
             Assert.IsTrue(ComplexMath.Sqrt(netComplex) == ComplexMath.Sqrt(myComplex));
         }
 
+        [TestMethod]
+        public void ComplexMyToNet () {
+            Complex myComplex = new Complex(-1.0, 2.0);
+            NetComplex netComplex = myComplex;
+            Assert.IsTrue(netComplex.Real == myComplex.Re);
+            Assert.IsTrue(netComplex.Imaginary == myComplex.Im);
+            Assert.IsTrue(NetComplex.Sqrt(netComplex) == NetComplex.Sqrt(myComplex));
+        }
+
     }
 }

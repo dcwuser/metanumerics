@@ -66,6 +66,7 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -84,6 +85,7 @@
     <Compile Include="BinaryContingencyTableTest.cs" />
     <Compile Include="BivariateSampleTest.cs" />
     <Compile Include="Bugs.cs" />
+    <Compile Include="ComplexInteropTest.cs" />
     <Compile Include="ComplexMathTest.cs" />
     <Compile Include="ComplexTest.cs" />
     <Compile Include="ContingencyTableTest.cs" />

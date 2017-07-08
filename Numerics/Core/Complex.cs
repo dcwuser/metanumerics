@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-using Meta.Numerics.Functions;
+using NetComplex = System.Numerics.Complex;
 
 namespace Meta.Numerics {
 
@@ -95,12 +95,31 @@ namespace Meta.Numerics {
         /// <see cref="System.Numerics.Complex.Sqrt(System.Numerics.Complex)"/> of -1.0 and note that it does
         /// not equal <see cref="System.Numerics.Complex.ImaginaryOne"/>), our own Complex type persists. Eventually, we
         /// expect the deficiencies of <see cref="System.Numerics.Complex"/> to be corected. Until that time,
-        /// to ease interoperation, we provide an implicit cast that converts the .NET Framework Complex type into
+        /// to ease interoperation, we provide an implicit casts that interconvert between the .NET Framework Complex type and
         /// the Meta.Numerics Complex type.</para>
         /// </remarks>
-        //public static implicit operator Complex (System.Numerics.Complex value) {
-        //    return (new Complex(value.Real, value.Imaginary));
-        //}
+        public static implicit operator Complex (NetComplex value) {
+           return (new Complex(value.Real, value.Imaginary));
+        }
+
+        /// <summary>
+        /// Converts a Meta.Numerics.Complex number to a System.Numerics.Complex number.
+        /// </summary>
+        /// <param name="value">The Meta.Numerics.Complex number.</param>
+        /// <returns>The System.Numerics.Complex number.</returns>
+        /// <remarks>
+        /// <para>The <see cref="System.Numerics.Complex"/> data type has been available in the .NET Framework since version 4.0.
+        /// Because Meta.Numerics offered its own <see cref="Complex"/> data type before the .NET Framework, and since even in
+        /// the latest version of the .NET Framework, its Complex type has some notable deficiencies (e.g., compute
+        /// <see cref="System.Numerics.Complex.Sqrt(System.Numerics.Complex)"/> of -1.0 and note that it does
+        /// not equal <see cref="System.Numerics.Complex.ImaginaryOne"/>), our own Complex type persists. Eventually, we
+        /// expect the deficiencies of <see cref="System.Numerics.Complex"/> to be corected. Until that time,
+        /// to ease interoperation, we provide an implicit casts that interconvert between the .NET Framework Complex type and
+        /// the Meta.Numerics Complex type.</para>
+        /// </remarks>
+        public static implicit operator NetComplex (Complex value) {
+            return (new NetComplex(value.Re, value.Im));
+        }
 
 		// printing
 

@@ -1,0 +1,5 @@
+# editorconfig.org
+
+[*.cs]
+# bracing and indenting
+csharp_new_line_before_open_brace = none

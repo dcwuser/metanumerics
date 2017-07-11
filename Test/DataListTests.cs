@@ -4,6 +4,7 @@ using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics.Data;
+using Meta.Numerics.Statistics;
 
 namespace DataTest
 {
@@ -33,7 +34,7 @@ namespace DataTest
             Console.WriteLine(arrayTimer.ElapsedMilliseconds);
 
             DataList<double> list = new DataList<double>("list");
-            for (int j = 0; j < list.Count; j++)
+            for (int j = 0; j < n; j++)
             {
                 list.Add(rng.NextDouble());
             }
@@ -47,9 +48,10 @@ namespace DataTest
 
             DataFrame frame = new DataFrame(list);
             Stopwatch frameTimer = Stopwatch.StartNew();
+            DataColumn<double> frameList = frame.Column<double>("list");
             for (int i = 0; i < m; i++)
             {
-                mean += frame.Column<double>("list").Mean();
+                mean += frameList.Mean();
             }
             frameTimer.Stop();
             Console.WriteLine(frameTimer.ElapsedMilliseconds);

@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics.Data;
+using Meta.Numerics.Statistics;
 
 namespace DataTest
 {
@@ -98,13 +99,16 @@ namespace DataTest
         [TestMethod]
         public void DataViewGroupByClause ()
         {
-            DataView original = GetTestFrame().DiscardNulls("male");
+            DataView original = GetTestFrame();//.WhereNotNull("male");
 
             DataFrame grouped = original.GroupBy("male", v => v.Column<double>("height").Mean(), "meanHeight");
 
             foreach (DataRow row in grouped.Rows) {
                 object value = row["male"];
-                DataView selected = original.Where(r => (r["male"].Equals(value)));
+                // r["male"] == value doesn't work, because this is an object comparison,
+                // and two equal values boxed to objects are not equal. This is a problem.
+                DataView selected = original.Where<bool?>("male", m => m.Equals(value));
+                //DataView selected = original.Where(r => (r["male"] == value));
                 double height = selected.Column<double>("height").Mean();
                 Assert.IsTrue((double) row["meanHeight"] == height);
             }

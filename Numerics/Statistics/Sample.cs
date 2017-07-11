@@ -19,7 +19,7 @@ namespace Meta.Numerics.Statistics {
     // the SampleStorage class is the internal representation of a sample
     // it is used internally by the Sample, BivariateSample, and MultivariateSample classes
 
-    internal class SampleStorage  {
+    internal class SampleStorage : IReadOnlyList<double>  {
 
         public SampleStorage () {
             data = new List<double>();
@@ -204,6 +204,10 @@ namespace Meta.Numerics.Statistics {
 
         public IEnumerator<double> GetEnumerator () {
             return (data.GetEnumerator());
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() {
+            return(data.GetEnumerator());
         }
 
     }
@@ -1558,31 +1562,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="KolmogorovDistribution"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
         public TestResult KolmogorovSmirnovTest (ContinuousDistribution distribution) {
-            if (distribution == null) throw new ArgumentNullException(nameof(distribution));
-            if (this.Count < 1) throw new InsufficientDataException();
-
-            return (KolmogorovSmirnovTest(distribution, 0));
-        }
-
-        private TestResult KolmogorovSmirnovTest (ContinuousDistribution distribution, int count) {
-
-            // compute the D statistic, which is the maximum of the D+ and D- statistics
-            double DP, DM;
-            ComputeDStatistics(distribution, out DP, out DM);
-            double D = Math.Max(DP, DM);
-
-            // reduce n by the number of fit parameters, if any
-            // this is heuristic and needs to be changed to deal with specific fits
-            int n = data.Count - count;
-            
-            ContinuousDistribution DDistribution;
-            if (n < 32) {
-                DDistribution = new TransformedDistribution(new KolmogorovExactDistribution(n), 0.0, 1.0 / n);
-            } else {
-                DDistribution = new TransformedDistribution(new KolmogorovAsymptoticDistribution(n), 0.0, 1.0 / Math.Sqrt(n));
-            }
-            return (new TestResult("D", D, TestType.RightTailed, DDistribution));
-            
+            return (Univariate.KolmogorovSmirnovTest(data, distribution));
         }
 
         /// <summary>
@@ -1601,62 +1581,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There is no data in the sample.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Kuiper%27s_test"/>
         public TestResult KuiperTest (ContinuousDistribution distribution) {
-
-            if (distribution == null) throw new ArgumentNullException(nameof(distribution));
-            if (data.Count < 1) throw new InsufficientDataException();
-
-            // compute the V statistic, which is the sum of the D+ and D- statistics
-            double DP, DM;
-            ComputeDStatistics(distribution, out DP, out DM);
-            double V = DP + DM;
-
-            ContinuousDistribution VDistribution;
-            if (this.Count < 32) {
-                VDistribution = new TransformedDistribution(new KuiperExactDistribution(this.Count), 0.0, 1.0 / this.Count);
-            } else {
-                VDistribution = new TransformedDistribution(new KuiperAsymptoticDistribution(this.Count), 0.0, 1.0 / Math.Sqrt(this.Count));
-            }
-            return (new TestResult("V", V, TestType.RightTailed, VDistribution));
-
-        }
-
-
-        private void ComputeDStatistics (ContinuousDistribution distribution, out double D1, out double D2) {
-
-            int[] order = data.GetSortOrder();
-
-            D1 = 0.0;
-            D2 = 0.0;
-
-            double P1 = 0.0;
-            for (int i = 0; i < data.Count; i++) {
-
-                // compute the theoretical CDF value at the data-point
-                double x = data[order[i]];
-                double P = distribution.LeftProbability(x);
-
-                // compute the experimental CDF value at x+dx
-                double P2 = (i + 1.0) / data.Count;
-
-                // compare the the theoretical and experimental CDF values at x-dx and x+dx
-                // update D if this is the largest seperation yet observed
-
-                double DU = P2 - P;
-                if (DU > D1) D1 = DU;
-                double DL = P - P1;
-                if (DL > D2) D2 = DL;
-
-                //double D1 = Math.Abs(P - P1);
-                //if (D1 > D) D = D1;
-                //double D2 = Math.Abs(P - P2);
-                //if (D2 > D) D = D2;
-
-                // remember the experimental CDF value at x+dx;
-                // this will be the experimental CDF value at x-dx for the next step
-                P1 = P2;
-
-            }
-
+            return(Univariate.KuiperTest(this.data, distribution));
         }
 
         /// <summary>

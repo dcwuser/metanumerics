@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Statistics {
 
@@ -10,7 +8,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Contains methods for analyzing univariate samples.
     /// </summary>
-    public static class Univariate {
+    public static partial class Univariate {
 
         /// <summary>
         /// Computes the sample mean.
@@ -135,12 +133,7 @@ namespace Meta.Numerics.Statistics {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) throw new InsufficientDataException();
 
-            List<int> order = new List<int>(sample.Count);
-            for (int i = 0; i < sample.Count; i++) {
-                order.Add(i);
-            }
-
-            order.Sort((int i, int j) => sample[i].CompareTo(sample[j]));
+            List<int> order = GetSortOrder(sample);
 
             int m = sample.Count / 2;
             if (sample.Count % 2 == 0) {
@@ -149,6 +142,19 @@ namespace Meta.Numerics.Statistics {
                 return (0.5 * (sample[m] + sample[m + 1]));
             }
 
+        }
+
+        private static List<int> GetSortOrder (IReadOnlyList<double> sample) {
+            Debug.Assert(sample != null);
+
+            List<int> order = new List<int>(sample.Count);
+            for (int i = 0; i < sample.Count; i++) {
+                order.Add(i);
+            }
+
+            order.Sort((int i, int j) => sample[i].CompareTo(sample[j]));
+
+            return (order);
         }
 
     }

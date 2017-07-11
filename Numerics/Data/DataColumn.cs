@@ -72,19 +72,12 @@ namespace Meta.Numerics.Data
             }
         }
 
-        /*
-        object IDataList.this[int r]
-        {
-            get
-            {
-                return (this[r]);
-            }
-        }
-        */
-
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            return ((IEnumerable<T>)frame.columns[c]).GetEnumerator();
+            DataList column = frame.columns[c];
+            foreach (int index in frame.map) {
+                yield return ((T) column.GetItem(index));
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()

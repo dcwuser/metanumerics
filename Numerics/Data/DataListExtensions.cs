@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Meta.Numerics.Data
 {
-
+    /*
     public static class Univariate
     {
 
@@ -32,6 +32,7 @@ namespace Meta.Numerics.Data
         }
 
     }
+    */
 
     public static class DataListExtensions
     {

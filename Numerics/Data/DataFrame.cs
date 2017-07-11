@@ -191,11 +191,6 @@ namespace Meta.Numerics.Data
         //    VirtualDataColumn
         //    ComputedDataColumn
 
-        public DataFrame Pivot<T> (string rowColumnName, string columnColumnName, Func<DataFrame, T> pivotAggregator)
-        {
-            throw new NotImplementedException();
-        }
-
         /// <summary>
         /// Adds the given data list as a column to the data frame.
         /// </summary>

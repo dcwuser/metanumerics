@@ -235,6 +235,7 @@
     <Compile Include="Statistics\UncertainMeasurement.cs" />
     <Compile Include="Statistics\UncertainMeasurementSample.cs" />
     <Compile Include="Statistics\Univariate.cs" />
+    <Compile Include="Statistics\Univariate_Tests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="bin\" />

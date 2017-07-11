@@ -105,7 +105,6 @@ namespace Meta.Numerics.Data
             DataList column = columns[columnIndex];
             List<int> newMap = new List<int>(map);
             newMap.Sort((i, j) => NullableComparer((IComparable) column.GetItem(i), (IComparable) column.GetItem(j)));
-            //newMap.Sort((i, j) => ((IComparable)columns[columnIndex].GetItem(i)).CompareTo(columns[columnIndex].GetItem(j)));
             return (new DataView(this.columns, newMap));
         }
 
@@ -128,7 +127,7 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
-        /// Constructs a new view, with rows sorted accoring to a function of a given column.
+        /// Sorts all rows by the given function of the given column.
         /// </summary>
         /// <typeparam name="T">The type of values being compared.</typeparam>
         /// <param name="columnName">The column to sort on.</param>
@@ -207,16 +206,30 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="columnNames">The columns to check for null values.</param>
         /// <returns>A new view, without the rows that have null values in the named columns.</returns>
-        public DataView DiscardNulls(params string[] columnNames)
+        /// <remarks>
+        /// <para>If no column names are given, rows with nulls in any column are removed.</para>
+        /// </remarks>
+        public DataView WhereNotNull(params string[] columnNames)
         {
             if (columnNames == null) throw new ArgumentNullException(nameof(columnNames));
 
-            int[] columnIndexes = new int[columnNames.Length];
-            for (int i = 0; i < columnIndexes.Length; i++)
-            {
-                columnIndexes[i] = GetColumnIndex(columnNames[i]);
+            // Convert the list of names into a list of indexes to check.
+            // If no names are given, check all columns.
+            // There is no need to check non-nullable columns, so leave them out.
+            List<int> columnIndexes = new List<int>();
+            if (columnNames.Length == 0) {
+                for (int columnIndex = 0; columnIndex < columns.Count; columnIndex++) {
+                    if (columns[columnIndex].IsNullable) columnIndexes.Add(columnIndex);
+                }
+            } else {
+                foreach (string columnName in columnNames) {
+                    int columnIndex = GetColumnIndex(columnName);
+                    if (columns[columnIndex].IsNullable) columnIndexes.Add(columnIndex);
+                }
             }
 
+            // Go through each row, checking for nulls in the noted columns.
+            // If no nulls are found, add the row to the new map.
             List<int> newMap = new List<int>();
             foreach (int rowIndex in map)
             {
@@ -236,6 +249,14 @@ namespace Meta.Numerics.Data
             return (new DataView(columns, newMap));
         }
 
+        /// <summary>
+        /// Groups the data by the values in the given column, and computes the given aggregate quantity for each group.
+        /// </summary>
+        /// <typeparam name="T">The type of the aggregate output.</typeparam>
+        /// <param name="groupByColumnName">The name of the column to group by.</param>
+        /// <param name="aggregator">A function that computes the aggregate quantity.</param>
+        /// <param name="aggregateColumnName">The name of the column for the aggregate output.</param>
+        /// <returns>A new data frame containing the requested aggregate values for each group.</returns>
         public DataFrame GroupBy<T>(string groupByColumnName, Func<DataView, T> aggregator, string aggregateColumnName)
         {
             if (groupByColumnName == null) throw new ArgumentNullException(nameof(groupByColumnName));
@@ -245,20 +266,22 @@ namespace Meta.Numerics.Data
             int groupByColumnIndex = GetColumnIndex(groupByColumnName);
             DataList groupByColumn = columns[groupByColumnIndex];
 
-            // Create a lookup table that maps group column values to the
-            // indexes of rows with that value.
+            // Create a lookup table that maps group column values to the indexes of rows with that value.
+            // We have to be a little tricky to deal with null values, because null is not allowed to be
+            // a dictionary key. We use a special internal null signifier object to get around this problem.
             Dictionary<object, List<int>> groups = new Dictionary<object, List<int>>();
             for (int r = 0; r < map.Count; r++)
             {
-                object value = groupByColumn.GetItem(map[r]);
-                // Problem: what if value == null?
+                int index = map[r];
+                object value = groupByColumn.GetItem(index);
+                if (value == null) value = NullSignifier.Value;
                 List<int> members;
                 if (!groups.TryGetValue(value, out members))
                 {
                     members = new List<int>();
                     groups.Add(value, members);
                 }
-                members.Add(r);
+                members.Add(index);
             }
 
             // Form destination columns based on group aggregates.
@@ -268,8 +291,12 @@ namespace Meta.Numerics.Data
             {
                 DataView values = new DataView(this.columns, group.Value);
                 T aggregateValue = aggregator(values);
-                groupsColumn.AddItem(group.Key);
                 aggregateColumn.AddItem(aggregateValue);
+
+                object groupKey = group.Key;
+                if (groupKey == NullSignifier.Value) groupKey = null;
+                groupsColumn.AddItem(groupKey);
+
             }
 
             DataFrame result = new DataFrame(groupsColumn, aggregateColumn);
@@ -398,6 +425,18 @@ namespace Meta.Numerics.Data
                 }
                 yield return (rowDictionary);
             }
+        }
+
+    }
+
+    internal sealed class NullSignifier {
+
+        private NullSignifier() { }
+
+        public static readonly NullSignifier Value = new NullSignifier();
+
+        public override int GetHashCode () {
+            return (-12948583);
         }
 
     }

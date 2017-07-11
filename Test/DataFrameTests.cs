@@ -4,10 +4,12 @@ using System.Linq;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Net;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics.Data;
+using Meta.Numerics.Statistics;
 
 namespace DataTest
 {
@@ -120,6 +122,26 @@ namespace DataTest
             Assert.IsTrue(frame2.Columns[0].Name == frame.Columns[0].Name);
             Assert.IsTrue(frame2.Columns[1].StorageType == frame.Columns[1].StorageType);
             Assert.IsTrue(frame2.Rows[2]["male"] == frame2.Rows[2]["male"]);
+
+        }
+
+        [TestMethod]
+        public void Smoketest () {
+
+            DataFrame frame;
+            string url = "https://raw.github.com/pandas-dev/pandas/master/pandas/tests/data/tips.csv";
+            WebRequest request = WebRequest.Create(url);
+            using (WebResponse response = request.GetResponse()) {
+                using (Stream responseStream = response.GetResponseStream()) {
+                    using (TextReader reader = new StreamReader(responseStream)) {
+                        frame = DataFrame.ReadCsv(reader);
+                    }
+                }
+            }
+            frame.AddComputedColumn("tip_fraction", r => ((double) r["tip"]) / ((double) r["total_bill"]));
+
+            DataView counts = frame.GroupBy("day", v => v.Rows.Count, "total").OrderBy("day");
+            DataView means = frame.GroupBy("sex", v => v.Column<double>("tip_fraction").Mean(), "mean_tip_fraction");
 
         }
     }

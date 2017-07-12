@@ -243,7 +243,7 @@ namespace Test {
 
                     if (!IsNonpositiveInteger(b)) {
                         if (IsNonpositiveInteger((a + b) / 2.0) || IsNonpositiveInteger((b - a + 1.0) / 2.0)) {
-                            Assert.IsTrue(Math.Abs(AdvancedMath.Hypergeometric2F1(a, b, c, 0.5)) < TestUtilities.TargetPrecision);
+                            Assert.IsTrue(Math.Abs(AdvancedMath.Hypergeometric2F1(a, 1.0 - a, b, 0.5)) < TestUtilities.TargetPrecision);
                         } else {
                             Assert.IsTrue(TestUtilities.IsNearlyEqual(
                                 AdvancedMath.Hypergeometric2F1(a, 1.0 - a, b, 0.5),

@@ -120,63 +120,6 @@ namespace Meta.Numerics.Data
 
         }
 
-
-        /// <summary>
-        /// Joins this data view to another data view on the given column.
-        /// </summary>
-        /// <param name="other"></param>
-        /// <param name="columnName"></param>
-        /// <returns></returns>
-        public DataFrame Join (DataFrame other, string columnName)
-        {
-            int thisColumnIndex = this.GetColumnIndex(columnName);
-            Type thisType = this.columns[thisColumnIndex].StorageType;
-            int otherColumnIndex = other.GetColumnIndex(columnName);
-            Type otherType = other.columns[otherColumnIndex].StorageType;
-
-            // Form a lookup from the other table
-            Dictionary<object, int> hash = new Dictionary<object, int>();
-            for (int otherRowIndex = 0; otherRowIndex < other.Rows.Count; otherRowIndex++)
-            {
-                hash[other.columns[otherColumnIndex].GetItem(other.map[otherRowIndex])] = otherRowIndex;
-            }
-
-            // Construct the joined columns
-            List<DataList> joinedColumns = new List<DataList>();
-            for (int i = 0; i < this.columns.Count; i++)
-            {
-                DataList joinedColumn = DataList.Create(this.columns[i].Name, this.columns[i].StorageType);
-                joinedColumns.Add(joinedColumn);
-            }
-            for (int j = 0; j < other.columns.Count; j++)
-            {
-                DataList joinedColumn = DataList.Create(other.columns[j].Name, other.columns[j].StorageType);
-                joinedColumns.Add(joinedColumn);
-            }
-
-            // Populate the joined columns
-            for (int thisRowIndex = 0; thisRowIndex < this.map.Count; thisRowIndex++)
-            {
-                object thisValue = this.columns[thisColumnIndex].GetItem(this.map[thisRowIndex]);
-                int otherRowIndex;
-                if (hash.TryGetValue(thisValue, out otherRowIndex))
-                {
-                    for (int i = 0; i < this.columns.Count; i++)
-                    {
-                        joinedColumns[i].AddItem(this.columns[i].GetItem(this.map[i]));
-                    }
-                    for (int j = 0; j < other.columns.Count; j++)
-                    {
-                        joinedColumns[this.columns.Count + j].AddItem(other.columns[j].GetItem(other.map[otherRowIndex]));
-                    }
-                }
-            }
-
-            DataFrame result = new DataFrame(joinedColumns);
-            return (result);
-
-        }
-
         // IReadableDataList
         // IDataList : IReadableDataList
         // IReadableDataList<T> : IReadableDataList

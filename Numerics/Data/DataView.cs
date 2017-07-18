@@ -56,7 +56,7 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
-        /// Get a given column, cast to a given data type/
+        /// Get a given column, cast to a given data type.
         /// </summary>
         /// <typeparam name="T">The type into which to cast the column.</typeparam>
         /// <param name="columnName">The name of the column.</param>
@@ -97,54 +97,28 @@ namespace Meta.Numerics.Data
         /// Sort the rows by the values in the given column.
         /// </summary>
         /// <param name="columnName">The name of the column to sort by.</param>
-        /// <returns>A new view, with rows sorted by the values in the given column.</returns>
+        /// <returns>A new view, with rows sorted in ascending order by the values in the given column.</returns>
         public DataView OrderBy(string columnName) {
+            return (OrderBy(columnName, SortOrder.Ascending));
+        }
+
+        /// <summary>
+        /// Sort the rows by the values in the given column in the given direction.
+        /// </summary>
+        /// <param name="columnName">The name of the column to sort by.</param>
+        /// <param name="direction">The direction in which the result should be ordered.</param>
+        /// <returns>A new view, with rows sorted in the given direction by the values in the given column.</returns>
+        public DataView OrderBy(string columnName, SortOrder direction) {
             if (columnName == null) throw new ArgumentNullException(nameof(columnName));
 
             int columnIndex = GetColumnIndex(columnName);
             DataList column = columns[columnIndex];
             List<int> newMap = new List<int>(map);
-            newMap.Sort((i, j) => NullableComparer((IComparable) column.GetItem(i), (IComparable) column.GetItem(j)));
+            NullTollerantComparer comparer = new NullTollerantComparer(direction);
+            newMap.Sort((i, j) => comparer.Compare((IComparable)column.GetItem(i), (IComparable)column.GetItem(j)));
             return (new DataView(this.columns, newMap));
         }
 
-        // This comparer is able to deal with null values.
-
-        private static int NullableComparer (IComparable a, IComparable b) {
-            if (a == null) {
-                if (b == null) {
-                    return (0);
-                } else {
-                    return (-1);
-                }
-            } else {
-                if (b == null) {
-                    return (+1);
-                } else {
-                    return (a.CompareTo(b));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Sorts all rows by the given function of the given column.
-        /// </summary>
-        /// <typeparam name="T">The type of values being compared.</typeparam>
-        /// <param name="columnName">The column to sort on.</param>
-        /// <param name="comparer">A comparison function of <paramref name="columnName"/> values.</param>
-        /// <returns>A view of the data sorted by the function of the given column.</returns>
-        public DataView OrderBy<T>(string columnName, Comparison<T> comparer) {
-            if (columnName == null) throw new ArgumentNullException(nameof(columnName));
-            if (comparer == null) throw new ArgumentNullException(nameof(comparer));
-
-            int columnIndex = GetColumnIndex(columnName);
-            IReadOnlyDataList<T> column = (IReadOnlyDataList<T>)columns[columnIndex];
-
-            List<int> newMap = new List<int>(map);
-            newMap.Sort((i, j) => comparer(column[i], column[j]));
-
-            return (new DataView(this.columns, newMap));
-        }
 
         /// <summary>
         /// Sorts all rows by the given function.
@@ -189,11 +163,12 @@ namespace Meta.Numerics.Data
             if (selector == null) throw new ArgumentNullException(nameof(selector));
 
             int columnIndex = GetColumnIndex(columnName);
-            IReadOnlyDataList<T> column = (IReadOnlyDataList<T>) columns[columnIndex];
+            DataList column = columns[columnIndex];
+            //IReadOnlyDataList<T> column = (IReadOnlyDataList<T>) columns[columnIndex];
 
             List<int> newMap = new List<int>();
             for (int i = 0; i < map.Count; i++) {
-                T value = column[map[i]];
+                T value = (T) column.GetItem(map[i]); // column[map[i]];
                 bool include = selector(value);
                 if (include) newMap.Add(map[i]);
             }
@@ -301,6 +276,66 @@ namespace Meta.Numerics.Data
 
             DataFrame result = new DataFrame(groupsColumn, aggregateColumn);
             return (result);
+        }
+
+        public DataFrame GroupBy<T, U>(string groupByColumnName, Func<DataView,Tuple<T,U>> aggregator, string firstAggregateColumnName, string secondAggregateColumnName) {
+            throw new NotImplementedException();
+        }
+
+
+        /// <summary>
+        /// Joins this data view to another data view on the given column.
+        /// </summary>
+        /// <param name="other">The second data view.</param>
+        /// <param name="columnName">The column name, which must be the same in both views.</param>
+        /// <returns>A new data frame whose columns are combined columns of the original views, inner joined on the non-null values of the given shared column.</returns>
+        public DataFrame Join(DataView other, string columnName) {
+            int thisColumnIndex = this.GetColumnIndex(columnName);
+            DataList thisColumn = this.columns[thisColumnIndex];
+            Type thisType = thisColumn.StorageType;
+            int otherColumnIndex = other.GetColumnIndex(columnName);
+            DataList otherColumn = other.columns[otherColumnIndex];
+            Type otherType = otherColumn.StorageType;
+
+            // Form a lookup from the other table
+            Dictionary<object, int> hash = new Dictionary<object, int>();
+            for (int otherRowIndex = 0; otherRowIndex < other.Rows.Count; otherRowIndex++) {
+                object key = otherColumn.GetItem(other.map[otherRowIndex]);
+                if (key == null) continue;
+                hash[key] = otherRowIndex;
+            }
+
+            // Construct the joined columns
+            List<DataList> joinedColumns = new List<DataList>();
+            for (int i = 0; i < this.columns.Count; i++) {
+                DataList joinedColumn = DataList.Create(this.columns[i].Name, this.columns[i].StorageType);
+                joinedColumns.Add(joinedColumn);
+            }
+            for (int j = 0; j < other.columns.Count; j++) {
+                //if (j == otherColumnIndex) continue;
+                DataList joinedColumn = DataList.Create(other.columns[j].Name, other.columns[j].StorageType);
+                joinedColumns.Add(joinedColumn);
+            }
+
+            // Populate the joined columns
+            for (int thisRowIndex = 0; thisRowIndex < this.map.Count; thisRowIndex++) {
+                object thisValue = thisColumn.GetItem(this.map[thisRowIndex]);
+                if (thisValue == null) continue;
+                int otherRowIndex;
+                if (hash.TryGetValue(thisValue, out otherRowIndex)) {
+                    for (int i = 0; i < this.columns.Count; i++) {
+                        joinedColumns[i].AddItem(this.columns[i].GetItem(this.map[i]));
+                    }
+                    for (int j = 0; j < other.columns.Count; j++) {
+                        //if (j == otherColumnIndex) continue;
+                        joinedColumns[this.columns.Count + j].AddItem(other.columns[j].GetItem(other.map[otherRowIndex]));
+                    }
+                }
+            }
+
+            DataFrame result = new DataFrame(joinedColumns);
+            return (result);
+
         }
 
         public DataFrame Pivot(string rowNamesColumnName, string columnNamesColumnName, string valuesColumnName)
@@ -439,6 +474,55 @@ namespace Meta.Numerics.Data
             return (-12948583);
         }
 
+    }
+
+    internal class NullTollerantComparer {
+
+        public NullTollerantComparer(SortOrder direction) {
+            if (direction == SortOrder.Ascending) {
+                ordered = +1;
+            } else {
+                ordered = -1;
+            }
+        }
+
+        private readonly int ordered;
+
+        public int Compare(IComparable a, IComparable b) {
+            if (a == null) {
+                if (b == null) {
+                    return (0);
+                }
+                else {
+                    return (-ordered);
+                }
+            }
+            else {
+                if (b == null) {
+                    return (+ordered);
+                }
+                else {
+                    return (a.CompareTo(b));
+                }
+            }
+        }
+
+    }
+
+    /// <summary>
+    /// Specifies the order of a sort.
+    /// </summary>
+    public enum SortOrder {
+
+        /// <summary>
+        /// Ascending sort order.
+        /// </summary>
+        Ascending,
+
+        /// <summary>
+        /// Descending sort order.
+        /// </summary>
+        Descending
     }
 
 }

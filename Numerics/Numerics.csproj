@@ -172,6 +172,7 @@
     <Compile Include="Functions\SpinState.cs" />
     <Compile Include="Statistics\Anova.cs" />
     <Compile Include="Statistics\BinaryContingencyTable.cs" />
+    <Compile Include="Statistics\Bivariate.cs" />
     <Compile Include="Statistics\BivariateSample.cs" />
     <Compile Include="Statistics\ContingencyTable.cs" />
     <Compile Include="Statistics\DiscreteHistogram.cs" />

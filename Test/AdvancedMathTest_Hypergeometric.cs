@@ -330,13 +330,13 @@ namespace Test {
                             double F = AdvancedMath.Hypergeometric2F1(a, b, c, x);
 
                             // A&S 15.3.3
-                            Assert.IsTrue(TestUtilities.IsNearlyEqual(F, AdvancedMath.Hypergeometric2F1(c - a, c - b, c, x) * Math.Pow(1.0 - x, c - a - b)));
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(F, AdvancedMath.Hypergeometric2F1(c - a, c - b, c, x) * Math.Pow(1.0 - x, c - a - b), 1.0E-12));
 
                             // A&S 15.3.4
-                            Assert.IsTrue(TestUtilities.IsNearlyEqual(F, AdvancedMath.Hypergeometric2F1(a, c - b, c, x / (x - 1.0)) * Math.Pow(1.0 - x, -a)));
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(F, AdvancedMath.Hypergeometric2F1(a, c - b, c, x / (x - 1.0)) * Math.Pow(1.0 - x, -a), 1.0E-13));
 
                             // A&S 15.3.5
-                            Assert.IsTrue(TestUtilities.IsNearlyEqual(F, AdvancedMath.Hypergeometric2F1(b, c - a, c, x / (x - 1.0)) * Math.Pow(1.0 - x, -b)));
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(F, AdvancedMath.Hypergeometric2F1(b, c - a, c, x / (x - 1.0)) * Math.Pow(1.0 - x, -b), 1.0E-13));
 
                             // A&S 15.3.6
                             if (!IsNonpositiveInteger(c - a - b) && !IsNonpositiveInteger(a + b - c) && (x > 0.0)) {

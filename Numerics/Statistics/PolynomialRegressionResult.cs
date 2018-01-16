@@ -9,7 +9,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents the result of a multiple linear regression fit.
     /// </summary>
-    public sealed class MultiLinearRegressionResult : RegressionResult {
+    public sealed class MultiLinearRegressionResult : GeneralLinearRegressionResult {
 
         internal MultiLinearRegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, Sample residuals) : base(parameters, anova, residuals) {
 
@@ -55,7 +55,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents the result of a polynomial regression fit.
     /// </summary>
-    public class PolynomialRegressionResult : RegressionResult {
+    public class PolynomialRegressionResult : GeneralLinearRegressionResult {
 
         internal PolynomialRegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, Sample residuals) : base(parameters, anova, residuals) {
 

@@ -4,23 +4,18 @@ using System.Collections.Generic;
 
 namespace Meta.Numerics.Statistics {
 
-    /// <summary>
-    /// Represents the result of a regression fit.
-    /// </summary>
+
+
     public class RegressionResult {
 
-        internal RegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, Sample residuals) {
+        internal RegressionResult (ParameterCollection parameters, Sample residuals) {
             Debug.Assert(parameters != null);
-            Debug.Assert(anova != null);
             Debug.Assert(residuals != null);
             this.parameters = parameters;
-            this.anova = anova;
             this.residuals = residuals;
         }
 
         private readonly ParameterCollection parameters;
-
-        private readonly OneWayAnovaResult anova;
 
         private readonly Sample residuals;
 
@@ -32,6 +27,29 @@ namespace Meta.Numerics.Statistics {
                 return (parameters);
             }
         }
+
+        /// <summary>
+        /// Gets the residuals.
+        /// </summary>
+        public virtual Sample Residuals {
+            get {
+                return (residuals);
+            }
+        }
+
+    }
+
+    /// <summary>
+    /// Represents the result of a general linear regression.
+    /// </summary>
+    public class GeneralLinearRegressionResult : RegressionResult {
+
+        internal GeneralLinearRegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, Sample residuals) : base(parameters, residuals) {
+            Debug.Assert(anova != null);
+            this.anova = anova;
+        }
+
+        private readonly OneWayAnovaResult anova;
 
         /// <summary>
         /// Gets r<sup>2</sup> for the regression. 
@@ -58,15 +76,6 @@ namespace Meta.Numerics.Statistics {
         public virtual OneWayAnovaResult Anova {
             get {
                 return (anova);
-            }
-        }
-
-        /// <summary>
-        /// Gets the residuals.
-        /// </summary>
-        public virtual Sample Residuals {
-            get {
-                return (residuals);
             }
         }
 

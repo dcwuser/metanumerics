@@ -144,5 +144,18 @@ namespace DataTest
             DataView means = frame.GroupBy("sex", v => v.Column<double>("tip_fraction").Mean(), "mean_tip_fraction");
 
         }
+
+        [TestMethod]
+        public void SmokeTest2 () {
+
+            DataFrame frame;
+            string path = @"C:\Users\dcw-b\Desktop\DataSets\551184489_52017_210_airline_delay_causes\551184489_52017_210_airline_delay_causes.csv";
+            using (StreamReader stream = File.OpenText(path)) {
+                frame = DataFrame.ReadCsv(stream);
+            }
+
+            DataView view = frame.GroupBy("carrier", (DataView q) => q.Rows.Count, "count");
+
+        }
     }
 }

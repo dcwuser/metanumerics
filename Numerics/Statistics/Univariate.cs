@@ -51,9 +51,20 @@ namespace Meta.Numerics.Statistics {
             return (sumOfSquares / sample.Count);
         }
 
-        private static void ComputeMomentsUpToSecond (IReadOnlyCollection<double> sample, out double mean, out double sumOfSquares) {
+        public static double Skewness (this IReadOnlyCollection<double> sample) {
+
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 2) throw new InsufficientDataException();
+
+            int n;
+            double mean, sumOfSquares, sumOfCubes;
+            ComputeMomentsUpToThird(sample, out n, out mean, out sumOfSquares, out sumOfCubes);
+
+            return (sumOfCubes / Math.Pow(sumOfSquares, 3.0 / 2.0) * Math.Sqrt(n));
+
+        }
+
+        internal static void ComputeMomentsUpToSecond (IEnumerable<double> sample, out double mean, out double sumOfSquares) {
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
             int n = 0;
             mean = 0.0;
             sumOfSquares = 0.0;
@@ -63,6 +74,29 @@ namespace Meta.Numerics.Statistics {
                 mean += delta / n;
                 sumOfSquares += (value - mean) * delta;
             }
+        }
+
+        private static void ComputeMomentsUpToThird (IEnumerable<double> values, out int n, out double mean, out double sumOfSquares, out double sumOfCubes) {
+
+            Debug.Assert(values != null);
+
+            n = 0;
+            mean = 0.0;
+            sumOfSquares = 0.0;
+            sumOfCubes = 0.0;
+            foreach (double value in values) {
+                n++;
+                double e = 1.0 / n;
+                double delta = value - mean;
+                mean += delta * e;
+                double sumOfSquaresDelta = delta * delta * (1.0 - e);
+                sumOfCubes += delta * (sumOfSquaresDelta * (1.0 - 2.0 * e) - 3.0 * sumOfSquares * e);
+                sumOfSquares += sumOfSquaresDelta;
+            }
+
+            Debug.Assert(n >= 0);
+            Debug.Assert(sumOfSquares >= 0.0);
+
         }
 
         /// <summary>

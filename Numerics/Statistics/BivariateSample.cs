@@ -588,6 +588,8 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
         public LinearRegressionResult LinearRegression () {
 
+            return (Bivariate.LinearRegression(xData, yData));
+            /*
             int n = this.Count;
             if (n < 3) throw new InsufficientDataException();
 
@@ -658,6 +660,7 @@ namespace Meta.Numerics.Statistics {
             };
 
             return (new LinearRegressionResult(parameters, rTest, anova, residuals, predict));
+            */
 
         }
 
@@ -670,6 +673,9 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are fewer data points than coefficients to be fit.</exception>
         public PolynomialRegressionResult PolynomialRegression (int m) {
 
+            return (Bivariate.PolynomialRegression(xData, yData, m));
+
+            /*
             if (m < 0) throw new ArgumentOutOfRangeException(nameof(m));
 
             int n = Count;
@@ -729,7 +735,7 @@ namespace Meta.Numerics.Statistics {
             ParameterCollection parameters = new ParameterCollection(names, b, C);
 
             return (new PolynomialRegressionResult(parameters, anova, residuals));
-
+            */
         }
 
 
@@ -749,8 +755,10 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are not more data points than fit parameters.</exception>
         /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
         /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
-        public FitResult NonlinearRegression (Func<IList<double>, double, double> f, IList<double> start) {
+        public RegressionResult NonlinearRegression (Func<IList<double>, double, double> f, IReadOnlyList<double> start) {
 
+            return (Bivariate.NonlinearRegression(xData, yData, f, start));
+            /*
             if (f == null) throw new ArgumentNullException(nameof(f));
             if (start == null) throw new ArgumentNullException(nameof(start));
 
@@ -774,7 +782,19 @@ namespace Meta.Numerics.Statistics {
 
             FitResult result = new FitResult(min.Location, curvature, null);
 
+            string[] names = 
+            ParameterCollection parameters = new ParameterCollection()
+
+            Sample residuals = new Sample();
+            for (int i = 0; i < n; i++) {
+                double r = yData[i] - f(min.Location, xData[i]);
+                residuals.Add(r);
+            }
+
+            RegressionResult result2 = new RegressionResult()
+
             return (result);
+            */
         }
 
         /// <summary>

@@ -9,7 +9,7 @@ namespace Meta.Numerics.Matrices {
     /// </summary>
     /// <seealso cref="RowVector"/>
     /// <seealso cref="ColumnVector"/>
-    public abstract class VectorBase : AnyRectangularMatrix, IEnumerable, IEnumerable<double>, ICollection<double>, IList<double> {
+    public abstract class VectorBase : AnyRectangularMatrix, IEnumerable, IEnumerable<double>, ICollection<double>, IList<double>, IReadOnlyCollection<double>, IReadOnlyList<double> {
 
         internal VectorBase (double[] store, int offset, int stride, int dimension, bool isReadOnly) : base(isReadOnly) {
             this.store = store;
@@ -98,6 +98,12 @@ namespace Meta.Numerics.Matrices {
         }
 
         int ICollection<double>.Count {
+            get {
+                return (dimension);
+            }
+        }
+
+        int IReadOnlyCollection<double>.Count {
             get {
                 return (dimension);
             }

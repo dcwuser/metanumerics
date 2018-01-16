@@ -1696,7 +1696,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The result of the fit, containg the parameters that result in the best fit,
         /// covariance matrix among those parameters, and a test of the goodness of fit.</returns>
         /// <seealso href="http://en.wikipedia.org/wiki/Maximum_likelihood"/>
-        public FitResult MaximumLikelihoodFit (Func<IList<double>, ContinuousDistribution> factory, IList<double> start) {
+        public FitResult MaximumLikelihoodFit (Func<IList<double>, ContinuousDistribution> factory, IReadOnlyList<double> start) {
 
             if (factory == null) throw new ArgumentNullException(nameof(factory));
             if (start == null) throw new ArgumentNullException(nameof(start));

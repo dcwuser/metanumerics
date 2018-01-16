@@ -394,8 +394,8 @@ namespace Test {
             B.Add(1.0, 7.0);
             B.Add(4.0, 8.0);
             B.Add(2.0, 9.0);
-            RegressionResult PR = B.PolynomialRegression(1);
-            RegressionResult LR = B.LinearRegression();
+            GeneralLinearRegressionResult PR = B.PolynomialRegression(1);
+            GeneralLinearRegressionResult LR = B.LinearRegression();
             Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.Parameters.Best, LR.Parameters.Best));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.Parameters.Covariance, LR.Parameters.Covariance));
 
@@ -427,13 +427,13 @@ namespace Test {
                     sample.Add(x, y);
                 }
 
-                FitResult fit = sample.NonlinearRegression(
+                RegressionResult fit = sample.NonlinearRegression(
                     (IList<double> p, double x) => p[0] * Math.Pow(x, p[1]),
                     new double[] { 1.0, 1.0 }
                 );
 
-                parameters.Add(fit.Parameters);
-                covariances.Add(fit.Covariance(0, 0), fit.Covariance(1, 1), fit.Covariance(0, 1));
+                parameters.Add(fit.Parameters.Best);
+                covariances.Add(fit.Parameters.Covariance[0, 0], fit.Parameters.Covariance[1, 1], fit.Parameters.Covariance[0, 1]);
 
             }
 

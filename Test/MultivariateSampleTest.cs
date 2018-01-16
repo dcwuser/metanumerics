@@ -346,7 +346,7 @@ namespace Test {
                     }
                     ms.Add(x);
                 }
-                RegressionResult r = ms.LinearRegression(0);
+                GeneralLinearRegressionResult r = ms.LinearRegression(0);
                 fs.Add(r.F.Statistic);
             }
 
@@ -365,12 +365,12 @@ namespace Test {
             for (int i = 0; i < 10; i++) {
                 SA.Add(rng.NextDouble(), rng.NextDouble());
             }
-            RegressionResult RA = SA.LinearRegression(0);
+            GeneralLinearRegressionResult RA = SA.LinearRegression(0);
             ColumnVector PA = RA.Parameters.Best;
             SymmetricMatrix CA = RA.Parameters.Covariance;
 
             MultivariateSample SB = SA.Columns(1, 0);
-            RegressionResult RB = SB.LinearRegression(1);
+            GeneralLinearRegressionResult RB = SB.LinearRegression(1);
             ColumnVector PB = RB.Parameters.Best;
             SymmetricMatrix CB = RB.Parameters.Covariance;
 
@@ -378,7 +378,7 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 0], CB[1, 1])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 1], CB[1, 0])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[1, 1], CB[0, 0]));
 
             BivariateSample SC = SA.TwoColumns(1, 0);
-            RegressionResult RC = SC.LinearRegression();
+            GeneralLinearRegressionResult RC = SC.LinearRegression();
             ColumnVector PC = RC.Parameters.Best;
             SymmetricMatrix CC = RC.Parameters.Covariance;
 

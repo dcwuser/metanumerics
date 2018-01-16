@@ -151,7 +151,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Describes the result of a linear regression.
     /// </summary>
-    public sealed class LinearRegressionResult : RegressionResult {
+    public sealed class LinearRegressionResult : GeneralLinearRegressionResult {
 
         internal LinearRegressionResult (
             ParameterCollection parameters,

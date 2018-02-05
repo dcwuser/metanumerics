@@ -10,6 +10,7 @@ namespace Meta.Numerics.Data
     /// A collection of rows from a table.
     /// </summary>
     public sealed class DataRowCollection : IReadOnlyCollection<DataRow>, IReadOnlyList<DataRow> {
+
         internal DataRowCollection (DataView frame) {
             Debug.Assert(frame != null);
             this.frame = frame;
@@ -37,6 +38,10 @@ namespace Meta.Numerics.Data
             }
         }
 
+        /// <summary>
+        /// Returns an enumerator through the rows.
+        /// </summary>
+        /// <returns></returns>
         public IEnumerator<DataRow> GetEnumerator () {
             for (int i = 0; i < frame.map.Count; i++) {
                 yield return (new DataRow(frame, i));

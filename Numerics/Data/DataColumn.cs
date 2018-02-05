@@ -9,7 +9,7 @@ namespace Meta.Numerics.Data
     /// A readable, indexed set of data points. 
     /// </summary>
     /// <typeparam name="T">The type of the data points.</typeparam>
-    public class DataColumn<T> : IReadOnlyDataList<T>
+    public sealed class DataColumn<T> : IReadOnlyDataList<T>
     {
         internal DataColumn(DataView frame, int c)
         {
@@ -17,8 +17,8 @@ namespace Meta.Numerics.Data
             this.c = c;
         }
 
-        private DataView frame;
-        private int c;
+        private readonly DataView frame;
+        private readonly int c;
 
         /// <summary>
         /// Gets the name of the column.

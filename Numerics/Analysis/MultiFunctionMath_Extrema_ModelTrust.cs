@@ -17,7 +17,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="function">The multi-dimensional function to minimize.</param>
         /// <param name="start">The starting location for the search.</param>
         /// <returns>The local minimum.</returns>
-        public static MultiExtremum FindLocalMinimum (Func<IList<double>, double> function, IReadOnlyList<double> start) {
+        public static MultiExtremum FindLocalMinimum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start) {
             return (FindLocalMinimum(function, start, new EvaluationSettings()));
         }
 
@@ -38,12 +38,13 @@ namespace Meta.Numerics.Analysis {
         /// <para>The Hessian (matrix of second derivatives) returned with the minimum is an approximation that is constructed in the course of search. It should be
         /// considered a crude approximation, and may not even be that if the minimum is highly non-quadratic.</para>
         /// <para>If you have a constrained minimization problem, require a high-precision solution, and do not have a good initial guess, consider first feeding
-        /// your constrained problem into <see cref="FindGlobalMinimum(Func{IList{double}, double}, IList{Interval}, EvaluationSettings)"/>, which supports constraints but gives relatively lower precision solutions, then
+        /// your constrained problem into <see cref="FindGlobalMinimum(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, EvaluationSettings)"/>,
+        /// which supports constraints but gives relatively lower precision solutions, then
         /// feeding the result of that method into this method, which finds relatively precise solutions but does not support constraints.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="function"/>, <paramref name="start"/>, or <paramref name="settings"/> is <see langword="null"/>.</exception>
         /// <exception cref="NonconvergenceException">The number of function evaluations required exceeded the evaluation budget.</exception>
-        public static MultiExtremum FindLocalMinimum (Func<IList<double>, double> function, IReadOnlyList<double> start, EvaluationSettings settings) {
+        public static MultiExtremum FindLocalMinimum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start, EvaluationSettings settings) {
             if (function == null) throw new ArgumentNullException("function");
             if (start == null) throw new ArgumentNullException("start");
             if (settings == null) throw new ArgumentNullException("settings");
@@ -56,7 +57,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="function">The multi-dimensional function to maximize.</param>
         /// <param name="start">The starting location for the search.</param>
         /// <returns>The local maximum.</returns>
-        public static MultiExtremum FindLocalMaximum (Func<IList<double>, double> function, IReadOnlyList<double> start) {
+        public static MultiExtremum FindLocalMaximum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start) {
             return (FindLocalMaximum(function, start, new EvaluationSettings()));
         }
 
@@ -67,14 +68,14 @@ namespace Meta.Numerics.Analysis {
         /// <param name="start">The starting location for the search.</param>
         /// <param name="settings">The evaluation settings that govern the search for the maximum.</param>
         /// <returns>The local maximum.</returns>
-        public static MultiExtremum FindLocalMaximum (Func<IList<double>, double> function, IReadOnlyList<double> start, EvaluationSettings settings) {
+        public static MultiExtremum FindLocalMaximum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start, EvaluationSettings settings) {
             if (function == null) throw new ArgumentNullException("function");
             if (start == null) throw new ArgumentNullException("start");
             if (settings == null) throw new ArgumentNullException("settings");
             return (FindLocalExtremum(function, start, settings, true));
         }
 
-        private static MultiExtremum FindLocalExtremum (Func<IList<double>, double> function, IReadOnlyList<double> start, EvaluationSettings settings, bool negate) {
+        private static MultiExtremum FindLocalExtremum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start, EvaluationSettings settings, bool negate) {
             MultiFunctor f = new MultiFunctor(function, negate);
 
             // Pick an initial radius; we need to do this better.

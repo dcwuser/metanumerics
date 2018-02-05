@@ -376,6 +376,12 @@ namespace Meta.Numerics.Data
             return (new DataFrame(outputColumns));
         }
 
+        /// <summary>
+        /// Add a computed column.
+        /// </summary>
+        /// <typeparam name="T">The type of the computed value.</typeparam>
+        /// <param name="columnName">The name of the computed column.</param>
+        /// <param name="function">The function that computes the column value.</param>
         public void AddComputedColumn<T>(string columnName, Func<DataRow, T> function)
         {
             if (columnName == null) throw new ArgumentNullException(nameof(columnName));

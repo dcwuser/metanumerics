@@ -25,7 +25,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="function">The function.</param>
         /// <param name="volume">The volume to search.</param>
         /// <returns>The global minimum.</returns>
-        public static MultiExtremum FindGlobalMinimum (Func<IList<double>, double> function, IList<Interval> volume) {
+        public static MultiExtremum FindGlobalMinimum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<Interval> volume) {
             return (FindGlobalExtremum(function, volume, null, false));
         }
 
@@ -65,14 +65,14 @@ namespace Meta.Numerics.Analysis {
         /// <returns>The global minimum.</returns>
         /// <remarks>
         /// <para>This algorithm attempts to find the global minimum of the given function within the entire given hyper-cube. It generally
-        /// requires many more function evaluations than <see cref="FindGlobalMinimum(Func{IList{double}, double}, IList{Interval}, EvaluationSettings)"/>,
+        /// requires many more function evaluations than <see cref="FindGlobalMinimum(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, EvaluationSettings)"/>,
         /// but is much more likely to find a global minimum in situations where multiple local minima exist.</para>
-        /// <para>Unlike <see cref="FindGlobalMinimum(Func{IList{double}, double}, IList{Interval}, EvaluationSettings)"/>,
+        /// <para>Unlike <see cref="FindGlobalMinimum(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, EvaluationSettings)"/>,
         /// this method does not return an approximate Hessian matrix near the minimum.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="function"/> or <paramref name="volume"/> is <see langword="null"/>.</exception>
         /// <exception cref="NonconvergenceException">The minimum could not be found within the given evaluation budget.</exception>
-        public static MultiExtremum FindGlobalMinimum (Func<IList<double>, double> function, IList<Interval> volume, EvaluationSettings settings) {
+        public static MultiExtremum FindGlobalMinimum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<Interval> volume, EvaluationSettings settings) {
             return (FindGlobalExtremum(function, volume, settings, false));
         }
 
@@ -82,7 +82,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="function">The function.</param>
         /// <param name="volume">The volume to search.</param>
         /// <returns>The global maximum.</returns>
-        public static MultiExtremum FindGlobalMaximum (Func<IList<double>, double> function, IList<Interval> volume) {
+        public static MultiExtremum FindGlobalMaximum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<Interval> volume) {
             return (FindGlobalExtremum(function, volume, null, true));
         }
 
@@ -93,11 +93,11 @@ namespace Meta.Numerics.Analysis {
         /// <param name="volume">The volume to search.</param>
         /// <param name="settings">The evaluation constraints to apply.</param>
         /// <returns>The global maximum.</returns>
-        public static MultiExtremum FindGlobalMaximum (Func<IList<double>, double> function, IList<Interval> volume, EvaluationSettings settings) {
+        public static MultiExtremum FindGlobalMaximum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<Interval> volume, EvaluationSettings settings) {
             return (FindGlobalExtremum(function, volume, settings, true));
         }
 
-        private static MultiExtremum FindGlobalExtremum (Func<IList<double>, double> function, IList<Interval> volume, EvaluationSettings settings, bool negate) {
+        private static MultiExtremum FindGlobalExtremum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<Interval> volume, EvaluationSettings settings, bool negate) {
             if (function == null) throw new ArgumentNullException(nameof(function));
             if (volume == null) throw new ArgumentNullException(nameof(volume));
             MultiFunctor f = new MultiFunctor(function, negate);
@@ -110,7 +110,7 @@ namespace Meta.Numerics.Analysis {
         // The idea is maintain a population of input vectors ("agents") and to vary that population over cycles ("generations") according to rules that incorporate
         // random mutation but on average tend to bring them closer to optima ("fitter").
 
-        private static MultiExtremum FindGlobalExtremum (MultiFunctor f, IList<Interval> volume, DifferentialEvolutionSettings settings) {
+        private static MultiExtremum FindGlobalExtremum (MultiFunctor f, IReadOnlyList<Interval> volume, DifferentialEvolutionSettings settings) {
 
             int d = volume.Count;
 

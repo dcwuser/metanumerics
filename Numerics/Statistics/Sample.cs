@@ -64,13 +64,6 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        public double SumOfSquaredDeviations {
-            get {
-                //return (SS);
-                return (summary.SumOfSquaredDeviations);
-            }
-        }
-
         public double Variance {
             get {
                 //return (SS / data.Count);
@@ -449,7 +442,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="transformFunction"/> is <see langword="null"/>.</exception>
         public void Transform (Func<double, double> transformFunction) {
-            if (transformFunction == null) throw new ArgumentNullException("transformFunction");
+            if (transformFunction == null) throw new ArgumentNullException(nameof(transformFunction));
             data.Transform(transformFunction);
             // it's okay to apply a transform even to a "read-only" sample because read-only is there to
             // keep us from adding or removing entries, not from updating them
@@ -508,17 +501,6 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        // in some cases (e.g. t-tests) its helpful to access the sum of squared deviations directly
-        // without this property, we would need to multiply by N or N-1 just to get back to the 
-        // number we divided by N or N-1 in order to return the sample or population variance
-
-        internal double SumOfSquareDeviations {
-            get {
-                return (data.SumOfSquaredDeviations);
-            }
-        }
-
-
         /// <summary>
         /// Gets the sample variance.
         /// </summary>
@@ -542,7 +524,8 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>        
         public double StandardDeviation {
             get {
-                return (Math.Sqrt(Variance));
+                return (data.StandardDeviation());
+                //return (Math.Sqrt(Variance));
             }
         }
 
@@ -554,7 +537,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         public double Skewness {
             get {
-                return (CentralMoment(3) / Math.Pow(Variance, 3.0 / 2.0));
+                return (data.Skewness());
             }
         }
 
@@ -564,20 +547,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="r">The order of the moment to compute.</param>
         /// <returns>The <paramref name="r"/>th raw moment of the sample.</returns>
         public double RawMoment (int r) {
-            if (r == 0) {
-                return (1.0);
-            } else if (r == 1) {
-                return (Mean);
-            } else if (r == 2) {
-                return (Variance + MoreMath.Sqr(Mean));
-            } else {
-                // Negative moments are okay.
-                double M = 0.0;
-                for (int i = 0; i < data.Count; i++) {
-                    M += MoreMath.Pow(data[i], r);
-                }
-                return (M / data.Count);
-            }
+            return (data.RawMoment(r));
         }
 
         /// <summary>
@@ -590,21 +560,7 @@ namespace Meta.Numerics.Statistics {
         /// central moments of the underlying population; to obtain the latter, use <see cref="PopulationCentralMoment(int)"/>.</para>
         /// </remarks>
         public double CentralMoment (int r) {
-            if (r == 0) {
-                return (1.0);
-            } else if (r == 1) {
-                return (0.0);
-            } else if (r == 2) {
-                return (Variance);
-            } else {
-                // Negative moments are okay
-                double mu = Mean;
-                double C = 0.0;
-                for (int i = 0; i < data.Count; i++) {
-                    C += MoreMath.Pow(data[i] - mu, r);
-                }
-                return (C / data.Count);
-            }
+            return (data.CentralMoment(r));
         }
 
         // median and other measures based on quantile functions
@@ -615,7 +571,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="https://en.wikipedia.org/wiki/Median"/>
         public double Median {
             get {
-                return (InverseLeftProbability(0.5));
+                return (data.Median());
             }
         }
 
@@ -627,7 +583,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="https://en.wikipedia.org/wiki/Interquartile_range"/>
         public Interval InterquartileRange {
             get {
-                return (Interval.FromEndpoints(InverseLeftProbability(0.25), InverseLeftProbability(0.75)));
+                return (data.InterquartileRange());
             }
         }
 
@@ -637,9 +593,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">The sample contains no data.</exception>
         public double Minimum {
             get {
-                if (data.Count < 1) throw new InsufficientDataException();
-                int[] order = data.GetSortOrder();
-                return (data[order[0]]);
+                return (data.Minimum());
             }
         }
 
@@ -649,9 +603,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">The sample contains no data.</exception>
         public double Maximum {
             get {
-                if (data.Count < 1) throw new InsufficientDataException();
-                int[] order = data.GetSortOrder();
-                return (data[order[data.Count - 1]]);
+                return (data.Maximum());
             }
         }
 
@@ -661,11 +613,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="value">The reference value.</param>
         /// <returns>The fraction of values in the sample that are less than or equal to the given reference value.</returns>
         public double LeftProbability (double value) {
-            int[] order = data.GetSortOrder();
-            for (int i = 0; i < data.Count; i++) {
-                if (data[order[i]] > value) return (((double) i) / data.Count);
-            }
-            return (1.0);
+            return (data.LeftProbability(value));
         }
 
         /// <summary>
@@ -676,15 +624,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="P"/> lies outside [0,1].</exception>
         /// <exception cref="InsufficientDataException"><see cref="Sample.Count"/> is less than two.</exception>
         public double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
-            if (data.Count < 2) throw new InsufficientDataException();
-            int[] order = data.GetSortOrder();
-            double n = P * (data.Count - 1);
-            int n1 = (int) Math.Floor(n);
-            int n2 = (int) Math.Ceiling(n);
-            double p1 = n2 - n;
-            double p2 = 1.0 - p1;
-            return (p1 * data[order[n1]] + p2 * data[order[n2]]);
+            return (data.InverseLeftProbability(P));
         }
 
         // infered population-level statistics
@@ -694,7 +634,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public UncertainValue PopulationMean {
             get {
-                return (EstimateFirstCumulant());
+                return (data.PopulationMean());
             }
         }
 
@@ -703,7 +643,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public UncertainValue PopulationVariance {
             get {
-                return (EstimateSecondCumulant());
+                return (data.PopulationVariance());
             }
         }
 
@@ -716,7 +656,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         public UncertainValue PopulationStandardDeviation {
             get {
-                return (EstimateStandardDeviation());
+                return (data.PopulationStandardDeviation());
             }
         }
 
@@ -736,22 +676,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>An estimate of the <paramref name="r"/>th raw moment of the population.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="r"/> is negative.</exception>
         public UncertainValue PopulationRawMoment (int r) {
-            if (r < 0) {
-                // we don't do negative moments
-                throw new ArgumentOutOfRangeException(nameof(r));
-            } else if (r == 0) {
-                // the zeroth moment is exactly one for any distribution
-                return (new UncertainValue(1.0, 0.0));
-            } else if (r == 1) {
-                // the first momemt is just the mean
-                return (EstimateFirstCumulant());
-            } else {
-                // moments of order two and higher
-                int n = data.Count;
-                double M_r = RawMoment(r);
-                double M_2r = RawMoment(2 * r);
-                return (new UncertainValue(M_r, Math.Sqrt((M_2r - M_r * M_r) / n)));
-            }
+            return (data.PopulationRawMoment(r));
         }
 
         /// <summary>
@@ -762,160 +687,7 @@ namespace Meta.Numerics.Statistics {
         /// of the underlying population.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="r"/> is negative.</exception>
         public UncertainValue PopulationCentralMoment (int r) {
-            if (r < 0) {
-                // we don't do negative moments
-                throw new ArgumentOutOfRangeException(nameof(r));
-            } else if (r == 0) {
-                // the zeroth moment is exactly one for any distribution
-                return (new UncertainValue(1.0, 0.0));
-            } else if (r == 1) {
-                // the first moment about the mean is exactly zero by the defintion of the mean
-                return (new UncertainValue(0.0, 0.0));
-            } else if (r == 2) {
-                return (EstimateSecondCumulant());
-            } else if (r == 3) {
-                return (EstimateThirdCumulant());
-            } else {
-                return (EstimateCentralMoment(r));
-            }
-
-        }
-
-        // First three cumulants are M1, C2, and C3. Unbiased estimators of these are called k-statistics.
-        // See http://mathworld.wolfram.com/k-Statistic.html for k-statistic formulas in terms of sample central
-        // moments and expressions for their variances in terms of population cumulants.
-
-        // These formulas are also found in Dodge & Rousson, "The Complications of the Fourth Central Moment",
-        // The American Statistician 53 (1999) 267. Also Stuart & Ord, "Kendall's Advanced Theory of Statistics",
-        // Volume I, Chapter 12
-
-        // The first cumulant, the mean:
-        //   k_1 = m_1
-        //   V(k_1) = \frac{K_2}{n}
-        // To get V(k_1), we need K_2. We have an unbiased estimate k_2 = \frac{n}{n-1} c_2, and if we plug that in, we get
-        //   V(k_1) = \frac{c_2}{n-1}
-        // None of this is surprising. We already knew that the m_1 is an unbiased estimator of M_1, with variance C_2 / n.
-
-        private UncertainValue EstimateFirstCumulant () {
-            int n = this.Count;
-            if (n < 2) throw new InsufficientDataException();
-            double m1 = this.Mean;
-            double c2 = this.Variance;
-            return (new UncertainValue(m1, Math.Sqrt(c2 / (n - 1))));
-        }
-
-        // The second cumulant, the variance:
-        //   k_2 = \frac{n}{n-1} c_2
-        //   V(k_2) = \frac{K_4}{n} + \frac{2 K_2^2}{n-1}
-        // Evaluating V(k_2) is not trivial. Just as we used k_2 for K_2 above, we could just use k_2 and k_4 for K_2 and K_4.
-        // But that isn't exactly right, because an even though k_2 is an unbiased estimator of K_2, k_2^2 isn't an unbiased
-        // estimator of K_2^2. Using polykays, Stuart & Ord derive an unbiased estimator (formula 12.131), which is also
-        // quoted by Mathworld:
-        //   V(k_2) = \frac{1}{n+1} \left[ \frac{(n-1)}{n} k_4 + 2 k_2^2 \right]
-        // Plugging in the formulas for k-statistics in terms of central moments and doing a lot of algebra gets us to
-        //   V(k_2) = \frac{n}{(n-2)(n-3)} \left[ c_4 - \frac{(n^2 - 3)}{(n - 1)^2} c_2^2 \right]
-        // Numerical simulations show this to indeed be unbiased, but it has a problem. The coefficient of c_2^2 is
-        // greater than unity, so the quantity in brackets can be negative. Therefore we fall back on the asymptotic
-        // limit
-        //   V(k_2) = \frac{c_4 - c_2^2}{n}
-        // which cannot be negative because of the inequality (verified in numerical simulations) c_4 > c_2^2. 
-
-        // See if we can do better, either by adjusting denominator and/or making exact for normal distributions.
-        // Being a little off here isn't terrible, since this is just an error estimate.
-
-        // For normal, V(k_2) = \frac{2 \sigma^4}{n-1}, so change denominator to n-1?
-
-        private UncertainValue EstimateSecondCumulant () {
-            int n = this.Count;
-            if (n < 3) throw new InsufficientDataException();
-            double c2 = this.CentralMoment(2);
-            double c4 = this.CentralMoment(4);
-            Debug.Assert(c2 >= 0.0);
-            Debug.Assert(c4 >= 0.0);
-            double k2 = c2 * n / (n - 1);
-            double v = c4 - c2 * c2;
-            Debug.Assert(v >= 0.0);
-            return (new UncertainValue(k2, Math.Sqrt(v / (n - 1))));
-        }
-
-        // The third cumulant, which characterizes skew:
-        //   k_3 = \frac{n^2}{(n-1)(n-2)} c_3
-        //   V(k_3) = \frac{K_6}{n} + \frac{9 K_4 K_2}{n-1} + \frac{9 K_3^2}{n-1} + \frac{6 n K_2^3}{(n-1)(n-2)}    
-        // Evaluating V(k_3) has the same issues as V(k_2) above. In this case, we won't even attempt an unbiased
-        // estimator, but instead just go directly to the asymptotic form. In terms of central moments, this is:
-        //   V(k_3) = \frac{c_6 - 6 c_4 c_2 - c_3^2 + 9 c_2^3}{n}
-        // Numerical simulations suggest this is guaranteed positive, but it would be nice to find a proof.
-
-        private UncertainValue EstimateThirdCumulant () {
-            int n = this.Count;
-            if (n < 4) throw new InsufficientDataException();
-            double c2 = this.Variance;
-            double c3 = this.CentralMoment(3);
-            double c4 = this.CentralMoment(4);
-            double c6 = this.CentralMoment(6);
-            double k3 = c3 * n * n / (n - 1) / (n - 2);
-            double v = c6 - c3 * c3 - 3.0 * (2.0 * c4 - 3.0 * c2 * c2) * c2;
-            Debug.Assert(v >= 0.0);
-            return (new UncertainValue(k3, Math.Sqrt(v / n)));
-        }
-
-        // Stuart & Ord, "Kendall's Advanced Theory of Statistics", Volume I, Chapter 10 derives
-        // formulas for the the expectation and variance of arbitrary c_r in terms of C_r as a series in 1/n.
-        //   E(c_r) = C_r - \frac{r C_r - r(r-1) / 2 C_{r-2} C_2}{n} + \cdots
-        //   V(c_r) = \frac{C_{2r} - C_{r}^2 + r^2 C_{r-1}^2 C_2 - 2 r C_{r+1} C_{r-1}}{n} + \cdots
-        // We can turn these around to get an estimator for C_r and its variance in terms of c_r.
-        // We have verified that these agree, to these orders, with the exact expressions for M1, C2, and C3 above.
-
-        private UncertainValue EstimateCentralMoment (int r) {
-
-            Debug.Assert(r >= 2);
-
-            // the formula for the best estimate of the r'th population moment involves C_r, C_{r-2}, and C_2
-            // the formula for the uncertainty in this estimate involves C_{2r}, C_{r+1}, C_{r-1}, and C_2
-            // we need all these sample moments
-            int n = data.Count;
-            if (n < 3) throw new InsufficientDataException();
-            double c_2 = CentralMoment(2);
-            double c_rm2 = CentralMoment(r - 2);
-            double c_rm1 = CentralMoment(r - 1);
-            double c_r = CentralMoment(r);
-            double c_rp1 = CentralMoment(r + 1);
-            double c_2r = CentralMoment(2 * r);
-
-            double c = c_r + r * (c_r - 0.5 * (r - 1) * c_rm2 * c_2) / n;
-            double v = c_2r - c_r * c_r + r * r * c_rm1 * c_rm1 * c_2 - 2 * r * c_rp1 * c_rm1;
-            Debug.Assert(v >= 0.0);
-            return (new UncertainValue(c, Math.Sqrt(v / n)));
-        }
-
-        // An obvious estimate of the standard deviation is just the square root of the variance, computed
-        // with our usual error propagation methods. This is right as a first approximation, and is what
-        // we did in previous versions, but we can do better.
-
-        // The reason it's not exactly right is that the square root of the mean of a distributed quantity
-        // is not the mean of the square root of the quantity. This means that, even though we have found
-        // in k_2 an unbiased estimator of K_2 = C_2, it's square root is not an unbiased estimator of
-        // \sqrt{C_2}. To discover it's bias, use Taylor expansion
-        //   E(f(x)) = \int \! dp \, p(x) \, f(x)
-        //           = \int \! dp \, p(x) \left[ f(x_0) + f'(x_0) (x - x_0) + \half f''(x_0) (x - x_0)^2 + \cdots \right]
-        //           = f(x_0) \int \! dp \, p(x) + f'(x_0) \int \! dp \, p(x) (x - x_0) + \half f''(x_0) \int \! dp \, p(x) (x - x_0)^2 + \cdots
-        //           = f(x_0) + 0 + \half f''(x_0) V(x) + \cdots
-        //  In our case f(x) = \sqrt{k_2} so
-        //    E(\sqrt{k_2}) = C_2^{1/2} - \frac{1}{8} C_2^{-3/2} V(k_2) + \cdots
-        //  So less unbiased estimator of \sqrt{C_2} is
-        //    \hat{\sigma} = k_2^{1/2} + \frac{1}{8} k_2^{-3/2} V(k_2)
-        //                 = \sqrt{k_2} \left[ 1 + \frac{c_4 - c_2^2}{8 n c_2^2} 
-        // This is covered in Stuart & Ord in exercise 10.20.
-
-        private UncertainValue EstimateStandardDeviation () {
-            int n = this.Count;
-            if (n < 3) throw new InsufficientDataException();
-            double c2 = this.CentralMoment(2);
-            double c4 = this.CentralMoment(4);
-            double v = (c4 - c2 * c2) / (n - 1);
-            double s = Math.Sqrt(c2 * n / (n - 1)) * (1.0 + v / (8.0 * c2 * c2));
-            double ds = 0.5 * Math.Sqrt(v) / s;
-            return (new UncertainValue(s, ds));
+            return (data.PopulationCentralMoment(r));
         }
 
         private UncertainValue EstimateSkewness () {
@@ -979,9 +751,7 @@ namespace Meta.Numerics.Statistics {
         /// in the direction indicated by <paramref name="type"/>.</returns>
         /// <seealso cref="ZTest(double, double)"/>
         public TestResult ZTest (double referenceMean, double referenceStandardDeviation, TestType type) {
-            if (this.Count < 1) throw new InsufficientDataException();
-            double z = (this.Mean - referenceMean) / (referenceStandardDeviation / Math.Sqrt(this.Count));
-            return (new TestResult("z", z, type, new NormalDistribution()));
+            return (data.ZTest(referenceMean, referenceStandardDeviation, type));
         }
 
         /// <summary>
@@ -1035,17 +805,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>A test result indicating whether the sample mean is significantly different from the reference mean
         /// in the direction indicated by <paramref name="type"/>.</returns>
         public TestResult StudentTTest (double referenceMean, TestType type) {
-
-            // We need to be able to compute a mean and standard deviation in order to do this test; the standard deviation requires at least 2 data points.
-
-            if (this.Count < 2) throw new InsufficientDataException();
-            double sigma = Math.Sqrt(this.SumOfSquareDeviations / (this.Count - 1.0));
-            double se = sigma / Math.Sqrt(this.Count);
-
-            double t = (this.Mean - referenceMean) / se;
-            int dof = this.Count - 1;
-
-            return (new TestResult("t", t, type, new StudentDistribution(dof)));
+            return (data.StudentTTest(referenceMean, type));
         }
 
         /// <summary>
@@ -1067,19 +827,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <seealso cref="StudentTTest(double)"/>
         public TestResult SignTest (double referenceMedian) {
-
-            // we need some data to do a sign test
-            if (this.Count < 1) throw new InsufficientDataException();
-
-            // count the number of entries that exceed the reference median
-            int W = 0;
-            foreach (double value in data) {
-                if (value > referenceMedian) W++;
-            }
-
-            // W should be distributed binomially
-            return (new TestResult("W", W, TestType.TwoTailed, new DiscreteAsContinuousDistribution(new BinomialDistribution(0.5, data.Count))));
-
+            return (data.SignTest(referenceMedian));
         }
 
         /// <summary>
@@ -1107,30 +855,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException"><paramref name="a"/> or <paramref name="b"/> contains less than two values.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Student's_t-test"/>
         public static TestResult StudentTTest (Sample a, Sample b) {
-
-            if (a == null) throw new ArgumentNullException(nameof(a));
-            if (b == null) throw new ArgumentNullException(nameof(b));
-
-            // get counts
-            int na = a.Count;
-            int nb = b.Count;
-
-            if (na < 2) throw new InsufficientDataException();
-            if (nb < 2) throw new InsufficientDataException();
-
-            // get means
-            double ma = a.Mean;
-            double mb = b.Mean;
-
-            // get pooled variance and count
-            double v = (a.SumOfSquareDeviations + b.SumOfSquareDeviations) / (na + nb - 2);
-            double n = 1.0 / (1.0 / na + 1.0 / nb);
-
-            // evaluate t
-            double t = (ma - mb) / Math.Sqrt(v / n);
-
-            return (new TestResult("t", t, TestType.TwoTailed, new StudentDistribution(na + nb - 2)));
-
+            return (Univariate.StudentTTest(a.data, b.data));
         }
 
         /// <summary>
@@ -1148,90 +873,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Mann-Whitney_U_test"/>
         public static TestResult MannWhitneyTest (Sample a, Sample b) {
-
-            if (a == null) throw new ArgumentNullException(nameof(a));
-            if (b == null) throw new ArgumentNullException(nameof(b));
-
-            // Essentially, we want to order the entries from both samples together and find out how
-            // many times "a's beat b's". In the ordering ababb, a beats b 5 times.
-
-            // Implementing this naively would be O(N^2), so instead we use a formula that
-            // relates this quantity to the sum of ranks of a's and b's; to get those ranks
-            // we do seperate sorts O(N ln N) and a merge sort O(N).
-
-            // Sort the two samples.
-            int[] aOrder = a.data.GetSortOrder();
-            int[] bOrder = b.data.GetSortOrder();
-
-            // Now we essentially do a merge sort, but instead of actually forming the merged list,
-            // we just keep track of the ranks that elements from each sample would have in the merged list
-
-            // Variables to track the sum of ranks for each sample
-            int r1 = 0;
-            int r2 = 0;
-
-            // Pointers to the current position in each list
-            int p1 = 0;
-            int p2 = 0;
-
-            // The current rank
-            int r = 1;
-
-            while (true) {
-
-                if (a.data[aOrder[p1]] < b.data[bOrder[p2]]) {
-                    r1 += r;
-                    p1++;
-                    r++;
-                    if (p1 >= a.Count) {
-                        while (p2 < b.Count) {
-                            r2 += r;
-                            p2++;
-                            r++;
-                        }
-                        break;
-                    }
-
-                } else {
-                    r2 += r;
-                    p2++;
-                    r++;
-                    if (p2 >= b.Count) {
-                        while (p1 < a.Count) {
-                            r1 += r;
-                            p1++;
-                            r++;
-                        }
-                        break;
-                    }
-
-                }
-            }
-
-            // Relate u's to r's,
-            int u1 = r1 - a.Count * (a.Count + 1) / 2;
-            int u2 = r2 - b.Count * (b.Count + 1) / 2;
-            Debug.Assert(u1 + u2 == a.Count * b.Count);
-
-            // Return the result
-
-            // If possible, we want to use the exact distribution of U.
-            // To compute it, we need to do exact integer arithmetic on numbers of order the total number of possible orderings,
-            // which is (a.Count + b.Count!).
-            // Since decimal is the built-in type that can hold the largest exact integers, we use it for the computation.
-            // Therefore, to generate the exact distribution, the total number of possible orderings must be less than the capacity of a decimal. 
-            ContinuousDistribution uDistribution;
-            double lnTotal = AdvancedIntegerMath.LogFactorial(a.Count + b.Count) - AdvancedIntegerMath.LogFactorial(a.Count) - AdvancedIntegerMath.LogFactorial(b.Count);
-            if (lnTotal > Math.Log((double)Decimal.MaxValue)) {
-                double mu = a.Count * b.Count / 2.0;
-                double sigma = Math.Sqrt(mu * (a.Count + b.Count + 1) / 6.0);
-                uDistribution = new NormalDistribution(mu, sigma);
-            } else {
-                uDistribution = new DiscreteAsContinuousDistribution(new MannWhitneyExactDistribution(a.Count, b.Count));
-            }
-
-            return (new TestResult("U", u1, TestType.TwoTailed, uDistribution));
-
+            return (Univariate.MannWhitneyTest(a.data, b.data));
         }
 
         /// <summary>
@@ -1562,7 +1204,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="KolmogorovDistribution"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
         public TestResult KolmogorovSmirnovTest (ContinuousDistribution distribution) {
-            return (Univariate.KolmogorovSmirnovTest(data, distribution));
+            return (data.KolmogorovSmirnovTest(distribution));
         }
 
         /// <summary>
@@ -1581,7 +1223,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There is no data in the sample.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Kuiper%27s_test"/>
         public TestResult KuiperTest (ContinuousDistribution distribution) {
-            return(Univariate.KuiperTest(this.data, distribution));
+            return(data.KuiperTest(distribution));
         }
 
         /// <summary>
@@ -1595,55 +1237,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">One or both of the samples is empty.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
         public static TestResult KolmogorovSmirnovTest (Sample a, Sample b) {
-            if (a == null) throw new ArgumentNullException(nameof(a));
-            if (b == null) throw new ArgumentNullException(nameof(b));
-
-            // we must have data to do the test
-            if (a.Count < 1) throw new InsufficientDataException("Messages.InsufficientData");
-            if (b.Count < 1) throw new InsufficientDataException("Messages.InsufficientData");
-
-            // the samples must be sorted
-            int[] aOrder = a.data.GetSortOrder();
-            int[] bOrder = b.data.GetSortOrder();
-
-            // keep track of where we are in each sample
-            int ia = 0;
-            int ib = 0;
-
-            // keep track of the cdf of each sample
-            double d0 = 0.0;
-            double d1 = 0.0;
-
-            // find the maximum cdf seperation
-            double d = 0.0;
-            while ((ia < a.Count) && (ib < b.Count)) {
-                if (a.data[aOrder[ia]] < b.data[bOrder[ib]]) {
-                    // the next data point is in sample 0
-                    d0 = 1.0 * (ia + 1) / a.Count;
-                    ia++;
-                } else {
-                    // the next data point is in sample 1
-                    d1 = 1.0 * (ib + 1) / b.Count;
-                    ib++;
-                }
-                double dd = Math.Abs(d1 - d0);
-                if (dd > d) d = dd;
-            }
-
-            // return the result
-            // currently we use the fast that, asymptotically, \sqrt{\frac{n m}{n + m}} D goes to the limiting Kolmogorov distribution
-            // but this limit is known to be approached slowly; we should look into the exact distribution
-            // the exact distribution is actually discrete (since steps are guaranteed to be 1/n or 1/m, D will always be an integer times 1/LCM(n,m))
-            // the exact distribution is known and fairly simple in the n=m case (and in that case D will always be an integer times 1/n)
-            ContinuousDistribution nullDistribution;
-            if (AdvancedIntegerMath.BinomialCoefficient(a.Count + b.Count, a.Count) < Int64.MaxValue) {
-                nullDistribution = new DiscreteAsContinuousDistribution(new KolmogorovTwoSampleExactDistribution(a.Count, b.Count), Interval.FromEndpoints(0.0, 1.0));
-            } else {
-                nullDistribution = new TransformedDistribution(new KolmogorovDistribution(), 0.0, Math.Sqrt(1.0 * (a.Count + b.Count) / a.Count / b.Count));
-            }
-
-            return (new TestResult("D", d, TestType.RightTailed, nullDistribution));
-
+            return (Univariate.KolmogorovSmirnovTest(a.data, b.data));
         }
 
         /// <summary>
@@ -1696,13 +1290,13 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The result of the fit, containg the parameters that result in the best fit,
         /// covariance matrix among those parameters, and a test of the goodness of fit.</returns>
         /// <seealso href="http://en.wikipedia.org/wiki/Maximum_likelihood"/>
-        public FitResult MaximumLikelihoodFit (Func<IList<double>, ContinuousDistribution> factory, IReadOnlyList<double> start) {
+        public FitResult MaximumLikelihoodFit (Func<IReadOnlyList<double>, ContinuousDistribution> factory, IReadOnlyList<double> start) {
 
             if (factory == null) throw new ArgumentNullException(nameof(factory));
             if (start == null) throw new ArgumentNullException(nameof(start));
 
             // Define a log likelyhood function
-            Func<IList<double>, double> L = (IList<double> parameters) => {
+            Func<IReadOnlyList<double>, double> L = (IReadOnlyList<double> parameters) => {
                 ContinuousDistribution distribution = factory(parameters);
                 double lnP = 0.0;
                 foreach (double value in data) {
@@ -1728,93 +1322,9 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are fewer than 16 values in the sample.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Shapiro%E2%80%93Francia_test"/>
         public TestResult ShapiroFranciaTest () {
-
-            int n = this.Count;
-            if (n < 16) throw new InsufficientDataException();
-
-            // Determine V = 1 - r^2
-            double mx = this.Mean;
-            double cxx = 0.0;
-            double cmm = 0.0;
-            double cmx = 0.0;
-            int[] order = data.GetSortOrder();
-            for (int i = 0; i < n; i++) {
-                double zx = data[order[i]] - mx;
-                // We could use symmetry to make half as many calls to NormalOrderStatistic,
-                // but the code would be less straightforward, because we can't proceed linearly
-                // through the data.
-                double m = NormalOrderStatistic(i + 1, n);
-                cxx += zx * zx;
-                cmm += m * m;
-                cmx += zx * m;
-            }
-            // W = r^2 = cmx / sqrt(cxx * cmm). But if we compute r^2 like this and then 1 - r^2, we will
-            // get significant cancellation errors. So re-form V = 1 - r^2 analytically.
-            double q = cxx * cmm;
-            double p = Math.Sqrt(cxx * cmm);
-            double lnV = Math.Log((p - cmx) * (p + cmx) / q);
-
-            // The observed mean and variance of log(1 - W) can be fit to six digits over n=16-8192
-            // by simple polynomials in log(n). To get these results, I ran simulations for n = 16, 24, 32, 48, 64, ..., 8192.
-            // The number of simulated samples was 10^8 for n=10-100, 10^7 for n=100-1000, and 10^6 for n=1000-10000.
-            // Folloying Royston, I transformed to log(1 - W) and did polynomial fits to K1 and log(K2) as
-            // functions of log(n), increasing the order until I was able to reproduce both cumulants to
-            // within errors for all n=16-8192. Note that K3 is detectably non-zero, so we really should
-            // introduce a correction for the remaining skewness, perhaps via an Edgeworth-style expansion
-            // or by fitting to a skew-normal distribution.
-            double t = Math.Log(n);
-            double mu = -2.41348986 + t * (0.34785948 + t * (-0.31462118 + t * (0.04298010 + t * (-0.00311513 + t * 0.00009230))));
-            double sigma = Math.Exp((0.56767288 + t * (-1.18529022 + t * (0.31916472 + t * (-0.04912452 + t * (0.00383692 + t * -0.00011891))))) / 2.0);
-            NormalDistribution nullDistribution = new NormalDistribution(mu, sigma);
-
-            // Need to handle 3-15 seperately.
-
-            // N = 3: W' = W, 3/4 <= W <= 1, P = (6 / Pi)(Asin(Sqrt(W)) - Asin(Sqrt(3/4)))
-
-            return (new TestResult("ln(1-W')", lnV, TestType.RightTailed, nullDistribution));
-
+            return (Univariate.ShapiroFranciaTest(data));
         }
-
-        private static double NormalOrderStatistic (int i, int n) {
-
-            // This uses the David and Johnson asymptotic expansion, as presented
-            // in Arnold, Balakrishnan, and Nagaraja, "A First Course in Order Statistics",
-            // Section 5.5, specialized to the normal distribution.
-            
-            // It is more accurate than simpler approximations, but still looses
-            // accuracy in the tails. I have verified that dropping the last term
-            // doesn't change the moments in my simulations to within their accuracy,
-            // so it's not necessary to add more terms. If we ever do want to add
-            // another term, see Childs and Balakrisnan, "Series approximations
-            // for moments of order statistics using MAPLE", Computations Statistics
-            // and Data Analysis 38 (2002) 331, which gives the lengthy next term.
-
-            double p = (double) i / (n + 1);
-            double q = (double) (n - i + 1) / (n + 1);
-
-            double f0 = AdvancedMath.Probit(p, q);
-            double p0 = Math.Exp(-f0 * f0 / 2.0) / Global.SqrtTwoPI;
-
-            double f2 = f0 / (p0 * p0);
-            double f3 = (1.0 + 2.0 * f0 * f0) / (p0 * p0 * p0);
-            double f4 = f0 * (7.0 + 6.0 * f0 * f0) / (p0 * p0 * p0 * p0);
-            double f5 = (7.0 + 46.0 * f0 * f0 + 24.0 * f0 * f0 * f0 * f0) / (p0 * p0 * p0 * p0 * p0);
-            double f6 = f0 * (127.0 + 326.0 * f0 * f0 + 120.0 * f0 * f0 * f0 * f0) / (p0 * p0 * p0 * p0 * p0 * p0);
-
-            double qmp = q - p;
-
-            double m = f0;
-
-            m += p * q / (n + 2) * f2 / 2.0;
-
-            m += p * q / (n + 2) / (n + 2) * (qmp / 3.0 * f3 + p * q / 8.0 * f4);
-
-            m += p * q / (n + 2) / (n + 2) / (n + 2) * (-qmp / 3.0 * f3 + (qmp * qmp - p * q) / 4.0 * f4 + p * q * qmp / 6.0 * f5 + p * p * q * q / 48.0 * f6);
-
-            return (m);
-
-        }
-
+        
 #if !SILVERLIGHT
         /// <summary>
         /// Loads values from a data reader.

@@ -4,20 +4,26 @@ using System.Collections.Generic;
 
 namespace Meta.Numerics.Statistics {
 
+    // Rename to RegressionResult or FitResult
 
+    /// <summary>
+    /// The base class of all fit results.
+    /// </summary>
+    public class BaseFitResult {
 
-    public class RegressionResult {
+        internal BaseFitResult (ParameterCollection parameters) : this(parameters, Double.NaN) {
 
-        internal RegressionResult (ParameterCollection parameters, Sample residuals) {
+        }
+
+        internal BaseFitResult (ParameterCollection parameters, double logLikelihood) {
             Debug.Assert(parameters != null);
-            Debug.Assert(residuals != null);
             this.parameters = parameters;
-            this.residuals = residuals;
+            this.logLikelihood = logLikelihood;
         }
 
         private readonly ParameterCollection parameters;
 
-        private readonly Sample residuals;
+        private readonly double logLikelihood;
 
         /// <summary>
         /// Gets the parameters of the regression.
@@ -27,6 +33,33 @@ namespace Meta.Numerics.Statistics {
                 return (parameters);
             }
         }
+
+        /// <summary>
+        /// Gets the log-likelihood value of the fit.
+        /// </summary>
+        /// <see href="https://en.wikipedia.org/wiki/Likelihood_function"/>
+        public virtual double LogLikelihood {
+            get {
+                return (logLikelihood);
+            }
+        }
+
+    }
+
+    // Rename to NonlinearRegressionResult or GeneralRegressionResult
+    // Make residuals into a list
+
+    /// <summary>
+    /// Represents the result of a regression fit.
+    /// </summary>
+    public class RegressionResult : BaseFitResult {
+
+        internal RegressionResult (ParameterCollection parameters, Sample residuals) : base(parameters) {
+            Debug.Assert(residuals != null);
+            this.residuals = residuals;
+        }
+
+        private readonly Sample residuals;
 
         /// <summary>
         /// Gets the residuals.

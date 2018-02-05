@@ -524,7 +524,7 @@ namespace Meta.Numerics.Statistics {
             if (this.Count <= this.Dimension) throw new InsufficientDataException();
 
             // Define the log likelihood as a function of the parameter set
-            Func<IList<double>, double> logLikelihood = (IList<double> a) => {
+            Func<IReadOnlyList<double>, double> logLikelihood = (IReadOnlyList<double> a) => {
                 double L = 0.0;
                 for (int k = 0; k < this.Count; k++) {
                     double z = 0.0;

@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
+using Meta.Numerics.Data;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
@@ -116,22 +117,20 @@ namespace Test {
                     }
                 }
 
-                //if (k != 27) continue;
-
                 // do the regression
-                FitResult r = s.LinearLogisticRegression();
+                LinearLogisticRegressionResult r = s.LinearLogisticRegression();
 
                 // record best fit parameters
-                double a = r.Parameter(0).Value;
-                double b = r.Parameter(1).Value;
+                double a = r.Intercept.Value;
+                double b = r.Slope.Value;
                 ps.Add(a, b);
 
                 Console.WriteLine("{0}, {1}", a, b);
 
                 // record estimated covariances
-                caa += r.Covariance(0, 0);
-                cbb += r.Covariance(1, 1);
-                cab += r.Covariance(0, 1); 
+                caa += r.Parameters.Covariance[0, 0];
+                cbb += r.Parameters.Covariance[1, 1];
+                cab += r.Parameters.Covariance[0, 1]; 
 
             }
 
@@ -414,7 +413,8 @@ namespace Test {
             ContinuousDistribution xDistribution = new ExponentialDistribution(2.0);
             ContinuousDistribution eDistribution = new NormalDistribution(0.0, 4.0);
 
-            MultivariateSample parameters = new MultivariateSample("a", "b");
+            DataFrame parameters = new DataFrame(new DataList<double>("a"), new DataList<double>("b"));
+            //MultivariateSample parameters = new MultivariateSample("a", "b");
             MultivariateSample covariances = new MultivariateSample(3);
 
             for (int i = 0; i < 64; i++) {
@@ -428,21 +428,24 @@ namespace Test {
                 }
 
                 RegressionResult fit = sample.NonlinearRegression(
-                    (IList<double> p, double x) => p[0] * Math.Pow(x, p[1]),
+                    (IReadOnlyList<double> p, double x) => p[0] * Math.Pow(x, p[1]),
                     new double[] { 1.0, 1.0 }
                 );
 
-                parameters.Add(fit.Parameters.Best);
+                parameters.AddRow(fit.Parameters.Best);
+                //parameters.Add(fit.Parameters.Best);
                 covariances.Add(fit.Parameters.Covariance[0, 0], fit.Parameters.Covariance[1, 1], fit.Parameters.Covariance[0, 1]);
 
             }
 
-            Assert.IsTrue(parameters.Column(0).PopulationMean.ConfidenceInterval(0.99).ClosedContains(a));
-            Assert.IsTrue(parameters.Column(1).PopulationMean.ConfidenceInterval(0.99).ClosedContains(b));
+            Assert.IsTrue(parameters.Column<double>("a").PopulationMean().ConfidenceInterval(0.99).ClosedContains(a));
+            Assert.IsTrue(parameters.Column<double>("b").PopulationMean().ConfidenceInterval(0.99).ClosedContains(b));
 
-            Assert.IsTrue(parameters.Column(0).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(0).Mean));
-            Assert.IsTrue(parameters.Column(1).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(1).Mean));
-            Assert.IsTrue(parameters.TwoColumns(0, 1).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
+            Assert.IsTrue(parameters.Column<double>("a").PopulationVariance().ConfidenceInterval(0.99).ClosedContains(covariances.Column(0).Mean));
+            Assert.IsTrue(parameters.Column<double>("b").PopulationVariance().ConfidenceInterval(0.99).ClosedContains(covariances.Column(1).Mean));
+            Assert.IsTrue(parameters.Column<double>("a").PopulationCovariance(parameters.Column<double>("b")).ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
+            Assert.IsTrue(Bivariate.PopulationCovariance(parameters.Column<double>("a"), parameters.Column<double>("b")).ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
+            //Assert.IsTrue(parameters.TwoColumns(0, 1).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
 
         }
 

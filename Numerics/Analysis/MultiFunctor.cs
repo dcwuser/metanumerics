@@ -7,7 +7,7 @@ namespace Meta.Numerics.Analysis {
 
     internal class MultiFunctor {
 
-        private readonly Func<IList<double>, double> function;
+        private readonly Func<IReadOnlyList<double>, double> function;
 
         private readonly CoordinateTransform[] map;
 
@@ -15,13 +15,13 @@ namespace Meta.Numerics.Analysis {
 
         private int count = 0;
 
-        public MultiFunctor (Func<IList<double>, double> function, bool negate) : this(function) {
+        public MultiFunctor (Func<IReadOnlyList<double>, double> function, bool negate) : this(function) {
             this.negate = negate;
         }
 
-        public MultiFunctor (Func<IList<double>, double> function) : this(function, null) { }
+        public MultiFunctor (Func<IReadOnlyList<double>, double> function) : this(function, null) { }
 
-        public MultiFunctor (Func<IList<double>, double> function, CoordinateTransform[] map) {
+        public MultiFunctor (Func<IReadOnlyList<double>, double> function, CoordinateTransform[] map) {
             this.function = function;
             this.map = map;
         }

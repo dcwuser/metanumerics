@@ -292,7 +292,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             ga /= sample.Count; gb /= sample.Count;
 
             // define the function to zero
-            Func<IList<double>, IList<double>> f = delegate(IList<double> x) {
+            Func<IReadOnlyList<double>, IReadOnlyList<double>> f = delegate(IReadOnlyList<double> x) {
                 double pab = AdvancedMath.Psi(x[0] + x[1]);
                 return (new double[] {
                     AdvancedMath.Psi(x[0]) - pab - ga,

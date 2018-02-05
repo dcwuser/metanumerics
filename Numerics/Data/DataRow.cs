@@ -6,6 +6,10 @@ using System.Text;
 
 namespace Meta.Numerics.Data
 {
+
+    /// <summary>
+    /// Represents one row of a table of data.
+    /// </summary>
     [DebuggerDisplay("{DebuggerDisplay()}")]
     public sealed class DataRow : IReadOnlyDictionary<string, object>, IReadOnlyList<object> {
 
@@ -81,11 +85,19 @@ namespace Meta.Numerics.Data
         }
 
         bool IReadOnlyDictionary<string, object>.ContainsKey (string key) {
-            throw new NotImplementedException();
+            int c = frame.GetColumnIndex(key);
+            return (c >= 0);
         }
 
         bool IReadOnlyDictionary<string, object>.TryGetValue (string key, out object value) {
-            throw new NotImplementedException();
+            int c = frame.GetColumnIndex(key);
+            if (c < 0) {
+                value = null;
+                return (false);
+            } else {
+                value = this[c];
+                return (true);
+            }
         }
 
         IEnumerator<KeyValuePair<string, object>> IEnumerable<KeyValuePair<string, object>>.GetEnumerator () {

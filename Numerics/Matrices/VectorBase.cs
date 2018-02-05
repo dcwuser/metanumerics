@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Meta.Numerics.Matrices {
 
@@ -24,13 +25,13 @@ namespace Meta.Numerics.Matrices {
 
         internal VectorBase (int dimension) : this(new double[dimension], dimension) { }
 
-        internal VectorBase (IList<double> list) {
+        internal VectorBase (IReadOnlyList<double> list) {
             if (list == null) throw new ArgumentNullException("list");
             dimension = list.Count;
-            store = new double[dimension];
+            store = list.ToArray();
             offset = 0;
             stride = 1;
-            list.CopyTo(store, 0);
+            //((IList<double>) list).CopyTo(store, 0);
         }
 
         // this storage is internal so that other routines can access it for fast operations (e.g. multiplication)

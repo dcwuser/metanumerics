@@ -266,7 +266,7 @@ namespace Test {
 
             LinearRegressionResult linearFit = s.LinearRegression();
             RegressionResult nonlinearFit = s.NonlinearRegression(
-                (IList<double> c, double x) => c[0] + c[1] * x,
+                (IReadOnlyList<double> c, double x) => c[0] + c[1] * x,
                 new double[] { 1.0, 1.0 } 
             );
 

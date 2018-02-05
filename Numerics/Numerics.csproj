@@ -225,6 +225,8 @@
     <Compile Include="Statistics\FitResult.cs" />
     <Compile Include="Statistics\Histogram.cs" />
     <Compile Include="Statistics\InsufficientDataException.cs" />
+    <Compile Include="Statistics\LinearLogisticRegressionResult.cs" />
+    <Compile Include="Statistics\LinearRegressionResult.cs" />
     <Compile Include="Statistics\MultivariateSample.cs" />
     <Compile Include="Statistics\PolynomialRegressionResult.cs" />
     <Compile Include="Statistics\PrincipalComponentAnalysis.cs" />
@@ -236,6 +238,8 @@
     <Compile Include="Statistics\UncertainMeasurement.cs" />
     <Compile Include="Statistics\UncertainMeasurementSample.cs" />
     <Compile Include="Statistics\Univariate.cs" />
+    <Compile Include="Statistics\Univariate_Percentiles.cs" />
+    <Compile Include="Statistics\Univariate_PopulationMoments.cs" />
     <Compile Include="Statistics\Univariate_Tests.cs" />
   </ItemGroup>
   <ItemGroup>

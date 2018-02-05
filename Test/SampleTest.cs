@@ -682,7 +682,7 @@ namespace Test {
             Sample s = CreateSample(d, 1024);
 
             // do an explicit maximum likelyhood fit to a normal distribution
-            FitResult mf = s.MaximumLikelihoodFit((IList<double> p) => new NormalDistribution(p[0], p[1]), new double[] { mu + 1.0, sigma + 1.0 });
+            FitResult mf = s.MaximumLikelihoodFit((IReadOnlyList<double> p) => new NormalDistribution(p[0], p[1]), new double[] { mu + 1.0, sigma + 1.0 });
 
             // it should find the parameters
             Assert.IsTrue(mf.Dimension == 2);
@@ -710,7 +710,7 @@ namespace Test {
             ContinuousDistribution nd = new NormalDistribution(mu, sigma);
             Sample ns = CreateSample(nd, 500);
             //FitResult nr = ns.MaximumLikelihoodFit(new NormalDistribution(mu + 1.0, sigma + 1.0));
-            FitResult nr = ns.MaximumLikelihoodFit((IList<double> p) => new NormalDistribution(p[0], p[1]), new double[] { mu + 1.0, sigma + 1.0 });
+            FitResult nr = ns.MaximumLikelihoodFit((IReadOnlyList<double> p) => new NormalDistribution(p[0], p[1]), new double[] { mu + 1.0, sigma + 1.0 });
 
             Console.WriteLine(nr.Parameter(0));
             Console.WriteLine(nr.Parameter(1));
@@ -735,7 +735,7 @@ namespace Test {
             ContinuousDistribution ed = new ExponentialDistribution(em);
             Sample es = CreateSample(ed, 100);
             //FitResult er = es.MaximumLikelihoodFit(new ExponentialDistribution(em + 1.0));
-            FitResult er = es.MaximumLikelihoodFit((IList<double> p) => new ExponentialDistribution(p[0]), new double[] { em + 1.0 });
+            FitResult er = es.MaximumLikelihoodFit((IReadOnlyList<double> p) => new ExponentialDistribution(p[0]), new double[] { em + 1.0 });
 
             Console.WriteLine(er.Parameter(0));
 
@@ -757,7 +757,7 @@ namespace Test {
             ContinuousDistribution ld = new LognormalDistribution(l1, l2);
             Sample ls = CreateSample(ld, 100);
             //FitResult lr = ls.MaximumLikelihoodFit(new LognormalDistribution(l1 + 1.0, l2 + 1.0));
-            FitResult lr = ls.MaximumLikelihoodFit((IList<double> p) => new LognormalDistribution(p[0], p[1]), new double[] { l1 + 1.0, l2 + 1.0 });
+            FitResult lr = ls.MaximumLikelihoodFit((IReadOnlyList<double> p) => new LognormalDistribution(p[0], p[1]), new double[] { l1 + 1.0, l2 + 1.0 });
 
             Console.WriteLine(lr.Parameter(0));
             Console.WriteLine(lr.Parameter(1));
@@ -775,7 +775,7 @@ namespace Test {
             WeibullDistribution w_d = new WeibullDistribution(w_scale, w_shape);
             Sample w_s = CreateSample(w_d, 20);
             //FitResult w_r = w_s.MaximumLikelihoodFit(new WeibullDistribution(1.0, 0.5));
-            FitResult w_r = w_s.MaximumLikelihoodFit((IList<double> p) => new WeibullDistribution(p[0], p[1]), new double[] { 2.0, 2.0 });
+            FitResult w_r = w_s.MaximumLikelihoodFit((IReadOnlyList<double> p) => new WeibullDistribution(p[0], p[1]), new double[] { 2.0, 2.0 });
 
             Console.WriteLine(w_r.Parameter(0));
             Console.WriteLine(w_r.Parameter(1));
@@ -792,7 +792,7 @@ namespace Test {
             ContinuousDistribution logistic_distribution = new LogisticDistribution(logistic_m, logistic_s);
             Sample logistic_sample = CreateSample(logistic_distribution, 100);
             //FitResult logistic_result = logistic_sample.MaximumLikelihoodFit(new LogisticDistribution());
-            FitResult logistic_result = logistic_sample.MaximumLikelihoodFit((IList<double> p) => new LogisticDistribution(p[0], p[1]), new double[] { 2.0, 3.0 });
+            FitResult logistic_result = logistic_sample.MaximumLikelihoodFit((IReadOnlyList<double> p) => new LogisticDistribution(p[0], p[1]), new double[] { 2.0, 3.0 });
 
             Console.WriteLine(logistic_result.Parameter(0));
             Console.WriteLine(logistic_result.Parameter(1));
@@ -1076,14 +1076,15 @@ namespace Test {
             Console.WriteLine(sample1.Covariance / sample1.X.Variance / sample1.Y.Mean / (1.0 - sample1.Y.Mean));
             Console.WriteLine(sample1.Covariance / sample1.X.Variance / sample1.Y.Variance);
 
-            FitResult result1 = sample1.LinearLogisticRegression();
-            FitResult result2 = sample2.TwoColumns(0, 1).LinearLogisticRegression();
+            LinearLogisticRegressionResult result1 = sample1.LinearLogisticRegression();
+            LinearLogisticRegressionResult result2 = sample2.TwoColumns(0, 1).LinearLogisticRegression();
             FitResult result3 = sample2.LogisticLinearRegression(1);
-
+            // Fits should give same result
+            /*
             for (int i = 0; i < result1.Dimension; i++) {
                 Console.WriteLine("{0} {1} {2}", i, result1.Parameter(i), result3.Parameter(i) );
             }
-
+            */
         }
 
         [TestMethod]

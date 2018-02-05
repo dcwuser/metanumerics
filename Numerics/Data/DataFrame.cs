@@ -227,19 +227,29 @@ namespace Meta.Numerics.Data
         /// <summary>
         /// Add a new row of data to the data frame.
         /// </summary>
-        /// <param name="values"></param>
+        /// <param name="values">The values to add to each column.</param>
         public void AddRow(params object[] values)
         {
+            AddRow((IReadOnlyList<object>) values);
+        }
+        
+        /// <summary>
+        /// Adds a new row of data to the frame.
+        /// </summary>
+        /// <typeparam name="T">The type of the data collection.</typeparam>
+        /// <param name="values">The values to add to each column.</param>
+        public void AddRow<T>(IReadOnlyList<T> values) {
             if (values == null) throw new ArgumentNullException(nameof(values));
-            if (values.Length != columns.Count) throw new InvalidOperationException();
-            int r = 0;
-            for (int i = 0; i < values.Length; i++)
-            {
+            if (values.Count != columns.Count) throw new DimensionMismatchException();
+            int r = -1;
+            for (int i = 0; i < values.Count; i++) {
+                int previous_r = r;
                 r = columns[i].AddItem(values[i]);
+                if (previous_r > 0) Debug.Assert(r == previous_r);
             }
             map.Add(r);
         }
-        
+
         /// <summary>
         /// Adds a new row of data to the data frame.
         /// </summary>

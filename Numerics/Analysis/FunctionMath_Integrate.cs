@@ -74,7 +74,7 @@ namespace Meta.Numerics.Analysis {
         /// to evaluate I = &#x222B;<sub>0</sub><sup>b</sup> f(x) x<sup>-1/2</sup> dx, substitute y = x<sup>1/2</sup>
         /// to obtain I = 2 &#x222B;<sub>0</sub><sup>&#x221A;b</sup> f(y<sup>2</sup>) dy.</para>
         /// <para>To do multi-dimensional integrals, use
-        /// <see cref="MultiFunctionMath.Integrate(Func{IList{double}, double}, IList{Interval}, IntegrationSettings)"/>.
+        /// <see cref="MultiFunctionMath.Integrate(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, IntegrationSettings)"/>.
         /// </para>
         /// </remarks>
         public static IntegrationResult Integrate (Func<double,double> integrand, Interval range, IntegrationSettings settings) {

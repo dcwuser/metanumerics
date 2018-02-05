@@ -20,13 +20,13 @@ namespace Meta.Numerics.Analysis {
         /// to about 10<sup>-1</sup> (10%) for d=15. The default absolute accuracy target falls from about 10<sup>-8</sup> to about 10<sup>-2</sup> over the same range.
         /// To achieve those targets, it allows up to about 100,000 evaluations of the integrand for d=2, rising up to about 1 billion evaluations for d=15.</para>
         /// <para>You can change the accuracy targets and evaluation budget by passing an <see cref="EvaluationSettings"/> object to
-        /// <see cref="Integrate(Func{IList{double}, double}, IList{Interval}, IntegrationSettings)"/> overload. By decreasing
+        /// <see cref="Integrate(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, IntegrationSettings)"/> overload. By decreasing
         /// the accuracy you demand or increasing the evaluation budget, you may be able to successfully complete integrals that would fail for the default settings.</para>
-        /// <para>For more information on multi-dimensional integration, see <see cref="Integrate(Func{IList{double}, double}, IList{Interval}, IntegrationSettings)"/>.</para>
+        /// <para>For more information on multi-dimensional integration, see <see cref="Integrate(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, IntegrationSettings)"/>.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="function"/> or <paramref name="volume"/> is <see langword="null"/>.</exception>
         /// <exception cref="NonconvergenceException">The required accuracy could not be achieved using the evaulation budget.</exception>
-        public static IntegrationResult Integrate (Func<IList<double>, double> function, IList<Interval> volume) {
+        public static IntegrationResult Integrate (Func<IReadOnlyList<double>, double> function, IReadOnlyList<Interval> volume) {
             return (Integrate(function, volume, new IntegrationSettings()));
         }
 
@@ -68,7 +68,7 @@ namespace Meta.Numerics.Analysis {
         /// <exception cref="ArgumentException"><paramref name="function"/>, <paramref name="volume"/>, or <paramref name="settings"/> are null, or
         /// the dimension of <paramref name="volume"/> is larger than 15.</exception>
         /// <exception cref="NonconvergenceException">The prescribed accuracy could not be achieved with the given evaluation budget.</exception>
-        public static IntegrationResult Integrate (Func<IList<double>, double> function, IList<Interval> volume, IntegrationSettings settings) {
+        public static IntegrationResult Integrate (Func<IReadOnlyList<double>, double> function, IReadOnlyList<Interval> volume, IntegrationSettings settings) {
 
             if (function == null) throw new ArgumentNullException(nameof(function));
             if (volume == null) throw new ArgumentNullException(nameof(volume));

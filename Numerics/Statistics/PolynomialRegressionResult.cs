@@ -33,7 +33,10 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="x">The new value of x.</param>
         /// <returns>The value predicted by the model, with uncertainty.</returns>
-        public UncertainValue Predict (IList<double> x) {
+        public UncertainValue Predict (IReadOnlyList<double> x) {
+
+            if (x == null) throw new ArgumentNullException(nameof(x));
+            if (x.Count != this.Parameters.Best.Dimension) throw new DimensionMismatchException();
 
             ColumnVector v = new ColumnVector(x);
 
@@ -55,7 +58,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents the result of a polynomial regression fit.
     /// </summary>
-    public class PolynomialRegressionResult : GeneralLinearRegressionResult {
+    public sealed class PolynomialRegressionResult : GeneralLinearRegressionResult {
 
         internal PolynomialRegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, Sample residuals) : base(parameters, anova, residuals) {
 
@@ -72,7 +75,6 @@ namespace Meta.Numerics.Statistics {
         public UncertainValue Coefficient (int k) {
             return (this.Parameters[k].Estimate);
         }
-
 
         /// <summary>
         /// Computes the predicted y at a new value of x.

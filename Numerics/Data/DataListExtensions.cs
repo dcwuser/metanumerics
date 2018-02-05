@@ -34,33 +34,4 @@ namespace Meta.Numerics.Data
     }
     */
 
-    public static class DataListExtensions
-    {
-        // frame.Column("foo").Distinct()
-        // frame.GroupBy<T>("a", Func<IEnumerable<DataFrameRow>, T>)
-        // frame.GroupBy<T>("a", "b", Func<IEnumerable<DataFrameRow>, T>)
-        // frame.OrderBy("a", Comparer)
-
-        public static HashSet<T> Distinct<T> (this DataList<T> list)
-        {
-            HashSet<T> values = new HashSet<T>();
-            foreach (T value in list)
-            {
-                values.Add(value);
-            }
-            return (values);
-        }
-
-        public static DataList<U> Transform<T, U>(this DataList<T> list, Func<T, U> transformation)
-        {
-            DataList<U> result = new DataList<U>(list.Name);
-            foreach(T t in list)
-            {
-                U u = transformation(t);
-                result.Add(u);
-            }
-            return (result);
-        }
-        
-    }
 }

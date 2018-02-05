@@ -98,8 +98,7 @@ namespace Meta.Numerics.Data
     /// Represents a data list of a particular stored type.
     /// </summary>
     /// <typeparam name="T">The type of value in the list.</typeparam>
-    public class DataList<T> : DataList, IReadOnlyDataList<T>, IList<T> {
-
+    public class DataList<T> : DataList, IReadOnlyDataList<T>, IList<T>, ICollection<T>, IEnumerable<T> {
 
         /// <summary>
         /// Initializes a new data list with the given name.

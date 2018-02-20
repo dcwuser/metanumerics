@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
@@ -303,9 +304,39 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void BivariatePolynomialRegressionFit () {
+
+            // Pick a simple polynomial
+            Polynomial p = Polynomial.FromCoefficients(3.0, -2.0, 1.0);
+
+            // Use it to generate a data set
+            Random rng = new Random(1);
+            ContinuousDistribution xDistribution = new CauchyDistribution(1.0, 2.0);
+            ContinuousDistribution errorDistribution = new NormalDistribution(0.0, 3.0);
+            List<double> xs = new List<double>(TestUtilities.CreateDataSample(rng, xDistribution, 10));
+            List<double> ys = new List<double>(xs.Select(x => p.Evaluate(x) + errorDistribution.GetRandomValue(rng)));
+
+            PolynomialRegressionResult fit = Bivariate.PolynomialRegression(xs, ys, p.Degree);
+
+            // Parameters should agree
+            Assert.IsTrue(fit.Parameters.Count == p.Degree + 1);
+            for (int k = 0; k <= p.Degree; k++) {
+                Assert.IsTrue(fit.Coefficient(k).ConfidenceInterval(0.99).ClosedContains(p.Coefficient(k)));
+            }
+
+            // Residuals should agree
+            Assert.IsTrue(fit.Residuals.Count == xs.Count);
+            for (int i = 0; i < xs.Count; i++) {
+                double z = ys[i] - fit.Predict(xs[i]).Value;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(z, fit.Residuals[i]));
+            }
+
+        }
+
 
         [TestMethod]
-        public void BivariatePolynomialRegression () {
+        public void BivariatePolynomialRegressionCovariance () {
 
             // do a set of polynomial regression fits
             // make sure not only that the fit parameters are what they should be, but that their variances/covariances are as claimed

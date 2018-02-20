@@ -93,6 +93,7 @@
     <Compile Include="Core\PolynomialInterpolation.cs" />
     <Compile Include="Core\UncertainMath.cs" />
     <Compile Include="Core\UncertainValue.cs" />
+    <Compile Include="Data\AggregateColumn.cs" />
     <Compile Include="Data\ComputedColumn.cs" />
     <Compile Include="Data\DataAdaptor.cs" />
     <Compile Include="Data\DataColumn.cs" />
@@ -182,6 +183,7 @@
     <Compile Include="Statistics\Distributions\CauchyDistribution.cs" />
     <Compile Include="Statistics\Distributions\ChiDistribution.cs" />
     <Compile Include="Statistics\Distributions\ChiSquaredDistribution.cs" />
+    <Compile Include="Statistics\Distributions\CircularDistribution.cs" />
     <Compile Include="Statistics\Distributions\DiscreteAsContinuousDistribution.cs" />
     <Compile Include="Statistics\Distributions\DiscreteDistribution.cs" />
     <Compile Include="Statistics\Distributions\DiscreteUniformDistribution.cs" />
@@ -227,6 +229,7 @@
     <Compile Include="Statistics\InsufficientDataException.cs" />
     <Compile Include="Statistics\LinearLogisticRegressionResult.cs" />
     <Compile Include="Statistics\LinearRegressionResult.cs" />
+    <Compile Include="Statistics\Multivariate.cs" />
     <Compile Include="Statistics\MultivariateSample.cs" />
     <Compile Include="Statistics\PolynomialRegressionResult.cs" />
     <Compile Include="Statistics\PrincipalComponentAnalysis.cs" />

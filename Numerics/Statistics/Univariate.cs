@@ -22,7 +22,7 @@ namespace Meta.Numerics.Statistics {
         public static double Mean (this IReadOnlyCollection<double> sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 1) throw new InsufficientDataException();
+            if (sample.Count < 1) return (Double.NaN);
 
             int n = 0;
             double mean = 0.0;
@@ -51,7 +51,7 @@ namespace Meta.Numerics.Statistics {
         public static double Variance (this IReadOnlyCollection<double> sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 2) throw new InsufficientDataException();
+            if (sample.Count < 2) return (Double.NaN);
 
             int n;
             double mean, sumOfSquares;
@@ -73,7 +73,7 @@ namespace Meta.Numerics.Statistics {
         public static double Skewness (this IReadOnlyCollection<double> sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 3) throw new InsufficientDataException();
+            if (sample.Count < 3) return (Double.NaN);
 
             int n;
             double m1, c2, c3;

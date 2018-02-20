@@ -175,10 +175,9 @@ namespace Meta.Numerics.Statistics {
             double b = xySum / xxSum;
             double a = yMean - b * xMean;
             // Since cov(x,y) = (n S_xy - S_x S_y)/n^2 and var(x) = (n S_xx - S_x^2) / n^2,
-            // these formulas are equivilent to the 
-            // to the usual formulas for a and b involving sums, but it is more stable against round-off
+            // these formulas are equivilent to the  textbook formulas involving sums,
+            // but are more stable against round-off.
             ColumnVector v = new ColumnVector(a, b);
-            v.IsReadOnly = true;
 
             // Compute Pearson r value
             double r = xySum / Math.Sqrt(xxSum * yySum);
@@ -187,20 +186,10 @@ namespace Meta.Numerics.Statistics {
             // Compute residuals and other sum-of-squares
             double SSR = 0.0;
             double SSF = 0.0;
-            Sample residuals = new Sample();
-            IEnumerator<double> xEnumerator = x.GetEnumerator();
-            IEnumerator<double> yEnumerator = y.GetEnumerator();
-            while(true) {
-                bool xFlag = xEnumerator.MoveNext();
-                bool yFlag = yEnumerator.MoveNext();
-                if (!xFlag) {
-                    Debug.Assert(!yFlag);
-                    break;
-                }
-                double xValue = xEnumerator.Current;
-                double yPredicted = a + b * xValue;
-                double yValue = yEnumerator.Current;
-                double z = yValue - yPredicted;
+            List<double> residuals = new List<double>(n);
+            for (int i = 0; i < n; i++) {
+                double yPredicted = a + b * x[i];
+                double z = y[i] - yPredicted;
                 SSR += MoreMath.Sqr(z);
                 SSF += MoreMath.Sqr(yPredicted - yMean);
                 residuals.Add(z);
@@ -225,7 +214,6 @@ namespace Meta.Numerics.Statistics {
             C[0, 0] = caa;
             C[1, 1] = cbb;
             C[0, 1] = cab;
-            C.IsReadOnly = true;
 
             // Package the parameters
             ParameterCollection parameters = new ParameterCollection(
@@ -290,7 +278,7 @@ namespace Meta.Numerics.Statistics {
             double SSR = 0.0;
             double SSF = 0.0;
             ColumnVector yHat = X * b;
-            Sample residuals = new Sample();
+            List<double> residuals = new List<double>(n);
             for (int i = 0; i < n; i++) {
                 double z = y[i] - yHat[i];
                 residuals.Add(z);
@@ -332,11 +320,12 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The fit result.</returns>
         /// <remarks>
         /// <para>
-        /// In the returned <see cref="FitResult"/>, the parameters appear in the same order as in
-        /// the supplied fit function and initial guess vector. No goodness-of-fit test is returned.
+        /// In the returned result, the fit parameters appear in the same order as in
+        /// the supplied fit function and initial guess vector.
         /// </para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="f"/> or <paramref name="start"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> or <paramref name="f"/> or <paramref name="start"/> is null.</exception>
+        /// <exception cref="DimensionMismatchException">The sizes of <paramref name="x"/> and <paramref name="y"/> do not match.</exception>
         /// <exception cref="InsufficientDataException">There are not more data points than fit parameters.</exception>
         /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
         /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
@@ -373,13 +362,13 @@ namespace Meta.Numerics.Statistics {
             for (int i = 0; i < names.Length; i++) names[i] = start[i].Key;
             ParameterCollection parameters = new ParameterCollection(names, min.Location, curvature);
 
-            Sample residuals = new Sample();
+            List<double> residuals = new List<double>(n);
             for (int i = 0; i < n; i++) {
                 double r = y[i] - f(min.Location, x[i]);
                 residuals.Add(r);
             }
 
-            RegressionResult result = new RegressionResult(parameters, residuals);
+            RegressionResult result = new RegressionResult(parameters, -min.Value, residuals);
 
             return (result);
         }
@@ -442,7 +431,7 @@ namespace Meta.Numerics.Statistics {
             MultiExtremum m = MultiFunctionMath.FindLocalMinimum(f, new double[2] { a0, b0 });
             SymmetricMatrix covariance = m.HessianMatrix.Inverse();
             ParameterCollection parameters = new ParameterCollection(new string[] { "Intercept", "Slope" }, m.Location, covariance);
-            LinearLogisticRegressionResult result = new LinearLogisticRegressionResult(parameters);
+            LinearLogisticRegressionResult result = new LinearLogisticRegressionResult(parameters, -m.Value);
 
             return (result);
 
@@ -720,6 +709,69 @@ namespace Meta.Numerics.Statistics {
             return (new TestResult("W", W, TestType.TwoTailed, nullDistribution));
 
         }
+
+        /// <summary>
+        /// Produces a cross-tabulation.
+        /// </summary>
+        /// <typeparam name="R">The type of row data.</typeparam>
+        /// <typeparam name="C">The type of column data</typeparam>
+        /// <param name="rowValues">The data values for rows.</param>
+        /// <param name="columnValues">The data values for columns.</param>
+        /// <returns>A cross-tabular summary of the number of joint occurences of each row and column value.</returns>
+        public static ContingencyTable<R, C> Crosstabs<R, C> (IReadOnlyList<R> rowValues, IReadOnlyList<C> columnValues) {
+
+            if (rowValues == null) throw new ArgumentNullException(nameof(rowValues));
+            if (columnValues == null) throw new ArgumentNullException(nameof(columnValues));
+            if (rowValues.Count != columnValues.Count) throw new DimensionMismatchException();
+
+            // This is coded as a two passes over the data. The first pass determines
+            // the distinct row and column values. The second pass determines the cell counts.
+            // It's possible to do this in one pass, but we need auxiluary memory and/or
+            // dynamic storage and the details become messier.
+
+            // Determine the distinct row and column values
+            NullableDictionary<R, int> rowMap = new NullableDictionary<R, int>();
+            NullableDictionary<C, int> columnMap = new NullableDictionary<C, int>();
+            for (int i = 0; i < rowValues.Count; i++) {
+                R rowValue = rowValues[i];
+                C columnValue = columnValues[i];
+
+                if (!rowMap.ContainsKey(rowValue)) rowMap.Add(rowValue, rowMap.Count);
+                if (!columnMap.ContainsKey(columnValue)) columnMap.Add(columnValue, columnMap.Count);
+            }
+
+            // Fill out the cells and marginal totals
+            int[,] counts = new int[rowMap.Count, columnMap.Count];
+            int[] rowCounts = new int[rowMap.Count];
+            int[] columnCounts = new int[columnMap.Count];
+            int totalCount = 0;
+            for (int i = 0; i < rowValues.Count; i++) {
+                R rowValue = rowValues[i];
+                C columnValue = columnValues[i];
+
+                int rowIndex = rowMap[rowValue];
+                int columnIndex = columnMap[columnValue];
+
+                counts[rowIndex, columnIndex]++;
+                rowCounts[rowIndex]++;
+                columnCounts[columnIndex]++;
+                totalCount++;
+            }
+
+            return new ContingencyTable<R, C>(rowMap, columnMap, counts, rowCounts, columnCounts, totalCount);
+        }
+
+        /*
+        public static ContingencyTable Crosstabs<T, U> (IReadOnlyList<T> rowSample, IReadOnlyList<U> columnSample) {
+
+            if (rowSample == null) throw new ArgumentNullException(nameof(rowSample));
+            if (columnSample == null) throw new ArgumentNullException(nameof(columnSample));
+            if (rowSample.Count != columnSample.Count) throw new DimensionMismatchException();
+
+            throw new NotImplementedException();
+
+        }
+        */
 
     }
 }

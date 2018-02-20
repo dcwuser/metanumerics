@@ -121,12 +121,46 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc/>
+        public override double Variance {
+            get {
+                if (a <= 2.0) {
+                    return (Double.PositiveInfinity);
+                } else if (a <= 4.0) {
+                    // If a gets even moderately big, this suffers from cancelation
+                    // For large a, value goes to \frac{\pi^2}{6 a^2}, but higher
+                    // terms fall off only slowly and are not trivial to compute
+                    double ai = 1.0 / a;
+                    double g1 = AdvancedMath.Gamma(1.0 - 2.0 * ai);
+                    double g2 = MoreMath.Sqr(AdvancedMath.Gamma(1.0 - ai));
+                    return (s * s * (g1 - g2));
+                } else {
+                    return (base.Variance);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
         public override double RawMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r < a) {
                 // This only works for m = 0
                 return (MoreMath.Pow(s, r) * AdvancedMath.Gamma(1.0 - r / a));
+            } else {
+                return (Double.PositiveInfinity);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override double CentralMoment (int r) {
+            if (r < 0) {
+                throw new ArgumentOutOfRangeException(nameof(r));
+            } else if (r == 0) {
+                return (1.0);
+            } else if (r == 1) {
+                return (0.0);
+            } else if (r < a) {
+                return (base.CentralMoment(r));
             } else {
                 return (Double.PositiveInfinity);
             }

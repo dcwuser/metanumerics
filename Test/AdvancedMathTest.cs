@@ -1009,6 +1009,9 @@ namespace Test {
 
         [TestMethod]
         public void IncompleteBetaIdentity2 () {
+            // For x ~ 1.0E-2, a ~ 1.0E2, b ~ 1.0E3, this fails at the 1.0E-13 level.
+            // There are errors at this level in both RegularizedBeta_ContinuedFraction (14 terms of alternating signs)
+            // and PowOverBeta (doing multiplications in log-space).
             foreach (double a in TestUtilities.GenerateRealValues(1.0, 1.0E4, 8)) {
                 foreach (double b in TestUtilities.GenerateRealValues(1.0, 1.0E4, 8)) {
                     foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 8)) {

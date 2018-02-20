@@ -11,7 +11,7 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     public sealed class MultiLinearRegressionResult : GeneralLinearRegressionResult {
 
-        internal MultiLinearRegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, Sample residuals) : base(parameters, anova, residuals) {
+        internal MultiLinearRegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, List<double> residuals) : base(parameters, anova, residuals) {
 
         }
 
@@ -60,7 +60,7 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     public sealed class PolynomialRegressionResult : GeneralLinearRegressionResult {
 
-        internal PolynomialRegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, Sample residuals) : base(parameters, anova, residuals) {
+        internal PolynomialRegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, List<double> residuals) : base(parameters, anova, residuals) {
 
         }
 

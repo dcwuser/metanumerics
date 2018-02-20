@@ -1,7 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+
+using Meta.Numerics.Statistics;
+using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Data
 {
@@ -89,6 +94,23 @@ namespace Meta.Numerics.Data
             foreach (string columnName in columnNames) {
                 int columnIndex = GetColumnIndex(columnName);
                 newColumns.Add(columns[columnIndex]);
+            }
+            return (new DataView(newColumns, map));
+        }
+
+        /// <summary>
+        /// Constructs a new view that does not contain the given columns.
+        /// </summary>
+        /// <param name="columnNames">The names of the columns to discard.</param>
+        /// <returns>A new view that does not contain the given columns.</returns>
+        public DataView Discard(params string[] columnNames) {
+            if (columnNames == null) throw new ArgumentNullException(nameof(columnNames));
+
+            HashSet<string> names = new HashSet<string>(columnNames);
+
+            List<DataList> newColumns = new List<DataList>();
+            foreach(DataList column in columns) {
+                if (!names.Contains(column.Name)) newColumns.Add(column);
             }
             return (new DataView(newColumns, map));
         }
@@ -303,6 +325,82 @@ namespace Meta.Numerics.Data
             return (result);
         }
 
+        public DataFrame GroupBy (string groupByColumnName, params AggregateColumn[] aggregateColumns) {
+
+            if (groupByColumnName == null) throw new ArgumentNullException(nameof(groupByColumnName));
+            if (aggregateColumns == null) throw new ArgumentNullException(nameof(aggregateColumns));
+
+            int groupByColumnIndex = GetColumnIndex(groupByColumnName);
+            DataList groupByColumn = columns[groupByColumnIndex];
+
+            // Create a lookup table that maps group column values to the indexes of rows with that value.
+            // We have to be a little tricky to deal with null values, because null is not allowed to be
+            // a dictionary key. We use a special internal null signifier object to get around this problem.
+            Dictionary<object, List<int>> groups = new Dictionary<object, List<int>>();
+            for (int r = 0; r < map.Count; r++) {
+                int index = map[r];
+                object value = groupByColumn.GetItem(index);
+                if (value == null) value = NullSignifier.Value;
+                List<int> members;
+                if (!groups.TryGetValue(value, out members)) {
+                    members = new List<int>();
+                    groups.Add(value, members);
+                }
+                members.Add(index);
+            }
+
+            // Set up result columns
+            List<DataList> resultColumns = new List<DataList>();
+            DataList groupsColumn = DataList.Create(groupByColumnName, groupByColumn.StorageType);
+            resultColumns.Add(groupsColumn);
+            foreach (AggregateColumn aggregateColumn in aggregateColumns) {
+                if (aggregateColumn == null) throw new ArgumentNullException(nameof(aggregateColumn));
+                DataList outputColumn = DataList.Create(aggregateColumn.Name, aggregateColumn.StorageType);
+                resultColumns.Add(outputColumn);
+            }
+
+            // Form destination columns based on group aggregates.
+            foreach (KeyValuePair<object, List<int>> group in groups) {
+
+                // Add the value for the grouping column
+                object groupValue = group.Key;
+                if (groupValue == NullSignifier.Value) groupValue = null;
+                groupsColumn.AddItem(groupValue);
+
+                // Create a filtered view of the data
+                DataView inputView = new DataView(this.columns, group.Value);
+
+                // Apply each aggregator to the filtered view to get the values to add to the aggregate columns.
+                for (int i = 0; i < aggregateColumns.Length; i++) {
+                    AggregateColumn aggregateColumn = aggregateColumns[i];
+                    object outputValue = aggregateColumn.ApplyAggregator(inputView);
+                    resultColumns[i + 1].AddItem(outputValue);
+                }
+            }
+
+            DataFrame result = new DataFrame(resultColumns);
+            return (result);
+
+            /*
+            DataList groupsColumn = DataList.Create(groupByColumnName, groupByColumn.StorageType);
+            DataList<T> aggregateColumn = new DataList<T>(aggregateColumnName);
+            foreach (KeyValuePair<object, List<int>> group in groups) {
+                DataView values = new DataView(this.columns, group.Value);
+                T aggregateValue = aggregator(values);
+                aggregateColumn.AddItem(aggregateValue);
+
+                object groupKey = group.Key;
+                if (groupKey == NullSignifier.Value) groupKey = null;
+                groupsColumn.AddItem(groupKey);
+
+            }
+
+            DataFrame result = new DataFrame(groupsColumn, aggregateColumn);
+            return (result);
+            */
+        }
+
+        /*
         public DataFrame Pivot(string rowNamesColumnName, string columnNamesColumnName, string valuesColumnName)
         {
             if (rowNamesColumnName == null) throw new ArgumentNullException(nameof(rowNamesColumnName));
@@ -375,6 +473,41 @@ namespace Meta.Numerics.Data
 
             return (new DataFrame(outputColumns));
         }
+        */
+        
+        public int[,] Crosstabs<R, C> (string rowsColumnName, string columnsColumnName) {
+
+            int rowsColumnIndex = GetColumnIndex(rowsColumnName);
+            DataList rowsColumn = columns[rowsColumnIndex];
+
+            int columnsColumnIndex = GetColumnIndex(columnsColumnName);
+            DataList columnsColumn = columns[columnsColumnIndex];
+
+            NullableDictionary<R, int> rowValues = new NullableDictionary<R, int>();
+            NullableDictionary<C, int> columnValues = new NullableDictionary<C, int>();
+            for (int r = 0; r < map.Count; r++) {
+                int index = map[r];
+                R rowValue = (R) rowsColumn.GetItem(index);
+                if (!rowValues.ContainsKey(rowValue)) rowValues.Add(rowValue, rowValues.Count);
+                C columnValue = (C) columnsColumn.GetItem(index);
+                if (!columnValues.ContainsKey(columnValue)) columnValues.Add(columnValue, columnValues.Count);
+            }
+
+            int[,] counts = new int[rowValues.Count, columnValues.Count];
+            for (int r = 0; r < map.Count; r++) {
+                int index = map[r];
+                R rowValue = (R) rowsColumn.GetItem(index);
+                int rowIndex = rowValues[rowValue];
+                C columnValue = (C) columnsColumn.GetItem(index);
+                int columnIndex = columnValues[columnValue];
+                counts[rowIndex, columnIndex]++;
+            }
+
+            return (counts);
+
+
+        }
+        
 
         /// <summary>
         /// Add a computed column.

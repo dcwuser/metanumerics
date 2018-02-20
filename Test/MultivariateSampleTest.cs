@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using Meta.Numerics.Functions;
+using Meta.Numerics;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 using Meta.Numerics.Matrices;
@@ -249,50 +252,27 @@ namespace Test {
 
         }
 
-        public void OldMultivariateLinearRegressionTest () {
+        [TestMethod]
+        public void MultivariateLinearRegressionAgreement2 () {
 
-            MultivariateSample sample = new MultivariateSample(3);
-            
-            sample.Add(98322, 81449, 269465);
-            sample.Add(65060, 31749, 121900);
-            sample.Add(36052, 14631, 37004);
-            sample.Add(31829, 27732, 91400);
-            sample.Add(7101, 9693, 54900);
-            sample.Add(41294, 4268, 16160);
-            sample.Add(16614, 4697, 21500);
-            sample.Add(3449, 4233, 9306);
-            sample.Add(3386, 5293, 38300);
-            sample.Add(6242, 2039, 13369);
-            sample.Add(14036, 7893, 29901);
-            sample.Add(2636, 3345, 10930);
-            sample.Add(869, 1135, 5100);
-            sample.Add(452, 727, 7653);
-            
-            /*
-            sample.Add(41.9, 29.1, 251.3);
-            sample.Add(43.4, 29.3, 251.3);
-            sample.Add(43.9, 29.5, 248.3);
-            sample.Add(44.5, 29.7, 267.5);
-            sample.Add(47.3, 29.9, 273.0);
-            sample.Add(47.5, 30.3, 276.5);
-            sample.Add(47.9, 30.5, 270.3);
-            sample.Add(50.2, 30.7, 274.9);
-            sample.Add(52.8, 30.8, 285.0);
-            sample.Add(53.2, 30.9, 290.0);
-            sample.Add(56.7, 31.5, 297.0);
-            sample.Add(57.0, 31.7, 302.5);
-            sample.Add(63.5, 31.9, 304.5);
-            sample.Add(65.3, 32.0, 309.3);
-            sample.Add(71.1, 32.1, 321.7);
-            sample.Add(77.0, 32.5, 330.7);
-            sample.Add(77.8, 32.9, 349.0);
-            */
+            // A multivariate linear regression with just one x-column should be the same as a bivariate linear regression.
 
-            Console.WriteLine(sample.Count);
+            double intercept = 1.0;
+            double slope = -2.0;
+            ContinuousDistribution yErrDist = new NormalDistribution(0.0, 3.0);
+            UniformDistribution xDist = new UniformDistribution(Interval.FromEndpoints(-2.0, 3.0));
+            Random rng = new Random(1111111);
 
-            //sample.LinearRegression(0);
-            sample.LinearRegression(0);
+            MultivariateSample multi = new MultivariateSample("x", "y");
+            for (int i = 0; i < 10; i++) {
+                double x = xDist.GetRandomValue(rng);
+                double y = intercept + slope * x + yErrDist.GetRandomValue(rng);
+                multi.Add(x, y);
+            }
 
+            MultiLinearRegressionResult result1 = multi.LinearRegression(1);
+            LinearRegressionResult result2 = multi.TwoColumns(0, 1).LinearRegression();
+            MultiLinearRegressionResult result3 = Multivariate.LinearRegression(new IReadOnlyList<double>[] { multi.Column(0).ToList() }, multi.Column(1).ToList());
         }
 
         [TestMethod]
@@ -463,6 +443,62 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void MeansClustering2 () {
+
+            ColumnVector[] centers = new ColumnVector[] {
+                new ColumnVector(0.0, 0.0, 0.0), new ColumnVector(2.0, 0.0, 0.0), new ColumnVector(0.0, 2.0, 0.0), new ColumnVector(0.0, 0.0, 2.0)
+            };
+
+            List<int> inputAssignments = new List<int>();
+            List<ColumnVector> inputVectors = new List<ColumnVector>();
+            Random rng = new Random(2);
+            ContinuousDistribution dist = new NormalDistribution(0.0, 1.0);
+            for (int i = 0; i < 100; i++) {
+                int inputAssignment = rng.Next(0, centers.Length);
+                inputAssignments.Add(inputAssignment);
+                ColumnVector inputVector = centers[inputAssignment].Copy();
+                for (int k = 0; k < inputVector.Dimension; k++) {
+                    inputVector[k] += dist.GetRandomValue(rng);
+                }
+                inputVectors.Add(inputVector);
+            }
+
+            MultivariateSample s = new MultivariateSample(3);
+            foreach (ColumnVector v in inputVectors) { s.Add(v); }
+            MeansClusteringResult result = s.MeansClustering(centers.Length);
+
+            List<int> outputAssignments = new List<int>();
+            for (int i = 0; i < inputVectors.Count; i++) {
+                int assignment = result.Classify(inputVectors[i]);
+                outputAssignments.Add(assignment);
+            }
+
+            // Map the output centroids to the original centroids
+            Dictionary<int, int> map = new Dictionary<int, int>();
+            for (int outputIndex = 0; outputIndex < result.Count; outputIndex++) {
+                ColumnVector centroid = result.Centroid(outputIndex);
+                int mappedInputIndex = -1;
+                double mappedInputDistance = Double.MaxValue;
+                for (int inputIndex = 0; inputIndex < centers.Length; inputIndex++) {
+                    double distance = (centroid - centers[inputIndex]).Norm();
+                    if (distance < mappedInputDistance) {
+                        mappedInputIndex = inputIndex;
+                        mappedInputDistance = distance;
+                    }
+                }
+                Assert.IsTrue(mappedInputIndex >= 0);
+                Assert.IsTrue(mappedInputDistance < 1.0);
+                map.Add(outputIndex, mappedInputIndex);
+            }
+
+            int correctCount = 0;
+            for (int i = 0; i < outputAssignments.Count; i++) {
+                if (map[outputAssignments[i]] == inputAssignments[i]) correctCount++;
+            }
+            Assert.IsTrue(correctCount >= 0.50 * outputAssignments.Count);
+
+        }
 
         [TestMethod]
         public void MeansClustering () {

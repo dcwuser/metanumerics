@@ -375,7 +375,7 @@ namespace Meta.Numerics.Statistics {
             double SSR = 0.0;
             double SSF = 0.0;
             ColumnVector yHat = X * b;
-            Sample residuals = new Sample();
+            List<double> residuals = new List<double>(n);
             for (int i = 0; i < n; i++) {
                 double z = storage[outputIndex][i] - yHat[i];
                 residuals.Add(z);
@@ -606,7 +606,8 @@ namespace Meta.Numerics.Statistics {
         /// less than the number of variables (<see cref="Dimension"/>).</exception>
         /// <seealso cref="PrincipalComponentAnalysis"/>
         public PrincipalComponentAnalysis PrincipalComponentAnalysis () {
-
+            return(Multivariate.PrincipalComponentAnalysis(storage));
+            /*
             if (Count < Dimension) throw new InsufficientDataException();
 
             // construct a (Count X Dimension) matrix of mean-centered data
@@ -637,7 +638,7 @@ namespace Meta.Numerics.Statistics {
             PrincipalComponentAnalysis pca = new PrincipalComponentAnalysis(left, a, right, Count, Dimension);
 
             return (pca);
-            
+            */
         }
 
         /// <summary>
@@ -855,19 +856,19 @@ namespace Meta.Numerics.Statistics {
             if (values.Count != this.Dimension) throw new DimensionMismatchException();
 
             double minDistance = Double.MaxValue;
-            int kMin = -1;
+            int minK = -1;
             for (int k = 0; k < centroids.Length; k++) {
                 double distance = 0.0;
-                for (int j = 0; k < values.Count; j++) {
+                for (int j = 0; j < values.Count; j++) {
                     distance += MoreMath.Sqr(values[j] - centroids[k][j]);
                 }
                 if (distance < minDistance) {
                     minDistance = distance;
-                    kMin = k;
+                    minK = k;
                 }
             }
 
-            return (kMin);
+            return (minK);
         }
 
         /// <summary>

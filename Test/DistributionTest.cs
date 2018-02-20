@@ -44,7 +44,8 @@ namespace Test {
                 new GumbelDistribution(1.2, 2.3),
                 new LaplaceDistribution(4.5, 6.0),
                 new ChiDistribution(1), new ChiDistribution(4),
-                new RayleighDistribution(3.0)
+                new RayleighDistribution(3.0),
+                new FrechetDistribution(2.9, 4.0)
             });
 
             // Add some distributions that come from tests.
@@ -193,18 +194,18 @@ namespace Test {
         [TestMethod]
         public void DistributionVarianceIntegral () {
             foreach (ContinuousDistribution distribution in distributions) {
-                if (Double.IsNaN(distribution.Variance) || Double.IsInfinity(distribution.Variance)) continue;
+                double v = distribution.Variance;
+                // Skip distributions with infinite variance
+                if (Double.IsNaN(v) || Double.IsInfinity(v)) continue;
+                // Determine target precision, which must be reduced for some cases where an integral singularity means that cannot achieve full precision
                 double e = TestUtilities.TargetPrecision;
-                // since a Gamma distribution with \alpha < 1 has a power law singularity and numerical integration cannot achieve full precision with such a singularity,
-                // we reduce our precision requirement in this case
-                GammaDistribution gammaDistribution = distribution as GammaDistribution; if ((gammaDistribution != null) && (gammaDistribution.Shape < 1.0)) e = Math.Sqrt(e);
-                Console.WriteLine(distribution.GetType().Name);
+                GammaDistribution gammaDistribution = distribution as GammaDistribution;
+                if ((gammaDistribution != null) && (gammaDistribution.Shape < 1.0)) e = Math.Sqrt(e);
                 Func<double, double> f = delegate(double x) {
                     double z = x - distribution.Mean;
                     return (distribution.ProbabilityDensity(x) * z * z);
                 };
                 double C2 = FunctionMath.Integrate(f, distribution.Support, new IntegrationSettings() { RelativePrecision = e, AbsolutePrecision = 0.0 }).Value;
-                Console.WriteLine("  {0} {1}", distribution.StandardDeviation, Math.Sqrt(C2));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(C2, distribution.Variance, e));
             }
         }

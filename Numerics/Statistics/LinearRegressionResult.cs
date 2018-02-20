@@ -15,7 +15,7 @@ namespace Meta.Numerics.Statistics {
             ParameterCollection parameters,
             TestResult rTest,
             OneWayAnovaResult anova,
-            Sample residuals,
+            List<double> residuals,
             Func<double, UncertainValue> predict
         ) : base(parameters, anova, residuals) {
             this.rTest = rTest;

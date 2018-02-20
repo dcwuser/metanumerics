@@ -37,6 +37,7 @@ namespace Meta.Numerics.Data
             }
         }
 
+        /*
         public new string Name
         {
             get
@@ -49,6 +50,7 @@ namespace Meta.Numerics.Data
                 name = value;
             }
         }
+        */
 
         public override Type StorageType
         {
@@ -58,10 +60,12 @@ namespace Meta.Numerics.Data
             }
         }
 
+        /*
         public int Add(object value)
         {
             throw new InvalidOperationException();
         }
+        */
 
         public IEnumerator<T> GetEnumerator()
         {

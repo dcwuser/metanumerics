@@ -13,7 +13,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The minimum value in the sample.</returns>
         public static double Minimum (this IReadOnlyCollection<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 1) throw new InsufficientDataException();
+            if (sample.Count < 1) return (Double.NaN);
             double minimum = Double.MaxValue;
             foreach (double value in sample) {
                 if (value < minimum) minimum = value;
@@ -28,7 +28,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The maximum value in the sample.</returns>
         public static double Maximum (this IReadOnlyCollection<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 1) throw new InsufficientDataException();
+            if (sample.Count < 1) return (Double.NaN);
             double maximum = Double.MinValue;
             foreach (double value in sample) {
                 if (value > maximum) maximum = value;

@@ -126,6 +126,7 @@
     <Compile Include="SparseSquareMatrixTest.cs" />
     <Compile Include="SpinTest.cs" />
     <Compile Include="SquareMatrixTest.cs" />
+    <Compile Include="StreamingSampleSummaryTest.cs" />
     <Compile Include="SymmetricMatrixTest.cs" />
     <Compile Include="TestUtilities.cs" />
     <Compile Include="TimeSeriesTest.cs" />

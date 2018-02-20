@@ -505,9 +505,13 @@ namespace Meta.Numerics.Statistics {
         /// Gets the sample variance.
         /// </summary>
         /// <remarks>
-        /// <para>This is the actual variance of the sample values, not the infered variance
-        /// of the underlying population; to obtain the latter use <see cref="PopulationVariance" />.</para>
+        /// <para>This is the variance of the sample values, not the inferred variance
+        /// of the underlying distribution. This is sometimes called the uncorrected
+        /// sample variance, because it is a biased estimator of the variance of
+        /// the underlying population. To obtain an unbiased estimate of the variance
+        /// of the underlying population, use <see cref="PopulationVariance" />.</para>
         /// </remarks>
+        /// <seealso href="http://mathworld.wolfram.com/SampleVariance.html"/>
         public double Variance {
             get {
                 return (data.Variance);
@@ -518,14 +522,16 @@ namespace Meta.Numerics.Statistics {
         /// Gets the sample standard deviation.
         /// </summary>
         /// <remarks>
-        /// <para>This is the actual standard deviation of the sample values, not the infered standard
-        /// deviation of the underlying population; to obtain the latter use
-        /// <see cref="PopulationStandardDeviation" />.</para>
-        /// </remarks>        
+        /// <para>This is the standard deviation of the sample values, not the infered standard
+        /// deviation of the underlying distribution. This is sometimes called the uncorrected
+        /// sample standard deviation, because it is a biased estimator of the variance of
+        /// the underlying population. To obtain an unbiased estimate of the standard deviation
+        /// of the underlying population, use <see cref="PopulationStandardDeviation" />.</para>
+        /// </remarks>
+        /// <seealso href="http://mathworld.wolfram.com/StandardDeviation.html"/>
         public double StandardDeviation {
             get {
-                return (data.StandardDeviation());
-                //return (Math.Sqrt(Variance));
+                return (Math.Sqrt(data.Variance));
             }
         }
 
@@ -1248,6 +1254,8 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The result of the test.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is <see langword="null"/>.</exception>
         public static TestResult FisherFTest (Sample a, Sample b) {
+            return (Univariate.FisherFTest(a.data, b.data));
+            /*
             if (a == null) throw new ArgumentNullException(nameof(a));
             if (b == null) throw new ArgumentNullException(nameof(b));
             if ((a.Count < 2) || (b.Count < 2)) throw new InsufficientDataException();
@@ -1260,7 +1268,7 @@ namespace Meta.Numerics.Statistics {
             double F = v1 / v2;
 
             return (new TestResult("F", F, TestType.RightTailed, new FisherDistribution(a.Count - 1, b.Count - 1)));
-
+            */
         }
 
         // enumeration

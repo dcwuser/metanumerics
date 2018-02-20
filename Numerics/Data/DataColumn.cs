@@ -6,7 +6,7 @@ namespace Meta.Numerics.Data
 {
 
     /// <summary>
-    /// A readable, indexed set of data points. 
+    /// A readable, indexed column of data values. 
     /// </summary>
     /// <typeparam name="T">The type of the data points.</typeparam>
     public sealed class DataColumn<T> : IReadOnlyDataList<T>

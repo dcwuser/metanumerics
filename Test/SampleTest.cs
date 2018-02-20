@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
-using System.Collections;
+using System.Linq;
 
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
@@ -1079,6 +1079,10 @@ namespace Test {
             LinearLogisticRegressionResult result1 = sample1.LinearLogisticRegression();
             LinearLogisticRegressionResult result2 = sample2.TwoColumns(0, 1).LinearLogisticRegression();
             FitResult result3 = sample2.LogisticLinearRegression(1);
+
+            LinearLogisticRegressionResult result4 = Bivariate.LinearLogisticRegression(sample1.X.ToList(), sample1.Y.Select(x => (x == 1.0)).ToList());
+            MultiLinearLogisticRegressionResult result5 = Multivariate.LinearLogisticRegression(new IReadOnlyList<double>[] { sample1.X.ToList() }, sample1.Y.Select(x => (x == 1.0)).ToList());
+
             // Fits should give same result
             /*
             for (int i = 0; i < result1.Dimension; i++) {

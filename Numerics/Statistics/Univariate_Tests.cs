@@ -154,6 +154,40 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
+        /// Tests whether the variances of two samples are compatible.
+        /// </summary>
+        /// <param name="a">The first sample.</param>
+        /// <param name="b">The second sample.</param>
+        /// <returns>The result of the test.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is <see langword="null"/>.</exception>
+        public static TestResult FisherFTest (IReadOnlyCollection<double> a, IReadOnlyCollection<double> b) {
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
+            if ((a.Count < 2) || (b.Count < 2)) throw new InsufficientDataException();
+
+            int aCount;
+            double aMean, aSumOfSquaredDeviations;
+            ComputeMomentsUpToSecond(a, out aCount, out aMean, out aSumOfSquaredDeviations);
+            Debug.Assert(aCount == a.Count);
+            Debug.Assert(aSumOfSquaredDeviations >= 0.0);
+
+            int bCount;
+            double bMean, bSumOfSquaredDeviations;
+            ComputeMomentsUpToSecond(b, out bCount, out bMean, out bSumOfSquaredDeviations);
+            Debug.Assert(bCount == b.Count);
+            Debug.Assert(bSumOfSquaredDeviations >= 0.0);
+
+            // compute population variances
+            double va = aSumOfSquaredDeviations / (aCount - 1);
+            double vb = bSumOfSquaredDeviations / (bCount - 1);
+
+            // compute the ratio
+            double F = va / vb;
+
+            return (new TestResult("F", F, TestType.RightTailed, new FisherDistribution(a.Count - 1, b.Count - 1)));
+        }
+
+        /// <summary>
         /// Tests whether the sample is compatible with the given distribution.
         /// </summary>
         /// <param name="sample">The sample.</param>

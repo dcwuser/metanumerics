@@ -11,10 +11,6 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     public class BaseFitResult {
 
-        internal BaseFitResult (ParameterCollection parameters) : this(parameters, Double.NaN) {
-
-        }
-
         internal BaseFitResult (ParameterCollection parameters, double logLikelihood) {
             Debug.Assert(parameters != null);
             this.parameters = parameters;
@@ -54,17 +50,17 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     public class RegressionResult : BaseFitResult {
 
-        internal RegressionResult (ParameterCollection parameters, Sample residuals) : base(parameters) {
+        internal RegressionResult (ParameterCollection parameters, double logLikelyhood, List<double> residuals) : base(parameters, logLikelyhood) {
             Debug.Assert(residuals != null);
             this.residuals = residuals;
         }
 
-        private readonly Sample residuals;
+        private readonly List<double> residuals;
 
         /// <summary>
         /// Gets the residuals.
         /// </summary>
-        public virtual Sample Residuals {
+        public virtual IReadOnlyList<double> Residuals {
             get {
                 return (residuals);
             }
@@ -77,7 +73,7 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     public class GeneralLinearRegressionResult : RegressionResult {
 
-        internal GeneralLinearRegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, Sample residuals) : base(parameters, residuals) {
+        internal GeneralLinearRegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, List<double> residuals) : base(parameters, Double.NaN, residuals) {
             Debug.Assert(anova != null);
             this.anova = anova;
         }

@@ -16,9 +16,9 @@ namespace Test
         private DataFrame GetTestFrame ()
         {
             DataFrame frame = new DataFrame(
-                new DataHeader<string>("name"),
-                new DataHeader<double>("height"),
-                new DataHeader<bool?>("male")
+                new ColumnDefinition<string>("name"),
+                new ColumnDefinition<double>("height"),
+                new ColumnDefinition<bool?>("male")
             );
             frame.AddRow("a", 7.0, false);
             frame.AddRow(null, 6.5, true);
@@ -28,6 +28,51 @@ namespace Test
             frame.AddRow("f", 4.5, true);
 
             return (frame);
+        }
+
+        [TestMethod]
+        public void DataViewRowInterfaces () {
+
+            DataView original = GetTestFrame();
+            DataRow row = original.Rows[0];
+
+            IReadOnlyDictionary<string, object> rowAsDictionary = (IReadOnlyDictionary<string, object>) row;
+            Assert.IsTrue(rowAsDictionary.Count == original.Columns.Count);
+            Assert.IsTrue(rowAsDictionary.ContainsKey(original.Columns[0].Name));
+            Assert.IsFalse(rowAsDictionary.ContainsKey("NoName"));
+
+            object value = null;
+            Assert.IsTrue(rowAsDictionary.TryGetValue(original.Columns[0].Name, out value));
+            Assert.IsTrue(original.Columns[0][0].Equals(value));
+            Assert.IsFalse(rowAsDictionary.TryGetValue("NoName", out value));
+
+            Assert.IsTrue(rowAsDictionary.Keys.Count() == original.Columns.Count);
+            Assert.IsTrue(rowAsDictionary.Values.Count() == original.Columns.Count);
+
+            IReadOnlyList<object> rowAsList = (IReadOnlyList<object>) row;
+            Assert.IsTrue(rowAsList.Count == original.Columns.Count);
+            Assert.IsTrue(rowAsList[0].Equals(original.Columns[0][0]));
+        }
+
+        [TestMethod]
+        public void DataViewColumnInterfaces () {
+
+            DataView original = GetTestFrame();
+
+            DataColumnCollection columns = original.Columns;
+
+            IReadOnlyList<DataColumn<object>> columnsAsList = (IReadOnlyList<DataColumn<object>>) columns;
+            Assert.IsTrue(columnsAsList.Count == original.Columns.Count);
+
+            IReadOnlyDictionary<string, DataColumn<object>> columnsAsDictionary = (IReadOnlyDictionary<string, DataColumn<object>>) columns;
+            Assert.IsTrue(columnsAsDictionary.ContainsKey(original.Columns[1].Name));
+            Assert.IsFalse(columnsAsDictionary.ContainsKey("NoName"));
+
+            foreach(KeyValuePair<string, DataColumn<object>> entry in columnsAsDictionary) {
+                Assert.IsTrue(entry.Key == entry.Value.Name);
+            }
+
+
         }
 
         [TestMethod]
@@ -190,8 +235,8 @@ namespace Test
 
             DataFrame grouped = original.GroupBy(
                 "male",
-                new AggregateColumn<double>("heightMean", v => v.Column<double>("height").Mean()),
-                new AggregateColumn<double>("heightStandardDeviation", v => v.Rows.Count < 2 ? Double.NaN : v.Column<double>("height").StandardDeviation())
+                new AggregateDefinition<double>("heightMean", v => v.Column<double>("height").Mean()),
+                new AggregateDefinition<double>("heightStandardDeviation", v => v.Rows.Count < 2 ? Double.NaN : v.Column<double>("height").StandardDeviation())
             );
             Assert.IsTrue(grouped.Rows.Count == values.Count);
             Assert.IsTrue(grouped.Columns.Count == 3);

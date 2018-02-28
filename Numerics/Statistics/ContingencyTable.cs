@@ -7,6 +7,11 @@ using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Statistics {
 
+    /// <summary>
+    /// Represents a contingency table.
+    /// </summary>
+    /// <typeparam name="R">The type of the row labels.</typeparam>
+    /// <typeparam name="C">The type of the column labels.</typeparam>
     public class ContingencyTable<R, C> {
         
         public ContingencyTable (IReadOnlyCollection<R> rowValues, IReadOnlyCollection<C> columnValues) {
@@ -222,7 +227,7 @@ namespace Meta.Numerics.Statistics {
 
     }
 
-    internal class NullableDictionary<K, V> : IDictionary<K, V> {
+    internal class NullableDictionary<K, V> : /* IDictionary<K, V>, */ IEnumerable<KeyValuePair<K,V>> {
 
         public NullableDictionary () {
             dictionary = new Dictionary<K, V>();
@@ -254,11 +259,13 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /*
         public bool IsReadOnly {
             get {
                 return (false);
             }
         }
+        */
 
         public V this[K key] {
             get {
@@ -303,6 +310,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /*
         public bool Remove (K key) {
             if (key == null) {
                 if (nullKey) {
@@ -315,6 +323,7 @@ namespace Meta.Numerics.Statistics {
                 return (dictionary.Remove(key));
             }
         }
+        */
 
         public bool TryGetValue (K key, out V value) {
             if (key == null) {
@@ -330,6 +339,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        /*
         public void Add (KeyValuePair<K, V> item) {
             Add(item.Key, item.Value);
         }
@@ -350,6 +360,7 @@ namespace Meta.Numerics.Statistics {
         public bool Remove (KeyValuePair<K, V> item) {
             throw new NotImplementedException();
         }
+        */
 
         public IEnumerator<KeyValuePair<K, V>> GetEnumerator () {
             foreach (KeyValuePair<K, V> item in dictionary) {

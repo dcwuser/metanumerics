@@ -93,7 +93,7 @@
     <Compile Include="Core\PolynomialInterpolation.cs" />
     <Compile Include="Core\UncertainMath.cs" />
     <Compile Include="Core\UncertainValue.cs" />
-    <Compile Include="Data\AggregateColumn.cs" />
+    <Compile Include="Data\AggregateDefinition.cs" />
     <Compile Include="Data\ComputedColumn.cs" />
     <Compile Include="Data\DataAdaptor.cs" />
     <Compile Include="Data\DataColumn.cs" />
@@ -101,7 +101,7 @@
     <Compile Include="Data\DataFrame.cs" />
     <Compile Include="Data\DataFrame_Csv.cs" />
     <Compile Include="Data\DataFrame_Dictionary.cs" />
-    <Compile Include="Data\DataHeader.cs" />
+    <Compile Include="Data\ColumnDefinition.cs" />
     <Compile Include="Data\DataList.cs" />
     <Compile Include="Data\DataListExtensions.cs" />
     <Compile Include="Data\DataRow.cs" />

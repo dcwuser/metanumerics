@@ -17,7 +17,7 @@ namespace Test {
             // Construct data where (i) there are both reference-nulls and nullable-struct-nulls,
             // (ii) all values of one column are equally, (iii) values of other column depend on value of first column
             List<string> groups = new List<string>(){ "A", "B", "C", null };
-            DataFrame data = new DataFrame(new DataList<string>("Group"), new DataList<bool?>("Outcome"));
+            DataFrame data = new DataFrame(new ColumnDefinition<string>("Group"), new ColumnDefinition<bool?>("Outcome"));
             int n = 512;
             double pOutcomeNull = 0.05;
             Func<int, double> pOutcome = groupIndex => 0.8 - 0.2 * groupIndex; 

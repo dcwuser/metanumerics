@@ -202,6 +202,11 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Slope.Uncertainty, Math.Sqrt(result.Parameters.Covariance[1, 1])));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(result.R.Statistic, sample.CorrelationCoefficient));
 
+                // Named parameters
+                Assert.IsTrue(result.Parameters[nameof(result.Intercept)].Estimate == result.Intercept);
+                Assert.IsTrue(result.Parameters[nameof(result.Slope)].Estimate == result.Slope);
+                Assert.IsTrue(result.Parameters.CovarianceOf(nameof(result.Intercept), nameof(result.Slope)) == result.Parameters.Covariance[0, 1]);
+
                 // record best fit parameters
                 double a = result.Parameters.Best[0];
                 double b = result.Parameters.Best[1];
@@ -444,7 +449,7 @@ namespace Test {
             ContinuousDistribution xDistribution = new ExponentialDistribution(2.0);
             ContinuousDistribution eDistribution = new NormalDistribution(0.0, 4.0);
 
-            DataFrame parameters = new DataFrame(new DataList<double>("a"), new DataList<double>("b"));
+            DataFrame parameters = new DataFrame(new ColumnDefinition<double>("a"), new ColumnDefinition<double>("b"));
             //MultivariateSample parameters = new MultivariateSample("a", "b");
             MultivariateSample covariances = new MultivariateSample(3);
 

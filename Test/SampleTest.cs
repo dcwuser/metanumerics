@@ -206,6 +206,45 @@ namespace Test {
 
         }
 
+
+        [TestMethod]
+        public void SampleTrimean () {
+
+            // Examples from https://explorable.com/trimean
+            // Indexes 8 * 0.25 = 2, 8 * 0.50 = 4, 8 * 0.75 = 6
+            // For d1, (161 + 2 * 166 + 171) / 4 = 166
+            // For d2, (163 + 2 * 166 + 181) / 4 = 169
+
+            double[] d1 = new double[] { 155, 158, 161, 162, 166, 170, 171, 174, 179 };
+            double[] d2 = new double[] { 162, 162, 163, 165, 166, 175, 181, 186, 192 };
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(d1.Trimean(), 166));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(d2.Trimean(), 169));
+        }
+
+        [TestMethod]
+        public void ZeroSampleProperties () {
+            double[] sample = new double[] { };
+            Assert.IsTrue(Double.IsNaN(sample.Minimum()));
+            Assert.IsTrue(Double.IsNaN(sample.Maximum()));
+            Assert.IsTrue(Double.IsNaN(sample.Mean()));
+            //Assert.IsTrue(sample.RawMoment(0) == 1.0);
+            //Assert.IsTrue(sample.CentralMoment(0) == 1.0);
+        }
+
+        [TestMethod]
+        public void OneSampleProperties () {
+            double[] sample = new double[] { 2.0 };
+            Assert.IsTrue(sample.RawMoment(0) == 1.0);
+            Assert.IsTrue(sample.CentralMoment(0) == 1.0);
+            Assert.IsTrue(sample.RawMoment(1) == sample[0]);
+            Assert.IsTrue(sample.CentralMoment(1) == 0.0);
+            Assert.IsTrue(sample.Mean() == sample[0]);
+            Assert.IsTrue(sample.Minimum() == sample[0]);
+            Assert.IsTrue(sample.Maximum() == sample[0]);
+            Assert.IsTrue(sample.Median() == sample[0]);
+        }
+
         [TestMethod]
         public void LognormalFit () {
 

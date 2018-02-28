@@ -167,8 +167,11 @@ namespace Meta.Numerics.Data {
                         DataAdaptor header = headers[columnIndex];
                         LinkedListNode<TypeAdaptor> adaptorNode = header.TypeCandidates.First;
                         while (adaptorNode != null) {
-                            if (!adaptorNode.Value.IsParsable(cell)) header.TypeCandidates.Remove(adaptorNode);
-                            adaptorNode = adaptorNode.Next;
+                            // It's necessary to extract the next node first because calling Remove sets Next to null
+                            LinkedListNode<TypeAdaptor> nextAdaptorNode = adaptorNode.Next;
+                            bool parsable = adaptorNode.Value.IsParsable(cell);
+                            if (!parsable) header.TypeCandidates.Remove(adaptorNode);
+                            adaptorNode = nextAdaptorNode;
                         }
                         columns[columnIndex].Add(cell);
                     }

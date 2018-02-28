@@ -11,7 +11,7 @@ using Meta.Numerics.Statistics.Distributions;
 namespace Meta.Numerics.Data
 {
     /// <summary>
-    /// A readable array of data.
+    /// A read-only view of a table of data.
     /// </summary>
     public class DataView {
 
@@ -61,7 +61,7 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
-        /// Get a given column, cast to a given data type/
+        /// Get a given column, cast to a given data type.
         /// </summary>
         /// <typeparam name="T">The type into which to cast the column.</typeparam>
         /// <param name="columnName">The name of the column.</param>
@@ -291,12 +291,13 @@ namespace Meta.Numerics.Data
             // Create a lookup table that maps group column values to the indexes of rows with that value.
             // We have to be a little tricky to deal with null values, because null is not allowed to be
             // a dictionary key. We use a special internal null signifier object to get around this problem.
-            Dictionary<object, List<int>> groups = new Dictionary<object, List<int>>();
+            //Dictionary<object, List<int>> groups = new Dictionary<object, List<int>>();
+            NullableDictionary<object, List<int>> groups = new NullableDictionary<object, List<int>>();
             for (int r = 0; r < map.Count; r++)
             {
                 int index = map[r];
                 object value = groupByColumn.GetItem(index);
-                if (value == null) value = NullSignifier.Value;
+                //if (value == null) value = NullSignifier.Value;
                 List<int> members;
                 if (!groups.TryGetValue(value, out members))
                 {
@@ -316,7 +317,7 @@ namespace Meta.Numerics.Data
                 aggregateColumn.AddItem(aggregateValue);
 
                 object groupKey = group.Key;
-                if (groupKey == NullSignifier.Value) groupKey = null;
+                //if (groupKey == NullSignifier.Value) groupKey = null;
                 groupsColumn.AddItem(groupKey);
 
             }
@@ -325,7 +326,13 @@ namespace Meta.Numerics.Data
             return (result);
         }
 
-        public DataFrame GroupBy (string groupByColumnName, params AggregateColumn[] aggregateColumns) {
+        /// <summary>
+        /// Groups the data by the values in the given column, and computes the given aggregate quantities for each group.
+        /// </summary>
+        /// <param name="groupByColumnName">The name of the column to group by.</param>
+        /// <param name="aggregateColumns">The definitions of the aggregate columns to compute.</param>
+        /// <returns>A new data frame containing the requested aggregate values for each group.</returns>
+        public DataFrame GroupBy (string groupByColumnName, params AggregateDefinition[] aggregateColumns) {
 
             if (groupByColumnName == null) throw new ArgumentNullException(nameof(groupByColumnName));
             if (aggregateColumns == null) throw new ArgumentNullException(nameof(aggregateColumns));
@@ -336,11 +343,12 @@ namespace Meta.Numerics.Data
             // Create a lookup table that maps group column values to the indexes of rows with that value.
             // We have to be a little tricky to deal with null values, because null is not allowed to be
             // a dictionary key. We use a special internal null signifier object to get around this problem.
-            Dictionary<object, List<int>> groups = new Dictionary<object, List<int>>();
+            //Dictionary<object, List<int>> groups = new Dictionary<object, List<int>>();
+            NullableDictionary<object, List<int>> groups = new NullableDictionary<object, List<int>>();
             for (int r = 0; r < map.Count; r++) {
                 int index = map[r];
                 object value = groupByColumn.GetItem(index);
-                if (value == null) value = NullSignifier.Value;
+                //if (value == null) value = NullSignifier.Value;
                 List<int> members;
                 if (!groups.TryGetValue(value, out members)) {
                     members = new List<int>();
@@ -353,7 +361,7 @@ namespace Meta.Numerics.Data
             List<DataList> resultColumns = new List<DataList>();
             DataList groupsColumn = DataList.Create(groupByColumnName, groupByColumn.StorageType);
             resultColumns.Add(groupsColumn);
-            foreach (AggregateColumn aggregateColumn in aggregateColumns) {
+            foreach (AggregateDefinition aggregateColumn in aggregateColumns) {
                 if (aggregateColumn == null) throw new ArgumentNullException(nameof(aggregateColumn));
                 DataList outputColumn = DataList.Create(aggregateColumn.Name, aggregateColumn.StorageType);
                 resultColumns.Add(outputColumn);
@@ -364,7 +372,7 @@ namespace Meta.Numerics.Data
 
                 // Add the value for the grouping column
                 object groupValue = group.Key;
-                if (groupValue == NullSignifier.Value) groupValue = null;
+                //if (groupValue == NullSignifier.Value) groupValue = null;
                 groupsColumn.AddItem(groupValue);
 
                 // Create a filtered view of the data
@@ -372,7 +380,7 @@ namespace Meta.Numerics.Data
 
                 // Apply each aggregator to the filtered view to get the values to add to the aggregate columns.
                 for (int i = 0; i < aggregateColumns.Length; i++) {
-                    AggregateColumn aggregateColumn = aggregateColumns[i];
+                    AggregateDefinition aggregateColumn = aggregateColumns[i];
                     object outputValue = aggregateColumn.ApplyAggregator(inputView);
                     resultColumns[i + 1].AddItem(outputValue);
                 }
@@ -380,24 +388,6 @@ namespace Meta.Numerics.Data
 
             DataFrame result = new DataFrame(resultColumns);
             return (result);
-
-            /*
-            DataList groupsColumn = DataList.Create(groupByColumnName, groupByColumn.StorageType);
-            DataList<T> aggregateColumn = new DataList<T>(aggregateColumnName);
-            foreach (KeyValuePair<object, List<int>> group in groups) {
-                DataView values = new DataView(this.columns, group.Value);
-                T aggregateValue = aggregator(values);
-                aggregateColumn.AddItem(aggregateValue);
-
-                object groupKey = group.Key;
-                if (groupKey == NullSignifier.Value) groupKey = null;
-                groupsColumn.AddItem(groupKey);
-
-            }
-
-            DataFrame result = new DataFrame(groupsColumn, aggregateColumn);
-            return (result);
-            */
         }
 
         /*
@@ -475,40 +465,6 @@ namespace Meta.Numerics.Data
         }
         */
         
-        public int[,] Crosstabs<R, C> (string rowsColumnName, string columnsColumnName) {
-
-            int rowsColumnIndex = GetColumnIndex(rowsColumnName);
-            DataList rowsColumn = columns[rowsColumnIndex];
-
-            int columnsColumnIndex = GetColumnIndex(columnsColumnName);
-            DataList columnsColumn = columns[columnsColumnIndex];
-
-            NullableDictionary<R, int> rowValues = new NullableDictionary<R, int>();
-            NullableDictionary<C, int> columnValues = new NullableDictionary<C, int>();
-            for (int r = 0; r < map.Count; r++) {
-                int index = map[r];
-                R rowValue = (R) rowsColumn.GetItem(index);
-                if (!rowValues.ContainsKey(rowValue)) rowValues.Add(rowValue, rowValues.Count);
-                C columnValue = (C) columnsColumn.GetItem(index);
-                if (!columnValues.ContainsKey(columnValue)) columnValues.Add(columnValue, columnValues.Count);
-            }
-
-            int[,] counts = new int[rowValues.Count, columnValues.Count];
-            for (int r = 0; r < map.Count; r++) {
-                int index = map[r];
-                R rowValue = (R) rowsColumn.GetItem(index);
-                int rowIndex = rowValues[rowValue];
-                C columnValue = (C) columnsColumn.GetItem(index);
-                int columnIndex = columnValues[columnValue];
-                counts[rowIndex, columnIndex]++;
-            }
-
-            return (counts);
-
-
-        }
-        
-
         /// <summary>
         /// Add a computed column.
         /// </summary>
@@ -564,18 +520,6 @@ namespace Meta.Numerics.Data
                 }
                 yield return (rowDictionary);
             }
-        }
-
-    }
-
-    internal sealed class NullSignifier {
-
-        private NullSignifier() { }
-
-        public static readonly NullSignifier Value = new NullSignifier();
-
-        public override int GetHashCode () {
-            return (-12948583);
         }
 
     }

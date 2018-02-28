@@ -65,7 +65,7 @@ namespace Meta.Numerics.Data
         }
 
         bool IReadOnlyDictionary<string, DataColumn<object>>.ContainsKey (string key) {
-            throw new NotImplementedException();
+            return (frame.GetColumnIndex(key) >= 0);
         }
 
         bool IReadOnlyDictionary<string, DataColumn<object>>.TryGetValue (string key, out DataColumn<object> value) {
@@ -73,12 +73,14 @@ namespace Meta.Numerics.Data
         }
 
         IEnumerator<KeyValuePair<string, DataColumn<object>>> IEnumerable<KeyValuePair<string, DataColumn<object>>>.GetEnumerator () {
-            throw new NotImplementedException();
+            foreach(DataColumn<object> column in ((IEnumerable<DataColumn<object>>) this)) {
+                yield return (new KeyValuePair<string, DataColumn<object>>(column.Name, column));
+            }
         }
 
         IEnumerable<string> IReadOnlyDictionary<string, DataColumn<object>>.Keys {
             get {
-                throw new NotImplementedException();
+                return (frame.columnMap.Keys);
             }
         }
 

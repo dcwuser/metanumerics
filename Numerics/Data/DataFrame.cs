@@ -79,12 +79,12 @@ namespace Meta.Numerics.Data
         /// Initializes a new data frame with the columns specifed by the given headers.
         /// </summary>
         /// <param name="columnHeaders"></param>
-        public DataFrame(params DataHeader[] columnHeaders) : this()
+        public DataFrame(params ColumnDefinition[] columnHeaders) : this()
         {
             if (columnHeaders == null) throw new ArgumentNullException(nameof(columnHeaders));
-            foreach(DataHeader header in columnHeaders)
+            foreach(ColumnDefinition header in columnHeaders)
             {
-                AddColumn(header.CreateList());
+                AddColumn(header.CreateList(this));
             }
         }
 
@@ -108,19 +108,9 @@ namespace Meta.Numerics.Data
             {
                 AddColumn(column);
             }
-            int count = this.columns[0].Count;
-            for (int i = 0; i < count; i++)
-            {
-                this.map.Add(i);
-            }
         }
 
-        internal DataFrame(List<DataList> columns, List<int> map) :base(columns, map)
-        {
-
-        }
-
-
+        /*
         /// <summary>
         /// Joins this data view to another data view on the given column.
         /// </summary>
@@ -176,6 +166,7 @@ namespace Meta.Numerics.Data
             return (result);
 
         }
+        */
 
         // IReadableDataList
         // IDataList : IReadableDataList
@@ -199,11 +190,26 @@ namespace Meta.Numerics.Data
         public int AddColumn(DataList column)
         {
             if (column == null) throw new ArgumentNullException(nameof(column));
-            int columnCount = columns.Count;
-            if ((columnCount > 0) && (columns[0].Count != column.Count)) throw new InvalidOperationException();
+            if (this.columns.Count == 0) {
+                for (int i = 0; i < column.Count; i++) {
+                    this.map.Add(i);
+                }
+            } else {
+                if (column.Count != map.Count) throw new DimensionMismatchException();
+            }
+            int columnCount = this.columns.Count;
             this.columns.Add(column);
             this.columnMap[column.Name] = columnCount;
             return (columnCount);
+        }
+
+        /// <summary>
+        /// Adds the given column to the data frame.
+        /// </summary>
+        /// <param name="column">The column to add.</param>
+        public void AddColumn(ColumnDefinition column) {
+            if (column == null) throw new ArgumentNullException(nameof(column));
+            AddColumn(column.CreateList(this));
         }
 
         /// <summary>
@@ -217,7 +223,8 @@ namespace Meta.Numerics.Data
             this.columns.RemoveAt(columnIndex);
             // Remove the name of the removed column from the index,
             // and fix the index values for the higher columns, which will have changed 
-            this.columnMap.Remove(columnName);
+            bool removed = this.columnMap.Remove(columnName);
+            Debug.Assert(removed);
             for (int index = columnIndex; index < columns.Count; index++)
             {
                 columnMap[columns[index].Name] = index;

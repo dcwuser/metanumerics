@@ -23,10 +23,10 @@ namespace Meta.Numerics.Data
             {
                 if (frame == null)
                 {
-                    List<DataHeader> headers = new List<DataHeader>();
+                    List<ColumnDefinition> headers = new List<ColumnDefinition>();
                     foreach(KeyValuePair<string, object> entry in dictionary)
                     {
-                        DataHeader header = new DataHeader(entry.Key, entry.Value.GetType());
+                        ColumnDefinition header = new ColumnDefinition(entry.Key, entry.Value.GetType());
                         headers.Add(header);
                         frame = new DataFrame(headers.ToArray());
                     }

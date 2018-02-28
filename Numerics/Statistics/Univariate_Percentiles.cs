@@ -45,7 +45,7 @@ namespace Meta.Numerics.Statistics {
         public static double Median (this IReadOnlyList<double> sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 2) throw new InsufficientDataException();
+            if (sample.Count < 1) throw new InsufficientDataException();
 
             int[] order = GetSortOrder(sample);
 

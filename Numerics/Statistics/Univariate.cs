@@ -237,7 +237,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         public static double CentralMoment(this IReadOnlyCollection<double> sample, int r) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 2) throw new InsufficientDataException();
+            if (sample.Count < 1) throw new InsufficientDataException();
             if (r == 0) {
                 return (1.0);
             } else if (r == 1) {

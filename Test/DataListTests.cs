@@ -13,56 +13,6 @@ namespace DataTest
     {
 
         [TestMethod]
-        public void Timings()
-        {
-            int n = 10000;
-            int m = 10000;
-            Random rng = new Random(1);
-            double mean = 0.0;
-
-            double[] array = new double[n];
-            for (int j = 0; j < array.Length; j++)
-            {
-                array[j] = rng.NextDouble();
-            }
-            Stopwatch arrayTimer = Stopwatch.StartNew();
-            for (int i = 0; i < m; i++)
-            {
-                mean += array.Mean();
-            }
-            arrayTimer.Stop();
-            Console.WriteLine(arrayTimer.ElapsedMilliseconds);
-
-            DataList<double> list = new DataList<double>("list");
-            for (int j = 0; j < n; j++)
-            {
-                list.Add(rng.NextDouble());
-            }
-            Stopwatch listTimer = Stopwatch.StartNew();
-            for (int i = 0; i < m; i++)
-            {
-                mean += list.Mean();
-            }
-            listTimer.Stop();
-            Console.WriteLine(listTimer.ElapsedMilliseconds);
-
-            DataFrame frame = new DataFrame(list);
-            Stopwatch frameTimer = Stopwatch.StartNew();
-            DataColumn<double> frameList = frame.Column<double>("list");
-            for (int i = 0; i < m; i++)
-            {
-                mean += frameList.Mean();
-            }
-            frameTimer.Stop();
-            Console.WriteLine(frameTimer.ElapsedMilliseconds);
-
-
-
-        }
-
-
-
-        [TestMethod]
         public void DataListManipulations ()
         {
             string name = "test";

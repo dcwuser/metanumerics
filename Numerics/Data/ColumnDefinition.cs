@@ -10,23 +10,15 @@ namespace Meta.Numerics.Data {
     /// <summary>
     /// Defines a column of a data frame.
     /// </summary>
-    public class ColumnDefinition {
+    /// <remarks><para>This is an abstract marker class. To define a concrete column, use <see cref="ColumnDefinition{T}"/>.</para></remarks>
+    public abstract class ColumnDefinition {
 
-        /// <summary>
-        /// Initializes a new data header with the given name and data type.
-        /// </summary>
-        /// <param name="name">The name of the column.</param>
-        /// <param name="type">The type of data stored in the column.</param>
-        public ColumnDefinition (string name, Type type) {
-            if (name == null) throw new ArgumentNullException(nameof(name));
-            if (type == null) throw new ArgumentNullException(nameof(type));
+        internal ColumnDefinition(string name) {
+            Debug.Assert(name != null);
             this.name = name;
-            this.type = type;
         }
 
         private readonly string name;
-
-        private readonly Type type;
 
         /// <summary>
         /// Gets the name of the column.
@@ -40,32 +32,46 @@ namespace Meta.Numerics.Data {
         /// <summary>
         /// Gets the type of data stored in the column.
         /// </summary>
-        public Type StorageType {
-            get {
-                return (type);
-            }
-        }
+        public abstract Type StorageType { get; }
 
-        internal virtual DataList CreateList (DataView view) {
-            return (DataList.Create(name, type));
-        }
+        internal abstract DataList CreateList(DataView view);
+
+        internal abstract bool IsComputed { get; }
+
     }
 
     /// <summary>
-    /// Represents a column of a data frame that stores the given type of data.
+    /// Defines a column of a data frame that stores the given type of data.
     /// </summary>
     /// <typeparam name="T">The type of data stored in the column.</typeparam>
+    /// <remarks>
+    /// <para>Pass instances of this type to the constructor <see cref="DataFrame.DataFrame(ColumnDefinition[])"/> to instantiate a new <see cref="DataFrame"/>.</para>
+    /// <para>If you want a column to support null value types, use <see cref="Nullable{T}"/> types for T.</para>
+    /// </remarks>
     public sealed class ColumnDefinition<T> : ColumnDefinition {
 
         /// <summary>
-        /// Initializes a new data header for a column with the given name.
+        /// Initializes a new definition of a column with the given name.
         /// </summary>
         /// <param name="name">The name of the column.</param>
-        public ColumnDefinition (string name) : base(name, typeof(T)) {
+        public ColumnDefinition (string name) : base(name) {
+        }
+
+        /// <inheritdoc/>
+        public override Type StorageType {
+            get {
+                return (typeof(T));
+            }
         }
 
         internal override DataList CreateList (DataView view) {
             return (new DataList<T>(this.Name));
+        }
+
+        internal override bool IsComputed {
+            get {
+                return (false);
+            }
         }
 
     }
@@ -78,14 +84,32 @@ namespace Meta.Numerics.Data {
 
         private readonly Func<DataRow, T> function;
 
-        public ComputedColumnDefinition (string name, Func<DataRow, T> function) : base(name, typeof(T)) {
+        /// <summary>
+        /// Initializes a new definition of a computed column.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="function"></param>
+        public ComputedColumnDefinition (string name, Func<DataRow, T> function) : base(name) {
             if (function == null) throw new ArgumentNullException(nameof(function));
             this.function = function;
+        }
+
+        /// <inheritdoc/>
+        public override Type StorageType {
+            get {
+                return (typeof(T));
+            }
         }
 
         internal override DataList CreateList (DataView view) {
             Debug.Assert(view != null);
             return (new ComputedColumn<T>(view, this.Name, function));
+        }
+
+        internal override bool IsComputed {
+            get {
+                return (true);
+            }
         }
     }
 }

@@ -33,9 +33,15 @@ namespace Meta.Numerics.Data
         internal Dictionary<string, int> columnMap;
         internal List<int> map;
 
-        internal int GetColumnIndex (string name) {
+        /// <summary>
+        /// Gets the index of a given column.
+        /// </summary>
+        /// <param name="columnName">The name of the column.</param>
+        /// <returns>The (zero-based) index of the column, or -1 if there is no such column in the table.</returns>
+        public int GetColumnIndex (string columnName) {
+            if (columnName == null) throw new ArgumentNullException(nameof(columnName));
             int columnIndex;
-            if (this.columnMap.TryGetValue(name, out columnIndex)) {
+            if (this.columnMap.TryGetValue(columnName, out columnIndex)) {
                 return (columnIndex);
             } else {
                 return (-1);

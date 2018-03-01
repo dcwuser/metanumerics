@@ -26,6 +26,7 @@ namespace Test
             frame.AddRow("d", 5.5, true);
             frame.AddRow("e", 5.0, null);
             frame.AddRow("f", 4.5, true);
+            frame.AddRow(null, 4.0, false);
 
             return (frame);
         }
@@ -123,13 +124,12 @@ namespace Test
         }
 
         [TestMethod]
-        public void DataViewOrderByColumnFunc () {
+        public void DataViewOrderByColumnWithNulls () {
 
             DataView original = GetTestFrame();
 
             // This should support nulls
             DataView reordered = original.OrderBy("name");
-            //DataView reordered = original.OrderBy<string>("name", String.Compare);
             Assert.IsTrue(reordered.Columns.Count == original.Columns.Count);
             Assert.IsTrue(reordered.Rows.Count == original.Rows.Count);
 
@@ -142,6 +142,16 @@ namespace Test
                 Assert.IsTrue(reorderedColumn[i] == reorderedCopy[i]);
             }
 
+        }
+
+        [TestMethod]
+        public void DataViewOrderByRowFunc () {
+
+            DataView original = GetTestFrame();
+
+            Comparison<DataRow> comparer = (a, b) => {
+                return (0);
+            };
         }
 
         [TestMethod]

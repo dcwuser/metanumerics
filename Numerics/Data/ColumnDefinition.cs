@@ -34,9 +34,7 @@ namespace Meta.Numerics.Data {
         /// </summary>
         public abstract Type StorageType { get; }
 
-        internal abstract DataList CreateList(DataView view);
-
-        internal abstract bool IsComputed { get; }
+        internal abstract NamedList CreateList(FrameView view);
 
     }
 
@@ -45,7 +43,7 @@ namespace Meta.Numerics.Data {
     /// </summary>
     /// <typeparam name="T">The type of data stored in the column.</typeparam>
     /// <remarks>
-    /// <para>Pass instances of this type to the constructor <see cref="DataFrame.DataFrame(ColumnDefinition[])"/> to instantiate a new <see cref="DataFrame"/>.</para>
+    /// <para>Pass instances of this type to the constructor <see cref="FrameTable.FrameTable(ColumnDefinition[])"/> to instantiate a new <see cref="FrameTable"/>.</para>
     /// <para>If you want a column to support null value types, use <see cref="Nullable{T}"/> types for T.</para>
     /// </remarks>
     public sealed class ColumnDefinition<T> : ColumnDefinition {
@@ -54,8 +52,20 @@ namespace Meta.Numerics.Data {
         /// Initializes a new definition of a column with the given name.
         /// </summary>
         /// <param name="name">The name of the column.</param>
-        public ColumnDefinition (string name) : base(name) {
+        public ColumnDefinition (string name) : this(name, null) {
         }
+
+        /// <summary>
+        /// Initializes a new definition of a column with the given name and storage.
+        /// </summary>
+        /// <param name="name">The name of the column.</param>
+        /// <param name="storage">The storage to be used.</param>
+        public ColumnDefinition (string name, List<T> storage) : base(name) {
+            this.storage = storage;
+        }
+
+
+        private readonly List<T> storage;
 
         /// <inheritdoc/>
         public override Type StorageType {
@@ -64,13 +74,11 @@ namespace Meta.Numerics.Data {
             }
         }
 
-        internal override DataList CreateList (DataView view) {
-            return (new DataList<T>(this.Name));
-        }
-
-        internal override bool IsComputed {
-            get {
-                return (false);
+        internal override NamedList CreateList (FrameView view) {
+            if (storage == null) {
+                return (new NamedList<T>(this.Name));
+            } else {
+                return (new NamedList<T>(this.Name, storage));
             }
         }
 
@@ -82,14 +90,14 @@ namespace Meta.Numerics.Data {
     /// <typeparam name="T">The type of data computed.</typeparam>
     public sealed class ComputedColumnDefinition<T> : ColumnDefinition {
 
-        private readonly Func<DataRow, T> function;
+        private readonly Func<FrameRow, T> function;
 
         /// <summary>
         /// Initializes a new definition of a computed column.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="function"></param>
-        public ComputedColumnDefinition (string name, Func<DataRow, T> function) : base(name) {
+        public ComputedColumnDefinition (string name, Func<FrameRow, T> function) : base(name) {
             if (function == null) throw new ArgumentNullException(nameof(function));
             this.function = function;
         }
@@ -101,15 +109,10 @@ namespace Meta.Numerics.Data {
             }
         }
 
-        internal override DataList CreateList (DataView view) {
+        internal override NamedList CreateList (FrameView view) {
             Debug.Assert(view != null);
-            return (new ComputedColumn<T>(view, this.Name, function));
+            return (new ComputedDataList<T>(view, this.Name, function));
         }
 
-        internal override bool IsComputed {
-            get {
-                return (true);
-            }
-        }
     }
 }

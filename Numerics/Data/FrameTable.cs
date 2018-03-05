@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
+using System.IO;
 
 namespace Meta.Numerics.Data
 {
@@ -14,20 +14,20 @@ namespace Meta.Numerics.Data
     /// <summary>
     /// A modifyable array of data.
     /// </summary>
-    public sealed partial class DataFrame : DataView
+    public sealed partial class FrameTable : FrameView
     {
-        private DataFrame ()
+        private FrameTable () : base(new List<NamedList>(), new List<int>())
         {
-            this.columns = new List<DataList>();
-            this.columnMap = new Dictionary<string, int>();
-            this.map = new List<int>();
+            //this.columns = new List<DataList>();
+            //this.columnMap = new Dictionary<string, int>();
+            //this.map = new List<int>();
         }
 
         /// <summary>
         /// Initializes a new data frame with the columns specifed by the given headers.
         /// </summary>
         /// <param name="columnHeaders"></param>
-        public DataFrame(params ColumnDefinition[] columnHeaders) : this()
+        public FrameTable(params ColumnDefinition[] columnHeaders) : this()
         {
             if (columnHeaders == null) throw new ArgumentNullException(nameof(columnHeaders));
             foreach(ColumnDefinition header in columnHeaders)
@@ -40,7 +40,7 @@ namespace Meta.Numerics.Data
         /// Initializes a new data frame with the given data lists as columns.
         /// </summary>
         /// <param name="columns">The data lists.</param>
-        internal DataFrame(params DataList[] columns) : this((IList<DataList>) columns)
+        internal FrameTable(params NamedList[] columns) : this((IList<NamedList>) columns)
         {
 
         }
@@ -49,12 +49,27 @@ namespace Meta.Numerics.Data
         /// Initializes a new data frame with the given sequence of data lists as columns.
         /// </summary>
         /// <param name="columns">An enumerable sequence of non-null data lists.</param>
-        internal DataFrame(IEnumerable<DataList> columns) : this()
+        internal FrameTable(IEnumerable<NamedList> columns) : this()
         {
             if (columns == null) throw new ArgumentNullException(nameof(columns));
-            foreach (DataList column in columns)
+            foreach (NamedList column in columns)
             {
                 AddColumn(column);
+            }
+        }
+
+
+        /// <summary>
+        /// Gets or sets the value in a given cell.
+        /// </summary>
+        /// <param name="rowIndex">The row index of the cell.</param>
+        /// <param name="columnIndex">The column index of the cell.</param>
+        public new object this [int rowIndex, int columnIndex] {
+            get {
+                return (base[rowIndex, columnIndex]);
+            }
+            set {
+                columns[columnIndex].SetItem(map[rowIndex], value);
             }
         }
 
@@ -135,7 +150,7 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="column">The data list to add.</param>
         /// <returns>The index of the new column.</returns>
-        public int AddColumn(DataList column)
+        internal int AddColumn(NamedList column)
         {
             if (column == null) throw new ArgumentNullException(nameof(column));
             if (this.columns.Count == 0) {
@@ -143,7 +158,7 @@ namespace Meta.Numerics.Data
                     this.map.Add(i);
                 }
             } else {
-                if (column.Count != map.Count) throw new DimensionMismatchException();
+                if (!column.IsComputed && column.Count != map.Count) throw new DimensionMismatchException();
             }
             int columnCount = this.columns.Count;
             this.columns.Add(column);
@@ -215,8 +230,8 @@ namespace Meta.Numerics.Data
             int rowCount = map.Count;
             for (int columnIndex = 0; columnIndex < columns.Count; columnIndex++)
             {
-                DataList column = columns[columnIndex];
-                // handle computed columns
+                NamedList column = columns[columnIndex];
+                if (column.IsComputed) continue;
                 object value = values[column.Name];
                 int rowIndex = column.AddItem(value);
                 if (rowIndex != rowCount) throw new InvalidOperationException();
@@ -224,14 +239,105 @@ namespace Meta.Numerics.Data
             map.Add(rowCount);
         }
 
+        // RemoveRow and InsertRowAt are difficult because we need to not only re-order all the columns,
+        // but also fix the indexes pointed to by all the map entries.
+      
+        /// <summary>
+        /// Removes all data from the table.
+        /// </summary>
+        /// <remarks>
+        /// <para>This method removes all rows, but does not remove any columns.</para>
+        /// </remarks>
+        public void Clear () {
+            foreach(NamedList column in columns) {
+                column.Clear();
+            }
+            map.Clear();
+        }
+        
+        /// <summary>
+        /// Creates a new data frame by reading values from a file of comma-seperated values.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <returns>A new data frame with data from the file.</returns>
+        /// <remarks>The column names are taken from the first line of the file.</remarks>
+        public static FrameTable FromCsv (TextReader reader) {
+            if (reader == null) throw new ArgumentNullException(nameof(reader));
 
-        // parse to integer -> int
-        // parse to double -> double
-        // parse to datetime -> datetime
-        // parse to boolean -> boolean
-        // parse to guid -> guid
-        // leave as string        
+            NamedList<string>[] textColumns;
+            DataAdaptor[] headers;
+            ReadCsvAsStrings(reader, out textColumns, out headers);
+
+            NamedList[] columns = new NamedList[headers.Length];
+            for (int columnIndex = 0; columnIndex < columns.Length; columnIndex++) {
+                DataAdaptor header = headers[columnIndex];
+                if (header.TypeCandidates.Count == 0) {
+                    columns[columnIndex] = textColumns[columnIndex];
+                } else {
+                    TypeParser adaptor = header.TypeCandidates.First.Value;
+                    NamedList column = adaptor.CreateStorage(textColumns[columnIndex].Name, header.IsNullable);
+                    foreach (string textValue in textColumns[columnIndex]) {
+                        if (textValue == null) {
+                            column.AddItem(null);
+                        } else {
+                            object value = adaptor.Parse(textValue);
+                            column.AddItem(value);
+                        }
+                    }
+                    columns[columnIndex] = column;
+                }
+            }
+
+            FrameTable frame = new FrameTable(columns);
+            return (frame);
+        }
+
+        private static void ReadCsvAsStrings (TextReader reader, out NamedList<string>[] columns, out DataAdaptor[] headers) {
+            Debug.Assert(reader != null);
+
+            // Get the column names from the first line.
+
+            string firstline = reader.ReadLine();
+            if (firstline == null) {
+                columns = null;
+                headers = null;
+                return;
+            }
+
+            List<string> names = CsvHelper.ReadCells(firstline);
+            int count = names.Count;
+
+            // Put the columns into lists of strings, and as we do so, maintain the collection of
+            // types it can be parsed into, and whether any entries are null.
+
+            columns = new NamedList<string>[names.Count];
+            headers = new DataAdaptor[names.Count];
+            for (int columnIndex = 0; columnIndex < columns.Length; columnIndex++) {
+                columns[columnIndex] = new NamedList<string>(names[columnIndex]);
+                headers[columnIndex] = new DataAdaptor();
+            }
+
+            while (true) {
+                string line = reader.ReadLine();
+                if (line == null) break;
+                List<string> cells = CsvHelper.ReadCells(line);
+                if (cells.Count != count) throw new FormatException();
+                for (int columnIndex = 0; columnIndex < count; columnIndex++) {
+                    string cell = cells[columnIndex];
+                    if (String.IsNullOrEmpty(cell)) {
+                        headers[columnIndex].IsNullable = true;
+                        columns[columnIndex].Add(null);
+                    } else {
+                        DataAdaptor header = headers[columnIndex];
+                        header.TryParse(cell);
+                        columns[columnIndex].Add(cell);
+                    }
+                }
+            }
+
+        }
 
     }
 
 }
+

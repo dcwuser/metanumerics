@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Meta.Numerics.Data
 {
-    public partial class DataFrame
+    public partial class FrameTable
     {
 
         /// <summary>
@@ -14,11 +14,11 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="dictionaries"></param>
         /// <returns></returns>
-        public static DataFrame FromDictionaries (IEnumerable<IReadOnlyDictionary<string, object>> dictionaries)
+        public static FrameTable FromDictionaries (IEnumerable<IReadOnlyDictionary<string, object>> dictionaries)
         {
             if (dictionaries == null) throw new ArgumentNullException(nameof(dictionaries));
 
-            DataFrame frame = null;
+            FrameTable frame = null;
             foreach(IReadOnlyDictionary<string, object> dictionary in dictionaries)
             {
                 if (dictionary == null) throw new ArgumentNullException(nameof(dictionary));
@@ -27,14 +27,13 @@ namespace Meta.Numerics.Data
                 // Change to a Dictionary<string,DataColumn> to avoid Frame overhead?
                 if (frame == null)
                 {
-                    List<ColumnDefinition> headers = new List<ColumnDefinition>();
-                    List<DataList> columns = new List<DataList>();
+                    List<NamedList> columns = new List<NamedList>();
                     foreach(KeyValuePair<string, object> entry in dictionary)
                     {
-                        DataList column = DataList.Create(entry.Key, entry.Value.GetType());
+                        NamedList column = NamedList.Create(entry.Key, entry.Value.GetType());
                         columns.Add(column);
                     }
-                    frame = new DataFrame(columns);
+                    frame = new FrameTable(columns);
                 }
 
                 // Add in each row
@@ -43,11 +42,11 @@ namespace Meta.Numerics.Data
                 foreach(KeyValuePair<string, object> entry in dictionary)
                 {
                     int columnIndex = frame.columnMap[entry.Key];
-                    DataList column = frame.columns[columnIndex];
+                    NamedList column = frame.columns[columnIndex];
                     // If we encounter a null in a column which was created as non-nullable, re-create the column as nullable.
                     if ((entry.Value == null) && !column.IsNullable) {
                         Type nullableType = typeof(Nullable<>).MakeGenericType(column.StorageType);
-                        DataList nullableColumn = DataList.Create(entry.Key, nullableType);
+                        NamedList nullableColumn = NamedList.Create(entry.Key, nullableType);
                         for (int i = 0; i < column.Count; i++)
                         {
                             nullableColumn.AddItem(column.GetItem(i));
@@ -55,7 +54,7 @@ namespace Meta.Numerics.Data
                         frame.columns[columnIndex] = nullableColumn;
                         column = nullableColumn;
                     }
-                    int rowIndex = column.AddItem(entry.Value);
+                    column.AddItem(entry.Value);
                 }
                 frame.map.Add(frame.map.Count);
             }

@@ -17,7 +17,7 @@ namespace Test {
             // Construct data where (i) there are both reference-nulls and nullable-struct-nulls,
             // (ii) all values of one column are equally, (iii) values of other column depend on value of first column
             List<string> groups = new List<string>(){ "A", "B", "C", null };
-            DataFrame data = new DataFrame(new ColumnDefinition<string>("Group"), new ColumnDefinition<bool?>("Outcome"));
+            FrameTable data = new FrameTable(new ColumnDefinition<string>("Group"), new ColumnDefinition<bool?>("Outcome"));
             int n = 512;
             double pOutcomeNull = 0.05;
             Func<int, double> pOutcome = groupIndex => 0.8 - 0.2 * groupIndex; 
@@ -31,7 +31,7 @@ namespace Test {
             }
 
             // Form a contingency table.
-            ContingencyTable<string, bool?> table = Bivariate.Crosstabs(data.Column<string>("Group"), data.Column<bool?>("Outcome"));
+            ContingencyTable<string, bool?> table = Bivariate.Crosstabs(data["Group"].As<string>(), data["Outcome"].As<bool?>());
 
             // Total counts should match
             Assert.IsTrue(table.Total == n);
@@ -43,7 +43,7 @@ namespace Test {
             foreach (string group in table.Rows) {
                 int rowTotal = 0;
                 foreach (bool? outcome in table.Columns) {
-                    DataView view = data.Where(r => ((string) r["Group"] == group) && ((bool?) r["Outcome"] == outcome));
+                    FrameView view = data.Where(r => ((string) r["Group"] == group) && ((bool?) r["Outcome"] == outcome));
                     Assert.IsTrue(table[group, outcome] == view.Rows.Count);
                     rowTotal += view.Rows.Count;
                 }

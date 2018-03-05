@@ -92,8 +92,8 @@ namespace Meta.Numerics.Data {
         }
 
     }
-
-    public sealed partial class DataFrame
+    /*
+    public sealed partial class FrameTable
     {
 
         /// <summary>
@@ -102,7 +102,7 @@ namespace Meta.Numerics.Data {
         /// <param name="reader"></param>
         /// <returns>A new data frame with data from the file.</returns>
         /// <remarks>The column names are taken from the first line of the file.</remarks>
-        public static DataFrame ReadCsv (TextReader reader) {
+        public static FrameTable ReadCsv (TextReader reader) {
             if (reader == null) throw new ArgumentNullException(nameof(reader));
 
             DataList<string>[] textColumns;
@@ -129,7 +129,7 @@ namespace Meta.Numerics.Data {
                 }
             }
 
-            DataFrame frame = new DataFrame(columns);
+            FrameTable frame = new FrameTable(columns);
             return (frame);
         }
 
@@ -181,5 +181,5 @@ namespace Meta.Numerics.Data {
         }
 
     }
-
+    */
 }

@@ -69,7 +69,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException"><paramref name="x"/> and <paramref name="y"/> do not contain the same number of entries.</exception>
         /// <exception cref="InsufficientDataException">Are fewer than two entries in the sample.</exception>
-        public static double Covariance (IReadOnlyList<double> x, IReadOnlyList<double> y) {
+        public static double Covariance (this IReadOnlyList<double> x, IReadOnlyList<double> y) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
@@ -93,7 +93,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException"><paramref name="x"/> and <paramref name="y"/> do not contain the same number of entries.</exception>
         /// <exception cref="InsufficientDataException">Are fewer than two entries in the sample.</exception>
-        public static double CorrelationCoefficient (IReadOnlyList<double> x, IReadOnlyList<double> y) {
+        public static double CorrelationCoefficient (this IReadOnlyList<double> x, IReadOnlyList<double> y) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
@@ -160,7 +160,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException"><paramref name="x"/> and <paramref name="y"/> do not contain the same number of entries.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
-        public static LinearRegressionResult LinearRegression(IReadOnlyList<double> x, IReadOnlyList<double> y) {
+        public static LinearRegressionResult LinearRegression(IReadOnlyList<double> y, IReadOnlyList<double> x) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
@@ -241,7 +241,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="DimensionMismatchException"><paramref name="x"/> and <paramref name="y"/> do not contain the same number of entries.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="m"/> is negative.</exception>
         /// <exception cref="InsufficientDataException">There are fewer data points than coefficients to be fit.</exception>
-        public static PolynomialRegressionResult PolynomialRegression (IReadOnlyList<double> x, IReadOnlyList<double> y, int m) {
+        public static PolynomialRegressionResult PolynomialRegression (this IReadOnlyList<double> y, IReadOnlyList<double> x, int m) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
@@ -329,7 +329,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are not more data points than fit parameters.</exception>
         /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
         /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
-        public static RegressionResult NonlinearRegression (IReadOnlyList<double> x, IReadOnlyList<double> y, Func<IReadOnlyList<double>, double, double> f, IReadOnlyList<KeyValuePair<string,double>> start) {
+        public static RegressionResult NonlinearRegression (IReadOnlyList<double> y, IReadOnlyList<double> x, Func<IReadOnlyList<double>, double, double> f, IReadOnlyList<KeyValuePair<string,double>> start) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));

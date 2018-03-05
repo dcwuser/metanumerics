@@ -14,45 +14,45 @@ using Meta.Numerics.Statistics;
 namespace DataTest
 {
     [TestClass]
-    public class DataFrameTests
+    public class FrameTableTests
     {
 
         [TestMethod]
-        public void DataFrameColumnManipulations ()
+        public void FrameTableColumnManipulations ()
         {
             ColumnDefinition column0 = new ColumnDefinition<int>("Integer");
             ColumnDefinition column1 = new ColumnDefinition<double>("Double");
             ColumnDefinition column2 = new ColumnDefinition<DateTime>("Timestamp");
 
-            DataFrame frame = new DataFrame(column0, column1);
+            FrameTable frame = new FrameTable(column0, column1);
             Assert.IsTrue(frame.Columns.Count == 2);
 
             Assert.IsTrue(frame.Columns[0].Name == column0.Name);
             Assert.IsTrue(frame.Columns[0].StorageType == column0.StorageType);
             Assert.IsTrue(frame.Columns[column0.Name].Name == column0.Name);
-            Assert.IsTrue(frame.Column<object>(column0.Name).Name == column0.Name);
+            Assert.IsTrue(frame[column0.Name].Name == column0.Name);
 
             frame.AddColumn(column2);
             Assert.IsTrue(frame.Columns.Count == 3);
 
             Assert.IsTrue(frame.Columns[2].Name == column2.Name);
             Assert.IsTrue(frame.Columns[2].StorageType == column2.StorageType);
-            Assert.IsTrue(frame.Column<object>(column2.Name).Name == column2.Name);
+            Assert.IsTrue(frame[column2.Name].Name == column2.Name);
 
             frame.RemoveColumn(column0.Name);
             Assert.IsTrue(frame.Columns.Count == 2);
 
             Assert.IsTrue(frame.Columns[0].Name == column1.Name);
             Assert.IsTrue(frame.Columns[0].StorageType == column1.StorageType);
-            Assert.IsTrue(frame.Column<object>(column1.Name).Name == column1.Name);
+            Assert.IsTrue(frame[column1.Name].Name == column1.Name);
 
         }
 
         [TestMethod]
-        public void DataFrameRowManipulations () {
+        public void FrameTableRowManipulations () {
 
             // In future, test with computed columns
-            DataFrame frame = new DataFrame(new ColumnDefinition<double>("Height"), new ColumnDefinition<string>("Name"));
+            FrameTable frame = new FrameTable(new ColumnDefinition<double>("Height"), new ColumnDefinition<string>("Name"));
             //DataFrame frame = new DataFrame(new ColumnDefinition<double>("Height"), new ColumnDefinition<string>("Name"), new ComputedColumnDefinition<int>("NameLength", r => ((string) r["Name"]).Length));
             Assert.IsTrue(frame.Columns.Count == 2);
             Assert.IsTrue(frame.Rows.Count == 0);
@@ -82,12 +82,12 @@ namespace DataTest
 
         [TestMethod]
         [DeploymentItem(csvFileName)]
-        public void DataFrameCsvRoundtrip()
+        public void FrameTableCsvRoundtrip()
         {
-            DataFrame frame;
+            FrameTable frame;
             using (TextReader reader = File.OpenText(csvFileName))
             {
-                frame = DataFrame.ReadCsv(reader);
+                frame = FrameTable.FromCsv(reader);
             }
 
             Assert.IsTrue(frame != null);
@@ -101,7 +101,7 @@ namespace DataTest
                 {
                     using (TextWriter writer = new StreamWriter(stream))
                     {
-                        frame.WriteCsv(writer);
+                        frame.ToCsv(writer);
                     }
                 }
 
@@ -130,9 +130,9 @@ namespace DataTest
         }
 
         [TestMethod]
-        public void DataFrameDictionariesRoundtrip()
+        public void FrameTableDictionariesRoundtrip()
         {
-            DataFrame frame = new DataFrame(
+            FrameTable frame = new FrameTable(
                 new ColumnDefinition<string>("name"),
                 new ColumnDefinition<double>("height"),
                 new ColumnDefinition<bool?>("male")
@@ -146,7 +146,7 @@ namespace DataTest
             Assert.IsTrue(dictionaries.Count == frame.Rows.Count);
             Assert.IsTrue(dictionaries[0].Count == frame.Columns.Count);
 
-            DataFrame frame2 = DataFrame.FromDictionaries(dictionaries);
+            FrameTable frame2 = FrameTable.FromDictionaries(dictionaries);
 
             Assert.IsTrue(frame2.Rows.Count == frame.Rows.Count);
             Assert.IsTrue(frame2.Columns.Count == frame.Columns.Count);
@@ -157,10 +157,10 @@ namespace DataTest
         }
 
         [TestMethod]
-        public void DataFrameCsvRoundtrip2 () {
+        public void FrameTableCsvRoundtrip2 () {
 
             // Let's exercise all our data adaptors
-            DataFrame original = new DataFrame(
+            FrameTable original = new FrameTable(
                 new ColumnDefinition<string>("String"),
                 new ColumnDefinition<double?>("Double?"),
                 new ColumnDefinition<int>("Int"),
@@ -173,9 +173,9 @@ namespace DataTest
             original.AddRow("x", 2.0, 3, DateTime.UtcNow.Date, TimeSpan.FromDays(3.0), false);
 
             TextWriter storage = new StringWriter();
-            original.WriteCsv(storage);
+            original.ToCsv(storage);
 
-            DataFrame copy = DataFrame.ReadCsv(new StringReader(storage.ToString()));
+            FrameTable copy = FrameTable.FromCsv(new StringReader(storage.ToString()));
             for(int i = 0; i < original.Columns.Count; i++) {
                 Assert.IsTrue(original.Columns[i].Name == copy.Columns[i].Name);
                 Assert.IsTrue(original.Columns[i].StorageType == copy.Columns[i].StorageType);
@@ -200,33 +200,33 @@ namespace DataTest
         [TestMethod]
         public void Smoketest () {
 
-            DataFrame frame;
+            FrameTable frame;
             string url = "https://raw.github.com/pandas-dev/pandas/master/pandas/tests/data/tips.csv";
             WebRequest request = WebRequest.Create(url);
             using (WebResponse response = request.GetResponse()) {
                 using (Stream responseStream = response.GetResponseStream()) {
                     using (TextReader reader = new StreamReader(responseStream)) {
-                        frame = DataFrame.ReadCsv(reader);
+                        frame = FrameTable.FromCsv(reader);
                     }
                 }
             }
             frame.AddComputedColumn("tip_fraction", r => ((double) r["tip"]) / ((double) r["total_bill"]));
 
-            DataView counts = frame.GroupBy("day", v => v.Rows.Count, "total").OrderBy("day");
-            DataView means = frame.GroupBy("sex", v => v.Column<double>("tip_fraction").Mean(), "mean_tip_fraction");
+            FrameView counts = frame.GroupBy("day", v => v.Rows.Count, "total").OrderBy("day");
+            FrameView means = frame.GroupBy("sex", v => v["tip_fraction"].As<double>().Mean(), "mean_tip_fraction");
 
         }
 
         [TestMethod]
         public void SmokeTest2 () {
 
-            DataFrame frame;
+            FrameTable frame;
             string path = @"C:\Users\dcw-b\Desktop\DataSets\551184489_52017_210_airline_delay_causes\551184489_52017_210_airline_delay_causes.csv";
             using (StreamReader stream = File.OpenText(path)) {
-                frame = DataFrame.ReadCsv(stream);
+                frame = FrameTable.FromCsv(stream);
             }
 
-            DataView view = frame.GroupBy("carrier", (DataView q) => q.Rows.Count, "count");
+            FrameView view = frame.GroupBy("carrier", (FrameView q) => q.Rows.Count, "count");
 
         }
     }

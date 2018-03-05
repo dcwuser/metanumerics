@@ -322,7 +322,7 @@ namespace Test {
             List<double> xs = new List<double>(TestUtilities.CreateDataSample(rng, xDistribution, 10));
             List<double> ys = new List<double>(xs.Select(x => p.Evaluate(x) + errorDistribution.GetRandomValue(rng)));
 
-            PolynomialRegressionResult fit = Bivariate.PolynomialRegression(xs, ys, p.Degree);
+            PolynomialRegressionResult fit = Bivariate.PolynomialRegression(ys, xs, p.Degree);
 
             // Parameters should agree
             Assert.IsTrue(fit.Parameters.Count == p.Degree + 1);
@@ -449,7 +449,7 @@ namespace Test {
             ContinuousDistribution xDistribution = new ExponentialDistribution(2.0);
             ContinuousDistribution eDistribution = new NormalDistribution(0.0, 4.0);
 
-            DataFrame parameters = new DataFrame(new ColumnDefinition<double>("a"), new ColumnDefinition<double>("b"));
+            FrameTable parameters = new FrameTable(new ColumnDefinition<double>("a"), new ColumnDefinition<double>("b"));
             //MultivariateSample parameters = new MultivariateSample("a", "b");
             MultivariateSample covariances = new MultivariateSample(3);
 
@@ -474,13 +474,13 @@ namespace Test {
 
             }
 
-            Assert.IsTrue(parameters.Column<double>("a").PopulationMean().ConfidenceInterval(0.99).ClosedContains(a));
-            Assert.IsTrue(parameters.Column<double>("b").PopulationMean().ConfidenceInterval(0.99).ClosedContains(b));
+            Assert.IsTrue(parameters["a"].As<double>().PopulationMean().ConfidenceInterval(0.99).ClosedContains(a));
+            Assert.IsTrue(parameters["b"].As<double>().PopulationMean().ConfidenceInterval(0.99).ClosedContains(b));
 
-            Assert.IsTrue(parameters.Column<double>("a").PopulationVariance().ConfidenceInterval(0.99).ClosedContains(covariances.Column(0).Mean));
-            Assert.IsTrue(parameters.Column<double>("b").PopulationVariance().ConfidenceInterval(0.99).ClosedContains(covariances.Column(1).Mean));
-            Assert.IsTrue(parameters.Column<double>("a").PopulationCovariance(parameters.Column<double>("b")).ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
-            Assert.IsTrue(Bivariate.PopulationCovariance(parameters.Column<double>("a"), parameters.Column<double>("b")).ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
+            Assert.IsTrue(parameters["a"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(covariances.Column(0).Mean));
+            Assert.IsTrue(parameters["b"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(covariances.Column(1).Mean));
+            Assert.IsTrue(parameters["a"].As<double>().PopulationCovariance(parameters["b"].As<double>()).ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
+            Assert.IsTrue(Bivariate.PopulationCovariance(parameters["a"].As<double>(), parameters["b"].As<double>()).ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
             //Assert.IsTrue(parameters.TwoColumns(0, 1).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
 
         }

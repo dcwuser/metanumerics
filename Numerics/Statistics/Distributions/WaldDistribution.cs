@@ -263,12 +263,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             // This is a rather weird transformation generator described in Michael et al, "Generating Random Variates
             // Using Transformations with Multiple Roots", The American Statistician 30 (1976) 88-90.
 
-            double u = rngGenerator.GetNext(rng);
-            double y = MoreMath.Sqr(rngGenerator.GetNext(rng));
-            double muy = mu * y;
-            double x = mu * (1.0 + (muy - Math.Sqrt((4.0 * lambda + muy ) * muy)) / (2.0 * lambda));
-            double z = rng.NextDouble();
-            if (z <= mu / (mu + x)) {
+            // u ~ U(0,1), v ~ ChiSquare(1), i.e. square of standard normal deviate
+
+            double v = MoreMath.Sqr(rngGenerator.GetNext(rng));
+            double w = mu * v;
+            double x = mu * (1.0 + (w - Math.Sqrt((4.0 * lambda + w ) * w)) / (2.0 * lambda));
+            double u = rng.NextDouble();
+            if (u <= mu / (mu + x)) {
                 return (x);
             } else {
                 return (mu * mu / x);

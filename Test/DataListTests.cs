@@ -11,7 +11,7 @@ namespace DataTest
     [TestClass]
     public class DataListTests
     {
-
+        /*
         [TestMethod]
         public void DataListManipulations ()
         {
@@ -47,5 +47,6 @@ namespace DataTest
             Assert.IsTrue(list.Count == 0);
 
         }
+        */
     }
 }

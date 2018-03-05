@@ -20,7 +20,7 @@ namespace Meta.Numerics.Data {
 
         internal abstract Type StorageType { get; }
 
-        internal abstract object ApplyAggregator (DataView view);
+        internal abstract object ApplyAggregator (FrameView view);
 
     }
 
@@ -35,7 +35,7 @@ namespace Meta.Numerics.Data {
         /// </summary>
         /// <param name="name">The name of the aggregate column.</param>
         /// <param name="aggregator">The function that computes the aggregate value.</param>
-        public AggregateDefinition(string name, Func<DataView, T> aggregator) : base(name) {
+        public AggregateDefinition(string name, Func<FrameView, T> aggregator) : base(name) {
             if (aggregator == null) throw new ArgumentNullException(nameof(aggregator));
             Aggregator = aggregator;
         }
@@ -43,7 +43,7 @@ namespace Meta.Numerics.Data {
         /// <summary>
         /// Gets the function that computes the aggregate value.
         /// </summary>
-        public Func<DataView, T> Aggregator { get; private set; }
+        public Func<FrameView, T> Aggregator { get; private set; }
 
         internal override Type StorageType {
             get {
@@ -51,7 +51,7 @@ namespace Meta.Numerics.Data {
             }
         }
 
-        internal override object ApplyAggregator (DataView view) {
+        internal override object ApplyAggregator (FrameView view) {
             Debug.Assert(view != null);
             Debug.Assert(Aggregator != null);
             return (Aggregator(view));

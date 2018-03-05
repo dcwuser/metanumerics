@@ -89,10 +89,10 @@
     <Compile Include="ComplexMathTest.cs" />
     <Compile Include="ComplexTest.cs" />
     <Compile Include="ContingencyTableTest.cs" />
-    <Compile Include="DataFrameTests.cs" />
+    <Compile Include="FrameTableTests.cs" />
     <Compile Include="DataListTests.cs" />
     <Compile Include="DataSetTest.cs" />
-    <Compile Include="DataViewTests.cs" />
+    <Compile Include="FrameViewTests.cs" />
     <Compile Include="DbTest.cs" />
     <Compile Include="DiscreteDistributionTest.cs" />
     <Compile Include="DiscreteIntervalTest.cs" />
@@ -102,6 +102,7 @@
     <Compile Include="ExtremaTest.cs" />
     <Compile Include="DifferentiateTest.cs" />
     <Compile Include="FourierTest.cs" />
+    <Compile Include="FrameTableTest.cs" />
     <Compile Include="FutureTest.cs" />
     <Compile Include="HistogramTest.cs" />
     <Compile Include="IntegrateTest.cs" />

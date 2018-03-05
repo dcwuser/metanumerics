@@ -34,7 +34,7 @@ namespace Meta.Numerics.Statistics {
 
         // the mean and standard deviation
         //private double M, SS;
-        private SampleSummary summary = new SampleSummary();
+        private InternalSampleSummary summary = new InternalSampleSummary();
 
         // the order array
         // order[0] is index of lowest value, so data[order[0]] is lowest value
@@ -141,7 +141,7 @@ namespace Meta.Numerics.Statistics {
 
         public void Transform (Func<double, double> transformFunction) {
             //M = 0.0; SS = 0.0;
-            summary = new SampleSummary();
+            summary = new InternalSampleSummary();
             for (int i = 0; i < data.Count; i++) {
                 double value = transformFunction(data[i]);
                 //double dM = (value - M);
@@ -212,7 +212,7 @@ namespace Meta.Numerics.Statistics {
     // of the mean and standard deviation.
     // See http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance and Knuth
 
-    internal struct SampleSummary {
+    internal struct InternalSampleSummary {
 
         /*
         public SampleSummary () {
@@ -220,7 +220,7 @@ namespace Meta.Numerics.Statistics {
         }
         */
 
-        public SampleSummary (IEnumerable<double> values) : this() {
+        public InternalSampleSummary (IEnumerable<double> values) : this() {
             Add(values);
         }
 

@@ -3,23 +3,35 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 
 using Meta.Numerics.Statistics;
-using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Data
 {
+
+    /// <summary>
+    /// Specifies the order of sorting.
+    /// </summary>
+    public enum SortOrder {
+
+        /// <summary>
+        /// From smallest to largest.
+        /// </summary>
+        Ascending,
+
+        /// <summary>
+        /// From largest to smallest.
+        /// </summary>
+        Descending
+    }
+
+
     /// <summary>
     /// A read-only view of a table of data.
     /// </summary>
-    public class DataView {
+    public class FrameView {
 
-        internal DataView() {
-
-        }
-
-        internal DataView(List<DataList> columns, List<int> map) {
+        internal FrameView(List<NamedList> columns, List<int> map) {
             this.columns = columns;
             this.columnMap = new Dictionary<string, int>();
             for (int columnIndex = 0; columnIndex < columns.Count; columnIndex++) {
@@ -29,9 +41,9 @@ namespace Meta.Numerics.Data
         }
 
 
-        internal List<DataList> columns;
-        internal Dictionary<string, int> columnMap;
-        internal List<int> map;
+        internal readonly List<NamedList> columns;
+        internal readonly Dictionary<string, int> columnMap;
+        internal readonly List<int> map;
 
         /// <summary>
         /// Gets the index of a given column.
@@ -49,20 +61,32 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
+        /// Gets the value in the given cell.
+        /// </summary>
+        /// <param name="rowIndex">The (zero-based) row index of the cell.</param>
+        /// <param name="columnIndex">The (zero-based) column index of the cell.</param>
+        /// <returns></returns>
+        public object this [int rowIndex, int columnIndex] {
+            get {
+                return (columns[columnIndex].GetItem(map[rowIndex]));
+            }
+        }
+
+        /// <summary>
         /// Gets the rows of the table.
         /// </summary>
-        public DataRowCollection Rows {
+        public FrameRowCollection Rows {
             get {
-                return (new DataRowCollection(this));
+                return (new FrameRowCollection(this));
             }
         }
 
         /// <summary>
         /// Gets the columns of the table.
         /// </summary>
-        public DataColumnCollection Columns {
+        public FrameColumnCollection Columns {
             get {
-                return (new DataColumnCollection(this));
+                return (new FrameColumnCollection(this));
             }
         }
 
@@ -72,11 +96,12 @@ namespace Meta.Numerics.Data
         /// <typeparam name="T">The type into which to cast the column.</typeparam>
         /// <param name="columnName">The name of the column.</param>
         /// <returns>The requested column, cast to the given data type.</returns>
-        public DataColumn<T> Column<T>(string columnName) {
-            if (columnName == null) throw new ArgumentNullException(nameof(columnName));
-
-            int c = GetColumnIndex(columnName);
-            return (new DataColumn<T>(this, c));
+        public FrameColumn this [string columnName] {
+            get {
+                if (columnName == null) throw new ArgumentNullException(nameof(columnName));
+                int c = GetColumnIndex(columnName);
+                return (new FrameColumn(this, c));
+            }
         }
 
         /// <summary>
@@ -84,7 +109,7 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="columnNames">The names of the columns to include.</param>
         /// <returns>A view containing only the given columns.</returns>
-        public DataView Select(params string[] columnNames) {
+        public FrameView Select(params string[] columnNames) {
             return (Select((ICollection<string>)columnNames));
         }
 
@@ -93,15 +118,15 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="columnNames">The names of the columns to include.</param>
         /// <returns>A new view containing only the given columns.</returns>
-        public DataView Select (ICollection<string> columnNames) {
+        public FrameView Select (ICollection<string> columnNames) {
             if (columnNames == null) throw new ArgumentNullException(nameof(columnNames));
 
-            List<DataList> newColumns = new List<DataList>();
+            List<NamedList> newColumns = new List<NamedList>();
             foreach (string columnName in columnNames) {
                 int columnIndex = GetColumnIndex(columnName);
                 newColumns.Add(columns[columnIndex]);
             }
-            return (new DataView(newColumns, map));
+            return (new FrameView(newColumns, map));
         }
 
         /// <summary>
@@ -109,31 +134,48 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="columnNames">The names of the columns to discard.</param>
         /// <returns>A new view that does not contain the given columns.</returns>
-        public DataView Discard(params string[] columnNames) {
+        public FrameView Discard(params string[] columnNames) {
             if (columnNames == null) throw new ArgumentNullException(nameof(columnNames));
 
             HashSet<string> names = new HashSet<string>(columnNames);
 
-            List<DataList> newColumns = new List<DataList>();
-            foreach(DataList column in columns) {
+            List<NamedList> newColumns = new List<NamedList>();
+            foreach(NamedList column in columns) {
                 if (!names.Contains(column.Name)) newColumns.Add(column);
             }
-            return (new DataView(newColumns, map));
+            return (new FrameView(newColumns, map));
         }
 
         /// <summary>
-        /// Sort the rows by the values in the given column.
+        /// Sorts the rows by the values in the given column.
         /// </summary>
         /// <param name="columnName">The name of the column to sort by.</param>
         /// <returns>A new view, with rows sorted by the values in the given column.</returns>
-        public DataView OrderBy(string columnName) {
+        public FrameView OrderBy(string columnName) {
+            return (OrderBy(columnName, SortOrder.Ascending));
+        }
+
+        /// <summary>
+        /// Sort the rows by the values in the given column in the given direction.
+        /// </summary>
+        /// <param name="columnName">The name of the column to sort by.</param>
+        /// <param name="order">The direction of the ordering.</param>
+        /// <returns>A new view, with rows sorted by the values in the given column.</returns>
+        /// <remarks>
+        /// <para>The storage type of the column must implement <see cref="IComparable"/>.</para>
+        /// </remarks>
+        public FrameView OrderBy(string columnName, SortOrder order) {
             if (columnName == null) throw new ArgumentNullException(nameof(columnName));
 
             int columnIndex = GetColumnIndex(columnName);
-            DataList column = columns[columnIndex];
+            NamedList column = columns[columnIndex];
             List<int> newMap = new List<int>(map);
-            newMap.Sort((i, j) => NullableComparer((IComparable) column.GetItem(i), (IComparable) column.GetItem(j)));
-            return (new DataView(this.columns, newMap));
+            if (order == SortOrder.Ascending) {
+                newMap.Sort((i, j) => NullableComparer((IComparable) column.GetItem(i), (IComparable) column.GetItem(j)));
+            } else {
+                newMap.Sort((i, j) => NullableComparer((IComparable) column.GetItem(j), (IComparable) column.GetItem(i)));
+            }
+            return (new FrameView(this.columns, newMap));
         }
 
         // This comparer is able to deal with null values.
@@ -161,17 +203,17 @@ namespace Meta.Numerics.Data
         /// <param name="columnName">The column to sort on.</param>
         /// <param name="comparer">A comparison function of <paramref name="columnName"/> values.</param>
         /// <returns>A view of the data sorted by the function of the given column.</returns>
-        public DataView OrderBy<T>(string columnName, Comparison<T> comparer) {
+        public FrameView OrderBy<T>(string columnName, Comparison<T> comparer) {
             if (columnName == null) throw new ArgumentNullException(nameof(columnName));
             if (comparer == null) throw new ArgumentNullException(nameof(comparer));
 
             int columnIndex = GetColumnIndex(columnName);
-            IReadOnlyDataList<T> column = (IReadOnlyDataList<T>)columns[columnIndex];
+            IReadOnlyList<T> column = (IReadOnlyList<T>)columns[columnIndex];
 
             List<int> newMap = new List<int>(map);
             newMap.Sort((i, j) => comparer(column[i], column[j]));
 
-            return (new DataView(this.columns, newMap));
+            return (new FrameView(this.columns, newMap));
         }
 
         /// <summary>
@@ -179,12 +221,12 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="comparer">A row comparison function.</param>
         /// <returns>A new view, with rows sorted by the given function.</returns>
-        public DataView OrderBy(Comparison<DataRow> comparer) {
+        public FrameView OrderBy(Comparison<FrameRow> comparer) {
             if (comparer == null) throw new ArgumentNullException(nameof(comparer));
 
             List<int> newMap = new List<int>(map);
-            newMap.Sort((i, j) => comparer(new DataRow(this, i), new DataRow(this, j)));
-            return (new DataView(this.columns, newMap));
+            newMap.Sort((i, j) => comparer(new FrameRow(this, i), new FrameRow(this, j)));
+            return (new FrameView(this.columns, newMap));
         }
 
         /// <summary>
@@ -192,16 +234,16 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="selector">A function which accepts or rejects rows.</param>
         /// <returns>A new view, containing only those rows which were accepted by the <paramref name="selector"/> function.</returns>
-        public DataView Where (Func<DataRow, bool> selector) {
+        public FrameView Where (Func<FrameRow, bool> selector) {
             if (selector == null) throw new ArgumentNullException(nameof(selector));
 
             List<int> newMap = new List<int>();
             for (int i = 0; i < map.Count; i++) {
-                DataRow row = new DataRow(this, i);
+                FrameRow row = new FrameRow(this, i);
                 bool include = selector(row);
                 if (include) newMap.Add(map[i]);
             }
-            return (new DataView(this.columns, newMap));
+            return (new FrameView(this.columns, newMap));
         }
 
         /// <summary>
@@ -212,12 +254,12 @@ namespace Meta.Numerics.Data
         /// <param name="selector">A function which accepts or rejects values.</param>
         /// <returns>A new view, containing only those rows in which the <paramref name="columnName"/> value was accepted by
         /// the <paramref name="selector"/>.</returns>
-        public DataView Where<T> (string columnName, Func<T, bool> selector) {
+        public FrameView Where<T> (string columnName, Func<T, bool> selector) {
             if (columnName == null) throw new ArgumentNullException(nameof(columnName));
             if (selector == null) throw new ArgumentNullException(nameof(selector));
 
             int columnIndex = GetColumnIndex(columnName);
-            IReadOnlyDataList<T> column = (IReadOnlyDataList<T>) columns[columnIndex];
+            NamedList<T> column = (NamedList<T>) columns[columnIndex];
 
             List<int> newMap = new List<int>();
             for (int i = 0; i < map.Count; i++) {
@@ -226,7 +268,7 @@ namespace Meta.Numerics.Data
                 if (include) newMap.Add(map[i]);
             }
 
-            return (new DataView(this.columns, newMap));
+            return (new FrameView(this.columns, newMap));
         }
 
         /// <summary>
@@ -237,7 +279,7 @@ namespace Meta.Numerics.Data
         /// <remarks>
         /// <para>If no column names are given, rows with nulls in any column are removed.</para>
         /// </remarks>
-        public DataView WhereNotNull(params string[] columnNames)
+        public FrameView WhereNotNull(params string[] columnNames)
         {
             if (columnNames == null) throw new ArgumentNullException(nameof(columnNames));
 
@@ -274,7 +316,7 @@ namespace Meta.Numerics.Data
                 if (insert) newMap.Add(rowIndex);
             }
 
-            return (new DataView(columns, newMap));
+            return (new FrameView(columns, newMap));
         }
 
         /// <summary>
@@ -285,14 +327,14 @@ namespace Meta.Numerics.Data
         /// <param name="aggregator">A function that computes the aggregate quantity.</param>
         /// <param name="aggregateColumnName">The name of the column for the aggregate output.</param>
         /// <returns>A new data frame containing the requested aggregate values for each group.</returns>
-        public DataFrame GroupBy<T>(string groupByColumnName, Func<DataView, T> aggregator, string aggregateColumnName)
+        public FrameTable GroupBy<T>(string groupByColumnName, Func<FrameView, T> aggregator, string aggregateColumnName)
         {
             if (groupByColumnName == null) throw new ArgumentNullException(nameof(groupByColumnName));
             if (aggregator == null) throw new ArgumentNullException(nameof(aggregator));
             if (aggregateColumnName == null) throw new ArgumentNullException(nameof(aggregateColumnName));
 
             int groupByColumnIndex = GetColumnIndex(groupByColumnName);
-            DataList groupByColumn = columns[groupByColumnIndex];
+            NamedList groupByColumn = columns[groupByColumnIndex];
 
             // Create a lookup table that maps group column values to the indexes of rows with that value.
             // We have to be a little tricky to deal with null values, because null is not allowed to be
@@ -314,11 +356,11 @@ namespace Meta.Numerics.Data
             }
 
             // Form destination columns based on group aggregates.
-            DataList groupsColumn = DataList.Create(groupByColumnName, groupByColumn.StorageType);
-            DataList<T> aggregateColumn = new DataList<T>(aggregateColumnName);
+            NamedList groupsColumn = NamedList.Create(groupByColumnName, groupByColumn.StorageType);
+            NamedList<T> aggregateColumn = new NamedList<T>(aggregateColumnName);
             foreach (KeyValuePair<object, List<int>> group in groups)
             {
-                DataView values = new DataView(this.columns, group.Value);
+                FrameView values = new FrameView(this.columns, group.Value);
                 T aggregateValue = aggregator(values);
                 aggregateColumn.AddItem(aggregateValue);
 
@@ -328,7 +370,7 @@ namespace Meta.Numerics.Data
 
             }
 
-            DataFrame result = new DataFrame(groupsColumn, aggregateColumn);
+            FrameTable result = new FrameTable(groupsColumn, aggregateColumn);
             return (result);
         }
 
@@ -338,13 +380,13 @@ namespace Meta.Numerics.Data
         /// <param name="groupByColumnName">The name of the column to group by.</param>
         /// <param name="aggregateColumns">The definitions of the aggregate columns to compute.</param>
         /// <returns>A new data frame containing the requested aggregate values for each group.</returns>
-        public DataFrame GroupBy (string groupByColumnName, params AggregateDefinition[] aggregateColumns) {
+        public FrameTable GroupBy (string groupByColumnName, params AggregateDefinition[] aggregateColumns) {
 
             if (groupByColumnName == null) throw new ArgumentNullException(nameof(groupByColumnName));
             if (aggregateColumns == null) throw new ArgumentNullException(nameof(aggregateColumns));
 
             int groupByColumnIndex = GetColumnIndex(groupByColumnName);
-            DataList groupByColumn = columns[groupByColumnIndex];
+            NamedList groupByColumn = columns[groupByColumnIndex];
 
             // Create a lookup table that maps group column values to the indexes of rows with that value.
             // We have to be a little tricky to deal with null values, because null is not allowed to be
@@ -364,12 +406,12 @@ namespace Meta.Numerics.Data
             }
 
             // Set up result columns
-            List<DataList> resultColumns = new List<DataList>();
-            DataList groupsColumn = DataList.Create(groupByColumnName, groupByColumn.StorageType);
+            List<NamedList> resultColumns = new List<NamedList>();
+            NamedList groupsColumn = NamedList.Create(groupByColumnName, groupByColumn.StorageType);
             resultColumns.Add(groupsColumn);
             foreach (AggregateDefinition aggregateColumn in aggregateColumns) {
                 if (aggregateColumn == null) throw new ArgumentNullException(nameof(aggregateColumn));
-                DataList outputColumn = DataList.Create(aggregateColumn.Name, aggregateColumn.StorageType);
+                NamedList outputColumn = NamedList.Create(aggregateColumn.Name, aggregateColumn.StorageType);
                 resultColumns.Add(outputColumn);
             }
 
@@ -382,7 +424,7 @@ namespace Meta.Numerics.Data
                 groupsColumn.AddItem(groupValue);
 
                 // Create a filtered view of the data
-                DataView inputView = new DataView(this.columns, group.Value);
+                FrameView inputView = new FrameView(this.columns, group.Value);
 
                 // Apply each aggregator to the filtered view to get the values to add to the aggregate columns.
                 for (int i = 0; i < aggregateColumns.Length; i++) {
@@ -392,7 +434,7 @@ namespace Meta.Numerics.Data
                 }
             }
 
-            DataFrame result = new DataFrame(resultColumns);
+            FrameTable result = new FrameTable(resultColumns);
             return (result);
         }
 
@@ -477,11 +519,11 @@ namespace Meta.Numerics.Data
         /// <typeparam name="T">The type of the computed value.</typeparam>
         /// <param name="columnName">The name of the computed column.</param>
         /// <param name="function">The function that computes the column value.</param>
-        public void AddComputedColumn<T>(string columnName, Func<DataRow, T> function)
+        public void AddComputedColumn<T>(string columnName, Func<FrameRow, T> function)
         {
             if (columnName == null) throw new ArgumentNullException(nameof(columnName));
             if (function == null) throw new ArgumentNullException(nameof(function));
-            DataList column = new ComputedColumn<T>(this, columnName, function);
+            NamedList column = new ComputedDataList<T>(this, columnName, function);
             int columnIndex = columns.Count;
             columns.Add(column);
             columnMap[columnName] = columnIndex;
@@ -493,7 +535,7 @@ namespace Meta.Numerics.Data
         /// Write the data in the view to a comma-seperated-value file.
         /// </summary>
         /// <param name="writer">A writer to accept the data.</param>
-        public void WriteCsv (TextWriter writer) {
+        public void ToCsv (TextWriter writer) {
             if (writer == null) throw new ArgumentNullException(nameof(writer));
 
             string[] columnNames = new string[this.columns.Count];
@@ -501,7 +543,7 @@ namespace Meta.Numerics.Data
                 columnNames[c] = columns[c].Name;
             }
             writer.WriteLine(CsvHelper.WriteCells(columnNames));
-            foreach (DataRow row in this.Rows) {
+            foreach (FrameRow row in this.Rows) {
                 writer.WriteLine(CsvHelper.WriteCells(row));
             }
         }
@@ -518,13 +560,8 @@ namespace Meta.Numerics.Data
         /// <para>This method can be used to produce a JSON seriealized form of the data.</para>
         /// </remarks>
         public IEnumerable<Dictionary<string, object>> ToDictionaries () {
-            foreach (DataRow row in this.Rows) {
-                IReadOnlyDictionary<string, object> rowAsDictionary = (IReadOnlyDictionary<string, object>) row;
-                Dictionary<string, object> rowDictionary = new Dictionary<string, object>();
-                foreach (KeyValuePair<string, object> entry in rowAsDictionary) {
-                    rowDictionary.Add(entry.Key, entry.Value);
-                }
-                yield return (rowDictionary);
+            foreach (FrameRow row in this.Rows) {
+                yield return (row.ToDictionary());
             }
         }
 

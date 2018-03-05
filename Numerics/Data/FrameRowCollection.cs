@@ -7,16 +7,16 @@ namespace Meta.Numerics.Data
 {
 
     /// <summary>
-    /// A collection of rows from a table.
+    /// A collection of rows from a frame.
     /// </summary>
-    public sealed class DataRowCollection : IReadOnlyCollection<DataRow>, IReadOnlyList<DataRow> {
+    public sealed class FrameRowCollection : IReadOnlyCollection<FrameRow>, IReadOnlyList<FrameRow> {
 
-        internal DataRowCollection (DataView frame) {
+        internal FrameRowCollection (FrameView frame) {
             Debug.Assert(frame != null);
             this.frame = frame;
         }
 
-        private readonly DataView frame;
+        private readonly FrameView frame;
 
         /// <summary>
         /// Gets the number of rows.
@@ -32,9 +32,9 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="index">The (zero-based) index.</param>
         /// <returns></returns>
-        public DataRow this[int index] {
+        public FrameRow this[int index] {
             get {
-                return (new DataRow(frame, index));
+                return (new FrameRow(frame, index));
             }
         }
 
@@ -42,14 +42,14 @@ namespace Meta.Numerics.Data
         /// Returns an enumerator through the rows.
         /// </summary>
         /// <returns></returns>
-        public IEnumerator<DataRow> GetEnumerator () {
+        public IEnumerator<FrameRow> GetEnumerator () {
             for (int i = 0; i < frame.map.Count; i++) {
-                yield return (new DataRow(frame, i));
+                yield return (new FrameRow(frame, i));
             }
         }
 
         IEnumerator IEnumerable.GetEnumerator () {
-            return (((IEnumerable<DataRow>) this).GetEnumerator());
+            return (((IEnumerable<FrameRow>) this).GetEnumerator());
         }
 
     }

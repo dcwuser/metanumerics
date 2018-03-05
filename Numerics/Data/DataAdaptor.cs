@@ -12,39 +12,50 @@ namespace Meta.Numerics.Data {
 
     internal class DataAdaptor {
 
-        private static TypeAdaptor[] knownTypes = new TypeAdaptor[] {
-            new DateTimeAdaptor(), new TimeSpanAdaptor(), new IntAdaptor(), new DoubleAdaptor(), new BooleanAdaptor()
+        private static readonly TypeParser[] knownTypes = new TypeParser[] {
+            new DateTimeParser(), new TimeSpanParser(), new IntParser(), new DoubleParser(), new BoolParser()
         };
 
         public bool IsNullable = false;
 
-        internal LinkedList<TypeAdaptor> TypeCandidates = new LinkedList<TypeAdaptor>(knownTypes);
+        internal LinkedList<TypeParser> TypeCandidates = new LinkedList<TypeParser>(knownTypes);
 
-    }
-
-    internal abstract class TypeAdaptor {
-
-        public abstract bool IsParsable(string text);
-
-        public abstract object Parse(string text);
-
-        public abstract DataList CreateStorage(string name, bool nullable);
-
-    }
-
-    internal abstract class TypeAdaptor<T> : TypeAdaptor where T : struct {
-
-        public override DataList CreateStorage(string name, bool nullable) {
-            if (nullable) {
-                return (new DataList<T?>(name));
-            } else {
-                return (new DataList<T>(name));
+        public void TryParse (string text) {
+            LinkedListNode<TypeParser> adaptorNode = TypeCandidates.First;
+            while (adaptorNode != null) {
+                // It's necessary to extract the next node first because calling Remove sets Next to null
+                LinkedListNode<TypeParser> nextAdaptorNode = adaptorNode.Next;
+                bool parsable = adaptorNode.Value.IsParsable(text);
+                if (!parsable) TypeCandidates.Remove(adaptorNode);
+                adaptorNode = nextAdaptorNode;
             }
         }
 
     }
 
-    internal class DoubleAdaptor : TypeAdaptor<double> {
+    internal abstract class TypeParser {
+
+        public abstract bool IsParsable(string text);
+
+        public abstract object Parse(string text);
+
+        public abstract NamedList CreateStorage(string name, bool nullable);
+
+    }
+
+    internal abstract class TypeParser<T> : TypeParser where T : struct {
+
+        public override NamedList CreateStorage(string name, bool nullable) {
+            if (nullable) {
+                return (new NamedList<T?>(name));
+            } else {
+                return (new NamedList<T>(name));
+            }
+        }
+
+    }
+
+    internal class DoubleParser : TypeParser<double> {
 
         public override bool IsParsable(string text) {
             double value;
@@ -58,7 +69,7 @@ namespace Meta.Numerics.Data {
 
     }
 
-    internal class IntAdaptor : TypeAdaptor<int> {
+    internal class IntParser : TypeParser<int> {
         public override bool IsParsable(string text) {
             int value;
             bool isParsable = Int32.TryParse(text, out value);
@@ -71,7 +82,7 @@ namespace Meta.Numerics.Data {
 
     }
 
-    internal class DateTimeAdaptor : TypeAdaptor<DateTime> {
+    internal class DateTimeParser : TypeParser<DateTime> {
 
         public override bool IsParsable(string text) {
             DateTime value;
@@ -85,7 +96,7 @@ namespace Meta.Numerics.Data {
 
     }
 
-    internal class TimeSpanAdaptor : TypeAdaptor<TimeSpan> {
+    internal class TimeSpanParser : TypeParser<TimeSpan> {
 
         public override bool IsParsable(string text)
         {
@@ -106,7 +117,7 @@ namespace Meta.Numerics.Data {
 
     }
 
-    internal class BooleanAdaptor : TypeAdaptor<bool> {
+    internal class BoolParser : TypeParser<bool> {
 
         public override bool IsParsable(string text) {
             bool value;

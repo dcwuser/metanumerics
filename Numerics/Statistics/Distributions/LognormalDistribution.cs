@@ -333,7 +333,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             // \mu = < \log x >, \sigma^2 = < (\log x - \mu)^2 >
             
             // do a one-pass computation of these quantities
-            SampleSummary summary = new SampleSummary();
+            InternalSampleSummary summary = new InternalSampleSummary();
             foreach (double value in sample) {
                 if (value <= 0.0) throw new InvalidOperationException();
                 summary.Add(Math.Log(value));

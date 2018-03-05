@@ -428,7 +428,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
         public LinearRegressionResult LinearRegression () {
-            return (Bivariate.LinearRegression(xData, yData));
+            return (Bivariate.LinearRegression(yData, xData));
         }
 
         /// <summary>
@@ -439,7 +439,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="m"/> is negative.</exception>
         /// <exception cref="InsufficientDataException">There are fewer data points than coefficients to be fit.</exception>
         public PolynomialRegressionResult PolynomialRegression (int m) {
-            return (Bivariate.PolynomialRegression(xData, yData, m));
+            return (Bivariate.PolynomialRegression(yData, xData, m));
         }
 
 
@@ -463,7 +463,7 @@ namespace Meta.Numerics.Statistics {
             if (start == null) throw new ArgumentNullException(nameof(start));
             KeyValuePair<string, double>[] startParameters = new KeyValuePair<string, double>[start.Count];
             for (int i = 0; i < startParameters.Length; i++) startParameters[i] = new KeyValuePair<string, double>($"Parameter{i}", start[i]);
-            return (Bivariate.NonlinearRegression(xData, yData, f, startParameters));
+            return (Bivariate.NonlinearRegression(yData, xData, f, startParameters));
         }
 
         /// <summary>

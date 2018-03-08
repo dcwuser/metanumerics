@@ -290,9 +290,9 @@ namespace Meta.Numerics {
         /// <para>A different view is that it is better regard every representable floating point value as some exact rational number, and
         /// when computing functions of floating point numbers, to always strive to return the representable floating point value nearest
         /// to the actual function of that exact rational.
-        /// Callers are unlikely to complain if we are careful in the regard, and this behavior is particularly
+        /// Callers are unlikely to complain if we are careful in this regard, and this behavior is particularly
         /// useful when the argument is an intermediate result that the programmer may not even realize has become large.</para>
-        /// <para>For typical arguments, say between 10<sup>-4</sup> and 10<sup>4</sup>, the extra cost of calling this function instead of
+        /// <para>For typical arguments, say between -10<sup>4</sup> and 10<sup>4</sup>, the extra cost of calling this function instead of
         /// <see cref="Math.Sin"/> is just a couple of comparisons and a single floating point operation; less than 0.1% of
         /// arguments in this range are then routed to our much slower, high-accuracy algorithm. We therefore suggest that,
         /// for general use, you prefer this method over <see cref="Math.Sin"/>; only in very unusual situations where (i) you are guaranteed

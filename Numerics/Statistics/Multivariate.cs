@@ -14,16 +14,32 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     public static class Multivariate {
 
-
-        public static MultiLinearRegressionResult LinearRegression (IReadOnlyList<IReadOnlyList<double>> x, IReadOnlyList<double> y) {
-
-            if (x == null) throw new ArgumentNullException(nameof(x));
+        /// <summary>
+        /// Performs a multi-variate linear regression.
+        /// </summary>
+        /// <param name="y">The dependent variable to be predicted by the regression.</param>
+        /// <param name="xComponents">The independent variables that serve as inputs to the regression function.</param>
+        /// <returns>The regression result.</returns>
+        public static MultiLinearRegressionResult MultiLinearRegression(this IReadOnlyList<double> y, params IReadOnlyList<double>[] xComponents) {
+            if (xComponents == null) throw new ArgumentNullException(nameof(xComponents));
             if (y == null) throw new ArgumentNullException(nameof(y));
+            return (MultiLinearRegression(y, (IReadOnlyList<IReadOnlyList<double>>) xComponents));
+        }
 
-            int dimension = x.Count;
+        /// <summary>
+        /// Performs a multi-variate linear regression.
+        /// </summary>
+        /// <param name="xComponents">The values of the indepdent variables that serve as inputs to the regression function.</param>
+        /// <param name="y">The values of the dependent variable to be predicted by the regression.</param>
+        /// <returns>The regression result.</returns>
+        public static MultiLinearRegressionResult MultiLinearRegression (IReadOnlyList<double> y, IReadOnlyList<IReadOnlyList<double>> xComponents) {
+            if (y == null) throw new ArgumentNullException(nameof(y));
+            if (xComponents == null) throw new ArgumentNullException(nameof(xComponents));
+
             int count = y.Count;
-            foreach (IReadOnlyList<double> xColumn in x) {
-                if (xColumn == null) throw new ArgumentNullException(nameof(x));
+            int dimension = xComponents.Count;
+            foreach (IReadOnlyList<double> xColumn in xComponents) {
+                if (xColumn == null) throw new ArgumentNullException(nameof(xComponents));
                 if (xColumn.Count != count) throw new DimensionMismatchException();
             }
 
@@ -32,11 +48,11 @@ namespace Meta.Numerics.Statistics {
             // Compute the design matrix X.
             int n = count;
             int m = dimension + 1;
-            RectangularMatrix X = new RectangularMatrix(count, dimension + 1);
+            RectangularMatrix X = new RectangularMatrix(n, m);
             ColumnVector v = new ColumnVector(n);
-            for (int i = 0; i < count; i++) {
+            for (int i = 0; i < n; i++) {
                 for (int j = 0; j < dimension; j++) {
-                    X[i, j] = x[j][i];
+                    X[i, j] = xComponents[j][i];
                 }
                 X[i, dimension] = 1.0;
                 v[i] = y[i];
@@ -110,7 +126,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are not more rows in the sample than columns.</exception>
         /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
         /// one or more of the independent variables, or that two or more variables are linearly dependent.</exception>
-        public static MultiLinearLogisticRegressionResult LinearLogisticRegression (IReadOnlyList<IReadOnlyList<double>> x, IReadOnlyList<bool> y) {
+        public static MultiLinearLogisticRegressionResult MultiLinearLogisticRegression (IReadOnlyList<IReadOnlyList<double>> x, IReadOnlyList<bool> y) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));

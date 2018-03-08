@@ -334,6 +334,23 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(s.InverseLeftProbability(0.5), 2.0));
         }
 
+
+        [TestMethod]
+        public void Bug10 () {
+
+            // Fisher exact test didn't give same probability when rows were permuted
+
+            BinaryContingencyTable t1 = new BinaryContingencyTable(new int[,] {
+                { 18, 16 }, { 12, 14 }
+            });
+
+            BinaryContingencyTable t2 = new BinaryContingencyTable(new int[,] {
+                { 12, 14 }, { 18, 16 }
+            });
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(t1.FisherExactTest().Probability, t2.FisherExactTest().Probability));
+
+        }
     }
 
 }

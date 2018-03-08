@@ -66,6 +66,7 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.Mean, summary.Mean));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.Variance, summary.Variance));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.StandardDeviation, summary.StandardDeviation));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.Skewness, summary.Skewness));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.SecondRawMoment, summary.SecondRawMoment));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.ThirdCentralMoment, summary.ThirdCentralMoment));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.FourthCentralMoment, summary.FourthCentralMoment));

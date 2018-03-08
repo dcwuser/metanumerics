@@ -100,7 +100,7 @@ namespace Meta.Numerics {
         /// </summary>
         /// <param name="x">The argument of the numerator.</param>
         /// <param name="y">The argument of the denominator.</param>
-        /// <returns>The arctangent of the quotient.</returns>
+        /// <returns>The arctangent of the quotient x/y.</returns>
         public static UncertainValue Atan2 (UncertainValue x, UncertainValue y) {
             double xv = x.Value;
             double yv = y.Value;
@@ -126,7 +126,7 @@ namespace Meta.Numerics {
         /// Computes the natural logarithm of an uncertain value.
         /// </summary>
         /// <param name="x">The argument.</param>
-        /// <returns>The value of ln(x1).</returns>
+        /// <returns>The value of ln(x).</returns>
         public static UncertainValue Log (UncertainValue x) {
             double v = Math.Log(x.Value);
             double u = x.RelativeUncertainty;

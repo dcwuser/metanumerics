@@ -17,6 +17,7 @@ namespace Meta.Numerics {
         /// Gets the unit imaginary number I.
         /// </summary>
         /// <value>The unit imaginary number.</value>
+        /// <seealso href="https://en.wikipedia.org/wiki/Imaginary_unit"/>
         public static Complex I {
             get {
                 return (Complex.I);
@@ -50,6 +51,7 @@ namespace Meta.Numerics {
         /// <para>The phase of complex numbers in the upper complex plane lies between 0 and &#x3C0;. The phase of complex numbers
         /// in the lower complex plane lies between 0 and -&#x3C0;. The phase of a positive real number is zero.</para>
         /// </remarks>
+        /// <seealso href="https://en.wikipedia.org/wiki/Argument_(complex_analysis)"/>
         public static double Arg (Complex z) {
             // returns 0 to PI in the upper complex plane (Im>=0),
             // 0 to -PI in the lower complex plane (Im<0)

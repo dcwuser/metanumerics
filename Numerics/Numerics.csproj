@@ -229,11 +229,13 @@
     <Compile Include="Statistics\LinearRegressionResult.cs" />
     <Compile Include="Statistics\Multivariate.cs" />
     <Compile Include="Statistics\MultivariateSample.cs" />
+    <Compile Include="Statistics\NullableDictionary.cs" />
     <Compile Include="Statistics\PolynomialRegressionResult.cs" />
     <Compile Include="Statistics\PrincipalComponentAnalysis.cs" />
     <Compile Include="Statistics\RegressionResult.cs" />
     <Compile Include="Statistics\Sample.cs" />
     <Compile Include="Statistics\SampleSummary.cs" />
+    <Compile Include="Statistics\Series.cs" />
     <Compile Include="Statistics\TestResult.cs" />
     <Compile Include="Statistics\TimeSeries.cs" />
     <Compile Include="Statistics\UncertainMeasurement.cs" />

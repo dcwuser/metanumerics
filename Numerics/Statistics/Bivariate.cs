@@ -68,7 +68,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The covariance between the two variables.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException"><paramref name="x"/> and <paramref name="y"/> do not contain the same number of entries.</exception>
-        /// <exception cref="InsufficientDataException">Are fewer than two entries in the sample.</exception>
+        /// <exception cref="InsufficientDataException">There are fewer than two entries in the sample.</exception>
         public static double Covariance (this IReadOnlyList<double> x, IReadOnlyList<double> y) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
@@ -160,7 +160,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException"><paramref name="x"/> and <paramref name="y"/> do not contain the same number of entries.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
-        public static LinearRegressionResult LinearRegression(IReadOnlyList<double> y, IReadOnlyList<double> x) {
+        public static LinearRegressionResult LinearRegression(this IReadOnlyList<double> y, IReadOnlyList<double> x) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
@@ -324,12 +324,12 @@ namespace Meta.Numerics.Statistics {
         /// the supplied fit function and initial guess vector.
         /// </para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> or <paramref name="f"/> or <paramref name="start"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> or <paramref name="f"/> or <paramref name="start"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException">The sizes of <paramref name="x"/> and <paramref name="y"/> do not match.</exception>
         /// <exception cref="InsufficientDataException">There are not more data points than fit parameters.</exception>
         /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
         /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
-        public static RegressionResult NonlinearRegression (IReadOnlyList<double> y, IReadOnlyList<double> x, Func<IReadOnlyList<double>, double, double> f, IReadOnlyList<KeyValuePair<string,double>> start) {
+        public static RegressionResult NonlinearRegression (this IReadOnlyList<double> y, IReadOnlyList<double> x, Func<IReadOnlyList<double>, double, double> f, IReadOnlyList<KeyValuePair<string,double>> start) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
@@ -383,6 +383,8 @@ namespace Meta.Numerics.Statistics {
         /// 0 and 1 are encountered, it throws an <see cref="InvalidOperationException"/>.</para>
         /// <para>The fit result is two-dimensional. The first parameter is a, the second b.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> or <paramref name="f"/> is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException">The sizes of <paramref name="x"/> and <paramref name="y"/> do not match.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
         public static LinearLogisticRegressionResult LinearLogisticRegression (IReadOnlyList<double> x, IReadOnlyList<bool> y) {
 
@@ -760,18 +762,6 @@ namespace Meta.Numerics.Statistics {
 
             return new ContingencyTable<R, C>(rowMap, columnMap, counts, rowCounts, columnCounts, totalCount);
         }
-
-        /*
-        public static ContingencyTable Crosstabs<T, U> (IReadOnlyList<T> rowSample, IReadOnlyList<U> columnSample) {
-
-            if (rowSample == null) throw new ArgumentNullException(nameof(rowSample));
-            if (columnSample == null) throw new ArgumentNullException(nameof(columnSample));
-            if (rowSample.Count != columnSample.Count) throw new DimensionMismatchException();
-
-            throw new NotImplementedException();
-
-        }
-        */
 
     }
 }

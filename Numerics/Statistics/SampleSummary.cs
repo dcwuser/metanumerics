@@ -124,6 +124,15 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
+        /// Gets the skewness of the sample data.
+        /// </summary>
+        public double Skewness {
+            get {
+                return (s3 / n / Math.Pow(s2 / n, 3.0 / 2.0));
+            }
+        }
+
+        /// <summary>
         /// Gets the smallest value in the sample.
         /// </summary>
         public double Minimum {

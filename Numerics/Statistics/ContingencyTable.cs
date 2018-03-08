@@ -14,7 +14,15 @@ namespace Meta.Numerics.Statistics {
     /// <typeparam name="C">The type of the column labels.</typeparam>
     public class ContingencyTable<R, C> {
         
+        /// <summary>
+        /// Initializes a new contingency table.
+        /// </summary>
+        /// <param name="rowValues">The low labels.</param>
+        /// <param name="columnValues">The column labels.</param>
         public ContingencyTable (IReadOnlyCollection<R> rowValues, IReadOnlyCollection<C> columnValues) {
+
+            if (rowValues == null) throw new ArgumentNullException(nameof(rowValues));
+            if (columnValues == null) throw new ArgumentNullException(nameof(columnValues));
 
             rowMap = new NullableDictionary<R, int>();
             foreach (R rowValue in rowValues) rowMap.Add(rowValue, rowMap.Count);
@@ -92,7 +100,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the row values.
         /// </summary>
-        public virtual ICollection<R> Rows {
+        public virtual IReadOnlyCollection<R> Rows {
             get {
                 return (rowMap.Keys);
             }
@@ -101,7 +109,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the column values.
         /// </summary>
-        public virtual ICollection<C> Columns {
+        public virtual IReadOnlyCollection<C> Columns {
             get {
                 return (columnMap.Keys);
             }
@@ -226,207 +234,6 @@ namespace Meta.Numerics.Statistics {
         }
 
     }
-
-    internal class NullableDictionary<K, V> : /* IDictionary<K, V>, */ IEnumerable<KeyValuePair<K,V>> {
-
-        public NullableDictionary () {
-            dictionary = new Dictionary<K, V>();
-        }
-
-        private readonly Dictionary<K, V> dictionary;
-
-        private bool nullKey;
-
-        private V nullValue;
-
-        public ICollection<K> Keys {
-            get {
-                return (new KeyCollection(this));
-            }
-        }
-
-        public ICollection<V> Values {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int Count {
-            get {
-                int count = dictionary.Count;
-                if (nullKey) count++;
-                return (count);
-            }
-        }
-
-        /*
-        public bool IsReadOnly {
-            get {
-                return (false);
-            }
-        }
-        */
-
-        public V this[K key] {
-            get {
-                if (key == null) {
-                    if (nullKey) {
-                        return (nullValue);
-                    } else {
-                        throw new KeyNotFoundException();
-                    }
-                } else {
-                    return (dictionary[key]);
-                }
-            }
-            set {
-                if (key == null) {
-                    nullKey = true;
-                    nullValue = value;
-                } else {
-                    dictionary[key] = value;
-                }
-            }
-        }
-
-        public void Add (K key, V value) {
-            if (key == null) {
-                if (nullKey) {
-                    throw new ArgumentException();
-                } else {
-                    nullKey = true;
-                    nullValue = value;
-                }
-            } else {
-                dictionary.Add(key, value);
-            }
-        }
-
-        public bool ContainsKey (K key) {
-            if (key == null) {
-                return (nullKey);
-            } else {
-                return (dictionary.ContainsKey(key));
-            }
-        }
-
-        /*
-        public bool Remove (K key) {
-            if (key == null) {
-                if (nullKey) {
-                    nullKey = false;
-                    return (true);
-                } else {
-                    return (false);
-                }
-            } else {
-                return (dictionary.Remove(key));
-            }
-        }
-        */
-
-        public bool TryGetValue (K key, out V value) {
-            if (key == null) {
-                if (nullKey) {
-                    value = nullValue;
-                    return (true);
-                } else {
-                    value = default(V);
-                    return (false);
-                }
-            } else {
-                return (dictionary.TryGetValue(key, out value));
-            }
-        }
-
-        /*
-        public void Add (KeyValuePair<K, V> item) {
-            Add(item.Key, item.Value);
-        }
-
-        public void Clear () {
-            nullKey = false;
-            dictionary.Clear();
-        }
-
-        public bool Contains (KeyValuePair<K, V> item) {
-            throw new NotImplementedException();
-        }
-
-        public void CopyTo (KeyValuePair<K, V>[] array, int arrayIndex) {
-            throw new NotImplementedException();
-        }
-
-        public bool Remove (KeyValuePair<K, V> item) {
-            throw new NotImplementedException();
-        }
-        */
-
-        public IEnumerator<KeyValuePair<K, V>> GetEnumerator () {
-            foreach (KeyValuePair<K, V> item in dictionary) {
-                yield return item;
-            }
-            if (nullKey) yield return new KeyValuePair<K, V>(default(K), nullValue);
-        }
-
-        IEnumerator IEnumerable.GetEnumerator () {
-            return (((IEnumerable<KeyValuePair<K, V>>) this).GetEnumerator());
-        }
-
-        internal class KeyCollection : IReadOnlyCollection<K>, ICollection<K> {
-
-            internal KeyCollection (NullableDictionary<K, V> parent) {
-                this.parent = parent;
-            }
-
-            private NullableDictionary<K, V> parent;
-
-            public int Count {
-                get {
-                    return (parent.Count);
-                }
-            }
-
-            public bool IsReadOnly {
-                get {
-                    return (true);
-                }
-            }
-
-            public IEnumerator<K> GetEnumerator () {
-                foreach (KeyValuePair<K, V> item in parent) {
-                    yield return item.Key;
-                }
-            }
-
-            IEnumerator IEnumerable.GetEnumerator () {
-                return (((IEnumerable<K>) this).GetEnumerator());
-            }
-
-            public void Add (K item) {
-                throw new InvalidOperationException();
-            }
-
-            public void Clear () {
-                throw new InvalidOperationException();
-            }
-
-            public bool Contains (K item) {
-                return (parent.ContainsKey(item));
-            }
-
-            public void CopyTo (K[] array, int arrayIndex) {
-                throw new NotImplementedException();
-            }
-
-            public bool Remove (K item) {
-                throw new InvalidOperationException();
-            }
-        }
-
-    }
-
-
 
     /// <summary>
     /// Represents a contingency table.

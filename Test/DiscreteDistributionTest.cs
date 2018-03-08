@@ -121,6 +121,29 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void HypergeometricDistributionSymmetry () {
+            foreach (int nPopulation in TestUtilities.GenerateIntegerValues(1, 1000, 4)) {
+                foreach (int nSuccess in TestUtilities.GenerateIntegerValues(1, nPopulation, 2)) {
+                    foreach (int nDraws in TestUtilities.GenerateIntegerValues(1, nPopulation, 2)) {
+                        HypergeometricDistribution d = new HypergeometricDistribution(nPopulation, nSuccess, nDraws);
+
+                        HypergeometricDistribution d1 = new HypergeometricDistribution(nPopulation, nPopulation - nSuccess, nDraws);
+                        HypergeometricDistribution d2 = new HypergeometricDistribution(nPopulation, nSuccess, nPopulation - nDraws);
+                        HypergeometricDistribution d3 = new HypergeometricDistribution(nPopulation, nDraws, nSuccess);
+
+                        int kMin = d.Support.LeftEndpoint;
+                        int kMax = d.Support.RightEndpoint;
+                        foreach (int k in TestUtilities.GenerateUniformIntegerValues(kMin, kMin, 4)) {
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(d.ProbabilityMass(k), d1.ProbabilityMass(nDraws - k)));
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(d.ProbabilityMass(k), d2.ProbabilityMass(nSuccess - k)));
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(d.ProbabilityMass(k), d3.ProbabilityMass(k)));
+                        }
+                    }
+                }
+            }
+        }
+
         /*
         [TestMethod]
         public void DiscreteContinuousAgreement () {

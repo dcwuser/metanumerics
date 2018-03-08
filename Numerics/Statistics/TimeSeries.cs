@@ -159,22 +159,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <seealso cref="Autocovariance()"/>
         public double Autocovariance (int lag) {
-
-            if (lag < 0) lag = -lag;
-            if (lag >= data.Count) throw new ArgumentOutOfRangeException(nameof(lag));
-
-            double sum = 0.0;
-            for (int i = lag; i < data.Count; i++) {
-                sum += (data[i] - data.Mean) * (data[i - lag] - data.Mean);
-            }
-            return (sum / data.Count);
-
-            // It appears to be standard practice to divide by n instead of n-k, even though
-            // (1) there are n-k terms, not n, (2) dividing by n gives a biased estimator
-            // of the population mean, while dividing by n-k yields an unbiased estimator.
-            // I really don't undertand this practice, but it does appear to be necessary 
-            // for agreement with the FFT computation.
-
+            return (Series.Autocovariance(data, lag));
         }
 
         /// <summary>
@@ -192,28 +177,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <seealso cref="Autocovariance(int)"/>
         public double[] Autocovariance () {
-
-            // To avoid aliasing, we must zero-pad with n zeros.
-            Complex[] s = new Complex[2 * data.Count];
-            for (int i = 0; i < data.Count; i++) {
-                    s[i] = data[i] - data.Mean;
-            }
-
-            FourierTransformer fft = new FourierTransformer(s.Length);
-            Complex[] t = fft.Transform(s);
-
-            for (int i = 0; i < t.Length; i++) {
-                t[i] = MoreMath.Sqr(t[i].Re) + MoreMath.Sqr(t[i].Im);
-            }
-
-            Complex[] u = fft.InverseTransform(t);
-
-            double[] c = new double[data.Count];
-            for (int i = 0; i < c.Length; i++) {
-                c[i] = u[i].Re / data.Count;
-            }
-
-            return (c); 
+            return (Series.Autocovariance(data));
         }
 
         /// <summary>
@@ -231,24 +195,7 @@ namespace Meta.Numerics.Statistics {
         /// the signal, i.e. the mean.</para>
         /// </remarks>
         public double[] PowerSpectrum () {
-
-            Complex[] s = new Complex[data.Count];
-            for (int i = 0; i < data.Count; i++) {
-                s[i] = data[i];
-            }
-
-            FourierTransformer fft = new FourierTransformer(s.Length);
-            Complex[] t = fft.Transform(s);
-
-            double[] u = new double[data.Count / 2];
-            u[0] = MoreMath.Sqr(t[0].Re) + MoreMath.Sqr(t[0].Im);
-            for (int i = 1; i < u.Length; i++) {
-                u[i] = MoreMath.Sqr(t[i].Re) + MoreMath.Sqr(t[i].Im)
-                    + MoreMath.Sqr(t[data.Count - i].Re) + MoreMath.Sqr(t[data.Count - i].Im);
-            }
-
-            return (u);
-
+            return (Series.PowerSpectrum(data));
         }
 
         /// <summary>
@@ -267,113 +214,8 @@ namespace Meta.Numerics.Statistics {
         /// quickly queried.</para>
         /// </remarks>
         public TimeSeriesPopulationStatistics PopulationStatistics () {
-
-            double m = data.Mean;
-
-            double v;
-            double[] g;
-            PopulationStatistics(out g, out v);
-
-            return (new TimeSeriesPopulationStatistics(m, v, g));
-
+            return (Series.SeriesPopulationStatistics(data));
         }
-
-        private void PopulationStatistics (out double[] g, out double v) {
-
-            if (data.Count < 4) throw new InsufficientDataException();
-
-            // For an ergodic series, the naive mean
-            //   m = \frac{1}{n} \sum_{i=1}{n} y_i
-            // is an unbiased estimator of the population mean E(m) = \mu. It's not
-            // hard to show that the estimator has variance
-            //   v = \frac{1}{n} \left[ g_0 + 2 \sum_{k=1}{n-1} \frac{n - k}{n} g_k \right]
-            // where g_k = V(g_t, g_{t-k}).
-
-            // For data with a known mean \bar{y},
-            //   c_{k} = \frac{1}{n - k} \sum_{i = k}{n} ( y_i - \bar{y} ) ( y_{i-k} - \bar{y} )
-            // is a provably unbiased estimator of the population covariance E(c_k) = g_k.
-
-            // But almost never is the mean known independent of the sample. If the mean is
-            // computed from the sample, this estimator is biased, and the bias is computable.
-            //  E(c_k) = g_k - v
-            // Here v is the same quantity as the variance of the mean.
-
-            // For these results, see Fuller, "Introduction To Statistical Time Series",
-            // Chapter 6.
-
-            // You might think it should now be straightforward to recover unbiased estimates of
-            // the g_k given the c_k, but it turns out it is very much not.
-
-            // One simple approach would be to note that the deviation of c_k from g_k looks
-            // to be supressed by 1/n, so a good first approximation should be to compute v
-            // from the c_k and then use it to correct them. But this doesn't work because
-            // v = 0 when computed using the c_k. This is a sum identity of the FFT, which
-            // tends to make the higher c_k artificially negative so as to produce the required
-            // sum.
-
-            // Next you might note that our formula effectively defines a matrix A that
-            // relates c = A g, if c and g are understood as vectors. If we just invert the
-            // matrix we should be able to recover g = A^{-1} c. But A turns out to be
-            // rank n-1 and so is not invertable. (Presumably because the same sum identity
-            // effectively defines a linear relationship among the c's.) I also tried
-            // doing an SVD on A and inverting using the pseudo-inverse, but didn't get
-            // very good g's. (Presumably there is a lot of freedom to move power
-            // around between the different g's, and the pseudo-inverse doesn't pick
-            // what we want, which is one that supresses higher g's.)
-
-            // What finally worked was to introduce a window function into v that supresses
-            // the contribution of higher g's. The simplest is a hard window which just
-            // does the sum up to some maximum j. This makes A invertible but it is
-            // simpler and faster just do a few v -> g -> v -> cycles. Such an
-            // approach is suggested by Okui and Ryo, Econometric Theory (2010) 26 : 1263,
-            // "Asymptotically Unbiased Estimation of Autocovariances and Autocorrelations
-            // with Long Panel Data"
-            // (http://repository.kulib.kyoto-u.ac.jp/dspace/bitstream/2433/130692/1/S0266466609990582.pdf)
-
-            // For my test series, I recovered all g's within population uncertainties
-            // using j_max = n / 3. They typically stabilized to 3 digits within 8
-            // cycles, 4 digits within 12 cycles.
-
-            // One problem with this approach is that makes g_{ij} = g_{i - j} no longer positive
-            // definite, so v is occasionally negative. 
-
-            int n = data.Count;
-            //int jmax = n / 3;
-            int jmax = (int) Math.Floor(Math.Sqrt(n));
-
-            double[] c = Autocovariance();
-            for (int j = 0; j < c.Length; j++) {
-                c[j] = n * c[j] / (n - j);
-            }
-
-            g = new double[n];
-            Array.Copy(c, g, n);
-
-            v = 0.0;
-            for (int k = 0; k < 12; k++) {
-
-                v = g[0];
-                for (int j = 1; j < jmax; j++) {
-                    v += 2.0 * (n - j) / n * g[j];
-                }
-                v = v / n;
-
-                for (int j = 0; j < g.Length; j++) {
-                    g[j] = c[j] + v;
-                }
-
-            }
-
-            // To deal with v negative (or unrealisticaly small), don't let it
-            // get smaller than the first truncated term. This is a very
-            // ad hoc solution; we should try to do better.
-
-            double vMin = 2.0 / n * (n - jmax) / n * Math.Abs(g[jmax]);
-            if (v < vMin) {
-                v = vMin;
-            }
-
-        } 
 
         /// <summary>
         /// Gets a sample containing the time-series values.
@@ -388,81 +230,8 @@ namespace Meta.Numerics.Statistics {
         /// Fits an MA(1) model to the time series.
         /// </summary>
         /// <returns>The fit with parameters lag-1 coefficient, mean, and standard deviation.</returns>
-        public FitResult FitToMA1() {
-
-            if (data.Count < 4) throw new InsufficientDataException();
-
-            // MA(1) model is
-            //   y_t - \mu = u_t + \beta u_{t-1}
-            // where u_t ~ N(0, \sigma) are IID.
-
-            // It's easy to show that
-            //   m = E(y_t) = \mu
-            //   c_0 = V(y_t) = E((y_t - m)^2) = (1 + \beta^2) \sigma^2
-            //   c_1 = V(y_t, y_{t-1}) = \beta \sigma^2
-            // So the method of moments gives
-            //   \beta = \frac{1 - \sqrt{1 - (2 g_1)^2}}{2}
-            //   \mu = m
-            //   \sigma^2 = \frac{c_0}{1 + \beta^2}
-            // It turns out these are very poor (high bias, high variance) estimators,
-            // but they illustrate a basic requirement that g_1 < 1/2.
-
-            // The MLE estimator 
-
-            int n = data.Count;
-
-            double m = data.Mean;
-
-            Func<double,double> fnc = (double theta) => {
-
-                double s = 0.0;
-                double uPrevious = 0.0;
-                for (int i = 0; i < data.Count; i++) {
-                    double u = data[i] - m - theta * uPrevious;
-                    s += u * u;
-                    uPrevious = u;
-                };
-                return (s);
-            };
-
-            Extremum minimum = FunctionMath.FindMinimum(fnc, Interval.FromEndpoints(-1.0, 1.0));
-
-            double beta = minimum.Location;
-            double sigma2 = minimum.Value / (data.Count - 3);
-
-            // While there is significant evidence that the MLE value for \beta is biased
-            // for small-n, I know of no anlytic correction.
-
-            double[] parameters = new double[] { beta, m, Math.Sqrt(sigma2) };
-
-            // The calculation of the variance for \mu can be improved over the MLE
-            // result by plugging the values for \gamma_0 and \gamma_1 into the
-            // exact formula.
-
-            SymmetricMatrix covariances = new SymmetricMatrix(3);
-            if (minimum.Curvature > 0.0) {
-                covariances[0, 0] = sigma2 / minimum.Curvature;
-            } else {
-                covariances[0, 0] = MoreMath.Sqr(1.0 - beta * beta) / n;
-            }
-            covariances[1, 1] = sigma2 * (MoreMath.Sqr(1.0 + beta) - 2.0 * beta / n) / n;
-            covariances[2, 2] = sigma2 / 2.0 / n;
-
-            TimeSeries residuals = new TimeSeries();
-            double u1 = 0.0;
-            for (int i = 0; i < data.Count; i++) {
-                double u0 = data[i] - m - beta * u1;
-                residuals.Add(u0);
-                u1 = u0;
-            };
-            TestResult test = residuals.LjungBoxTest();
-
-            FitResult result = new FitResult(
-                parameters, covariances, test
-            );
-
-            return (result);
-
+        public MA1FitResult FitToMA1() {
+            return (Series.FitToMA1(data));
         }
 
         /// <summary>
@@ -640,20 +409,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="kMax">The number of lag times to test.</param>
         /// <returns>The result of the test.</returns>
         public TestResult LjungBoxTest (int kMax) {
-
-            if (kMax < 1) throw new ArgumentOutOfRangeException(nameof(kMax));
-            if (kMax >= data.Count) throw new InsufficientDataException();
-
-            double[] c = Autocovariance();
-
-            double Q = 0.0;
-            for (int k = 1; k <= kMax; k++) {
-                Q += MoreMath.Sqr(c[k] / c[0]) / (c.Length - k);
-            }
-            Q = c.Length * (c.Length + 2) * Q;
-
-            return (new TestResult("Q", Q, TestType.RightTailed, new ChiSquaredDistribution(kMax)));
-
+            return (Series.LjungBoxTest(data, kMax));
         }
 
     }

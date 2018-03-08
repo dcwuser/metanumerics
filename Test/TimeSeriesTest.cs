@@ -109,6 +109,10 @@ namespace Test {
             double[] acv1 = series1.Autocovariance();
             TestAutocovariance(acv1);
 
+            for (int i = 0; i < acv1.Length; i++) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(acv1[i], series1.Autocovariance(i)));
+            }
+
         }
 
         private void TestAutocovariance (IList<double> acv) {
@@ -187,18 +191,17 @@ namespace Test {
 
                 Debug.Assert(series.Count == n);
 
-                FitResult result = series.FitToMA1();
+                MA1FitResult result = series.FitToMA1();
 
-                Assert.IsTrue(result.Dimension == 3);
-
-                parameters.Add(result.Parameters);
+                //Assert.IsTrue(result.Dimension == 3);
+                parameters.Add(result.Parameters.Best);
                 covariances.Add(
-                    result.CovarianceMatrix[0, 0],
-                    result.CovarianceMatrix[1, 1],
-                    result.CovarianceMatrix[2, 2],
-                    result.CovarianceMatrix[0, 1],
-                    result.CovarianceMatrix[0, 2],
-                    result.CovarianceMatrix[1, 2]
+                    result.Parameters.Covariance[0, 0],
+                    result.Parameters.Covariance[1, 1],
+                    result.Parameters.Covariance[2, 2],
+                    result.Parameters.Covariance[0, 1],
+                    result.Parameters.Covariance[0, 2],
+                    result.Parameters.Covariance[1, 2]
                 );
 
             }

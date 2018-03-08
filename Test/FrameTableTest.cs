@@ -63,18 +63,43 @@ namespace Test {
         }
         
         [TestMethod]
-        public void InternetCsvDownload () {
+        public void InternetSampleDownload () {
             FrameTable table = DownloadFrameTable(new Uri("https://raw.githubusercontent.com/Dataweekends/zero_to_deep_learning_udemy/master/data/weight-height.csv"));
-            FrameView view = table.WhereNotNull().Where("Gender", (string s) => (s == "Male"));
+            FrameView view = table.WhereNotNull();
             view.AddComputedColumn("Bmi", (FrameRow r) => {
                 double h = (double) r["Height"];
                 double w = (double) r["Weight"];
                 return (w / (h * h));
             });
-            SampleSummary summary = new SampleSummary(view["Bmi"].As<double>());
-            PolynomialRegressionResult result1 = view["Height"].As<double>().PolynomialRegression(view["Weight"].As<double>(), 1);
-            PolynomialRegressionResult result2 = view["Height"].As<double>().PolynomialRegression(view["Weight"].As<double>(), 2);
-            PolynomialRegressionResult result3 = view["Height"].As<double>().PolynomialRegression(view["Weight"].As<double>(), 3);
+
+            FrameView males = view.Where("Gender", (string s) => (s == "Male"));
+            FrameView females = view.Where("Gender", (string s) => (s == "Female"));
+
+            SampleSummary maleSummary = new SampleSummary(males["Height"].As<double>());
+            SampleSummary femaleSummary = new SampleSummary(females["Height"].As<double>());
+
+            TestResult maleNormal = males["Height"].As<double>().ShapiroFranciaTest();
+
+            TestResult tTest = Univariate.StudentTTest(males["Height"].As<double>(), females["Height"].As<double>());
+            TestResult mwTest = Univariate.MannWhitneyTest(males["Height"].As<double>(), females["Height"].As<double>());
+
+            LinearRegressionResult result0 = males["Weight"].As<double>().LinearRegression(males["Height"].As<double>());
+            PolynomialRegressionResult result1 = males["Height"].As<double>().PolynomialRegression(males["Weight"].As<double>(), 1);
+            PolynomialRegressionResult result2 = males["Height"].As<double>().PolynomialRegression(males["Weight"].As<double>(), 2);
+            PolynomialRegressionResult result3 = males["Height"].As<double>().PolynomialRegression(males["Weight"].As<double>(), 3);
+
+            //MultiLinearRegressionResult multi = view["Weight"].As<double>().MultiLinearRegression(view["Height"].As<double>(), view["Gender"].As<string>().Select(s => (s == "Male") ? 1.0 : 0.0).ToList());
+
+        }
+
+        [TestMethod]
+        public void InternetTimeSeriesDownload () {
+
+            FrameTable table = DownloadFrameTable(new Uri("https://timeseries.weebly.com/uploads/2/1/0/8/21086414/sea_ice.csv"));
+
+            double[] powerSpectrum = table["Arctic"].As<double>().PowerSpectrum();
+            double v12 = table["Arctic"].As<double>().Autocovariance(12);
+            TestResult lbTest = table["Arctic"].As<double>().LjungBoxTest();
         }
 
         public FrameTable DownloadFrameTable (Uri url) {

@@ -270,9 +270,17 @@ namespace Test {
                 multi.Add(x, y);
             }
 
+            // Old multi linear regression code.
             MultiLinearRegressionResult result1 = multi.LinearRegression(1);
+
+            // Simple linear regression code.
             LinearRegressionResult result2 = multi.TwoColumns(0, 1).LinearRegression();
-            MultiLinearRegressionResult result3 = Multivariate.LinearRegression(new IReadOnlyList<double>[] { multi.Column(0).ToList() }, multi.Column(1).ToList());
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result1.Parameters["Intercept"].Estimate, result2.Parameters["Intercept"].Estimate));
+
+            // New multi linear regression code.
+            MultiLinearRegressionResult result3 = multi.Column(1).ToList().MultiLinearRegression(multi.Column(0).ToList());
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result1.Parameters["Intercept"].Estimate, result3.Parameters["Intercept"].Estimate));
+
         }
 
         [TestMethod]

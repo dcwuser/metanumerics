@@ -91,11 +91,10 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
-        /// Get a given column, cast to a given data type.
+        /// Get the column with the given name.
         /// </summary>
-        /// <typeparam name="T">The type into which to cast the column.</typeparam>
         /// <param name="columnName">The name of the column.</param>
-        /// <returns>The requested column, cast to the given data type.</returns>
+        /// <returns>The requested column.</returns>
         public FrameColumn this [string columnName] {
             get {
                 if (columnName == null) throw new ArgumentNullException(nameof(columnName));

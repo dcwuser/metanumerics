@@ -252,7 +252,7 @@ namespace Test {
             Sample sample = CreateSample(distribution, 100);
 
             // fit to normal should be bad
-            FitResult nfit = NormalDistribution.FitToSample(sample);
+            NormalFitResult nfit = NormalDistribution.FitToSample(sample);
             Console.WriteLine("P_n = {0}", nfit.GoodnessOfFit.LeftProbability);
             Assert.IsTrue(nfit.GoodnessOfFit.LeftProbability > 0.95);
 
@@ -281,7 +281,7 @@ namespace Test {
             Assert.IsTrue(RB.GoodnessOfFit.LeftProbability < 0.99);
 
             // Fit to a normal distribution should be bad
-            FitResult RN = NormalDistribution.FitToSample(S);
+            NormalFitResult RN = NormalDistribution.FitToSample(S);
             Assert.IsTrue(RN.GoodnessOfFit.LeftProbability > 0.99);
         }
 
@@ -369,12 +369,12 @@ namespace Test {
 
             // fit to normal should be bad
             // this is harder than others, because a chi^2 isn't so very different from a normal; to help, increse N or decrease vu
-            FitResult nfit = NormalDistribution.FitToSample(sample);
+            NormalFitResult nfit = NormalDistribution.FitToSample(sample);
             Console.WriteLine("P_n = {0}", nfit.GoodnessOfFit.LeftProbability);
             Assert.IsTrue(nfit.GoodnessOfFit.LeftProbability > 0.95, String.Format("P_n = {0}", nfit.GoodnessOfFit.LeftProbability));
 
             // fit to exponential should also be bad
-            FitResult efit = ExponentialDistribution.FitToSample(sample);
+            ExponentialFitResult efit = ExponentialDistribution.FitToSample(sample);
             Console.WriteLine("P_e = {0}", efit.GoodnessOfFit.LeftProbability);
             Assert.IsTrue(efit.GoodnessOfFit.LeftProbability > 0.95, String.Format("P_e = {0}", efit.GoodnessOfFit.LeftProbability));
 
@@ -729,11 +729,11 @@ namespace Test {
             Assert.IsTrue(mf.Parameter(1).ConfidenceInterval(0.99).ClosedContains(sigma));
 
             // now do our analytic fit
-            FitResult nf = NormalDistribution.FitToSample(s);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(0).Value, nf.Parameter(0).Value, 1.0E-4));
-            //Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(1).Value, nf.Parameter(1).Value, 1.0E-4));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(0).Uncertainty, nf.Parameter(0).Uncertainty, 1.0E-2));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(1).Uncertainty, nf.Parameter(1).Uncertainty, 1.0E-2));
+            NormalFitResult nf = NormalDistribution.FitToSample(s);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(0).Value, nf.Parameters[0].Estimate.Value, 1.0E-4));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(1).Value, nf.Parameters[1].Estimate.Value, 1.0E-3));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(0).Uncertainty, nf.Parameters[0].Estimate.Uncertainty, 1.0E-2));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(1).Uncertainty, nf.Parameters[1].Estimate.Uncertainty, 1.0E-2));
 
 
         }
@@ -758,7 +758,7 @@ namespace Test {
             Assert.IsTrue(nr.Parameter(0).ConfidenceInterval(0.95).ClosedContains(mu));
             Assert.IsTrue(nr.Parameter(1).ConfidenceInterval(0.95).ClosedContains(sigma));
 
-            FitResult nr2 = NormalDistribution.FitToSample(ns);
+            NormalFitResult nr2 = NormalDistribution.FitToSample(ns);
 
             Console.WriteLine(nr.Covariance(0,1));
 

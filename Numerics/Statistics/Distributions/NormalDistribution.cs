@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 using Meta.Numerics.Functions;
+using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
@@ -195,15 +196,10 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// Computes the normal distribution that best fits the given sample.
         /// </summary>
         /// <param name="sample">The sample to fit.</param>
-        /// <returns>The best fit parameters.</returns>
-        /// <remarks>
-        /// <para>The returned fit parameters are the &#x3BC; (<see cref="Mean"/>) and &#x3C3; (<see cref="StandardDeviation"/>) parameters, in that order.
-        /// These are the same parameters, in the same order, that are required by the <see cref="NormalDistribution(double,double)"/> constructor to
-        /// specify a new normal distribution.</para>
-        /// </remarks>
+        /// <returns>The result of the fit.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
-        public static FitResult FitToSample (Sample sample) {
+        public static NormalFitResult FitToSample (Sample sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
@@ -262,11 +258,63 @@ namespace Meta.Numerics.Statistics.Distributions {
             // at the minimum
 
             //return (new FitResult(mu.Value, mu.Uncertainty, sigma.Value, sigma.Uncertainty, 0.0, test));
-            return (new FitResult(m, dm, s, ds, 0.0, test));
+            //return (new FitResult(m, dm, s, ds, 0.0, test));
+            return (new NormalFitResult(new UncertainValue(m, dm), new UncertainValue(s, ds), test));
 
         }
 
     }
 
+    /// <summary>
+    /// Represents the result of a sample to a normal distribution.
+    /// </summary>
+    public sealed class NormalFitResult : DistributionFitResult<NormalDistribution> {
+
+        internal NormalFitResult(UncertainValue mu, UncertainValue sigma, TestResult goodnessOfFit) : base(new NormalDistribution(mu.Value, sigma.Value), goodnessOfFit)
+        {
+            this.mu = mu;
+            this.sigma = sigma;
+        }
+
+        private readonly UncertainValue mu;
+        private readonly UncertainValue sigma;
+
+        internal override ParameterCollection CreateParameters ()
+        {
+            ColumnVector p = new ColumnVector(mu.Value, sigma.Value);
+            p.IsReadOnly = true;
+            SymmetricMatrix C = new SymmetricMatrix(2);
+            C[0, 0] = MoreMath.Sqr(mu.Uncertainty);
+            C[1, 1] = MoreMath.Sqr(sigma.Uncertainty);
+            C.IsReadOnly = true;
+            ParameterCollection parameters = new ParameterCollection(
+                new string[] { nameof(Mean), nameof(StandardDeviation) }, p, C
+            );
+            return (parameters);
+        }
+
+        /// <summary>
+        /// Gets an estimate, with uncertainty, of the mean.
+        /// </summary>
+        public UncertainValue Mean
+        {
+            get
+            {
+                return (mu);
+            }
+        }
+
+        /// <summary>
+        /// Gets and estimate, with uncertainty, of the standard deviation.
+        /// </summary>
+        public UncertainValue StandardDeviation
+        {
+            get
+            {
+                return (sigma);
+            }
+        }
+
+    }
 
 }

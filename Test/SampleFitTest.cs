@@ -20,13 +20,13 @@ namespace Test {
             Sample sample = SampleTest.CreateSample(distribution, 100);
 
             // fit to normal should be good
-            FitResult nfit = NormalDistribution.FitToSample(sample);
+            NormalFitResult nfit = NormalDistribution.FitToSample(sample);
             Assert.IsTrue(nfit.GoodnessOfFit.Probability > 0.05);
-            Assert.IsTrue(nfit.Parameter(0).ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
-            Assert.IsTrue(nfit.Parameter(1).ConfidenceInterval(0.95).ClosedContains(distribution.StandardDeviation));
+            Assert.IsTrue(nfit.Mean.ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
+            Assert.IsTrue(nfit.StandardDeviation.ConfidenceInterval(0.95).ClosedContains(distribution.StandardDeviation));
 
             // fit to exponential should be bad
-            FitResult efit = ExponentialDistribution.FitToSample(sample);
+            ExponentialFitResult efit = ExponentialDistribution.FitToSample(sample);
             Assert.IsTrue(efit.GoodnessOfFit.Probability < 0.05);
         }
 
@@ -47,13 +47,13 @@ namespace Test {
                 Sample s = TestUtilities.CreateSample(N, 8, i);
 
                 // Fit each sample to a normal distribution
-                FitResult fit = NormalDistribution.FitToSample(s);
+                NormalFitResult fit = NormalDistribution.FitToSample(s);
 
                 // and record the mu and sigma values from the fit into our bivariate sample
-                parameters.Add(fit.Parameter(0).Value, fit.Parameter(1).Value);
+                parameters.Add(fit.Mean.Value, fit.StandardDeviation.Value);
 
                 // also record the claimed covariances among these parameters
-                covariances.Add(fit.Covariance(0, 0), fit.Covariance(1, 1), fit.Covariance(0, 1));
+                covariances.Add(fit.Parameters.Covariance[0, 0], fit.Parameters.Covariance[1, 1], fit.Parameters.Covariance[0, 1]);
             }
 
             // the mean fit values should agree with the population distribution
@@ -74,13 +74,13 @@ namespace Test {
             Sample sample = SampleTest.CreateSample(distribution, 100);
 
             // fit to normal should be bad
-            FitResult nfit = NormalDistribution.FitToSample(sample);
+            NormalFitResult nfit = NormalDistribution.FitToSample(sample);
             Assert.IsTrue(nfit.GoodnessOfFit.Probability < 0.05);
 
             // fit to exponential should be good
-            FitResult efit = ExponentialDistribution.FitToSample(sample);
+            ExponentialFitResult efit = ExponentialDistribution.FitToSample(sample);
             Assert.IsTrue(efit.GoodnessOfFit.Probability > 0.05);
-            Assert.IsTrue(efit.Parameter(0).ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
+            Assert.IsTrue(efit.Mean.ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
 
         }
 
@@ -99,8 +99,8 @@ namespace Test {
             Sample uncertainties = new Sample();
             for (int i = 0; i < 128; i++) {
                 Sample sample = SampleTest.CreateSample(distribution, 8, i);
-                FitResult fit = ExponentialDistribution.FitToSample(sample);
-                UncertainValue lambda = fit.Parameter(0);
+                ExponentialFitResult fit = ExponentialDistribution.FitToSample(sample);
+                UncertainValue lambda = fit.Parameters[0].Estimate;
                 values.Add(lambda.Value);
                 uncertainties.Add(lambda.Uncertainty);
             }

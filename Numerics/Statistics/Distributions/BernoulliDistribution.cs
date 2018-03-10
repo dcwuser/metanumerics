@@ -183,10 +183,10 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <summary>
         /// Finds the Bernoulli distribution that best fits the given counts.
         /// </summary>
-        /// <param name="n0">The count of zeros, which must be non-negative.</param>
-        /// <param name="n1">The count of ones, which must be non-negative.</param>
+        /// <param name="n0">The count of zeros (failure outcomes), which must be non-negative.</param>
+        /// <param name="n1">The count of ones (success outcomes), which must be non-negative.</param>
         /// <returns>The best-fit Bernoulli distribution parameters.</returns>
-        public static FitResult FitToSample (int n0, int n1) {
+        public static BernoulliFitResult FitToSample (int n0, int n1) {
 
             if (n0 < 0) throw new ArgumentOutOfRangeException(nameof(n0));
             if (n1 < 0) throw new ArgumentOutOfRangeException(nameof(n1));
@@ -214,7 +214,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             double chi2 = MoreMath.Sqr(n * q - n0) + MoreMath.Sqr(n * p - n1);
             TestResult test = new TestResult("chi2", chi2, TestType.RightTailed, new ChiSquaredDistribution(1));
 
-            return (new FitResult(p, Math.Sqrt(vp), test));
+            return (new BernoulliFitResult(new UncertainValue(p, Math.Sqrt(vp)), test));
         }
 
     }

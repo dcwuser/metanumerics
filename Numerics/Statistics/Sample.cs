@@ -308,7 +308,7 @@ namespace Meta.Numerics.Statistics {
     /// of descriptive statistics of the underlying population distribution, and statistical
     /// tests to compare the sample distribution to other sample distributions or theoretical models.</para>
     /// </remarks>
-    public sealed class Sample : ICollection<double>, IEnumerable<double>, IEnumerable {
+    public sealed class Sample : ICollection<double>, IReadOnlyCollection<double>, IEnumerable<double>, IEnumerable {
 
         private SampleStorage data;
 

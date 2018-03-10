@@ -5,6 +5,7 @@ using Meta.Numerics.Analysis;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
+#if FUTURE
     public abstract class CircularDistribution {
 
         public abstract Interval Support { get;  }
@@ -74,4 +75,5 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
     }
+#endif
 }

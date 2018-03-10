@@ -14,6 +14,16 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     public sealed class ParameterCollection : IReadOnlyCollection<Parameter> {
 
+        internal ParameterCollection(string name, double p, double vp)
+        {
+            this.names = new string[] { name };
+            this.best = new ColumnVector(p);
+            this.covariance = new SymmetricMatrix(1);
+            this.covariance[0, 0] = MoreMath.Sqr(vp);
+            this.best.IsReadOnly = true;
+            this.covariance.IsReadOnly = true;
+        }
+
         internal ParameterCollection (IList<string> names, ColumnVector best, SymmetricMatrix covariance) {
             Debug.Assert(names != null);
             Debug.Assert(best != null);

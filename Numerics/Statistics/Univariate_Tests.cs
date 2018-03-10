@@ -619,5 +619,118 @@ namespace Meta.Numerics.Statistics {
 
         }
 
+        /// <summary>
+        /// Performs a one-way analysis of variance (ANOVA).
+        /// </summary>
+        /// <param name="samples">The samples to compare.</param>
+        /// <returns>ANOVA data, including an F-test comparing the between-group variance to
+        /// the within-group variance.</returns>
+        /// <remarks>
+        /// <para>The one-way ANOVA is an extension of the Student t-test (<see cref="StudentTTest(Sample,Sample)"/>)
+        /// to more than two groups. The test's null hypothesis is that all the groups' data are drawn
+        /// from the same distribution. If the null hypothesis is rejected, it indicates
+        /// that at least one of the groups differs significantly from the others.</para>
+        /// <para>Given more than two groups, you should use an ANOVA to test for differences
+        /// in the means of the groups rather than perform multiple t-tests. The reason
+        /// is that each t-test incurs a small risk of a false positive, so multiple t-tests increase
+        /// the total risk of a false positive. For example, given a 95% confidence requirement,
+        /// there is only a 5% chance that an individual t-test will incorrectly diagnose a significant
+        /// difference. But given 5 samples, there are 5 * 4 / 2 = 10 t-tests to be
+        /// performed, giving about a 40% chance that at least one of them will incorrectly
+        /// diagnose a significant difference! The ANOVA avoids the accumulation of risk
+        /// by performing a single test at the required confidence level to test for
+        /// any significant differences between the groups.</para>
+        /// <para>A one-way ANOVA performed on just two samples is equivilent to a
+        /// t-test (<see cref="Sample.StudentTTest(Sample,Sample)" />).</para>
+        /// <para>ANOVA is an acronym for "Analysis of Variance". Do not be confused
+        /// by the name and by the use of a ratio-of-variances test statistic: an
+        /// ANOVA is primarily (although not exclusively) sensitive to changes in the
+        /// <i>mean</i> between samples. The variances being compared by the test are not the
+        /// variances of the individual samples; instead the test compares the variance of
+        /// all samples considered together as one single, large sample to the variances of the samples
+        /// considered individually. If the means of some groups differ significantly,
+        /// then the variance of the unified sample will be much larger than the vairiances of the
+        /// individual samples, and the test will signal a significant difference. Thus the
+        /// test uses variance as a tool to detect shifts in mean, not because it
+        /// is interesed in the individual sample variances per se.</para>
+        /// <para>ANOVA is most appropriate when the sample data are continuous and approximately normal,
+        /// and the samples are distinguished by a nominal variable. For example, given
+        /// a random sampling of the heights of members of five different political parties,
+        /// a one-way ANOVA would be an appropriate test of the whether the different
+        /// parties tend to attract people with different heights.</para>
+        /// <para>Given a continuous independent variable, binning in order to define
+        /// groups and perform an ANOVA is generally not appropriate.
+        /// For exapmple, given the incomes and heights of a large number of people,
+        /// dividing these people into low-height, medium-height, and high-height groups
+        /// and performing an ANOVA of the income of people in each group is not a
+        /// good way to test whether height influences income.
+        /// In a case like this, it would be better to put the data into a <see cref="BivariateSample"/> and
+        /// perform a test of association, such as a <see cref="BivariateSample.PearsonRTest" />,
+        /// <see cref="BivariateSample.SpearmanRhoTest" />, or <see cref="BivariateSample.KendallTauTest" />
+        /// between the two variables. If you have measurements
+        /// of additional variables for each indiviual, a <see cref="MultivariateSample.LinearRegression(int)" />
+        /// analysis would allow you to adjust for the confounding effects of the other variables. If you
+        /// define arbitrary bins of continuously variable data in order to form groups, then your
+        /// ANOVA results will depend on your choice of bins.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="samples"/> is null.</exception>
+        /// <exception cref="ArgumentException"><paramref name="samples"/> contains fewer than two samples.</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Analysis_of_variance"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/One-way_analysis_of_variance"/>
+        public static OneWayAnovaResult OneWayAnovaTest (params ICollection<double>[] samples) {
+            return (OneWayAnovaTest((ICollection<ICollection<double>>) samples));
+        }
+
+        /// <summary>
+        /// Performs a one-way analysis of variance (ANOVA).
+        /// </summary>
+        /// <param name="samples">The samples to compare.</param>
+        /// <returns>ANOVA data, including an F-test comparing the between-group variance to
+        /// the within-group variance.</returns>
+        /// <remarks>
+        /// <para>For detailed information, see <see cref="OneWayAnovaTest(ICollection{double}[])"/>.</para>
+        /// </remarks>
+        public static OneWayAnovaResult OneWayAnovaTest (ICollection<ICollection<double>> samples) {
+
+            if (samples == null) throw new ArgumentNullException(nameof(samples));
+            if (samples.Count < 2) throw new ArgumentException("There must be at least two samples in the sample list.", nameof(samples));
+
+            // determine total count, mean, and within-group sum-of-squares
+            int n = 0;
+            double mean = 0.0;
+            double SSW = 0.0;
+            foreach (ICollection<double> sample in samples) {
+                if (sample == null) throw new ArgumentNullException("sample");
+
+                int n_sample;
+                double mean_sample, sumOfSquaredDeviations_sample;
+
+                ComputeMomentsUpToSecond(sample, out n_sample, out mean_sample, out sumOfSquaredDeviations_sample);
+                n += n_sample;
+                mean += n_sample * mean_sample;
+                SSW += sumOfSquaredDeviations_sample;
+            }
+            mean = mean / n;
+
+            // determine between-group sum-of-squares
+            double SSB = 0.0;
+            foreach (Sample sample in samples) {
+                SSB += sample.Count * MoreMath.Sqr(sample.Mean - mean);
+            }
+
+            // determine degrees of freedom associated with each sum-of-squares
+            int dB = samples.Count - 1;
+            int dW = n - 1 - dB;
+
+            // determine F statistic
+            double F = (SSB / dB) / (SSW / dW);
+
+            AnovaRow factor = new AnovaRow(SSB, dB);
+            AnovaRow residual = new AnovaRow(SSW, dW);
+            AnovaRow total = new AnovaRow(SSB + SSW, n - 1);
+            return (new OneWayAnovaResult(factor, residual, total));
+
+        }
+
     }
 }

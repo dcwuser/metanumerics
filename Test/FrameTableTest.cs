@@ -17,6 +17,32 @@ namespace Test {
     public class FrameTableTest {
 
         [TestMethod]
+        public void FrameViewColumnCoercion () {
+
+            // Create nullable double and integer columns.
+            FrameTable table = new FrameTable(
+                new ColumnDefinition<double?>("one"),
+                new ColumnDefinition<int>("two")
+            );
+            table.AddRow(1.1, 2);
+            table.AddRow(null, 3);
+
+            // Coerce the nullable double into a non-nullable double
+            // Should work when value is non-null, and fail with value is null
+            IReadOnlyList<double> one = table["one"].As<double>();
+            Assert.IsTrue(one[0] == 1.1);
+            try {
+                double v = one[1];
+                Assert.Fail();
+            } catch (Exception) { }
+
+            // Coerce integer to double.
+            IReadOnlyList<double> two = table.Columns[1].As<double>();
+            Assert.IsTrue(two[0] == 2.0);
+
+        }
+
+        [TestMethod]
         public void FrameTableManipulation () {
 
             FrameTable table = new FrameTable(
@@ -78,7 +104,9 @@ namespace Test {
             SampleSummary maleSummary = new SampleSummary(males["Height"].As<double>());
             SampleSummary femaleSummary = new SampleSummary(females["Height"].As<double>());
 
+            TestResult allNormal = view["Height"].As<double>().ShapiroFranciaTest();
             TestResult maleNormal = males["Height"].As<double>().ShapiroFranciaTest();
+            TestResult femaleNormal = females["Height"].As<double>().ShapiroFranciaTest();
 
             TestResult tTest = Univariate.StudentTTest(males["Height"].As<double>(), females["Height"].As<double>());
             TestResult mwTest = Univariate.MannWhitneyTest(males["Height"].As<double>(), females["Height"].As<double>());

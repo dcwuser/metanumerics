@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
+using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 using Meta.Numerics.Matrices;
@@ -194,16 +195,25 @@ namespace Test {
             // draw a sample from the model
             Random rng = new Random(1);
             MultivariateSample sample = new MultivariateSample(3);
+            FrameTable table = new FrameTable(
+                new ColumnDefinition<double>("x0"),
+                new ColumnDefinition<double>("x1"),
+                new ColumnDefinition<double>("y")
+            );
             for (int i = 0; i < 100; i++) {
                 double x0 = -10.0 + 20.0 * rng.NextDouble();
                 double x1 = -10.0 + 20.0 * rng.NextDouble();
                 double eps = noise.InverseLeftProbability(rng.NextDouble());
                 double y = a + b0 * x0 + b1 * x1 + eps;
                 sample.Add(x0, x1, y);
+                table.AddRow(x0, x1, y);
             }
 
             // do a linear regression fit on the model
             ParameterCollection result = sample.LinearRegression(2).Parameters;
+            MultiLinearRegressionResult result2 = table["y"].As<double>().MultiLinearRegression(
+                table["x0"].As<double>(), table["x1"].As<double>()
+            );
 
             // the result should have the appropriate dimension
             Assert.IsTrue(result.Count == 3);
@@ -212,6 +222,8 @@ namespace Test {
             Assert.IsTrue(result[0].Estimate.ConfidenceInterval(0.90).ClosedContains(b0));
             Assert.IsTrue(result[1].Estimate.ConfidenceInterval(0.90).ClosedContains(b1));
             Assert.IsTrue(result[2].Estimate.ConfidenceInterval(0.90).ClosedContains(a));
+
+            Assert.IsTrue(result2.Intercept.ConfidenceInterval(0.99).ClosedContains(a));
 
         }
 

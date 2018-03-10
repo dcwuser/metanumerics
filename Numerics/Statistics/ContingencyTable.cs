@@ -294,18 +294,6 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets or sets the name of the table.
-        /// </summary>
-        public string Name {
-            get {
-                return (name);
-            }
-            set {
-                name = value;
-            }
-        }
-
-        /// <summary>
         /// Gets or sets the count in the specified cell.
         /// </summary>
         /// <param name="r">The (zero-based) row index.</param>

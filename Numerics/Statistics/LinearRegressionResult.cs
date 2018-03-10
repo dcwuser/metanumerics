@@ -29,7 +29,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the best fit value of the intercept and its associated uncertainty.
         /// </summary>
-        public UncertainValue Intercept {
+        public override UncertainValue Intercept {
             get {
                 return (this.Parameters[0].Estimate);
             }

@@ -86,6 +86,18 @@ namespace Meta.Numerics.Data
             }
         }
 
+        /// <summary>
+        /// Returns a transformation of the column as a typed list.
+        /// </summary>
+        /// <typeparam name="TIn">The input type of the transformation.</typeparam>
+        /// <typeparam name="TOut">The output type of the transformation.</typeparam>
+        /// <param name="transformation">The transformation.</param>
+        /// <returns>An object that allows a transformation of the column to be accessed as a typed list.</returns>
+        public IReadOnlyList<TOut> As<TIn, TOut>(Func<TIn, TOut> transformation) {
+            IReadOnlyList<TIn> inputColumn = this.As<TIn>();
+            return (new TransformedList<TIn, TOut>(inputColumn, transformation));
+        }
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return (((IEnumerable) column).GetEnumerator());
@@ -158,6 +170,40 @@ namespace Meta.Numerics.Data
             return (((IEnumerable<T>) this).GetEnumerator());
         }
 
+    }
+
+    internal class TransformedList<TIn, TOut> : IReadOnlyList<TOut> {
+
+        public TransformedList(IReadOnlyList<TIn> input, Func<TIn, TOut> transformation) {
+            this.input = input;
+            this.transformation = transformation;
+        }
+
+        private readonly IReadOnlyList<TIn> input;
+
+        private readonly Func<TIn, TOut> transformation;
+
+        public int Count {
+            get {
+                return (input.Count);
+            }
+        }
+
+        public TOut this[int index] {
+            get {
+                return (transformation(input[index]));
+            }
+        }
+
+        public IEnumerator<TOut> GetEnumerator () {
+            foreach (TIn entry in input) {
+                yield return (transformation(entry));
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator () {
+            return (((IEnumerable<TOut>) this).GetEnumerator());
+        }
     }
 
 }

@@ -386,7 +386,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> or <paramref name="f"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException">The sizes of <paramref name="x"/> and <paramref name="y"/> do not match.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
-        public static LinearLogisticRegressionResult LinearLogisticRegression (IReadOnlyList<double> x, IReadOnlyList<bool> y) {
+        public static LinearLogisticRegressionResult LinearLogisticRegression (this IReadOnlyList<bool> y, IReadOnlyList<double> x) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));

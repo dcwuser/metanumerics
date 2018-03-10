@@ -480,7 +480,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InvalidOperationException">There is a y-value other than 0 or 1.</exception>
         public LinearLogisticRegressionResult LinearLogisticRegression () {
             List<bool> y = yData.Select(v => { if (v == 0.0) { return (false); } else if (v == 1.0) { return (true); } else { throw new InvalidOperationException(); } }).ToList();
-            return (Bivariate.LinearLogisticRegression(xData, y));
+            return (Bivariate.LinearLogisticRegression(y, xData));
         }
 
 #if !SILVERLIGHT

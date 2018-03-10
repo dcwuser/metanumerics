@@ -81,6 +81,16 @@ namespace Meta.Numerics.Statistics {
         private readonly OneWayAnovaResult anova;
 
         /// <summary>
+        /// Gets an estimate of the intercept.
+        /// </summary>
+        public virtual UncertainValue Intercept {
+            get {
+                return (Parameters["Intercept"].Estimate);
+            }
+        }
+
+
+        /// <summary>
         /// Gets r<sup>2</sup> for the regression. 
         /// </summary>
         public virtual double RSquared {

@@ -1119,7 +1119,7 @@ namespace Test {
             LinearLogisticRegressionResult result2 = sample2.TwoColumns(0, 1).LinearLogisticRegression();
             FitResult result3 = sample2.LogisticLinearRegression(1);
 
-            LinearLogisticRegressionResult result4 = Bivariate.LinearLogisticRegression(sample1.X.ToList(), sample1.Y.Select(x => (x == 1.0)).ToList());
+            //LinearLogisticRegressionResult result4 = Bivariate.LinearLogisticRegression(sample1.X.ToList(), sample1.Y.Select(x => (x == 1.0)).ToList());
             MultiLinearLogisticRegressionResult result5 = Multivariate.MultiLinearLogisticRegression(new IReadOnlyList<double>[] { sample1.X.ToList() }, sample1.Y.Select(x => (x == 1.0)).ToList());
 
             // Fits should give same result

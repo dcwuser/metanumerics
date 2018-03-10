@@ -80,6 +80,30 @@ namespace Test {
         }
 
         [TestMethod]
+        public void LinearLogisticRegressionSimple () {
+
+            Polynomial m = Polynomial.FromCoefficients(-1.0, 2.0);
+
+            FrameTable table = new FrameTable(
+                new ColumnDefinition<double>("x"),
+                new ColumnDefinition<string>("z")
+            );
+            Random rng = new Random(2);
+            ContinuousDistribution xDistribution = new CauchyDistribution(4.0, 2.0);
+            for (int i = 0; i < 24; i++) {
+                double x = xDistribution.GetRandomValue(rng);
+                double y = m.Evaluate(x);
+                double p = 1.0 / (1.0 + Math.Exp(-y));
+                bool z = (rng.NextDouble() < p);
+                table.AddRow(x, z.ToString());
+            }
+
+            LinearLogisticRegressionResult fit = table["z"].As((string s) => Boolean.Parse(s)).LinearLogisticRegression(table["x"].As<double>());
+            Assert.IsTrue(fit.Intercept.ConfidenceInterval(0.99).ClosedContains(m.Coefficient(0)));
+            Assert.IsTrue(fit.Slope.ConfidenceInterval(0.99).ClosedContains(m.Coefficient(1)));
+        }
+
+        [TestMethod]
         public void LinearLogisticRegression () {
 
             // do a set of logistic regression fits

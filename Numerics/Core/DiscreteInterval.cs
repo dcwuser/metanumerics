@@ -20,6 +20,12 @@ namespace Meta.Numerics {
 
         private readonly int max;
 
+        /// <summary>
+        /// Instantiates a new discrete interval from the given endpoints.
+        /// </summary>
+        /// <param name="a">One endpoint.</param>
+        /// <param name="b">The other endpoint.</param>
+        /// <returns>A discrete interval between the given endpoints.</returns>
         public static DiscreteInterval FromEndpoints (int a, int b) {
             return (new DiscreteInterval(Math.Min(a, b), Math.Max(a, b)));
         }

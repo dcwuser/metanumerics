@@ -81,30 +81,12 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        public double SecondRawMoment {
-            get {
-                return (m * m + s2 / n);
-            }
-        }
-
-        public double ThirdRawMoment {
-            get {
-                return (s3 / n + m * (3.0 * s2 / n + m * m));
-            }
-        }
-
         /// <summary>
         /// Get the variance of the sample data.
         /// </summary>
         public double Variance {
             get {
                 return (s2 / n);
-            }
-        }
-
-        public double ThirdCentralMoment {
-            get {
-                return (s3 / n);
             }
         }
 

@@ -225,6 +225,22 @@ namespace Test {
         }
 
         [TestMethod]
+        public void BernoulliDistributionFit ()
+        {
+            double p = 0.25;
+
+            int n0 = 0;
+            int n1 = 0;
+            Random rng = new Random(3);
+            for (int i = 0; i < 100; i++) {
+                if (rng.NextDouble() < p) { n1++; } else { n0++; }
+            }
+            BernoulliFitResult fit = BernoulliDistribution.FitToSample(n0, n1);
+            Assert.IsTrue(fit.P.ConfidenceInterval(0.95).ClosedContains(p));
+            Assert.IsTrue(fit.GoodnessOfFit.Probability > 0.05);
+        }
+
+        [TestMethod]
         public void DiscreteDistributionBase () {
 
             DiscreteDistribution D = new DiscreteTestDistribution();

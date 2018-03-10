@@ -191,7 +191,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than two values.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
-        public static FitResult FitToSample (Sample sample) {
+        public static ExponentialFitResult FitToSample (Sample sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) throw new InsufficientDataException();
@@ -216,7 +216,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             ContinuousDistribution distribution = new ExponentialDistribution(lambda);
             TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
-            return (new FitResult(lambda, dLambda, test));
+            return (new ExponentialFitResult(new UncertainValue(lambda, dLambda), test));
 
         }
 

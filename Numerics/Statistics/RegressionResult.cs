@@ -11,13 +11,21 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     public class BaseFitResult {
 
+        internal BaseFitResult ()
+        {
+            this.parameters = new Lazy<ParameterCollection>(CreateParameters);
+            this.logLikelihood = Double.NaN;
+        }
+
         internal BaseFitResult (ParameterCollection parameters, double logLikelihood) {
             Debug.Assert(parameters != null);
-            this.parameters = parameters;
+            this.parameters = new Lazy<ParameterCollection>(() => parameters);
             this.logLikelihood = logLikelihood;
         }
 
-        private readonly ParameterCollection parameters;
+        //private readonly ParameterCollection parameters;
+
+        private readonly Lazy<ParameterCollection> parameters;
 
         private readonly double logLikelihood;
 
@@ -26,8 +34,13 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public virtual ParameterCollection Parameters {
             get {
-                return (parameters);
+                return (parameters.Value);
             }
+        }
+
+        internal virtual ParameterCollection CreateParameters ()
+        {
+            throw new InvalidOperationException();
         }
 
         /// <summary>

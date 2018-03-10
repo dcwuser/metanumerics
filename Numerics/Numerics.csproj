@@ -176,6 +176,7 @@
     <Compile Include="Statistics\ContingencyTable.cs" />
     <Compile Include="Statistics\DiscreteHistogram.cs" />
     <Compile Include="Statistics\Distributions\BernoulliDistribution.cs" />
+    <Compile Include="Statistics\Distributions\BernoulliFitResult.cs" />
     <Compile Include="Statistics\Distributions\BetaDistribution.cs" />
     <Compile Include="Statistics\Distributions\BinomialDistribution.cs" />
     <Compile Include="Statistics\Distributions\CauchyDistribution.cs" />
@@ -186,7 +187,9 @@
     <Compile Include="Statistics\Distributions\DiscreteDistribution.cs" />
     <Compile Include="Statistics\Distributions\DiscreteUniformDistribution.cs" />
     <Compile Include="Statistics\Distributions\ContinuousDistribution.cs" />
+    <Compile Include="Statistics\Distributions\DistributionFitResult.cs" />
     <Compile Include="Statistics\Distributions\ExponentialDistribution.cs" />
+    <Compile Include="Statistics\Distributions\ExponentialFitResult.cs" />
     <Compile Include="Statistics\Distributions\FisherDistribution.cs" />
     <Compile Include="Statistics\Distributions\FrechetDistribution.cs" />
     <Compile Include="Statistics\Distributions\GammaDistribution.cs" />

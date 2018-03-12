@@ -184,46 +184,61 @@ namespace Test {
         }
 
         [TestMethod]
-        public void MultivariateLinearRegressionTest () {
+        public void MultivariateLinearRegressionSimple () {
 
             // define model y = a + b0 * x0 + b1 * x1 + noise
             double a = 1.0;
             double b0 = -2.0;
             double b1 = 3.0;
+            ContinuousDistribution x0distribution = new CauchyDistribution(10.0, 5.0);
+            ContinuousDistribution x1distribution = new UniformDistribution(Interval.FromEndpoints(-10.0, 20.0));
             ContinuousDistribution noise = new NormalDistribution(0.0, 10.0);
 
             // draw a sample from the model
             Random rng = new Random(1);
-            MultivariateSample sample = new MultivariateSample(3);
+            MultivariateSample sample = new MultivariateSample("x0", "x1", "y");
             FrameTable table = new FrameTable(
                 new ColumnDefinition<double>("x0"),
                 new ColumnDefinition<double>("x1"),
                 new ColumnDefinition<double>("y")
             );
             for (int i = 0; i < 100; i++) {
-                double x0 = -10.0 + 20.0 * rng.NextDouble();
-                double x1 = -10.0 + 20.0 * rng.NextDouble();
-                double eps = noise.InverseLeftProbability(rng.NextDouble());
+                double x0 = x0distribution.GetRandomValue(rng);
+                double x1 = x1distribution.GetRandomValue(rng);
+                double eps = noise.GetRandomValue(rng);
                 double y = a + b0 * x0 + b1 * x1 + eps;
                 sample.Add(x0, x1, y);
                 table.AddRow(x0, x1, y);
             }
 
             // do a linear regression fit on the model
-            ParameterCollection result = sample.LinearRegression(2).Parameters;
-            MultiLinearRegressionResult result2 = table["y"].As<double>().MultiLinearRegression(
+            ParameterCollection oldResult = sample.LinearRegression(2).Parameters;
+            MultiLinearRegressionResult newResult = table["y"].As<double>().MultiLinearRegression(
                 table["x0"].As<double>(), table["x1"].As<double>()
             );
 
             // the result should have the appropriate dimension
-            Assert.IsTrue(result.Count == 3);
+            Assert.IsTrue(oldResult.Count == 3);
+            Assert.IsTrue(newResult.Parameters.Count == 3);
 
-            // the parameters should match the model
-            Assert.IsTrue(result[0].Estimate.ConfidenceInterval(0.90).ClosedContains(b0));
-            Assert.IsTrue(result[1].Estimate.ConfidenceInterval(0.90).ClosedContains(b1));
-            Assert.IsTrue(result[2].Estimate.ConfidenceInterval(0.90).ClosedContains(a));
+            // The parameters should match the model
+            Assert.IsTrue(oldResult[0].Estimate.ConfidenceInterval(0.90).ClosedContains(b0));
+            Assert.IsTrue(oldResult[1].Estimate.ConfidenceInterval(0.90).ClosedContains(b1));
+            Assert.IsTrue(oldResult[2].Estimate.ConfidenceInterval(0.90).ClosedContains(a));
 
-            Assert.IsTrue(result2.Intercept.ConfidenceInterval(0.99).ClosedContains(a));
+            Assert.IsTrue(newResult.CoefficientOf(0).ConfidenceInterval(0.99).ClosedContains(b0));
+            Assert.IsTrue(newResult.CoefficientOf("x1").ConfidenceInterval(0.99).ClosedContains(b1));
+            Assert.IsTrue(newResult.Intercept.ConfidenceInterval(0.99).ClosedContains(a));
+
+            // The residuals should be compatible with the model predictions
+            for (int i = 0; i < table.Rows.Count; i++) {
+                FrameRow row = table.Rows[i];
+                double x0 = (double) row["x0"];
+                double x1 = (double) row["x1"];
+                double yp = newResult.Predict(x0, x1).Value;
+                double y = (double) row["y"];
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(newResult.Residuals[i], y - yp));
+            }
 
         }
 

@@ -245,7 +245,7 @@ namespace Meta.Numerics.Statistics {
     /// <seealso href="http://en.wikipedia.org/wiki/Contingency_table" />
     public class ContingencyTable {
 
-        private string name;
+        //private string name;
         //private NameCollection rowNames;
         //private NameCollection columnNames;
 

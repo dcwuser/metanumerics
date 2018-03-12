@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
@@ -210,11 +211,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
-        public static FitResult FitToSample (Sample sample) {
+        public static WeibullFitResult FitToSample (IReadOnlyList<double> sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
-            if (sample.Minimum <= 0.0) throw new InvalidOperationException();
+            foreach (double value in sample) {
+                if (value <= 0.0) throw new InvalidOperationException();
+            }
 
             // The log likelyhood function is
             //   \log L = N \log k + (k-1) \sum_i \log x_i - N K \log \lambda - \sum_i \left(\frac{x_i}{\lambda}\right)^k
@@ -250,10 +253,12 @@ namespace Meta.Numerics.Statistics.Distributions {
             // then w_i = z_i - \bar{z}. Then lots of factors of e^{k \bar{z}} cancel out and, even though we still do
             // have some e^{k w_i}, the w_i are small and centered around 0 instead of large and centered around \lambda.
 
-            Sample transformedSample = sample.Copy();
-            transformedSample.Transform(x => Math.Log(x));
-            double zbar = transformedSample.Mean;
-            transformedSample.Transform(z => z - zbar);
+            //Sample transformedSample = sample.Copy();
+            //transformedSample.Transform(x => Math.Log(x));
+            double[] transformedSample = new double[sample.Count];
+            for (int j = 0; j < sample.Count; j++) transformedSample[j] = Math.Log(sample[j]);
+            double zbar = transformedSample.Mean();
+            for (int j = 0; j < transformedSample.Length; j++) transformedSample[j] -= zbar;
 
             // After this change of variable the 1D function to zero becomes
             //   g(k) = \sum_i ( 1 - k w_i ) e^{k w_i}
@@ -285,7 +290,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             foreach (double w in transformedSample) {
                 t += Math.Exp(k1 * w);
             }
-            t /= transformedSample.Count;
+            t /= transformedSample.Length;
             double lambda1 = Math.Exp(zbar) * Math.Pow(t, 1.0 / k1);
             
             // We need the curvature matrix at the minimum of our log likelyhood function
@@ -332,7 +337,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
             // return the result
-            return (new FitResult(new double[] {lambda1, k1}, C, test));
+            return (new WeibullFitResult(lambda1, k1, C, test));
+            //return (new FitResult(new double[] {lambda1, k1}, C, test));
 
         }
 

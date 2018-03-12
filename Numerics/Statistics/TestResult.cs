@@ -87,7 +87,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets the probability of such an extreme value of the satistic.
+        /// Gets the probability of such an extreme value of the statistic.
         /// </summary>
         /// <value>The P-value of the test-statistic.</value>
         public double Probability {
@@ -131,7 +131,7 @@ namespace Meta.Numerics.Statistics {
         RightTailed,
 
         /// <summary>
-        /// The P-values gives the probabily of obtain a value as large in absolute value as observed.
+        /// The P-values gives the probability of obtaining a value as large in absolute value as observed.
         /// </summary>
         TwoTailed
     

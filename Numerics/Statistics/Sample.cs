@@ -308,7 +308,8 @@ namespace Meta.Numerics.Statistics {
     /// of descriptive statistics of the underlying population distribution, and statistical
     /// tests to compare the sample distribution to other sample distributions or theoretical models.</para>
     /// </remarks>
-    public sealed class Sample : ICollection<double>, IReadOnlyCollection<double>, IEnumerable<double>, IEnumerable {
+    public sealed class Sample : ICollection<double>, IReadOnlyCollection<double>, IEnumerable<double>, IEnumerable,
+        IReadOnlyList<double> {
 
         private SampleStorage data;
 
@@ -941,7 +942,8 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="https://en.wikipedia.org/wiki/Analysis_of_variance"/>
         /// <seealso href="https://en.wikipedia.org/wiki/One-way_analysis_of_variance"/>
         public static OneWayAnovaResult OneWayAnovaTest (params Sample[] samples) {
-            return (OneWayAnovaTest((IList<Sample>)samples));
+            return (Univariate.OneWayAnovaTest(samples));
+            //return (OneWayAnovaTest((IList<Sample>)samples));
         }
 
         /// <summary>
@@ -953,8 +955,9 @@ namespace Meta.Numerics.Statistics {
         /// <remarks>
         /// <para>For detailed information, see <see cref="OneWayAnovaTest(Sample[])"/>.</para>
         /// </remarks>
-        public static OneWayAnovaResult OneWayAnovaTest (ICollection<Sample> samples) {
-
+        public static OneWayAnovaResult OneWayAnovaTest (IReadOnlyCollection<Sample> samples) {
+            return (Univariate.OneWayAnovaTest(samples));
+            /*
             if (samples == null) throw new ArgumentNullException(nameof(samples));
             if (samples.Count < 2) throw new ArgumentException("There must be at least two samples in the sample list.", "samples");
 
@@ -987,7 +990,7 @@ namespace Meta.Numerics.Statistics {
             AnovaRow residual = new AnovaRow(SSW, dW);
             AnovaRow total = new AnovaRow(SSB + SSW, n - 1);
             return (new OneWayAnovaResult(factor, residual, total));
-
+            */
         }
 
         /// <summary>
@@ -1288,6 +1291,12 @@ namespace Meta.Numerics.Statistics {
         void ICollection<double>.CopyTo (double[] array, int start) {
             if (array == null) throw new ArgumentNullException(nameof(array));
             data.CopyTo(array, start);
+        }
+
+        double IReadOnlyList<double>.this [int index] {
+            get {
+                return (data[index]);
+            }
         }
 
         /// <summary>

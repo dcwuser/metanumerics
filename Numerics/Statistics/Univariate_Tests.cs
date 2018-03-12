@@ -307,24 +307,26 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Performs a Shapiro-Francia test of normality on the sample.
         /// </summary>
+        /// <param name="sample">The sample to test for normality.</param>
         /// <returns>The result of the test.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than 16 values in the sample.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Shapiro%E2%80%93Francia_test"/>
-        public static TestResult ShapiroFranciaTest (this IReadOnlyList<double> x) {
+        public static TestResult ShapiroFranciaTest (this IReadOnlyList<double> sample) {
 
-            if (x == null) throw new ArgumentNullException(nameof(x));
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
 
-            int n = x.Count;
+            int n = sample.Count;
             if (n < 16) throw new InsufficientDataException();
 
             // Determine V = 1 - r^2
-            double mx = Mean(x);
+            double mx = Mean(sample);
             double cxx = 0.0;
             double cmm = 0.0;
             double cmx = 0.0;
-            int[] order = GetSortOrder(x);
+            int[] order = GetSortOrder(sample);
             for (int i = 0; i < n; i++) {
-                double zx = x[order[i]] - mx;
+                double zx = sample[order[i]] - mx;
                 // We could use symmetry to make half as many calls to NormalOrderStatistic,
                 // but the code would be less straightforward, because we can't proceed linearly
                 // through the data.
@@ -626,7 +628,8 @@ namespace Meta.Numerics.Statistics {
         /// <returns>ANOVA data, including an F-test comparing the between-group variance to
         /// the within-group variance.</returns>
         /// <remarks>
-        /// <para>The one-way ANOVA is an extension of the Student t-test (<see cref="StudentTTest(Sample,Sample)"/>)
+        /// <para>The one-way ANOVA is an extension of the Student t-test
+        /// (<see cref="StudentTTest(IReadOnlyCollection{double},IReadOnlyCollection{double})"/>)
         /// to more than two groups. The test's null hypothesis is that all the groups' data are drawn
         /// from the same distribution. If the null hypothesis is rejected, it indicates
         /// that at least one of the groups differs significantly from the others.</para>
@@ -640,7 +643,7 @@ namespace Meta.Numerics.Statistics {
         /// diagnose a significant difference! The ANOVA avoids the accumulation of risk
         /// by performing a single test at the required confidence level to test for
         /// any significant differences between the groups.</para>
-        /// <para>A one-way ANOVA performed on just two samples is equivilent to a
+        /// <para>A one-way ANOVA performed on just two samples is equivalent to a
         /// t-test (<see cref="Sample.StudentTTest(Sample,Sample)" />).</para>
         /// <para>ANOVA is an acronym for "Analysis of Variance". Do not be confused
         /// by the name and by the use of a ratio-of-variances test statistic: an
@@ -660,10 +663,12 @@ namespace Meta.Numerics.Statistics {
         /// parties tend to attract people with different heights.</para>
         /// <para>Given a continuous independent variable, binning in order to define
         /// groups and perform an ANOVA is generally not appropriate.
-        /// For exapmple, given the incomes and heights of a large number of people,
+        /// For example, given the incomes and heights of a large number of people,
         /// dividing these people into low-height, medium-height, and high-height groups
         /// and performing an ANOVA of the income of people in each group is not a
-        /// good way to test whether height influences income.
+        /// good way to test whether height influences income, first because the result
+        /// will be sensitive to the arbitrary boundaries you have chosen for the bins,
+        /// and second because the ANOVA has no notion of bin ordering.
         /// In a case like this, it would be better to put the data into a <see cref="BivariateSample"/> and
         /// perform a test of association, such as a <see cref="BivariateSample.PearsonRTest" />,
         /// <see cref="BivariateSample.SpearmanRhoTest" />, or <see cref="BivariateSample.KendallTauTest" />
@@ -677,8 +682,8 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentException"><paramref name="samples"/> contains fewer than two samples.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Analysis_of_variance"/>
         /// <seealso href="https://en.wikipedia.org/wiki/One-way_analysis_of_variance"/>
-        public static OneWayAnovaResult OneWayAnovaTest (params ICollection<double>[] samples) {
-            return (OneWayAnovaTest((ICollection<ICollection<double>>) samples));
+        public static OneWayAnovaResult OneWayAnovaTest (params IReadOnlyCollection<double>[] samples) {
+            return (OneWayAnovaTest((IReadOnlyCollection<IReadOnlyCollection<double>>) samples));
         }
 
         /// <summary>
@@ -688,9 +693,9 @@ namespace Meta.Numerics.Statistics {
         /// <returns>ANOVA data, including an F-test comparing the between-group variance to
         /// the within-group variance.</returns>
         /// <remarks>
-        /// <para>For detailed information, see <see cref="OneWayAnovaTest(ICollection{double}[])"/>.</para>
+        /// <para>For detailed information, see <see cref="OneWayAnovaTest(IReadOnlyCollection{double}[])"/>.</para>
         /// </remarks>
-        public static OneWayAnovaResult OneWayAnovaTest (ICollection<ICollection<double>> samples) {
+        public static OneWayAnovaResult OneWayAnovaTest (IReadOnlyCollection<IReadOnlyCollection<double>> samples) {
 
             if (samples == null) throw new ArgumentNullException(nameof(samples));
             if (samples.Count < 2) throw new ArgumentException("There must be at least two samples in the sample list.", nameof(samples));

@@ -191,7 +191,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than two values.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
-        public static ExponentialFitResult FitToSample (Sample sample) {
+        public static ExponentialFitResult FitToSample (IReadOnlyList<double> sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) throw new InsufficientDataException();
@@ -210,7 +210,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             // distribution of the mean is Gamma(n, \mu / n). This has mean \mu and variance
             // \mu^2 / n, so the asymptotic results are actually exact.
 
-            double lambda = sample.Mean;
+            double lambda = sample.Mean();
             double dLambda = lambda / Math.Sqrt(sample.Count);
 
             ContinuousDistribution distribution = new ExponentialDistribution(lambda);

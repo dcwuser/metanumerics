@@ -5,6 +5,7 @@ using System.Linq;
 
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
+using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 
@@ -381,15 +382,15 @@ namespace Test {
         }
 
         [TestMethod]
-        public void WeibullFit () {
+        public void WeibullFitSimple () {
 
             foreach (double alpha in new double[] { 0.031, 0.13, 1.3, 3.1, 13.1, 33.1, 313.1, 1313.1 }) {
                 WeibullDistribution W = new WeibullDistribution(2.2, alpha);
                 Sample S = CreateSample(W, 50);
-                FitResult R = WeibullDistribution.FitToSample(S);
-                Console.WriteLine("{0} ?= {1}, {2} ?= {3}", R.Parameter(0), W.Scale, R.Parameter(1), W.Shape);
-                Assert.IsTrue(R.Parameter(0).ConfidenceInterval(0.99).ClosedContains(W.Scale));
-                Assert.IsTrue(R.Parameter(1).ConfidenceInterval(0.99).ClosedContains(W.Shape));
+                WeibullFitResult R = WeibullDistribution.FitToSample(S);
+                Assert.IsTrue(R.Scale.ConfidenceInterval(0.99).ClosedContains(W.Scale));
+                Assert.IsTrue(R.Shape.ConfidenceInterval(0.99).ClosedContains(W.Shape));
+                Assert.IsTrue(R.GoodnessOfFit.Probability > 0.01);
             }
 
         }
@@ -417,20 +418,40 @@ namespace Test {
             // it should be the standard deviation of fit parameter values in a sample of many fits
 
             // define a population distribution 
-            ContinuousDistribution distribution = new WeibullDistribution(2.5, 1.5);
+            WeibullDistribution distribution = new WeibullDistribution(2.5, 1.5);
 
             // draw a lot of samples from it; fit each sample and
             // record the reported parameter value and error of each
             BivariateSample values = new BivariateSample();
             MultivariateSample uncertainties = new MultivariateSample(3);
+            FrameTable table = new FrameTable(
+                new ColumnDefinition<int>("Id"),
+                new ColumnDefinition<double>("Scale"),
+                new ColumnDefinition<double>("Shape"),
+                new ColumnDefinition<double>("ScaleVariance"),
+                new ColumnDefinition<double>("ShapeVariance"),
+                new ColumnDefinition<double>("ScaleShapeCovariance")
+            );
             for (int i = 0; i < 50; i++) {
                 Sample sample = CreateSample(distribution, 10, i);
-                FitResult fit = WeibullDistribution.FitToSample(sample);
-                UncertainValue a = fit.Parameter(0);
-                UncertainValue b = fit.Parameter(1);
+                WeibullFitResult fit = WeibullDistribution.FitToSample(sample);
+                UncertainValue a = fit.Scale;
+                UncertainValue b = fit.Shape;
                 values.Add(a.Value, b.Value);
-                uncertainties.Add(a.Uncertainty, b.Uncertainty, fit.Covariance(0,1));
+                uncertainties.Add(a.Uncertainty, b.Uncertainty, fit.Parameters.Covariance[0,1]);
+                table.AddRow(i, fit.Scale.Value, fit.Shape.Value,
+                    fit.Parameters.CovarianceOf("Scale", "Scale"),
+                    fit.Parameters.CovarianceOf("Shape", "Shape"),
+                    fit.Parameters.CovarianceOf("Scale", "Shape")
+                );
             }
+
+            Assert.IsTrue(table["Scale"].As<double>().PopulationMean().ConfidenceInterval(0.99).ClosedContains(distribution.Scale));
+            Assert.IsTrue(table["Shape"].As<double>().PopulationMean().ConfidenceInterval(0.99).ClosedContains(distribution.Shape));
+
+            Assert.IsTrue(table["Scale"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(table["ScaleVariance"].As<double>().Median()));
+            Assert.IsTrue(table["Shape"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(table["ShapeVariance"].As<double>().Median()));
+            Assert.IsTrue(table["Scale"].As<double>().PopulationCovariance(table["Shape"].As<double>()).ConfidenceInterval(0.99).ClosedContains(table["ScaleShapeCovariance"].As<double>().Median()));
 
             // the reported errors should agree with the standard deviation of the reported parameters
             Assert.IsTrue(values.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.Column(0).Mean));

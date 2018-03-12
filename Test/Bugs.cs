@@ -69,8 +69,8 @@ namespace Test {
                 12.876, 12.878, 12.879, 12.879, 12.881
             );
 
-            FitResult result = WeibullDistribution.FitToSample(sample);
-            Console.WriteLine("{0} {1}", result.Parameter(0), result.Parameter(1));
+            WeibullFitResult result = WeibullDistribution.FitToSample(sample);
+            Console.WriteLine("{0} {1}", result.Scale, result.Shape);
             Console.WriteLine(result.GoodnessOfFit.RightProbability);
         }
 
@@ -158,7 +158,7 @@ namespace Test {
 
             Sample s = new Sample();
             s.Add(0.00590056, 0.00654598, 0.0066506, 0.00679065, 0.008826);
-            FitResult r = WeibullDistribution.FitToSample(s);
+            WeibullFitResult r = WeibullDistribution.FitToSample(s);
 
         }
 
@@ -338,7 +338,14 @@ namespace Test {
         [TestMethod]
         public void Bug10 () {
 
-            // Fisher exact test didn't give same probability when rows were permuted
+            // Fisher exact test didn't give same probability when rows were permuted.
+            // To compute the Fisher exact probability, we iterate over all contingency tables
+            // with the same marginal totals and count their probability if it is less than or
+            // equal to the probability of the observed matrix.
+            // In particular for the symmetric case, the "opposite" table has the exact
+            // same probability. But there is floating point noise, so sometimes it's
+            // calculated probability is infinitisimally larger and isn't counted.
+            // To fix this, we special-case the symmetric case. 
 
             BinaryContingencyTable t1 = new BinaryContingencyTable(new int[,] {
                 { 18, 16 }, { 12, 14 }

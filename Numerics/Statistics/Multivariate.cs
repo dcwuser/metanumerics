@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 using Meta.Numerics.Analysis;
+using Meta.Numerics.Data;
 using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Statistics {
@@ -14,32 +16,144 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     public static class Multivariate {
 
-        /// <summary>
-        /// Performs a multi-variate linear regression.
-        /// </summary>
-        /// <param name="y">The dependent variable to be predicted by the regression.</param>
-        /// <param name="xComponents">The independent variables that serve as inputs to the regression function.</param>
-        /// <returns>The regression result.</returns>
-        public static MultiLinearRegressionResult MultiLinearRegression(this IReadOnlyList<double> y, params IReadOnlyList<double>[] xComponents) {
-            if (xComponents == null) throw new ArgumentNullException(nameof(xComponents));
-            if (y == null) throw new ArgumentNullException(nameof(y));
-            return (MultiLinearRegression(y, (IReadOnlyList<IReadOnlyList<double>>) xComponents));
+
+        public static MultiLinearRegressionResult MultiLinearRegression(this IReadOnlyList<double> yColumn, IReadOnlyDictionary<string, IReadOnlyList<double>> xColumnDictionary) {
+            if (yColumn == null) throw new ArgumentNullException(nameof(yColumn));
+            if (xColumnDictionary == null) throw new ArgumentNullException(nameof(xColumnDictionary));
+
+            List<string> xNames = new List<string>();
+            List<IReadOnlyList<double>> xColumns = new List<IReadOnlyList<double>>();
+            foreach(KeyValuePair<string, IReadOnlyList<double>> xEntry in xColumnDictionary) {
+                IReadOnlyList<double> xColumn = xEntry.Value;
+                if (xColumn == null) throw new ArgumentNullException("xColumn");
+                if (xColumn.Count != yColumn.Count) throw new DimensionMismatchException();
+                xNames.Add(xEntry.Key);
+                xColumns.Add(xEntry.Value);
+            }
+            xNames.Add("Intercept");
+            xColumns.Add(null);
+            return (MultiLinearRegression(yColumn, xColumns, xNames));
+        }
+
+        internal static MultiLinearRegressionResult MultiLinearRegression(IReadOnlyList<double> yColumn, IReadOnlyList<IReadOnlyList<double>> xColumns, IReadOnlyList<string> xNames) {
+            return (new MultiLinearRegressionResult(yColumn, xColumns, xNames));
+            /*
+            Debug.Assert(yColumn != null);
+            Debug.Assert(xColumns != null);
+            Debug.Assert(xColumns.Count > 0);
+
+            int n = yColumn.Count;
+            int m = xColumns.Count;
+            if (n <= m) throw new InsufficientDataException();
+
+            // Compute the design matrix X.
+            bool foundInterceptColumn = false;
+            RectangularMatrix X = new RectangularMatrix(n, m);
+            for (int c = 0; c < m; c++) {
+                IReadOnlyList<double> xColumn = xColumns[c];
+                if (xColumn == null) {
+                    Debug.Assert(xNames[c] == "Intercept");
+                    Debug.Assert(!foundInterceptColumn);
+                    for (int r = 0; r < n; r++) {
+                        X[r, c] = 1.0;
+                    }
+                    foundInterceptColumn = true;
+                } else {
+                    if (xColumn.Count != n) throw new DimensionMismatchException();
+                    for (int r = 0; r < n; r++) {
+                        X[r, c] = xColumn[r];
+                    }
+                }
+            }
+            Debug.Assert(foundInterceptColumn);
+            ColumnVector v = new ColumnVector(yColumn);
+
+            // Use X = QR to solve X b = y and compute C.
+            ColumnVector b;
+            SymmetricMatrix C;
+            QRDecomposition.SolveLinearSystem(X, v, out b, out C);
+
+            // For ANOVA, we will need mean and variance of y
+            int yn;
+            double ym, SST;
+            Univariate.ComputeMomentsUpToSecond(yColumn, out yn, out ym, out SST);
+
+            // Compute residuals
+            double SSR = 0.0;
+            double SSF = 0.0;
+            ColumnVector yHat = X * b;
+            List<double> residuals = new List<double>(n);
+            for (int i = 0; i < n; i++) {
+                double z = yColumn[i] - yHat[i];
+                residuals.Add(z);
+                SSR += z * z;
+                SSF += MoreMath.Sqr(yHat[i] - ym);
+            }
+            double sigma2 = SSR / (n - m);
+
+            // Scale up C by \sigma^2
+            // (It sure would be great to be able to overload *=.)
+            for (int i = 0; i < m; i++) {
+                for (int j = i; j < m; j++) {
+                    C[i, j] = C[i, j] * sigma2;
+                }
+            }
+
+            // Use sums-of-squares to do ANOVA
+            AnovaRow fit = new AnovaRow(SSF, m - 1);
+            AnovaRow residual = new AnovaRow(SSR, n - m);
+            AnovaRow total = new AnovaRow(SST, n - 1);
+            OneWayAnovaResult anova = new OneWayAnovaResult(fit, residual, total);
+
+            ParameterCollection parameters = new ParameterCollection(xNames, b, C);
+            return (new MultiLinearRegressionResult(parameters, anova, residuals));
+            */
         }
 
         /// <summary>
         /// Performs a multi-variate linear regression.
         /// </summary>
-        /// <param name="xComponents">The values of the indepdent variables that serve as inputs to the regression function.</param>
-        /// <param name="y">The values of the dependent variable to be predicted by the regression.</param>
+        /// <param name="yColumn">The dependent variable to be predicted by the regression.</param>
+        /// <param name="xColumns">The independent variables that serve as inputs to the regression function.</param>
         /// <returns>The regression result.</returns>
-        public static MultiLinearRegressionResult MultiLinearRegression (IReadOnlyList<double> y, IReadOnlyList<IReadOnlyList<double>> xComponents) {
-            if (y == null) throw new ArgumentNullException(nameof(y));
-            if (xComponents == null) throw new ArgumentNullException(nameof(xComponents));
+        public static MultiLinearRegressionResult MultiLinearRegression(this IReadOnlyList<double> yColumn, params IReadOnlyList<double>[] xColumns) {
+            if (xColumns == null) throw new ArgumentNullException(nameof(xColumns));
+            if (yColumn == null) throw new ArgumentNullException(nameof(yColumn));
+            return (MultiLinearRegression(yColumn, (IReadOnlyList<IReadOnlyList<double>>) xColumns));
+        }
 
-            int count = y.Count;
-            int dimension = xComponents.Count;
-            foreach (IReadOnlyList<double> xColumn in xComponents) {
-                if (xColumn == null) throw new ArgumentNullException(nameof(xComponents));
+        /// <summary>
+        /// Performs a multi-variate linear regression.
+        /// </summary>
+        /// <param name="xColumns">The values of the indepdent variables that serve as inputs to the regression function.</param>
+        /// <param name="yColumn">The values of the dependent variable to be predicted by the regression.</param>
+        /// <returns>The regression result.</returns>
+        public static MultiLinearRegressionResult MultiLinearRegression (IReadOnlyList<double> yColumn, IReadOnlyList<IReadOnlyList<double>> xColumns) {
+            if (yColumn == null) throw new ArgumentNullException(nameof(yColumn));
+            if (xColumns == null) throw new ArgumentNullException(nameof(xColumns));
+
+            List<string> xNames = new List<string>();
+            List<IReadOnlyList<double>> xColumnsCopy = new List<IReadOnlyList<double>>();
+            foreach (IReadOnlyList<double> xColumn in xColumns) {
+                if (xColumn == null) throw new ArgumentNullException("xColumn");
+                if (xColumn.Count != yColumn.Count) throw new DimensionMismatchException();
+                INamed named = xColumn as INamed;
+                if (named == null) {
+                    xNames.Add(xNames.Count.ToString());
+                } else {
+                    xNames.Add(named.Name);
+                }
+                xColumnsCopy.Add(xColumn);
+            }
+            xNames.Add("Intercept");
+            xColumnsCopy.Add(null);
+
+            return (MultiLinearRegression(yColumn, xColumnsCopy, xNames));
+            /*
+            int count = yColumn.Count;
+            int dimension = xColumns.Count;
+            foreach (IReadOnlyList<double> xColumn in xColumns) {
+                if (xColumn == null) throw new ArgumentNullException(nameof(xColumns));
                 if (xColumn.Count != count) throw new DimensionMismatchException();
             }
 
@@ -52,10 +166,10 @@ namespace Meta.Numerics.Statistics {
             ColumnVector v = new ColumnVector(n);
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < dimension; j++) {
-                    X[i, j] = xComponents[j][i];
+                    X[i, j] = xColumns[j][i];
                 }
                 X[i, dimension] = 1.0;
-                v[i] = y[i];
+                v[i] = yColumn[i];
             }
 
             // Use X = QR to solve X b = y and compute C.
@@ -66,7 +180,7 @@ namespace Meta.Numerics.Statistics {
             // For ANOVA, we will need mean and variance of y
             int yn;
             double ym, SST;
-            Univariate.ComputeMomentsUpToSecond(y, out yn, out ym, out SST);
+            Univariate.ComputeMomentsUpToSecond(yColumn, out yn, out ym, out SST);
 
             // Compute residuals
             double SSR = 0.0;
@@ -74,7 +188,7 @@ namespace Meta.Numerics.Statistics {
             ColumnVector yHat = X * b;
             List<double> residuals = new List<double>(count);
             for (int i = 0; i < count; i++) {
-                double z = y[i] - yHat[i];
+                double z = yColumn[i] - yHat[i];
                 residuals.Add(z);
                 SSR += z * z;
                 SSF += MoreMath.Sqr(yHat[i] - ym);
@@ -104,7 +218,7 @@ namespace Meta.Numerics.Statistics {
             ParameterCollection parameters = new ParameterCollection(names, b, C);
 
             return (new MultiLinearRegressionResult(parameters, anova, residuals));
-
+            */
         }
 
         /// <summary>

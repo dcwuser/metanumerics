@@ -14,7 +14,7 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     public static class Bivariate {
 
-        private static void ComputeBivariateMomentsUpToTwo (IEnumerable<double> x, IEnumerable<double> y, out int n, out double xMean, out double yMean, out double xxSum, out double yySum, out double xySum) {
+        internal static void ComputeBivariateMomentsUpToTwo (IEnumerable<double> x, IEnumerable<double> y, out int n, out double xMean, out double yMean, out double xxSum, out double yySum, out double xySum) {
 
             Debug.Assert(x != null);
             Debug.Assert(y != null);
@@ -161,73 +161,12 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="DimensionMismatchException"><paramref name="x"/> and <paramref name="y"/> do not contain the same number of entries.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
         public static LinearRegressionResult LinearRegression(this IReadOnlyList<double> y, IReadOnlyList<double> x) {
-
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
             if (x.Count < 3) throw new InsufficientDataException();
 
-            int n;
-            double xMean, yMean, xxSum, yySum, xySum;
-            ComputeBivariateMomentsUpToTwo(x, y, out n, out xMean, out yMean, out xxSum, out yySum, out xySum);
-
-            // Compute the best-fit parameters
-            double b = xySum / xxSum;
-            double a = yMean - b * xMean;
-            // Since cov(x,y) = (n S_xy - S_x S_y)/n^2 and var(x) = (n S_xx - S_x^2) / n^2,
-            // these formulas are equivilent to the  textbook formulas involving sums,
-            // but are more stable against round-off.
-            ColumnVector v = new ColumnVector(a, b);
-
-            // Compute Pearson r value
-            double r = xySum / Math.Sqrt(xxSum * yySum);
-            TestResult rTest = new TestResult("r", r, TestType.TwoTailed, new Distributions.PearsonRDistribution(n));
-
-            // Compute residuals and other sum-of-squares
-            double SSR = 0.0;
-            double SSF = 0.0;
-            List<double> residuals = new List<double>(n);
-            for (int i = 0; i < n; i++) {
-                double yPredicted = a + b * x[i];
-                double z = y[i] - yPredicted;
-                SSR += MoreMath.Sqr(z);
-                SSF += MoreMath.Sqr(yPredicted - yMean);
-                residuals.Add(z);
-            }
-            double SST = yySum;
-            // Note SST = SSF + SSR because \sum_{i} ( y_i - \bar{y})^2 = \sum_i (y_i - f_i)^2 + \sum_i (f_i - \bar{y})^2
-
-            // Use sums-of-squares to do ANOVA
-            AnovaRow fit = new AnovaRow(SSF, 1);
-            AnovaRow residual = new AnovaRow(SSR, n - 2);
-            AnovaRow total = new AnovaRow(SST, n - 1);
-            OneWayAnovaResult anova = new OneWayAnovaResult(fit, residual, total);
-
-            // Compute covariance of parameters matrix
-            double xVar = xxSum / n;
-            double s2 = SSR / (n - 2);
-            double cbb = s2 / xVar / n;
-            double cab = -xMean * cbb;
-            double caa = (xVar + xMean * xMean) * cbb;
-
-            SymmetricMatrix C = new SymmetricMatrix(2);
-            C[0, 0] = caa;
-            C[1, 1] = cbb;
-            C[0, 1] = cab;
-
-            // Package the parameters
-            ParameterCollection parameters = new ParameterCollection(
-                new string[] { "Intercept", "Slope" }, v, C
-            );
-
-            // Prepare the prediction function
-            Func<double, UncertainValue> predict = (double xValue) => {
-                double yPredicted = a + b * xValue;
-                return (new UncertainValue(yPredicted, Math.Sqrt(s2 * (1.0 + (1.0 + MoreMath.Sqr(xValue - xMean) / xVar) / n))));
-            };
-
-            return (new LinearRegressionResult(parameters, rTest, anova, residuals, predict));
-
+            return (new LinearRegressionResult(x, y));
         }
 
         /// <summary>
@@ -242,80 +181,44 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="m"/> is negative.</exception>
         /// <exception cref="InsufficientDataException">There are fewer data points than coefficients to be fit.</exception>
         public static PolynomialRegressionResult PolynomialRegression (this IReadOnlyList<double> y, IReadOnlyList<double> x, int m) {
+            return (new PolynomialRegressionResult(x, y, m));
+        }
 
-            if (x == null) throw new ArgumentNullException(nameof(x));
+
+        public static NonlinearRegressionResult NonlinearRegression (
+            this IReadOnlyList<double> y,
+            IReadOnlyList<double> x,
+            Func<IReadOnlyDictionary<string, double>, double, double> function,
+            IReadOnlyDictionary<string, double> start
+        ) {
             if (y == null) throw new ArgumentNullException(nameof(y));
+            if (x == null) throw new ArgumentNullException(nameof(x));
+            if (function == null) throw new ArgumentNullException(nameof(function));
+            if (start == null) throw new ArgumentNullException(nameof(start));
             if (x.Count != y.Count) throw new DimensionMismatchException();
-            if (m < 0) throw new ArgumentOutOfRangeException(nameof(m));
 
-            int n = x.Count;
-            if (n < (m + 1)) throw new InsufficientDataException();
+            List<string> names = start.Keys.ToList();
+            List<double> startValues = start.Values.ToList();
 
-            // Construct the n X m design matrix X_{ij} = x_{i}^{j}
-            RectangularMatrix X = new RectangularMatrix(n, m + 1);
-            ColumnVector Y = new ColumnVector(n);
-            for (int i = 0; i < n; i++) {
-                double x_i = x[i];
-                X[i, 0] = 1.0;
-                for (int j = 1; j <= m; j++) {
-                    X[i, j] = X[i, j - 1] * x_i;
-                }
-                double y_i = y[i];
-                Y[i] = y_i;
-            }
+            Func<IReadOnlyList<double>, double, double> f2 = (a, x2) => {
+                Debug.Assert(a.Count == names.Count);
+                Dictionary<string, double> parameters = new Dictionary<string, double>(names.Count);
+                for (int i = 0; i < a.Count; i++) {
+                    string name = names[i];
+                    parameters.Add(name, a[i]);
+                };
+                return (function(parameters, x2));
+            };
 
-            // Use X = QR to solve X b = y and compute C
-            ColumnVector b;
-            SymmetricMatrix C;
-            QRDecomposition.SolveLinearSystem(X, Y, out b, out C);
-
-            // Compute mean and total sum of squares.
-            // This could be done inside loop above, but this way we get to re-use code from Univariate.
-            double yMean, SST;
-            Univariate.ComputeMomentsUpToSecond(y, out n, out yMean, out SST);
-
-            // Compute residuals
-            double SSR = 0.0;
-            double SSF = 0.0;
-            ColumnVector yHat = X * b;
-            List<double> residuals = new List<double>(n);
-            for (int i = 0; i < n; i++) {
-                double z = y[i] - yHat[i];
-                residuals.Add(z);
-                SSR += z * z;
-                SSF += MoreMath.Sqr(yHat[i] - yMean);
-            }
-            double sigma2 = SSR / (n - (m + 1));
-
-            // Scale up C by \sigma^2
-            // (It sure would be great to be able to overload *=.)
-            for (int i = 0; i <= m; i++) {
-                for (int j = i; j <= m; j++) {
-                    C[i, j] = C[i, j] * sigma2;
-                }
-            }
-
-            // Use sums-of-squares to do ANOVA
-            AnovaRow fit = new AnovaRow(SSF, m);
-            AnovaRow residual = new AnovaRow(SSR, n - (m + 1));
-            AnovaRow total = new AnovaRow(SST, n - 1);
-            OneWayAnovaResult anova = new OneWayAnovaResult(fit, residual, total);
-
-            string[] names = new string[m + 1];
-            names[0] = "[1]";
-            if (m > 0) names[1] = "[x]";
-            for (int i = 2; i <= m; i++) names[i] = $"[x^{i}]";
-            ParameterCollection parameters = new ParameterCollection(names, b, C);
-
-            return (new PolynomialRegressionResult(parameters, anova, residuals));
+            return new NonlinearRegressionResult(x, y, f2, startValues, names);
         }
 
         /// <summary>
         /// Finds the parameterized function that best fits the data.
         /// </summary>
         /// <param name="x">The ordinate values.</param>
-        /// <param name="y">The abcissa values.</param>
-        /// <param name="f">The parameterized function.</param>
+        /// <param name="y">The abscissa values.</param>
+        /// <param name="function">The parameterized function.</param>
         /// <param name="start">An initial guess for the parameters.</param>
         /// <returns>The fit result.</returns>
         /// <remarks>
@@ -324,58 +227,34 @@ namespace Meta.Numerics.Statistics {
         /// the supplied fit function and initial guess vector.
         /// </para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> or <paramref name="f"/> or <paramref name="start"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> or <paramref name="function"/> or <paramref name="start"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException">The sizes of <paramref name="x"/> and <paramref name="y"/> do not match.</exception>
         /// <exception cref="InsufficientDataException">There are not more data points than fit parameters.</exception>
         /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
         /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
-        public static RegressionResult NonlinearRegression (this IReadOnlyList<double> y, IReadOnlyList<double> x, Func<IReadOnlyList<double>, double, double> f, IReadOnlyList<KeyValuePair<string,double>> start) {
+        public static NonlinearRegressionResult NonlinearRegression (
+            this IReadOnlyList<double> y,
+            IReadOnlyList<double> x,
+            Func<IReadOnlyList<double>, double, double> function,
+            IReadOnlyList<double> start) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
-            if (f == null) throw new ArgumentNullException(nameof(f));
+            if (function == null) throw new ArgumentNullException(nameof(function));
             if (start == null) throw new ArgumentNullException(nameof(start));
             if (x.Count != y.Count) throw new DimensionMismatchException();
 
-            int n = x.Count;
-            int d = start.Count;
-            if (n <= d) throw new InsufficientDataException();
+            List<string> names = new List<string>(start.Count);
+            for (int i = 0; i < start.Count; i++) names.Add(i.ToString());
 
-            double[] startValues = new double[start.Count];
-            for (int i = 0; i < startValues.Length; i++) startValues[i] = start[i].Value;
-
-            MultiExtremum min = MultiFunctionMath.FindLocalMinimum((IReadOnlyList<double> a) => {
-                double ss = 0.0;
-                for (int i = 0; i < n; i++) {
-                    double r = y[i] - f(a, x[i]);
-                    ss += r * r;
-                }
-                return (ss);
-            }, startValues);
-
-            CholeskyDecomposition cholesky = min.HessianMatrix.CholeskyDecomposition();
-            if (cholesky == null) throw new DivideByZeroException();
-            SymmetricMatrix curvature = cholesky.Inverse();
-            curvature = (2.0 * min.Value / (n - d)) * curvature;
-
-            string[] names = new string[d];
-            for (int i = 0; i < names.Length; i++) names[i] = start[i].Key;
-            ParameterCollection parameters = new ParameterCollection(names, min.Location, curvature);
-
-            List<double> residuals = new List<double>(n);
-            for (int i = 0; i < n; i++) {
-                double r = y[i] - f(min.Location, x[i]);
-                residuals.Add(r);
-            }
-
-            RegressionResult result = new RegressionResult(parameters, -min.Value, residuals);
-
-            return (result);
+            return (new NonlinearRegressionResult(x, y, function, start, names));
         }
 
         /// <summary>
         /// Computes the best-fit linear logistic regression from the data.
         /// </summary>
+        /// <param name="y">The values of the dependent variable.</param>
+        /// <param name="x">The values of the independent variable.</param>
         /// <returns>The fit result.</returns>
         /// <remarks>
         /// <para>Linear logistic regression is a way to fit binary outcome data to a linear model.</para>
@@ -396,7 +275,7 @@ namespace Meta.Numerics.Statistics {
             int n = x.Count;
             if (n < 3) throw new InsufficientDataException();
 
-            // Define the log-likelyhood as a function of the parameters
+            // Define the log-likelihood as a function of the parameters
             Func<IReadOnlyList<double>, double> f = delegate (IReadOnlyList<double> a) {
                 Debug.Assert(a != null);
                 Debug.Assert(a.Count == 2);
@@ -442,6 +321,8 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Performs a Pearson correlation test for association.
         /// </summary>
+        /// <param name="x">The values of the first variable.</param>
+        /// <param name="y">The values of the second variable.</param>
         /// <returns>The result of the test.</returns>
         /// <remarks>
         /// <para>This test measures the strength of the linear correlation between two variables. The
@@ -481,11 +362,13 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Performs a Spearman rank-order test of association between the two variables.
         /// </summary>
+        /// <param name="x">The values of the first variable.</param>
+        /// <param name="y">The values of the second variable.</param>
         /// <returns>The result of the test.</returns>
         /// <remarks>
         /// <para>The Spearman rank-order test of association is a non-parametric test for association between
         /// two variables. The test statistic rho is the correlation coefficient of the <em>rank</em> of
-        /// each entry in the sample. It is thus invariant over monotonic reparameterizations of the data,
+        /// each entry in the sample. It is thus invariant over monotonic re-parameterizations of the data,
         /// and will, for example, detect a quadratic or exponential association just as well as a linear
         /// association.</para>
         /// <para>The Spearman rank-order test requires O(N log N) operations.</para>
@@ -542,24 +425,25 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Performs a Kendall concordance test for association.
         /// </summary>
+        /// <param name="x">The values of the first variable.</param>
+        /// <param name="y">The values of the second variable.</param>
         /// <returns>The result of the test.</returns>
         /// <remarks>
-        /// <para>Kendall's &#x3C4; is a non-parameteric and robust test of association
+        /// <para>Kendall's &#x3C4; is a non-parametric and robust test of association
         /// between two variables. It simply measures the number of cases where an increase
-        /// in one variable is associated with an increase in the other (corcordant pairs),
+        /// in one variable is associated with an increase in the other (concordant pairs),
         /// compared with the number of cases where an increase in one variable is associated
         /// with a decrease in the other (discordant pairs).</para>
         /// <para>Because &#x3C4; depends only on the sign
-        /// of a change and not its magnitude, it is not skewed by outliers exhibiting very large
-        /// changes, nor by cases where the degree of change in one variable associated with
-        /// a given change in the other changes over the range of the varibles. Of course, it may
-        /// still miss an association whoose sign changes over the range of the variables. For example,
+        /// of the difference and not its magnitude, it is not skewed by outliers exhibiting very large
+        /// changes, nor by cases where the degree of difference
+        /// changes over the ranges of the variables. Of course, it may
+        /// still miss an association whose sign changes over the range of the variables. For example,
         /// if data points lie along a semi-circle in the plane, an increase in the first variable
         /// is associated with an increase in the second variable along the rising arc and and decrease in
-        /// the second variable along the falling arc. No test that looks for single-signed correlation
-        /// will catch this association.
+        /// the second variable along the falling arc.
         /// </para>
-        /// <para>Because it examine all pairs of data points, the Kendall test requires
+        /// <para>Because it examines all pairs of data points, the Kendall test requires
         /// O(N<sup>2</sup>) operations. It is thus impractical for very large data sets. While
         /// not quite as robust as the Kendall test, the Spearman test is a good fall-back in such cases.</para>
         /// </remarks>
@@ -611,13 +495,15 @@ namespace Meta.Numerics.Statistics {
                 tauDistribution = new NormalDistribution(0.0, dt);
             }
 
-            return (new TestResult(t, tauDistribution));
+            return (new TestResult("τ", t, TestType.TwoTailed, tauDistribution));
 
         }
 
         /// <summary>
         /// Performs a paired Student t-test.
         /// </summary>
+        /// <param name="x">The values of the first variable.</param>
+        /// <param name="y">The values of the second variable.</param>
         /// <returns>The result of the test.</returns>
         /// <remarks>
         /// <para>Like a two-sample, unpaired t-test (<see cref="Sample.StudentTTest(Sample,Sample)" />),
@@ -664,6 +550,8 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Performs a Wilcoxon signed rank test.
         /// </summary>
+        /// <param name="x">The values of the first variable.</param>
+        /// <param name="y">The values of the second variable.</param>
         /// <returns>The result of the test.</returns>
         /// <remarks>
         /// <para>The Wilcoxon signed rank test is a non-parametric alternative to the
@@ -719,7 +607,7 @@ namespace Meta.Numerics.Statistics {
         /// <typeparam name="C">The type of column data</typeparam>
         /// <param name="rowValues">The data values for rows.</param>
         /// <param name="columnValues">The data values for columns.</param>
-        /// <returns>A cross-tabular summary of the number of joint occurences of each row and column value.</returns>
+        /// <returns>A cross-tabular summary of the number of joint occurrences of each row and column value.</returns>
         public static ContingencyTable<R, C> Crosstabs<R, C> (IReadOnlyList<R> rowValues, IReadOnlyList<C> columnValues) {
 
             if (rowValues == null) throw new ArgumentNullException(nameof(rowValues));
@@ -728,7 +616,7 @@ namespace Meta.Numerics.Statistics {
 
             // This is coded as a two passes over the data. The first pass determines
             // the distinct row and column values. The second pass determines the cell counts.
-            // It's possible to do this in one pass, but we need auxiluary memory and/or
+            // It's possible to do this in one pass, but we need auxiliary memory and/or
             // dynamic storage and the details become messier.
 
             // Determine the distinct row and column values

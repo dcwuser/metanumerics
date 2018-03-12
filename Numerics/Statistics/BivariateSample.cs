@@ -459,11 +459,10 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are not more data points than fit parameters.</exception>
         /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
         /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
-        public RegressionResult NonlinearRegression (Func<IReadOnlyList<double>, double, double> f, IReadOnlyList<double> start) {
+        public NonlinearRegressionResult NonlinearRegression (Func<IReadOnlyList<double>, double, double> f, IReadOnlyList<double> start) {
             if (start == null) throw new ArgumentNullException(nameof(start));
             KeyValuePair<string, double>[] startParameters = new KeyValuePair<string, double>[start.Count];
-            for (int i = 0; i < startParameters.Length; i++) startParameters[i] = new KeyValuePair<string, double>($"Parameter{i}", start[i]);
-            return (Bivariate.NonlinearRegression(yData, xData, f, startParameters));
+            return (Bivariate.NonlinearRegression(yData, xData, f, start));
         }
 
         /// <summary>

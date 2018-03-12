@@ -43,6 +43,7 @@ namespace Meta.Numerics.Statistics {
             throw new InvalidOperationException();
         }
 
+        /*
         /// <summary>
         /// Gets the log-likelihood value of the fit.
         /// </summary>
@@ -52,46 +53,19 @@ namespace Meta.Numerics.Statistics {
                 return (logLikelihood);
             }
         }
-
-    }
-
-    // Rename to NonlinearRegressionResult or GeneralRegressionResult
-    // Make residuals into a list
-
-    /// <summary>
-    /// Represents the result of a regression fit.
-    /// </summary>
-    public class RegressionResult : BaseFitResult {
-
-        internal RegressionResult (ParameterCollection parameters, double logLikelyhood, List<double> residuals) : base(parameters, logLikelyhood) {
-            Debug.Assert(residuals != null);
-            this.residuals = residuals;
-        }
-
-        private readonly List<double> residuals;
-
-        /// <summary>
-        /// Gets the residuals.
-        /// </summary>
-        public virtual IReadOnlyList<double> Residuals {
-            get {
-                return (residuals);
-            }
-        }
-
+        */
     }
 
     /// <summary>
     /// Represents the result of a general linear regression.
     /// </summary>
-    public class GeneralLinearRegressionResult : RegressionResult {
+    public abstract class GeneralLinearRegressionResult : BaseFitResult {
 
-        internal GeneralLinearRegressionResult (ParameterCollection parameters, OneWayAnovaResult anova, List<double> residuals) : base(parameters, Double.NaN, residuals) {
-            Debug.Assert(anova != null);
-            this.anova = anova;
+        internal GeneralLinearRegressionResult () : base() {
+            this.anova = new Lazy<OneWayAnovaResult>(CreateAnova);
         }
 
-        private readonly OneWayAnovaResult anova;
+        private readonly Lazy<OneWayAnovaResult> anova;
 
         /// <summary>
         /// Gets an estimate of the intercept.
@@ -127,9 +101,11 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public virtual OneWayAnovaResult Anova {
             get {
-                return (anova);
+                return (anova.Value);
             }
         }
+
+        internal abstract OneWayAnovaResult CreateAnova ();
 
     }
 

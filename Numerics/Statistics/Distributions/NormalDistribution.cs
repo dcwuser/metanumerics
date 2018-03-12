@@ -199,7 +199,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The result of the fit.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
-        public static NormalFitResult FitToSample (Sample sample) {
+        public static NormalFitResult FitToSample (IReadOnlyList<double> sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
@@ -221,11 +221,17 @@ namespace Meta.Numerics.Statistics.Distributions {
             //   m  = \frac{1}{n} \sum_i x_i \sim N(\mu, \sigma / \sqrt{n}).
             // which means the estimator m is normally distributed with mean \mu and standard deviation \sigma / \sqrt{n}.
 
+            int n;
+            double m, v;
+            Univariate.ComputeMomentsUpToSecond(sample, out n, out m, out v);
+            v = v / n;
+            double dm = Math.Sqrt(v / n);
+            /*
             int n = sample.Count;
             double m = sample.Mean;
             double v = sample.Variance;
             double dm = Math.Sqrt(v / n);
-
+            */
             // Next the variance estimator. By the definition of the chi squared distribution and a bit of algebra that
             // reduces the degrees of freedom by one, \sum_i ( \frac{x_i - m}{\sigma} )^2 \sim \chi^2(n - 1), which has
             // mean n - 1 and variance 2(n-1). Therefore the estimator

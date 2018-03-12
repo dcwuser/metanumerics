@@ -347,6 +347,26 @@ namespace Meta.Numerics.Statistics {
         
         private MultiLinearRegressionResult LinearRegression_Internal (int outputIndex) {
 
+            IReadOnlyList<double> yColumn = storage[outputIndex];
+            IReadOnlyList<double>[] xColumns = new IReadOnlyList<double>[Dimension];
+            string[] xNames = new string[Dimension];
+            for (int c = 0; c < Dimension; c++) {
+                if (c == outputIndex) {
+                    xColumns[c] = null;
+                    xNames[c] = "Intercept";
+                } else {
+                    SampleStorage xColumn = storage[c];
+                    xColumns[c] = xColumn;
+                    if (String.IsNullOrWhiteSpace(xColumn.Name)) {
+                        xNames[c] = c.ToString();
+                    } else {
+                        xNames[c] = xColumn.Name;
+                    }
+                }
+            }
+
+            return (Multivariate.MultiLinearRegression(yColumn, xColumns, xNames));
+            /*
             // To do a fit, we need more data than parameters.
             if (Count < Dimension) throw new InsufficientDataException();
 
@@ -413,7 +433,7 @@ namespace Meta.Numerics.Statistics {
             ParameterCollection parameters = new ParameterCollection(names, b, C);
 
             return (new MultiLinearRegressionResult(parameters, anova, residuals));
-
+            */
         }
 
 
@@ -645,6 +665,7 @@ namespace Meta.Numerics.Statistics {
         /// Compute k-means clusters of the data.
         /// </summary>
         /// <param name="m">The number of clusters to compute.</param>
+        /// <returns>A description of the identified clusters.</returns>
         public MeansClusteringResult MeansClustering (int m) {
 
             if ((m <= 0) || (m >= this.Count)) throw new ArgumentOutOfRangeException(nameof(m));

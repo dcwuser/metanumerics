@@ -105,7 +105,7 @@ namespace Meta.Numerics.Data
 
     }
 
-    internal class TypedFrameColumn<T> : IReadOnlyList<T> {
+    internal class TypedFrameColumn<T> : IReadOnlyList<T>, INamed {
 
         public TypedFrameColumn(NamedList<T> column, List<int> map) {
             this.column = column;
@@ -114,6 +114,12 @@ namespace Meta.Numerics.Data
 
         private NamedList<T> column;
         private List<int> map;
+
+        public string Name {
+            get {
+                return (column.Name);
+            }
+        }
 
         public T this[int index] {
             get {
@@ -138,7 +144,9 @@ namespace Meta.Numerics.Data
         }
     }
 
-    internal class ConvertedFrameColumn<T> : IReadOnlyList<T> {
+    // Try to add Cast or something to support Nullable<->Non-nullable conversions
+
+    internal class ConvertedFrameColumn<T> : IReadOnlyList<T>, INamed {
 
         public ConvertedFrameColumn(NamedList column, List<int> map) {
             this.column = column;
@@ -148,9 +156,16 @@ namespace Meta.Numerics.Data
         private NamedList column;
         private List<int> map;
 
+        public string Name {
+            get {
+                return (column.Name);
+            }
+        }
+
         public T this[int index] {
             get {
-                return ((T) column.GetItem(map[index]));
+                object value = column.GetItem(map[index]);
+                return ((T) Convert.ChangeType(value, typeof(T)));
             }
         }
 
@@ -162,7 +177,8 @@ namespace Meta.Numerics.Data
 
         public IEnumerator<T> GetEnumerator () {
             foreach (int index in map) {
-                yield return ((T) column.GetItem(index));
+                object value = column.GetItem(index);
+                yield return ((T) Convert.ChangeType(value, typeof(T)));
             }
         }
 
@@ -204,6 +220,12 @@ namespace Meta.Numerics.Data
         IEnumerator IEnumerable.GetEnumerator () {
             return (((IEnumerable<TOut>) this).GetEnumerator());
         }
+    }
+
+    internal interface INamed {
+
+        string Name { get; }
+
     }
 
 }

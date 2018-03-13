@@ -254,13 +254,11 @@ namespace Test {
 
             // fit to normal should be bad
             NormalFitResult nfit = NormalDistribution.FitToSample(sample);
-            Console.WriteLine("P_n = {0}", nfit.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(nfit.GoodnessOfFit.LeftProbability > 0.95);
+            Assert.IsTrue(nfit.GoodnessOfFit.Probability < 0.05);
 
             // fit to lognormal should be good
             FitResult efit = LognormalDistribution.FitToSample(sample);
-            Console.WriteLine("P_e = {0}", efit.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(efit.GoodnessOfFit.LeftProbability < 0.95);
+            Assert.IsTrue(efit.GoodnessOfFit.Probability > 0.05);
             Assert.IsTrue(efit.Parameter(0).ConfidenceInterval(0.95).ClosedContains(distribution.Mu));
             Assert.IsTrue(efit.Parameter(1).ConfidenceInterval(0.95).ClosedContains(distribution.Sigma));
 
@@ -279,11 +277,11 @@ namespace Test {
             FitResult RB = BetaDistribution.FitToSample(S);
             Assert.IsTrue(RB.Parameter(0).ConfidenceInterval(0.99).ClosedContains(B.Alpha));
             Assert.IsTrue(RB.Parameter(1).ConfidenceInterval(0.99).ClosedContains(B.Beta));
-            Assert.IsTrue(RB.GoodnessOfFit.LeftProbability < 0.99);
+            Assert.IsTrue(RB.GoodnessOfFit.Probability > 0.05);
 
             // Fit to a normal distribution should be bad
             NormalFitResult RN = NormalDistribution.FitToSample(S);
-            Assert.IsTrue(RN.GoodnessOfFit.LeftProbability > 0.99);
+            Assert.IsTrue(RN.GoodnessOfFit.Probability < 0.05);
         }
 
         [TestMethod]
@@ -328,7 +326,7 @@ namespace Test {
             FitResult R = GammaDistribution.FitToSample(S);
             Assert.IsTrue(R.Parameter(0).ConfidenceInterval(0.95).ClosedContains(B.Shape));
             Assert.IsTrue(R.Parameter(1).ConfidenceInterval(0.95).ClosedContains(B.Scale));
-            Assert.IsTrue(R.GoodnessOfFit.LeftProbability < 0.95);
+            Assert.IsTrue(R.GoodnessOfFit.Probability > 0.05);
 
         }
 
@@ -364,21 +362,17 @@ namespace Test {
 
         [TestMethod]
         public void SampleFitChiSquaredTest () {
-
             ContinuousDistribution distribution = new ChiSquaredDistribution(4);
             Sample sample = CreateSample(distribution, 100);
 
             // fit to normal should be bad
-            // this is harder than others, because a chi^2 isn't so very different from a normal; to help, increse N or decrease vu
+            // this is harder than others, because a chi^2 isn't so very different from a normal; to help, increase N or decrease nu
             NormalFitResult nfit = NormalDistribution.FitToSample(sample);
-            Console.WriteLine("P_n = {0}", nfit.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(nfit.GoodnessOfFit.LeftProbability > 0.95, String.Format("P_n = {0}", nfit.GoodnessOfFit.LeftProbability));
+            Assert.IsTrue(nfit.GoodnessOfFit.Probability < 0.05);
 
             // fit to exponential should also be bad
             ExponentialFitResult efit = ExponentialDistribution.FitToSample(sample);
-            Console.WriteLine("P_e = {0}", efit.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(efit.GoodnessOfFit.LeftProbability > 0.95, String.Format("P_e = {0}", efit.GoodnessOfFit.LeftProbability));
-
+            Assert.IsTrue(efit.GoodnessOfFit.Probability < 0.05);
         }
 
         [TestMethod]
@@ -473,14 +467,9 @@ namespace Test {
             for (int i = 0; i < 100; i++) {
 
                 // each sample has 9 values
-                Sample xSample = new Sample();
-                for (int j = 0; j < 9; j++) {
-                    xSample.Add(xDistribution.GetRandomValue(rng));
-                }
-                //Sample xSample = CreateSample(xDistribution, 10, i);
+                List<double> xSample = TestUtilities.CreateDataSample(rng, xDistribution, 9).ToList();
                 TestResult tResult = xSample.StudentTTest(2.0);
                 double t = tResult.Statistic;
-                Console.WriteLine("t = {0}", t);
                 tSample.Add(t);
             }
 
@@ -491,17 +480,14 @@ namespace Test {
             ContinuousDistribution tDistribution = new StudentDistribution(9);
 
             // check on the mean
-            Console.WriteLine("m = {0} vs. {1}", tSample.PopulationMean, tDistribution.Mean);
-            Assert.IsTrue(tSample.PopulationMean.ConfidenceInterval(0.95).ClosedContains(tDistribution.Mean), String.Format("{0} vs. {1}", tSample.PopulationMean, tDistribution.Mean));
+            Assert.IsTrue(tSample.PopulationMean.ConfidenceInterval(0.95).ClosedContains(tDistribution.Mean));
 
             // check on the standard deviation
-            Console.WriteLine("s = {0} vs. {1}", tSample.PopulationStandardDeviation, tDistribution.StandardDeviation);
             Assert.IsTrue(tSample.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(tDistribution.StandardDeviation));
 
             // do a KS test
             TestResult ksResult = tSample.KolmogorovSmirnovTest(tDistribution);
-            Assert.IsTrue(ksResult.LeftProbability < 0.95);
-            Console.WriteLine("D = {0}", ksResult.Statistic);
+            Assert.IsTrue(ksResult.Probability > 0.05);
 
             // check that we can distinguish the t distribution from a normal distribution?
         }
@@ -575,27 +561,20 @@ namespace Test {
             Console.WriteLine("P={0} => D={1}", 0.99, kd.InverseLeftProbability(0.99));
 
             // cross-test using KS; like samples should agree and unlike samples should be distinguished
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-
-                    //aSamples[0] = new Sample(new double[] { 10, 19, 15, 20, 12, 8, 15, 21 });
-                    //bSamples[0] = new Sample(new double[] { 15, 22, 17, 9, 12, 10, 29, 11, 25, 31 });
-
-                    //foreach (double datum in aSamples[i]) Console.WriteLine("a={0}", datum);
-                    //foreach (double datum in bSamples[j]) Console.WriteLine("b={0}", datum);
+            for (int i = 0; i < aSamples.Length; i++) {
+                for (int j = 0; j < bSamples.Length; j++) {
 
                     TestResult result = Sample.KolmogorovSmirnovTest(aSamples[i], bSamples[j]);
-                    Console.WriteLine("{0} v. {1}: D={2} P={3}", i, j, result.Statistic, result.LeftProbability);
                     if (i == j) {
-                        Assert.IsTrue(result.LeftProbability < 0.90);
+                        Assert.IsTrue(result.Probability > 0.05);
                     } else {
-                        Assert.IsTrue(result.LeftProbability > 0.90);
+                        Assert.IsTrue(result.Probability < 0.05);
                     }
 
                     // the order shouldn't matter
                     TestResult reverse = Sample.KolmogorovSmirnovTest(bSamples[j], aSamples[i]);
                     Assert.IsTrue(reverse.Statistic == result.Statistic);
-                    Assert.IsTrue(reverse.RightProbability == result.RightProbability);
+                    Assert.IsTrue(reverse.Probability == result.Probability);
 
                 }
             }
@@ -641,95 +620,96 @@ namespace Test {
         [TestMethod]
         public void SampleKolmogorovSmirnovTest () {
 
-            // this test has a whiff of meta-statistics about it
-            // we want to make sure that the KS test statistic D is distributed according to the Kolmogorov
-            // distribution; to do this, we create a sample of D statistics and do KS/Kuiper tests
-            // comparing it to the claimed Kolmogorov distribution
+            // This test has a whiff of "meta" about it.
+            // We want to make sure that the KS test statistic D is distributed according to the Kolmogorov
+            // distribution. To do this, we create a sample of D statistics and do KS/Kuiper tests
+            // comparing it to the claimed Kolmogorov distribution.
 
-            // start with any 'ol underlying distribution
+            // Start with any old underlying distribution
             ContinuousDistribution distribution = new UniformDistribution(Interval.FromEndpoints(-2.0, 4.0));
 
-            // generate some samples from it, and for each one get a D statistic from a KS test
-            Sample DSample = new Sample();
-            ContinuousDistribution DDistribution = null;
-            for (int i = 0; i < 25; i++) {
-                // the sample size must be large enough that the asymptotic assumptions are satistifed
-                // at the moment this test fails if we make the sample size much smaller; we should
-                // be able shrink this number when we expose the finite-sample distributions
-                Sample sample = CreateSample(distribution, 250, i);
-                TestResult ks = sample.KolmogorovSmirnovTest(distribution);
-                double D = ks.Statistic;
-                Console.WriteLine("D = {0}", D);
-                DSample.Add(D);
-                DDistribution = ks.Distribution;
+            // Generate some samples from it, and for each one get a D statistic from a KS test comparing
+            // the sample to the source distribution.
+            // The sample sizes must be such that our approximation to the D-distribution is good.
+            // At the moment we are good when the size is small enough that we can compute the
+            // exact distribution and when the size is large enough that our asymptotic approximation
+            // is accurate. In the intermediate range it gets iffy.
+            Random rng = new Random(1);
+            double[] sizes = new double[] { 7, 55, 333 };
+            foreach (int n in sizes) {
+
+                List<double> DSample = new List<double>();
+                ContinuousDistribution DDistribution = null;
+                for (int i = 0; i < 32; i++) {
+                    List<double> sample = TestUtilities.CreateDataSample(rng, distribution, n).ToList();
+                    TestResult ks = sample.KolmogorovSmirnovTest(distribution);
+                    double D = ks.Statistic;
+                    DSample.Add(D);
+                    DDistribution = ks.Distribution;
+                }
+
+                // check on the mean
+                Assert.IsTrue(DSample.PopulationMean().ConfidenceInterval(0.99).ClosedContains(DDistribution.Mean));
+
+                // check on the standard deviation
+                 Assert.IsTrue(DSample.PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(DDistribution.StandardDeviation));
+
+                // do a KS test comparing the sample to the expected distribution
+                TestResult kst = DSample.KolmogorovSmirnovTest(DDistribution);
+                Assert.IsTrue(kst.Probability > 0.01);
+
+                // do a Kuiper test comparing the sample to the expected distribution
+                TestResult kut = DSample.KuiperTest(DDistribution);
+                Assert.IsTrue(kut.Probability > 0.01);
             }
-
-            // check on the mean
-            Console.WriteLine("m = {0} vs. {1}", DSample.PopulationMean, DDistribution.Mean);
-            Assert.IsTrue(DSample.PopulationMean.ConfidenceInterval(0.95).ClosedContains(DDistribution.Mean), String.Format("{0} vs. {1}", DSample.PopulationMean, DDistribution.Mean));
-
-            // check on the standard deviation
-            Console.WriteLine("s = {0} vs. {1}", DSample.PopulationStandardDeviation, DDistribution.StandardDeviation);
-            Assert.IsTrue(DSample.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(DDistribution.StandardDeviation));
-
-            // do a KS test comparing the sample to the expected distribution
-            TestResult kst = DSample.KolmogorovSmirnovTest(DDistribution);
-            Console.WriteLine("D = {0}, P = {1}", kst.Statistic, kst.LeftProbability);
-            Assert.IsTrue(kst.LeftProbability < 0.95);
-
-            // do a Kuiper test comparing the sample to the expected distribution
-            TestResult kut = DSample.KuiperTest(DDistribution);
-            Console.WriteLine("V = {0}, P = {1}", kut.Statistic, kut.LeftProbability);
-            Assert.IsTrue(kut.LeftProbability < 0.95);
-
-
         }
 
 
         [TestMethod]
         public void SampleKuiperTest () {
 
-            // this test has a whiff of meta-statistics about it
-            // we want to make sure that the Kuiper test statistic V is distributed according to the Kuiper
-            // distribution; to do this, we create a sample of V statistics and do KS/Kuiper tests
-            // comparing it to the claimed Kuiper distribution
-            
-            // start with any 'ol underlying distribution
-            ContinuousDistribution distribution = new ExponentialDistribution(2.0);
+            // This test has a whiff of "meta" about it.
+            // We want to make sure that the KS test statistic D is distributed according to the Kolmogorov
+            // distribution. To do this, we create a sample of D statistics and do KS/Kuiper tests
+            // comparing it to the claimed Kolmogorov distribution.
 
-            // generate some samples from it, and for each one get a V statistic from a KS test
-            Sample VSample = new Sample();
-            ContinuousDistribution VDistribution = null;
-            for (int i = 0; i < 25; i++) {
-                // the sample size must be large enough that the asymptotic assumptions are satistifed
-                // at the moment this test fails if we make the sample size much smaller; we should
-                // be able shrink this number when we expose the finite-sample distributions
-                Sample sample = CreateSample(distribution, 250, i);
-                TestResult kuiper = sample.KuiperTest(distribution);
-                double V = kuiper.Statistic;
-                Console.WriteLine("V = {0}", V);
-                VSample.Add(V);
-                VDistribution = kuiper.Distribution;
+            // Start with any old underlying distribution
+            ContinuousDistribution distribution = new UniformDistribution(Interval.FromEndpoints(-2.0, 4.0));
+
+            // Generate some samples from it, and for each one get a D statistic from a KS test comparing
+            // the sample to the source distribution.
+            // The sample sizes must be such that our approximation to the D-distribution is good.
+            // At the moment we are good when the size is small enough that we can compute the
+            // exact distribution and when the size is large enough that our asymptotic approximation
+            // is accurate. In the intermediate range it gets iffy.
+            Random rng = new Random(7);
+            double[] sizes = new double[] { 6, 54, 321 };
+            foreach (int n in sizes) {
+
+                List<double> VSample = new List<double>();
+                ContinuousDistribution VDistribution = null;
+                for (int i = 0; i < 32; i++) {
+                    List<double> sample = TestUtilities.CreateDataSample(rng, distribution, n).ToList();
+                    TestResult kp = sample.KuiperTest(distribution);
+                    double V = kp.Statistic;
+                    VSample.Add(V);
+                    VDistribution = kp.Distribution;
+                }
+
+                // check on the mean
+                Assert.IsTrue(VSample.PopulationMean().ConfidenceInterval(0.99).ClosedContains(VDistribution.Mean));
+
+                // check on the standard deviation
+                Assert.IsTrue(VSample.PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(VDistribution.StandardDeviation));
+
+                // do a KS test comparing the sample to the expected distribution
+                TestResult kst = VSample.KolmogorovSmirnovTest(VDistribution);
+                Assert.IsTrue(kst.Probability > 0.01);
+
+                // do a Kuiper test comparing the sample to the expected distribution
+                TestResult kut = VSample.KuiperTest(VDistribution);
+                Assert.IsTrue(kut.Probability > 0.01);
             }
-
-            // check on the mean
-            Console.WriteLine("m = {0} vs. {1}", VSample.PopulationMean, VDistribution.Mean);
-            Assert.IsTrue(VSample.PopulationMean.ConfidenceInterval(0.95).ClosedContains(VDistribution.Mean));
-
-            // check on the standard deviation
-            Console.WriteLine("s = {0} vs. {1}", VSample.PopulationStandardDeviation, VDistribution.StandardDeviation);
-            Assert.IsTrue(VSample.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(VDistribution.StandardDeviation));
-
-            // do a KS test comparing the sample to the expected distribution
-            TestResult kst = VSample.KolmogorovSmirnovTest(VDistribution);
-            Console.WriteLine("D = {0}, P = {1}", kst.Statistic, kst.LeftProbability);
-            Assert.IsTrue(kst.LeftProbability < 0.95);
-
-            // do a Kuiper test comparing the sample to the expected distribution
-            TestResult kut = VSample.KuiperTest(VDistribution);
-            Console.WriteLine("V = {0}, P = {1}", kut.Statistic, kut.LeftProbability);
-            Assert.IsTrue(kut.LeftProbability < 0.95);
-
         }
 
         [TestMethod]
@@ -903,9 +883,9 @@ namespace Test {
         public void SampleFisherFTest () {
 
 
-            // create 3 samles
-            // 1 and 2 have the same mean but different variances, the F test should catch the difference
-            // 1 and 3 have different means but the same variance, the F test should rule them equivilent
+            // Create 3 samples.
+            // 1 and 2 have the same mean but different variances, the F test should catch the difference.
+            // 1 and 3 have different means but the same variance, the F test should rule them equivalent.
             Sample sample1 = CreateSample(new NormalDistribution(1.0, 1.0), 20, 1);
             Sample sample2 = CreateSample(new NormalDistribution(1.0, 2.0), 20, 2);
             Sample sample3 = CreateSample(new NormalDistribution(3.0, 1.0), 20, 3);
@@ -919,16 +899,20 @@ namespace Test {
 
             // 1/2 is the inverse of 2/1
             Assert.IsTrue(TestUtilities.IsNearlyEqual(f12.Statistic, 1.0 / f21.Statistic));
-            
+
             // the F test detects the difference between the variance of 1 and 2
-            Console.WriteLine(f12.LeftProbability);
-            Assert.IsTrue(f12.RightProbability > 0.95);
+            if (f12.Statistic > 1) {
+                Assert.IsTrue(f12.Distribution.RightProbability(f12.Statistic) < 0.05);
+            } else {
+                Assert.IsTrue(f12.Distribution.LeftProbability(f12.Statistic) < 0.05);
+            }
 
             // the F test detects no difference between the variance of 1 and 3
             TestResult f13 = Sample.FisherFTest(sample1, sample3);
-            Console.WriteLine(f13.Statistic);
-            Console.WriteLine(f13.LeftProbability);
-            Assert.IsTrue((f13.LeftProbability > 0.05) && (f13.RightProbability > 0.05));
+            Assert.IsTrue(
+                f13.Distribution.LeftProbability(f13.Statistic) > 0.05 &&
+                f13.Distribution.RightProbability(f13.Statistic) > 0.05
+            );
 
         }
 
@@ -946,14 +930,13 @@ namespace Test {
 
             // Mann-Whitney test 1a vs. 1b; they should not be distinguished
             TestResult rab = Sample.MannWhitneyTest(s1a, s1b);
-            Console.WriteLine("{0} {1}", rab.Statistic, rab.LeftProbability);
-            Assert.IsTrue((rab.LeftProbability < 0.95) && (rab.RightProbability < 0.95));
+            Assert.IsTrue(rab.Probability > 0.05);
 
             // Mann-Whitney test 1 vs. 2; they should be distinguished
             // with 1 consistently less than 2, so U abnormally small
             TestResult r12 = Sample.MannWhitneyTest(s1b, s2);
-            Console.WriteLine("{0} {1}", r12.Statistic, r12.LeftProbability);
-            Assert.IsTrue(r12.RightProbability > 0.95);
+            Assert.IsTrue(r12.Probability < 0.05);
+            Assert.IsTrue(r12.Distribution.LeftProbability(r12.Statistic) < 0.05);
 
         }
 
@@ -1005,96 +988,78 @@ namespace Test {
 
                 OneWayAnovaResult result = Sample.OneWayAnovaTest(groups);
                 fSample.Add(result.Factor.Result.Statistic);
-
             }
 
             // compare the distribution of F statistics to the expected distribution
             ContinuousDistribution fDistribution = new FisherDistribution(3, 8);
-            Console.WriteLine("m={0} s={1}", fSample.PopulationMean, fSample.PopulationStandardDeviation);
             TestResult kResult = fSample.KolmogorovSmirnovTest(fDistribution);
-            Console.WriteLine(kResult.LeftProbability);
-            Assert.IsTrue(kResult.LeftProbability < 0.95);
+            Assert.IsTrue(kResult.Probability > 0.05);
 
         }
 
         [TestMethod]
         public void AnovaStudentAgreement () {
 
-            // create two random samples
+            // Create two samples.
             Sample A = new Sample(new double[] { 10, 20, 30 });
             Sample B = new Sample(new double[] { 15, 25, 35, 45 });
-            Console.WriteLine("A m={0} v={1}", A.Mean, A.Variance);
-            Console.WriteLine("B m={0} v={1}", B.Mean, B.Variance);
 
-            // do a Student t-test and a one-way ANOVA
-            //TestResult ts = Sample.StudentTTest(A, B);
+            // Do a Student t-test and a one-way ANOVA comparing them.
             TestResult ts = Sample.StudentTTest(A, B);
             TestResult ta = Sample.OneWayAnovaTest(A, B).Factor.Result;
 
-
-            // the results should agree, with F = t^2 and same probability
-            Console.WriteLine("t F {0} {1}", MoreMath.Pow(ts.Statistic, 2), ta.Statistic);
-            Console.WriteLine("P P {0} {1}", ts.LeftProbability, ta.LeftProbability);
-
-            StudentDistribution ds = (StudentDistribution)ts.Distribution;
-            FisherDistribution da = (FisherDistribution)ta.Distribution;
-            Console.WriteLine(ds.DegreesOfFreedom);
-            Console.WriteLine("{0} {1}", da.NumeratorDegreesOfFreedom, da.DenominatorDegreesOfFreedom);
-
+            // The results should agree, with F = t^2 and same probability.
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(ta.Statistic, MoreMath.Sqr(ts.Statistic)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(ts.Probability, ta.Probability));
         }
 
         [TestMethod]
         public void ZTestDistribution () {
-
-            Random rng = new Random(1);
+            Random rng = new Random(26);
 
             // define the sampling population (which must be normal for a z-test)
             ContinuousDistribution population = new NormalDistribution(2.0, 3.0);
 
-            // collect 100 samples
+            // Do a lot of z-tests.
             Sample zSample = new Sample();
-            for (int i = 0; i < 100; i++) {
+            ContinuousDistribution zDistribution = null;
+            for (int i = 0; i < 128; i++) {
 
-                // each z-statistic is formed by making a 4-count sample from a normal distribution
-                Sample sample = new Sample();
-                for (int j = 0; j < 4; j++) {
-                    sample.Add(population.GetRandomValue(rng));
-                }
+                // We will do each z-test on a 4-point sample. We pick a small number so that any
+                // non-normality for small sample sizes would show up.
+                double[] sample = TestUtilities.CreateDataSample(rng, population, 4).ToArray();
 
-                // for each sample, do a z-test against the population
+                // For each sample, do a z-test against the population.
                 TestResult zResult = sample.ZTest(population.Mean, population.StandardDeviation);
                 zSample.Add(zResult.Statistic);
-
+                zDistribution = zResult.Distribution;
             }
 
-            // the z's should be distrubuted normally
+            // The z's should be distributed normally, in accordance with the claimed distribution.
 
-            TestResult result = zSample.KolmogorovSmirnovTest(new NormalDistribution());
-            Console.WriteLine("{0} {1}", result.Statistic, result.LeftProbability);
-            Assert.IsTrue((result.LeftProbability > 0.05) && (result.LeftProbability < 0.95));
+            TestResult result = zSample.KolmogorovSmirnovTest(zDistribution);
+            Assert.IsTrue(result.Probability > 0.05);
 
         }
 
         [TestMethod]
         public void KruskalWallis () {
 
-            // generate four samples drawn from the same distribution,
-            // and a replacement sample for the last one drawn from a different distribution
+            // Generate four samples drawn from the same distribution,
+            // and one sample drawn from a different distribution.
             Sample s1 = CreateSample(new ExponentialDistribution(1.0), 20, 1);
             Sample s2 = CreateSample(new ExponentialDistribution(1.0), 30, 2);
             Sample s3 = CreateSample(new ExponentialDistribution(1.0), 50, 3);
             Sample s4 = CreateSample(new ExponentialDistribution(1.0), 80, 4);
             Sample t4 = CreateSample(new ExponentialDistribution(2.0), 80, 4);
 
-            // the test using the different sample should reject the null hypothesis
+            // The test using the different sample should reject the null hypothesis.
             TestResult ssst = Sample.KruskalWallisTest(s1, s2, s3, t4);
-            Console.WriteLine(ssst.RightProbability);
-            Assert.IsTrue(ssst.RightProbability < 0.05);
+            Assert.IsTrue(ssst.Probability < 0.05);
 
-            // the test using the same samples should not reject the null hypothesis
+            // The test using the same samples should not reject the null hypothesis.
             TestResult ssss = Sample.KruskalWallisTest(s1, s2, s3, s4);
-            Console.WriteLine(ssss.RightProbability);
-            Assert.IsTrue(ssss.RightProbability > 0.05);
+            Assert.IsTrue(ssss.Probability > 0.05);
 
         }
 

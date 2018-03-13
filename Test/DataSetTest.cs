@@ -141,7 +141,7 @@ namespace Test {
         public void FitDataToProportionalityTest () {
             Interval r = Interval.FromEndpoints(0.0, 0.1);
             Func<double,double> fv = delegate (double x) {
-                return(0.5*x);
+                return(0.5 * x);
             };
             Func<double, double> fu = delegate(double x) {
                 return (0.02);
@@ -152,7 +152,7 @@ namespace Test {
             FitResult prop = set.FitToProportionality();
             Assert.IsTrue(prop.Dimension == 1);
             Assert.IsTrue(prop.Parameter(0).ConfidenceInterval(0.95).ClosedContains(0.5));
-            Assert.IsTrue(prop.GoodnessOfFit.LeftProbability < 0.95);
+            Assert.IsTrue(prop.GoodnessOfFit.Probability > 0.05);
 
             // fit to line
             FitResult line = set.FitToLine();
@@ -171,10 +171,10 @@ namespace Test {
         public void FitDataToLineTest () {
             Interval r = Interval.FromEndpoints(0.0, 10.0);
             Func<double,double> fv = delegate (double x) {
-                return(2.0*x - 1.0);
+                return(2.0 * x - 1.0);
             };
             Func<double, double> fu = delegate(double x) {
-                return (1.0+x);
+                return (1.0 + x);
             };
             UncertainMeasurementSample data = CreateDataSet(r, fv, fu, 20);
 
@@ -187,7 +187,7 @@ namespace Test {
             Assert.IsTrue(line.Dimension == 2);
             Assert.IsTrue(line.Parameter(0).ConfidenceInterval(0.95).ClosedContains(-1.0));
             Assert.IsTrue(line.Parameter(1).ConfidenceInterval(0.95).ClosedContains(2.0));
-            Assert.IsTrue(line.GoodnessOfFit.LeftProbability < 0.95);
+            Assert.IsTrue(line.GoodnessOfFit.Probability > 0.05);
 
             // correlation coefficient should be related to covariance as expected
             Assert.IsTrue(TestUtilities.IsNearlyEqual(line.CorrelationCoefficient(0,1),line.Covariance(0,1)/line.Parameter(0).Uncertainty/line.Parameter(1).Uncertainty));
@@ -198,12 +198,11 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(poly.Parameters, line.Parameters));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(poly.CovarianceMatrix, line.CovarianceMatrix));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(poly.GoodnessOfFit.Statistic, line.GoodnessOfFit.Statistic));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(poly.GoodnessOfFit.LeftProbability, line.GoodnessOfFit.LeftProbability));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(poly.GoodnessOfFit.RightProbability, line.GoodnessOfFit.RightProbability));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(poly.GoodnessOfFit.Probability, line.GoodnessOfFit.Probability));
 
             // fit to a constant; the result should be poor
             FitResult constant = data.FitToConstant();
-            Assert.IsTrue(constant.GoodnessOfFit.LeftProbability > 0.95);
+            Assert.IsTrue(constant.GoodnessOfFit.Probability < 0.05);
 
         }
 
@@ -240,7 +239,7 @@ namespace Test {
             // test whether the chi^2 values are distributed as expected
             ContinuousDistribution chiDistribution = new ChiSquaredDistribution(8);
             TestResult ks = chis.KolmogorovSmirnovTest(chiDistribution);
-            Assert.IsTrue(ks.LeftProbability < 0.95);
+            Assert.IsTrue(ks.Probability > 0.05);
 
         }
 
@@ -248,19 +247,12 @@ namespace Test {
         public void FitDataToPolynomialTest () {
 
             Interval r = Interval.FromEndpoints(-10.0, 10.0);
-            double[] c = new double[] { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 };
-            Func<double, double> fv = delegate(double x) {
-                double f = 0.0;
-                for (int i = c.Length - 1; i >= 0; i--) {
-                    f = f * x + c[i];
-                }
-                return (f);
-            };
+            Polynomial p = Polynomial.FromCoefficients(1.0, -2.0, 3.0, -4.0, 5.0, -6.0);
             Func<double, double> fu = delegate(double x) {
-                return (1.0 + 0.5*Math.Cos(x));
+                return (1.0 + 0.5 * Math.Cos(x));
             };
 
-            UncertainMeasurementSample set = CreateDataSet(r, fv, fu, 50);
+            UncertainMeasurementSample set = CreateDataSet(r, p.Evaluate, fu, 50);
             Assert.IsTrue(set.Count == 50);
 
             // fit to an appropriate polynomial
@@ -268,19 +260,18 @@ namespace Test {
 
             // the coefficients should match
             for (int i = 0; i < poly.Dimension; i++) {
-                Assert.IsTrue(poly.Parameter(i).ConfidenceInterval(0.95).ClosedContains(c[i]));
+                Assert.IsTrue(poly.Parameter(i).ConfidenceInterval(0.95).ClosedContains(p.Coefficient(i)));
             }
 
             // the fit should be good
-            Console.WriteLine(poly.GoodnessOfFit.LeftProbability);
-            Assert.IsTrue(poly.GoodnessOfFit.LeftProbability < 0.95);
+            Assert.IsTrue(poly.GoodnessOfFit.Probability > 0.05);
 
             // fit to a lower order polynomial
             FitResult low = set.FitToPolynomial(4);
 
             // the fit should be bad
             Assert.IsTrue(low.GoodnessOfFit.Statistic > poly.GoodnessOfFit.Statistic);
-            Assert.IsTrue(low.GoodnessOfFit.LeftProbability > 0.95);
+            Assert.IsTrue(low.GoodnessOfFit.Probability < 0.05);
 
             // fit to a higher order polynomial
             FitResult high = set.FitToPolynomial(6);
@@ -325,7 +316,7 @@ namespace Test {
             // test whether the chi^2 values are distributed as expected
             ContinuousDistribution chiDistribution = new ChiSquaredDistribution(7);
             TestResult ks = chis.KolmogorovSmirnovTest(chiDistribution);
-            Assert.IsTrue(ks.LeftProbability < 0.95);
+            Assert.IsTrue(ks.Probability > 0.05);
 
         }
 

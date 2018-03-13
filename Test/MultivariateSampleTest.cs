@@ -117,51 +117,48 @@ namespace Test {
         [TestMethod]
         public void BivariateNullAssociation () {
 
-            Random rng = new Random(314159265);
+            Random rng = new Random(31415926);
 
-            // Create sample sets for our three test statisics
-            Sample PS = new Sample();
-            Sample SS = new Sample();
-            Sample KS = new Sample();
+            // Create a data structure to hold the results of Pearson, Spearman, and Kendall tests.
+            FrameTable data = new FrameTable(
+                new ColumnDefinition<double>("r"),
+                new ColumnDefinition<double>("ρ"),
+                new ColumnDefinition<double>("τ")
+            );
 
-            // variables to hold the claimed distribution of teach test statistic
-            ContinuousDistribution PD = null;
-            ContinuousDistribution SD = null;
-            ContinuousDistribution KD = null;
+            // Create variables to hold the claimed distribution of each test statistic.
+            ContinuousDistribution PRD = null;
+            ContinuousDistribution SRD = null;
+            ContinuousDistribution KTD = null;
 
-            // generate a large number of bivariate samples and conduct our three tests on each
-
+            // Generate a large number of bivariate samples and conduct our three tests on each.
+            ContinuousDistribution xDistribution = new LognormalDistribution();
+            ContinuousDistribution yDistribution = new CauchyDistribution();
             for (int j = 0; j < 100; j++) {
 
-                BivariateSample S = new BivariateSample();
-
-                // sample size should be large so that asymptotic assumptions are justified
+                List<double> x = new List<double>();
+                List<double> y = new List<double>();
                 for (int i = 0; i < 100; i++) {
-                    double x = rng.NextDouble();
-                    double y = rng.NextDouble();
-                    S.Add(x, y);
+                    x.Add(xDistribution.GetRandomValue(rng));
+                    y.Add(yDistribution.GetRandomValue(rng));
                 }
 
-                TestResult PR = S.PearsonRTest();
-                PS.Add(PR.Statistic);
-                PD = PR.Distribution;
-                TestResult SR = S.SpearmanRhoTest();
-                SS.Add(SR.Statistic);
-                SD = SR.Distribution;
-                TestResult KR = S.KendallTauTest();
-                KS.Add(KR.Statistic);
-                KD = KR.Distribution;
+                TestResult PR = Bivariate.PearsonRTest(x, y);
+                TestResult SR = Bivariate.SpearmanRhoTest(x, y);
+                TestResult KT = Bivariate.KendallTauTest(x, y);
 
+                PRD = PR.Distribution;
+                SRD = SR.Distribution;
+                KTD = KT.Distribution;
+
+                data.AddRow(new Dictionary<string, object>() {
+                    {"r", PR.Statistic}, {"ρ", SR.Statistic}, {"τ", KT.Statistic}
+                });
             }
 
-            // do KS to test whether the samples follow the claimed distributions
-            //Console.WriteLine(PS.KolmogorovSmirnovTest(PD).LeftProbability);
-            //Console.WriteLine(SS.KolmogorovSmirnovTest(SD).LeftProbability);
-            //Console.WriteLine(KS.KolmogorovSmirnovTest(KD).LeftProbability);
-            Assert.IsTrue(PS.KolmogorovSmirnovTest(PD).LeftProbability < 0.95);
-            Assert.IsTrue(SS.KolmogorovSmirnovTest(SD).LeftProbability < 0.95);
-            Assert.IsTrue(KS.KolmogorovSmirnovTest(KD).LeftProbability < 0.95);
-
+            Assert.IsTrue(data["r"].As<double>().KolmogorovSmirnovTest(PRD).Probability > 0.05);
+            Assert.IsTrue(data["ρ"].As<double>().KolmogorovSmirnovTest(SRD).Probability > 0.05);
+            Assert.IsTrue(data["τ"].As<double>().KolmogorovSmirnovTest(KTD).Probability > 0.05);
         }
         
         [TestMethod]
@@ -177,10 +174,8 @@ namespace Test {
             s.Add(2, 7);
             s.Add(1, 11);
             s.Add(4, 8);
-            Console.WriteLine(s.Count);
             TestResult r = s.PairedStudentTTest();
-            Console.WriteLine(r.Statistic);
-            Console.WriteLine(r.LeftProbability);
+            // Maybe we should assert something here?
         }
 
         [TestMethod]
@@ -367,7 +362,7 @@ namespace Test {
 
             // conduct a KS test to check that F follows the expected distribution
             TestResult ks = fs.KolmogorovSmirnovTest(new FisherDistribution(3, 4));
-            Assert.IsTrue(ks.LeftProbability < 0.95);
+            Assert.IsTrue(ks.Probability > 0.05);
 
         }
 

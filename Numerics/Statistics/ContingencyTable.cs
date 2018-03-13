@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -55,7 +55,7 @@ namespace Meta.Numerics.Statistics {
         private int tCounts;
 
         /// <summary>
-        /// Gets the number of events that occured in the specified cell.
+        /// Gets the number of events that occurred in the specified cell.
         /// </summary>
         /// <param name="row">The row value.</param>
         /// <param name="column">The column value.</param>
@@ -69,7 +69,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets the total number of events that occured in the specified row.
+        /// Gets the total number of events that occurred in the specified row.
         /// </summary>
         /// <param name="row">The row value.</param>
         /// <returns>The total number of counts counts in all cells in the specified row.</returns>
@@ -79,7 +79,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets the total number of events that occured in the specified column.
+        /// Gets the total number of events that occurred in the specified column.
         /// </summary>
         /// <param name="column">The column value.</param>
         /// <returns>The total number of counts counts in all cells in the specified column.</returns>
@@ -115,8 +115,8 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        // row and column probabilites are the fraction of total counts that a given row/column total represents
-        // conditional probablities are the fraction of row/column totals that a cell represents
+        // row and column probabilities are the fraction of total counts that a given row/column total represents
+        // conditional probabilities are the fraction of row/column totals that a cell represents
         // to get the uncertainties in these probabilities, use
         //   (df)^2 = (df/da)^2 (da)^2 + (df/db)^2 (db)^2 + ...
         // and use (dn)^2 = n for each cell count
@@ -137,7 +137,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Estimates the marginal probility of the given row in the underlying population.
+        /// Estimates the probability of the given row in the underlying population.
         /// </summary>
         /// <param name="row">The row value.</param>
         /// <returns>An estimate, with uncertainty, of the probability for a random event to occur in the given row.</returns>
@@ -165,10 +165,10 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Estimates the martinal probility of the given column in the underlying population.
+        /// Estimates the probability of the given column in the underlying population.
         /// </summary>
         /// <param name="column">The column value.</param>
-        /// <returns>An estimate, with uncertainty, of the probability for a random envent to occur in the given column.</returns>
+        /// <returns>An estimate, with uncertainty, of the probability for a random event to occur in the given column.</returns>
         public virtual UncertainValue ProbabilityOfColumn (C column) {
             int c = columnMap[column];
             double p = ((double) cCounts[c]) / tCounts;
@@ -178,7 +178,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Estimates the probability of the given colun, conditional on the given row, in the underlying population.
+        /// Estimates the probability of the given column, conditional on the given row, in the underlying population.
         /// </summary>
         /// <param name="column">The column value.</param>
         /// <param name="row">The row value.</param>
@@ -229,7 +229,7 @@ namespace Meta.Numerics.Statistics {
             int nu = (rCounts.Length - 1) * (cCounts.Length - 1);
 
             // return the test result
-            return (new TestResult("ChiSquared", chi2, TestType.RightTailed, new ChiSquaredDistribution(nu)));
+            return (new TestResult("χ²", chi2, TestType.RightTailed, new ChiSquaredDistribution(nu)));
 
         }
 
@@ -319,7 +319,7 @@ namespace Meta.Numerics.Statistics {
         
 
         /// <summary>
-        /// Increments the count in the specifed cel.
+        /// Increments the count in the specified cell.
         /// </summary>
         /// <param name="r">The (zero-based) row index.</param>
         /// <param name="c">The (zero-based) column index.</param>
@@ -483,7 +483,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Performs a Pearson &#x3C7;<sup>2</sup> test for correlation in the table.
         /// </summary>
-        /// <returns>The result of the test. The test statistic is &#x3C7;<sup>2</sup> and its likelyhood under the null hypothesis is
+        /// <returns>The result of the test. The test statistic is &#x3C7;<sup>2</sup> and its likelihood under the null hypothesis is
         /// the (right) probability to obtain a value as large or larger.</returns>
         /// <remarks><para>The Pearson Pearson &#x3C7;<sup>2</sup> test tests for correlation between the row and column values. If
         /// row and column values are uncorrelated, then the expected number of counts in a table entry is simply proportional to the
@@ -512,7 +512,7 @@ namespace Meta.Numerics.Statistics {
             int nu = (rows - 1) * (cols - 1);
 
             // return the test result
-            return (new TestResult("ChiSquared", chi2, TestType.RightTailed, new ChiSquaredDistribution(nu)));
+            return (new TestResult("χ²", chi2, TestType.RightTailed, new ChiSquaredDistribution(nu)));
 
         }
 

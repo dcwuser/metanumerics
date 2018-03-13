@@ -139,7 +139,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <summary>
-        /// Gets the interval over which the distribution is nonvanishing.
+        /// Gets the interval over which the distribution is non-vanishing.
         /// </summary>
         public virtual Interval Support {
             get {

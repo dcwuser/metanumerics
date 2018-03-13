@@ -230,17 +230,15 @@ namespace Meta.Numerics.Statistics {
             xData = t;
         }
 
-        // marginals
-
         /// <summary>
         /// Gets a read-only univariate sample consisting of the x-values of the data points.
         /// </summary>
         /// <remarks>
-        /// <para>Use this method to obtain sinformation specific to the x-vales, such as their <see cref="Sample.Median"/> or
+        /// <para>Use this method to obtain information specific to the x-vales, such as their <see cref="Sample.Median"/> or
         /// <see cref="Sample.Variance"/>.</para>
         /// <para>Note that this is a fast, O(1) operation, which does not create an independent copy of the data.
         /// The advantage of this is that you can access x-data as a <see cref="Sample"/> as often as you like without
-        /// worying about performance. The disadvantage of this is that the returned sample cannot be altered. If you
+        /// worrying about performance. The disadvantage of this is that the returned sample cannot be altered. If you
         /// need to alter x-data independent of the bivariate sample, use the <see cref="Sample.Copy"/>
         /// method to obtain an independent copy.</para>
         /// </remarks>
@@ -254,11 +252,11 @@ namespace Meta.Numerics.Statistics {
         /// Gets a read-only univariate sample consisting of the y-values of the data points.
         /// </summary>
         /// <remarks>
-        /// <para>Use this method to obtain sinformation specific to the y-vales, such as their <see cref="Sample.Median"/> or
+        /// <para>Use this method to obtain information specific to the y-vales, such as their <see cref="Sample.Median"/> or
         /// <see cref="Sample.Variance"/>.</para>
         /// <para>Note that this is a fast, O(1) operation, which does not create an independent copy of the data.
         /// The advantage of this is that you can access y-data as a <see cref="Sample"/> as often as you like without
-        /// worying about performance. The disadvantage of this is that the returned sample cannot be altered. If you
+        /// worrying about performance. The disadvantage of this is that the returned sample cannot be altered. If you
         /// need to alter y-data independent of the bivariate sample, use the <see cref="Sample.Copy"/>
         /// method to obtain an independent copy.</para>
         /// </remarks>
@@ -338,7 +336,7 @@ namespace Meta.Numerics.Statistics {
         /// <remarks>
         /// <para>The Spearman rank-order test of association is a non-parametric test for association between
         /// two variables. The test statistic rho is the correlation coefficient of the <em>rank</em> of
-        /// each entry in the sample. It is thus invariant over monotonic reparameterizations of the data,
+        /// each entry in the sample. It is thus invariant over monotonic re-parameterizations of the data,
         /// and will, for example, detect a quadratic or exponential association just as well as a linear
         /// association.</para>
         /// <para>The Spearman rank-order test requires O(N log N) operations.</para>
@@ -356,16 +354,16 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <returns>The result of the test.</returns>
         /// <remarks>
-        /// <para>Kendall's &#x3C4; is a non-parameteric and robust test of association
+        /// <para>Kendall's &#x3C4; is a non-parametric and robust test of association
         /// between two variables. It simply measures the number of cases where an increase
-        /// in one variable is associated with an increase in the other (corcordant pairs),
+        /// in one variable is associated with an increase in the other (concordant pairs),
         /// compared with the number of cases where an increase in one variable is associated
         /// with a decrease in the other (discordant pairs).</para>
         /// <para>Because &#x3C4; depends only on the sign
         /// of a change and not its magnitude, it is not skewed by outliers exhibiting very large
         /// changes, nor by cases where the degree of change in one variable associated with
-        /// a given change in the other changes over the range of the varibles. Of course, it may
-        /// still miss an association whoose sign changes over the range of the variables. For example,
+        /// a given change in the other changes over the range of the variables. Of course, it may
+        /// still miss an association whose sign changes over the range of the variables. For example,
         /// if data points lie along a semi-circle in the plane, an increase in the first variable
         /// is associated with an increase in the second variable along the rising arc and and decrease in
         /// the second variable along the falling arc. No test that looks for single-signed correlation

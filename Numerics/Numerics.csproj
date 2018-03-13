@@ -195,6 +195,7 @@
     <Compile Include="Statistics\Distributions\GammaDistribution.cs" />
     <Compile Include="Statistics\Distributions\GeometricDistribution.cs" />
     <Compile Include="Statistics\Distributions\GumbelDistribution.cs" />
+    <Compile Include="Statistics\Distributions\GumbelFitResult.cs" />
     <Compile Include="Statistics\Distributions\HypergeometricDistribution.cs" />
     <Compile Include="Statistics\Distributions\IDeviateGenerator.cs" />
     <Compile Include="Statistics\Distributions\KendallDistribution.cs" />

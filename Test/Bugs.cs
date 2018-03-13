@@ -71,7 +71,7 @@ namespace Test {
 
             WeibullFitResult result = WeibullDistribution.FitToSample(sample);
             Console.WriteLine("{0} {1}", result.Scale, result.Shape);
-            Console.WriteLine(result.GoodnessOfFit.RightProbability);
+            Console.WriteLine(result.GoodnessOfFit.Probability);
         }
 
 

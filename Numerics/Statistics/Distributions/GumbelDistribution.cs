@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using Meta.Numerics.Matrices;
 using Meta.Numerics.Analysis;
@@ -227,12 +228,12 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="sample">The sample to fit.</param>
         /// <returns>The fit result.</returns>
-        public static FitResult FitToSample (Sample sample) {
+        public static GumbelFitResult FitToSample (IReadOnlyList<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
 
-            // To do a maximum likelyhood fit, start from the log probability of each data point and aggregate to
-            // obtain the log likehood of the sample
+            // To do a maximum likelihood fit, start from the log probability of each data point and aggregate to
+            // obtain the log likelihood of the sample
             //   z_i = \frac{x_i - m}{s}
             //   -\ln p_i = \ln s + ( z_i + e^{-z_i})
             //   \ln L = \sum_i \ln p_i
@@ -268,13 +269,19 @@ namespace Meta.Numerics.Statistics.Distributions {
             // "using the method of moments, probability weighted moments, and maximum likelihood", Revista de Mathematica:
             // Teoria y Aplicaciones 12 (2005) 151-156 (http://revistas.ucr.ac.cr/index.php/matematica/article/viewFile/259/239) 
 
+            // We will be needed the sample mean and standard deviation
+            int n;
+            double mean, stdDev;
+            Univariate.ComputeMomentsUpToSecond(sample, out n, out mean, out stdDev);
+            stdDev = Math.Sqrt(stdDev / n);
+
             // Use the method of moments to get an initial estimate of s.
-            double s0 = Math.Sqrt(6.0) / Math.PI * sample.StandardDeviation;
+            double s0 = Math.Sqrt(6.0) / Math.PI * stdDev;
 
             // Define the function to zero
             Func<double, double> fnc = (double s) => {
                 double u, v;
-                MaximumLikelihoodHelper(sample, s, out u, out v);
+                MaximumLikelihoodHelper(sample, n, mean, s, out u, out v);
                 return (s + v / u);
             };
 
@@ -283,11 +290,10 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             // Compute the corresponding best-fit m
             double u1, v1;
-            MaximumLikelihoodHelper(sample, s1, out u1, out v1);
-            double m1 = sample.Mean - s1 * Math.Log(u1);
+            MaximumLikelihoodHelper(sample, n, mean, s1, out u1, out v1);
+            double m1 = mean - s1 * Math.Log(u1);
 
             // Compute the curvature matrix
-
             double w1 = 0.0;
             double w2 = 0.0;
             foreach (double x in sample) {
@@ -298,79 +304,38 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
             w1 /= sample.Count;
             w2 /= sample.Count;
-
             SymmetricMatrix C = new SymmetricMatrix(2);
-            int n = sample.Count;
             C[0, 0] = (n - 2) / (s1 * s1);
             C[0, 1] = (n - 2) / (s1 * s1) * w1;
             C[1, 1] = (n - 2) / (s1 * s1) * (w2 + 1.0);
             SymmetricMatrix CI = C.CholeskyDecomposition().Inverse();
-            // The use of (n-2) here in place of n is an ad hoc attempt to increase accuracy.
+            // The use of (n-2) here in place of n is a very ad hoc attempt to increase accuracy.
 
 
             // Compute goodness-of-fit
             GumbelDistribution dist = new GumbelDistribution(m1, s1);
             TestResult test = sample.KolmogorovSmirnovTest(dist);
 
-            return (new FitResult(new ColumnVector(m1, s1), CI, test));
-
+            return (new GumbelFitResult(m1, s1, CI[0, 0], CI[1, 1], CI[0, 1], test));
         }
 
         // Compute u = <e^{-d/s}> and v = <d e^{-d/s}> for a given s and a given sample.
 
-        private static void MaximumLikelihoodHelper (Sample sample, double s, out double u, out double v) {
+        private static void MaximumLikelihoodHelper (IEnumerable<double> sample, int n, double mean, double s, out double u, out double v) {
             u = 0.0;
             v = 0.0;
             foreach (double x in sample) {
-                double d = x - sample.Mean;
+                double d = x - mean;
                 double e = Math.Exp(-d / s);
                 u += e;
                 v += d * e;
             }
-            u /= sample.Count;
-            v /= sample.Count;
+            u /= n;
+            v /= n;
         }
 
     }
 
-    /// <summary>
-    /// Represents the result of fitting sample data to a Gumbel distribution.
-    /// </summary>
-    public sealed class GumbelFit : FitResult {
 
-        internal GumbelFit(ColumnVector parameters, SymmetricMatrix covariances, TestResult test) : base(parameters, covariances, test) {
-            this.distribution = new GumbelDistribution(parameters[0], parameters[1]);
-        }
-
-        private readonly GumbelDistribution distribution;
-
-        /// <summary>
-        /// Gets the best fit value of the location parameter and its associated uncertainty.
-        /// </summary>
-        public UncertainValue LocationParameter {
-            get {
-                return (this.Parameter(0));
-            }
-        }
-
-        /// <summary>
-        /// Gets the best fit value of the scale parameter and its associated uncertainty.
-        /// </summary>
-        public UncertainValue ScaleParameter {
-            get {
-                return (this.Parameter(1));
-            }
-        }
-
-        /// <summary>
-        /// Gets the best fit Gumbel distribution.
-        /// </summary>
-        public GumbelDistribution Distribution {
-            get {
-                return (distribution);
-            }
-        }
-
-    }
 
 }

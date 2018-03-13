@@ -1163,7 +1163,7 @@ namespace Meta.Numerics.Statistics {
             H = 12.0 / N / (N + 1) * H;
 
             // use the chi-squared approximation to the null distribution
-            return (new TestResult(H, new ChiSquaredDistribution(samples.Count - 1)));
+            return (new TestResult("H", H, TestType.RightTailed, new ChiSquaredDistribution(samples.Count - 1)));
 
         }
 
@@ -1258,20 +1258,6 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is <see langword="null"/>.</exception>
         public static TestResult FisherFTest (Sample a, Sample b) {
             return (Univariate.FisherFTest(a.data, b.data));
-            /*
-            if (a == null) throw new ArgumentNullException(nameof(a));
-            if (b == null) throw new ArgumentNullException(nameof(b));
-            if ((a.Count < 2) || (b.Count < 2)) throw new InsufficientDataException();
-
-            // compute population variances
-            double v1 = a.Count / (a.Count - 1.0) * a.Variance;
-            double v2 = b.Count / (b.Count - 1.0) * b.Variance;
-
-            // compute the ratio
-            double F = v1 / v2;
-
-            return (new TestResult("F", F, TestType.RightTailed, new FisherDistribution(a.Count - 1, b.Count - 1)));
-            */
         }
 
         // enumeration
@@ -1342,23 +1328,6 @@ namespace Meta.Numerics.Statistics {
             return (Univariate.ShapiroFranciaTest(data));
         }
         
-#if !SILVERLIGHT
-        /// <summary>
-        /// Loads values from a data reader.
-        /// </summary>
-        /// <param name="reader">The data reader.</param>
-        /// <param name="dbIndex">The column number.</param>
-        public void Load (IDataReader reader, int dbIndex) {
-            if (reader == null) throw new ArgumentNullException("reader");
-            if (isReadOnly) throw new InvalidOperationException();
-            while (reader.Read()) {
-                if (reader.IsDBNull(dbIndex)) continue;
-                object value = reader.GetValue(dbIndex);
-                Add(Convert.ToDouble(value, CultureInfo.InvariantCulture));
-            }
-        }
-#endif
-
     }
 
 }

@@ -202,6 +202,8 @@ namespace Test {
         [TestMethod]
         public void DiscreteDistributionRandomValues () {
 
+            // Test of histogram to the distribution that created it should find compatibility.
+
             foreach (DiscreteDistribution distribution in distributions) {
 
                 int max = distribution.Support.RightEndpoint;
@@ -210,15 +212,13 @@ namespace Test {
                 } else {
                     max = (int) Math.Round(distribution.Mean + 2.0 * distribution.StandardDeviation);
                 }
-                Console.WriteLine("{0} {1}", distribution.GetType().Name, max);
 
                 Histogram h = new Histogram(max);
 
                 Random rng = new Random(314159265);
                 for (int i = 0; i < 1024; i++) h.Add(distribution.GetRandomValue(rng));
                 TestResult result = h.ChiSquaredTest(distribution);
-                Console.WriteLine("{0} {1}", result.Statistic, result.RightProbability);
-                Assert.IsTrue(result.RightProbability > 0.05);
+                Assert.IsTrue(result.Probability > 0.01);
 
             }
 

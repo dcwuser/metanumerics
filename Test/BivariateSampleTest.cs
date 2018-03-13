@@ -281,14 +281,14 @@ namespace Test {
         [TestMethod]
         public void BivariateLinearRegressionNullDistribution () {
 
-            // create uncorrelated x and y values
-            // the distribution of F-test statistics returned by linear fits should follow the expected F-distribution
+            // Create uncorrelated x and y values and do a linear fit.
+            // The r-tests and F-test statistics returned by the linear fits
+            // should agree and both test statistics should follow their claimed
+            // distributions.
 
             Random rng = new Random(987654321);
             NormalDistribution xd = new NormalDistribution(1.0, 2.0);
             NormalDistribution yd = new NormalDistribution(-3.0, 4.0);
-
-            Sample fs = new Sample();
 
             Sample rSample = new Sample();
             ContinuousDistribution rDistribution = null;
@@ -304,9 +304,6 @@ namespace Test {
                 }
                 LinearRegressionResult result = sample.LinearRegression();
 
-                double f = result.F.Statistic;
-                fs.Add(f);
-
                 rSample.Add(result.R.Statistic);
                 rDistribution = result.R.Distribution;
 
@@ -321,12 +318,6 @@ namespace Test {
                 ));
 
             }
-
-            ContinuousDistribution fd = new FisherDistribution(1, 5);
-            Console.WriteLine("{0} v. {1}", fs.PopulationMean, fd.Mean);
-            TestResult t = fs.KolmogorovSmirnovTest(fd);
-            Console.WriteLine(t.LeftProbability);
-            Assert.IsTrue(t.LeftProbability < 0.95);
 
             Assert.IsTrue(rSample.KuiperTest(rDistribution).Probability > 0.05);
             Assert.IsTrue(fSample.KuiperTest(fDistribution).Probability > 0.05);

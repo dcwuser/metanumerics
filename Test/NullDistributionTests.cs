@@ -101,40 +101,35 @@ namespace Test {
         [TestMethod]
         public void TwoSampleKolmogorovNullDistributionTest () {
 
+            Random rng = new Random(4);
             ContinuousDistribution population = new ExponentialDistribution();
 
             int[] sizes = new int[] { 23, 30, 175 };
 
             foreach (int na in sizes) {
                 foreach (int nb in sizes) {
-                    Console.WriteLine("{0} {1}", na, nb);
 
                     Sample d = new Sample();
                     ContinuousDistribution nullDistribution = null;
                     for (int i = 0; i < 128; i++) {
+                        List<double> a = TestUtilities.CreateDataSample(rng, population, na).ToList();
+                        List<double> b = TestUtilities.CreateDataSample(rng, population, nb).ToList();
 
-                        Sample a = TestUtilities.CreateSample(population, na, 31415 + na + i);
-                        Sample b = TestUtilities.CreateSample(population, nb, 27182 + nb + i);
-
-                        TestResult r = Sample.KolmogorovSmirnovTest(a, b);
+                        TestResult r = Univariate.KolmogorovSmirnovTest(a, b);
                         d.Add(r.Statistic);
                         nullDistribution = r.Distribution;
 
                     }
-                    // Only do full KS test if the number of bins is larger than the sample size, otherwise we are going to fail
-                    // because the KS test detects the granularity of the distribution
-                    TestResult mr = d.KolmogorovSmirnovTest(nullDistribution);
-                    Console.WriteLine(mr.LeftProbability);
-                    if (AdvancedIntegerMath.LCM(na, nb) > d.Count) Assert.IsTrue(mr.LeftProbability < 0.99);
-                    // But always test that mean and standard deviation are as expected
-                    Console.WriteLine("{0} {1}", nullDistribution.Mean, d.PopulationMean.ConfidenceInterval(0.99));
-                    Assert.IsTrue(d.PopulationMean.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Mean));
-                    Console.WriteLine("{0} {1}", nullDistribution.StandardDeviation, d.PopulationStandardDeviation.ConfidenceInterval(0.99));
-                    Assert.IsTrue(d.PopulationStandardDeviation.ConfidenceInterval(0.99).ClosedContains(nullDistribution.StandardDeviation));
-                    Console.WriteLine("{0} {1}", nullDistribution.CentralMoment(3), d.PopulationCentralMoment(3).ConfidenceInterval(0.99));
-                    //Assert.IsTrue(d.PopulationMomentAboutMean(3).ConfidenceInterval(0.99).ClosedContains(nullDistribution.MomentAboutMean(3)));
 
-                    //Console.WriteLine("m {0} {1}", nullDistribution.Mean, d.PopulationMean);
+                    // Only do full KS test if the number of bins is larger than the sample size, otherwise we are going to fail
+                    // because the KS test detects the granularity of the distribution.
+                    TestResult mr = d.KolmogorovSmirnovTest(nullDistribution);
+                    if (AdvancedIntegerMath.LCM(na, nb) > d.Count) Assert.IsTrue(mr.Probability > 0.01);
+                    // But always test that mean and standard deviation are as expected
+                    Assert.IsTrue(d.PopulationMean.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Mean));
+                    Assert.IsTrue(d.PopulationStandardDeviation.ConfidenceInterval(0.99).ClosedContains(nullDistribution.StandardDeviation));
+                    // This test is actually a bit sensitive, probably because the discrete-ness of the underlying distribution
+                    // and the inaccuracy of the asymptotic approximation for intermediate sample size make strict comparisons iffy.
                 }
             }
 
@@ -265,7 +260,7 @@ namespace Test {
             ContinuousDistribution yDistribution = new ExponentialDistribution();
             Random rng = new Random(314159265);
 
-            // generate bivariate samples of various sizes
+            // Generate bivariate samples of various sizes
             foreach (int n in TestUtilities.GenerateIntegerValues(8, 64, 4)) {
 
                 Sample testStatistics = new Sample();
@@ -274,6 +269,7 @@ namespace Test {
                 for (int i = 0; i < 128; i++) {
                     BivariateSample sample = new BivariateSample();
                     for (int j = 0; j < n; j++) {
+                        // x and y are uncorrelated
                         sample.Add(xDistrubtion.GetRandomValue(rng), yDistribution.GetRandomValue(rng));
                     }
 
@@ -282,8 +278,9 @@ namespace Test {
                     testDistribution = result.Distribution;
                 }
 
+                // We should find that they are uncorrelated.
                 TestResult r2 = testStatistics.KolmogorovSmirnovTest(testDistribution);
-                Assert.IsTrue(r2.RightProbability > 0.05);
+                Assert.IsTrue(r2.Probability > 0.01);
 
                 Assert.IsTrue(testStatistics.PopulationMean.ConfidenceInterval(0.99).ClosedContains(testDistribution.Mean));
                 Assert.IsTrue(testStatistics.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(testDistribution.Variance));

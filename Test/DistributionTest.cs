@@ -362,11 +362,8 @@ namespace Test {
 
         }
 
-        // this test seems to indicate a problem as the tSample size gets bigger (few thousand)
-        // the fit gets too good to be true; is this a problem with KS? the the RNG? somehting else?
-
         [TestMethod]
-        public void StudentTest2 () {
+        public void StudentFromNormal () {
 
             // make sure Student t is consistent with its definition
 
@@ -376,77 +373,33 @@ namespace Test {
             // begin with an underlying normal distribution
             ContinuousDistribution xDistribution = new NormalDistribution();
 
-            // compute a bunch of t satistics from the distribution
-            for (int i = 0; i < 100000; i++) {
-
-                // take a small sample from the underlying distribution
-                // (as the sample gets large, the t distribution becomes normal)
-                Random rng = new Random(314159+i);
-
-                double p = xDistribution.InverseLeftProbability(rng.NextDouble());
+            // compute a bunch of t statistics from the distribution
+            Random rng = new Random(314159);
+            for (int i = 0; i < 10000; i++) {
+                double p = xDistribution.GetRandomValue(rng);
                 double q = 0.0;
                 for (int j = 0; j < 5; j++) {
-                    double x = xDistribution.InverseLeftProbability(rng.NextDouble());
+                    double x = xDistribution.GetRandomValue(rng);
                     q += x * x;
                 }
                 q = q / 5;
 
                 double t = p / Math.Sqrt(q);
                 tSample.Add(t);
-
             }
 
             ContinuousDistribution tDistribution = new StudentDistribution(5);
-            TestResult result = tSample.KolmogorovSmirnovTest(tDistribution);
-            Console.WriteLine(result.LeftProbability);
+            TestResult tResult = tSample.KolmogorovSmirnovTest(tDistribution);
+            Assert.IsTrue(tResult.Probability > 0.05);
 
+            // Distribution should be demonstrably non-normal
+            ContinuousDistribution zDistribution = new NormalDistribution(tDistribution.Mean, tDistribution.StandardDeviation);
+            TestResult zResult = tSample.KolmogorovSmirnovTest(zDistribution);
+            Assert.IsTrue(zResult.Probability < 0.05);
         }
 
         [TestMethod]
-        public void StudentTest () {
-
-            // make sure Student t is consistent with its definition
-
-            // we are going to take a sample that we expect to be t-distributed
-            Sample tSample = new Sample();
-
-            // begin with an underlying normal distribution
-            ContinuousDistribution xDistribution = new NormalDistribution(1.0, 2.0);
-
-            // compute a bunch of t satistics from the distribution
-            for (int i = 0; i < 200000; i++) {
-
-                // take a small sample from the underlying distribution
-                // (as the sample gets large, the t distribution becomes normal)
-                Random rng = new Random(i);
-                Sample xSample = new Sample();
-                for (int j = 0; j < 5; j++) {
-                    double x = xDistribution.InverseLeftProbability(rng.NextDouble());
-                    xSample.Add(x);
-                }
-
-                // compute t for the sample
-                double t = (xSample.Mean - xDistribution.Mean) / (xSample.PopulationStandardDeviation.Value / Math.Sqrt(xSample.Count));
-                tSample.Add(t);
-                //Console.WriteLine(t);
-
-            }
-
-            // t's should be t-distrubuted; use a KS test to check this
-            ContinuousDistribution tDistribution = new StudentDistribution(4);
-            TestResult result = tSample.KolmogorovSmirnovTest(tDistribution);
-            Console.WriteLine(result.LeftProbability);
-            //Assert.IsTrue(result.LeftProbability < 0.95);
-
-            // t's should be demonstrably not normally distributed
-            Console.WriteLine(tSample.KolmogorovSmirnovTest(new NormalDistribution()).LeftProbability);
-            //Assert.IsTrue(tSample.KolmogorovSmirnovTest(new NormalDistribution()).LeftProbability > 0.95);
-
-        }
-
-
-        [TestMethod]
-        public void FisherTest () {
+        public void FisherFromChiSquared () {
 
             // we will need a RNG
             Random rng = new Random(314159);
@@ -461,8 +414,8 @@ namespace Test {
             // create a sample of chi-squared variates
             Sample s = new Sample();
             for (int i = 0; i < 250; i++) {
-                double x1 = d1.InverseLeftProbability(rng.NextDouble());
-                double x2 = d2.InverseLeftProbability(rng.NextDouble());
+                double x1 = d1.GetRandomValue(rng);
+                double x2 = d2.GetRandomValue(rng);
                 double x = (x1/n1) / (x2/n2);
                 s.Add(x);
             }
@@ -470,42 +423,14 @@ namespace Test {
             // it should match a Fisher distribution with the appropriate parameters
             ContinuousDistribution f0 = new FisherDistribution(n1, n2);
             TestResult t0 = s.KuiperTest(f0);
-            Console.WriteLine(t0.LeftProbability);
-            Assert.IsTrue(t0.LeftProbability < 0.95);
+            Assert.IsTrue(t0.Probability > 0.05);
 
             // it should be distinguished from a Fisher distribution with different parameters
             ContinuousDistribution f1 = new FisherDistribution(n1 + 1, n2);
             TestResult t1 = s.KuiperTest(f1);
-            Console.WriteLine(t1.LeftProbability);
-            Assert.IsTrue(t1.LeftProbability > 0.95);
+            Assert.IsTrue(t1.Probability < 0.05);
 
         }
-
-        /*
-        [TestMethod]
-        public void FiniteKSDebug () {
-
-            int n = 200;
-
-            FiniteKolmogorovDistribution d = new FiniteKolmogorovDistribution(n);
-
-            double x = 99.0/200.0;
-
-            Stopwatch s = new Stopwatch();
-            s.Start();
-            double P = d.LeftProbability(x);
-            s.Stop();
-            Console.WriteLine("{0} ({1})", P, s.ElapsedMilliseconds);
-
-            s.Reset();
-            s.Start();
-            double Q = d.RightProbability(x);
-            s.Stop();
-            Console.WriteLine("{0} ({1})", Q, s.ElapsedMilliseconds);
-
-        }
-        */
-
 
         [TestMethod]
         public void UniformOrderStatistics () {
@@ -535,11 +460,11 @@ namespace Test {
 
             // maxima should be distributed according to Beta(n,1)
             TestResult maxTest = maxima.KolmogorovSmirnovTest(new BetaDistribution(4, 1));
-            Assert.IsTrue(maxTest.LeftProbability < 0.95);
+            Assert.IsTrue(maxTest.Probability > 0.05);
 
             // minima should be distributed according to Beta(1,n)
             TestResult minTest = minima.KolmogorovSmirnovTest(new BetaDistribution(1, 4));
-            Assert.IsTrue(minTest.LeftProbability < 0.95);
+            Assert.IsTrue(minTest.Probability > 0.05);
 
 
         }
@@ -588,7 +513,7 @@ namespace Test {
 
                 GammaDistribution gDistribution = new GammaDistribution(n);
                 TestResult result = gSample.KolmogorovSmirnovTest(gDistribution);
-                Assert.IsTrue(result.LeftProbability < 0.95);
+                Assert.IsTrue(result.Probability > 0.05);
 
             }
 
@@ -599,16 +524,15 @@ namespace Test {
 
             // X_i ~ IG(\mu,\lambda) \rightarrow \sum_{i=0}^{n} X_i ~ IG(n \mu, n^2 \lambda)
             
-            Random rng = new Random(0);
+            Random rng = new Random(1);
             WaldDistribution d0 = new WaldDistribution(1.0, 2.0);
-            Sample s = new Sample();
+            List<double> s = new List<double>();
             for (int i = 0; i < 64; i++) {
                 s.Add(d0.GetRandomValue(rng) + d0.GetRandomValue(rng) + d0.GetRandomValue(rng));
             }
             WaldDistribution d1 = new WaldDistribution(3.0 * 1.0, 9.0 * 2.0);
             TestResult r = s.KolmogorovSmirnovTest(d1);
-            Console.WriteLine(r.LeftProbability);
-
+            Assert.IsTrue(r.Probability > 0.05);
         }
 
         [TestMethod]
@@ -640,12 +564,12 @@ namespace Test {
 
         [TestMethod]
         public void DistributionRandomDeviates () {
+            // Check that random deviates generated match distribution
             foreach (ContinuousDistribution distribution in distributions) {
                 Console.WriteLine(distribution.GetType().Name);
                 Sample s = TestUtilities.CreateSample(distribution, 128);
                 TestResult r = s.KolmogorovSmirnovTest(distribution);
-                Console.WriteLine(r.LeftProbability);
-                Assert.IsTrue(r.LeftProbability < 0.95);
+                Assert.IsTrue(r.Probability > 0.01);
 
             }
         }

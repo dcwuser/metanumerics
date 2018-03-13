@@ -161,7 +161,7 @@ namespace Meta.Numerics.Statistics {
                 }
                 chi2 += Math.Pow((data[i].Y.Value - f) / data[i].Y.Uncertainty, 2);
             }
-            TestResult test = new TestResult("ChiSquare", chi2, TestType.RightTailed, new ChiSquaredDistribution(data.Count - functions.Length));
+            TestResult test = new TestResult("χ²", chi2, TestType.RightTailed, new ChiSquaredDistribution(data.Count - functions.Length));
 
             // return the results
             FitResult fit = new FitResult(a, C, test);
@@ -391,15 +391,13 @@ namespace Meta.Numerics.Statistics {
             // compute chi^2
             double chi2 = 0.0;
             foreach (UncertainMeasurement<double> datum in this) {
-                //for (int i = 0; i < data.Count; i++) {
-                //DataPoint datum = data[i];
                 double x = datum.X;
                 double y = datum.Y.Value;
                 double dy = datum.Y.Uncertainty;
                 double z = (y - (m * x + b)) / dy;
                 chi2 += z * z;
             }
-            TestResult test = new TestResult(chi2, new ChiSquaredDistribution(Count - 2));
+            TestResult test = new TestResult("χ²", chi2, TestType.RightTailed, new ChiSquaredDistribution(Count - 2));
 
             return (new FitResult(b, db, m, dm, cov, test));
         }

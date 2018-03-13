@@ -121,13 +121,13 @@ namespace Test {
             MultivariateSample parameters = new MultivariateSample(2);
             MultivariateSample variances = new MultivariateSample(3);
 
-            // Do a bunch of fits, record reported parameters an variances
+            // Do a bunch of fits, record reported parameters and variances
             for (int i = 0; i < 32; i++) {
                 Sample s = SampleTest.CreateSample(d, 64, i);
 
-                FitResult r = GumbelDistribution.FitToSample(s);
-                parameters.Add(r.Parameters);
-                variances.Add(r.Covariance(0, 0), r.Covariance(1, 1), r.Covariance(0, 1));
+                GumbelFitResult r = GumbelDistribution.FitToSample(s);
+                parameters.Add(r.Location.Value, r.Scale.Value);
+                variances.Add(r.Parameters.Covariance[0, 0], r.Parameters.Covariance[1, 1], r.Parameters.Covariance[0, 1]);
 
                 Assert.IsTrue(r.GoodnessOfFit.Probability > 0.01);
             }

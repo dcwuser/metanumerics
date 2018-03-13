@@ -57,11 +57,11 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The result of the test.</returns>
         /// <remarks>
         /// <para>The sign test is a non-parametric alternative to the Student t-test (<see cref="StudentTTest(IReadOnlyCollection{double},double)"/>).
-        /// It tests whether the sample is consistent with the given refernce median.</para>
+        /// It tests whether the sample is consistent with the given reference median.</para>
         /// <para>The null hypothesis for the test is that the median of the underlying population from which the sample is
         /// drawn is the reference median. The test statistic is simply number of sample values that lie above the median. Since
         /// each sample value is equally likely to be below or above the population median, each draw is an independent Bernoulli
-        /// trial, and the total number of values above the population median is distributed accordng to a binomial distribution
+        /// trial, and the total number of values above the population median is distributed according to a binomial distribution
         /// (<see cref="BinomialDistribution"/>).</para>
         /// <para>The left probability of the test result is the chance of the sample median being so low, assuming the sample to have been
         /// drawn from a population with the reference median. The right probability of the test result is the chance of the sample median
@@ -184,6 +184,7 @@ namespace Meta.Numerics.Statistics {
             // compute the ratio
             double F = va / vb;
 
+            // right-tailed is only right if F > 1.
             return (new TestResult("F", F, TestType.RightTailed, new FisherDistribution(a.Count - 1, b.Count - 1)));
         }
 
@@ -196,12 +197,12 @@ namespace Meta.Numerics.Statistics {
         /// obtaining such a large value of D under the assumption that the sample is drawn from the given distribution.</returns>
         /// <remarks>
         /// <para>The null hypothesis of the Kolmogorov-Smirnov (KS) test is that the sample is drawn from the given continuous distribution.
-        /// The test statsitic D is the maximum deviation of the sample's empirical distribution function (EDF) from
+        /// The test statistic D is the maximum deviation of the sample's empirical distribution function (EDF) from
         /// the distribution's cumulative distribution function (CDF). A high value of the test statistic, corresponding
         /// to a low right tail probability, indicates that the sample distribution disagrees with the given distribution
         /// to a degree unlikely to arise from statistical fluctuations.</para>
         /// <para>For small sample sizes, we compute the null distribution of D exactly. For large sample sizes, we use an accurate
-        /// asympototic approximation. Therefore it is safe to use this method for all sample sizes.</para>
+        /// asymptotic approximation. Therefore it is safe to use this method for all sample sizes.</para>
         /// <para>A variant of this test, <see cref="Sample.KolmogorovSmirnovTest(Sample, Sample)"/>, allows you to non-parametrically
         /// test whether two samples are drawn from the same underlying distribution, without having to specify that distribution.</para>
         /// </remarks>
@@ -244,7 +245,7 @@ namespace Meta.Numerics.Statistics {
         /// <para>Like the Kolmogorov-Smirnov test (<see cref="Univariate.KolmogorovSmirnovTest(IReadOnlyList{Double},ContinuousDistribution)"/>),
         /// Kuiper's test compares the EDF of the sample to the CDF of the given distribution.</para>
         /// <para>For small sample sizes, we compute the null distribution of V exactly. For large sample sizes, we use an accurate
-        /// asympototic approximation. Therefore it is safe to use this method for all sample sizes.</para>
+        /// asymptotic approximation. Therefore it is safe to use this method for all sample sizes.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="distribution"/> is <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException">There is no data in the sample.</exception>
@@ -290,7 +291,7 @@ namespace Meta.Numerics.Statistics {
                 double P2 = (i + 1.0) / sample.Count;
 
                 // Compare the the theoretical and experimental CDF values at x-dx and x+dx;
-                // Update D if it is the largest seperation yet observed.
+                // Update D if it is the largest separation yet observed.
                 double DU = P2 - P;
                 if (DU > D1) D1 = DU;
                 double DL = P - P1;
@@ -344,7 +345,7 @@ namespace Meta.Numerics.Statistics {
             // The observed mean and variance of log(1 - W) can be fit to six digits over n=16-8192
             // by simple polynomials in log(n). To get these results, I ran simulations for n = 16, 24, 32, 48, 64, ..., 8192.
             // The number of simulated samples was 10^8 for n=10-100, 10^7 for n=100-1000, and 10^6 for n=1000-10000.
-            // Folloying Royston, I transformed to log(1 - W) and did polynomial fits to K1 and log(K2) as
+            // Following Royston, I transformed to log(1 - W) and did polynomial fits to K1 and log(K2) as
             // functions of log(n), increasing the order until I was able to reproduce both cumulants to
             // within errors for all n=16-8192. Note that K3 is detectably non-zero, so we really should
             // introduce a correction for the remaining skewness, perhaps via an Edgeworth-style expansion
@@ -354,7 +355,7 @@ namespace Meta.Numerics.Statistics {
             double sigma = Math.Exp((0.56767288 + t * (-1.18529022 + t * (0.31916472 + t * (-0.04912452 + t * (0.00383692 + t * -0.00011891))))) / 2.0);
             NormalDistribution nullDistribution = new NormalDistribution(mu, sigma);
 
-            // Need to handle 3-15 seperately.
+            // Need to handle 3-15 separately.
 
             // N = 3: W' = W, 3/4 <= W <= 1, P = (6 / Pi)(Asin(Sqrt(W)) - Asin(Sqrt(3/4)))
 
@@ -407,7 +408,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="a">The first sample.</param>
         /// <param name="b">The second sample.</param>
-        /// <returns>The test result. The test statistic is the D statistic and the likelyhood is the right probability
+        /// <returns>The test result. The test statistic is the D statistic and the likelihood is the right probability
         /// to obtain a value of D as large or larger than the one obtained.</returns>
         /// <remarks>
         /// <para>The two-sample Kolmogorov-Smirnov test is a variation of the single-sample test (<see cref="KolmogorovSmirnovTest(IReadOnlyList{double}, ContinuousDistribution)"/>)
@@ -480,12 +481,12 @@ namespace Meta.Numerics.Statistics {
         /// significant way is to compare their <see cref="PopulationMean"/> values. If their error bars overlap, they
         /// are probably statistically compatible; if they do not, the difference in means is probably statistically
         /// significant. Student's t-test is a way to refine this back-of-the-envelope procedure into a statistical test
-        /// that can determine exactly how likely a given seperation of means is under the null hypothesis that the
+        /// that can determine exactly how likely a given separation of means is under the null hypothesis that the
         /// two samples are drawn from the same distribution.</para>
         /// <para>The t-statistic is proportional to the mean of <paramref name="a"/> minus the mean of <paramref name="b"/>,
         /// so t > 0 indicates that <paramref name="a"/> has a greater mean.</para>
         /// <para>Student's t-test was one of the first statistical tests. It was described by William Sealy Gosset,
-        /// a chemist who worked for the Guiness brewing company. Since Guiness was concerned that other breweries might take
+        /// a chemist who worked for the Guinness brewing company. Since Guinness was concerned that other breweries might take
         /// advantage of a technique published by one of its chemists, Gosset published his work under the pseudonym Student.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is null.</exception>
@@ -522,7 +523,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Tests whether one sample median is compatible with another sample median.
         /// </summary>
-        /// <param name="a">The fisrt sample.</param>
+        /// <param name="a">The first sample.</param>
         /// <param name="b">The second sample.</param>
         /// <returns>The result of the test. The statistic is the Mann-Whitney U value and the probability
         /// is the chance of obtaining such an extreme value of U if the two samples are drawn from the
@@ -546,7 +547,7 @@ namespace Meta.Numerics.Statistics {
 
             // Implementing this naively would be O(N^2), so instead we use a formula that
             // relates this quantity to the sum of ranks of a's and b's; to get those ranks
-            // we do seperate sorts O(N ln N) and a merge sort O(N).
+            // we do separate sorts O(N ln N) and a merge sort O(N).
 
             // Sort the two samples.
             int[] aOrder = GetSortOrder(a);
@@ -652,10 +653,10 @@ namespace Meta.Numerics.Statistics {
         /// variances of the individual samples; instead the test compares the variance of
         /// all samples considered together as one single, large sample to the variances of the samples
         /// considered individually. If the means of some groups differ significantly,
-        /// then the variance of the unified sample will be much larger than the vairiances of the
+        /// then the variance of the unified sample will be much larger than the variances of the
         /// individual samples, and the test will signal a significant difference. Thus the
-        /// test uses variance as a tool to detect shifts in mean, not because it
-        /// is interesed in the individual sample variances per se.</para>
+        /// test uses variance as a tool to detect shifts in mean, not because we
+        /// are interested in the individual sample variances per se.</para>
         /// <para>ANOVA is most appropriate when the sample data are continuous and approximately normal,
         /// and the samples are distinguished by a nominal variable. For example, given
         /// a random sampling of the heights of members of five different political parties,
@@ -673,7 +674,7 @@ namespace Meta.Numerics.Statistics {
         /// perform a test of association, such as a <see cref="BivariateSample.PearsonRTest" />,
         /// <see cref="BivariateSample.SpearmanRhoTest" />, or <see cref="BivariateSample.KendallTauTest" />
         /// between the two variables. If you have measurements
-        /// of additional variables for each indiviual, a <see cref="MultivariateSample.LinearRegression(int)" />
+        /// of additional variables for each individual, a <see cref="MultivariateSample.LinearRegression(int)" />
         /// analysis would allow you to adjust for the confounding effects of the other variables. If you
         /// define arbitrary bins of continuously variable data in order to form groups, then your
         /// ANOVA results will depend on your choice of bins.</para>

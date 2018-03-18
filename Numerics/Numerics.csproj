@@ -193,6 +193,7 @@
     <Compile Include="Statistics\Distributions\FisherDistribution.cs" />
     <Compile Include="Statistics\Distributions\FrechetDistribution.cs" />
     <Compile Include="Statistics\Distributions\GammaDistribution.cs" />
+    <Compile Include="Statistics\Distributions\GammaFitResult.cs" />
     <Compile Include="Statistics\Distributions\GeometricDistribution.cs" />
     <Compile Include="Statistics\Distributions\GumbelDistribution.cs" />
     <Compile Include="Statistics\Distributions\GumbelFitResult.cs" />
@@ -207,15 +208,18 @@
     <Compile Include="Statistics\Distributions\LaplaceDistribution.cs" />
     <Compile Include="Statistics\Distributions\LogisticDistribution.cs" />
     <Compile Include="Statistics\Distributions\LognormalDistribution.cs" />
+    <Compile Include="Statistics\Distributions\LognormalFitResult.cs" />
     <Compile Include="Statistics\Distributions\MannWhitneyDistribution.cs" />
     <Compile Include="Statistics\Distributions\MomentMath.cs" />
     <Compile Include="Statistics\Distributions\NegativeBinomialDistribution.cs" />
     <Compile Include="Statistics\Distributions\NoncentralChiSquaredDistribution.cs" />
     <Compile Include="Statistics\Distributions\NormalDistribution.cs" />
+    <Compile Include="Statistics\Distributions\NormalFitResult.cs" />
     <Compile Include="Statistics\Distributions\ParetoDistribution.cs" />
     <Compile Include="Statistics\Distributions\PearsonRDistribution.cs" />
     <Compile Include="Statistics\Distributions\PoissonDistribution.cs" />
     <Compile Include="Statistics\Distributions\RayleighDistribution.cs" />
+    <Compile Include="Statistics\Distributions\RayleighFitResult.cs" />
     <Compile Include="Statistics\Distributions\SpearmanDistribution.cs" />
     <Compile Include="Statistics\Distributions\StudentDistribution.cs" />
     <Compile Include="Statistics\Distributions\TransformedDistribution.cs" />
@@ -224,6 +228,7 @@
     <Compile Include="Statistics\Distributions\UniformDistribution.cs" />
     <Compile Include="Statistics\Distributions\UnivariateDistribution.cs" />
     <Compile Include="Statistics\Distributions\WaldDistribution.cs" />
+    <Compile Include="Statistics\Distributions\WaldFitResult.cs" />
     <Compile Include="Statistics\Distributions\WeibullDistribution.cs" />
     <Compile Include="Statistics\Distributions\WeibullFitResult.cs" />
     <Compile Include="Statistics\Distributions\WilcoxonExactDistribution.cs" />
@@ -232,6 +237,7 @@
     <Compile Include="Statistics\InsufficientDataException.cs" />
     <Compile Include="Statistics\LinearLogisticRegressionResult.cs" />
     <Compile Include="Statistics\LinearRegressionResult.cs" />
+    <Compile Include="Statistics\MeansClusteringResult.cs" />
     <Compile Include="Statistics\MultiLinearLogisticRegressionResult.cs" />
     <Compile Include="Statistics\MultiLinearRegressionResult.cs" />
     <Compile Include="Statistics\Multivariate.cs" />

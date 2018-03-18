@@ -81,12 +81,23 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets the matrix of covariances between the fit parameters.
+        /// Gets the covariance matrix of the fit parameters.
         /// </summary>
         public SymmetricMatrix Covariance {
             get {
                 return (covariance);
             }
+        }
+
+        /// <summary>
+        /// Gets the variance of the named parameter.
+        /// </summary>
+        /// <param name="name">The parameter name.</param>
+        /// <returns>The variance of the named parameter.</returns>
+        public double VarianceOf (string name) {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            int index = IndexOf(name);
+            return (covariance[index, index]);
         }
 
         /// <summary>
@@ -194,7 +205,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Returns a string representation of the parameter.
         /// </summary>
-        /// <returns>A string representatio of the parameter.</returns>
+        /// <returns>A string representation of the parameter.</returns>
         public override string ToString () {
             return ($"{Name} = {Estimate}");
         }

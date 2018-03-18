@@ -3,6 +3,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
+using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 
@@ -148,26 +149,33 @@ namespace Test {
 
             WaldDistribution wald = new WaldDistribution(3.5, 2.5);
 
-            BivariateSample parameters = new BivariateSample();
-            MultivariateSample variances = new MultivariateSample(3);
-
+            FrameTable results = new FrameTable(
+                new ColumnDefinition<double>("Mean"),
+                new ColumnDefinition<double>("Shape"),
+                new ColumnDefinition<double>("MeanVariance"),
+                new ColumnDefinition<double>("ShapeVariance"),
+                new ColumnDefinition<double>("MeanShapeCovariance")
+            );
             for (int i = 0; i < 128; i++) {
-                Sample s = SampleTest.CreateSample(wald, 16, i);
+                Sample sample = SampleTest.CreateSample(wald, 16, i);
 
-                FitResult r = WaldDistribution.FitToSample(s);
-                parameters.Add(r.Parameters[0], r.Parameters[1]);
-                variances.Add(r.Covariance(0, 0), r.Covariance(1, 1), r.Covariance(0, 1));
-
-                Assert.IsTrue(r.GoodnessOfFit.Probability > 0.01);
+                WaldFitResult result = WaldDistribution.FitToSample(sample);
+                Assert.IsTrue(result.Mean.Value == result.Parameters.Best[result.Parameters.IndexOf("Mean")]);
+                Assert.IsTrue(result.Shape.Value == result.Parameters.Best[result.Parameters.IndexOf("Shape")]);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Parameters.VarianceOf("Mean"), MoreMath.Sqr(result.Mean.Uncertainty)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Parameters.VarianceOf("Shape"), MoreMath.Sqr(result.Shape.Uncertainty)));
+                results.AddRow(
+                    result.Mean.Value, result.Shape.Value,
+                    result.Parameters.VarianceOf("Mean"), result.Parameters.VarianceOf("Shape"), result.Parameters.CovarianceOf("Mean", "Shape")
+                );
             }
 
-            Assert.IsTrue(parameters.X.PopulationMean.ConfidenceInterval(0.99).ClosedContains(wald.Mean));
-            Assert.IsTrue(parameters.Y.PopulationMean.ConfidenceInterval(0.99).ClosedContains(wald.Shape));
+            Assert.IsTrue(results["Mean"].As<double>().PopulationMean().ConfidenceInterval(0.99).ClosedContains(wald.Mean));
+            Assert.IsTrue(results["Shape"].As<double>().PopulationMean().ConfidenceInterval(0.99).ClosedContains(wald.Shape));
 
-            Assert.IsTrue(parameters.X.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(variances.Column(0).Median));
-            Assert.IsTrue(parameters.Y.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(variances.Column(1).Median));
-            Assert.IsTrue(parameters.PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(variances.Column(2).Median));
-
+            Assert.IsTrue(results["Mean"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(results["MeanVariance"].As<double>().Median()));
+            Assert.IsTrue(results["Shape"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(results["ShapeVariance"].As<double>().Median()));
+            Assert.IsTrue(results["Mean"].As<double>().PopulationCovariance(results["Shape"].As<double>()).ConfidenceInterval(0.99).ClosedContains(results["MeanShapeCovariance"].As<double>().Median()));
         }
 
         [TestMethod]
@@ -182,9 +190,9 @@ namespace Test {
                 // We pick a quite-small sample, because we have a finite-n unbiased estimator.
                 Sample s = SampleTest.CreateSample(rayleigh, 8, i);
 
-                FitResult r = RayleighDistribution.FitToSample(s);
-                parameter.Add(r.Parameters[0]);
-                variance.Add(r.Covariance(0, 0));
+                RayleighFitResult r = RayleighDistribution.FitToSample(s);
+                parameter.Add(r.Scale.Value);
+                variance.Add(r.Parameters.VarianceOf("Scale"));
 
                 Assert.IsTrue(r.GoodnessOfFit.Probability > 0.01);
             }

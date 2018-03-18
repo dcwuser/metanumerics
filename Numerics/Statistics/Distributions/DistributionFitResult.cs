@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Statistics.Distributions
 {
@@ -14,6 +12,8 @@ namespace Meta.Numerics.Statistics.Distributions
     {
         internal DistributionFitResult(T distribution, TestResult goodnessOfFit) : base()
         {
+            Debug.Assert(distribution != null);
+            Debug.Assert(goodnessOfFit != null);
             this.Distribution = distribution;
             this.GoodnessOfFit = goodnessOfFit;
         }

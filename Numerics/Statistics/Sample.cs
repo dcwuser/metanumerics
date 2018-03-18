@@ -10,8 +10,7 @@ using System.Text;
 
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
-using Meta.Numerics.Functions;
-using Meta.Numerics.Matrices;
+using Meta.Numerics.Data;
 using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Statistics {
@@ -19,7 +18,7 @@ namespace Meta.Numerics.Statistics {
     // the SampleStorage class is the internal representation of a sample
     // it is used internally by the Sample, BivariateSample, and MultivariateSample classes
 
-    internal class SampleStorage : IReadOnlyList<double>  {
+    internal class SampleStorage : IReadOnlyList<double>, INamed  {
 
         public SampleStorage () {
             data = new List<double>();
@@ -59,24 +58,19 @@ namespace Meta.Numerics.Statistics {
 
         public double Mean {
             get {
-                //return (M);
                 return (summary.Mean);
             }
         }
 
-        public double Variance {
+        public double SumOfSquaredDeviations {
             get {
-                //return (SS / data.Count);
-                return (summary.Variance);
+                return (summary.SumOfSquaredDeviations);
             }
         }
 
         public void Add (double value) {
             data.Add(value);
             int n = data.Count;
-            //double dM = (value - M);
-            //M += dM / n;
-            //SS += (n - 1.0) / n * dM * dM;
             summary.Add(value);
             order = null;
         }
@@ -98,17 +92,6 @@ namespace Meta.Numerics.Statistics {
         public void RemoveAt (int i) {
             double value = data[i];
             data.RemoveAt(i);
-            /*
-            int n = data.Count;
-            if (n > 0) {
-                double dM = (value - M);
-                M -= dM / n;
-                SS -= (n + 1.0) / n * dM * dM;
-            } else {
-                M = 0.0;
-                SS = 0.0;
-            }
-            */
             summary.Remove(value);
             order = null;
         }
@@ -140,56 +123,18 @@ namespace Meta.Numerics.Statistics {
         }
 
         public void Transform (Func<double, double> transformFunction) {
-            //M = 0.0; SS = 0.0;
             summary = new InternalSampleSummary();
             for (int i = 0; i < data.Count; i++) {
                 double value = transformFunction(data[i]);
-                //double dM = (value - M);
-                //M += dM / (i + 1);
-                //SS += dM * dM * i / (i + 1);
                 summary.Add(value);
                 data[i] = value;
             }
             order = null;
         }
 
-        public int[] GetSortOrder () {
-            if (order == null) {
-                order = new int[data.Count];
-                for (int i = 0; i < order.Length; i++) {
-                    order[i] = i;
-                }
-                Array.Sort<int> (order, delegate (int xi, int yi) {
-                    double x = data[xi];
-                    double y = data[yi];
-                    if (x < y) {
-                        return(-1);
-                    } else if (x > y) {
-                        return(+1);
-                    } else {
-                        return(0);
-                    }
-                } );
-                return (order);
-            } else {
-                return (order);
-            }
-        }
-
-        public int[] GetRanks () {
-            int[] order = GetSortOrder();
-            int[] ranks = new int[order.Length];
-            for (int i = 0; i < order.Length; i++) {
-                ranks[order[i]] = i;
-            }
-            return (ranks);
-        }
-
         public SampleStorage Copy () {
             SampleStorage copy = new SampleStorage();
             copy.data = new List<double>(this.data);
-            //copy.M = this.M;
-            //copy.SS = this.SS;
             copy.summary = this.summary;
             copy.order = this.order;
             return (copy);
@@ -210,19 +155,10 @@ namespace Meta.Numerics.Statistics {
     // we can know how the summary statistics change without
     // referencing past values. This enables "one pass" computation
     // of the mean and standard deviation.
-    // See http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance and Knuth
+    // See http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance and Knuth.
+    // I'd like to replace this with our new, public version, but that doesn't support removal yet.
 
     internal struct InternalSampleSummary {
-
-        /*
-        public SampleSummary () {
-
-        }
-        */
-
-        public InternalSampleSummary (IEnumerable<double> values) : this() {
-            Add(values);
-        }
 
         private int N;
         private double M1;
@@ -246,13 +182,6 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        public double Variance {
-            get {
-                // Note this is the sample variance, not the population variance
-                return (M2 / N);
-            }
-        }
-
         public void Add (double value) {
             N++;
             double dM = value - M1;
@@ -260,13 +189,6 @@ namespace Meta.Numerics.Statistics {
             M2 += (value - M1) * dM;
             // note in M2 update, one factor is delta from old mean, the other the delta from new mean
             // M2 can also be updated as dM * dM * (n-1) / n, but this requires an additional flop
-        }
-
-        public void Add (IEnumerable<double> values) {
-            if (values == null) throw new ArgumentNullException("values");
-            foreach (double value in values) {
-                Add(value);
-            }
         }
 
         public void Remove (double value) {
@@ -309,13 +231,13 @@ namespace Meta.Numerics.Statistics {
     /// tests to compare the sample distribution to other sample distributions or theoretical models.</para>
     /// </remarks>
     public sealed class Sample : ICollection<double>, IReadOnlyCollection<double>, IEnumerable<double>, IEnumerable,
-        IReadOnlyList<double> {
+        IReadOnlyList<double>, INamed {
 
         private SampleStorage data;
 
         // isReadOnly is true for samples returned as columns of larger data sets
         // values cannot be added to or deleted from such samples because that would
-        // distrub the correspondence with other columns
+        // disturb the correspondence with other columns
         private bool isReadOnly;
 
         /// <summary>
@@ -438,7 +360,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="transformFunction">The function used to transform the values.</param>
         /// <remarks>
         /// <para>For example, to replace all values with their logarithms, apply a transform using <see cref="Math.Log(double)"/>.</para>
-        /// <para>If the supplied transform function throws an excaption, or returns infinite or NaN values, the transformation
+        /// <para>If the supplied transform function throws an exception, or returns infinite or NaN values, the transformation
         /// may be incomplete or the data corrupted.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="transformFunction"/> is <see langword="null"/>.</exception>
@@ -455,7 +377,7 @@ namespace Meta.Numerics.Statistics {
         /// <value><see langword="true"/> if the sample is read-only, otherwise <see langword="false"/>.</value>
         /// <remarks>
         /// <para>If a sample is read-only and you need to make changes to it, you can use <see cref="Copy"/> to
-        /// obtain a modifyable copy.</para>
+        /// obtain a modify-able copy.</para>
         /// </remarks>
         public bool IsReadOnly {
             get {
@@ -515,7 +437,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="http://mathworld.wolfram.com/SampleVariance.html"/>
         public double Variance {
             get {
-                return (data.Variance);
+                return (data.SumOfSquaredDeviations / data.Count);
             }
         }
 
@@ -523,7 +445,7 @@ namespace Meta.Numerics.Statistics {
         /// Gets the sample standard deviation.
         /// </summary>
         /// <remarks>
-        /// <para>This is the standard deviation of the sample values, not the infered standard
+        /// <para>This is the standard deviation of the sample values, not the inferred standard
         /// deviation of the underlying distribution. This is sometimes called the uncorrected
         /// sample standard deviation, because it is a biased estimator of the variance of
         /// the underlying population. To obtain an unbiased estimate of the standard deviation
@@ -532,7 +454,33 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="http://mathworld.wolfram.com/StandardDeviation.html"/>
         public double StandardDeviation {
             get {
-                return (Math.Sqrt(data.Variance));
+                return (Math.Sqrt(data.SumOfSquaredDeviations / data.Count));
+            }
+        }
+
+        /// <summary>
+        /// Gets the Bessel-corrected standard deviation.
+        /// </summary>
+        /// <remarks>
+        /// <para>This probably isn't the quantity you want, even though it is what many software
+        /// packages refer to as the "standard deviation". It is the square root of the sum of
+        /// squared deviations from the mean, divided by n-1 instead of n.</para>
+        /// <para>Using n-1 instead of n in the formula for variance produces an
+        /// unbiased estimator of the <see cref="PopulationVariance"/>. But using n-1 instead of n
+        /// in the formula for standard deviation, which is how this property is
+        /// computed, does <em>not</em> produce an unbiased estimator of the population's standard deviation.
+        /// Our implementation of <see cref="PopulationStandardDeviation"/> does a better job of reducing
+        /// bias, so you should use it instead if that is what you are trying to estimate. The main
+        /// reason this property exists at all is to satisfy users who want to compute the exact
+        /// same value that another software package did.</para>
+        /// </remarks>
+        /// <seealso cref="StandardDeviation"/>
+        /// <seealso cref="PopulationStandardDeviation"/>
+        /// <seealso cref="https://en.wikipedia.org/wiki/Bessel%27s_correction"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation"/>
+        public double CorrectedStandardDeviation {
+            get {
+                return (Math.Sqrt(data.SumOfSquaredDeviations / (data.Count - 1)));
             }
         }
 
@@ -563,7 +511,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="r">The order of the moment to compute.</param>
         /// <returns>The <paramref name="r"/>th central moment.</returns>
         /// <remarks>
-        /// <para>This method computes the central momements of the sample data, not the estiamted
+        /// <para>This method computes the central moments of the sample data, not the estimated
         /// central moments of the underlying population; to obtain the latter, use <see cref="PopulationCentralMoment(int)"/>.</para>
         /// </remarks>
         public double CentralMoment (int r) {
@@ -583,7 +531,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets the interquartile range of sample measurmements.
+        /// Gets the interquartile range of sample measurements.
         /// </summary>
         /// <remarks>The interquartile range is the interval between the 25th and the 75th percentile.</remarks>
         /// <seealso cref="InverseLeftProbability"/>
@@ -634,7 +582,7 @@ namespace Meta.Numerics.Statistics {
             return (data.InverseLeftProbability(P));
         }
 
-        // infered population-level statistics
+        // inferred population-level statistics
 
         /// <summary>
         /// Gets an estimate of the population mean from the sample.
@@ -667,6 +615,7 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+#if FUTURE
         /// <summary>
         /// Gets an estimate of the population skewness from the sample.
         /// </summary>
@@ -674,27 +623,6 @@ namespace Meta.Numerics.Statistics {
             get {
                 return (EstimateSkewness());
             }
-        }
-
-        /// <summary>
-        /// Estimates the given population raw moment from the sample.
-        /// </summary>
-        /// <param name="r">The order of the moment.</param>
-        /// <returns>An estimate of the <paramref name="r"/>th raw moment of the population.</returns>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="r"/> is negative.</exception>
-        public UncertainValue PopulationRawMoment (int r) {
-            return (data.PopulationRawMoment(r));
-        }
-
-        /// <summary>
-        /// Estimates the given population central moment from the sample.
-        /// </summary>
-        /// <param name="r">The order of the moment.</param>
-        /// <returns>An estimate, with uncertainty, of the <paramref name="r"/>th moment about the mean
-        /// of the underlying population.</returns>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="r"/> is negative.</exception>
-        public UncertainValue PopulationCentralMoment (int r) {
-            return (data.PopulationCentralMoment(r));
         }
 
         private UncertainValue EstimateSkewness () {
@@ -722,6 +650,29 @@ namespace Meta.Numerics.Statistics {
             return (new UncertainValue(g1, Math.Sqrt(vg)));
 
         }
+#endif
+
+        /// <summary>
+        /// Estimates the given population raw moment from the sample.
+        /// </summary>
+        /// <param name="r">The order of the moment.</param>
+        /// <returns>An estimate of the <paramref name="r"/>th raw moment of the population.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="r"/> is negative.</exception>
+        public UncertainValue PopulationRawMoment (int r) {
+            return (data.PopulationRawMoment(r));
+        }
+
+        /// <summary>
+        /// Estimates the given population central moment from the sample.
+        /// </summary>
+        /// <param name="r">The order of the moment.</param>
+        /// <returns>An estimate, with uncertainty, of the <paramref name="r"/>th moment about the mean
+        /// of the underlying population.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="r"/> is negative.</exception>
+        public UncertainValue PopulationCentralMoment (int r) {
+            return (data.PopulationCentralMoment(r));
+        }
+
 
         // statistical tests
 
@@ -943,7 +894,6 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="https://en.wikipedia.org/wiki/One-way_analysis_of_variance"/>
         public static OneWayAnovaResult OneWayAnovaTest (params Sample[] samples) {
             return (Univariate.OneWayAnovaTest(samples));
-            //return (OneWayAnovaTest((IList<Sample>)samples));
         }
 
         /// <summary>
@@ -957,40 +907,6 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         public static OneWayAnovaResult OneWayAnovaTest (IReadOnlyCollection<Sample> samples) {
             return (Univariate.OneWayAnovaTest(samples));
-            /*
-            if (samples == null) throw new ArgumentNullException(nameof(samples));
-            if (samples.Count < 2) throw new ArgumentException("There must be at least two samples in the sample list.", "samples");
-
-            // determine total count, mean, and within-group sum-of-squares
-            int n = 0;
-            double mean = 0.0;
-            double SSW = 0.0;
-            foreach (Sample sample in samples) {
-                if (sample == null) throw new ArgumentNullException("sample");
-                n += sample.Count;
-                mean += sample.Count * sample.Mean;
-                SSW += sample.Count * sample.Variance;
-            }
-            mean = mean / n;
-
-            // determine between-group sum-of-squares
-            double SSB = 0.0;
-            foreach (Sample sample in samples) {
-                SSB += sample.Count * MoreMath.Sqr(sample.Mean - mean);
-            }
-
-            // determine degrees of freedom associated with each sum-of-squares
-            int dB = samples.Count - 1;
-            int dW = n - 1 - dB;
-
-            // determine F statistic
-            double F = (SSB / dB) / (SSW / dW);
-
-            AnovaRow factor = new AnovaRow(SSB, dB);
-            AnovaRow residual = new AnovaRow(SSW, dW);
-            AnovaRow total = new AnovaRow(SSB + SSW, n - 1);
-            return (new OneWayAnovaResult(factor, residual, total));
-            */
         }
 
         /// <summary>
@@ -1104,67 +1020,8 @@ namespace Meta.Numerics.Statistics {
         /// <remarks>
         /// <para>For detailed information, see <see cref="KruskalWallisTest(Sample[])"/>.</para>
         /// </remarks>
-        public static TestResult KruskalWallisTest (IList<Sample> samples) {
-            if (samples == null) throw new ArgumentNullException(nameof(samples));
-            if (samples.Count < 2) throw new ArgumentException("There must be at least two samples in the sample list.", "samples");
-
-            // sort each sample individually and compute count total from all samples
-            int N = 0;
-            int[][] orders = new int[samples.Count][];
-            for (int i = 0; i < samples.Count; i++) {
-                N += samples[i].data.Count;
-                orders[i] = samples[i].data.GetSortOrder();
-            }
-
-            // do a multi-merge sort to determine ranks sums
-
-            // initialize a pointer to the current active index in each ordered list
-            int[] p = new int[samples.Count];
-
-            // keep track the current rank to be assigned
-            int r = 0;
-
-            // keep track of rank sums
-            // this is all that we need for KW
-            // the ranks of individual entries can be made to disappear from the final formula using sum identities
-            int[] rs = new int[samples.Count];
-
-            while (true) {
-
-                // increment the rank
-                // (programmers may think ranks start from 0, but in the definition of the KW test they start from 1)
-                r++;
-
-                // determine the smallest of current entries
-                int j = -1;
-                double f = Double.PositiveInfinity;
-                for (int k = 0; k < samples.Count; k++) {
-                    if ((p[k] < orders[k].Length) && (samples[k].data[orders[k][p[k]]] < f)) {
-                        j = k;
-                        f = samples[k].data[orders[k][p[k]]];
-                    }
-                }
-
-                // test for all lists complete
-                if (j < 0) break;
-
-                // increment the pointer and the rank sum for that column
-                p[j]++;
-                rs[j] += r;
-
-            }
-
-            // compute the KW statistic
-            double H = 0.0;
-            for (int i = 0; i < samples.Count; i++) {
-                double z = ((double)rs[i]) / orders[i].Length - (N + 1) / 2.0;
-                H += orders[i].Length * (z * z);
-            }
-            H = 12.0 / N / (N + 1) * H;
-
-            // use the chi-squared approximation to the null distribution
-            return (new TestResult("H", H, TestType.RightTailed, new ChiSquaredDistribution(samples.Count - 1)));
-
+        public static TestResult KruskalWallisTest (IReadOnlyList<Sample> samples) {
+            return (Univariate.KruskalWallisTest(samples));
         }
 
         /// <summary>
@@ -1187,7 +1044,7 @@ namespace Meta.Numerics.Statistics {
         /// <see cref="OneWayAnovaTest(Sample[])"/>
         /// <see href="https://en.wikipedia.org/wiki/Kruskal%E2%80%93Wallis_one-way_analysis_of_variance"/>
         public static TestResult KruskalWallisTest (params Sample[] samples) {
-            return (KruskalWallisTest((IList<Sample>)samples));
+            return (KruskalWallisTest((IReadOnlyList<Sample>)samples));
         }
 
 
@@ -1290,7 +1147,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="factory">A function that returns a distribution when given its defining parameters.</param>
         /// <param name="start">An initial guess for the defining parameters.</param>
-        /// <returns>The result of the fit, containg the parameters that result in the best fit,
+        /// <returns>The result of the fit, containing the parameters that result in the best fit,
         /// covariance matrix among those parameters, and a test of the goodness of fit.</returns>
         /// <seealso href="http://en.wikipedia.org/wiki/Maximum_likelihood"/>
         public FitResult MaximumLikelihoodFit (Func<IReadOnlyList<double>, ContinuousDistribution> factory, IReadOnlyList<double> start) {

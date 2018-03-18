@@ -12,19 +12,17 @@ namespace Meta.Numerics.Data
     // Supported addenda: iid, series, circular
 
     /// <summary>
-    /// A modifyable array of data.
+    /// A modify-able array of data.
     /// </summary>
     public sealed partial class FrameTable : FrameView
     {
         private FrameTable () : base(new List<NamedList>(), new List<int>())
         {
-            //this.columns = new List<DataList>();
-            //this.columnMap = new Dictionary<string, int>();
-            //this.map = new List<int>();
+
         }
 
         /// <summary>
-        /// Initializes a new data frame with the columns specifed by the given headers.
+        /// Initializes a new data frame with the columns specified by the given headers.
         /// </summary>
         /// <param name="columnHeaders"></param>
         public FrameTable(params ColumnDefinition[] columnHeaders) : this()
@@ -36,19 +34,11 @@ namespace Meta.Numerics.Data
             }
         }
 
-        /// <summary>
-        /// Initializes a new data frame with the given data lists as columns.
-        /// </summary>
-        /// <param name="columns">The data lists.</param>
-        internal FrameTable(params NamedList[] columns) : this((IList<NamedList>) columns)
+        internal FrameTable(params NamedList[] columns) : this((IEnumerable<NamedList>) columns)
         {
 
         }
 
-        /// <summary>
-        /// Initializes a new data frame with the given sequence of data lists as columns.
-        /// </summary>
-        /// <param name="columns">An enumerable sequence of non-null data lists.</param>
         internal FrameTable(IEnumerable<NamedList> columns) : this()
         {
             if (columns == null) throw new ArgumentNullException(nameof(columns));

@@ -104,6 +104,63 @@ namespace Test {
         }
 
         [TestMethod]
+        public void LinearLogisticRegressionVariances () {
+
+            // define model y = a + b0 * x0 + b1 * x1 + noise
+            double a = -2.0;
+            double b = 1.0;
+            ContinuousDistribution xDistribution = new StudentDistribution(2.0);
+
+            FrameTable data = new FrameTable(
+                new ColumnDefinition<double>("a"),
+                new ColumnDefinition<double>("da"),
+                new ColumnDefinition<double>("b"),
+                new ColumnDefinition<double>("db"),
+                new ColumnDefinition<double>("abcov"),
+                new ColumnDefinition<double>("p"),
+                new ColumnDefinition<double>("dp")
+            );
+
+            // draw a sample from the model
+            Random rng = new Random(3);
+            for (int j = 0; j < 32; j++) {
+                List<double> xs = new List<double>();
+                List<bool> ys = new List<bool>();
+
+                for (int i = 0; i < 32; i++) {
+                    double x = xDistribution.GetRandomValue(rng);
+                    double t = a + b * x;
+                    double p = 1.0 / (1.0 + Math.Exp(-t));
+                    bool y = (rng.NextDouble() < p);
+                    xs.Add(x);
+                    ys.Add(y);
+                }
+
+                // do a linear regression fit on the model
+                LinearLogisticRegressionResult result = ys.LinearLogisticRegression(xs);
+                UncertainValue pp = result.Predict(1.0);
+
+                data.AddRow(
+                    result.Intercept.Value, result.Intercept.Uncertainty,
+                    result.Slope.Value, result.Slope.Uncertainty,
+                    result.Parameters.Covariance[0, 1],
+                    pp.Value, pp.Uncertainty
+                );
+
+            }
+
+            // The estimated parameters should agree with the model that generated the data.
+
+            // The variances of the estimates should agree with the claimed variances
+            Assert.IsTrue(data["a"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["da"].As<double>().Mean()));
+            Assert.IsTrue(data["b"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["db"].As<double>().Mean()));
+            Assert.IsTrue(data["a"].As<double>().PopulationCovariance(data["b"].As<double>()).ConfidenceInterval(0.99).ClosedContains(data["abcov"].As<double>().Mean()));
+            Assert.IsTrue(data["p"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["dp"].As<double>().Mean()));
+
+        }
+
+
+        [TestMethod]
         public void LinearLogisticRegression () {
 
             // do a set of logistic regression fits

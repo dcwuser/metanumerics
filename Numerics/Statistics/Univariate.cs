@@ -201,6 +201,40 @@ namespace Meta.Numerics.Statistics {
             return (Math.Sqrt(Variance(sample)));
         }
 
+
+        /// <summary>
+        /// Computes the Bessel-corrected standard deviation.
+        /// </summary>
+        /// <remarks>
+        /// <para>This probably isn't the quantity you want, even though it's what many software
+        /// packages refer to as the "standard deviation". It is the square root of the sum of
+        /// squared deviations from the mean, divided by n-1 instead of n.</para>
+        /// <para>Using n-1 instead of n in the formula for <em>variance</em> produces an
+        /// unbiased estimator of the <see cref="PopulationVariance"/>. But using n-1 instead of n
+        /// in the formula for standard deviation, which is how this property is
+        /// computed, does <em>not</em> produce an unbiased estimator of the population's standard deviation.
+        /// Our implementation of <see cref="PopulationStandardDeviation"/> does a better job of reducing
+        /// bias, so you should use it instead if that is what you are trying to estimate. The main
+        /// reason this property exists at all is to satisfy users who want to compute the exact
+        /// same value that another software package did.</para>
+        /// </remarks>
+        /// <seealso cref="StandardDeviation"/>
+        /// <seealso cref="PopulationStandardDeviation"/>
+        /// <seealso cref="https://en.wikipedia.org/wiki/Bessel%27s_correction"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation"/>
+        /// <seealso cref="https://en.wikipedia.org/wiki/Bias_of_an_estimator"/>
+        public static double CorrectedStandardDeviation (IReadOnlyCollection<double> sample) {
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample.Count < 2) return (Double.NaN);
+
+            int n;
+            double mean, sumOfSquares;
+            ComputeMomentsUpToSecond(sample, out n, out mean, out sumOfSquares);
+            Debug.Assert(sample.Count == n);
+
+            return (Math.Sqrt(sumOfSquares / (n-1)));
+        }
+
         /// <summary>
         /// Computes the given sample raw moment.
         /// </summary>

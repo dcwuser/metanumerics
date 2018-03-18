@@ -237,6 +237,76 @@ namespace Test {
 
         }
 
+
+        [TestMethod]
+        public void MultivariateLinearRegressionVariances () {
+
+            // define model y = a + b0 * x0 + b1 * x1 + noise
+            double a = -3.0;
+            double b0 = 2.0;
+            double b1 = -1.0;
+            ContinuousDistribution x0distribution = new LaplaceDistribution();
+            ContinuousDistribution x1distribution = new CauchyDistribution();
+            ContinuousDistribution eDistribution = new NormalDistribution(0.0, 4.0);
+
+            FrameTable data = new FrameTable(
+                new ColumnDefinition<double>("a"),
+                new ColumnDefinition<double>("da"),
+                new ColumnDefinition<double>("b0"),
+                new ColumnDefinition<double>("db0"),
+                new ColumnDefinition<double>("b1"),
+                new ColumnDefinition<double>("db1"),
+                new ColumnDefinition<double>("ab1Cov"),
+                new ColumnDefinition<double>("p"),
+                new ColumnDefinition<double>("dp")
+            );
+
+            // draw a sample from the model
+            Random rng = new Random(4);
+            for (int j = 0; j < 64; j++) {
+                List<double> x0s = new List<double>();
+                List<double> x1s = new List<double>();
+                List<double> ys = new List<double>();
+
+                for (int i = 0; i < 16; i++) {
+                    double x0 = x0distribution.GetRandomValue(rng);
+                    double x1 = x1distribution.GetRandomValue(rng);
+                    double e = eDistribution.GetRandomValue(rng);
+                    double y = a + b0 * x0 + b1 * x1 + e;
+                    x0s.Add(x0);
+                    x1s.Add(x1);
+                    ys.Add(y);
+                }
+
+                // do a linear regression fit on the model
+                MultiLinearRegressionResult result = ys.MultiLinearRegression(
+                    new Dictionary<string, IReadOnlyList<double>> {
+                        {"x0", x0s }, {"x1", x1s }
+                    }
+                );
+                UncertainValue pp = result.Predict(-5.0, 6.0);
+
+                data.AddRow(
+                    result.Intercept.Value, result.Intercept.Uncertainty,
+                    result.CoefficientOf("x0").Value, result.CoefficientOf("x0").Uncertainty,
+                    result.CoefficientOf("x1").Value, result.CoefficientOf("x1").Uncertainty,
+                    result.Parameters.CovarianceOf("Intercept", "x1"),
+                    pp.Value, pp.Uncertainty
+                );
+
+            }
+
+            // The estimated parameters should agree with the model that generated the data.
+
+            // The variances of the estimates should agree with the claimed variances
+            Assert.IsTrue(data["a"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["da"].As<double>().Mean()));
+            Assert.IsTrue(data["b0"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["db0"].As<double>().Mean()));
+            Assert.IsTrue(data["b1"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["db1"].As<double>().Mean()));
+            Assert.IsTrue(data["a"].As<double>().PopulationCovariance(data["b1"].As<double>()).ConfidenceInterval(0.99).ClosedContains(data["ab1Cov"].As<double>().Mean()));
+            Assert.IsTrue(data["p"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["dp"].As<double>().Median()));
+
+        }
+
         [TestMethod]
         public void MultivariateLinearRegressionBadInputTest () {
 
@@ -302,6 +372,134 @@ namespace Test {
             // New multi linear regression code.
             MultiLinearRegressionResult result3 = multi.Column(1).ToList().MultiLinearRegression(multi.Column(0).ToList());
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result1.Parameters["Intercept"].Estimate, result3.Parameters["Intercept"].Estimate));
+
+        }
+
+
+        [TestMethod]
+        public void MultivariateLinearLogisticRegressionSimple () {
+
+            // define model y = a + b0 * x0 + b1 * x1 + noise
+            double a = 1.0;
+            double b0 = -1.0 / 2.0;
+            double b1 = 1.0 / 3.0;
+            ContinuousDistribution x0distribution = new LaplaceDistribution();
+            ContinuousDistribution x1distribution = new NormalDistribution();
+
+            // draw a sample from the model
+            Random rng = new Random(1);
+            MultivariateSample old = new MultivariateSample("y", "x0", "x1");
+            FrameTable table = new FrameTable(
+                new ColumnDefinition<double>("x0"),
+                new ColumnDefinition<double>("x1"),
+                new ColumnDefinition<bool>("y")
+            );
+            for (int i = 0; i < 100; i++) {
+                double x0 = x0distribution.GetRandomValue(rng);
+                double x1 = x1distribution.GetRandomValue(rng);
+                double t = a + b0 * x0 + b1 * x1;
+                double p = 1.0 / (1.0 + Math.Exp(-t));
+                bool y = (rng.NextDouble() < p);
+                old.Add(y ? 1.0 : 0.0, x0, x1);
+                table.AddRow(x0, x1, y);
+            }
+
+            // do a linear regression fit on the model
+            MultiLinearLogisticRegressionResult oldResult = old.LogisticLinearRegression(0);
+            MultiLinearLogisticRegressionResult newResult = table["y"].As<bool>().MultiLinearLogisticRegression(
+                table["x0"].As<double>(), table["x1"].As<double>()
+            );
+
+            // the result should have the appropriate dimension
+            Assert.IsTrue(newResult.Parameters.Count == 3);
+
+            // The parameters should match the model
+            Assert.IsTrue(newResult.CoefficientOf(0).ConfidenceInterval(0.99).ClosedContains(b0));
+            Assert.IsTrue(newResult.CoefficientOf("x1").ConfidenceInterval(0.99).ClosedContains(b1));
+            Assert.IsTrue(newResult.Intercept.ConfidenceInterval(0.99).ClosedContains(a));
+
+            // Our predictions should be better than chance.
+            int correct = 0;
+            for (int i = 0; i < table.Rows.Count; i++) {
+                FrameRow row = table.Rows[i];
+                double x0 = (double) row["x0"];
+                double x1 = (double) row["x1"];
+                double p = newResult.Predict(x0, x1).Value;
+                bool y = (bool) row["y"];
+                if ((y && p > 0.5) || (!y & p < 0.5)) correct++;
+            }
+            Assert.IsTrue(correct > 0.5 * table.Rows.Count);
+
+        }
+
+        [TestMethod]
+        public void MultivariateLinearLogisticRegressionVariances () {
+
+            // define model y = a + b0 * x0 + b1 * x1 + noise
+            double a = -3.0;
+            double b0 = 2.0;
+            double b1 = 1.0;
+            ContinuousDistribution x0distribution = new ExponentialDistribution();
+            ContinuousDistribution x1distribution = new LognormalDistribution();
+
+            FrameTable data = new FrameTable(
+                new ColumnDefinition<double>("a"),
+                new ColumnDefinition<double>("da"),
+                new ColumnDefinition<double>("b0"),
+                new ColumnDefinition<double>("db0"),
+                new ColumnDefinition<double>("b1"),
+                new ColumnDefinition<double>("db1"),
+                new ColumnDefinition<double>("p"),
+                new ColumnDefinition<double>("dp")
+            );
+
+            // draw a sample from the model
+            Random rng = new Random(2);
+            for (int j = 0; j < 32; j++) {
+                List<double> x0s = new List<double>();
+                List<double> x1s = new List<double>();
+                List<bool> ys = new List<bool>();
+
+                FrameTable table = new FrameTable(
+                    new ColumnDefinition<double>("x0"),
+                    new ColumnDefinition<double>("x1"),
+                    new ColumnDefinition<bool>("y")
+                );
+                for (int i = 0; i < 32; i++) {
+                    double x0 = x0distribution.GetRandomValue(rng);
+                    double x1 = x1distribution.GetRandomValue(rng);
+                    double t = a + b0 * x0 + b1 * x1;
+                    double p = 1.0 / (1.0 + Math.Exp(-t));
+                    bool y = (rng.NextDouble() < p);
+                    x0s.Add(x0);
+                    x1s.Add(x1);
+                    ys.Add(y);
+                }
+
+                // do a linear regression fit on the model
+                MultiLinearLogisticRegressionResult result = ys.MultiLinearLogisticRegression(
+                    new Dictionary<string, IReadOnlyList<double>> {
+                        {"x0", x0s }, {"x1", x1s }
+                    }
+                );
+                UncertainValue pp = result.Predict(0.0, 1.0);
+
+                data.AddRow(
+                    result.Intercept.Value, result.Intercept.Uncertainty,
+                    result.CoefficientOf("x0").Value, result.CoefficientOf("x0").Uncertainty,
+                    result.CoefficientOf("x1").Value, result.CoefficientOf("x1").Uncertainty,
+                    pp.Value, pp.Uncertainty
+                );
+
+            }
+
+            // The estimated parameters should agree with the model that generated the data.
+
+            // The variances of the estimates should agree with the claimed variances
+            Assert.IsTrue(data["a"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["da"].As<double>().Mean()));
+            Assert.IsTrue(data["b0"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["db0"].As<double>().Mean()));
+            Assert.IsTrue(data["b1"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["db1"].As<double>().Mean()));
+            Assert.IsTrue(data["p"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["dp"].As<double>().Mean()));
 
         }
 

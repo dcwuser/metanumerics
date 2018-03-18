@@ -96,7 +96,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="x">The x values of the data points.</param>
         /// <param name="y">The y values of the data points.</param>
         /// <exception cref="DimensionMismatchException">The lengths of the two lists are not equal.</exception>
-        public void Add (IList<double> x, IList<double> y) {
+        public void Add (IReadOnlyList<double> x, IReadOnlyList<double> y) {
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();

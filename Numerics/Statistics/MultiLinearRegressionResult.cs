@@ -86,13 +86,20 @@ namespace Meta.Numerics.Statistics {
         private readonly List<double> residuals;
         private readonly int interceptIndex;
 
+        /// <inheritdoc/>
+        public override UncertainValue Intercept {
+            get {
+                return (new UncertainValue(b[interceptIndex], Math.Sqrt(C[interceptIndex, interceptIndex])));
+            }
+        }
+
         /// <summary>
         /// Gets the coefficient of the input with the given index.
         /// </summary>
         /// <param name="k">The index of the input.</param>
         /// <returns>The best-fit value the coefficient, with uncertainty.</returns>
         public UncertainValue CoefficientOf (int k) {
-            return (this.Parameters[k].Estimate);
+            return (new UncertainValue(b[k], Math.Sqrt(C[k, k])));
         }
 
         /// <summary>
@@ -128,7 +135,6 @@ namespace Meta.Numerics.Statistics {
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (x.Count + 1 != b.Dimension) throw new DimensionMismatchException();
 
-            // This only works if intercept column is last. Fix it.
             ColumnVector v = new ColumnVector(x.Count + 1);
             int xIndex = 0;
             for (int vIndex = 0; vIndex < v.Dimension; vIndex++) {

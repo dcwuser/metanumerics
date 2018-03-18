@@ -72,12 +72,17 @@ namespace Test {
             Assert.IsTrue(s.Count == 3);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Mean, 4.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Variance, 8.0 / 3.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.StandardDeviation, Math.Sqrt(8.0 / 3.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.CorrectedStandardDeviation, Math.Sqrt(8.0 / 2.0)));
+
+            s.Remove(2.0);
 
             // set is 4, 6: M = 5, V = (1^2 + 1^2) / 2
-            s.Remove(2.0);
             Assert.IsTrue(s.Count == 2);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Mean, 5.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Variance, 1.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Variance, 2.0 / 2.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.StandardDeviation, Math.Sqrt(2.0 / 2.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.CorrectedStandardDeviation, Math.Sqrt(2.0 / 1.0)));
 
         }
 
@@ -257,10 +262,10 @@ namespace Test {
             Assert.IsTrue(nfit.GoodnessOfFit.Probability < 0.05);
 
             // fit to lognormal should be good
-            FitResult efit = LognormalDistribution.FitToSample(sample);
+            LognormalFitResult efit = LognormalDistribution.FitToSample(sample);
             Assert.IsTrue(efit.GoodnessOfFit.Probability > 0.05);
-            Assert.IsTrue(efit.Parameter(0).ConfidenceInterval(0.95).ClosedContains(distribution.Mu));
-            Assert.IsTrue(efit.Parameter(1).ConfidenceInterval(0.95).ClosedContains(distribution.Sigma));
+            Assert.IsTrue(efit.Mu.ConfidenceInterval(0.95).ClosedContains(distribution.Mu));
+            Assert.IsTrue(efit.Sigma.ConfidenceInterval(0.95).ClosedContains(distribution.Sigma));
 
         }
 
@@ -323,9 +328,9 @@ namespace Test {
 
             // Fit the sample to a gamma distribution
             // The fit should agree with the population and the fit should be good
-            FitResult R = GammaDistribution.FitToSample(S);
-            Assert.IsTrue(R.Parameter(0).ConfidenceInterval(0.95).ClosedContains(B.Shape));
-            Assert.IsTrue(R.Parameter(1).ConfidenceInterval(0.95).ClosedContains(B.Scale));
+            GammaFitResult R = GammaDistribution.FitToSample(S);
+            Assert.IsTrue(R.Shape.ConfidenceInterval(0.95).ClosedContains(B.Shape));
+            Assert.IsTrue(R.Scale.ConfidenceInterval(0.95).ClosedContains(B.Scale));
             Assert.IsTrue(R.GoodnessOfFit.Probability > 0.05);
 
         }
@@ -345,9 +350,9 @@ namespace Test {
             BivariateSample uncertainties = new BivariateSample();
             for (int i = 0; i < 100; i++) {
                 Sample sample = CreateSample(distribution, 50, i);
-                FitResult fit = GammaDistribution.FitToSample(sample);
-                UncertainValue a = fit.Parameter(0);
-                UncertainValue b = fit.Parameter(1);
+                GammaFitResult fit = GammaDistribution.FitToSample(sample);
+                UncertainValue a = fit.Parameters["Shape"].Estimate;
+                UncertainValue b = fit.Parameters["Scale"].Estimate;
                 values.Add(a.Value, b.Value);
                 uncertainties.Add(a.Uncertainty, b.Uncertainty);
             }
@@ -1103,11 +1108,11 @@ namespace Test {
 
             LinearLogisticRegressionResult result1 = sample1.LinearLogisticRegression();
             LinearLogisticRegressionResult result2 = sample2.TwoColumns(0, 1).LinearLogisticRegression();
-            FitResult result3 = sample2.LogisticLinearRegression(1);
+            MultiLinearLogisticRegressionResult result3 = sample2.LogisticLinearRegression(1);
 
             //LinearLogisticRegressionResult result4 = Bivariate.LinearLogisticRegression(sample1.X.ToList(), sample1.Y.Select(x => (x == 1.0)).ToList());
-            MultiLinearLogisticRegressionResult result5 = Multivariate.MultiLinearLogisticRegression(new IReadOnlyList<double>[] { sample1.X.ToList() }, sample1.Y.Select(x => (x == 1.0)).ToList());
-
+            MultiLinearLogisticRegressionResult result5 = sample1.Y.Select(x => (x == 1.0)).ToList().MultiLinearLogisticRegression(new IReadOnlyList<double>[] { sample1.X });
+ 
             // Fits should give same result
             /*
             for (int i = 0; i < result1.Dimension; i++) {
@@ -1145,11 +1150,11 @@ namespace Test {
                 sample.Add(row);
             }
 
-            FitResult result = sample.LogisticLinearRegression(outputIndex);
+            MultiLinearLogisticRegressionResult result = sample.LogisticLinearRegression(outputIndex);
 
-            for (int i = 0; i < result.Dimension; i++) {
-                Console.WriteLine(result.Parameter(i));
-                Assert.IsTrue(result.Parameter(i).ConfidenceInterval(0.99).ClosedContains(c[i]));
+            for (int i = 0; i < result.Parameters.Count; i++) {
+                Console.WriteLine(result.Parameters[i].Estimate);
+                Assert.IsTrue(result.Parameters[i].Estimate.ConfidenceInterval(0.99).ClosedContains(c[i]));
             }
         }
 

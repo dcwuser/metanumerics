@@ -738,5 +738,100 @@ namespace Meta.Numerics.Statistics {
 
         }
 
+        /// <summary>
+        /// Performs a Kruskal-Wallis test on the given samples.
+        /// </summary>
+        /// <param name="samples">The set of samples to compare.</param>
+        /// <returns>The result of the test.</returns>
+        /// <remarks>
+        /// <para>Kruskal-Wallis tests for differences between the samples. It is a non-parametric alternative to the
+        /// one-way ANOVA (<see cref="OneWayAnovaTest(IReadOnlyCollection{double}[])"/>) which is more appropriate
+        /// when the data far from normally distributed.</para>
+        /// <para>The test is essentially a one-way ANOVA performed on the <i>ranks</i> of sample values instead of the sample
+        /// values themselves.</para>
+        /// <para>A Kruskal-Wallis test on two samples is equivalent to a Mann-Whitney test
+        /// (see <see cref="MannWhitneyTest(IReadOnlyList{double}, IReadOnlyList{double})"/>).</para>
+        /// <para>As with a normal ANOVA, it is not appropriate to bin a continuous independent variable in order to form
+        /// groups for a Kruskal-Wallis test. Kruskal-Wallis addresses the non-normality of the dependent variable, not
+        /// the non-discreteness of the independent variable.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="samples"/> is <see langword="null"/>.</exception>
+        /// <see cref="OneWayAnovaTest(IReadOnlyCollection{double}[])"/>
+        /// <see href="https://en.wikipedia.org/wiki/Kruskal%E2%80%93Wallis_one-way_analysis_of_variance"/>
+        public static TestResult KruskalWallisTest (params IReadOnlyList<double>[] samples) {
+            return (KruskalWallisTest((IReadOnlyList<IReadOnlyList<double>>) samples));
+        }
+
+        /// <summary>
+        /// Performs a Kruskal-Wallis test on the given samples.
+        /// </summary>
+        /// <param name="samples">The set of samples to compare.</param>
+        /// <returns>The result of the test.</returns>
+        /// <remarks>
+        /// <para>For detailed information, see <see cref="KruskalWallisTest(IReadOnlyList{double}[])"/>.</para>
+        /// </remarks>
+        public static TestResult KruskalWallisTest (IReadOnlyList<IReadOnlyList<double>> samples) {
+            if (samples == null) throw new ArgumentNullException(nameof(samples));
+            if (samples.Count < 2) throw new ArgumentException("There must be at least two samples in the sample list.", "samples");
+
+            // sort each sample individually and compute count total from all samples
+            int N = 0;
+            int[][] orders = new int[samples.Count][];
+            for (int i = 0; i < samples.Count; i++) {
+                N += samples[i].Count;
+                orders[i] = GetSortOrder(samples[i]);
+            }
+
+            // do a multi-merge sort to determine ranks sums
+
+            // initialize a pointer to the current active index in each ordered list
+            int[] p = new int[samples.Count];
+
+            // keep track the current rank to be assigned
+            int r = 0;
+
+            // keep track of rank sums
+            // this is all that we need for KW
+            // the ranks of individual entries can be made to disappear from the final formula using sum identities
+            int[] rs = new int[samples.Count];
+
+            while (true) {
+
+                // increment the rank
+                // (programmers may think ranks start from 0, but in the definition of the KW test they start from 1)
+                r++;
+
+                // determine the smallest of current entries
+                int j = -1;
+                double f = Double.PositiveInfinity;
+                for (int k = 0; k < samples.Count; k++) {
+                    if ((p[k] < orders[k].Length) && (samples[k][orders[k][p[k]]] < f)) {
+                        j = k;
+                        f = samples[k][orders[k][p[k]]];
+                    }
+                }
+
+                // test for all lists complete
+                if (j < 0) break;
+
+                // increment the pointer and the rank sum for that column
+                p[j]++;
+                rs[j] += r;
+
+            }
+
+            // compute the KW statistic
+            double H = 0.0;
+            for (int i = 0; i < samples.Count; i++) {
+                double z = ((double) rs[i]) / orders[i].Length - (N + 1) / 2.0;
+                H += orders[i].Length * (z * z);
+            }
+            H = 12.0 / N / (N + 1) * H;
+
+            // use the chi-squared approximation to the null distribution
+            return (new TestResult("H", H, TestType.RightTailed, new ChiSquaredDistribution(samples.Count - 1)));
+
+        }
+
     }
 }

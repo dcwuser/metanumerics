@@ -187,7 +187,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return (0.0);
             } else if (r == 1) {
                 return (a);
             } else if (r % 2 == 0) {

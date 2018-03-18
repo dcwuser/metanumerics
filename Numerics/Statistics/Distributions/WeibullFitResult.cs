@@ -13,7 +13,8 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </summary>
     public sealed class WeibullFitResult : DistributionFitResult<WeibullDistribution> {
 
-        internal WeibullFitResult (double scale, double shape, SymmetricMatrix covariance, TestResult goodnessOfFit) : base(new WeibullDistribution(scale, shape), goodnessOfFit) {
+        internal WeibullFitResult (double scale, double shape, SymmetricMatrix covariance, WeibullDistribution distribution, TestResult goodnessOfFit) :
+            base(distribution, goodnessOfFit) {
             this.scale = scale;
             this.shape = shape;
             this.covariance = covariance;

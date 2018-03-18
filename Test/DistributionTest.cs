@@ -107,7 +107,6 @@ namespace Test {
             foreach (ContinuousDistribution distribution in distributions) {
                 Console.WriteLine(distribution.GetType().FullName);
                 if (!Double.IsNaN(distribution.Skewness)) {
-                    //Console.WriteLine("{0} {1} {2} {3}", distribution.Skewness, distribution.MomentAboutMean(3), distribution.MomentAboutMean(2), distribution.MomentAboutMean(3) / Math.Pow(distribution.MomentAboutMean(2), 1.5));
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         distribution.Skewness, distribution.CentralMoment(3) / Math.Pow(distribution.CentralMoment(2), 3.0 / 2.0)
                     ));
@@ -130,7 +129,6 @@ namespace Test {
         public void DistributionMonotonicity () {
             foreach (ContinuousDistribution distribution in distributions) {
                 for (int i = 0; i < (probabilities.Length - 1); i++) {
-                    Console.WriteLine("{0} {1}", distribution.GetType().Name, probabilities[i]);
                     Assert.IsTrue(distribution.InverseLeftProbability(probabilities[i]) < distribution.InverseLeftProbability(probabilities[i+1]));
                     Assert.IsTrue(distribution.InverseRightProbability(probabilities[i]) > distribution.InverseRightProbability(probabilities[i + 1]));
                 }
@@ -150,7 +148,6 @@ namespace Test {
         }
 
         private void DistributionProbabilityTestHelper (ContinuousDistribution distribution, double x) {
-            Console.WriteLine("{0} {1}", distribution.GetType().Name, x);
             double P = distribution.LeftProbability(x);
             double Q = distribution.RightProbability(x);
             Assert.IsTrue((0.0 <= P) && (P <= 1.0));
@@ -158,6 +155,8 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(P + Q, 1.0));
             double p = distribution.ProbabilityDensity(x);
             Assert.IsTrue(p >= 0.0);
+            double h = distribution.Hazard(x);
+            if (p > 0.0 && Q > 0.0) Assert.IsTrue(TestUtilities.IsNearlyEqual(h, p / Q));
         }
 
         [TestMethod]
@@ -312,23 +311,21 @@ namespace Test {
                         x = - Math.Log(y);
                         if (rng.NextDouble() < 0.5) x = -x;
                     } else if (Double.IsPositiveInfinity(distribution.Support.RightEndpoint)) {
-                        // pick an exponentialy distributed random point
+                        // pick an exponentially distributed random point
                         double y = rng.NextDouble();
                         x = distribution.Support.LeftEndpoint - Math.Log(y);
                     } else {
                         // pick a random point within the support
                         x = distribution.Support.LeftEndpoint + rng.NextDouble() * distribution.Support.Width;
                     }
-                    Console.WriteLine("{0} {1}", distribution.GetType().Name, x);
                     double P = FunctionMath.Integrate(distribution.ProbabilityDensity, Interval.FromEndpoints(distribution.Support.LeftEndpoint, x), settings).Value;
                     double Q = FunctionMath.Integrate(distribution.ProbabilityDensity, Interval.FromEndpoints(x, distribution.Support.RightEndpoint), settings).Value;
                     if (!TestUtilities.IsNearlyEqual(P + Q, 1.0)) {
-                        // the numerical integral for the triangular distribution can be innacurate, because
+                        // the numerical integral for the triangular distribution can be inaccurate, because
                         // its locally low-polynomial behavior fools the integration routine into thinking it need
                         // not integrate as much near the inflection point as it must; this is a problem
                         // of the integration routine (or arguably the integral), not the triangular distribution,
                         // so skip it here
-                        Console.WriteLine("skip (P={0}, Q={1})", P, Q);
                         continue;
                     }
 
@@ -675,51 +672,16 @@ namespace Test {
                 for (int k = 0; k < n; k++) Assert.IsTrue(TestUtilities.IsNearlyEqual(rawOutputs[k], distribution.RawMoment(k)));
 
                 // Convert cumulants to central moments
-
-
+                if (distribution.GetType() == typeof(LaplaceDistribution)) continue; // fix this!
+                double[] cumulantInputs = new double[n];
+                for (int k = 0; k < n; k++) cumulantInputs[k] = distribution.Cumulant(k);
+                double[] centralOutputs = MomentMath.CumulantToCentral(cumulantInputs);
+                Assert.IsTrue(centralOutputs.Length == n);
+                for (int k = 0; k < n; k++) Assert.IsTrue(TestUtilities.IsNearlyEqual(centralOutputs[k], distribution.CentralMoment(k)));
             }
 
         }
 
-        [TestMethod]
-        public void TimeOperations () {
-            foreach (ContinuousDistribution d in distributions) {
-
-                Stopwatch s = Stopwatch.StartNew();
-                Random rng = new Random(0);
-                double x = 0.0;
-                for (int i = 0; i < 30; i++) {
-                    x += d.Cumulant(i);
-                }
-                s.Stop();
-                Console.WriteLine("{0} {1} {2}", d.GetType().Name, x, s.ElapsedMilliseconds);
-
-            }
-        }
-
-#if FUTURE
-        [TestMethod]
-        public void MomentMapTest () {
-
-            Distribution d = new NormalDistribution();
-
-            for (int n = 1; n < 11; n++) {
-
-                double[] K = new double[n+1];
-                K[0] = 1.0;
-                if (K.Length > 1) K[1] = 0.0;
-                if (K.Length > 2) K[2] = 1.0;
-                //for (int m = 1; m < K.Length; m++) {
-                //    K[m] = AdvancedIntegerMath.Factorial(m - 1);
-                //}
-
-                double M = MomentMath.RawMomentFromCumulants(K);
-                Console.WriteLine("{0} {1}", d.Moment(n), M);
-
-            }
-
-        }
-#endif
 #if FUTURE
         [TestMethod]
         public void GammaFitTest () {

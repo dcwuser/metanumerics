@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+
 using Meta.Numerics.Functions;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
-    /// Represents a Wald distribution.
+    /// Represents a Wald (Inverse Gaussian) distribution.
     /// </summary>
     /// <remakrs>
     /// <para>The Wald distribution, also called the inverse Gaussian distribution, is the distribution of first
@@ -194,7 +196,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
-        public static FitResult FitToSample (Sample sample) {
+        public static WaldFitResult FitToSample (IReadOnlyList<double> sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
@@ -203,7 +205,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             //    \ln p = \frac{1}{2} \ln \lambda - \frac{1}{2} \ln (2\pi) - \frac{3}{2} \ln x
             //            - \frac{\lambda x}{2\mu^2} + \frac{\lambda}{\mu} - \frac{\lambda}{2x}
             //    \ln L = \sum_i p_i
-            
+
             // Take derivative wrt \mu
             //    \frac{\partial \ln L}{\partial \mu} = \sum_i \left[ \frac{\lambda x_i}{\mu^3} - \frac{\lambda}{\mu^2} \right]
             // and set equal to zero to obtain
@@ -216,7 +218,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             //    \frac{n}{\lambda} = \sum_i \left( \frac{1}{x_i} - \frac{1}{\mu} \right)
             //  i.e. \lambda^{-1} = <(x^{-1} - \mu^{-1})>
 
-            double mu = sample.Mean;
+            int n = sample.Count;
+            double mu = sample.Mean();
             double mui = 1.0 / mu;
             double lambda = 0.0;
             foreach (double value in sample) {
@@ -252,9 +255,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             double v_lambda_lambda = 2.0 * lambda * lambda / (sample.Count - 5);
             double v_mu_lambda = 0.0;
 
-            ContinuousDistribution dist = new WaldDistribution(mu, lambda);
+            WaldDistribution dist = new WaldDistribution(mu, lambda);
             TestResult test = sample.KolmogorovSmirnovTest(dist);
-            return (new FitResult(mu, Math.Sqrt(v_mu_mu), lambda, Math.Sqrt(v_lambda_lambda), v_mu_lambda, test));
+            return (new WaldFitResult(mu, lambda, v_mu_mu, v_lambda_lambda, dist, test));
         }
 
         /// <inheritdoc />
@@ -278,27 +281,4 @@ namespace Meta.Numerics.Statistics.Distributions {
 
     }
 
-    /*
-    public sealed class WaldFitResult : FitResult {
-
-        public UncertainValue Mean {
-            get {
-                return (this.Parameter(0));
-            }
-        }
-
-        public UncertainValue Shape {
-            get {
-                return (this.Parameter(1));
-            }
-        }
-
-        public WaldDistribution Distribution {
-            get {
-                return (new WaldDistribution(this.Parameter(0).Value, this.Parameter(1).Value));
-            }
-        }
-
-    }
-    */
 }

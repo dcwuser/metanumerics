@@ -266,56 +266,10 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="DimensionMismatchException">The sizes of <paramref name="x"/> and <paramref name="y"/> do not match.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
         public static LinearLogisticRegressionResult LinearLogisticRegression (this IReadOnlyList<bool> y, IReadOnlyList<double> x) {
-
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
-
-            // check size of data set
-            int n = x.Count;
-            if (n < 3) throw new InsufficientDataException();
-
-            // Define the log-likelihood as a function of the parameters
-            Func<IReadOnlyList<double>, double> f = delegate (IReadOnlyList<double> a) {
-                Debug.Assert(a != null);
-                Debug.Assert(a.Count == 2);
-                double L = 0.0;
-                for (int i = 0; i < n; i++) {
-                    double z = a[0] + a[1] * x[i];
-                    double ez = Math.Exp(z);
-                    if (y[i]) {
-                        L += MoreMath.LogOnePlus(1.0 / ez);
-                    } else {
-                        L += MoreMath.LogOnePlus(ez);
-                    }
-                }
-                return (L);
-            };
-
-            // We need an initial guess at the parameters. Begin with the Ansatz of the logistic model:
-            //    \frac{p}{1-p} = e^{\alpha + \beta x}
-            // Differentiate and do some algebra to get:
-            //    \frac{\partial p}{\partial x} = \beta p ( 1 - p)
-            // Evaluating at means, and noting that p (1 - p) = var(y) and that, in a development around the means,
-            //    cov(p, x) = \frac{\partial p}{\partial x} var(x)
-            // we get
-            //    \beta = \frac{cov(y, x)}{var(x) var(y)}
-            // This approximation gets the sign right, but it looks like it usually gets the magnitude quite wrong.
-            // The problem with the approach is that var(y) = p (1 - p) assumes y are chosen with fixed p, but they aren't.
-            // We need to re-visit this analysis.
-            double xMean, yMean, xxSum, yySum, xySum;
-            Bivariate.ComputeBivariateMomentsUpToTwo(x, y.Select(b => b ? 1.0 : 0.0), out n, out xMean, out yMean, out xxSum, out yySum, out xySum);
-            double p = yMean;
-            double b0 = xySum / xxSum / yySum * n;
-            double a0 = Math.Log(p / (1.0 - p)) - b0 * xMean;
-
-            MultiExtremum m = MultiFunctionMath.FindLocalMinimum(f, new double[2] { a0, b0 });
-            SymmetricMatrix covariance = m.HessianMatrix.Inverse();
-            ParameterCollection parameters = new ParameterCollection(new string[] { "Intercept", "Slope" }, m.Location, covariance);
-            LinearLogisticRegressionResult result = new LinearLogisticRegressionResult(parameters, -m.Value);
-
-            return (result);
-
+            return (new LinearLogisticRegressionResult(x, y));
         }
 
         /// <summary>

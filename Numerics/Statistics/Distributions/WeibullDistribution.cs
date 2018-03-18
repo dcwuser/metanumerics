@@ -12,13 +12,12 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents a Weibull distribution.
     /// </summary>
     /// <remarks>
-    /// <para>The Weibull distribution is a generalized form of the exponential distriubtion
-    /// for which the decay probability is not constant, but instead increases with time
-    /// (for shape parameters greater than one) or, less commonly, decreases with time (for
-    /// shape parameters less than one). When the shape parameter is one, the Weibull
-    /// distribution reduces to the exponential distribution.</para>
+    /// <para>The Weibull distribution is a generalized form of the exponential distribution,
+    /// for which the decay probability is not constant, but instead increases or decreases
+    /// with time. When the shape parameter is one, the Weibull distribution reduces to the
+    /// exponential distribution.</para>
     /// <para>The Weibull distribution is commonly used in engineering applications to
-    /// model the time-to-failure of industrial componets.</para>
+    /// model the time-to-failure of industrial components.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Weibull_distribution" />
     public sealed class WeibullDistribution : ContinuousDistribution {
@@ -110,7 +109,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (x <= 0.0) {
                 return (0.0);
             } else {
-                return (Math.Pow(x / scale, shape - 1.0));
+                return (Math.Pow(x / scale, shape) * shape / x);
             }
         }
 
@@ -219,7 +218,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (value <= 0.0) throw new InvalidOperationException();
             }
 
-            // The log likelyhood function is
+            // The log likelihood function is
             //   \log L = N \log k + (k-1) \sum_i \log x_i - N K \log \lambda - \sum_i \left(\frac{x_i}{\lambda}\right)^k
             // Taking derivatives, we get
             //   \frac{\partial \log L}{\partial \lambda} = - \frac{N k}{\lambda} + \sum_i \frac{k}{\lambda} \left(\frac{x_i}{\lambda}\right)^k
@@ -293,7 +292,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             t /= transformedSample.Length;
             double lambda1 = Math.Exp(zbar) * Math.Pow(t, 1.0 / k1);
             
-            // We need the curvature matrix at the minimum of our log likelyhood function
+            // We need the curvature matrix at the minimum of our log likelihood function
             // to determine the covariance matrix. Taking more derivatives...
             //    \frac{\partial^2 \log L} = \frac{N k}{\lambda^2} - \sum_i \frac{k(k+1) x_i^k}{\lambda^{k+2}}
             //    = - \frac{N k^2}{\lambda^2}
@@ -333,13 +332,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             SymmetricMatrix C = B.CholeskyDecomposition().Inverse();
 
             // Do a KS test to compare sample to best-fit distribution
-            ContinuousDistribution distribution = new WeibullDistribution(lambda1, k1);
+            WeibullDistribution distribution = new WeibullDistribution(lambda1, k1);
             TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
             // return the result
-            return (new WeibullFitResult(lambda1, k1, C, test));
-            //return (new FitResult(new double[] {lambda1, k1}, C, test));
-
+            return (new WeibullFitResult(lambda1, k1, C, distribution, test));
         }
 
     }

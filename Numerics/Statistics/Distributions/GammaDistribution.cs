@@ -171,7 +171,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
                 // for higher moments, use the recurrence C_{n+1} = n ( C_n + a C_{n-1} )
                 // which can be derived from C = U(-n, 1-n-a, -a), where U is the irregular confluent hypergeometric function,
-                // and the recurrsion recursion U(a-1,b-1,z) = (1-b+z) U(a,b,z) + z a U(a+1,b+1,z)
+                // and the recursion recursion U(a-1,b-1,z) = (1-b+z) U(a,b,z) + z a U(a+1,b+1,z)
 
                 double C1 = 0.0;
                 double C2 = s * s * a;
@@ -227,26 +227,26 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
             double x1 = x0 / (a + 1.0);
             if (x1 < 0.33) {
-                // do left-tail expansion if possible, because it is quite fast
-                // this is just a term-by-term inversion of the power series
+                // Do left-tail expansion if possible, because it is quite fast.
+                // This is just a term-by-term inversion of the power series
                 // P(a,x) = gamma(a,x) / Gamma(a) = e^{-x} x^a / Gamma(a+1) [ 1 + x / (a+1) + ... ]
                 double S = 1.0 + x1 + (3.0 * a + 5.0) / (a + 2.0) * x1 * x1 / 2.0 +
                     (8.0 * a * a + 33.0 * a + 31.0) / (a + 2.0) / (a + 3.0) * x1 * x1 * x1 / 3.0;
                 return (x0 * S);
             } else {
                 if (a > 1.0) {
-                    // it is well known that Gamma(a) -> Normal(a,sqrt(a)) for large a
-                    // but it does so exceedingly slowly (skew decreases ~1/sqrt(a) and kurtosis ~1/a)
-                    // in the days of yore when people looked for normalizing transforms, Wilson and Hilferty derived that
-                    // y = (x/a)^(1/3) ~ Normal(1-1/9a, 1/sqrt(9a)) with much faster decreasing cumulants
-                    // we use this here, having verified that it gives much more accurate values than the naive normal approximation
+                    // It is well known that Gamma(a) -> Normal(a,sqrt(a)) for large a,
+                    // but it does so exceedingly slowly (skew decreases ~1/sqrt(a) and kurtosis ~1/a).
+                    // In the days of yore when people looked for normalizing transforms, Wilson and Hilferty derived that
+                    // y = (x/a)^(1/3) ~ Normal(1-1/9a, 1/sqrt(9a)) with much faster decreasing cumulants.
+                    // We use this here, having verified that it gives much more accurate values than the naive normal approximation
                     double na = 9.0 * a;
                     double y = 1.0 - 1.0 / na + ApproximateProbit(P) / Math.Sqrt(na);
                     return (a * MoreMath.Pow(y, 3));
                 } else {
-                    // for small a, use a very crude right-tail approximation
+                    // For small a, use a very crude right-tail approximation
                     // this will fail if Gamma(a) * Q > 1, but given our range for the left-tail
-                    // approximation above, we have ~0.5 < Gamma(a) * Q < ~0.8 for 0 < a < 1
+                    // approximation above, we have ~0.5 < Gamma(a) * Q < ~0.8 for 0 < a < 1.
                     double log;
                     if (ga > 0.0) {
                         log = - Math.Log(ga * Q);
@@ -304,8 +304,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             return (s * gammaRng.GetNext(rng));
         }
 
-        // routines for maximum likelyhood fitting
-
         /// <summary>
         /// Computes the Gamma distribution that best fits the given sample.
         /// </summary>
@@ -319,15 +317,15 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
-        public static FitResult FitToSample (Sample sample) {
+        public static GammaFitResult FitToSample (Sample sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
 
-            // The log likelyhood of a sample given k and s is
+            // The log likelihood of a sample given k and s is
             //   \log L = (k-1) \sum_i \log x_i - \frac{1}{s} \sum_i x_i - N \log \Gamma(k) - N k \log s
             // Differentiating,
-            //   \frac{\partial \log L}{\partial s} = \frac{1}{s^2} \sum_i x_i - \frac{Nk}{s}
+            //   \frac{\partial \log L}{\partial s} = \frac{1}{s^2} \sum_i x_i - \frac{N k}{s}
             //   \frac{\partial \log L}{\partial k} = \sum_i \log x_i - N \psi(k) - N \log s
             // Setting the first equal to zero gives
             //   k s = N^{-1} \sum_i x_i = <x>
@@ -357,22 +355,25 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             double s1 = sample.Mean / k1;
 
-            // Curvature of the log likelyhood is straightforward
+            // Curvature of the log likelihood is straightforward
             //   \frac{\partial^2 \log L}{\partial s^2} = -\frac{2}{s^3} \sum_i x_i + \frac{Nk}{s^2} = - \frac{Nk}{s^2}
             //   \frac{\partial^2 \log L}{\partial k \partial s} = - \frac{N}{s}
             //   \frac{\partial^2 \log L}{\partial k^2} = - N \psi'(k)
             // This gives the curvature matrix and thus via inversion the covariance matrix.
 
-            SymmetricMatrix B = new SymmetricMatrix(2);
-            B[0, 0] = sample.Count * AdvancedMath.Psi(1, k1);
-            B[0, 1] = sample.Count / s1;
-            B[1, 1] = sample.Count * k1 / MoreMath.Sqr(s1);
-            SymmetricMatrix C = B.CholeskyDecomposition().Inverse();
+            SymmetricMatrix C = new SymmetricMatrix(2);
+            C[0, 0] = sample.Count * AdvancedMath.Psi(1, k1);
+            C[0, 1] = sample.Count / s1;
+            C[1, 1] = sample.Count * k1 / MoreMath.Sqr(s1);
+            CholeskyDecomposition CD = C.CholeskyDecomposition();
+            if (CD == null) throw new DivideByZeroException();
+            C = CD.Inverse();
 
             // Do a KS test for goodness-of-fit
-            TestResult test = sample.KolmogorovSmirnovTest(new GammaDistribution(k1, s1));
+            GammaDistribution distribution = new GammaDistribution(k1, s1);
+            TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
-            return (new FitResult(new double[] { k1, s1 }, C, test));
+            return (new GammaFitResult(k1, s1, C, distribution, test));
         }
 
 #if FUTURE

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using Meta.Numerics.Functions;
 
@@ -8,9 +9,9 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents a Rayleigh distribution.
     /// </summary>
     /// <remarks>
-    /// <para>A Rayleigh distribution is the distribution of the magnitude of a two-dimensional vector whoose
+    /// <para>A Rayleigh distribution is the distribution of the magnitude of a two-dimensional vector whose
     /// components are normally distributed.</para>
-    /// <para>A standard Rayleigh distribution is equivilent to a <see cref="ChiDistribution"/> with &#x3BD; = 2.</para>
+    /// <para>A standard Rayleigh distribution is equivalent to a <see cref="ChiDistribution"/> with &#x3BD; = 2.</para>
     /// </remarks>
     /// <seealso href="https://en.wikipedia.org/wiki/Rayleigh_distribution"/>
     public sealed class RayleighDistribution : ContinuousDistribution {
@@ -142,12 +143,12 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="sample">The sample to fit, which must have at least 2 values.</param>
         /// <returns>The fit result. The only parameter is the scale parameter.</returns>
-        public static FitResult FitToSample (Sample sample) {
+        public static RayleighFitResult FitToSample (IReadOnlyList<double> sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) throw new InsufficientDataException();
 
-            // It's easy to follow maximum likelyhood prescription, because there is only one
+            // It's easy to follow maximum likelihood prescription, because there is only one
             // parameter and the functional form is fairly simple.
 
             // \ln L = \sum_i p_i = = \sum_i \left[ \ln x_i - 2 \ln \sigma - \frac{1}{2} \frac{x_i^2}{\sigma^2 \right]
@@ -187,10 +188,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             int n = sample.Count;
             double s = Math.Sqrt(sample.RawMoment(2) / 2.0) * (Math.Sqrt(n) / AdvancedMath.Pochhammer(n, 1.0 / 2.0));
             double ds = s / Math.Sqrt(4.0 * n);
-            TestResult ksTest = sample.KolmogorovSmirnovTest(new RayleighDistribution(s));
 
-            return (new FitResult(s, ds, ksTest));
+            RayleighDistribution distribution = new RayleighDistribution(s);
+            TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
+            return (new RayleighFitResult(new UncertainValue(s, ds), distribution, test));
         }
     }
 }

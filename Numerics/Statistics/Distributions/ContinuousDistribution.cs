@@ -38,7 +38,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (x >= Support.RightEndpoint) {
                 return (1.0);
             } else {
-                return (FunctionMath.Integrate(ProbabilityDensity, Interval.FromEndpoints(Support.LeftEndpoint, x)));
+                return (FunctionMath.Integrate(ProbabilityDensity, Interval.FromEndpoints(Support.LeftEndpoint, x)).Estimate.Value);
             }
         }
 
@@ -108,11 +108,11 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (1.0);
             } else {
                 // If there will be no cancelation in the integral, use a pure relative accuracy target.
+                // Uh, that's not true, because x can be negative.
                 IntegrationSettings settings = new IntegrationSettings();
                 if ((r % 2 == 0) || !this.Support.OpenContains(0.0)) settings.AbsolutePrecision = 0.0;
                 IntegrationResult result = FunctionMath.Integrate(x => this.ProbabilityDensity(x) * MoreMath.Pow(x, r), this.Support, settings);
-                return (result.Value);
-                //return (ExpectationValue(x => MoreMath.Pow(x, r)));
+                return (result.Estimate.Value);
             }
         }
 
@@ -139,7 +139,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <summary>
-        /// Gets the interval over which the distribution is nonvanishing.
+        /// Gets the interval over which the distribution is non-vanishing.
         /// </summary>
         public virtual Interval Support {
             get {
@@ -154,7 +154,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The expectation value of the function.</returns>
         public virtual double ExpectationValue (Func<double, double> f) {
             if (f == null) throw new ArgumentNullException(nameof(f));
-            return (FunctionMath.Integrate(x => f(x) * ProbabilityDensity(x), Support));
+            return (FunctionMath.Integrate(x => f(x) * ProbabilityDensity(x), Support).Estimate.Value);
         }
 
         /// <summary>

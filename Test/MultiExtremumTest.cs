@@ -27,7 +27,7 @@ namespace Test {
         [TestMethod]
         public void MinimizeQuadratic1D () {
 
-            Func<IList<double>, double> f = (IList<double> x) => 1.0 + MoreMath.Sqr(x[0] - 3.0);
+            Func<IReadOnlyList<double>, double> f = (IReadOnlyList<double> x) => 1.0 + MoreMath.Sqr(x[0] - 3.0);
             MultiExtremum m = MultiFunctionMath.FindLocalMinimum(f, new double[] { 1.0 });
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(1.0, m.Value));
@@ -37,7 +37,7 @@ namespace Test {
         [TestMethod]
         public void MinimizeQuadratic2D () {
 
-            Func<IList<double>, double> f = (IList<double> x) => 1.0 + 2.0 * MoreMath.Sqr(x[0] - 3.0) + 4.0 * (x[0] - 3.0) * (x[1] - 5.0) + 6.0 * MoreMath.Sqr(x[1] - 5.0);
+            Func<IReadOnlyList<double>, double> f = (IReadOnlyList<double> x) => 1.0 + 2.0 * MoreMath.Sqr(x[0] - 3.0) + 4.0 * (x[0] - 3.0) * (x[1] - 5.0) + 6.0 * MoreMath.Sqr(x[1] - 5.0);
             MultiExtremum m = MultiFunctionMath.FindLocalMinimum(f, new double[] { 1.0, 1.0 });
 
             Console.WriteLine(m.Value);
@@ -59,7 +59,7 @@ namespace Test {
 
             EvaluationSettings s = new EvaluationSettings() { EvaluationBudget = 100, RelativePrecision = 1.0E-10 };
 
-            Func<IList<double>, double> f = (IList<double> x) =>
+            Func<IReadOnlyList<double>, double> f = (IReadOnlyList<double> x) =>
                 1.0 + 2.0 * MoreMath.Sqr(x[0] - 3.0) + 4.0 * (x[0] - 3.0) * (x[1] - 5.0) + 6.0 * MoreMath.Sqr(x[1] - 5.0) +
                 7.0 * MoreMath.Pow(x[0] - 3.0, 4) + 8.0 * MoreMath.Pow(x[1] - 5.0, 4);
 
@@ -77,7 +77,7 @@ namespace Test {
 
             // This function is described by Powell in his NEWOUA paper as one that caused problems for the simplest formulation of that minimizer.
 
-            Func<IList<double>, double> f = (IList<double> x) => {
+            Func<IReadOnlyList<double>, double> f = (IReadOnlyList<double> x) => {
                 double s1 = 0.0;
                 double s2 = 0.0;
                 for (int i = 0; i < x.Count; i++) {
@@ -114,7 +114,7 @@ namespace Test {
             // Goldstein-Price has a valley with a complicated shape and a global minimum value of 3 at (0,-1).
             // It also has local minima, so we have to start close to this minimum if we expect to end at it.
 
-            Func<IList<double>, double> fGoldsteinPrice = (IList<double> v) => {
+            Func<IReadOnlyList<double>, double> fGoldsteinPrice = (IReadOnlyList<double> v) => {
                 double x = v[0];
                 double y = v[1];
                 return (
@@ -151,7 +151,7 @@ namespace Test {
             // if the minimzer gets caught in them it will move toward infinity until its evaluation budget is
             // exhausted. Starting from y > 0 will probably keep us safe, or we can do bounded optimization.
 
-            Func<IList<double>, double> fBeale = (IList<double> x) =>
+            Func<IReadOnlyList<double>, double> fBeale = (IReadOnlyList<double> x) =>
                 MoreMath.Sqr(1.5 - x[0] + x[0] * x[1]) +
                 MoreMath.Sqr(2.25 - x[0] + x[0] * x[1] * x[1]) +
                 MoreMath.Sqr(2.625 - x[0] + x[0] * x[1] * x[1] * x[1]);
@@ -173,7 +173,7 @@ namespace Test {
         [TestMethod]
         public void StylblinskiTang () {
 
-            Func<IList<double>, double> fStyblinskiTang = (IList<double> x) => {
+            Func<IReadOnlyList<double>, double> fStyblinskiTang = (IReadOnlyList<double> x) => {
                 double fst = 0.0;
                 for (int i = 0; i < x.Count; i++) {
                     double x1 = x[i];
@@ -218,7 +218,7 @@ namespace Test {
 
             // This function has three local minima, so not at all starting points should be expected to bring us to the global minimum at the origin.
 
-            Func<IList<double>, double> function = (IList<double> x) => 2.0 * MoreMath.Pow(x[0], 2) - 1.05 * MoreMath.Pow(x[0], 4) + MoreMath.Pow(x[0], 6) / 6.0 + x[0] * x[1] + MoreMath.Pow(x[1], 2);
+            Func<IReadOnlyList<double>, double> function = (IReadOnlyList<double> x) => 2.0 * MoreMath.Pow(x[0], 2) - 1.05 * MoreMath.Pow(x[0], 4) + MoreMath.Pow(x[0], 6) / 6.0 + x[0] * x[1] + MoreMath.Pow(x[1], 2);
             
             ColumnVector start = new ColumnVector(1.0, 1.0);
 
@@ -234,7 +234,7 @@ namespace Test {
         [TestMethod]
         public void McCormick () {
 
-            Func<IList<double>, double> fMcCormick = (IList<double> x) => Math.Sin(x[0] + x[1]) + MoreMath.Sqr(x[0] - x[1]) - 1.5 * x[0] + 2.5 * x[1] + 1.0;
+            Func<IReadOnlyList<double>, double> fMcCormick = (IReadOnlyList<double> x) => Math.Sin(x[0] + x[1]) + MoreMath.Sqr(x[0] - x[1]) - 1.5 * x[0] + 2.5 * x[1] + 1.0;
 
         }
 
@@ -244,7 +244,7 @@ namespace Test {
             // This is a multi-dimensional generalization of the famous Rosenbrock, aka banana function,
             // which has a narrow parabolic valley whose floor slopes only gently to the minimum.
 
-            Func<IList<double>, double> fRosenbrock = delegate(IList<double> x) {
+            Func<IReadOnlyList<double>, double> fRosenbrock = delegate(IReadOnlyList<double> x) {
                 double s = 0.0;
                 for (int i = 0; i < (x.Count - 1); i++) {
                     s += 100.0 * MoreMath.Pow(x[i + 1] - x[i] * x[i], 2) + MoreMath.Pow(1.0 - x[i], 2);
@@ -281,8 +281,8 @@ namespace Test {
             // This function is mostly flat except very near (\pi, \pi).
             // For (1,1) or (0,0) "converges" to minimum of 0 at (1.30, 1.30). This is probably a local minimum of the cosine product.
 
-            //Func<IList<double>, double> function = (IList<double> x) => -Math.Exp(-(MoreMath.Sqr(x[0] - Math.PI) + MoreMath.Sqr(x[1] - Math.PI)));
-            Func<IList<double>, double> function = (IList<double> x) => -Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Exp(-(MoreMath.Sqr(x[0] - Math.PI) + MoreMath.Sqr(x[1] - Math.PI)));
+            //Func<IReadOnlyList<double>, double> function = (IReadOnlyList<double> x) => -Math.Exp(-(MoreMath.Sqr(x[0] - Math.PI) + MoreMath.Sqr(x[1] - Math.PI)));
+            Func<IReadOnlyList<double>, double> function = (IReadOnlyList<double> x) => -Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Exp(-(MoreMath.Sqr(x[0] - Math.PI) + MoreMath.Sqr(x[1] - Math.PI)));
             ColumnVector start = new ColumnVector(2.0, 2.0);
 
             MultiExtremum minimum = MultiFunctionMath.FindLocalMinimum(function, start);
@@ -295,7 +295,7 @@ namespace Test {
         [TestMethod]
         public void Perm () {
 
-            Func<IList<double>, double> fPerm = (IList<double> x) => {
+            Func<IReadOnlyList<double>, double> fPerm = (IReadOnlyList<double> x) => {
                 double s = 0.0;
                 for (int i = 1; i <= x.Count; i++) {
                     double t = 0.0;
@@ -325,7 +325,7 @@ namespace Test {
             // This test is difficult because the minimum is emphatically not quadratic.
             // We do get close to the minimum but we massivly underestimate our error.
 
-            Func<IList<double>, double> function = (IList<double> x) => {
+            Func<IReadOnlyList<double>, double> function = (IReadOnlyList<double> x) => {
                 double s = 0.0;
                 for (int i = 0; i < x.Count; i++) {
                     s += MoreMath.Pow(Math.Abs(x[i]), i + 2);
@@ -362,7 +362,7 @@ namespace Test {
 
             // Ackley's function has many local minima, and a global minimum at (0, 0) -> 0.
 
-            Func<IList<double>, double> function = (IList<double> x) => {
+            Func<IReadOnlyList<double>, double> function = (IReadOnlyList<double> x) => {
                 double s = 0.0;
                 double c = 0.0;
                 for (int i = 0; i < x.Count; i++) {
@@ -401,7 +401,7 @@ namespace Test {
 
             // Test over [-500,500], minimum at (420.969,...) -> -418.983*d, many local minima
 
-            Func<IList<double>, double> function = (IList<double> x) => {
+            Func<IReadOnlyList<double>, double> function = (IReadOnlyList<double> x) => {
                 double s = 0.0;
                 for (int i = 0; i < x.Count; i++) {
                     s += x[i] * Math.Sin(Math.Sqrt(Math.Abs(x[i])));
@@ -440,7 +440,7 @@ namespace Test {
 
                 Console.WriteLine(n);
 
-                Func<IList<double>, double> function = (IList<double> x) => {
+                Func<IReadOnlyList<double>, double> function = (IReadOnlyList<double> x) => {
                     double s = 0.0;
                     double p = 1.0;
                     for (int i = 0; i < x.Count; i++) {
@@ -473,9 +473,9 @@ namespace Test {
 
             // Burkin has a narrow valley, not aligned with any axis, punctuated with many tiny "wells" along its bottom.
             // The deepest well is at (-10,1)-> 0.
-            Func<IList<double>, double> function = (IList<double> x) => 100.0 * Math.Sqrt(Math.Abs(x[1] - 0.01 * x[0] * x[0])) + 0.01 * Math.Abs(x[0] + 10.0);
+            Func<IReadOnlyList<double>, double> function = (IReadOnlyList<double> x) => 100.0 * Math.Sqrt(Math.Abs(x[1] - 0.01 * x[0] * x[0])) + 0.01 * Math.Abs(x[0] + 10.0);
 
-            IList<Interval> box = new Interval[] { Interval.FromEndpoints(-15.0, 0.0), Interval.FromEndpoints(-3.0, 3.0) };
+            IReadOnlyList<Interval> box = new Interval[] { Interval.FromEndpoints(-15.0, 0.0), Interval.FromEndpoints(-3.0, 3.0) };
 
             EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 0.0, AbsolutePrecision = 1.0E-4, EvaluationBudget = 1000000 };
             /*
@@ -497,7 +497,7 @@ namespace Test {
         [TestMethod]
         public void EasomLocal () {
 
-            Func<IList<double>, double> function = (IList<double> x) => Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Exp(-(MoreMath.Sqr(x[0] - Math.PI) + MoreMath.Sqr(x[1] - Math.PI)));
+            Func<IReadOnlyList<double>, double> function = (IReadOnlyList<double> x) => Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Exp(-(MoreMath.Sqr(x[0] - Math.PI) + MoreMath.Sqr(x[1] - Math.PI)));
 
             // We can't start too far from minimum, since cosines introduce many local minima.
             ColumnVector start = new ColumnVector(1.5, 2.0);
@@ -513,8 +513,8 @@ namespace Test {
         [TestMethod]
         public void EasomGlobal () {
 
-            Func<IList<double>, double> function = (IList<double> x) => Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Exp(-(MoreMath.Sqr(x[0] - Math.PI) + MoreMath.Sqr(x[1] - Math.PI)));
-            IList<Interval> box = new Interval[] { Interval.FromEndpoints(-10.0, 10.0), Interval.FromEndpoints(-10.0, 10.0) };
+            Func<IReadOnlyList<double>, double> function = (IReadOnlyList<double> x) => Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Exp(-(MoreMath.Sqr(x[0] - Math.PI) + MoreMath.Sqr(x[1] - Math.PI)));
+            IReadOnlyList<Interval> box = new Interval[] { Interval.FromEndpoints(-10.0, 10.0), Interval.FromEndpoints(-10.0, 10.0) };
 
             MultiExtremum maximum = MultiFunctionMath.FindGlobalMaximum(function, box);
 
@@ -561,7 +561,7 @@ namespace Test {
 
                 Console.WriteLine("n={0}", n);
 
-                Func<IList<double>, double> function = (IList<double> x) => {
+                Func<IReadOnlyList<double>, double> function = (IReadOnlyList<double> x) => {
                     // Intrepret coordinates as (x_1, y_1, x_2, y_2, \cdots, x_n, y_n)
                     // Iterate over all pairs of points, finding smallest distance betwen any pair of points.
                     double sMin = Double.MaxValue;
@@ -574,8 +574,8 @@ namespace Test {
                     return (sMin);
                 };
 
-                IList<Interval> box = new Interval[2 * n];
-                for (int i = 0; i < box.Count; i++) box[i] = Interval.FromEndpoints(0.0, 1.0);
+                Interval[] box = new Interval[2 * n];
+                for (int i = 0; i < box.Length; i++) box[i] = Interval.FromEndpoints(0.0, 1.0);
 
                 EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-4, AbsolutePrecision = 1.0E-6, EvaluationBudget = 10000000 };
 
@@ -623,7 +623,7 @@ namespace Test {
 
                 // We assume that the point r=1, t=0 exists and encode only the remaining n-1 points in a 2(n-1)-length vector.
 
-                Func<IList<double>, double> f = (IList<double> u) => {
+                Func<IReadOnlyList<double>, double> f = (IReadOnlyList<double> u) => {
                     double sMin = Double.MaxValue;
                     for (int i = 0; i < (n - 1); i++) {
                         double ri = u[2 * i];
@@ -691,7 +691,7 @@ namespace Test {
             for (int n = 2; n < 8; n++)
             {
 
-                Func<IList<double>, double> function = (IList<double> x) => {
+                Func<IReadOnlyList<double>, double> function = (IReadOnlyList<double> x) => {
                     // Intrepret coordinates as (x_1, y_1, z_1, x_2, y_2, z_2, \cdots, x_n, y_n, z_n)
                     // Iterate over all pairs of points, finding smallest distance betwen any pair of points.
                     double sMin = Double.MaxValue;
@@ -708,8 +708,8 @@ namespace Test {
                     return (sMin);
                 };
 
-                IList<Interval> box = new Interval[3 * n];
-                for (int i = 0; i < box.Count; i++) box[i] = Interval.FromEndpoints(0.0, 1.0);
+                Interval[] box = new Interval[3 * n];
+                for (int i = 0; i < box.Length; i++) box[i] = Interval.FromEndpoints(0.0, 1.0);
 
                 MultiExtremum maximum = MultiFunctionMath.FindGlobalMaximum(function, box);
 
@@ -741,16 +741,20 @@ namespace Test {
                 49.165253058 /* n = 12: isosahedron */
         };
 
-        private Func<IList<double>, double> GetThompsonFunction (int n) {
+        private Func<IReadOnlyList<double>, double> GetThompsonFunction (int n) {
 
             // Define a function that assumes one point at spherical coordinates (0, 0) and others at given 2 * (n - 1) spherical coordinates
 
-            Func<IList<double>, double> f = (IList<double> u) => {
+            Func<IReadOnlyList<double>, double> f = (IReadOnlyList<double> u) => {
 
                 // add a point at 0,0
+                List<double> v = u.ToList();
+                v.Add(0.0);
+                v.Add(0.0);
+                /*
                 double[] v = new double[2 * n];
                 u.CopyTo(v, 0);
-
+                */
                 double e = 0.0;
 
                 // iterate over all distinct pairs of points
@@ -781,7 +785,7 @@ namespace Test {
             {
                 Console.WriteLine("n={0}", n);
 
-                Func<IList<double>, double> f = GetThompsonFunction(n);
+                Func<IReadOnlyList<double>, double> f = GetThompsonFunction(n);
 
                 Interval[] box = new Interval[2 * (n - 1)];
                 for (int i = 0; i < (n - 1); i++) {
@@ -883,7 +887,7 @@ namespace Test {
                 Console.WriteLine(n);
 
                 // define the thompson metric
-                Func<IList<double>, double> f = GetThompsonFunction(n);
+                Func<IReadOnlyList<double>, double> f = GetThompsonFunction(n);
 
                 // random distribution to start
                 // using antipodal pairs gives us a better starting configuration
@@ -934,11 +938,15 @@ namespace Test {
                 Console.WriteLine("n = {0}", n);
 
                 // Define a function that returns the minimum distance between points
-                Func<IList<double>, double> f = (IList<double> u) => {
+                Func<IReadOnlyList<double>, double> f = (IReadOnlyList<double> u) => {
                     // add a point at 0,0
+                    List<double> v = u.ToList();
+                    v.Add(0.0);
+                    v.Add(0.0);
+                    /*
                     double[] v = new double[2 * n];
                     u.CopyTo(v, 0);
-
+                    */
                     double dmin = Double.PositiveInfinity;
 
                     // iterate over all distinct pairs of points

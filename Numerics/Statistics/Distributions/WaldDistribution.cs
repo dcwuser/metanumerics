@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+
 using Meta.Numerics.Functions;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
-    /// Represents a Wald distribution.
+    /// Represents a Wald (Inverse Gaussian) distribution.
     /// </summary>
     /// <remakrs>
     /// <para>The Wald distribution, also called the inverse Gaussian distribution, is the distribution of first
@@ -194,67 +196,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
-        public static FitResult FitToSample (Sample sample) {
-
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 3) throw new InsufficientDataException();
-
-            // For maximum likelihood estimation, take logs of pdfs and sum:
-            //    \ln p = \frac{1}{2} \ln \lambda - \frac{1}{2} \ln (2\pi) - \frac{3}{2} \ln x
-            //            - \frac{\lambda x}{2\mu^2} + \frac{\lambda}{\mu} - \frac{\lambda}{2x}
-            //    \ln L = \sum_i p_i
-            
-            // Take derivative wrt \mu
-            //    \frac{\partial \ln L}{\partial \mu} = \sum_i \left[ \frac{\lambda x_i}{\mu^3} - \frac{\lambda}{\mu^2} \right]
-            // and set equal to zero to obtain
-            //    \mu = \frac{1}{n} \sum_i x_i = <x>
-            // which agrees with method of moments.
-
-            // Take derivative wrt \lambda
-            //    \frac{\partial \ln L}{\partial \lambda} = \sum_i \left[ \frac{1}{2 \lambda} -\frac{x_i}{2\mu^2} + \frac{1}{\mu} - \frac{1}{2 x_i} \right]
-            // Set equal to zero, plug in our expression for \mu, and solve for \lambda to get
-            //    \frac{n}{\lambda} = \sum_i \left( \frac{1}{x_i} - \frac{1}{\mu} \right)
-            //  i.e. \lambda^{-1} = <(x^{-1} - \mu^{-1})>
-
-            double mu = sample.Mean;
-            double mui = 1.0 / mu;
-            double lambda = 0.0;
-            foreach (double value in sample) {
-                if (value <= 0.0) throw new InvalidOperationException();
-                lambda += (1.0 / value - mui);
-            }
-            lambda = (sample.Count - 3) / lambda;
-
-            // If x ~ IG(\mu, \lambda), then \sum_i x_i ~ IG(n \mu, n^2 \lambda), so \hat{\mu} ~ IG (\mu, n \lambda). This gives us
-            // not just the exact mean and variance of \hat{\mu}, but its entire distribution. Since its mean is \mu, \hat{\mu} is an
-            // unbiased estimator. And by the variance formula for IG, the variance of \hat{\mu} is \frac{\mu^3}{n \lambda}.
-
-            // Tweedie, "Statistical Properties of Inverse Gaussian Distributions" (http://projecteuclid.org/download/pdf_1/euclid.aoms/1177706964)
-            // showed that \frac{n \lambda}{\hat{\lambda}} ~ \chi^2_{n-1}. Since the mean of \chi^2_{k} is k, the MLE estimator of
-            // \frac{1}{\lambda} can be made unbiased by replacing n by (n-1). However, we are estimating \lambda, not \frac{1}{\lambda}.
-            // By the relation between chi squared and inverse chi squared distributions, \frac{\hat{\lambda}}{n \lambda} ~ I\chi^2_{n-1}.
-            // The mean of I\chi^2_{k} is \frac{1}{n-2}, so to get an unbiased estimator of \lambda, we need to replace n by (n-3). This is
-            // what we have done above. Furthermore, the variance of I\chi^2_{k} is \frac{2}{(k-2)^2 (k-4)}, so the variance of \hat{\lambda}
-            // is \frac{2 \lambda^2}{(n-5)}.
-
-            // We can also get covariances from the MLE approach. To get a curvature matrix, take additional derivatives
-            //   \frac{\partial^2 \ln L}{\partial \mu^2} = \sum_i \left[ -\frac{3 \lambda x_i}{\mu^4} + \frac{2 \lambda}{\mu^3} \right]
-            //   \frac{\partial^2 \ln L}{\partial \mu \partial \lambda} = \sum_i \left[ \frac{x_i}{\mu^3} - \frac{1}{\mu^2} \right]
-            //   \frac{\partial^2 \ln L}{\partial \lambda^2} =\sum_i \left[ - \frac{1}{2 \lambda^2} \right]
-            // and substitutue in best-fit values of \mu and \lambda
-            //   \frac{\partial^2 \ln L}{\partial \mu^2} = - \frac{n \lambda}{\mu^3}
-            //   \frac{\partial^2 \ln L}{\partial \mu \partial \lambda} = 0
-            //   \frac{\partial^2 \ln L}{\partial \lambda^2} = - \frac{n}{2 \lambda^2}
-            // Mixed derivative vanishes, so matrix is trivially invertible to obtain covariances. These results agree with the
-            // results from exact distributions in the asymptotic regime.
-
-            double v_mu_mu = mu * mu * mu / lambda / sample.Count;
-            double v_lambda_lambda = 2.0 * lambda * lambda / (sample.Count - 5);
-            double v_mu_lambda = 0.0;
-
-            ContinuousDistribution dist = new WaldDistribution(mu, lambda);
-            TestResult test = sample.KolmogorovSmirnovTest(dist);
-            return (new FitResult(mu, Math.Sqrt(v_mu_mu), lambda, Math.Sqrt(v_lambda_lambda), v_mu_lambda, test));
+        public static WaldFitResult FitToSample (Sample sample) {
+            return (Univariate.FitToWald(sample.data));
         }
 
         /// <inheritdoc />
@@ -263,12 +206,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             // This is a rather weird transformation generator described in Michael et al, "Generating Random Variates
             // Using Transformations with Multiple Roots", The American Statistician 30 (1976) 88-90.
 
-            double u = rngGenerator.GetNext(rng);
-            double y = MoreMath.Sqr(rngGenerator.GetNext(rng));
-            double muy = mu * y;
-            double x = mu * (1.0 + (muy - Math.Sqrt((4.0 * lambda + muy ) * muy)) / (2.0 * lambda));
-            double z = rng.NextDouble();
-            if (z <= mu / (mu + x)) {
+            // u ~ U(0,1), v ~ ChiSquare(1), i.e. square of standard normal deviate
+
+            double v = MoreMath.Sqr(rngGenerator.GetNext(rng));
+            double w = mu * v;
+            double x = mu * (1.0 + (w - Math.Sqrt((4.0 * lambda + w ) * w)) / (2.0 * lambda));
+            double u = rng.NextDouble();
+            if (u <= mu / (mu + x)) {
                 return (x);
             } else {
                 return (mu * mu / x);
@@ -277,27 +221,4 @@ namespace Meta.Numerics.Statistics.Distributions {
 
     }
 
-    /*
-    public sealed class WaldFitResult : FitResult {
-
-        public UncertainValue Mean {
-            get {
-                return (this.Parameter(0));
-            }
-        }
-
-        public UncertainValue Shape {
-            get {
-                return (this.Parameter(1));
-            }
-        }
-
-        public WaldDistribution Distribution {
-            get {
-                return (new WaldDistribution(this.Parameter(0).Value, this.Parameter(1).Value));
-            }
-        }
-
-    }
-    */
 }

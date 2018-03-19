@@ -7,7 +7,7 @@ using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Analysis {
 
-    
+
 
     public static partial class MultiFunctionMath {
 
@@ -17,7 +17,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="function">The multi-dimensional function to minimize.</param>
         /// <param name="start">The starting location for the search.</param>
         /// <returns>The local minimum.</returns>
-        public static MultiExtremum FindLocalMinimum (Func<IList<double>, double> function, IList<double> start) {
+        public static MultiExtremum FindLocalMinimum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start) {
             return (FindLocalMinimum(function, start, new EvaluationSettings()));
         }
 
@@ -38,12 +38,13 @@ namespace Meta.Numerics.Analysis {
         /// <para>The Hessian (matrix of second derivatives) returned with the minimum is an approximation that is constructed in the course of search. It should be
         /// considered a crude approximation, and may not even be that if the minimum is highly non-quadratic.</para>
         /// <para>If you have a constrained minimization problem, require a high-precision solution, and do not have a good initial guess, consider first feeding
-        /// your constrained problem into <see cref="FindGlobalMinimum(Func{IList{double}, double}, IList{Interval}, EvaluationSettings)"/>, which supports constraints but gives relatively lower precision solutions, then
+        /// your constrained problem into <see cref="FindGlobalMinimum(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, EvaluationSettings)"/>,
+        /// which supports constraints but gives relatively lower precision solutions, then
         /// feeding the result of that method into this method, which finds relatively precise solutions but does not support constraints.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="function"/>, <paramref name="start"/>, or <paramref name="settings"/> is <see langword="null"/>.</exception>
         /// <exception cref="NonconvergenceException">The number of function evaluations required exceeded the evaluation budget.</exception>
-        public static MultiExtremum FindLocalMinimum (Func<IList<double>, double> function, IList<double> start, EvaluationSettings settings) {
+        public static MultiExtremum FindLocalMinimum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start, EvaluationSettings settings) {
             if (function == null) throw new ArgumentNullException("function");
             if (start == null) throw new ArgumentNullException("start");
             if (settings == null) throw new ArgumentNullException("settings");
@@ -56,7 +57,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="function">The multi-dimensional function to maximize.</param>
         /// <param name="start">The starting location for the search.</param>
         /// <returns>The local maximum.</returns>
-        public static MultiExtremum FindLocalMaximum (Func<IList<double>, double> function, IList<double> start) {
+        public static MultiExtremum FindLocalMaximum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start) {
             return (FindLocalMaximum(function, start, new EvaluationSettings()));
         }
 
@@ -67,14 +68,14 @@ namespace Meta.Numerics.Analysis {
         /// <param name="start">The starting location for the search.</param>
         /// <param name="settings">The evaluation settings that govern the search for the maximum.</param>
         /// <returns>The local maximum.</returns>
-        public static MultiExtremum FindLocalMaximum (Func<IList<double>, double> function, IList<double> start, EvaluationSettings settings) {
+        public static MultiExtremum FindLocalMaximum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start, EvaluationSettings settings) {
             if (function == null) throw new ArgumentNullException("function");
             if (start == null) throw new ArgumentNullException("start");
             if (settings == null) throw new ArgumentNullException("settings");
-            return(FindLocalExtremum(function, start, settings, true));
+            return (FindLocalExtremum(function, start, settings, true));
         }
 
-        private static MultiExtremum FindLocalExtremum (Func<IList<double>, double> function, IList<double> start, EvaluationSettings settings, bool negate) {
+        private static MultiExtremum FindLocalExtremum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start, EvaluationSettings settings, bool negate) {
             MultiFunctor f = new MultiFunctor(function, negate);
 
             // Pick an initial radius; we need to do this better.
@@ -82,11 +83,11 @@ namespace Meta.Numerics.Analysis {
             double s = Double.MaxValue;
             foreach (double x in start) s = Math.Min((Math.Abs(x) + 1.0 / 8.0) / 8.0, s);
             */
-            
+
             double s = 0.0;
             foreach (double x in start) s += (Math.Abs(x) + 1.0 / 4.0) / 4.0;
             s = s / start.Count;
-            
+
             //double s = 0.2;
             Debug.WriteLine("s={0}", s);
 
@@ -116,8 +117,8 @@ namespace Meta.Numerics.Analysis {
 
         // It should be very easy to extend this method to constrained optimization, either by incorporating the bounds into
         // the step limits or by mapping hyper-space into a hyper-cube.
-         
-        private static MultiExtremum FindMinimum_ModelTrust (MultiFunctor f, IList<double> x, double s, EvaluationSettings settings) {
+
+        private static MultiExtremum FindMinimum_ModelTrust (MultiFunctor f, IReadOnlyList<double> x, double s, EvaluationSettings settings) {
 
             // Construct an initial model.
             QuadraticInterpolationModel model = QuadraticInterpolationModel.Construct(f, x, s);
@@ -161,7 +162,7 @@ namespace Meta.Numerics.Analysis {
                     }
                 }
 
-                
+
                 // There are now three decisions to be made:
                 //   1. How to change the trust radius
                 //   2. Whether to accept the new point
@@ -175,7 +176,7 @@ namespace Meta.Numerics.Analysis {
                     trustRadius = 2.0 * trustRadius;
                 }
                 // It appears that the limits on delta being too large don't help, and even hurt if made too stringent.
-                
+
                 // Replace an old point with the new point.
                 int iMax = 0; double fMax = model.values[0];
                 int iBad = 0; double fBad = model.ComputeBadness(0, z, point, value);
@@ -187,7 +188,7 @@ namespace Meta.Numerics.Analysis {
                 if (value < fMax) {
                     Debug.WriteLine("iMax={0}, iBad={1}", iMax, iBad);
                     model.ReplacePoint(iBad, point, z, value);
-                 }
+                }
                 // There is some question about how best to choose which point to replace.
                 // The largest value? The furthest away? The one closest to new min?
 
@@ -350,7 +351,7 @@ namespace Meta.Numerics.Analysis {
             return (r2);
         }
 
-        public void DivideBy(double q) {
+        public void DivideBy (double q) {
             f /= q;
             for (int i = 0; i < g.Length; i++) {
                 g[i] /= q;
@@ -409,7 +410,7 @@ namespace Meta.Numerics.Analysis {
         private QuadraticModel[] polynomials;
 
         // The total interpolating polynomial.
-        
+
         private QuadraticModel total;
 
         // The interpolation points and the function values at those points.
@@ -440,7 +441,7 @@ namespace Meta.Numerics.Analysis {
             }
         }
 
-        private void Initialize (MultiFunctor f, IList<double> x, double s) {
+        private void Initialize (MultiFunctor f, IReadOnlyList<double> x, double s) {
 
             // Allocate storage
             d = x.Count;
@@ -626,7 +627,7 @@ namespace Meta.Numerics.Analysis {
         }
 #endif
 
-        internal static QuadraticInterpolationModel Construct (MultiFunctor f, IList<double> x, double s) {
+        internal static QuadraticInterpolationModel Construct (MultiFunctor f, IReadOnlyList<double> x, double s) {
             QuadraticInterpolationModel model = new QuadraticInterpolationModel();
             model.Initialize(f, x, s);
             return (model);
@@ -733,5 +734,19 @@ namespace Meta.Numerics.Analysis {
 
     }
 
+    // IList defines CopyTo. IReadOnlyList doesn't. So in order to switch from IList to IReadOnlyList,
+    // we define an extension method to implement it.
 
+    internal static class CopyHelper {
+
+        public static void CopyTo<T> (this IReadOnlyList<T> source, T[] target, int startIndex) {
+            Debug.Assert(source != null);
+            Debug.Assert(target != null);
+            Debug.Assert(startIndex >= 0);
+            for (int i = 0; i < source.Count; i++) {
+                target[startIndex + i] = source[i];
+            }
+        }
+
+    }
 }

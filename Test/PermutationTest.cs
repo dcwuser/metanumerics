@@ -162,12 +162,12 @@ namespace Test {
         [TestMethod]
         public void PermutationDistribution () {
 
-            // We want to test that GetRandomPermutation actually samples all permutations equally
+            // We want to test that GetRandomPermutation actually samples all permutations equally.
 
-            // Don't let n get too big or we will have a ridiculously large number of bins
+            // Don't let n get too big or we will have a ridiculously large number of bins.
             for (int n = 2; n < 8; n++) {
 
-                // Build a mapping that assign each permutation a unique integer index from 0 to (n! - 1) 
+                // Build a mapping that assigns each permutation a unique integer index from 0 to (n! - 1). 
                 Dictionary<Permutation, int> index = new Dictionary<Permutation, int>();
                 int count = 0;
                 foreach (Permutation p in Permutation.Permutations(n)) {
@@ -175,7 +175,7 @@ namespace Test {
                     count++;
                 }
 
-                // Create a historgram of randomly generated permutation indexes
+                // Create a histogram of randomly generated permutation indexes.
                 Histogram histogram = new Histogram(count);
                 Random rng = new Random(2);
                 for (int i = 0; i < 8 * count; i++) {
@@ -183,13 +183,9 @@ namespace Test {
                     histogram.Bins[index[p]].Increment();
                 }
 
-                //for (int i = 0; i < count; i++) {
-                //    Console.WriteLine("{0} {1}", i, bins[i].Counts);
-                //}
-
+                // Test the uniformity of the distribution.
                 TestResult result = histogram.ChiSquaredTest(new DiscreteUniformDistribution(0, count - 1));
-                Console.WriteLine(result.RightProbability);
-                Assert.IsTrue(result.RightProbability > 0.01);
+                Assert.IsTrue(result.Probability > 0.01);
 
             }
 

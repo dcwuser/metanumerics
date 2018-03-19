@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using Meta.Numerics.Functions;
+using Meta.Numerics;
+using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 using Meta.Numerics.Matrices;
@@ -113,51 +117,48 @@ namespace Test {
         [TestMethod]
         public void BivariateNullAssociation () {
 
-            Random rng = new Random(314159265);
+            Random rng = new Random(31415926);
 
-            // Create sample sets for our three test statisics
-            Sample PS = new Sample();
-            Sample SS = new Sample();
-            Sample KS = new Sample();
+            // Create a data structure to hold the results of Pearson, Spearman, and Kendall tests.
+            FrameTable data = new FrameTable(
+                new ColumnDefinition<double>("r"),
+                new ColumnDefinition<double>("ρ"),
+                new ColumnDefinition<double>("τ")
+            );
 
-            // variables to hold the claimed distribution of teach test statistic
-            ContinuousDistribution PD = null;
-            ContinuousDistribution SD = null;
-            ContinuousDistribution KD = null;
+            // Create variables to hold the claimed distribution of each test statistic.
+            ContinuousDistribution PRD = null;
+            ContinuousDistribution SRD = null;
+            ContinuousDistribution KTD = null;
 
-            // generate a large number of bivariate samples and conduct our three tests on each
-
+            // Generate a large number of bivariate samples and conduct our three tests on each.
+            ContinuousDistribution xDistribution = new LognormalDistribution();
+            ContinuousDistribution yDistribution = new CauchyDistribution();
             for (int j = 0; j < 100; j++) {
 
-                BivariateSample S = new BivariateSample();
-
-                // sample size should be large so that asymptotic assumptions are justified
+                List<double> x = new List<double>();
+                List<double> y = new List<double>();
                 for (int i = 0; i < 100; i++) {
-                    double x = rng.NextDouble();
-                    double y = rng.NextDouble();
-                    S.Add(x, y);
+                    x.Add(xDistribution.GetRandomValue(rng));
+                    y.Add(yDistribution.GetRandomValue(rng));
                 }
 
-                TestResult PR = S.PearsonRTest();
-                PS.Add(PR.Statistic);
-                PD = PR.Distribution;
-                TestResult SR = S.SpearmanRhoTest();
-                SS.Add(SR.Statistic);
-                SD = SR.Distribution;
-                TestResult KR = S.KendallTauTest();
-                KS.Add(KR.Statistic);
-                KD = KR.Distribution;
+                TestResult PR = Bivariate.PearsonRTest(x, y);
+                TestResult SR = Bivariate.SpearmanRhoTest(x, y);
+                TestResult KT = Bivariate.KendallTauTest(x, y);
 
+                PRD = PR.Distribution;
+                SRD = SR.Distribution;
+                KTD = KT.Distribution;
+
+                data.AddRow(new Dictionary<string, object>() {
+                    {"r", PR.Statistic}, {"ρ", SR.Statistic}, {"τ", KT.Statistic}
+                });
             }
 
-            // do KS to test whether the samples follow the claimed distributions
-            //Console.WriteLine(PS.KolmogorovSmirnovTest(PD).LeftProbability);
-            //Console.WriteLine(SS.KolmogorovSmirnovTest(SD).LeftProbability);
-            //Console.WriteLine(KS.KolmogorovSmirnovTest(KD).LeftProbability);
-            Assert.IsTrue(PS.KolmogorovSmirnovTest(PD).LeftProbability < 0.95);
-            Assert.IsTrue(SS.KolmogorovSmirnovTest(SD).LeftProbability < 0.95);
-            Assert.IsTrue(KS.KolmogorovSmirnovTest(KD).LeftProbability < 0.95);
-
+            Assert.IsTrue(data["r"].As<double>().KolmogorovSmirnovTest(PRD).Probability > 0.05);
+            Assert.IsTrue(data["ρ"].As<double>().KolmogorovSmirnovTest(SRD).Probability > 0.05);
+            Assert.IsTrue(data["τ"].As<double>().KolmogorovSmirnovTest(KTD).Probability > 0.05);
         }
         
         [TestMethod]
@@ -173,42 +174,136 @@ namespace Test {
             s.Add(2, 7);
             s.Add(1, 11);
             s.Add(4, 8);
-            Console.WriteLine(s.Count);
             TestResult r = s.PairedStudentTTest();
-            Console.WriteLine(r.Statistic);
-            Console.WriteLine(r.LeftProbability);
+            // Maybe we should assert something here?
         }
 
         [TestMethod]
-        public void MultivariateLinearRegressionTest () {
+        public void MultivariateLinearRegressionSimple () {
 
             // define model y = a + b0 * x0 + b1 * x1 + noise
             double a = 1.0;
             double b0 = -2.0;
             double b1 = 3.0;
+            ContinuousDistribution x0distribution = new CauchyDistribution(10.0, 5.0);
+            ContinuousDistribution x1distribution = new UniformDistribution(Interval.FromEndpoints(-10.0, 20.0));
             ContinuousDistribution noise = new NormalDistribution(0.0, 10.0);
 
             // draw a sample from the model
             Random rng = new Random(1);
-            MultivariateSample sample = new MultivariateSample(3);
+            MultivariateSample sample = new MultivariateSample("x0", "x1", "y");
+            FrameTable table = new FrameTable(
+                new ColumnDefinition<double>("x0"),
+                new ColumnDefinition<double>("x1"),
+                new ColumnDefinition<double>("y")
+            );
             for (int i = 0; i < 100; i++) {
-                double x0 = -10.0 + 20.0 * rng.NextDouble();
-                double x1 = -10.0 + 20.0 * rng.NextDouble();
-                double eps = noise.InverseLeftProbability(rng.NextDouble());
+                double x0 = x0distribution.GetRandomValue(rng);
+                double x1 = x1distribution.GetRandomValue(rng);
+                double eps = noise.GetRandomValue(rng);
                 double y = a + b0 * x0 + b1 * x1 + eps;
                 sample.Add(x0, x1, y);
+                table.AddRow(x0, x1, y);
             }
 
             // do a linear regression fit on the model
-            ParameterCollection result = sample.LinearRegression(2).Parameters;
+            ParameterCollection oldResult = sample.LinearRegression(2).Parameters;
+            MultiLinearRegressionResult newResult = table["y"].As<double>().MultiLinearRegression(
+                table["x0"].As<double>(), table["x1"].As<double>()
+            );
 
             // the result should have the appropriate dimension
-            Assert.IsTrue(result.Count == 3);
+            Assert.IsTrue(oldResult.Count == 3);
+            Assert.IsTrue(newResult.Parameters.Count == 3);
 
-            // the parameters should match the model
-            Assert.IsTrue(result[0].Estimate.ConfidenceInterval(0.90).ClosedContains(b0));
-            Assert.IsTrue(result[1].Estimate.ConfidenceInterval(0.90).ClosedContains(b1));
-            Assert.IsTrue(result[2].Estimate.ConfidenceInterval(0.90).ClosedContains(a));
+            // The parameters should match the model
+            Assert.IsTrue(oldResult[0].Estimate.ConfidenceInterval(0.90).ClosedContains(b0));
+            Assert.IsTrue(oldResult[1].Estimate.ConfidenceInterval(0.90).ClosedContains(b1));
+            Assert.IsTrue(oldResult[2].Estimate.ConfidenceInterval(0.90).ClosedContains(a));
+
+            Assert.IsTrue(newResult.CoefficientOf(0).ConfidenceInterval(0.99).ClosedContains(b0));
+            Assert.IsTrue(newResult.CoefficientOf("x1").ConfidenceInterval(0.99).ClosedContains(b1));
+            Assert.IsTrue(newResult.Intercept.ConfidenceInterval(0.99).ClosedContains(a));
+
+            // The residuals should be compatible with the model predictions
+            for (int i = 0; i < table.Rows.Count; i++) {
+                FrameRow row = table.Rows[i];
+                double x0 = (double) row["x0"];
+                double x1 = (double) row["x1"];
+                double yp = newResult.Predict(x0, x1).Value;
+                double y = (double) row["y"];
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(newResult.Residuals[i], y - yp));
+            }
+
+        }
+
+
+        [TestMethod]
+        public void MultivariateLinearRegressionVariances () {
+
+            // define model y = a + b0 * x0 + b1 * x1 + noise
+            double a = -3.0;
+            double b0 = 2.0;
+            double b1 = -1.0;
+            ContinuousDistribution x0distribution = new LaplaceDistribution();
+            ContinuousDistribution x1distribution = new CauchyDistribution();
+            ContinuousDistribution eDistribution = new NormalDistribution(0.0, 4.0);
+
+            FrameTable data = new FrameTable(
+                new ColumnDefinition<double>("a"),
+                new ColumnDefinition<double>("da"),
+                new ColumnDefinition<double>("b0"),
+                new ColumnDefinition<double>("db0"),
+                new ColumnDefinition<double>("b1"),
+                new ColumnDefinition<double>("db1"),
+                new ColumnDefinition<double>("ab1Cov"),
+                new ColumnDefinition<double>("p"),
+                new ColumnDefinition<double>("dp")
+            );
+
+            // draw a sample from the model
+            Random rng = new Random(4);
+            for (int j = 0; j < 64; j++) {
+                List<double> x0s = new List<double>();
+                List<double> x1s = new List<double>();
+                List<double> ys = new List<double>();
+
+                for (int i = 0; i < 16; i++) {
+                    double x0 = x0distribution.GetRandomValue(rng);
+                    double x1 = x1distribution.GetRandomValue(rng);
+                    double e = eDistribution.GetRandomValue(rng);
+                    double y = a + b0 * x0 + b1 * x1 + e;
+                    x0s.Add(x0);
+                    x1s.Add(x1);
+                    ys.Add(y);
+                }
+
+                // do a linear regression fit on the model
+                MultiLinearRegressionResult result = ys.MultiLinearRegression(
+                    new Dictionary<string, IReadOnlyList<double>> {
+                        {"x0", x0s }, {"x1", x1s }
+                    }
+                );
+                UncertainValue pp = result.Predict(-5.0, 6.0);
+
+                data.AddRow(
+                    result.Intercept.Value, result.Intercept.Uncertainty,
+                    result.CoefficientOf("x0").Value, result.CoefficientOf("x0").Uncertainty,
+                    result.CoefficientOf("x1").Value, result.CoefficientOf("x1").Uncertainty,
+                    result.Parameters.CovarianceOf("Intercept", "x1"),
+                    pp.Value, pp.Uncertainty
+                );
+
+            }
+
+            // The estimated parameters should agree with the model that generated the data.
+
+            // The variances of the estimates should agree with the claimed variances
+            Assert.IsTrue(data["a"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["da"].As<double>().Mean()));
+            Assert.IsTrue(data["b0"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["db0"].As<double>().Mean()));
+            Assert.IsTrue(data["b1"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["db1"].As<double>().Mean()));
+            Assert.IsTrue(data["a"].As<double>().PopulationCovariance(data["b1"].As<double>()).ConfidenceInterval(0.99).ClosedContains(data["ab1Cov"].As<double>().Mean()));
+            Assert.IsTrue(data["p"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["dp"].As<double>().Median()));
 
         }
 
@@ -249,49 +344,162 @@ namespace Test {
 
         }
 
-        public void OldMultivariateLinearRegressionTest () {
+        [TestMethod]
+        public void MultivariateLinearRegressionAgreement2 () {
 
-            MultivariateSample sample = new MultivariateSample(3);
-            
-            sample.Add(98322, 81449, 269465);
-            sample.Add(65060, 31749, 121900);
-            sample.Add(36052, 14631, 37004);
-            sample.Add(31829, 27732, 91400);
-            sample.Add(7101, 9693, 54900);
-            sample.Add(41294, 4268, 16160);
-            sample.Add(16614, 4697, 21500);
-            sample.Add(3449, 4233, 9306);
-            sample.Add(3386, 5293, 38300);
-            sample.Add(6242, 2039, 13369);
-            sample.Add(14036, 7893, 29901);
-            sample.Add(2636, 3345, 10930);
-            sample.Add(869, 1135, 5100);
-            sample.Add(452, 727, 7653);
-            
-            /*
-            sample.Add(41.9, 29.1, 251.3);
-            sample.Add(43.4, 29.3, 251.3);
-            sample.Add(43.9, 29.5, 248.3);
-            sample.Add(44.5, 29.7, 267.5);
-            sample.Add(47.3, 29.9, 273.0);
-            sample.Add(47.5, 30.3, 276.5);
-            sample.Add(47.9, 30.5, 270.3);
-            sample.Add(50.2, 30.7, 274.9);
-            sample.Add(52.8, 30.8, 285.0);
-            sample.Add(53.2, 30.9, 290.0);
-            sample.Add(56.7, 31.5, 297.0);
-            sample.Add(57.0, 31.7, 302.5);
-            sample.Add(63.5, 31.9, 304.5);
-            sample.Add(65.3, 32.0, 309.3);
-            sample.Add(71.1, 32.1, 321.7);
-            sample.Add(77.0, 32.5, 330.7);
-            sample.Add(77.8, 32.9, 349.0);
-            */
+            // A multivariate linear regression with just one x-column should be the same as a bivariate linear regression.
 
-            Console.WriteLine(sample.Count);
+            double intercept = 1.0;
+            double slope = -2.0;
+            ContinuousDistribution yErrDist = new NormalDistribution(0.0, 3.0);
+            UniformDistribution xDist = new UniformDistribution(Interval.FromEndpoints(-2.0, 3.0));
+            Random rng = new Random(1111111);
 
-            //sample.LinearRegression(0);
-            sample.LinearRegression(0);
+            MultivariateSample multi = new MultivariateSample("x", "y");
+            for (int i = 0; i < 10; i++) {
+                double x = xDist.GetRandomValue(rng);
+                double y = intercept + slope * x + yErrDist.GetRandomValue(rng);
+                multi.Add(x, y);
+            }
+
+            // Old multi linear regression code.
+            MultiLinearRegressionResult result1 = multi.LinearRegression(1);
+
+            // Simple linear regression code.
+            LinearRegressionResult result2 = multi.TwoColumns(0, 1).LinearRegression();
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result1.Parameters["Intercept"].Estimate, result2.Parameters["Intercept"].Estimate));
+
+            // New multi linear regression code.
+            MultiLinearRegressionResult result3 = multi.Column(1).ToList().MultiLinearRegression(multi.Column(0).ToList());
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result1.Parameters["Intercept"].Estimate, result3.Parameters["Intercept"].Estimate));
+
+        }
+
+
+        [TestMethod]
+        public void MultivariateLinearLogisticRegressionSimple () {
+
+            // define model y = a + b0 * x0 + b1 * x1 + noise
+            double a = 1.0;
+            double b0 = -1.0 / 2.0;
+            double b1 = 1.0 / 3.0;
+            ContinuousDistribution x0distribution = new LaplaceDistribution();
+            ContinuousDistribution x1distribution = new NormalDistribution();
+
+            // draw a sample from the model
+            Random rng = new Random(1);
+            MultivariateSample old = new MultivariateSample("y", "x0", "x1");
+            FrameTable table = new FrameTable(
+                new ColumnDefinition<double>("x0"),
+                new ColumnDefinition<double>("x1"),
+                new ColumnDefinition<bool>("y")
+            );
+            for (int i = 0; i < 100; i++) {
+                double x0 = x0distribution.GetRandomValue(rng);
+                double x1 = x1distribution.GetRandomValue(rng);
+                double t = a + b0 * x0 + b1 * x1;
+                double p = 1.0 / (1.0 + Math.Exp(-t));
+                bool y = (rng.NextDouble() < p);
+                old.Add(y ? 1.0 : 0.0, x0, x1);
+                table.AddRow(x0, x1, y);
+            }
+
+            // do a linear regression fit on the model
+            MultiLinearLogisticRegressionResult oldResult = old.LogisticLinearRegression(0);
+            MultiLinearLogisticRegressionResult newResult = table["y"].As<bool>().MultiLinearLogisticRegression(
+                table["x0"].As<double>(), table["x1"].As<double>()
+            );
+
+            // the result should have the appropriate dimension
+            Assert.IsTrue(newResult.Parameters.Count == 3);
+
+            // The parameters should match the model
+            Assert.IsTrue(newResult.CoefficientOf(0).ConfidenceInterval(0.99).ClosedContains(b0));
+            Assert.IsTrue(newResult.CoefficientOf("x1").ConfidenceInterval(0.99).ClosedContains(b1));
+            Assert.IsTrue(newResult.Intercept.ConfidenceInterval(0.99).ClosedContains(a));
+
+            // Our predictions should be better than chance.
+            int correct = 0;
+            for (int i = 0; i < table.Rows.Count; i++) {
+                FrameRow row = table.Rows[i];
+                double x0 = (double) row["x0"];
+                double x1 = (double) row["x1"];
+                double p = newResult.Predict(x0, x1).Value;
+                bool y = (bool) row["y"];
+                if ((y && p > 0.5) || (!y & p < 0.5)) correct++;
+            }
+            Assert.IsTrue(correct > 0.5 * table.Rows.Count);
+
+        }
+
+        [TestMethod]
+        public void MultivariateLinearLogisticRegressionVariances () {
+
+            // define model y = a + b0 * x0 + b1 * x1 + noise
+            double a = -3.0;
+            double b0 = 2.0;
+            double b1 = 1.0;
+            ContinuousDistribution x0distribution = new ExponentialDistribution();
+            ContinuousDistribution x1distribution = new LognormalDistribution();
+
+            FrameTable data = new FrameTable(
+                new ColumnDefinition<double>("a"),
+                new ColumnDefinition<double>("da"),
+                new ColumnDefinition<double>("b0"),
+                new ColumnDefinition<double>("db0"),
+                new ColumnDefinition<double>("b1"),
+                new ColumnDefinition<double>("db1"),
+                new ColumnDefinition<double>("p"),
+                new ColumnDefinition<double>("dp")
+            );
+
+            // draw a sample from the model
+            Random rng = new Random(2);
+            for (int j = 0; j < 32; j++) {
+                List<double> x0s = new List<double>();
+                List<double> x1s = new List<double>();
+                List<bool> ys = new List<bool>();
+
+                FrameTable table = new FrameTable(
+                    new ColumnDefinition<double>("x0"),
+                    new ColumnDefinition<double>("x1"),
+                    new ColumnDefinition<bool>("y")
+                );
+                for (int i = 0; i < 32; i++) {
+                    double x0 = x0distribution.GetRandomValue(rng);
+                    double x1 = x1distribution.GetRandomValue(rng);
+                    double t = a + b0 * x0 + b1 * x1;
+                    double p = 1.0 / (1.0 + Math.Exp(-t));
+                    bool y = (rng.NextDouble() < p);
+                    x0s.Add(x0);
+                    x1s.Add(x1);
+                    ys.Add(y);
+                }
+
+                // do a linear regression fit on the model
+                MultiLinearLogisticRegressionResult result = ys.MultiLinearLogisticRegression(
+                    new Dictionary<string, IReadOnlyList<double>> {
+                        {"x0", x0s }, {"x1", x1s }
+                    }
+                );
+                UncertainValue pp = result.Predict(0.0, 1.0);
+
+                data.AddRow(
+                    result.Intercept.Value, result.Intercept.Uncertainty,
+                    result.CoefficientOf("x0").Value, result.CoefficientOf("x0").Uncertainty,
+                    result.CoefficientOf("x1").Value, result.CoefficientOf("x1").Uncertainty,
+                    pp.Value, pp.Uncertainty
+                );
+
+            }
+
+            // The estimated parameters should agree with the model that generated the data.
+
+            // The variances of the estimates should agree with the claimed variances
+            Assert.IsTrue(data["a"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["da"].As<double>().Mean()));
+            Assert.IsTrue(data["b0"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["db0"].As<double>().Mean()));
+            Assert.IsTrue(data["b1"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["db1"].As<double>().Mean()));
+            Assert.IsTrue(data["p"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["dp"].As<double>().Mean()));
 
         }
 
@@ -346,13 +554,13 @@ namespace Test {
                     }
                     ms.Add(x);
                 }
-                RegressionResult r = ms.LinearRegression(0);
+                GeneralLinearRegressionResult r = ms.LinearRegression(0);
                 fs.Add(r.F.Statistic);
             }
 
             // conduct a KS test to check that F follows the expected distribution
             TestResult ks = fs.KolmogorovSmirnovTest(new FisherDistribution(3, 4));
-            Assert.IsTrue(ks.LeftProbability < 0.95);
+            Assert.IsTrue(ks.Probability > 0.05);
 
         }
 
@@ -365,12 +573,12 @@ namespace Test {
             for (int i = 0; i < 10; i++) {
                 SA.Add(rng.NextDouble(), rng.NextDouble());
             }
-            RegressionResult RA = SA.LinearRegression(0);
+            GeneralLinearRegressionResult RA = SA.LinearRegression(0);
             ColumnVector PA = RA.Parameters.Best;
             SymmetricMatrix CA = RA.Parameters.Covariance;
 
             MultivariateSample SB = SA.Columns(1, 0);
-            RegressionResult RB = SB.LinearRegression(1);
+            GeneralLinearRegressionResult RB = SB.LinearRegression(1);
             ColumnVector PB = RB.Parameters.Best;
             SymmetricMatrix CB = RB.Parameters.Covariance;
 
@@ -378,7 +586,7 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 0], CB[1, 1])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 1], CB[1, 0])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[1, 1], CB[0, 0]));
 
             BivariateSample SC = SA.TwoColumns(1, 0);
-            RegressionResult RC = SC.LinearRegression();
+            GeneralLinearRegressionResult RC = SC.LinearRegression();
             ColumnVector PC = RC.Parameters.Best;
             SymmetricMatrix CC = RC.Parameters.Covariance;
 
@@ -463,6 +671,62 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void MeansClustering2 () {
+
+            ColumnVector[] centers = new ColumnVector[] {
+                new ColumnVector(0.0, 0.0, 0.0), new ColumnVector(2.0, 0.0, 0.0), new ColumnVector(0.0, 2.0, 0.0), new ColumnVector(0.0, 0.0, 2.0)
+            };
+
+            List<int> inputAssignments = new List<int>();
+            List<ColumnVector> inputVectors = new List<ColumnVector>();
+            Random rng = new Random(2);
+            ContinuousDistribution dist = new NormalDistribution(0.0, 1.0);
+            for (int i = 0; i < 100; i++) {
+                int inputAssignment = rng.Next(0, centers.Length);
+                inputAssignments.Add(inputAssignment);
+                ColumnVector inputVector = centers[inputAssignment].Copy();
+                for (int k = 0; k < inputVector.Dimension; k++) {
+                    inputVector[k] += dist.GetRandomValue(rng);
+                }
+                inputVectors.Add(inputVector);
+            }
+
+            MultivariateSample s = new MultivariateSample(3);
+            foreach (ColumnVector v in inputVectors) { s.Add(v); }
+            MeansClusteringResult result = s.MeansClustering(centers.Length);
+
+            List<int> outputAssignments = new List<int>();
+            for (int i = 0; i < inputVectors.Count; i++) {
+                int assignment = result.Classify(inputVectors[i]);
+                outputAssignments.Add(assignment);
+            }
+
+            // Map the output centroids to the original centroids
+            Dictionary<int, int> map = new Dictionary<int, int>();
+            for (int outputIndex = 0; outputIndex < result.Count; outputIndex++) {
+                ColumnVector centroid = result.Centroid(outputIndex);
+                int mappedInputIndex = -1;
+                double mappedInputDistance = Double.MaxValue;
+                for (int inputIndex = 0; inputIndex < centers.Length; inputIndex++) {
+                    double distance = (centroid - centers[inputIndex]).Norm();
+                    if (distance < mappedInputDistance) {
+                        mappedInputIndex = inputIndex;
+                        mappedInputDistance = distance;
+                    }
+                }
+                Assert.IsTrue(mappedInputIndex >= 0);
+                Assert.IsTrue(mappedInputDistance < 1.0);
+                map.Add(outputIndex, mappedInputIndex);
+            }
+
+            int correctCount = 0;
+            for (int i = 0; i < outputAssignments.Count; i++) {
+                if (map[outputAssignments[i]] == inputAssignments[i]) correctCount++;
+            }
+            Assert.IsTrue(correctCount >= 0.50 * outputAssignments.Count);
+
+        }
 
         [TestMethod]
         public void MeansClustering () {

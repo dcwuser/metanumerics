@@ -192,6 +192,9 @@ namespace Meta.Numerics.Extended {
         /// Converts a double double value to a double value.
         /// </summary>
         /// <param name="a">The value to be converted.</param>
+        /// <returns>The <see cref="Double"/> value closest to the original double double value.</returns>
+        /// <remarks><para>Note that this is a narrowing operator; the extra precision of the double double type
+        /// is lost in the conversion.</para></remarks>
         public static explicit operator double (DoubleDouble a) {
             return (a.hi + a.lo);
         }
@@ -200,6 +203,7 @@ namespace Meta.Numerics.Extended {
         /// Converts a double value to a double double value.
         /// </summary>
         /// <param name="x">The value to be converted.</param>
+        /// <returns>The double double value equal to the original <see cref="Double" /> value.</returns>
         public static implicit operator DoubleDouble (double x) {
             return new DoubleDouble(x, 0.0);
         }
@@ -383,10 +387,14 @@ namespace Meta.Numerics.Extended {
         // Printing and Parsing
 
         /// <summary>
-        /// Parses a string representaion of a double double value.
+        /// Parses a string representation of a double double value.
         /// </summary>
         /// <param name="s">The string representation of the value.</param>
         /// <returns>The corresponding double double value.</returns>
+        /// <remarks>
+        /// <para>Double double supports the same string representations as
+        /// <see cref="Double"/>.</para>
+        /// </remarks>
         public static DoubleDouble Parse (string s) {
             if (s == null) throw new ArgumentNullException(nameof(s));
 
@@ -407,7 +415,7 @@ namespace Meta.Numerics.Extended {
                 s = s.Substring(0, eIndex);
             }
 
-            // Remove trailing and leading 0s. Otherwise we do unnesessary multiplications
+            // Remove trailing and leading 0s. Otherwise we do unnecessary multiplications
             // (and later divisions) by 10, which also introduces floating point wobble.
             s = s.Trim('0');
 
@@ -483,7 +491,7 @@ namespace Meta.Numerics.Extended {
         /// <summary>
         /// Writes a string representation of the value.
         /// </summary>
-        /// <returns>A string representation of the vlaue.</returns>
+        /// <returns>A string representation of the value.</returns>
         public override string ToString () {
             return (Write());
         }
@@ -491,7 +499,7 @@ namespace Meta.Numerics.Extended {
         // Equality
 
         /// <summary>
-        /// Determines whether two double dobule values are equal.
+        /// Determines whether two double double values are equal.
         /// </summary>
         /// <param name="a">The first value.</param>
         /// <param name="b">The second value.</param>

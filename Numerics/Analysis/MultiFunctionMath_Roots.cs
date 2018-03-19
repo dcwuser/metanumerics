@@ -16,7 +16,7 @@ namespace Meta.Numerics.Analysis {
         /// <exception cref="ArgumentNullException"><paramref name="f"/> or <paramref name="x0"/> is null.</exception>
         /// <exception cref="DimensionMismatchException">The dimension of <paramref name="f"/> is not equal to the
         /// dimension of <paramref name="x0"/>.</exception>
-        public static ColumnVector FindZero (Func<IList<double>, IList<double>> f, IList<double> x0) {
+        public static ColumnVector FindZero (Func<IReadOnlyList<double>, IReadOnlyList<double>> f, IReadOnlyList<double> x0) {
 
             if (f == null) throw new ArgumentNullException("f");
             if (x0 == null) throw new ArgumentNullException("x0");
@@ -37,7 +37,7 @@ namespace Meta.Numerics.Analysis {
             //double[] F = f(x);
             if (F.Dimension != d) throw new DimensionMismatchException();
             SquareMatrix B = ApproximateJacobian(f, x0);
-            double g = MoreMath.Pow2(F.Norm());
+            double g = MoreMath.Sqr(F.Norm());
             //double g = Blas1.dDot(F, 0, 1, F, 0, 1, d);
 
             for (int n = 0; n < Global.SeriesMax; n++) {
@@ -53,7 +53,7 @@ namespace Meta.Numerics.Analysis {
                 // determine how far we will move along the Newton step
                 ColumnVector x1 = x + dx;
                 ColumnVector F1 = new ColumnVector(f(x1));
-                double g1 = MoreMath.Pow2(F1.Norm());
+                double g1 = MoreMath.Sqr(F1.Norm());
 
                 // check whether the Newton step decreases the function vector magnitude
                 // NR suggest that it's necessary to ensure that it decrease by a certain amount, but I have yet to see that make a diference
@@ -68,7 +68,7 @@ namespace Meta.Numerics.Analysis {
                     dx = z * dx;
                     x1 = x + dx;
                     F1 = new ColumnVector(f(x1.ToArray()));
-                    g1 = MoreMath.Pow2(F1.Norm());
+                    g1 = MoreMath.Sqr(F1.Norm());
                     // NR suggest that this be repeated, but I have yet to see that make a difference
                 }
 
@@ -104,11 +104,11 @@ namespace Meta.Numerics.Analysis {
         // we just need a very approximate Jacobian to start off the Broyden's root-finder,
         // so we don't employ all the right tricks to maximize accuracy here
 
-        private static SquareMatrix ApproximateJacobian (Func<IList<double>, IList<double>> f, IList<double> x0) {
+        private static SquareMatrix ApproximateJacobian (Func<IReadOnlyList<double>, IReadOnlyList<double>> f, IReadOnlyList<double> x0) {
 
             int d = x0.Count;
 
-            IList<double> f0 = f(x0);
+            IReadOnlyList<double> f0 = f(x0);
 
             double[] xp = new double[d];
 
@@ -117,7 +117,7 @@ namespace Meta.Numerics.Analysis {
                 x0.CopyTo(xp, 0);
                 double dx = (Math.Abs(x0[j]) + 1.0 / 64.0) / 64.0;
                 xp[j] += dx;
-                IList<double> fp = f(xp);
+                IReadOnlyList<double> fp = f(xp);
                 for (int i = 0; i < d; i++) {
                     B[i, j] = (fp[i] - f0[i]) / dx;
                 }

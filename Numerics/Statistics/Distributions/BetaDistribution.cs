@@ -269,7 +269,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         /// <exception cref="InvalidOperationException">Not all the entries in <paramref name="sample" /> lie between zero and one.</exception>
-        public static FitResult FitToSample (Sample sample) {
+        public static BetaFitResult FitToSample (Sample sample) {
+            return (Univariate.FitToBeta(sample.data));
+            /*
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
 
@@ -292,7 +294,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             ga /= sample.Count; gb /= sample.Count;
 
             // define the function to zero
-            Func<IList<double>, IList<double>> f = delegate(IList<double> x) {
+            Func<IReadOnlyList<double>, IReadOnlyList<double>> f = delegate(IReadOnlyList<double> x) {
                 double pab = AdvancedMath.Psi(x[0] + x[1]);
                 return (new double[] {
                     AdvancedMath.Psi(x[0]) - pab - ga,
@@ -331,12 +333,12 @@ namespace Meta.Numerics.Statistics.Distributions {
             // return the results
             FitResult result = new FitResult(x1, C, test);
             return (result);
-
+            */
         }
 
     }
 
-    // The inversion of the Beta CDF turns out to be quite complex. We have moved the logic into an auxiluary class for tidyness. 
+    // The inversion of the Beta CDF turns out to be quite complex. We have moved the logic into an auxiliary class for tidiness. 
 
     internal class BetaInverter {
 

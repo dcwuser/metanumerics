@@ -8,9 +8,12 @@ namespace Meta.Numerics.Analysis {
     /// Contains methods for the analysis of functions.
     /// </summary>
     /// <remarks>
-    /// <para>Function analysis includes integration, finding maxima and minima, and finding roots.</para>
-    /// <para>This class contains methods for the analysis of functions that both accept a single real argument and return a single real value.
-    /// For the analysis of multi-dimensional functions, see the <see cref="MultiFunctionMath"/> class.</para>
+    /// <para>This is the primary class for the numerical analysis of functions of a single variable.
+    /// Function analysis includes integration, optimization (finding maxima and minima), locating roots,
+    /// and solving differential equations.</para>
+    /// <para>The termination criteria and evaluation budget for numerical analysis can be controlled
+    /// using the <see cref="EvaluationSettings"/> class and its child classes.</para>
+    /// <para>For the analysis of multi-dimensional functions, see the <see cref="MultiFunctionMath"/> class.</para>
     /// </remarks>
     public static partial class FunctionMath {
 

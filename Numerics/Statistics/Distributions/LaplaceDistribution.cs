@@ -7,13 +7,17 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents a Laplace distribution.
     /// </summary>
+    /// <remarks>
+    /// <para>A Laplace distribution is a symmetric variant of the <see cref="ExponentialDistribution"/>.
+    /// Instead of putting all events to the right of the origin, it puts events on both sides of
+    /// its central location with equally, with a probability density falling off exponentially on each side.</para>
+    /// </remarks>
     /// <seealso href="https://en.wikipedia.org/wiki/Laplace_distribution"/>
     public sealed class LaplaceDistribution : ContinuousDistribution {
 
         /// <summary>
         /// Initializes a new standard Laplace distribution.
         /// </summary>
-        /// <remarks>A Laplace distribution is a symmetric variant of the <see cref="ExponentialDistribution"/>.</remarks>
         public LaplaceDistribution () : this(0.0, 1.0) { }
 
         /// <summary>
@@ -183,7 +187,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return (0.0);
             } else if (r == 1) {
                 return (a);
             } else if (r % 2 == 0) {

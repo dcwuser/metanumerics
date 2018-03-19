@@ -42,7 +42,7 @@ namespace Test {
 
             // This is a simple test of a seperable integral
 
-            Func<IList<double>, double> f = delegate (IList<double> x) {
+            Func<IReadOnlyList<double>, double> f = delegate (IReadOnlyList<double> x) {
                 double y = 1.0;
                 for (int j = 0; j < x.Count; j++) {
                     y *= MoreMath.Pow(x[j], j);
@@ -68,7 +68,7 @@ namespace Test {
 
             // This is a simple test of the integration of a discontinuous function.
 
-            Func<IList<double>, double> f = delegate (IList<double> x) {
+            Func<IReadOnlyList<double>, double> f = delegate (IReadOnlyList<double> x) {
                 double r2 = 0.0;
                 for (int j = 0; j < x.Count; j++) {
                     r2 += x[j] * x[j];
@@ -97,7 +97,7 @@ namespace Test {
             // By expanding 1/(1-x) = 1 + x + x^2 + ... and integrating term-by-term
             // it's easy to show that this integral is \zeta(d)
 
-            Func<IList<double>, double> f = delegate (IList<double> x) {
+            Func<IReadOnlyList<double>, double> f = delegate (IReadOnlyList<double> x) {
                 double p = 1.0;
                 for (int i = 0; i < x.Count; i++) {
                     p *= x[i];
@@ -128,13 +128,13 @@ namespace Test {
             // dimension, we can demand fairly high accuracy.
 
             IntegrationResult i1 = MultiFunctionMath.Integrate(
-                (IList<double> x) => 1.0 / (1.0 - x[0] * x[0] * x[1] * x[1]),
+                (IReadOnlyList<double> x) => 1.0 / (1.0 - x[0] * x[0] * x[1] * x[1]),
                 UnitCube(2)
             );
             Assert.IsTrue(i1.Estimate.ConfidenceInterval(0.95).ClosedContains(Math.PI * Math.PI / 8.0));
 
             IntegrationResult i2 = MultiFunctionMath.Integrate(
-                (IList<double> x) => 1.0 / (x[0] + x[1]) / Math.Sqrt((1.0 - x[0]) * (1.0 - x[1])),
+                (IReadOnlyList<double> x) => 1.0 / (x[0] + x[1]) / Math.Sqrt((1.0 - x[0]) * (1.0 - x[1])),
                 UnitCube(2),
                 new IntegrationSettings() { RelativePrecision = 1.0E-6 }
             );
@@ -142,7 +142,7 @@ namespace Test {
             // For higher precision demands on this integral, we start getting Infinity +/- NaN for estimate and never terminate, look into this.
 
             IntegrationResult i3 = MultiFunctionMath.Integrate(
-                (IList<double> x) => (x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1]),
+                (IReadOnlyList<double> x) => (x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1]),
                 UnitCube(2)
             );
             Assert.IsTrue(i3.Estimate.ConfidenceInterval(0.95).ClosedContains(AdvancedMath.EulerGamma));
@@ -160,7 +160,7 @@ namespace Test {
 
             Assert.IsTrue(
                 MultiFunctionMath.Integrate(
-                    (IList<double> x) => 1.0 / (1.0 - x[0] * x[1]),
+                    (IReadOnlyList<double> x) => 1.0 / (1.0 - x[0] * x[1]),
                     UnitCube(2)
                 ).Estimate.ConfidenceInterval(0.95).ClosedContains(
                     AdvancedMath.RiemannZeta(2.0)
@@ -169,7 +169,7 @@ namespace Test {
 
             Assert.IsTrue(
                 MultiFunctionMath.Integrate(
-                    (IList<double> x) => -Math.Log(x[0] * x[1]) / (1.0 - x[0] * x[1]),
+                    (IReadOnlyList<double> x) => -Math.Log(x[0] * x[1]) / (1.0 - x[0] * x[1]),
                     UnitCube(2)
                 ).Estimate.ConfidenceInterval(0.95).ClosedContains(
                     2.0 * AdvancedMath.RiemannZeta(3.0)
@@ -178,7 +178,7 @@ namespace Test {
 
             Assert.IsTrue(
                 MultiFunctionMath.Integrate(
-                    (IList<double> x) => (x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1]),
+                    (IReadOnlyList<double> x) => (x[0] - 1.0) / (1.0 - x[0] * x[1]) / Math.Log(x[0] * x[1]),
                     UnitCube(2)
                 ).Estimate.ConfidenceInterval(0.95).ClosedContains(
                     AdvancedMath.EulerGamma
@@ -187,7 +187,7 @@ namespace Test {
 
             Assert.IsTrue(
                 MultiFunctionMath.Integrate(
-                    (IList<double> x) => (x[0] - 1.0) / (1.0 + x[0] * x[1]) / Math.Log(x[0] * x[1]),
+                    (IReadOnlyList<double> x) => (x[0] - 1.0) / (1.0 + x[0] * x[1]) / Math.Log(x[0] * x[1]),
                     UnitCube(2)
                 ).Estimate.ConfidenceInterval(0.95).ClosedContains(
                     Math.Log(4.0 / Math.PI)
@@ -196,7 +196,7 @@ namespace Test {
 
             Assert.IsTrue(
                 MultiFunctionMath.Integrate(
-                    (IList<double> x) => 1.0 / (1.0 + MoreMath.Sqr(x[0] * x[1])),
+                    (IReadOnlyList<double> x) => 1.0 / (1.0 + MoreMath.Sqr(x[0] * x[1])),
                     UnitCube(2)
                 ).Estimate.ConfidenceInterval(0.95).ClosedContains(
                     AdvancedMath.Catalan
@@ -216,7 +216,7 @@ namespace Test {
             
             Assert.IsTrue(
                 MultiFunctionMath.Integrate(
-                    (IList<double> x) => 1.0 / (1.0 - Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Cos(x[2])), watsonBox
+                    (IReadOnlyList<double> x) => 1.0 / (1.0 - Math.Cos(x[0]) * Math.Cos(x[1]) * Math.Cos(x[2])), watsonBox
                 ).Estimate.ConfidenceInterval(0.99).ClosedContains(
                     MoreMath.Pow(AdvancedMath.Gamma(1.0 / 4.0), 4) / 4.0
                 )
@@ -224,7 +224,7 @@ namespace Test {
 
             Assert.IsTrue(
                 MultiFunctionMath.Integrate(
-                    (IList<double> x) => 1.0 / (3.0 - Math.Cos(x[0]) * Math.Cos(x[1]) - Math.Cos(x[1]) * Math.Cos(x[2]) - Math.Cos(x[0]) * Math.Cos(x[2])), watsonBox
+                    (IReadOnlyList<double> x) => 1.0 / (3.0 - Math.Cos(x[0]) * Math.Cos(x[1]) - Math.Cos(x[1]) * Math.Cos(x[2]) - Math.Cos(x[0]) * Math.Cos(x[2])), watsonBox
                 ).Estimate.ConfidenceInterval(0.99).ClosedContains(
                     3.0 * MoreMath.Pow(AdvancedMath.Gamma(1.0 / 3.0), 6) / Math.Pow(2.0, 14.0 / 3.0) / Math.PI
                 )
@@ -232,7 +232,7 @@ namespace Test {
 
             Assert.IsTrue(
                 MultiFunctionMath.Integrate(
-                    (IList<double> x) => 1.0 / (3.0 - Math.Cos(x[0]) - Math.Cos(x[1]) - Math.Cos(x[2])), watsonBox
+                    (IReadOnlyList<double> x) => 1.0 / (3.0 - Math.Cos(x[0]) - Math.Cos(x[1]) - Math.Cos(x[2])), watsonBox
                 ).Estimate.ConfidenceInterval(0.99).ClosedContains(
                     Math.Sqrt(6.0) / 96.0 * AdvancedMath.Gamma(1.0 / 24.0) * AdvancedMath.Gamma(5.0 / 24.0) * AdvancedMath.Gamma(7.0 / 24.0) * AdvancedMath.Gamma(11.0 / 24.0)
                 )
@@ -252,7 +252,7 @@ namespace Test {
 
             for (int d = 2; d <= 5; d++) {
 
-                IntegrationResult v1 = MultiFunctionMath.Integrate((IList<double> x) => {
+                IntegrationResult v1 = MultiFunctionMath.Integrate((IReadOnlyList<double> x) => {
                     for (int i = 0; i < d; i++) {
                         double s = 0.0;
                         for (int j = 0; j < d; j++) {
@@ -319,7 +319,7 @@ namespace Test {
         }
 
         private IntegrationResult RambleIntegral (int d, int s, IntegrationSettings settings) {
-            return (MultiFunctionMath.Integrate((IList<double> x) => {
+            return (MultiFunctionMath.Integrate((IReadOnlyList<double> x) => {
                 Complex z = 0.0;
                 for (int k = 0; k < d; k++) {
                     z += ComplexMath.Exp(2.0 * Math.PI * Complex.I * x[k]);
@@ -426,7 +426,7 @@ namespace Test {
 
             for (int d = 2; d <= 10; d++) {
 
-                IntegrationResult result = MultiFunctionMath.Integrate((IList<double> r) => {
+                IntegrationResult result = MultiFunctionMath.Integrate((IReadOnlyList<double> r) => {
                     double s = 0.0;
                     foreach (double x in r) s += x * x;
                     return (Math.Exp(-s));
@@ -454,7 +454,7 @@ namespace Test {
                 volume[i] = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
             }
 
-            IntegrationResult r = MultiFunctionMath.Integrate((IList<double> x) => {
+            IntegrationResult r = MultiFunctionMath.Integrate((IReadOnlyList<double> x) => {
                 double p = 1.0;
                 double q = 0.0;
                 for (int i = 0; i < x.Count; i++) {
@@ -475,7 +475,7 @@ namespace Test {
         }
 
         public double BoxIntegralB (int d, int r, IntegrationSettings settings) {
-            return (MultiFunctionMath.Integrate((IList<double> x) => {
+            return (MultiFunctionMath.Integrate((IReadOnlyList<double> x) => {
                 double s = 0.0;
                 for (int k = 0; k < d; k++) {
                     s += x[k] * x[k];
@@ -485,7 +485,7 @@ namespace Test {
         }
 
         public double BoxIntegralD (int d, int r, IntegrationSettings settings) {
-            return (MultiFunctionMath.Integrate((IList<double> x) => {
+            return (MultiFunctionMath.Integrate((IReadOnlyList<double> x) => {
                 double s = 0.0;
                 for (int k = 0; k < d; k++) {
                     double z = x[k] - x[k + d];
@@ -518,7 +518,7 @@ namespace Test {
                 double detA = CD.Determinant();
 
                 // Compute the integral
-                Func<IList<double>, double> f = (IList<double> x) => {
+                Func<IReadOnlyList<double>, double> f = (IReadOnlyList<double> x) => {
                     ColumnVector v = new ColumnVector(x);
                     double s = v.Transpose() * (A * v);
                     return (Math.Exp(-s));

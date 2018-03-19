@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 #if !SILVERLIGHT
 using System.Data;
 #endif
@@ -95,7 +96,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="x">The x values of the data points.</param>
         /// <param name="y">The y values of the data points.</param>
         /// <exception cref="DimensionMismatchException">The lengths of the two lists are not equal.</exception>
-        public void Add (IList<double> x, IList<double> y) {
+        public void Add (IReadOnlyList<double> x, IReadOnlyList<double> y) {
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
@@ -229,17 +230,15 @@ namespace Meta.Numerics.Statistics {
             xData = t;
         }
 
-        // marginals
-
         /// <summary>
         /// Gets a read-only univariate sample consisting of the x-values of the data points.
         /// </summary>
         /// <remarks>
-        /// <para>Use this method to obtain sinformation specific to the x-vales, such as their <see cref="Sample.Median"/> or
+        /// <para>Use this method to obtain information specific to the x-vales, such as their <see cref="Sample.Median"/> or
         /// <see cref="Sample.Variance"/>.</para>
         /// <para>Note that this is a fast, O(1) operation, which does not create an independent copy of the data.
         /// The advantage of this is that you can access x-data as a <see cref="Sample"/> as often as you like without
-        /// worying about performance. The disadvantage of this is that the returned sample cannot be altered. If you
+        /// worrying about performance. The disadvantage of this is that the returned sample cannot be altered. If you
         /// need to alter x-data independent of the bivariate sample, use the <see cref="Sample.Copy"/>
         /// method to obtain an independent copy.</para>
         /// </remarks>
@@ -253,11 +252,11 @@ namespace Meta.Numerics.Statistics {
         /// Gets a read-only univariate sample consisting of the y-values of the data points.
         /// </summary>
         /// <remarks>
-        /// <para>Use this method to obtain sinformation specific to the y-vales, such as their <see cref="Sample.Median"/> or
+        /// <para>Use this method to obtain information specific to the y-vales, such as their <see cref="Sample.Median"/> or
         /// <see cref="Sample.Variance"/>.</para>
         /// <para>Note that this is a fast, O(1) operation, which does not create an independent copy of the data.
         /// The advantage of this is that you can access y-data as a <see cref="Sample"/> as often as you like without
-        /// worying about performance. The disadvantage of this is that the returned sample cannot be altered. If you
+        /// worrying about performance. The disadvantage of this is that the returned sample cannot be altered. If you
         /// need to alter y-data independent of the bivariate sample, use the <see cref="Sample.Copy"/>
         /// method to obtain an independent copy.</para>
         /// </remarks>
@@ -283,24 +282,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public double Covariance {
             get {
-                int n = Count;
-                if (n < 2) throw new InsufficientDataException();
-                double mx = xData.Mean;
-                double my = yData.Mean;
-
-                double C = 0.0;
-                for (int i = 0; i < n; i++) {
-                    C += (xData[i] - mx) * (yData[i] - my);
-                }
-                C = C / n;
-
-                return (C);
-
-                // this is an O(N) operation, which really shouldn't be done in a property
-                // in the Sample class we maintain mean and variance as each value is
-                // added or removed; ideally we should do that with covariance in the
-                // bivariate sample, but Transforms, and maybe other operations, would
-                // screw that up
+                return (Bivariate.Covariance(xData, yData));
             }
         }
 
@@ -309,19 +291,8 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public double CorrelationCoefficient {
             get {
-                return (this.Covariance / Math.Sqrt(xData.Variance * yData.Variance));
+                return (Bivariate.CorrelationCoefficient(xData, yData));
             }
-        }
-
-        private double MomentAboutMean (int nx, int ny) {
-            double mx = xData.Mean;
-            double my = yData.Mean;
-
-            double C = 0.0;
-            for (int i = 0; i < Count; i++) {
-                C += MoreMath.Pow(xData[i] - mx, nx) * MoreMath.Pow(yData[i] - my, ny);
-            }
-            return (C / Count);
         }
 
         /// <summary>
@@ -330,14 +301,8 @@ namespace Meta.Numerics.Statistics {
         /// <returns>An estimate, with associated uncertainty, of the population covariance.</returns>
         public UncertainValue PopulationCovariance {
             get {
-                // two moments are involved for best value and error
-                int n = Count;
-                double C_xy = MomentAboutMean(1, 1);
-                double C_xxyy = MomentAboutMean(2, 2);
-
-                return (new UncertainValue(C_xy * n / (n - 1), Math.Sqrt((C_xxyy - C_xy * C_xy) / n)));
+                return(Bivariate.PopulationCovariance(xData, yData));
             }
-
         }
 
         /// <summary>
@@ -361,10 +326,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="KendallTauTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Pearson_correlation_coefficient" />
         public TestResult PearsonRTest () {
-            if (Count < 3) throw new InsufficientDataException();
-            double r = this.Covariance / Math.Sqrt(xData.Variance * yData.Variance);
-            ContinuousDistribution p = new PearsonRDistribution(Count);
-            return (new TestResult(r, p));
+            return (Bivariate.PearsonRTest(xData, yData));
         }
 
         /// <summary>
@@ -374,7 +336,7 @@ namespace Meta.Numerics.Statistics {
         /// <remarks>
         /// <para>The Spearman rank-order test of association is a non-parametric test for association between
         /// two variables. The test statistic rho is the correlation coefficient of the <em>rank</em> of
-        /// each entry in the sample. It is thus invariant over monotonic reparameterizations of the data,
+        /// each entry in the sample. It is thus invariant over monotonic re-parameterizations of the data,
         /// and will, for example, detect a quadratic or exponential association just as well as a linear
         /// association.</para>
         /// <para>The Spearman rank-order test requires O(N log N) operations.</para>
@@ -384,41 +346,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="KendallTauTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient"/>
         public TestResult SpearmanRhoTest () {
-
-            if (Count < 3) throw new InsufficientDataException();
-
-            // analytic expressions for the mean and variance of ranks
-            double M = (Count - 1) / 2.0;
-            double V = (Count + 1) * (Count - 1) / 12.0;
-
-            // compute the covariance of ranks
-            int[] rx = xData.GetRanks();
-            int[] ry = yData.GetRanks();
-            double C = 0.0;
-            for (int i = 0; i < Count; i++) {
-                C += (rx[i] - M) * (ry[i] - M);
-            }
-            C = C / Count;
-
-            // compute rho
-            double rho = C / V;
-
-            // for small enough sample, use the exact distribution
-            ContinuousDistribution rhoDistribution;
-            if (Count <= 10) {
-                // for small enough sample, use the exact distribution
-                // it would be nice to do this for at least slightly higher n, but computation time grows dramatically
-                // would like to ensure return in less than 100ms; current timings n=10 35ms, n=11 72ms, n=12 190ms
-                rhoDistribution = new DiscreteAsContinuousDistribution(new SpearmanExactDistribution(Count), Interval.FromEndpoints(-1.0, 1.0));
-            } else {
-                // for larger samples, use the normal approximation
-                // would like to fit support and C_4 too; look into logit-normal
-                // i was not happy with Edgeworth expansion, which can fit C_4 but screws up tails badly, even giving negative probabilities
-                rhoDistribution = new NormalDistribution(0.0, 1.0 / Math.Sqrt(Count - 1));
-            }
-
-            return (new TestResult(rho, rhoDistribution));
-
+            return (Bivariate.SpearmanRhoTest(xData, yData));
         }
 
         /// <summary>
@@ -426,16 +354,16 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <returns>The result of the test.</returns>
         /// <remarks>
-        /// <para>Kendall's &#x3C4; is a non-parameteric and robust test of association
+        /// <para>Kendall's &#x3C4; is a non-parametric and robust test of association
         /// between two variables. It simply measures the number of cases where an increase
-        /// in one variable is associated with an increase in the other (corcordant pairs),
+        /// in one variable is associated with an increase in the other (concordant pairs),
         /// compared with the number of cases where an increase in one variable is associated
         /// with a decrease in the other (discordant pairs).</para>
         /// <para>Because &#x3C4; depends only on the sign
         /// of a change and not its magnitude, it is not skewed by outliers exhibiting very large
         /// changes, nor by cases where the degree of change in one variable associated with
-        /// a given change in the other changes over the range of the varibles. Of course, it may
-        /// still miss an association whoose sign changes over the range of the variables. For example,
+        /// a given change in the other changes over the range of the variables. Of course, it may
+        /// still miss an association whose sign changes over the range of the variables. For example,
         /// if data points lie along a semi-circle in the plane, an increase in the first variable
         /// is associated with an increase in the second variable along the rising arc and and decrease in
         /// the second variable along the falling arc. No test that looks for single-signed correlation
@@ -450,45 +378,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="SpearmanRhoTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Kendall_tau_test" />
         public TestResult KendallTauTest () {
-
-            int n = xData.Count;
-            if (n < 2) throw new InsufficientDataException();
-
-            // loop over all pairs, counting concordant and discordant
-            int C = 0;
-            int D = 0;
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < i; j++) {
-
-                    // note the way each variable varies in the pair
-                    int sx = Math.Sign(xData[i] - xData[j]);
-                    int sy = Math.Sign(yData[i] - yData[j]);
-
-                    // if they vary in the same way, they are concordant, otherwise they are discordant
-                    if (sx == sy) {
-                        C++;
-                    } else {
-                        D++;
-                    }
-                    // note this does not count ties specially, as is sometimes done
-
-                }
-            }
-
-            // compute tau
-            double t = 1.0 * (C - D) / (C + D);
-
-            // compute tau distribution
-            ContinuousDistribution tauDistribution;
-            if (n <= 20) {
-                tauDistribution = new DiscreteAsContinuousDistribution(new KendallExactDistribution(n), Interval.FromEndpoints(-1.0, 1.0));
-            } else {
-                double dt = Math.Sqrt((4 * n + 10) / 9.0 / n / (n - 1));
-                tauDistribution = new NormalDistribution(0.0, dt);
-            }
-
-            return (new TestResult(t, tauDistribution));
-
+            return (Bivariate.KendallTauTest(xData, yData));
         }
 
         /// <summary>
@@ -502,31 +392,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <exception cref="InsufficientDataException">There are fewer than two data points.</exception>
         public TestResult PairedStudentTTest () {
-
-            if (Count < 2) throw new InsufficientDataException();
-
-            // the paired t-test is just a normal t-test of one sample against a mean,
-            // but where the sample consists of the differences between the paired measurements,
-            // and the mean being tested against is (usually) zero
-
-            // loop over pairs, computing mean and standard deviation of differences
-            double m = 0.0;
-            double v = 0.0;
-            for (int i = 0; i < Count; i++) {
-                double z = xData[i] - yData[i];
-                v += MoreMath.Pow2(z - m) * i / (i + 1);
-                m += (z - m) / (i + 1);
-            }
-            v = v / (Count - 1);
-
-            // compute standard error
-            double s = Math.Sqrt(v / Count);
-
-            // t is the mean deviation as a fraction of standard error
-            double t = m / s;
-
-            return (new TestResult("t", t, TestType.TwoTailed, new StudentDistribution(Count - 1)));
-
+            return (Bivariate.PairedStudentTTest(xData, yData));
         }
 
         /// <summary>
@@ -543,34 +409,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <seealso href="https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test"/>
         public TestResult WilcoxonSignedRankTest () {
-
-            int n = this.Count;
-            if (n < 2) throw new InsufficientDataException();
-
-            double[] z = new double[n];
-            for (int i = 0; i < z.Length; i++) {
-                z[i] = xData[i] - yData[i];
-            }
-
-            Array.Sort(z, (x, y) => Math.Abs(x).CompareTo(Math.Abs(y)));
-
-            int W = 0;
-            for (int i = 0; i < z.Length; i++) {
-                if (z[i] > 0.0) W += (i + 1);
-            }
-
-            ContinuousDistribution nullDistribution;
-            if (Count < 32) {
-                DiscreteDistribution wilcoxon = new WilcoxonDistribution(n);
-                nullDistribution = new DiscreteAsContinuousDistribution(wilcoxon);
-            } else {
-                double mu = n * (n + 1.0) / 4.0;
-                double sigma = Math.Sqrt(mu * (2.0 * n + 1.0) / 6.0);
-                nullDistribution = new NormalDistribution(mu, sigma);  
-            }
-
-            return (new TestResult("W", W, TestType.TwoTailed, nullDistribution));
-
+            return (Bivariate.WilcoxonSignedRankTest(xData, yData));
         }
 
         /// <summary>
@@ -587,78 +426,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
         public LinearRegressionResult LinearRegression () {
-
-            int n = this.Count;
-            if (n < 3) throw new InsufficientDataException();
-
-            // The means and covariances are the inputs to most of the regression formulas.
-            double mx = xData.Mean;
-            double my = yData.Mean;
-            double cxx = xData.Variance;
-            double cyy = yData.Variance;
-            double cxy = this.Covariance;
-
-            Debug.Assert(cxx >= 0.0);
-            Debug.Assert(cyy >= 0.0);
-
-            // Compute the best-fit parameters
-            double b = cxy / cxx;
-            double a = my - b * mx;
-            // Since cov(x,y) = (n S_xy - S_x S_y)/n^2 and var(x) = (n S_xx - S_x^2) / n^2,
-            // these formulas are equivilent to the 
-            // to the usual formulas for a and b involving sums, but it is more stable against round-off
-            ColumnVector v = new ColumnVector(a, b);
-            v.IsReadOnly = true;
-
-            // Compute Pearson r value
-            double r = cxy / Math.Sqrt(cxx * cyy);
-            TestResult rTest = new TestResult("r", r, TestType.TwoTailed, new Distributions.PearsonRDistribution(n));
-
-            // Compute residuals and other sum-of-squares
-            double SSR = 0.0;
-            double SSF = 0.0;
-            Sample residuals = new Sample();
-            foreach (XY point in this) {
-                double y = a + b * point.X;
-                double z = point.Y - y;
-                SSR += z * z;
-                residuals.Add(z);
-                SSF += MoreMath.Sqr(y - my);
-            }
-            double SST = cyy * n;
-            // Note SST = SSF + SSR because \sum_{i} ( y_i - \bar{y})^2 = \sum_i (y_i - f_i)^2 + \sum_i (f_i - \bar{y})^2
-
-            // Use sums-of-squares to do ANOVA
-            AnovaRow fit = new AnovaRow(SSF, 1);
-            AnovaRow residual = new AnovaRow(SSR, n - 2);
-            AnovaRow total = new AnovaRow(SST, n - 1);
-            OneWayAnovaResult anova = new OneWayAnovaResult(fit, residual, total);
-
-            // Compute covariance of parameters matrix
-            double s2 = SSR / (n - 2);
-            double cbb = s2 / cxx / n;
-            double cab = -mx * cbb;
-            double caa = (cxx + mx * mx) * cbb;
-
-            SymmetricMatrix C = new SymmetricMatrix(2);
-            C[0, 0] = caa;
-            C[1, 1] = cbb;
-            C[0, 1] = cab;
-            C.IsReadOnly = true;
-
-            // Package the parameters
-            ParameterCollection parameters = new ParameterCollection(
-                new string[] { "Intercept", "Slope" }, v, C
-            );
-
-            // Prepare the prediction function
-            Func<double, UncertainValue> predict = (double x) => {
-                double y = a + b * x;
-                return (new UncertainValue(y, Math.Sqrt(s2 * (1.0 + (1.0 + MoreMath.Sqr(x - mx) / cxx) / n))));
-            };
-
-            return (new LinearRegressionResult(parameters, rTest, anova, residuals, predict));
-
+            return (Bivariate.LinearRegression(yData, xData));
         }
 
         /// <summary>
@@ -669,67 +437,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="m"/> is negative.</exception>
         /// <exception cref="InsufficientDataException">There are fewer data points than coefficients to be fit.</exception>
         public PolynomialRegressionResult PolynomialRegression (int m) {
-
-            if (m < 0) throw new ArgumentOutOfRangeException(nameof(m));
-
-            int n = Count;
-            if (n < (m + 1)) throw new InsufficientDataException();
-
-            // Construct the n X m design matrix X_{ij} = x_{i}^{j}
-            RectangularMatrix X = new RectangularMatrix(n, m + 1);
-            ColumnVector y = new ColumnVector(n);
-            for (int i = 0; i < n; i++) {
-                double x = xData[i];
-                X[i, 0] = 1.0;
-                for (int j = 1; j <= m; j++) {
-                    X[i, j] = X[i, j - 1] * x;
-                }
-                y[i] = yData[i];
-            }
-
-            // Use X = QR to solve X b = y and compute C
-            ColumnVector b;
-            SymmetricMatrix C;
-            QRDecomposition.SolveLinearSystem(X, y, out b, out C);
-
-            // Compute residuals
-            double SSR = 0.0;
-            double SSF = 0.0;
-            ColumnVector yHat = X * b;
-            Sample residuals = new Sample();
-            for (int i = 0; i < n; i++) {
-                double z = yData[i] - yHat[i];
-                residuals.Add(z);
-                SSR += z * z;
-                SSF += MoreMath.Sqr(yHat[i] - yData.Mean);
-            }
-            double sigma2 = SSR / (n - (m + 1));
-
-            // Scale up C by \sigma^2
-            // (It sure would be great to be able to overload *=.)
-            for (int i = 0; i <= m; i++) {
-                for (int j = i; j <= m; j++) {
-                    C[i, j] = C[i, j] * sigma2;
-                }
-            }
-
-            // Compute remaing sums-of-squares
-            double SST = yData.Variance * n;
-
-            // Use sums-of-squares to do ANOVA
-            AnovaRow fit = new AnovaRow(SSF, m);
-            AnovaRow residual = new AnovaRow(SSR, n - (m + 1));
-            AnovaRow total = new AnovaRow(SST, n - 1);
-            OneWayAnovaResult anova = new OneWayAnovaResult(fit, residual, total);
-
-            string[] names = new string[m + 1];
-            names[0] = "1";
-            if (m > 0) names[1] = "x";
-            for (int i = 2; i <= m; i++) names[i] = $"x^{i}";
-            ParameterCollection parameters = new ParameterCollection(names, b, C);
-
-            return (new PolynomialRegressionResult(parameters, anova, residuals));
-
+            return (Bivariate.PolynomialRegression(yData, xData, m));
         }
 
 
@@ -749,32 +457,10 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are not more data points than fit parameters.</exception>
         /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
         /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
-        public FitResult NonlinearRegression (Func<IList<double>, double, double> f, IList<double> start) {
-
-            if (f == null) throw new ArgumentNullException(nameof(f));
+        public NonlinearRegressionResult NonlinearRegression (Func<IReadOnlyList<double>, double, double> f, IReadOnlyList<double> start) {
             if (start == null) throw new ArgumentNullException(nameof(start));
-
-            int n = this.Count;
-            int d = start.Count;
-            if (n <= d) throw new InsufficientDataException();
-
-            MultiExtremum min = MultiFunctionMath.FindLocalMinimum((IList<double> a) => {
-                double ss = 0.0;
-                for (int i = 0; i < n; i++) {
-                    double r = yData[i] - f(a, xData[i]);
-                    ss += r * r;
-                }
-                return (ss);
-            }, start);
-
-            CholeskyDecomposition cholesky = min.HessianMatrix.CholeskyDecomposition();
-            if (cholesky == null) throw new DivideByZeroException();
-            SymmetricMatrix curvature = cholesky.Inverse();
-            curvature = (2.0 * min.Value / (n - d)) * curvature;
-
-            FitResult result = new FitResult(min.Location, curvature, null);
-
-            return (result);
+            KeyValuePair<string, double>[] startParameters = new KeyValuePair<string, double>[start.Count];
+            return (Bivariate.NonlinearRegression(yData, xData, f, start));
         }
 
         /// <summary>
@@ -789,53 +475,9 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
         /// <exception cref="InvalidOperationException">There is a y-value other than 0 or 1.</exception>
-        public FitResult LinearLogisticRegression () {
-
-            // check size of data set
-            if (Count < 3) throw new InsufficientDataException();
-
-            // check limits on Y
-            double p = Y.Mean; double q = 1.0 - p;
-            if ((p <= 0.0) || (q <= 0.0)) throw new InvalidOperationException();
-
-            // Define the log-likelyhood as a function of the parameters
-            Func<IList<double>,double> f = delegate (IList<double> a) {
-                double L = 0.0;
-                for (int i = 0; i < Count; i++) {
-                    double x = xData[i];
-                    double z = a[0] + a[1] * x;
-                    double ez = Math.Exp(z);
-                    double y = yData[i];
-                    if (y == 0.0) {
-                        L += Math.Log(1.0 + ez);
-                    } else if (y == 1.0) {
-                        L += Math.Log(1.0 + 1.0 / ez);
-                    } else {
-                        throw new InvalidOperationException();
-                    }
-                }
-                return(L);
-            };
-
-            // We need an initial guess at the parameters.
-
-            // This particular initial guess is driven by the fact that, in a logistic model
-            //    \frac{\partial p}{\partial x} = \beta p ( 1 - p)
-            // Evaluating at means, and noting that p (1 - p) = var(y) and that, in a development around the means,
-            //    cov(p, x) = \frac{\partial p}{\partial x} var(x)
-            // we get
-            //    \beta = \frac{cov(y, x)}{var(x) var(y)}
-            // This approximation gets the sign right, but it looks like it usually gets the magnitude quite wrong.
-
-            double b0 = Covariance / X.Variance / Y.Variance;
-            double a0 = Math.Log(p / q) - b0 * X.Mean;
-
-            MultiExtremum m = MultiFunctionMath.FindLocalMinimum(f, new double[2] { a0, b0 });
-            return (new FitResult(m.Location, m.HessianMatrix.Inverse(), null));
-             
-            //SpaceExtremum m = FunctionMath.FindMinimum(f, new double[2] { a0, b0 });
-            //return (new FitResult(m.Location(), m.Curvature().Inverse(), null));
-
+        public LinearLogisticRegressionResult LinearLogisticRegression () {
+            List<bool> y = yData.Select(v => { if (v == 0.0) { return (false); } else if (v == 1.0) { return (true); } else { throw new InvalidOperationException(); } }).ToList();
+            return (Bivariate.LinearLogisticRegression(y, xData));
         }
 
 #if !SILVERLIGHT

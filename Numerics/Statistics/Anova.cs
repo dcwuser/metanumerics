@@ -21,7 +21,7 @@ namespace Meta.Numerics.Statistics {
     /// <remarks>
     /// <para>A one way ANOVA test detects the influence of a single factor on the mean of a measured variable, which is assumed
     /// to be normally distributed.</para>
-    /// <para>A one way ANOVA result is returned by the static <see cref="Sample.OneWayAnovaTest(System.Collections.Generic.ICollection{Sample})"/>
+    /// <para>A one way ANOVA result is returned by the static <see cref="Sample.OneWayAnovaTest(System.Collections.Generic.IReadOnlyCollection{Sample})"/>
     /// method.</para>
     /// <para>Fundamentally, a one-way ANOVA is a simple statistical test like any other, with a single test statistic (F) and
     /// a single associated null distribution (the <see cref="FisherDistribution"/>), but some ANOVA users like to examine and
@@ -45,7 +45,7 @@ namespace Meta.Numerics.Statistics {
     /// Console.WriteLine("P = {0}", anova.Result.Probability);
     /// </code>
     /// </example>
-    /// <seealso cref="Sample.OneWayAnovaTest(System.Collections.Generic.ICollection{Sample})"/>
+    /// <seealso cref="Sample.OneWayAnovaTest(System.Collections.Generic.IReadOnlyCollection{Sample})"/>
     public class OneWayAnovaResult : IAnovaResult {
 
         internal OneWayAnovaResult (AnovaRow factor, AnovaRow residual, AnovaRow total) {
@@ -86,7 +86,7 @@ namespace Meta.Numerics.Statistics {
     /// A row in an analysis of variance (ANOVA) table.
     /// </summary>
     /// <remarks>
-    /// <para>An ANOVA seperates the variance associated with one or more sources into "rows", each of which has an associated
+    /// <para>An ANOVA separates the variance associated with one or more sources into "rows", each of which has an associated
     /// sum of square deviations and number of degrees of freedom.</para>
     /// <para>It is used in properties of the <see cref="OneWayAnovaResult"/> class.</para>
     /// </remarks>
@@ -165,7 +165,7 @@ namespace Meta.Numerics.Statistics {
         private readonly AnovaRow total;
 
         /// <summary>
-        /// Gets the variance assocated with the effect of the row factor.
+        /// Gets the variance associated with the effect of the row factor.
         /// </summary>
         public AnovaTestRow RowFactor {
             get {

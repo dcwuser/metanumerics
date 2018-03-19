@@ -6,8 +6,7 @@ using System.Collections.ObjectModel;
 using System.Text;
 
 using Meta.Numerics;
-using Meta.Numerics.Functions;
-using Meta.Numerics.Analysis;
+using Meta.Numerics.Data;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.SignalProcessing;
 using Meta.Numerics.Statistics;
@@ -109,6 +108,10 @@ namespace Test {
             double[] acv1 = series1.Autocovariance();
             TestAutocovariance(acv1);
 
+            for (int i = 0; i < acv1.Length; i++) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(acv1[i], series1.Autocovariance(i)));
+            }
+
         }
 
         private void TestAutocovariance (IList<double> acv) {
@@ -181,30 +184,31 @@ namespace Test {
 
             MultivariateSample parameters = new MultivariateSample(3);
             MultivariateSample covariances = new MultivariateSample(6);
-            for (int i = 0; i < 100; i++) {
+            Sample tests = new Sample("p");
+            for (int i = 0; i < 64; i++) {
 
-                TimeSeries series = GenerateMA1TimeSeries(beta, mu, sigma, n, i + 314159);
+                TimeSeries series = GenerateMA1TimeSeries(beta, mu, sigma, n, n * i + 314159);
 
                 Debug.Assert(series.Count == n);
 
-                FitResult result = series.FitToMA1();
+                MA1FitResult result = series.FitToMA1();
 
-                Assert.IsTrue(result.Dimension == 3);
-
-                parameters.Add(result.Parameters);
+                //Assert.IsTrue(result.Dimension == 3);
+                parameters.Add(result.Parameters.Best);
                 covariances.Add(
-                    result.CovarianceMatrix[0, 0],
-                    result.CovarianceMatrix[1, 1],
-                    result.CovarianceMatrix[2, 2],
-                    result.CovarianceMatrix[0, 1],
-                    result.CovarianceMatrix[0, 2],
-                    result.CovarianceMatrix[1, 2]
+                    result.Parameters.Covariance[0, 0],
+                    result.Parameters.Covariance[1, 1],
+                    result.Parameters.Covariance[2, 2],
+                    result.Parameters.Covariance[0, 1],
+                    result.Parameters.Covariance[0, 2],
+                    result.Parameters.Covariance[1, 2]
                 );
+                tests.Add(result.GoodnessOfFit.Probability);
 
             }
 
-            Assert.IsTrue(parameters.Column(0).PopulationMean.ConfidenceInterval(0.99).ClosedContains(beta)); ;
-            Assert.IsTrue(parameters.Column(1).PopulationMean.ConfidenceInterval(0.99).ClosedContains(mu));
+            Assert.IsTrue(parameters.Column(0).PopulationMean.ConfidenceInterval(0.99).ClosedContains(mu)); ;
+            Assert.IsTrue(parameters.Column(1).PopulationMean.ConfidenceInterval(0.99).ClosedContains(beta));
             Assert.IsTrue(parameters.Column(2).PopulationMean.ConfidenceInterval(0.99).ClosedContains(sigma));
 
             Assert.IsTrue(parameters.Column(0).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(0).Mean));
@@ -213,6 +217,8 @@ namespace Test {
             Assert.IsTrue(parameters.TwoColumns(0, 1).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(3).Mean));
             Assert.IsTrue(parameters.TwoColumns(0, 2).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(4).Mean));
             Assert.IsTrue(parameters.TwoColumns(1, 2).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(5).Mean));
+
+            Assert.IsTrue(tests.KuiperTest(new UniformDistribution()).Probability > 0.01);
 
         }
 
@@ -223,54 +229,58 @@ namespace Test {
             double alpha = 0.3;
             double mu = 0.2;
             double sigma = 0.4;
-            int n = 20;
+            int n = 24;
 
             // For our fit to AR(1), we have incorporated bias correction (at least
             // for the most important parameter alpha), so we can do a small-n test.
 
-            MultivariateSample parameters = new MultivariateSample(3);
-            MultivariateSample covariances = new MultivariateSample(6);
-            Sample tests = new Sample();
-            for (int i = 0; i < 100; i++) {
+            FrameTable data = new FrameTable(
+                new ColumnDefinition<UncertainValue>("mu"),
+                new ColumnDefinition<UncertainValue>("alpha"),
+                new ColumnDefinition<UncertainValue>("sigma"),
+                new ColumnDefinition<SymmetricMatrix>("covariance"),
+                new ColumnDefinition<double>("p")
+            );
 
-                TimeSeries series = GenerateAR1TimeSeries(alpha, mu, sigma, n, i + 314159);
+            for (int i = 0; i < 128; i++) {
 
-                FitResult result = series.FitToAR1();
+                TimeSeries series = GenerateAR1TimeSeries(alpha, mu, sigma, n, n * i + 271828);
 
-                parameters.Add(result.Parameters);
-                covariances.Add(
-                    result.CovarianceMatrix[0, 0],
-                    result.CovarianceMatrix[1, 1],
-                    result.CovarianceMatrix[2, 2],
-                    result.CovarianceMatrix[0, 1],
-                    result.CovarianceMatrix[0, 2],
-                    result.CovarianceMatrix[1, 2]
+                AR1FitResult result = series.FitToAR1();
+
+                data.AddRow(
+                    result.Mu, result.Alpha, result.Sigma,
+                    result.Parameters.Covariance, result.GoodnessOfFit.Probability
                 );
-
-                tests.Add(result.GoodnessOfFit.Probability);
 
             }
 
+            data.AddComputedColumn("alphaValue", r => ((UncertainValue) r["alpha"]).Value);
+            data.AddComputedColumn("muValue", r => ((UncertainValue) r["mu"]).Value);
+
             // Check that fit parameters agree with inputs
-            Assert.IsTrue(parameters.Column(0).PopulationMean.ConfidenceInterval(0.99).ClosedContains(alpha));
-            Assert.IsTrue(parameters.Column(1).PopulationMean.ConfidenceInterval(0.99).ClosedContains(mu));
-            Assert.IsTrue(parameters.Column(2).PopulationMean.ConfidenceInterval(0.99).ClosedContains(sigma));
+            Assert.IsTrue(data["mu"].As((UncertainValue v) => v.Value).PopulationMean().ConfidenceInterval(0.99).ClosedContains(mu));
+            Assert.IsTrue(data["alpha"].As((UncertainValue v) => v.Value).PopulationMean().ConfidenceInterval(0.99).ClosedContains(alpha));
+            Assert.IsTrue(data["sigma"].As((UncertainValue v) => v.Value).PopulationMean().ConfidenceInterval(0.99).ClosedContains(sigma));
 
             // Check that reported variances agree with actual variances
-            Assert.IsTrue(parameters.Column(0).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(0).Median));
-            Assert.IsTrue(parameters.Column(1).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(1).Median));
-            Assert.IsTrue(parameters.Column(2).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Median));
-            Assert.IsTrue(parameters.TwoColumns(0, 1).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(3).Mean));
-            Assert.IsTrue(parameters.TwoColumns(0, 2).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(4).Mean));
-            Assert.IsTrue(parameters.TwoColumns(1, 2).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(5).Mean));
+            Assert.IsTrue(data["mu"].As((UncertainValue v) => v.Value).PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["mu"].As((UncertainValue v) => v.Uncertainty).Median()));
+            Assert.IsTrue(data["alpha"].As((UncertainValue v) => v.Value).PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["alpha"].As((UncertainValue v) => v.Uncertainty).Median()));
+            Assert.IsTrue(data["sigma"].As((UncertainValue v) => v.Value).PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["sigma"].As((UncertainValue v) => v.Uncertainty).Median()));
+
+            // Check that reported co-variances agree with actual co-variances
+            Assert.IsTrue(data["mu"].As((UncertainValue v) => v.Value).PopulationCovariance(data["alpha"].As((UncertainValue v) => v.Value)).ConfidenceInterval(0.99).ClosedContains(data["covariance"].As((SymmetricMatrix c) => c[0, 1]).Median()));
 
             // For small n, the fitted alpha can vary considerably, and the formula for var(m) varies
             // quite strongly with alpha, so the computed var(m) have a very long tail. This pushes the
             // mean computed var(m) quite a bit higher than a typical value, so we use medians instead
             // of means for our best guess for the predicted variance.
 
-            TestResult ks = tests.KolmogorovSmirnovTest(new UniformDistribution());
+            TestResult ks = data["p"].As<double>().KolmogorovSmirnovTest(new UniformDistribution());
             Assert.IsTrue(ks.Probability > 0.05);
+
+            // This is an onerous way to store values, but it does let us test how the data-frame machinery deals with
+            // non-trivial storage types.
 
         }
 
@@ -281,7 +291,7 @@ namespace Test {
 
             TimeSeries series = GenerateMA1TimeSeries(0.4, 0.3, 0.2, 1000);
 
-            FitResult result = series.FitToAR1();
+            AR1FitResult result = series.FitToAR1();
 
             Assert.IsTrue(result.GoodnessOfFit.Probability < 0.01);
 

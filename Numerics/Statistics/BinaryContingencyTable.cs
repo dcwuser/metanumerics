@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics.Distributions;
@@ -90,12 +91,14 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Fisher_exact_test"/>
         public TestResult FisherExactTest () {
-            // store row and column totals
+
+            // Store row and column totals
             int[] R = this.RowTotals;
             int[] C = this.ColumnTotals;
             int N = this.Total;
 
-            // compute the critical probability
+            // Compute the critical probability of the measured matrix given the marginal totals
+            // and the assumtion of no association.
             double x =
                 AdvancedIntegerMath.LogFactorial(R[0]) +
                 AdvancedIntegerMath.LogFactorial(R[1]) +
@@ -108,27 +111,54 @@ namespace Meta.Numerics.Statistics {
                 AdvancedIntegerMath.LogFactorial(this[1, 0]) -
                 AdvancedIntegerMath.LogFactorial(this[1, 1]);
 
-            // compute all possible 2 X 2 matrices with these row and column totals
-            // compute the total probability of getting a matrix as or less probable than the measured one
+            // Compute all possible 2 X 2 matrices with these row and column totals.
+            // Find the total probability of getting a matrix as or less probable than the measured one.
             double P = 0.0;
             int[,] test = new int[2, 2];
             int min = Math.Max(C[0] - R[1], 0);
             int max = Math.Min(R[0], C[0]);
-            for (int i = min; i <= max; i++) {
-                test[0, 0] = i;
-                test[0, 1] = R[0] - i;
-                test[1, 0] = C[0] - i;
-                test[1, 1] = R[1] - test[1, 0];
-                double lnP = x -
-                    AdvancedIntegerMath.LogFactorial(test[0, 0]) -
-                    AdvancedIntegerMath.LogFactorial(test[0, 1]) -
-                    AdvancedIntegerMath.LogFactorial(test[1, 0]) -
-                    AdvancedIntegerMath.LogFactorial(test[1, 1]);
-                if (lnP <= lnPc) P += Math.Exp(lnP);
+
+            // If the relevent hypergeometric distribution over i is symmetric, then lnP for the i on
+            // the other side is exactly equal to lnPc. But floating point noise means that it might come 
+            // in ever so slightly higher, causing us to incorrectly exclude that corresponding bin. This
+            // caused a bug. So handle the symmetric case specially.
+            if ((R[0] == R[1]) || (C[0] == C[1])) {
+                double mid = (min + max) / 2.0;
+                if (this[0, 0] == mid) {
+                    P = 1.0;
+                } else {
+                    int imax = (this[0, 0] < mid) ? this[0, 0] : min + (max - this[0, 0]);
+                    for (int i = min; i <= imax; i++) {
+                        test[0, 0] = i;
+                        test[0, 1] = R[0] - i;
+                        test[1, 0] = C[0] - i;
+                        test[1, 1] = R[1] - test[1, 0];
+                        double lnP = x -
+                            AdvancedIntegerMath.LogFactorial(test[0, 0]) -
+                            AdvancedIntegerMath.LogFactorial(test[0, 1]) -
+                            AdvancedIntegerMath.LogFactorial(test[1, 0]) -
+                            AdvancedIntegerMath.LogFactorial(test[1, 1]);
+                        P += Math.Exp(lnP);
+                    }
+                    P *= 2.0;
+                    Debug.Assert(P <= 1.0);
+                }
+            } else {
+                for (int i = min; i <= max; i++) {
+                    test[0, 0] = i;
+                    test[0, 1] = R[0] - i;
+                    test[1, 0] = C[0] - i;
+                    test[1, 1] = R[1] - test[1, 0];
+                    double lnP = x -
+                        AdvancedIntegerMath.LogFactorial(test[0, 0]) -
+                        AdvancedIntegerMath.LogFactorial(test[0, 1]) -
+                        AdvancedIntegerMath.LogFactorial(test[1, 0]) -
+                        AdvancedIntegerMath.LogFactorial(test[1, 1]);
+                    if (lnP <= lnPc) P += Math.Exp(lnP);
+                }
             }
 
-            // return the result
-            return (new TestResult(P, new UniformDistribution(Interval.FromEndpoints(0.0, 1.0))));
+            return (new TestResult("P", P, TestType.LeftTailed, new UniformDistribution(Interval.FromEndpoints(0.0, 1.0))));
         }
 
         /// <summary>
@@ -141,7 +171,7 @@ namespace Meta.Numerics.Statistics {
         /// <para>The circumstance to which McNemar's test applies is paired binary measurements. Each member of
         /// a set is measured twice, once before and once after some treatment, and each measurement has a binary
         /// outcome. McNemar's test can be used to determine whether the treatment had any systematic effect. The null
-        /// hypothesis is that it the not, i.e. that any discrepancies between the first and second measurements
+        /// hypothesis is that it does not, i.e. that any discrepancies between the first and second measurements
         /// were random.</para>
         /// </remarks>
         /// <see href="http://en.wikipedia.org/wiki/McNemar%27s_test"/>
@@ -149,8 +179,10 @@ namespace Meta.Numerics.Statistics {
 
             double t = MoreMath.Sqr(this[0, 1] - this[1, 0]) / (this[0, 1] + this[1, 0]);
 
-            return (new TestResult(t, new ChiSquaredDistribution(1)));
+            return (new TestResult("t", t, TestType.RightTailed, new ChiSquaredDistribution(1)));
 
+            // Adapt this to: (1) support one-sidedness (our squaring (b-c) currently prevents this)
+            // and (2) be exact for small counts.
         }
 
     }

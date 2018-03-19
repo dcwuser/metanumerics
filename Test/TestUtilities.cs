@@ -68,6 +68,12 @@ namespace Test {
             }
         }
 
+        // equality of uncertain values
+
+        public static bool IsNearlyEqual (UncertainValue u, UncertainValue v) {
+            return (IsNearlyEqual(u.Value, v.Value) && IsNearlyEqual(u.Uncertainty, v.Uncertainty));
+        }
+
         // equality of sums; this deals with "fair" loss of precision due to cancelation
 
         public static bool IsSumNearlyEqual (double x1, double x2, double y) {
@@ -399,6 +405,14 @@ namespace Test {
             }
 
             return (sample);
+        }
+
+        public static IEnumerable<double> CreateDataSample (Random rng, ContinuousDistribution distribution, int count) {
+
+            for (int i = 0; i < count; i++) {
+                yield return distribution.GetRandomValue(rng);
+            }
+
         }
 
     }

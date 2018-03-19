@@ -8,23 +8,23 @@ using System.Threading.Tasks;
 namespace Meta.Numerics.Data
 {
 
-    internal class ComputedColumn<T> : DataList, IReadOnlyDataList<T>
+    internal class ComputedDataList<T> : NamedList, IEnumerable, IReadOnlyList<T>
     {
-        internal ComputedColumn (DataView frame, string name, Func<DataRow,T> function) : base(name) {
+        internal ComputedDataList (FrameView frame, string name, Func<FrameRow,T> function) : base(name) {
             this.frame = frame;
             this.name = name;
             this.function = function;
         }
 
-        private readonly DataView frame;
+        private readonly FrameView frame;
         private string name;
-        private readonly Func<DataRow, T> function;
+        private readonly Func<FrameRow, T> function;
 
         public T this[int index]
         {
             get
             {
-                DataRow row = new DataRow(this.frame, index);
+                FrameRow row = new FrameRow(this.frame, index);
                 return (function(row));
             }
         }
@@ -37,6 +37,7 @@ namespace Meta.Numerics.Data
             }
         }
 
+        /*
         public new string Name
         {
             get
@@ -49,6 +50,7 @@ namespace Meta.Numerics.Data
                 name = value;
             }
         }
+        */
 
         public override Type StorageType
         {
@@ -58,16 +60,24 @@ namespace Meta.Numerics.Data
             }
         }
 
+        internal override bool IsComputed {
+            get {
+                return (true);
+            }
+        }
+
+        /*
         public int Add(object value)
         {
             throw new InvalidOperationException();
         }
+        */
 
         public IEnumerator<T> GetEnumerator()
         {
             for (int r = 0; r < frame.map.Count; r++)
             {
-                yield return function(new DataRow(frame, r));
+                yield return function(new FrameRow(frame, r));
             }
         }
         
@@ -88,6 +98,10 @@ namespace Meta.Numerics.Data
         internal override int AddItem(object value)
         {
             throw new InvalidOperationException();
+        }
+
+        public override void Clear () {
+            // no-op
         }
 
     }

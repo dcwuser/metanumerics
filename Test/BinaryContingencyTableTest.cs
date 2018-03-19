@@ -45,6 +45,8 @@ namespace Test {
         [TestMethod]
         public void BinaryContingencyNullTest () {
 
+            // Create a table with no significant association and test for it.
+
             BinaryContingencyTable e0 = CreateExperiment(0.25, 0.33, 0.33, 200);
 
             Assert.IsTrue(e0.Total == 200);
@@ -57,8 +59,11 @@ namespace Test {
             UncertainValue r = e0.OddsRatio;
             Assert.IsTrue(r.ConfidenceInterval(0.95).ClosedContains(1.0));
 
+            TestResult p = e0.PearsonChiSquaredTest();
+            Assert.IsTrue(p.Probability > 0.05);
+
             TestResult f = e0.FisherExactTest();
-            Assert.IsTrue(f.RightProbability < 0.95, f.RightProbability.ToString());
+            Assert.IsTrue(f.Probability > 0.05);
 
         }
 
@@ -73,22 +78,24 @@ namespace Test {
         [TestMethod]
         public void BinaryContingencyTest () {
 
+            // Create a table with significant association and test for it.
+
             BinaryContingencyTable e1 = CreateExperiment(0.50, 0.50, 0.75, 200);
 
             Assert.IsTrue(e1.RowTotal(0) + e1.RowTotal(1) == e1.Total);
             Assert.IsTrue(e1.ColumnTotal(0) + e1.ColumnTotal(1) == e1.Total);
 
             UncertainValue lnr = e1.LogOddsRatio;
-            Assert.IsFalse(lnr.ConfidenceInterval(0.95).ClosedContains(0.0));
+            Assert.IsTrue(!lnr.ConfidenceInterval(0.95).ClosedContains(0.0));
 
             UncertainValue r = e1.OddsRatio;
-            Assert.IsFalse(r.ConfidenceInterval(0.95).ClosedContains(1.0));
+            Assert.IsTrue(!r.ConfidenceInterval(0.95).ClosedContains(1.0));
 
             TestResult p = e1.PearsonChiSquaredTest();
-            Assert.IsTrue(p.LeftProbability > 0.95, p.RightProbability.ToString());
+            Assert.IsTrue(p.Probability < 0.05);
 
             TestResult f = e1.FisherExactTest();
-            Assert.IsTrue(f.RightProbability > 0.95);
+            Assert.IsTrue(f.Probability < 0.05);
 
         }
 

@@ -11,10 +11,10 @@ namespace Meta.Numerics.Data
     /// <summary>
     /// Represents a data list of any stored data type.
     /// </summary>
-    public abstract class DataList /*: IReadOnlyDataList<object> */
+    internal abstract class NamedList /*: IReadOnlyDataList<object> */
     {
 
-        internal DataList (string name) {
+        internal NamedList (string name) {
             if (name == null) throw new ArgumentNullException(nameof(name));
             this.name = name;
         }
@@ -49,6 +49,8 @@ namespace Meta.Numerics.Data
             }
         }
 
+        internal abstract bool IsComputed { get; }
+
         /// <summary>
         /// Gets the number of entries in the list.
         /// </summary>
@@ -57,6 +59,8 @@ namespace Meta.Numerics.Data
         internal abstract object GetItem (int index);
 
         internal abstract void SetItem (int index, object value);
+
+        public abstract void Clear ();
 
         internal abstract int AddItem (object value);
 
@@ -82,15 +86,15 @@ namespace Meta.Numerics.Data
             return (((IEnumerable<object>)this).GetEnumerator());
         }
         */
-        internal static DataList Create (string name, Type type) {
+        internal static NamedList Create (string name, Type type) {
             Debug.Assert(name != null);
             Debug.Assert(type != null);
             Type listType = genericListType.MakeGenericType(type);
             object list = Activator.CreateInstance(listType, name);
-            return ((DataList) list);
+            return ((NamedList) list);
         }
 
-        private static readonly Type genericListType = typeof(DataList<>);
+        private static readonly Type genericListType = typeof(NamedList<>);
 
     }
 
@@ -98,14 +102,13 @@ namespace Meta.Numerics.Data
     /// Represents a data list of a particular stored type.
     /// </summary>
     /// <typeparam name="T">The type of value in the list.</typeparam>
-    public class DataList<T> : DataList, IReadOnlyDataList<T>, IList<T> {
-
+    internal class NamedList<T> : NamedList, /*IReadOnlyDataList<T>, IList<T>, ICollection<T>,*/ IEnumerable<T>, IEnumerable {
 
         /// <summary>
         /// Initializes a new data list with the given name.
         /// </summary>
         /// <param name="name">The name of the data list.</param>
-        public DataList (string name) : base(name) {
+        public NamedList (string name) : base(name) {
             storage = new List<T>();
         }
 
@@ -114,27 +117,10 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="name">The name of the data list.</param>
         /// <param name="storage">The stored list.</param>
-        public DataList (string name, List<T> storage) : base(name) {
+        public NamedList (string name, List<T> storage) : base(name) {
             this.storage = storage;
         }
 
-        /// <summary>
-        /// Initializes a new data list with the given values.
-        /// </summary>
-        /// <param name="name">The name of the data list.</param>
-        /// <param name="values">The values to be stored.</param>
-        public DataList (string name, IEnumerable<T> values) : base(name) {
-            this.storage = values.ToList();
-        }
-
-        /// <summary>
-        /// Initalizes a new data list with the given values.
-        /// </summary>
-        /// <param name="name">The name of the data list.</param>
-        /// <param name="values">The values to be stored.</param>
-        public DataList (string name, params T[] values) : this(name, (IEnumerable<T>) values) {
-
-        }
 
         private readonly List<T> storage;
 
@@ -156,12 +142,22 @@ namespace Meta.Numerics.Data
             }
         }
 
+        internal override bool IsComputed {
+            get {
+                return (false);
+            }
+        }
+
         internal override object GetItem (int index) {
             return (storage[index]);
         }
 
         internal override void SetItem (int index, object value) {
             storage[index] = (T) value;
+        }
+
+        public override void Clear () {
+            storage.Clear();
         }
 
         internal override int AddItem (object value) {
@@ -202,28 +198,6 @@ namespace Meta.Numerics.Data
             return (storage.GetEnumerator());
         }
 
-        // IList (mutable) operations
-
-        /// <summary>
-        /// Removes all values from the data list.
-        /// </summary>
-        public void Clear () {
-            storage.Clear();
-        }
-
-        /// <summary>
-        /// Determines whether the data list contains the given value.
-        /// </summary>
-        /// <param name="value">The value to search for.</param>
-        /// <returns>True if the data list contains the given value, otherwise false.</returns>
-        public bool Contains (T value) {
-            return (storage.Contains(value));
-        }
-
-        void ICollection<T>.CopyTo (T[] array, int start) {
-            storage.CopyTo(array, start);
-        }
-
         /// <summary>
         /// Determines the first index at which the given value occurs.
         /// </summary>
@@ -243,24 +217,6 @@ namespace Meta.Numerics.Data
             storage.Insert(index, value);
         }
 
-        void IList<T>.Insert (int index, T value) {
-            InsertAt(index, value);
-        }
-
-        bool ICollection<T>.IsReadOnly {
-            get {
-                return (false);
-            }
-        }
-
-        /// <summary>
-        /// Removes the first occurance of the given value.
-        /// </summary>
-        /// <param name="value">The value to remove.</param>
-        /// <returns><see langword="true"/> if the value was found and removed, otherwise <see langword="false"/>.</returns>
-        public bool Remove (T value) {
-            return (storage.Remove(value));
-        }
 
         /// <summary>
         /// Removes the value at the given index.

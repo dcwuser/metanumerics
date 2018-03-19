@@ -90,7 +90,7 @@ namespace Meta.Numerics {
         }
 
         /// <summary>
-        /// Gets the specificed coefficient.
+        /// Gets the specified coefficient.
         /// </summary>
         /// <param name="n">The power of the variable for which the coefficient is desired.</param>
         /// <returns>The coefficient of x<sup>n</sup>.</returns>
@@ -112,10 +112,10 @@ namespace Meta.Numerics {
         /// <returns>The value of the polynomial.</returns>
         public virtual double Evaluate (double x) {
 
-            // This is horner's scheme, which is well-known but non-obvious, at least to me.
+            // This is Horner's scheme, which is well-known but non-obvious, at least to me.
             //   a_0 + a_1 x + a_2 x^2 + a_3 x^3 = ((a_3 x + a_2) x + a_1) x + a_0
-            // It requires 2d flops, i.e. only one multiply and one add for each degree added, so it is more efficient than naive evaluation.
-            // It is also ostensibly less subject to rounding errors than naive evaluation.
+            // It requires 2d flops, i.e. only one multiply and one add for each degree added, so it is more efficient than naïve evaluation.
+            // It is also ostensibly less subject to rounding errors than naïve evaluation.
 
             double t = 0.0;
             for (int i = coefficients.Length - 1; i >= 0; i--) {
@@ -127,7 +127,7 @@ namespace Meta.Numerics {
         /// <summary>
         /// Differentiates the polynomial.
         /// </summary>
-        /// <returns>The derivative of the polynomail.</returns>
+        /// <returns>The derivative of the polynomial.</returns>
         public virtual Polynomial Differentiate () {
             double[] newCoefficients = new double[this.Degree];
             for (int i = 0; i < newCoefficients.Length; i++) newCoefficients[i] = (i + 1) * this.Coefficient(i + 1);
@@ -135,7 +135,7 @@ namespace Meta.Numerics {
         }
 
         /// <summary>
-        /// Integrates the polynomail.
+        /// Integrates the polynomial.
         /// </summary>
         /// <param name="C">The integration constant.</param>
         /// <returns>The integral of the polynomial.</returns>
@@ -172,7 +172,7 @@ namespace Meta.Numerics {
         /// Negates a polynomial.
         /// </summary>
         /// <param name="p">The polynomial.</param>
-        /// <returns>The addative inverse of the polynomial.</returns>
+        /// <returns>The additive inverse of the polynomial.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="p"/> is null.</exception>
         public static Polynomial operator - (Polynomial p) {
             if (p == null) throw new ArgumentNullException("p");

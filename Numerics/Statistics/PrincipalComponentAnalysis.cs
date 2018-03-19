@@ -34,9 +34,9 @@ namespace Meta.Numerics.Statistics {
             this.vStore = vStore;
             // keep track of cumulative sum of squares, which is proportional to the cumulative explained variance
             wSquaredSum = new double[wStore.Length];
-            wSquaredSum[0] = MoreMath.Pow2(wStore[0]);
+            wSquaredSum[0] = MoreMath.Sqr(wStore[0]);
             for (int i = 1; i < wSquaredSum.Length; i++) {
-                wSquaredSum[i] = wSquaredSum[i - 1] + MoreMath.Pow2(wStore[i]);
+                wSquaredSum[i] = wSquaredSum[i - 1] + MoreMath.Sqr(wStore[i]);
             }
         }
 
@@ -159,7 +159,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public double VarianceFraction {
             get {
-                return (MoreMath.Pow2(analysis.wStore[index]) / analysis.wSquaredSum[analysis.wSquaredSum.Length - 1]);
+                return (MoreMath.Sqr(analysis.wStore[index]) / analysis.wSquaredSum[analysis.wSquaredSum.Length - 1]);
             }
         }
 

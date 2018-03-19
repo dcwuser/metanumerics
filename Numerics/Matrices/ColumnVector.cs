@@ -21,7 +21,7 @@ namespace Meta.Numerics.Matrices {
         /// Initializes a new column vector from the given component list.
         /// </summary>
         /// <param name="list">A list of vector components.</param>
-        public ColumnVector (IList<double> list) : base(list) { }
+        public ColumnVector (IReadOnlyList<double> list) : base(list) { }
 
         /// <summary>
         /// Initializes a new column vector with the given components.

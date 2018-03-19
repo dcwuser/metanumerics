@@ -6,7 +6,7 @@ using Meta.Numerics.Functions;
 namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
-    /// Represents all discrete, univariate probability distrubtions.
+    /// Represents all discrete, univariate probability distributions.
     /// </summary>
     /// <remarks>
     /// <para>A discrete distribution is a distribution over the integers.</para>
@@ -23,7 +23,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         public abstract double ProbabilityMass (int k);
 
         /// <summary>
-        /// Gets the interval over which the distribution is nonvanishing.
+        /// Gets the interval over which the distribution is non-vanishing.
         /// </summary>
         public abstract DiscreteInterval Support { get; }
 
@@ -88,19 +88,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="P">The percentile.</param>
         /// <returns>The value.</returns>
         public virtual int InverseLeftProbability (double P) {
-
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
-
             return (InverseLeftProbability(Support.LeftEndpoint, Support.RightEndpoint, P));
-
-            /*
-            double PP = 0.0;
-            for (int k = Minimum; k <= Maximum; k++) {
-                PP += ProbabilityMass(k);
-                if (PP >= P) return (k);
-            }
-            return (Maximum);
-            */
         }
 
         // Start with lower and upper limits, then use bisection to find
@@ -258,133 +247,5 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
     }
-
-
-#if FUTURE
-    /// <summary>
-    /// Represents an interval on the integers.
-    /// </summary>
-    public struct DiscreteInterval : IEquatable<DiscreteInterval> {
-
-        /// <summary>
-        /// Creates a new instance of a discrete interval.
-        /// </summary>
-        /// <param name="a">One endpoint.</param>
-        /// <param name="b">The other endpoint.</param>
-        public DiscreteInterval (int a, int b) {
-            if (b < a) Global.Swap(ref a, ref b);
-            this.a = a;
-            this.b = b;
-        }
-
-        int a, b;
-
-        /// <summary>
-        /// Gets the lower (left) boundary.
-        /// </summary>
-        public int LeftEndpoint {
-            get {
-                return (a);
-            }
-        }
-
-        /// <summary>
-        /// Gets the upper (right) boundary.
-        /// </summary>
-        public int RightEndpoint {
-            get {
-                return (b);
-            }
-        }
-
-        /// <summary>
-        /// Gets the width of the interval.
-        /// </summary>
-        /// <remarks>
-        /// <para>Note that the width of the interval is one less than the number of integers in it. For example:
-        /// the interval [1,3] has width two, but contains three integers.</para>
-        /// </remarks>
-        public int Width {
-            get {
-                return (b - a);
-            }
-        }
-
-
-        // convert int to double, replacing minimum and maxiumum integer values by negative and positivel infinity
-
-        private static double IntToDouble (int i) {
-            if (i == Int32.MinValue) {
-                return(Double.NegativeInfinity);
-            } else if (i == Int32.MaxValue) {
-                return(Double.PositiveInfinity);
-            } else {
-                return((double) i);
-            }
-        }
-
-        /// <summary>
-        /// Converts a discrete interval to a continuous interval.
-        /// </summary>
-        /// <param name="i">The discrete interval.</param>
-        /// <returns>The corresponding continuous interval.</returns>
-        public static implicit operator Interval (DiscreteInterval i) {
-            return (Interval.FromEndpoints(IntToDouble(i.a), IntToDouble(i.b)));
-        }
-
-        // equality stuff
-
-        /// <summary>
-        /// Determines if the given discrete intervals equals the current discrete interval.
-        /// </summary>
-        /// <param name="other">The interval to compare.</param>
-        /// <returns>True if the discrete intervals are equal, otherwise false.</returns>
-        public bool Equals (DiscreteInterval other) {
-            return ((this.a == other.a) && (this.b == other.b));
-        }
-
-        /// <summary>
-        /// Determines if the given object equals the current discrete interval.
-        /// </summary>
-        /// <param name="obj">The object to compare.</param>
-        /// <returns>True if the object describes the same discrete interval, otherwise false.</returns>
-        public override bool Equals (object obj) {
-            if (obj is DiscreteInterval) {
-                return (this.Equals((DiscreteInterval)obj));
-            } else {
-                return (false);
-            }
-        }
-
-        /// <summary>
-        /// Determines if the given discrete intervals are equal.
-        /// </summary>
-        /// <param name="interval1">The first discrete interval.</param>
-        /// <param name="interval2">The second discrete interval.</param>
-        /// <returns>True if the discrete intervals are equal, otherwise false.</returns>
-        public static bool operator == (DiscreteInterval interval1, DiscreteInterval interval2) {
-            return (interval1.Equals(interval2));
-        }
-
-        /// <summary>
-        /// Determines if the given discrete intervals are unequal.
-        /// </summary>
-        /// <param name="interval1">The first discrete interval.</param>
-        /// <param name="interval2">The second discrete interval.</param>
-        /// <returns>True if the discrete intervals are unequal, otherwise false.</returns>
-        public static bool operator != (DiscreteInterval interval1, DiscreteInterval interval2) {
-            return (!(interval1 == interval2));
-        }
-
-        /// <summary>
-        /// Returns a hash value for the current discrete interval.
-        /// </summary>
-        /// <returns>A hash value for the discrete interval.</returns>
-        public override int GetHashCode () {
-            return (a ^ (b << 15));
-        }
-
-    }
-#endif
 
 }

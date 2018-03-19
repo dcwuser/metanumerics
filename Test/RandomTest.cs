@@ -255,7 +255,7 @@ namespace Test {
     [TestClass]
     public class RandomTest {
 
-        [TestMethod]
+        //[TestMethod]
         public void TimeNormalGenerators () {
 
             Random rng = new Random(1);
@@ -271,8 +271,6 @@ namespace Test {
             double sum = 0.0;
             for (int i = 0; i < 10000000; i++) {
                 sum += nrm.InverseLeftProbability(rng.NextDouble());
-                //sum += nRng.GetNext(rng);
-                //sample.Add(nRng.GetNext(rng));
             }
             timer.Stop();
 
@@ -281,7 +279,7 @@ namespace Test {
             Console.WriteLine(timer.ElapsedMilliseconds);
         }
 
-        [TestMethod]
+        //[TestMethod]
         public void TimeCauchyGenerators () {
 
             Random rng = new Random(1);
@@ -305,13 +303,12 @@ namespace Test {
 
         }
 
-        [TestMethod]
+        //[TestMethod]
         public void TimeGammaGenerators () {
 
             double alpha = 1.0;
 
             Random rng = new Random(1);
-            //IDeviateGenerator nRng = new AhrensDieterGammaGenerator(alpha);
             IDeviateGenerator nRng = new MarsagliaTsangGammaGenerator(new PolarRejectionNormalDeviateGenerator(), alpha);
             ContinuousDistribution d = new GammaDistribution(alpha);
 
@@ -320,14 +317,12 @@ namespace Test {
 
             Stopwatch timer = Stopwatch.StartNew();
             for (int i = 0; i < 1000000; i++) {
-                //double x = nRng.GetNext(rng);
                 double x = d.InverseLeftProbability(rng.NextDouble());
-                //sum += x;
                 sample.Add(x);
             }
             timer.Stop();
 
-            Console.WriteLine(sample.KolmogorovSmirnovTest(d).RightProbability);
+            Console.WriteLine(sample.KolmogorovSmirnovTest(d).Probability);
             //Console.WriteLine(sum);
             Console.WriteLine(timer.ElapsedMilliseconds);
 

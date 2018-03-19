@@ -6,17 +6,21 @@ using System.Text;
 
 namespace Meta.Numerics.Data
 {
-    [DebuggerDisplay("{DebuggerDisplay()}")]
-    public sealed class DataRow : IReadOnlyDictionary<string, object>, IReadOnlyList<object> {
 
-        internal DataRow (DataView frame, int r) {
+    /// <summary>
+    /// Represents one row of a data frame.
+    /// </summary>
+    [DebuggerDisplay("{DebuggerDisplay()}")]
+    public sealed class FrameRow : IReadOnlyDictionary<string, object>, IReadOnlyList<object> {
+
+        internal FrameRow (FrameView frame, int r) {
             Debug.Assert(frame != null);
             Debug.Assert(r >= 0);
             this.frame = frame;
             this.r = r;
         }
 
-        private readonly DataView frame;
+        private readonly FrameView frame;
         private readonly int r;
 
         /// <summary>
@@ -30,7 +34,7 @@ namespace Meta.Numerics.Data
 
         IEnumerable<string> IReadOnlyDictionary<string, object>.Keys {
             get {
-                foreach (DataList column in frame.columns) {
+                foreach (NamedList column in frame.columns) {
                     yield return (column.Name);
                 }
             }
@@ -38,7 +42,7 @@ namespace Meta.Numerics.Data
 
         IEnumerable<object> IReadOnlyDictionary<string, object>.Values {
             get {
-                foreach (DataList column in frame.columns) {
+                foreach (NamedList column in frame.columns) {
                     yield return (column.GetItem(frame.map[r]));
                 }
             }
@@ -68,6 +72,31 @@ namespace Meta.Numerics.Data
             }
         }
 
+
+        /// <summary>
+        /// Gets the index of the column with the given name.
+        /// </summary>
+        /// <param name="name">The name of the column.</param>
+        /// <returns>The index of the column, of -1 if no such column exists.</returns>
+        public int GetIndexOf (string name) {
+            return (frame.GetColumnIndex(name));
+        }
+
+        /// <summary>
+        /// Returns a dictionary containing the row data.
+        /// </summary>
+        /// <returns>A dictionary whoose keys are the column names
+        /// and whoose values are the coresponding cell values for the row.
+        /// This dictionary is an independent copy, so any subsequent changes to the
+        /// frame data will not change it.</returns>
+        public Dictionary<string, object> ToDictionary () {
+            Dictionary<string, object> result = new Dictionary<string, object>();
+            foreach (KeyValuePair<string, object> entry in (IReadOnlyDictionary<string, object>) this) {
+                result.Add(entry.Key, entry.Value);
+            }
+            return (result);
+        }
+
         private string DebuggerDisplay () {
             StringBuilder builder = new StringBuilder();
             builder.Append("{ ");
@@ -81,21 +110,29 @@ namespace Meta.Numerics.Data
         }
 
         bool IReadOnlyDictionary<string, object>.ContainsKey (string key) {
-            throw new NotImplementedException();
+            int c = frame.GetColumnIndex(key);
+            return (c >= 0);
         }
 
         bool IReadOnlyDictionary<string, object>.TryGetValue (string key, out object value) {
-            throw new NotImplementedException();
+            int c = frame.GetColumnIndex(key);
+            if (c < 0) {
+                value = null;
+                return (false);
+            } else {
+                value = this[c];
+                return (true);
+            }
         }
 
         IEnumerator<KeyValuePair<string, object>> IEnumerable<KeyValuePair<string, object>>.GetEnumerator () {
-            foreach (DataList column in frame.columns) {
+            foreach (NamedList column in frame.columns) {
                 yield return (new KeyValuePair<string, object>(column.Name, column.GetItem(frame.map[r])));
             }
         }
 
         IEnumerator<object> IEnumerable<object>.GetEnumerator () {
-            foreach (DataList column in frame.columns) {
+            foreach (NamedList column in frame.columns) {
                 yield return (column.GetItem(frame.map[r]));
             }
         }

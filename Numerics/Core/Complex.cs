@@ -11,7 +11,9 @@ namespace Meta.Numerics {
     /// <summary>Represents a complex number.</summary>
     /// <remarks>
     /// <para>Version 4.0 of the .NET Framework introduced a Complex structure equivalent to this one. To maintain compatibility
-    /// with earlier versions of the .NET Framework, Meta.Numerics maintains its own Complex structure.</para>
+    /// with earlier versions of the .NET Framework, Meta.Numerics maintains its own Complex structure. The Meta.Numerics
+    /// complex type and the .NET Framework complex type can be used interchangably, because Meta.Numerics defines an
+    /// implicit cast between them.</para>
     /// </remarks>
     public struct Complex : IEquatable<Complex> {
 
@@ -385,12 +387,12 @@ namespace Meta.Numerics {
 		}
 
         /// <summary>
-        /// Gets the complex value of zero.
+        /// Gets zero as a complex number.
         /// </summary>
         public static readonly Complex Zero = new Complex(0.0, 0.0);
 
         /// <summary>
-        /// Gets the complex value of one.
+        /// Gets one as a complex number.
         /// </summary>
         public static readonly Complex One = new Complex(1.0, 0.0);
 

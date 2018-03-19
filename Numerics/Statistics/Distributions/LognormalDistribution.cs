@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
@@ -11,7 +12,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents a log-normal distribution.
     /// </summary>
     /// <remarks>
-    /// <para>The logrithm of a log-normal distributed variable is distributed normally.</para>
+    /// <para>The logarithm of a log-normal distributed variable is distributed normally.</para>
     /// <img src="../images/LogNormalFromNormal.png" />
     /// <para>The log-normal distribution is commonly used in financial engineering as a model of stock prices.
     /// If the rate of return on an asset is distributed normally, then its price will be distributed log-normally.</para>
@@ -28,7 +29,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <remarks>
         /// <para>Note that the values of &#x3BC; and  &#x3C3; parameters are
         /// <em>not</em> the mean and standard deviation of the log-normal distribution.
-        /// They are the mean and standard deviation of their logrithms z = ln x. This is
+        /// They are the mean and standard deviation of their logarithms z = ln x. This is
         /// the standard method of characterizing a log-normal distribution.</para>
         /// </remarks>
         public LognormalDistribution (double mu, double sigma) {
@@ -72,7 +73,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <remarks>
         /// <para>Note that the value of this parameter is not the standard deviation of the distribution.
         /// It is the value given to the distribution constructor (<see cref="LognormalDistribution(double,double)"/>),
-        /// which is the sandard deviation of the underlying normal distribution.</para>
+        /// which is the standard deviation of the underlying normal distribution.</para>
         /// </remarks>
         public double Sigma {
             get {
@@ -189,51 +190,6 @@ namespace Meta.Numerics.Statistics.Distributions {
 
                 double[] K = Cumulants(r);
                 return (MomentMath.CumulantToCentral(K, r));
-
-                // Begin with M_r = e^{r \mu + \frac{1}{2} r^2 \sigma^2} and use
-                //     C_r = <(x-M_1)^r> = \sum_{k=0}^{r} {r \choose k} M_k (-M_1)^{r-k}
-                //         = \sum_{k=0}^{r} (-1)^{r-k} {r \choose k} e^{k \mu + \frac{1}{2} k^2 \sigma^2} e^{(r-k)(\mu + \frac{1}{2} \sigma^2)}
-                //         = e^{r (\mu + \frac{1}{2} \sigma^2)} \sum_{k=0}^{r} (-1)^{r-k} {r \choose k} e^{\frac{1}{2} k (k - 1) \sigma^2}
-                // So far, this is just the usual raw to central moment conversion, subject to the usual significant cancellation errors,
-                // particularly for small \sigma, in which case all exponentials will be nearly equal. Write
-                //     e^{\frac{1}{2} k (k - 1) \sigma^2} = (e^{\frac{1}{2} k (k - 1) \sigma^2} - 1) + 1.
-                // When summed over all k, the contribution of the final +1 vanishes, so
-                //     C_r = e^{r (\mu + \frac{1}{2} \sigma^2)} \sum_{k=0}^{r} (-1)^{r-k} {r \choose k} (e^{\frac{1}{2} k (k - 1) \sigma^2} - 1)
-                // and since ( ) is zero for k = 0 and k = 2, we need not start the sum until k = 2.
-                /*
-                double s = 0.0;
-                double x = sigma * sigma / 2.0;
-                for (int k = 2; k <= r; k++) {
-                    double ds = AdvancedIntegerMath.BinomialCoefficient(r, k) * MoreMath.ExpMinusOne(k * (k - 1) * x);
-                    if ((r - k) % 2 != 0) ds = -ds;
-                    s += ds;
-                }
-                return (Math.Exp(r * (mu + x)) * s);
-                */
-                /*
-                // This follows from a straightforward expansion of (x-m)^n and substitution of expressions for M_k.
-                // It eliminates some arithmetic but is still subject to loss of significance due to cancelation.
-                double s2 = sigma * sigma / 2.0;
-
-                double C = 0.0;
-                for (int i = 0; i <= r; i++) {
-                    double dC = AdvancedIntegerMath.BinomialCoefficient(r, i) * Math.Exp((MoreMath.Sqr(r - i) + i) * s2);
-                    if (i % 2 != 0) dC = -dC;
-                    C += dC;
-                }
-                return (Math.Exp(r * mu) * C);
-                */
-                // this isn't great, but it does the job
-                // expand in terms of moments about the origin
-                // there is likely to be some cancelation, but the distribution is wide enough that it may not matter
-                /*
-                double m = -Mean;
-                double C = 0.0;
-                for (int k = 0; k <= n; k++) {
-                    C += AdvancedIntegerMath.BinomialCoefficient(n, k) * Moment(k) * Math.Pow(m, n - k);
-                }
-                return (C);
-                */
             }
 
         }
@@ -274,7 +230,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             //   K_5 = (M_1)^5 (x - 1)^4 (24 + 36 x + 30 x^2 + 20 x^3 + 4 x^4 + x^5)
 
             double x = Math.Exp(sigma * sigma);
-            //double x = 0.5;
 
             // Form L_k = 1 + x + \cdots + x^{k}
             double[] L = new double[rMax];
@@ -287,8 +242,6 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             double y = MoreMath.ExpMinusOne(sigma * sigma) * K[1];
             double yk = K[1];
-            //double y = 0.1;
-            //double yk = 1.0;
 
             double[] J = new double[rMax];
             J[0] = 1.0;
@@ -320,38 +273,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
-        public static FitResult FitToSample (Sample sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 3) throw new InsufficientDataException();
-
-            // Writing out the log likelyhood from p(x), taking its
-            // derivatives wrt mu and sigma, and setting them equal
-            // to zero to find the minimizing values, you find that
-            // the results of the normal fit are reproduced exactly
-            // with x -> log x, i.e.
-
-            // \mu = < \log x >, \sigma^2 = < (\log x - \mu)^2 >
-            
-            // do a one-pass computation of these quantities
-            SampleSummary summary = new SampleSummary();
-            foreach (double value in sample) {
-                if (value <= 0.0) throw new InvalidOperationException();
-                summary.Add(Math.Log(value));
-            }
-
-            // the second derivatives are also just as in the normal
-            // case, including the vanishing of the mixed derivative
-            // this makes direct inversion trivial
-
-            SymmetricMatrix C = new SymmetricMatrix(2);
-            C[0, 0] = summary.Variance / summary.Count;
-            C[1, 1] = summary.Variance / summary.Count / 2;
-
-            // test the fit
-            ContinuousDistribution d = new LognormalDistribution(summary.Mean, Math.Sqrt(summary.Variance));
-            TestResult r = sample.KolmogorovSmirnovTest(d);
-
-            return (new FitResult(new double[] { summary.Mean, Math.Sqrt(summary.Variance) }, C, r));
+        public static LognormalFitResult FitToSample (Sample sample) {
+            return (Univariate.FitToLognormal(sample.data));
         }
 
     }

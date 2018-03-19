@@ -92,13 +92,13 @@ namespace Test {
         public void BesselJ0Integral () {
             // Abromowitz & Stegun 9.1.18
             // J_0(x) = \int_{0}^{\pi} \cos( x \sin(t) ) \, dt
-            // don't let x get too big, or the integral becomes too oscilatory to do accurately
+            // don't let x get too big, or the integral becomes too oscillatory to do accurately
             Interval r = Interval.FromEndpoints(0.0, Math.PI);
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
                 Func<double, double> f = delegate(double t) {
                     return (Math.Cos(x * Math.Sin(t)));
                 };
-                double J0 = FunctionMath.Integrate(f, r) / Math.PI;
+                double J0 = FunctionMath.Integrate(f, r).Estimate.Value / Math.PI;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselJ(0, x), J0));
             }
         }
@@ -112,7 +112,7 @@ namespace Test {
                     double s = Math.Sin(t);
                     return (Math.Cos(x * Math.Cos(t)) * (AdvancedMath.EulerGamma + Math.Log(2.0 * x * s * s)));
                 };
-                double Y0 = 4.0 / (Math.PI * Math.PI) * FunctionMath.Integrate(f, r);
+                double Y0 = 4.0 / (Math.PI * Math.PI) * FunctionMath.Integrate(f, r).Estimate.Value;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselY(0, x), Y0));
             }
         }
@@ -126,13 +126,12 @@ namespace Test {
                     Func<double, double> f = delegate(double t) {
                         return (Math.Cos(x * Math.Sin(t) - n * t));
                     };
-                    double J = FunctionMath.Integrate(f, r) / Math.PI;
-                    Console.WriteLine("n={0} x={1} J={2} I={3}", n, x, AdvancedMath.BesselJ(n, x), J);
+                    double J = FunctionMath.Integrate(f, r).Estimate.Value / Math.PI;
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         AdvancedMath.BesselJ(n, x), J,
                         new EvaluationSettings() { AbsolutePrecision = 1.0E-15, RelativePrecision = 0.0 }
                     ));
-                    // The integral can produce signifiant cancelation, so use an absolute criterion.
+                    // The integral can produce significant cancelation, so use an absolute criterion.
                 }
             }
         }
@@ -145,7 +144,7 @@ namespace Test {
                     return (Math.Cos(x - t) * AdvancedMath.BesselJ(0, t));
                 };
                 Interval r = Interval.FromEndpoints(0.0, x);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(x * AdvancedMath.BesselJ(0, x), FunctionMath.Integrate(f, r)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(x * AdvancedMath.BesselJ(0, x), FunctionMath.Integrate(f, r).Estimate.Value));
             }
         }
 
@@ -156,7 +155,7 @@ namespace Test {
                 return (Math.Exp(-t) * AdvancedMath.BesselJ(0, t));
             };
             Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(FunctionMath.Integrate(f, r), 1.0 / Math.Sqrt(2.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(FunctionMath.Integrate(f, r).Estimate.Value, 1.0 / Math.Sqrt(2.0)));
         }
 
         [TestMethod]
@@ -165,7 +164,7 @@ namespace Test {
                 return (Math.Exp(-t*t) * AdvancedMath.BesselJ(0, t) * t);
             };
             Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(FunctionMath.Integrate(f, r), Math.Exp(-1.0/4.0) / 2.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(FunctionMath.Integrate(f, r).Estimate.Value, Math.Exp(-1.0/4.0) / 2.0));
         }
 
         [TestMethod]
@@ -414,7 +413,7 @@ namespace Test {
                         return (Math.Cos(x * Math.Cos(t)) * Math.Pow(Math.Sin(t), 2.0 * nu));
                     };
                     Interval r = Interval.FromEndpoints(0.0, Math.PI);
-                    double I = FunctionMath.Integrate(f, r);
+                    double I = FunctionMath.Integrate(f, r).Estimate.Value;
                     I = I * Math.Pow(x / 2.0, nu) / AdvancedMath.Gamma(nu + 0.5) / AdvancedMath.Gamma(0.5);
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselJ(nu, x), I));
                 }
@@ -917,7 +916,7 @@ namespace Test {
                         return (Math.Pow(t, a - 1.0) * Math.Pow(1.0 - t, b - 1.0));
                     };
                     Interval r = Interval.FromEndpoints(0.0, 1.0);
-                    double I = FunctionMath.Integrate(f, r, settings).Value;
+                    double I = FunctionMath.Integrate(f, r, settings).Estimate.Value;
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(B, I));
                 }
             }
@@ -1009,6 +1008,9 @@ namespace Test {
 
         [TestMethod]
         public void IncompleteBetaIdentity2 () {
+            // For x ~ 1.0E-2, a ~ 1.0E2, b ~ 1.0E3, this fails at the 1.0E-13 level.
+            // There are errors at this level in both RegularizedBeta_ContinuedFraction (14 terms of alternating signs)
+            // and PowOverBeta (doing multiplications in log-space).
             foreach (double a in TestUtilities.GenerateRealValues(1.0, 1.0E4, 8)) {
                 foreach (double b in TestUtilities.GenerateRealValues(1.0, 1.0E4, 8)) {
                     foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 8)) {
@@ -1062,7 +1064,7 @@ namespace Test {
                     return (Math.Exp(-t * t));
                 };
                 Interval r = Interval.FromEndpoints(0.0, x);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Erf(x), 2.0 / Math.Sqrt(Math.PI) * FunctionMath.Integrate(f, r)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Erf(x), 2.0 / Math.Sqrt(Math.PI) * FunctionMath.Integrate(f, r).Estimate.Value));
             }
         }
 

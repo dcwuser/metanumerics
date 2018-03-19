@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -6,13 +7,13 @@ using Meta.Numerics.Statistics.Distributions;
 
 namespace Meta.Numerics.Statistics {
 
-    // The internal HistorgramStorage stores all actual historgram data.
-    // The Histogram, HistogramBinCollection, and HistogramBin objects associated with a histogram all just hold references to the
-    // storage object and surface methods from it appropriate to their roles.
+    // The internal HistorgramStorage stores all actual histogram data.
+    // The Histogram, HistogramBinCollection, and HistogramBin objects associated with a histogram
+    // all just hold references to the storage object and surface data from it appropriate to their roles.
 
-    // To accomodate BelowRangeBin and AboveRangeBin, the internal index used to indicate a bin is one off from its external index.
-    // Thus bins 0..(Count - 1) have indexes 1..(Count); index 0 represents the BelowRangeBin and index (Count + 1) represents the
-    // AboveRangeBin.
+    // To accommodate BelowRangeBin and AboveRangeBin, the internal index used to indicate a bin is one off
+    // from its external index. Thus bins 0..(Count - 1) have indexes 1..(Count); index 0 represents the
+    // BelowRangeBin and index (Count + 1) represents the AboveRangeBin.
 
     internal class HistogramStorage {
 
@@ -104,7 +105,7 @@ namespace Meta.Numerics.Statistics {
     /// Represents a histogram.
     /// </summary>
     /// <remarks>
-    /// <para>A histogram stores the number of occurances of a value (called the count) within a set of ranges (called bins). It is the
+    /// <para>A histogram stores the number of occurrences of a value (called the count) within a set of ranges (called bins). It is the
     /// natural system to store discrete univariate data. The natural system to store continuous univariate data is the <see cref="Sample"/>
     /// class, but often histograms are also used for continuous data, for example because there is too much data to record each value
     /// individually.</para>
@@ -357,7 +358,7 @@ namespace Meta.Numerics.Statistics {
     /// Represents a collection of histogram bins.
     /// </summary>
     /// <seealso cref="Histogram"/>
-    public sealed class HistogramBinsCollection : ICollection<HistogramBin>, IEnumerable<HistogramBin> {
+    public sealed class HistogramBinsCollection : IReadOnlyCollection<HistogramBin>, IEnumerable<HistogramBin> {
 
         internal HistogramBinsCollection (HistogramStorage storage) {
             this.storage = storage;
@@ -377,24 +378,6 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        void ICollection<HistogramBin>.Add (HistogramBin item) {
-            throw new InvalidOperationException();
-        }
-
-        void ICollection<HistogramBin>.Clear () {
-            throw new InvalidOperationException();
-        }
-
-        bool ICollection<HistogramBin>.Contains (HistogramBin item) {
-            return (item.storage == this.storage);
-        }
-
-        void ICollection<HistogramBin>.CopyTo (HistogramBin[] array, int arrayIndex) {
-            for (int index = 0; index < storage.Count; index++) {
-                array[arrayIndex + index] = new HistogramBin(storage, index + 1);
-            }
-        }
-
         /// <summary>
         /// Gets the number of histogram bins in the collection.
         /// </summary>
@@ -404,23 +387,13 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        bool ICollection<HistogramBin>.IsReadOnly {
-            get {
-                return(true);
-            }
-        }
-
-        bool ICollection<HistogramBin>.Remove (HistogramBin item) {
-            throw new InvalidOperationException();
-        }
-
         IEnumerator<HistogramBin> IEnumerable<HistogramBin>.GetEnumerator () {
             for (int index = 0; index < storage.Count; index++) {
                 yield return (new HistogramBin(storage, index + 1));
             }
         }
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator () {
+        IEnumerator IEnumerable.GetEnumerator () {
             return (((IEnumerable<HistogramBin>) this).GetEnumerator());
         }
     }

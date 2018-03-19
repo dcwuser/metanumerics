@@ -46,7 +46,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="x">A point suspected to be near the maximum. The search begins at this point.</param>
         /// <returns>The maximum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
-        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a maximum being determined.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occurred without a maximum being determined.</exception>
         public static Extremum FindMaximum (Func<double, double> f, double x) {
             return (FindMaximum(f, x, DefaultExtremaSettings));
         }
@@ -60,7 +60,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="settings">The settings to use when searching for the maximum.</param>
         /// <returns>The maximum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null or <paramref name="settings"/> is null.</exception>
-        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a maximum being determined to the prescribed precision.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occurred without a maximum being determined to the prescribed precision.</exception>
         /// <remarks>
         /// <para>When you supply <paramref name="settings"/>, note that the supplied <see cref="EvaluationSettings.RelativePrecision"/> and <see cref="EvaluationSettings.AbsolutePrecision"/>
         /// values refer to argument (i.e. x) values, not function (i.e. f) values. Note also that, for typical functions, the best attainable relative precision is of the order of the
@@ -82,7 +82,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="x">A point suspected to be near the minimum. The search begins at this point.</param>
         /// <returns>The minimum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
-        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a minimum being determined.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occurred without a minimum being determined.</exception>
         public static Extremum FindMinimum (Func<double, double> f, double x) {
             return (FindMinimum(f, x, DefaultExtremaSettings));
         }
@@ -95,7 +95,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="settings">The settings to use when searching for the minimum.</param>
         /// <returns>The minimum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null or <paramref name="settings"/> is null.</exception>
-        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a minimum being determined to the prescribed precision.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occurred without a minimum being determined to the prescribed precision.</exception>
         /// <remarks>
         /// <para>When you supply <paramref name="settings"/>, note that the supplied <see cref="EvaluationSettings.RelativePrecision"/> and <see cref="EvaluationSettings.AbsolutePrecision"/>
         /// values refer to argument (i.e. x) values, not function (i.e. f) values. Note also that, for typical functions, the best attainable relative precision is of the order of the
@@ -191,7 +191,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="r">The interval.</param>
         /// <returns>The maximum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
-        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a minimum being determined.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occurred without a minimum being determined.</exception>
         public static Extremum FindMaximum (Func<double, double> f, Interval r) {
             return (FindMaximum(f, r, DefaultExtremaSettings));
         }
@@ -204,7 +204,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="settings">The settings used when searching for the maximum.</param>
         /// <returns>The maximum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null or <paramref name="settings"/> is null.</exception>
-        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a maximum being determined to the prescribed precision.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occurred without a maximum being determined to the prescribed precision.</exception>
         /// <remarks>
         /// <para>When you supply <paramref name="settings"/>, note that the supplied <see cref="EvaluationSettings.RelativePrecision"/> and <see cref="EvaluationSettings.AbsolutePrecision"/>
         /// values refer to argument (i.e. x) values, not function (i.e. f) values. Note also that, for typical functions, the best attainable relative precision is of the order of the
@@ -226,7 +226,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="r">The interval.</param>
         /// <returns>The minimum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null.</exception>
-        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a minimum being determined.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occurred without a minimum being determined.</exception>
         public static Extremum FindMinimum (Func<double, double> f, Interval r) {
             return (FindMinimum(f, r, DefaultExtremaSettings));
         }
@@ -239,7 +239,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="settings">The settings used when searching for the minimum.</param>
         /// <returns>The minimum.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is null or <paramref name="settings"/> is null.</exception>
-        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occured without a minimum being determined to the prescribed precision.</exception>
+        /// <exception cref="NonconvergenceException">More than the maximum allowed number of function evaluations occurred without a minimum being determined to the prescribed precision.</exception>
         /// <remarks>
         /// <para>When you supply <paramref name="settings"/>, note that the supplied <see cref="EvaluationSettings.RelativePrecision"/> and <see cref="EvaluationSettings.AbsolutePrecision"/>
         /// values refer to argument (i.e. x) values, not function (i.e. f) values. Note also that, for typical functions, the best attainable relative precision is of the order of the
@@ -421,10 +421,10 @@ namespace Meta.Numerics.Analysis {
                 }
 
                 if ((settings.RelativePrecision > 0.0 || settings.AbsolutePrecision > 0.0)) {
-                    // If the user has specified a tollerance, use it.
+                    // If the user has specified a tolerance, use it.
                     tol = Math.Max(Math.Abs(u) * settings.RelativePrecision, settings.AbsolutePrecision);
                 } else {
-                    // Otherwise, try to get the tollerance from the curvature.
+                    // Otherwise, try to get the tolerance from the curvature.
                     if (fpp > 0.0) {
                         tol = Math.Sqrt(2.0 * Global.Accuracy * (Math.Abs(fu) + Global.Accuracy) / fpp);
                     } else {
@@ -446,7 +446,7 @@ namespace Meta.Numerics.Analysis {
 
             // We want to find the parabola
             //   f = f0 + (f'' / 2) (x - x0)^2
-            // that passes throught the points (x1,f1), (x2,f2), (x3,f3)
+            // that passes through the points (x1,f1), (x2,f2), (x3,f3)
 
             // The solution, after much algebra is:
             //   x0 = x1 - \frac{1}{2} \frac{(f3-f1)(x1-x2)^2 - (f2-f1)(x3-x1)^2}{(f3-f1)(x1-x2) + (f2-f1)(x3-x1)}
@@ -465,7 +465,7 @@ namespace Meta.Numerics.Analysis {
             double q = 2.0 * (t1 + t2);
 
             if (q == 0.0) {
-                // the denominator vanishes when the points are colinear; there is no parabolic fit
+                // the denominator vanishes when the points are co-linear; there is no parabolic fit
                 x0 = Double.NaN;
                 fpp = Double.NaN;
             } else {
@@ -479,7 +479,7 @@ namespace Meta.Numerics.Analysis {
         
 
     // This class is used to wrap a function, storing some associated state such as the evaluation count.
-    // It isn't truely a functor in the C++ sense, since .NET doesn't allow () to be overloaded, but
+    // It isn't truly a functor in the C++ sense, since .NET doesn't allow () to be overloaded, but
     // it is a functor in the sense that it is a class used to represent a function.
 
     internal class Functor {

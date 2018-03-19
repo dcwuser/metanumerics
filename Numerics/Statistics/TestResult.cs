@@ -1,6 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Diagnostics;
 
 using Meta.Numerics.Statistics.Distributions;
 
@@ -18,17 +17,18 @@ namespace Meta.Numerics.Statistics {
     /// </remarks>
     public class TestResult {
 
+        private readonly string name;
         private readonly double statistic;
+        private TestType type;
         private readonly ContinuousDistribution distribution;
 
-        internal TestResult (double statistic, ContinuousDistribution distribution) {
-            this.statistic = statistic;
-            this.distribution = distribution;
-        }
-
-        internal TestResult (string name, double statistic, TestType type, ContinuousDistribution distribution) : this(statistic, distribution) {
+        internal TestResult (string name, double statistic, TestType type, ContinuousDistribution distribution) {
+            Debug.Assert(!String.IsNullOrWhiteSpace(name));
+            Debug.Assert(distribution != null);
             this.name = name;
+            this.statistic = statistic;
             this.type = type;
+            this.distribution = distribution;
         }
 
         /// <summary>
@@ -49,28 +49,6 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        /// <summary>
-        /// Get the probability, under the null hypothesis, of obtaining a test statistic value as small or smaller than the one actually obtained. 
-        /// </summary>
-        public double LeftProbability {
-            get {
-                return (distribution.LeftProbability(statistic));
-            }
-        }
-
-        /// <summary>
-        /// Get the probability, under the null hypothesis, of obtaining a test statistic value as large as or larger than the one actually obtained. 
-        /// </summary>
-        public double RightProbability {
-            get {
-                return (distribution.RightProbability(statistic));
-            }
-        }
-
-        private readonly string name;
-
-        private TestType type;
-
         private string Name {
             get {
                 return (name);
@@ -87,9 +65,9 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets the probability of such an extreme value of the satistic.
+        /// Gets the P-value of the test.
         /// </summary>
-        /// <value>The P-value of the test-statistic.</value>
+        /// <value>The probability, under the test's null hypothesis, of obtaining such an extreme value of the statistic.</value>
         public double Probability {
             get {
                 switch (type) {
@@ -102,6 +80,7 @@ namespace Meta.Numerics.Statistics {
                         // symmetric about the mean, so if we ever implement
                         // a two-tailed test that does not fit this requirement,
                         // we will need to revisit it.
+                        // Actually, we do, for the F-test, so deal with it.
                         if (statistic < distribution.Mean) {
                             return (2.0 * distribution.LeftProbability(statistic));
                         } else {
@@ -131,7 +110,7 @@ namespace Meta.Numerics.Statistics {
         RightTailed,
 
         /// <summary>
-        /// The P-values gives the probabily of obtain a value as large in absolute value as observed.
+        /// The P-values gives the probability of obtaining a value as large in absolute value as observed.
         /// </summary>
         TwoTailed
     

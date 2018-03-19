@@ -3,6 +3,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
+using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 
@@ -20,13 +21,13 @@ namespace Test {
             Sample sample = SampleTest.CreateSample(distribution, 100);
 
             // fit to normal should be good
-            FitResult nfit = NormalDistribution.FitToSample(sample);
+            NormalFitResult nfit = NormalDistribution.FitToSample(sample);
             Assert.IsTrue(nfit.GoodnessOfFit.Probability > 0.05);
-            Assert.IsTrue(nfit.Parameter(0).ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
-            Assert.IsTrue(nfit.Parameter(1).ConfidenceInterval(0.95).ClosedContains(distribution.StandardDeviation));
+            Assert.IsTrue(nfit.Mean.ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
+            Assert.IsTrue(nfit.StandardDeviation.ConfidenceInterval(0.95).ClosedContains(distribution.StandardDeviation));
 
             // fit to exponential should be bad
-            FitResult efit = ExponentialDistribution.FitToSample(sample);
+            ExponentialFitResult efit = ExponentialDistribution.FitToSample(sample);
             Assert.IsTrue(efit.GoodnessOfFit.Probability < 0.05);
         }
 
@@ -47,13 +48,13 @@ namespace Test {
                 Sample s = TestUtilities.CreateSample(N, 8, i);
 
                 // Fit each sample to a normal distribution
-                FitResult fit = NormalDistribution.FitToSample(s);
+                NormalFitResult fit = NormalDistribution.FitToSample(s);
 
                 // and record the mu and sigma values from the fit into our bivariate sample
-                parameters.Add(fit.Parameter(0).Value, fit.Parameter(1).Value);
+                parameters.Add(fit.Mean.Value, fit.StandardDeviation.Value);
 
                 // also record the claimed covariances among these parameters
-                covariances.Add(fit.Covariance(0, 0), fit.Covariance(1, 1), fit.Covariance(0, 1));
+                covariances.Add(fit.Parameters.Covariance[0, 0], fit.Parameters.Covariance[1, 1], fit.Parameters.Covariance[0, 1]);
             }
 
             // the mean fit values should agree with the population distribution
@@ -74,13 +75,13 @@ namespace Test {
             Sample sample = SampleTest.CreateSample(distribution, 100);
 
             // fit to normal should be bad
-            FitResult nfit = NormalDistribution.FitToSample(sample);
+            NormalFitResult nfit = NormalDistribution.FitToSample(sample);
             Assert.IsTrue(nfit.GoodnessOfFit.Probability < 0.05);
 
             // fit to exponential should be good
-            FitResult efit = ExponentialDistribution.FitToSample(sample);
+            ExponentialFitResult efit = ExponentialDistribution.FitToSample(sample);
             Assert.IsTrue(efit.GoodnessOfFit.Probability > 0.05);
-            Assert.IsTrue(efit.Parameter(0).ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
+            Assert.IsTrue(efit.Mean.ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
 
         }
 
@@ -99,8 +100,8 @@ namespace Test {
             Sample uncertainties = new Sample();
             for (int i = 0; i < 128; i++) {
                 Sample sample = SampleTest.CreateSample(distribution, 8, i);
-                FitResult fit = ExponentialDistribution.FitToSample(sample);
-                UncertainValue lambda = fit.Parameter(0);
+                ExponentialFitResult fit = ExponentialDistribution.FitToSample(sample);
+                UncertainValue lambda = fit.Parameters[0].Estimate;
                 values.Add(lambda.Value);
                 uncertainties.Add(lambda.Uncertainty);
             }
@@ -121,13 +122,13 @@ namespace Test {
             MultivariateSample parameters = new MultivariateSample(2);
             MultivariateSample variances = new MultivariateSample(3);
 
-            // Do a bunch of fits, record reported parameters an variances
+            // Do a bunch of fits, record reported parameters and variances
             for (int i = 0; i < 32; i++) {
                 Sample s = SampleTest.CreateSample(d, 64, i);
 
-                FitResult r = GumbelDistribution.FitToSample(s);
-                parameters.Add(r.Parameters);
-                variances.Add(r.Covariance(0, 0), r.Covariance(1, 1), r.Covariance(0, 1));
+                GumbelFitResult r = GumbelDistribution.FitToSample(s);
+                parameters.Add(r.Location.Value, r.Scale.Value);
+                variances.Add(r.Parameters.Covariance[0, 0], r.Parameters.Covariance[1, 1], r.Parameters.Covariance[0, 1]);
 
                 Assert.IsTrue(r.GoodnessOfFit.Probability > 0.01);
             }
@@ -148,26 +149,33 @@ namespace Test {
 
             WaldDistribution wald = new WaldDistribution(3.5, 2.5);
 
-            BivariateSample parameters = new BivariateSample();
-            MultivariateSample variances = new MultivariateSample(3);
-
+            FrameTable results = new FrameTable(
+                new ColumnDefinition<double>("Mean"),
+                new ColumnDefinition<double>("Shape"),
+                new ColumnDefinition<double>("MeanVariance"),
+                new ColumnDefinition<double>("ShapeVariance"),
+                new ColumnDefinition<double>("MeanShapeCovariance")
+            );
             for (int i = 0; i < 128; i++) {
-                Sample s = SampleTest.CreateSample(wald, 16, i);
+                Sample sample = SampleTest.CreateSample(wald, 16, i);
 
-                FitResult r = WaldDistribution.FitToSample(s);
-                parameters.Add(r.Parameters[0], r.Parameters[1]);
-                variances.Add(r.Covariance(0, 0), r.Covariance(1, 1), r.Covariance(0, 1));
-
-                Assert.IsTrue(r.GoodnessOfFit.Probability > 0.01);
+                WaldFitResult result = WaldDistribution.FitToSample(sample);
+                Assert.IsTrue(result.Mean.Value == result.Parameters.Best[result.Parameters.IndexOf("Mean")]);
+                Assert.IsTrue(result.Shape.Value == result.Parameters.Best[result.Parameters.IndexOf("Shape")]);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Parameters.VarianceOf("Mean"), MoreMath.Sqr(result.Mean.Uncertainty)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Parameters.VarianceOf("Shape"), MoreMath.Sqr(result.Shape.Uncertainty)));
+                results.AddRow(
+                    result.Mean.Value, result.Shape.Value,
+                    result.Parameters.VarianceOf("Mean"), result.Parameters.VarianceOf("Shape"), result.Parameters.CovarianceOf("Mean", "Shape")
+                );
             }
 
-            Assert.IsTrue(parameters.X.PopulationMean.ConfidenceInterval(0.99).ClosedContains(wald.Mean));
-            Assert.IsTrue(parameters.Y.PopulationMean.ConfidenceInterval(0.99).ClosedContains(wald.Shape));
+            Assert.IsTrue(results["Mean"].As<double>().PopulationMean().ConfidenceInterval(0.99).ClosedContains(wald.Mean));
+            Assert.IsTrue(results["Shape"].As<double>().PopulationMean().ConfidenceInterval(0.99).ClosedContains(wald.Shape));
 
-            Assert.IsTrue(parameters.X.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(variances.Column(0).Median));
-            Assert.IsTrue(parameters.Y.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(variances.Column(1).Median));
-            Assert.IsTrue(parameters.PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(variances.Column(2).Median));
-
+            Assert.IsTrue(results["Mean"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(results["MeanVariance"].As<double>().Median()));
+            Assert.IsTrue(results["Shape"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(results["ShapeVariance"].As<double>().Median()));
+            Assert.IsTrue(results["Mean"].As<double>().PopulationCovariance(results["Shape"].As<double>()).ConfidenceInterval(0.99).ClosedContains(results["MeanShapeCovariance"].As<double>().Median()));
         }
 
         [TestMethod]
@@ -182,9 +190,9 @@ namespace Test {
                 // We pick a quite-small sample, because we have a finite-n unbiased estimator.
                 Sample s = SampleTest.CreateSample(rayleigh, 8, i);
 
-                FitResult r = RayleighDistribution.FitToSample(s);
-                parameter.Add(r.Parameters[0]);
-                variance.Add(r.Covariance(0, 0));
+                RayleighFitResult r = RayleighDistribution.FitToSample(s);
+                parameter.Add(r.Scale.Value);
+                variance.Add(r.Parameters.VarianceOf("Scale"));
 
                 Assert.IsTrue(r.GoodnessOfFit.Probability > 0.01);
             }

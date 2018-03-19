@@ -256,7 +256,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void NonlinearRegressionTest () {
+        public void NonlinearRegressionLinearRegressionAgreementTest () {
 
             BivariateSample s = new BivariateSample();
             s.Add(1.0, 2.0);
@@ -265,10 +265,12 @@ namespace Test {
             s.Add(5.0, 4.0);
 
             LinearRegressionResult linearFit = s.LinearRegression();
-            FitResult nonlinearFit = s.NonlinearRegression(
-                (IList<double> c, double x) => c[0] + c[1] * x,
+            NonlinearRegressionResult nonlinearFit = s.NonlinearRegression(
+                (IReadOnlyList<double> c, double x) => c[0] + c[1] * x,
                 new double[] { 1.0, 1.0 } 
             );
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(linearFit.Parameters.Best, nonlinearFit.Parameters.Best, Math.Sqrt(TestUtilities.TargetPrecision)));
 
         }
 

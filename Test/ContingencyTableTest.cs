@@ -1,13 +1,68 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
+using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
 
 namespace Test {
 
     [TestClass]
     public class ContingencyTableTest {
+
+        [TestMethod]
+        public void ContingencyTableProbabilities () {
+
+            // Construct data where (i) there are both reference-nulls and nullable-struct-nulls,
+            // (ii) all values of one column are equally, (iii) values of other column depend on value of first column
+            List<string> groups = new List<string>(){ "A", "B", "C", null };
+            FrameTable data = new FrameTable(new ColumnDefinition<string>("Group"), new ColumnDefinition<bool?>("Outcome"));
+            int n = 512;
+            double pOutcomeNull = 0.05;
+            Func<int, double> pOutcome = groupIndex => 0.8 - 0.2 * groupIndex; 
+            Random rng = new Random(10101010);
+            for (int i = 0; i < n; i++) {
+                int groupIndex = rng.Next(0, groups.Count);
+                string group = groups[groupIndex];
+                bool? outcome = (rng.NextDouble() < pOutcome(groupIndex));
+                if (rng.NextDouble() < pOutcomeNull) outcome = null;
+                data.AddRow(group, outcome);
+            }
+
+            // Form a contingency table.
+            ContingencyTable<string, bool?> table = Bivariate.Crosstabs(data["Group"].As<string>(), data["Outcome"].As<bool?>());
+
+            // Total counts should match
+            Assert.IsTrue(table.Total == n);
+
+            // All values should be represented
+            foreach (string row in table.Rows) Assert.IsTrue(groups.Contains(row));
+
+            // Counts in each cell and marginal totals should match
+            foreach (string group in table.Rows) {
+                int rowTotal = 0;
+                foreach (bool? outcome in table.Columns) {
+                    FrameView view = data.Where(r => ((string) r["Group"] == group) && ((bool?) r["Outcome"] == outcome));
+                    Assert.IsTrue(table[group, outcome] == view.Rows.Count);
+                    rowTotal += view.Rows.Count;
+                }
+                Assert.IsTrue(rowTotal == table.RowTotal(group));
+            }
+
+            // Inferred probabilities should agree with model
+            Assert.IsTrue(table.ProbabilityOfColumn(null).ConfidenceInterval(0.99).ClosedContains(pOutcomeNull));
+            for (int groupIndex = 0; groupIndex < groups.Count; groupIndex++) {
+                string group = groups[groupIndex];
+                Assert.IsTrue(table.ProbabilityOfRow(group).ConfidenceInterval(0.99).ClosedContains(0.25));
+                Assert.IsTrue(table.ProbabilityOfColumnConditionalOnRow(true, group).ConfidenceInterval(0.99).ClosedContains(pOutcome(groupIndex) * (1.0 - pOutcomeNull)));
+            }
+            Assert.IsTrue(table.ProbabilityOfColumn(null).ConfidenceInterval(0.99).ClosedContains(pOutcomeNull));
+
+            // Pearson test should catch that rows and columns are corrleated
+            Assert.IsTrue(table.PearsonChiSquaredTest().Probability < 0.05);
+
+        }
 
         [TestMethod]
         public void ContingencyTableOperations () {

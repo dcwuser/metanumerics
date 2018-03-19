@@ -121,6 +121,29 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void HypergeometricDistributionSymmetry () {
+            foreach (int nPopulation in TestUtilities.GenerateIntegerValues(1, 1000, 4)) {
+                foreach (int nSuccess in TestUtilities.GenerateIntegerValues(1, nPopulation, 2)) {
+                    foreach (int nDraws in TestUtilities.GenerateIntegerValues(1, nPopulation, 2)) {
+                        HypergeometricDistribution d = new HypergeometricDistribution(nPopulation, nSuccess, nDraws);
+
+                        HypergeometricDistribution d1 = new HypergeometricDistribution(nPopulation, nPopulation - nSuccess, nDraws);
+                        HypergeometricDistribution d2 = new HypergeometricDistribution(nPopulation, nSuccess, nPopulation - nDraws);
+                        HypergeometricDistribution d3 = new HypergeometricDistribution(nPopulation, nDraws, nSuccess);
+
+                        int kMin = d.Support.LeftEndpoint;
+                        int kMax = d.Support.RightEndpoint;
+                        foreach (int k in TestUtilities.GenerateUniformIntegerValues(kMin, kMin, 4)) {
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(d.ProbabilityMass(k), d1.ProbabilityMass(nDraws - k)));
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(d.ProbabilityMass(k), d2.ProbabilityMass(nSuccess - k)));
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(d.ProbabilityMass(k), d3.ProbabilityMass(k)));
+                        }
+                    }
+                }
+            }
+        }
+
         /*
         [TestMethod]
         public void DiscreteContinuousAgreement () {
@@ -179,6 +202,8 @@ namespace Test {
         [TestMethod]
         public void DiscreteDistributionRandomValues () {
 
+            // Test of histogram to the distribution that created it should find compatibility.
+
             foreach (DiscreteDistribution distribution in distributions) {
 
                 int max = distribution.Support.RightEndpoint;
@@ -187,18 +212,32 @@ namespace Test {
                 } else {
                     max = (int) Math.Round(distribution.Mean + 2.0 * distribution.StandardDeviation);
                 }
-                Console.WriteLine("{0} {1}", distribution.GetType().Name, max);
 
                 Histogram h = new Histogram(max);
 
                 Random rng = new Random(314159265);
                 for (int i = 0; i < 1024; i++) h.Add(distribution.GetRandomValue(rng));
                 TestResult result = h.ChiSquaredTest(distribution);
-                Console.WriteLine("{0} {1}", result.Statistic, result.RightProbability);
-                Assert.IsTrue(result.RightProbability > 0.05);
+                Assert.IsTrue(result.Probability > 0.01);
 
             }
 
+        }
+
+        [TestMethod]
+        public void BernoulliDistributionFit ()
+        {
+            double p = 0.25;
+
+            int n0 = 0;
+            int n1 = 0;
+            Random rng = new Random(3);
+            for (int i = 0; i < 100; i++) {
+                if (rng.NextDouble() < p) { n1++; } else { n0++; }
+            }
+            BernoulliFitResult fit = BernoulliDistribution.FitToSample(n0, n1);
+            Assert.IsTrue(fit.P.ConfidenceInterval(0.95).ClosedContains(p));
+            Assert.IsTrue(fit.GoodnessOfFit.Probability > 0.05);
         }
 
         [TestMethod]

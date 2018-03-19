@@ -19,6 +19,8 @@ namespace Test {
         [TestMethod]
         public void TestMultivariateRegression () {
 
+            // Collect r^2 values from multivariate linear regressions.
+
             double cz = 1.0;
             double cx = 0.0;
             double cy = 0.0;
@@ -28,7 +30,7 @@ namespace Test {
             ContinuousDistribution yDistribution = new UniformDistribution(Interval.FromEndpoints(-8.0, 4.0));
             ContinuousDistribution eDistribution = new NormalDistribution();
 
-            Sample r2Sample = new Sample();
+            List<double> r2Sample = new List<double>();
 
             for (int i = 0; i < 500; i++) {
 
@@ -44,31 +46,21 @@ namespace Test {
                 double fcy = fit.Parameters.Best[1];
                 double fcz = fit.Parameters.Best[2];
 
-                double ss2 = 0.0;
-                double ss1 = 0.0;
-                foreach (double[] xyz in xyzSample) {
-                    ss2 += MoreMath.Sqr(xyz[2] - (fcx * xyz[0] + fcy * xyz[1] + fcz));
-                    ss1 += MoreMath.Sqr(xyz[2] - xyzSample.Column(2).Mean);
-                }
-                double r2 = 1.0 - ss2 / ss1;
-                r2Sample.Add(r2);
+                r2Sample.Add(fit.RSquared);
             }
 
-            Console.WriteLine("{0} {1} {2} {3} {4}", r2Sample.Count, r2Sample.PopulationMean, r2Sample.StandardDeviation, r2Sample.Minimum, r2Sample.Maximum);
-
+            // r^2 values should be distributed as expected.
             ContinuousDistribution r2Distribution = new BetaDistribution((3 - 1) / 2.0, (12 - 3) / 2.0);
-            //Distribution r2Distribution = new BetaDistribution((10 - 2) / 2.0, (2 - 1) / 2.0);
-            Console.WriteLine("{0} {1}", r2Distribution.Mean, r2Distribution.StandardDeviation);
 
             TestResult ks = r2Sample.KolmogorovSmirnovTest(r2Distribution);
-            Console.WriteLine(ks.RightProbability);
-            Console.WriteLine(ks.Probability);
-
+            Assert.IsTrue(ks.Probability > 0.05);
         }
 
 
         [TestMethod]
         public void TestBivariateRegression () {
+
+            // Do a bunch of linear regressions. r^2 should be distributed as expected.
 
             double a0 = 1.0;
             double b0 = 0.0;
@@ -77,7 +69,7 @@ namespace Test {
             ContinuousDistribution xDistribution = new UniformDistribution(Interval.FromEndpoints(-2.0, 4.0));
             ContinuousDistribution eDistribution = new NormalDistribution();
 
-            Sample r2Sample = new Sample();
+            List<double> r2Sample = new List<double>();
 
             for (int i = 0; i < 500; i++) {
 
@@ -91,26 +83,12 @@ namespace Test {
                 double a = fit.Intercept.Value;
                 double b = fit.Slope.Value;
 
-                double ss2 = 0.0;
-                double ss1 = 0.0;
-                foreach (XY xy in xySample) {
-                    ss2 += MoreMath.Sqr(xy.Y - (a + b * xy.X));
-                    ss1 += MoreMath.Sqr(xy.Y - xySample.Y.Mean);
-                }
-                double r2 = fit.RSquared;
-                r2Sample.Add(r2);
+                r2Sample.Add(fit.RSquared);
             }
 
-            Console.WriteLine("{0} {1} {2} {3} {4}", r2Sample.Count, r2Sample.PopulationMean, r2Sample.StandardDeviation, r2Sample.Minimum, r2Sample.Maximum);
-
             ContinuousDistribution r2Distribution = new BetaDistribution((2 - 1) / 2.0, (10 - 2) / 2.0);
-            //Distribution r2Distribution = new BetaDistribution((10 - 2) / 2.0, (2 - 1) / 2.0);
-            Console.WriteLine("{0} {1}", r2Distribution.Mean, r2Distribution.StandardDeviation);
-
             TestResult ks = r2Sample.KolmogorovSmirnovTest(r2Distribution);
-            Console.WriteLine(ks.RightProbability);
-            Console.WriteLine(ks.Probability);
-
+            Assert.IsTrue(ks.Probability > 0.05);
         }
 
         [TestMethod]

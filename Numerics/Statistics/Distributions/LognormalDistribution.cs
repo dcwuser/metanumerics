@@ -273,22 +273,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
-        public static LognormalFitResult FitToSample (IReadOnlyList<double> sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 3) throw new InsufficientDataException();
-
-            // Writing out the log likelihood from p(x), taking its derivatives wrt mu and sigma, and setting them equal
-            // to zero to find the minimizing values, you find that the results of the normal fit are reproduced exactly
-            // with x -> log x, i.e. \mu = < \log x >, \sigma^2 = < (\log x - \mu)^2 >. So we just repeat the normal fit
-            // logic with x -> log x.
-
-            double m, dm, s, ds;
-            NormalDistribution.FitToSampleInternal(sample.Select(x => Math.Log(x)), out m, out dm, out s, out ds);
-
-            LognormalDistribution distribution = new LognormalDistribution(m, s);
-            TestResult test = sample.KolmogorovSmirnovTest(distribution);
-            return (new LognormalFitResult(new UncertainValue(m, dm), new UncertainValue(s, ds), distribution, test));
-
+        public static LognormalFitResult FitToSample (Sample sample) {
+            return (Univariate.FitToLognormal(sample.data));
         }
 
     }

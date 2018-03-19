@@ -15,14 +15,14 @@ namespace Meta.Numerics {
     public static class MoreMath {
 
         /// <summary>
-        /// Rasises an argument to an integer power.
+        /// Raises an argument to an integer power.
         /// </summary>
         /// <param name="x">The argument.</param>
         /// <param name="n">The power.</param>
         /// <returns>The value of x<sup>n</sup>.</returns>
         /// <remarks>
         /// <para>Low integer powers can be computed by optimized algorithms much faster than the general
-        /// alrogithm for an arbitrary real power employed by <see cref="System.Math.Pow"/>.</para>
+        /// algorithm for an arbitrary real power employed by <see cref="System.Math.Pow"/>.</para>
         /// </remarks>
         public static double Pow (double x, int n) {
 
@@ -98,12 +98,6 @@ namespace Meta.Numerics {
 
         }
 
-        // an internal method for squaring
-
-        internal static double Pow2 (double x) {
-            return (x * x);
-        }
-
         /// <summary>
         /// Computes the length of a right triangle's hypotenuse.
         /// </summary>
@@ -145,9 +139,9 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The value of e<sup>x</sup>-1.</returns>
         /// <remarks>
-        /// <para>If x is close to 0, then e<sup>x</sup> is close to 1, and computing e<sup>x</sup>-1 by by subtracting one from
-        /// e<sup>x</sup> as computed by the <see cref="Math.Exp"/> function will be subject to severe loss of significance due to
-        /// cancelation. This method maintains full precision for all values of x by switching to a series expansion for values of
+        /// <para>If x is close to 0, then e<sup>x</sup> is close to 1, and computing e<sup>x</sup>-1 by <pre>Math.Exp(x) - 1.0</pre>
+        /// will be subject to severe loss of significance due to cancelation.
+        /// This method maintains full precision for all values of x by switching to a series expansion for values of
         /// x near zero.</para>
         /// </remarks>
         public static double ExpMinusOne (double x) {
@@ -196,7 +190,7 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The value of log(1+x).</returns>
         /// <remarks>
-        /// <para>If x is close to 0, computing log(1+x) by first adding one and then taking the log can result in a loss of accuracy.
+        /// <para>If x is close to 0, computing log(1+x) by <pre>Math.Log(1.0 + x)</pre> can result in a significant loss of accuracy.
         /// This function maintains full precision of all values of x by switching to a series expansion for values of x near zero.</para>
         /// </remarks>
         public static double LogOnePlus (double x) {
@@ -243,9 +237,9 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The square of the argument.</returns>
         /// <remarks>
-        /// <para>There is nothing numericaly sophisticated inside this function; it exists simply for programmers' convenience. Given a complicated expression
+        /// <para>There is nothing numerically sophisticated inside this function; it exists simply for programmers' convenience. Given a complicated expression
         /// that needs to be squared, it is nice to be able to wrap it in a simple call to this function instead of explicitly assigning its value to a new variable and then,
-        /// in a seperate statement, multiplying that variable by itself. Even if you are hyper-vigilant about function call overhead, you should not worry
+        /// in a separate statement, multiplying that variable by itself. Even if you are hyper-vigilant about function call overhead, you should not worry
         /// about using this function, because even the most basic optimizing compiler will optimize away the call.</para>
         /// </remarks>
         public static double Sqr (double x) {
@@ -256,7 +250,8 @@ namespace Meta.Numerics {
         /// The conversion factor from degrees to radians.
         /// </summary>
         /// <remarks>
-        /// <para>This conversion factor makes it easier to compute trigonometric functions if arguments in degrees.
+        /// <para>This conversion factor makes it easier to compute trigonometric functions if arguments are
+        /// given in degrees.
         /// Since trigonometric methods such as <see cref="Math.Sin"/> and <see cref="MoreMath.Cos"/> take arguments
         /// in dimensionless radians, you must convert a degree input to radians before passing it into one of these
         /// functions. This field makes it easy to do so via a simple and visually mnemonic multiplication. If x is
@@ -270,28 +265,29 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The value of sin(x).</returns>
         /// <remarks>
-        /// <para>This method addresses several subtle shortcommings of the <see cref="System.Math.Sin" /> method.
+        /// <para>This method addresses several subtle shortcomings of the <see cref="System.Math.Sin" /> method.
         /// One shortcoming, quite striking but rarely encountered, is that <see cref="Math.Sin"/> returns entirely wrong results very large
         /// arguments -- for x larger than about 10<sup>20</sup>, it simply returns the argument as the function value!
         /// (I have no idea
         /// why the base class library designers did not at least choose to return <see cref="Double.NaN"/>, so as to signal to the caller
         /// that the result should not be trusted. No floating point standard specifies this crazy behavior.)
-        /// Another shortcomming, more commonly encountered but often unnoticed, is that for large but not necessarily very large arguments,
+        /// Another shortcoming, more commonly encountered but often unnoticed, is that for large but not necessarily very large arguments,
         /// function values loose precision, particularly near zeros of the function.</para>
         /// <para>
-        /// One way to view these shortcommings is that they are justified by the uncertainty inherent in floating point representations. In this
+        /// One way to view these shortcomings is that they are justified by the uncertainty inherent in floating point representations. In this
         /// view, any <see cref="System.Double"/> should be seen as an uncertain value with a relative error of ~10<sup>-16</sup>. If the
-        /// number is very large, then the absolute size of this error can be as large or larger than 2&#x3C0;; in this circumstance we should not
+        /// argument is large enough, then the absolute size of this error can be as large or larger than 2&#x3C0;; in this circumstance we should not
         /// expect to be able to say anything about the value (except, of course, that it is between -1 and +1, which is violated by the designers' crazy
-        /// choice to return the argument as the value). Even if the absolute error is just a non-negligable faction of 2&#x3C0;, there is a non-neglible fraction
+        /// choice to return the argument as the value). Even if the absolute error is just a non-negligible faction of 2&#x3C0;, there is a non-negligible fraction
         /// of the values between -1 and +1 in the corresponding range of function values; any of these values is as possible as any other as a value
         /// for the sine of our uncertain argument, so we should be satisfied with any returned value in this non-negligible range.
         /// </para>
-        /// <para>A different view is that it is better regard every representable floating point value as some exact rational number, and
-        /// when computing functions of floating point numbers, to always strive to return the representable floating point value nearest
-        /// to the actual function of that exact rational.
+        /// <para>A different view is that it is better to regard every representable floating point value as some exact rational number, and
+        /// when computing functions of floating point numbers, we should strive to return the representable floating point value nearest
+        /// to the actual function value for that exact rational.
         /// Callers are unlikely to complain if we are careful in this regard, and this behavior is particularly
-        /// useful when the argument is an intermediate result that the programmer may not even realize has become large.</para>
+        /// useful when the argument is an intermediate result that the programmer may not even realize has become large.
+        /// Thus is the view that we adopt, and therefore we provide this improved trigonometric function.</para>
         /// <para>For typical arguments, say between -10<sup>4</sup> and 10<sup>4</sup>, the extra cost of calling this function instead of
         /// <see cref="Math.Sin"/> is just a couple of comparisons and a single floating point operation; less than 0.1% of
         /// arguments in this range are then routed to our much slower, high-accuracy algorithm. We therefore suggest that,
@@ -330,7 +326,7 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The value of sin(x).</returns>
         /// <remarks>
-        /// <para>For an explanaition of this method, see the remarks for the <see cref="MoreMath.Sin"/> method.</para>
+        /// <para>For an explanation of this method, see the remarks for the <see cref="MoreMath.Sin"/> method.</para>
         /// </remarks>
         public static double Cos (double x) {
 
@@ -444,7 +440,7 @@ namespace Meta.Numerics {
 
         // Next comes arithmetic. All we need is multiplication.
 
-        // The binary represenation of 2/\pi. We will use this to find z = (2\pi) x.
+        // The binary representation of 2/\pi. We will use this to find z = (2\pi) x.
 
         // The largest double value is 2^1024 = 1.7E308. Since we need to get around
         // 54 bits after the decimal point in order to get full precision, we need
@@ -511,7 +507,7 @@ namespace Meta.Numerics {
 
         // This is the Dekker multiplication algorithm.
 
-        // Multiply x by y. x is a double split into high and low parts xHi and xLo. y is a high-accuracy float whoose
+        // Multiply x by y. x is a double split into high and low parts xHi and xLo. y is a high-accuracy float whose
         // parts are stored in yParts. The output is z0 + z1, where z0 is an integer and -0.5 < z1 < 0.5.
 
         public static void Multiply (double xHi, double xLo, double[] yParts, out long z0, out double z1) {

@@ -220,9 +220,9 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <seealso cref="StandardDeviation"/>
         /// <seealso cref="PopulationStandardDeviation"/>
-        /// <seealso cref="https://en.wikipedia.org/wiki/Bessel%27s_correction"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Bessel%27s_correction"/>
         /// <seealso href="https://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation"/>
-        /// <seealso cref="https://en.wikipedia.org/wiki/Bias_of_an_estimator"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Bias_of_an_estimator"/>
         public static double CorrectedStandardDeviation (IReadOnlyCollection<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) return (Double.NaN);

@@ -37,7 +37,7 @@ namespace Meta.Numerics.Analysis {
             //double[] F = f(x);
             if (F.Dimension != d) throw new DimensionMismatchException();
             SquareMatrix B = ApproximateJacobian(f, x0);
-            double g = MoreMath.Pow2(F.Norm());
+            double g = MoreMath.Sqr(F.Norm());
             //double g = Blas1.dDot(F, 0, 1, F, 0, 1, d);
 
             for (int n = 0; n < Global.SeriesMax; n++) {
@@ -53,7 +53,7 @@ namespace Meta.Numerics.Analysis {
                 // determine how far we will move along the Newton step
                 ColumnVector x1 = x + dx;
                 ColumnVector F1 = new ColumnVector(f(x1));
-                double g1 = MoreMath.Pow2(F1.Norm());
+                double g1 = MoreMath.Sqr(F1.Norm());
 
                 // check whether the Newton step decreases the function vector magnitude
                 // NR suggest that it's necessary to ensure that it decrease by a certain amount, but I have yet to see that make a diference
@@ -68,7 +68,7 @@ namespace Meta.Numerics.Analysis {
                     dx = z * dx;
                     x1 = x + dx;
                     F1 = new ColumnVector(f(x1.ToArray()));
-                    g1 = MoreMath.Pow2(F1.Norm());
+                    g1 = MoreMath.Sqr(F1.Norm());
                     // NR suggest that this be repeated, but I have yet to see that make a difference
                 }
 

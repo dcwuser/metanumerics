@@ -191,33 +191,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than two values.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
-        public static ExponentialFitResult FitToSample (IReadOnlyList<double> sample) {
-
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 2) throw new InsufficientDataException();
-
-            // None of the data is allowed to be negative.
-            foreach (double value in sample) {
-                if (value < 0.0) throw new InvalidOperationException();
-            }
-
-            // It's easy to show that the MLE estimator of \mu is the sample mean and that its variance 
-            // is \mu^2 / n, which is just the the variance of the mean, since the variance of the individual
-            // values is \mu^2.
-
-            // We can do better than an asymptotic result, though. Since we know that the sum
-            // of exponential-distributed values is Gamma-distributed, we know the exact
-            // distribution of the mean is Gamma(n, \mu / n). This has mean \mu and variance
-            // \mu^2 / n, so the asymptotic results are actually exact.
-
-            double lambda = sample.Mean();
-            double dLambda = lambda / Math.Sqrt(sample.Count);
-
-            ContinuousDistribution distribution = new ExponentialDistribution(lambda);
-            TestResult test = sample.KolmogorovSmirnovTest(distribution);
-
-            return (new ExponentialFitResult(new UncertainValue(lambda, dLambda), test));
-
+        public static ExponentialFitResult FitToSample (Sample sample) {
+            return (Univariate.FitToExponential(sample.data));
         }
 
     }

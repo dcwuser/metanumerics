@@ -14,36 +14,40 @@ namespace Meta.Numerics.Data
     /// <summary>
     /// A modify-able array of data.
     /// </summary>
-    public sealed partial class FrameTable : FrameView
-    {
-        private FrameTable () : base(new List<NamedList>(), new List<int>())
-        {
+    /// <remarks>
+    /// <para>This is the central class for storing data in our data frame system.</para>
+    /// <para>Use the <see cref="FromCsv"/> method to create a frame table from a comma-separated values
+    /// file or the <see cref="FromDictionaries"/> method to create a frame table from JSON or another
+    /// collection-of-dictionaries representation. Or create one programmatically by supplying the
+    /// <see cref="FrameTable(ColumnDefinition[])"/> constructor with a set of column definitions.</para>
+    /// <para>You can add, remove, or insert rows or columns using the methods of this class.</para>
+    /// <para>Using the methods of the <see cref="FrameView"/> class, you can filter, re-order,
+    /// manipulate, and analyze data without incurring the space or time costs of copying the stored data.</para>
+    /// </remarks>
+    public sealed partial class FrameTable : FrameView {
+
+        private FrameTable () : base(new List<NamedList>(), new List<int>()) {
 
         }
 
         /// <summary>
         /// Initializes a new data frame with the columns specified by the given headers.
         /// </summary>
-        /// <param name="columnHeaders"></param>
-        public FrameTable(params ColumnDefinition[] columnHeaders) : this()
-        {
-            if (columnHeaders == null) throw new ArgumentNullException(nameof(columnHeaders));
-            foreach(ColumnDefinition header in columnHeaders)
-            {
-                AddColumn(header.CreateList(this));
+        /// <param name="columnDefinitions">The definitions of the columns.</param>
+        public FrameTable(params ColumnDefinition[] columnDefinitions) : this() {
+            if (columnDefinitions == null) throw new ArgumentNullException(nameof(columnDefinitions));
+            foreach(ColumnDefinition columnDefinition in columnDefinitions) {
+                AddColumn(columnDefinition.CreateList(this));
             }
         }
 
-        internal FrameTable(params NamedList[] columns) : this((IEnumerable<NamedList>) columns)
-        {
+        internal FrameTable(params NamedList[] columns) : this((IEnumerable<NamedList>) columns) {
 
         }
 
-        internal FrameTable(IEnumerable<NamedList> columns) : this()
-        {
+        internal FrameTable(IEnumerable<NamedList> columns) : this() {
             if (columns == null) throw new ArgumentNullException(nameof(columns));
-            foreach (NamedList column in columns)
-            {
+            foreach (NamedList column in columns) {
                 AddColumn(column);
             }
         }
@@ -169,8 +173,7 @@ namespace Meta.Numerics.Data
         /// Removes the column with the given index from the data frame.
         /// </summary>
         /// <param name="columnName">The name of the column to remove.</param>
-        public void RemoveColumn (string columnName)
-        {
+        public void RemoveColumn (string columnName) {
             if (columnName == null) throw new ArgumentNullException(nameof(columnName));
             int columnIndex = GetColumnIndex(columnName);
             this.columns.RemoveAt(columnIndex);
@@ -188,8 +191,7 @@ namespace Meta.Numerics.Data
         /// Add a new row of data to the data frame.
         /// </summary>
         /// <param name="values">The values to add to each column.</param>
-        public void AddRow(params object[] values)
-        {
+        public void AddRow(params object[] values) {
             AddRow((IReadOnlyList<object>) values);
         }
         
@@ -198,6 +200,11 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <typeparam name="T">The type of the data collection.</typeparam>
         /// <param name="values">The values to add to each column.</param>
+        /// <remarks>
+        /// <para>Use this overload when the data types are uniform across all columns.</para>
+        /// </remarks>
+        /// <exception cref="DimensionMismatchException">The number of items in <paramref name="values"/>
+        /// not equal the number of columns in the table.</exception>
         public void AddRow<T>(IReadOnlyList<T> values) {
             if (values == null) throw new ArgumentNullException(nameof(values));
             if (values.Count != columns.Count) throw new DimensionMismatchException();
@@ -213,9 +220,8 @@ namespace Meta.Numerics.Data
         /// <summary>
         /// Adds a new row of data to the data frame.
         /// </summary>
-        /// <param name="values"></param>
-        public void AddRow(IReadOnlyDictionary<string, object> values)
-        {
+        /// <param name="values">A dictionary that maps the existing column names to the cell values for the new row.</param>
+        public void AddRow(IReadOnlyDictionary<string, object> values) {
             if (values == null) throw new ArgumentNullException(nameof(values));
             int rowCount = map.Count;
             for (int columnIndex = 0; columnIndex < columns.Count; columnIndex++)
@@ -244,13 +250,17 @@ namespace Meta.Numerics.Data
             }
             map.Clear();
         }
-        
+
         /// <summary>
-        /// Creates a new data frame by reading values from a file of comma-seperated values.
+        /// Creates a new frame table from a file of comma-separated values.
         /// </summary>
-        /// <param name="reader"></param>
+        /// <param name="reader">A reader positioned at the beginning of the file.</param>
         /// <returns>A new data frame with data from the file.</returns>
-        /// <remarks>The column names are taken from the first line of the file.</remarks>
+        /// <remarks>
+        /// <para>The column names are taken from the first line of the file.</para>
+        /// <para>The storage type of each column is inferred from the types of objects
+        /// encountered are the frame table is constructed.</para>
+        /// </remarks>
         public static FrameTable FromCsv (TextReader reader) {
             if (reader == null) throw new ArgumentNullException(nameof(reader));
 

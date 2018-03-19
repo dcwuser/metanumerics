@@ -27,8 +27,18 @@ namespace Meta.Numerics.Data
 
 
     /// <summary>
-    /// A read-only view of a table of data.
+    /// A read-only view of an array of data.
     /// </summary>
+    /// <remarks>
+    /// <para>This is the central class for read-only views of data in our data frame system.</para>
+    /// <para>The methods of this class allow rows and columns of data to be re-ordered, filtered,
+    /// manipulated, and analyzed. Most of the methods produce a new FrameView that presents a new
+    /// view of the underlying data without incurring the time and space costs of copying the underlying
+    /// stored data.</para>
+    /// <para>To create the original array of data that will be manipulated, use the <see cref="FrameTable"/>
+    /// class. Note that, because the underlying data is not copied when a new view is generated, changes
+    /// to the original table may not be reflected in the views that have been generated from it.</para>
+    /// </remarks>
     public class FrameView {
 
         internal FrameView(List<NamedList> columns, List<int> map) {

@@ -257,7 +257,7 @@ namespace Meta.Numerics.Statistics {
 
             }
 
-            // To deal with v negative (or unrealisticaly small), don't let it
+            // To deal with v negative (or unrealistically small), don't let it
             // get smaller than the first truncated term. This is a very
             // ad hoc solution; we should try to do better.
 
@@ -266,6 +266,127 @@ namespace Meta.Numerics.Statistics {
                 v = vMin;
             }
 
+        }
+
+        /// <summary>
+        /// Fits an AR(1) model to the time series.
+        /// </summary>
+        /// <returns>The fit with parameters lag-1 coefficient, mean, and standard deviation.</returns>
+        public static AR1FitResult FitToAR1 (this IReadOnlyList<double> series) {
+
+            if (series == null) throw new ArgumentNullException(nameof(series));
+
+            // AR1 model is
+            //   (x_t - \mu) = \alpha (x_{t-1} - \mu) + u_{t}
+            // where u_{t} \sim N(0, \sigma) are IID
+
+            // It's easy to show
+            //   m = E(x_t) = \mu
+            //   c_0 = V(x_t) = E((x_t - m)^2) = \frac{\sigma^2}{1 - \alpha^2}
+            //   c_1 = V(x_t, x_t-1) = E((x_t - m)(x_{t-1} - m)) = \alpha c_0
+            // which gives a way to get parameters via the method of moments. In particular,
+            //   \alpha = c_1 / c_0
+
+            // For maximum likelihood estimation (MLE), we need
+            //   \log L = -\frac{1}{2} \sum_i \left[ \log (2 \pi \sigma^2)
+            //            + \left[\frac{(x_i - \mu) - \alpha (x_{i-1} - \mu)}{\sigma}\right]^2
+
+            // Treatment of the 1st value a bit subtle. We could treat it as normally distributed as
+            // per m and c_0, but then it enters differently than all other values, which significantly
+            // complicates the equations. Or we could regard it as given and compute log likelihood
+            // conditional on it; then all values enter in the same way, but sum begins with the second
+            // value. We do the latter, which is called the "conditional MLE" in the literature.
+
+            // Differentiating once
+            //   \frac{\partial L}{\partial \alpha} = \frac{1}{\sigma^2} \sum_i ( x_i - \mu - \alpha x_{i-1} ) x_{i-1}
+            //   \frac{\partial L}{\partial \mu} = \frac{1}{\sigma^2} \sum_i ( x_i - \mu - \alpha x_{i-1} )
+            //   \frac{\partial L}{\partial \sigma} = \sum_i \left[ \frac{(x_i - \mu - \alpha x_{i-1})^2}{\sigma^3} - \frac{1}{\sigma} \right]
+            // Set equal to zero to get equations for \mu, \alpha, \sigma. The first two give a 2X2 system
+            // that can be solved for \mu and \alpha. The third equation just says
+            //   \sum_i (x_i - \mu - \alpha x_{i-1})^2 = \sum_i \sigma^2
+            // that \sigma is the rms of residuals. If we play a little fast and loose with index ranges
+            // (e.g. ignoring difference between quantities computed over first n-1 and last n-1 values),
+            // then the other two give the same results as from the method of moments.
+
+            // Differentiating twice
+            //   \frac{\partial^2 L}{\partial \alpha^2} = \frac{-1}{\sigma^2} \sum_i x_{i-1} x_{i-1} = \frac{-n (c_0 + m^2)}{\sigma^2}
+            //   \frac{\partial^2 L}{\partial \mu^2} = \frac{-1}{\sigma^2} \sum_i 1 = \frac{-n}{\sigma^2}
+            //   \frac{\partial^2 L}{\partial \sigma^2} = \frac{-2 n}{\sigma^2}
+            //  Mixed derivatives all vanish because of the first derivative conditions.
+
+            int n = series.Count;
+            if (n < 4) throw new InsufficientDataException();
+
+            // compute mean, variance, lag-1 autocorrelation
+
+            double m = series.Mean();
+
+            double c0 = 0.0;
+            for (int i = 1; i < n; i++) {
+                c0 += MoreMath.Sqr(series[i] - m);
+            }
+
+            double c1 = 0.0;
+            for (int i = 1; i < n; i++) {
+                c1 += (series[i] - m) * (series[i - 1] - m);
+            }
+
+            double alpha = c1 / c0;
+            Debug.Assert(Math.Abs(alpha) <= 1.0);
+
+            // This expression for alpha is guaranteed to be asymptotically unbiased by MLE,
+            // but it is known to be biased at finite n, and in fact the bias is known.
+
+            // See http://www.alexchinco.com/bias-in-time-series-regressions/ for simulations and explanation.
+            // He cites Kendall, "Note on Bias in the Estimation of Autocorrelation", Biometrika (1954) 41 (3-4) 403-404
+
+            // See Shaman and Stine, "The Bias of Autogregressive Coefficient Estimators",
+            // Journal of the American Statistical Association (1988) Vol. 83, No. 403, pp. 842-848
+            // (http://www-stat.wharton.upenn.edu/~steele/Courses/956/Resource/YWSourceFiles/ShamanStine88.pdf)
+            // for derivation and formulas for AR(1)-AR(6).
+
+            // For AR(1), MLE systematically underestimates alpha:
+            //   E(\hat{\alpha}) = \alpha - \frac{1 + 3 \alpha}{n}
+            // I have confirmed the accuracy of this formula via my own simulations.
+            // One problem with trying to correct for this is that it can push alpha over one,
+            // which is not only impossible but produces negative variance estimates.
+            // So we don't accept such large alphas.
+            alpha = Math.Min(alpha + (1.0 + 3.0 * alpha) / n, 1.0);
+            Debug.Assert(alpha <= 1.0);
+
+            double sigma2 = 0.0;
+            List<double> residuals = new List<double>(n);
+            for (int i = 1; i < n; i++) {
+                double r = (series[i] - m) - alpha * (series[i - 1] - m);
+                residuals.Add(r);
+                sigma2 += MoreMath.Sqr(r);
+            }
+            sigma2 = sigma2 / (n - 3);
+
+            // Solution to MLE says denominator is n-1, but (i) Fuller says to use n-3,
+            // (ii) simulations show n-3 is a better estimate, (iii) n-3 makes intuitive
+            // sense because there are 3 parameters. I would prefer a more rigorous
+            // argument, but that's good enough for now.
+
+            // The formulas for the variances of alpha and sigma follow straightforwardly from
+            // the second derivatives of the likelihood function. For the variance of the mean
+            // we use the exact formula with the \gamma_k for an AR(1) model with the fitted
+            // alpha. After quite a bit of manipulation, that is
+            //   v = \frac{\sigma^2}{(1-\alpha)^2} \left[ 1 -
+            //         \frac{2\alpha}{n} \frac{1 - \alpha^n}{1 - \alpha^2} \right]
+            // which gives a finite-n correction to the MLE result. Near \alpha \approx \pm 1,
+            // we should use a series expansion to preserve accuracy.
+
+            double varAlpha = (1.0 - alpha * alpha) / n;
+            double varMu = sigma2 / MoreMath.Sqr(1.0 - alpha) * (1.0 - 2.0 * alpha * (1.0 - MoreMath.Pow(alpha, n)) / (1.0 - alpha * alpha) / n) / n;
+            double varSigma = sigma2 / 2.0 / n;
+
+            return (new AR1FitResult(
+                new UncertainValue(m, Math.Sqrt(varMu)),
+                new UncertainValue(alpha, Math.Sqrt(varAlpha)),
+                new UncertainValue(Math.Sqrt(sigma2), Math.Sqrt(varSigma)),
+                residuals
+            ));
         }
 
         /// <summary>
@@ -291,7 +412,7 @@ namespace Meta.Numerics.Statistics {
             //   \mu = m
             //   \sigma^2 = \frac{c_0}{1 + \beta^2}
             // It turns out these are very poor (high bias, high variance) estimators,
-            // but they illustrate a basic requirement that g_1 < 1/2.
+            // but they do illustrate the basic requirement that g_1 < 1/2.
 
             // The MLE estimator 
 
@@ -317,7 +438,7 @@ namespace Meta.Numerics.Statistics {
             double sigma2 = minimum.Value / (n - 3);
 
             // While there is significant evidence that the MLE value for \beta is biased
-            // for small-n, I know of no anlytic correction.
+            // for small-n, I know of no analytic correction.
 
             //double[] parameters = new double[] { beta, m, Math.Sqrt(sigma2) };
 
@@ -325,36 +446,29 @@ namespace Meta.Numerics.Statistics {
             // result by plugging the values for \gamma_0 and \gamma_1 into the
             // exact formula.
 
-            SymmetricMatrix covariances = new SymmetricMatrix(3);
+            double varBeta;
             if (minimum.Curvature > 0.0) {
-                covariances[0, 0] = sigma2 / minimum.Curvature;
+                varBeta = sigma2 / minimum.Curvature;
             } else {
-                covariances[0, 0] = MoreMath.Sqr(1.0 - beta * beta) / n;
+                varBeta = MoreMath.Sqr(1.0 - beta * beta) / n;
             }
-            covariances[1, 1] = sigma2 * (MoreMath.Sqr(1.0 + beta) - 2.0 * beta / n) / n;
-            covariances[2, 2] = sigma2 / 2.0 / n;
+            double varMu = sigma2 * (MoreMath.Sqr(1.0 + beta) - 2.0 * beta / n) / n;
+            double varSigma = sigma2 / 2.0 / n;
 
-            TimeSeries residuals = new TimeSeries();
+            List<double> residuals = new List<double>(n);
             double u1 = 0.0;
-            for (int i = 0; i < series.Count; i++) {
+            for (int i = 0; i < n; i++) {
                 double u0 = series[i] - m - beta * u1;
                 residuals.Add(u0);
                 u1 = u0;
             };
-            TestResult test = residuals.LjungBoxTest();
 
-            //FitResult result = new FitResult(
-            //    parameters, covariances, test
-            //);
-
-            ParameterCollection parameters = new ParameterCollection(
-                new string[] { "Beta", "Mean", "Sigma"},
-                new ColumnVector(beta, m, Math.Sqrt(sigma2)),
-                covariances
-            );
-
-            return (new MA1FitResult(parameters));
-
+            return (new MA1FitResult(
+                new UncertainValue(m, Math.Sqrt(varMu)),
+                new UncertainValue(beta, Math.Sqrt(varBeta)),
+                new UncertainValue(Math.Sqrt(sigma2), Math.Sqrt(varSigma)),
+                residuals
+           ));
         }
         /*
         /// <summary>
@@ -519,32 +633,4 @@ namespace Meta.Numerics.Statistics {
 
     }
 
-    /// <summary>
-    /// Represents the result of the fit of time series data to an MA(1) model.
-    /// </summary>
-    public sealed class MA1FitResult : BaseFitResult {
-
-        internal MA1FitResult (ParameterCollection parameters) : base(parameters, Double.NaN) {
-
-        }
-
-        /// <summary>
-        /// Gets an estimate of the beta coefficient of the model.
-        /// </summary>
-        public UncertainValue Beta {
-            get {
-                return (Parameters[0].Estimate);
-            }
-        }
-
-        /// <summary>
-        /// Gets an estimate of the mean parameter of the model.
-        /// </summary>
-        public UncertainValue Mean {
-            get {
-                return (Parameters[1].Estimate);
-            }
-        }
-
-    }
 }

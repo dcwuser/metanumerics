@@ -5,8 +5,7 @@ using System.Collections.Generic;
 using System.Data;
 #endif
 using System.Diagnostics;
-using System.Globalization;
-using System.Text;
+using System.Linq;
 
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
@@ -231,9 +230,9 @@ namespace Meta.Numerics.Statistics {
     /// tests to compare the sample distribution to other sample distributions or theoretical models.</para>
     /// </remarks>
     public sealed class Sample : ICollection<double>, IReadOnlyCollection<double>, IEnumerable<double>, IEnumerable,
-        IReadOnlyList<double>, INamed {
+        INamed {
 
-        private SampleStorage data;
+        internal SampleStorage data;
 
         // isReadOnly is true for samples returned as columns of larger data sets
         // values cannot be added to or deleted from such samples because that would
@@ -476,7 +475,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <seealso cref="StandardDeviation"/>
         /// <seealso cref="PopulationStandardDeviation"/>
-        /// <seealso cref="https://en.wikipedia.org/wiki/Bessel%27s_correction"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Bessel%27s_correction"/>
         /// <seealso href="https://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation"/>
         public double CorrectedStandardDeviation {
             get {
@@ -1021,7 +1020,12 @@ namespace Meta.Numerics.Statistics {
         /// <para>For detailed information, see <see cref="KruskalWallisTest(Sample[])"/>.</para>
         /// </remarks>
         public static TestResult KruskalWallisTest (IReadOnlyList<Sample> samples) {
-            return (Univariate.KruskalWallisTest(samples));
+            if (samples == null) throw new ArgumentNullException(nameof(samples));
+            List<IReadOnlyList<double>> data = new List<IReadOnlyList<double>>(samples.Count);
+            foreach(Sample sample in samples) {
+                data.Add(sample.data);
+            }
+            return (Univariate.KruskalWallisTest(data));
         }
 
         /// <summary>
@@ -1134,12 +1138,6 @@ namespace Meta.Numerics.Statistics {
         void ICollection<double>.CopyTo (double[] array, int start) {
             if (array == null) throw new ArgumentNullException(nameof(array));
             data.CopyTo(array, start);
-        }
-
-        double IReadOnlyList<double>.this [int index] {
-            get {
-                return (data[index]);
-            }
         }
 
         /// <summary>

@@ -9,7 +9,7 @@ namespace Meta.Numerics.Data
     /// <summary>
     /// A collection of rows from a frame.
     /// </summary>
-    public sealed class FrameRowCollection : IReadOnlyCollection<FrameRow>, IReadOnlyList<FrameRow> {
+    public sealed class FrameRowCollection : IReadOnlyCollection<FrameRow>, IReadOnlyList<FrameRow>, IEnumerable<FrameRow> {
 
         internal FrameRowCollection (FrameView frame) {
             Debug.Assert(frame != null);
@@ -39,10 +39,10 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
-        /// Returns an enumerator through the rows.
+        /// Returns an enumerator that iterates through the rows.
         /// </summary>
-        /// <returns></returns>
-        public IEnumerator<FrameRow> GetEnumerator () {
+        /// <returns>The requested enumerator.</returns>
+        IEnumerator<FrameRow> IEnumerable<FrameRow>.GetEnumerator () {
             for (int i = 0; i < frame.map.Count; i++) {
                 yield return (new FrameRow(frame, i));
             }

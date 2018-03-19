@@ -87,7 +87,6 @@ namespace Meta.Numerics {
         /// <param name="v2">The second uncertain value.</param>
         /// <returns><see langword="true"/> if the two uncertain values are equal, otherwise <see langword="false"/>.</returns>
         public static bool operator == (UncertainValue v1, UncertainValue v2) {
-            // dont' need to check for nulls because UncertainValue is a structure
             return ((v1.Value == v2.Value) && (v1.Uncertainty == v2.Uncertainty));
         }
 
@@ -225,7 +224,7 @@ namespace Meta.Numerics {
         /// Subtracts an uncertain value from a certain value.
         /// </summary>
         /// <param name="v1">The certain value.</param>
-        /// <param name="u2">The uncertain vlaue.</param>
+        /// <param name="u2">The uncertain value.</param>
         /// <returns>The difference between the two values.</returns>
         public static UncertainValue operator- (double v1, UncertainValue u2) {
             return (new UncertainValue(v1 - u2.Value, u2.Uncertainty));

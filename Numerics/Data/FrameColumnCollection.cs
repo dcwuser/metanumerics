@@ -9,7 +9,7 @@ namespace Meta.Numerics.Data
     /// <summary>
     /// A collection of data frame columns.
     /// </summary>
-    public sealed class FrameColumnCollection : IReadOnlyCollection<FrameColumn>, IReadOnlyList<FrameColumn>, IReadOnlyDictionary<string,FrameColumn>
+    public sealed class FrameColumnCollection : IReadOnlyCollection<FrameColumn>, IReadOnlyList<FrameColumn>, IEnumerable<FrameColumn> /*, IReadOnlyDictionary<string,FrameColumn> */
     {
         internal FrameColumnCollection(FrameView frame)
         {
@@ -62,10 +62,10 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
-        /// Gets an iterator that enumerates through the columns.
+        /// Gets an enumerator that iterates through the columns.
         /// </summary>
-        /// <returns></returns>
-        public IEnumerator<FrameColumn> GetEnumerator () {
+        /// <returns>The requested enumerator.</returns>
+        IEnumerator<FrameColumn> IEnumerable<FrameColumn>.GetEnumerator () {
             for (int i = 0; i < frame.columns.Count; i++) {
                 yield return (new FrameColumn(frame, i));
             }
@@ -75,7 +75,7 @@ namespace Meta.Numerics.Data
         {
             return (((IEnumerable<FrameColumn>) this).GetEnumerator());
         }
-
+        /*
         bool IReadOnlyDictionary<string, FrameColumn>.ContainsKey (string key) {
             return (frame.GetColumnIndex(key) >= 0);
         }
@@ -108,6 +108,6 @@ namespace Meta.Numerics.Data
                 return ((IEnumerable<FrameColumn>) this);
             }
         }
-
+        */
     }
 }

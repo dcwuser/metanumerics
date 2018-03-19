@@ -318,62 +318,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         public static GammaFitResult FitToSample (Sample sample) {
-
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 3) throw new InsufficientDataException();
-
-            // The log likelihood of a sample given k and s is
-            //   \log L = (k-1) \sum_i \log x_i - \frac{1}{s} \sum_i x_i - N \log \Gamma(k) - N k \log s
-            // Differentiating,
-            //   \frac{\partial \log L}{\partial s} = \frac{1}{s^2} \sum_i x_i - \frac{N k}{s}
-            //   \frac{\partial \log L}{\partial k} = \sum_i \log x_i - N \psi(k) - N \log s
-            // Setting the first equal to zero gives
-            //   k s = N^{-1} \sum_i x_i = <x>
-            //   \psi(k) + \log s = N^{-1} \sum_i \log x_i = <log x>
-            // Inserting the first into the second gives a single equation for k
-            //   \log k - \psi(k) = \log <x> - <\log x>
-            // Note the RHS need only be computed once.
-            // \log k > \psi(k) for all k, so the RHS had better be positive. They get
-            // closer for large k, so smaller RHS will produce a larger k.
-
-            double s = 0.0;
-            foreach (double x in sample) {
-                if (x <= 0.0) throw new InvalidOperationException();
-                s += Math.Log(x);
-            }
-            s = Math.Log(sample.Mean) - s / sample.Count;
-
-            // We can get an initial guess for k from the method of moments
-            //   \frac{\mu^2}{\sigma^2} = k
-
-            double k0 = MoreMath.Sqr(sample.Mean) / sample.Variance;
-
-            // Since 1/(2k) < \log(k) - \psi(k) < 1/k, we could get a bound; that
-            // might be better to avoid the solver running into k < 0 territory
-
-            double k1 = FunctionMath.FindZero(k => (Math.Log(k) - AdvancedMath.Psi(k) - s), k0);
-
-            double s1 = sample.Mean / k1;
-
-            // Curvature of the log likelihood is straightforward
-            //   \frac{\partial^2 \log L}{\partial s^2} = -\frac{2}{s^3} \sum_i x_i + \frac{Nk}{s^2} = - \frac{Nk}{s^2}
-            //   \frac{\partial^2 \log L}{\partial k \partial s} = - \frac{N}{s}
-            //   \frac{\partial^2 \log L}{\partial k^2} = - N \psi'(k)
-            // This gives the curvature matrix and thus via inversion the covariance matrix.
-
-            SymmetricMatrix C = new SymmetricMatrix(2);
-            C[0, 0] = sample.Count * AdvancedMath.Psi(1, k1);
-            C[0, 1] = sample.Count / s1;
-            C[1, 1] = sample.Count * k1 / MoreMath.Sqr(s1);
-            CholeskyDecomposition CD = C.CholeskyDecomposition();
-            if (CD == null) throw new DivideByZeroException();
-            C = CD.Inverse();
-
-            // Do a KS test for goodness-of-fit
-            GammaDistribution distribution = new GammaDistribution(k1, s1);
-            TestResult test = sample.KolmogorovSmirnovTest(distribution);
-
-            return (new GammaFitResult(k1, s1, C, distribution, test));
+            return (Univariate.FitToGamma(sample.data));
         }
 
 #if FUTURE

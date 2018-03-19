@@ -69,6 +69,7 @@ namespace Test
             IReadOnlyList<FrameColumn> columnsAsList = (IReadOnlyList<FrameColumn>) columns;
             Assert.IsTrue(columnsAsList.Count == original.Columns.Count);
 
+            /*
             IReadOnlyDictionary<string, FrameColumn> columnsAsDictionary = (IReadOnlyDictionary<string, FrameColumn>) columns;
             Assert.IsTrue(columnsAsDictionary.ContainsKey(original.Columns[1].Name));
             Assert.IsFalse(columnsAsDictionary.ContainsKey("NoName"));
@@ -88,7 +89,7 @@ namespace Test
             foreach (FrameColumn column in columnsAsDictionary.Values) {
                 Assert.IsTrue(columns.GetIndexOf(column.Name) >= 0);
             }
-
+            */
 
         }
 

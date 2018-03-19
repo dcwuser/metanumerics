@@ -44,14 +44,16 @@ namespace Meta.Numerics.Analysis {
                 return (estimate.Value);
             }
         }
-
+        
         /// <summary>
-        /// Gets the estimated value.
+        /// Converts the result to a single value.
         /// </summary>
+        /// <param name="result">The result.</param>
+        /// <returns>The best estimated value of the integral.</returns>
         public static implicit operator double (IntegrationResult result) {
             return (result.Value);
         }
-
+        
     }
 
 }

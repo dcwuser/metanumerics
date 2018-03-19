@@ -10,10 +10,13 @@ namespace Meta.Numerics.Data
     {
 
         /// <summary>
-        /// Constructs a new data frame from a sequence of dictionaries.
+        /// Constructs a new frame table from a sequence of dictionaries.
         /// </summary>
-        /// <param name="dictionaries"></param>
-        /// <returns></returns>
+        /// <param name="dictionaries">A enumerable set of dictionaries, one for each row, whose
+        /// keys are the column names and whose values are the cell value of the column for that row.</param>
+        /// <returns>A new frame table with data from the dictionaries.</returns>
+        /// <remarks><para>The storage type of each column is inferred from the types of objects
+        /// encountered are the frame table is constructed.</para></remarks>
         public static FrameTable FromDictionaries (IEnumerable<IReadOnlyDictionary<string, object>> dictionaries)
         {
             if (dictionaries == null) throw new ArgumentNullException(nameof(dictionaries));

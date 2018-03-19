@@ -170,6 +170,7 @@
     <Compile Include="Functions\SpinMath.cs" />
     <Compile Include="Functions\SpinState.cs" />
     <Compile Include="Statistics\Anova.cs" />
+    <Compile Include="Statistics\AR1FitResult.cs" />
     <Compile Include="Statistics\BinaryContingencyTable.cs" />
     <Compile Include="Statistics\Bivariate.cs" />
     <Compile Include="Statistics\BivariateSample.cs" />
@@ -178,6 +179,7 @@
     <Compile Include="Statistics\Distributions\BernoulliDistribution.cs" />
     <Compile Include="Statistics\Distributions\BernoulliFitResult.cs" />
     <Compile Include="Statistics\Distributions\BetaDistribution.cs" />
+    <Compile Include="Statistics\Distributions\BetaFitResult.cs" />
     <Compile Include="Statistics\Distributions\BinomialDistribution.cs" />
     <Compile Include="Statistics\Distributions\CauchyDistribution.cs" />
     <Compile Include="Statistics\Distributions\ChiDistribution.cs" />
@@ -237,6 +239,7 @@
     <Compile Include="Statistics\InsufficientDataException.cs" />
     <Compile Include="Statistics\LinearLogisticRegressionResult.cs" />
     <Compile Include="Statistics\LinearRegressionResult.cs" />
+    <Compile Include="Statistics\MA1FitResult.cs" />
     <Compile Include="Statistics\MeansClusteringResult.cs" />
     <Compile Include="Statistics\MultiLinearLogisticRegressionResult.cs" />
     <Compile Include="Statistics\MultiLinearRegressionResult.cs" />
@@ -253,15 +256,16 @@
     <Compile Include="Statistics\Series.cs" />
     <Compile Include="Statistics\TestResult.cs" />
     <Compile Include="Statistics\TimeSeries.cs" />
+    <Compile Include="Statistics\TimeSeriesPopulationStatistics.cs" />
     <Compile Include="Statistics\UncertainMeasurement.cs" />
     <Compile Include="Statistics\UncertainMeasurementSample.cs" />
     <Compile Include="Statistics\Univariate.cs" />
+    <Compile Include="Statistics\Univariate_Fits.cs" />
     <Compile Include="Statistics\Univariate_Percentiles.cs" />
     <Compile Include="Statistics\Univariate_PopulationMoments.cs" />
     <Compile Include="Statistics\Univariate_Tests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="bin\" />
     <Folder Include="Special\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />

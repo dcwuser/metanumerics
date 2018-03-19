@@ -19,7 +19,7 @@ namespace Meta.Numerics.Analysis {
         /// could be determined to the required precision.</exception>
         /// <remarks>
         /// <para>By default, integrals are evaluated to a relative precision of about 10<sup>-14</sup>, about two digits short of full
-        /// precision, or an absolute presions of about 10<sup>-21</sup>, using a budget of about 5000 evaulations.
+        /// precision, or an absolute precision of about 10<sup>-16</sup>, using a budget of about 5000 evaluations.
         /// To specify different evaluation settings use
         /// <see cref="Integrate(Func{double, double}, Interval, IntegrationSettings)"/>.</para>
         /// <para>See <see cref="Integrate(Func{double, double}, Interval, IntegrationSettings)"/> for detailed remarks on
@@ -44,7 +44,7 @@ namespace Meta.Numerics.Analysis {
         /// </summary>
         /// <param name="integrand">The function to be integrated.</param>
         /// <param name="range">The range of integration.</param>
-        /// <param name="settings">The settings which control the evaulation of the integal.</param>
+        /// <param name="settings">The settings which control the evaluation of the integral.</param>
         /// <returns>The result of the integral, which includes an estimated value and an estimated uncertainty of that value.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="integrand"/> is <see langword="null"/>.</exception>
         /// <exception cref="NonconvergenceException">The maximum number of function evaluations was exceeded before the integral
@@ -57,16 +57,16 @@ namespace Meta.Numerics.Analysis {
         /// evaluations to those regions required to achieve the desired accuracy.</para>
         /// <para>Our integrator handles smooth functions extremely efficiently. It handles integrands with
         /// discontinuities, or discontinuities of derivatives, at the price of slightly more evaluations
-        /// of the integrand. It can handle oscilatory functions, as long as not too many periods contribute
+        /// of the integrand. It can handle oscillatory functions, as long as not too many periods contribute
         /// significantly to the integral. It can integrate logarithmic and mild power-law singularities.</para>
-        /// <para>Strong power-law singularities will cause the alrorighm to fail with a <see cref="NonconvergenceException"/>.
+        /// <para>Strong power-law singularities will cause the algorithm to fail with a <see cref="NonconvergenceException"/>.
         /// This is unavoidable for essentially any double-precision numerical integrator. Consider, for example,
-        /// the integrable singularity 1/&#x221A;x. Since
+        /// the integrable singularity x<sup>-1/2</sup>. Since
         /// &#x3B5; = &#x222B;<sub>0</sub><sup>&#x3B4;</sup> x<sup>-1/2</sup> dx = 2 &#x3B4;<sup>1/2</sup>,
         /// points within &#x3B4; &#x223C; 10<sup>-16</sup> of the end-points, which as a close as you can get to
         /// a point in double precision without being on top of it, contribute at the &#x3B5; &#x223C; 10<sup>-8</sup>
         /// level to our integral, well beyond limit that nearly-full double precision requires. Said differently,
-        /// to know the value of the integral to &#x3B5; &#x223C; 10<sup>-16</sup> prescision, we would need to
+        /// to know the value of the integral to &#x3B5; &#x223C; 10<sup>-16</sup> precision, we would need to
         /// evaluate the contributions of points within &#x3B4; &#x223C; 10<sup>-32</sup> of the endpoints,
         /// which is far closer than we can get.</para>
         /// <para>If you need to evaluate an integral with such a strong singularity, make an analytic
@@ -134,7 +134,7 @@ namespace Meta.Numerics.Analysis {
 
             }
 
-            // normal integral over a finitite range
+            // normal integral over a finite range
 
             IAdaptiveIntegrator integrator = new GaussKronrodIntegrator(integrand, range);
             IntegrationResult result = Integrate_Adaptive(integrator, settings);
@@ -235,7 +235,7 @@ namespace Meta.Numerics.Analysis {
     }
 
     // Integrator base class
-    // All integtators inherit from this, whether adaptive or iterative.
+    // All integrators inherit from this, whether adaptive or iterative.
 
     internal abstract class Integrator : IIntegrator {
 
@@ -290,7 +290,7 @@ namespace Meta.Numerics.Analysis {
         }
 
         // This is a 15-point Gauss-Kronrod role. It is exact for up to 30th order polynomials.
-        // There is an embeded 7-point rule (embedded meaning it uses the same points with different weights).
+        // There is an embedded 7-point rule (embedded meaning it uses the same points with different weights).
         // Combining them gives a high-order estimate along with an error estimate without requiring additional evaluations.
 
         // These values appear at https://en.wikipedia.org/wiki/Gauss%E2%80%93Kronrod_quadrature_formula.

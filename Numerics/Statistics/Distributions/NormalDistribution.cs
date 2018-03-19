@@ -199,76 +199,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The result of the fit.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
-        public static NormalFitResult FitToSample (IReadOnlyList<double> sample) {
-
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 3) throw new InsufficientDataException();
-
-            double m, dm, s, ds;
-            FitToSampleInternal(sample, out m, out dm, out s, out ds);
-
-            NormalDistribution distribution = new NormalDistribution(m, s);
-            TestResult test = sample.KolmogorovSmirnovTest(distribution);
-
-            return (new NormalFitResult(new UncertainValue(m, dm), new UncertainValue(s, ds), distribution, test));
-
-        }
-
-        internal static void FitToSampleInternal (IEnumerable<double> sample,
-            out double m, out double dm, out double s, out double ds) {
-
-            // We factor out this method and make it internal because it is also
-            // used by the Lognormal fit method.
-
-            // Maximum likelihood estimate is straightforward.
-            //   p_i = \frac{1}{\sqrt{2\pi}\sigma} \exp \left[ -\frac{1}{2} \left( \frac{x_i - \mu}{\sigma} \right)^2 \right]
-            //   \ln p_i = -\ln (\sqrt{2\pi} \sigma) - \frac{1}{2} \left( \frac{x_i - \mu}{\sigma} \right)^2
-            //   \ln L = \sum_i
-            //  so
-            //    \frac{\partial \ln L}{\partial \mu} = \sum_i \frac{x_i - \mu}{\sigma^2}
-            //    \frac{\partial \ln L}{\partial \sigma} = -\frac{n}{\sigma} - \frac{1}{\sigma^2} \sum_i (x_i - \mu)^2
-            //  Setting equal to zero and solving gives the unsurprising result
-            //     \mu = n^{-1} \sum_i x_i
-            //     \sigma^2 = n^{-1} \sum_i (x_i - \mu)^2
-            //  that MLE says to estimate the model mean and variance by the sample mean and variance.
-
-            // MLE estimators are guaranteed to be asymptotically unbiased, but they can be biased for finite n.
-            // You can see that must be the case for \sigma because the denominator has n instead of n-1.
-
-            // To un-bias our estimators, we will derive exact distributions for these quantities.
-
-            // First the mean estimator. Start from x_i \sim N(\mu, \sigma). By the addition of normal deviates,
-            //   \sum_i x_i \sim N(n \mu, \sqrt{n} \sigma). So
-            //   m  = \frac{1}{n} \sum_i x_i \sim N(\mu, \sigma / \sqrt{n}).
-            // which means the estimator m is normally distributed with mean \mu and standard deviation
-            // \sigma / \sqrt{n}. Now we know that m is unbiased and we know its variance.
-
-            int n;
-            double ss;
-            Univariate.ComputeMomentsUpToSecond(sample, out n, out m, out ss);
-            dm = Math.Sqrt(ss) / n;
-
-            // Next the variance estimator. By the definition of the chi squared distribution and a bit of algebra that
-            // reduces the degrees of freedom by one, u^2 = \sum_i ( \frac{x_i - m}{\sigma} )^2 \sim \chi^2(n - 1), which has
-            // mean n - 1 and variance 2(n-1). Therefore the estimator
-            //   v = \sigma^2 u^2 / (n-1) = \frac{1}{n-1} \sum_i ( x_i - m )^2
-            // has mean \sigma^2 and variance 2 \sigma^4 / (n-1). 
-
-            // If we consider \sigma^2 the parameter, we are done -- we have derived an estimator that is unbiased and
-            // know its variance. But we don't consider the parameter \sigma^2, we consider it \sigma.
-            // The mean of the square root is not the square root of the mean, so the square root of an unbiased
-            // estimator of \sigma^2 will not be an unbiased estimator of \sigma. If we want an unbiased estimator of \sigma
-            // itself, we need to go a bit further. Since u^2 ~ \chi^2(n-1), u ~ \chi(n-1). It's mean is a complicated ratio
-            // of Gamma functions and it's variance is an even more complicated difference whose evaluation can be delicate,
-            // but our machinery in the ChiDistribution class handles that. To get an unbiased estimator of \sigma, we just
-            // need to apply the same principal of dividing by the mean of this distribution.
-            //   s = \sigma u / <u> = \sqrt{\sum_i (x_i - m)^2} / <u>
-            // to get an estimator with mean \sigma and known variance.
-
-            ChiDistribution d = new ChiDistribution(n - 1);
-            s = Math.Sqrt(ss) / d.Mean;
-            ds = d.StandardDeviation / d.Mean * s;
-
+        public static NormalFitResult FitToSample (Sample sample) {
+            return(Univariate.FitToNormal(sample.data));
         }
 
     }

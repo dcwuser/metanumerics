@@ -279,9 +279,9 @@ namespace Test {
 
             // Fit the sample to a beta distribution
             // The fit should agree with the population and the fit should be good
-            FitResult RB = BetaDistribution.FitToSample(S);
-            Assert.IsTrue(RB.Parameter(0).ConfidenceInterval(0.99).ClosedContains(B.Alpha));
-            Assert.IsTrue(RB.Parameter(1).ConfidenceInterval(0.99).ClosedContains(B.Beta));
+            BetaFitResult RB = BetaDistribution.FitToSample(S);
+            Assert.IsTrue(RB.Alpha.ConfidenceInterval(0.99).ClosedContains(B.Alpha));
+            Assert.IsTrue(RB.Beta.ConfidenceInterval(0.99).ClosedContains(B.Beta));
             Assert.IsTrue(RB.GoodnessOfFit.Probability > 0.05);
 
             // Fit to a normal distribution should be bad
@@ -304,9 +304,9 @@ namespace Test {
             BivariateSample uncertainties = new BivariateSample();
             for (int i = 0; i < 50; i++) {
                 Sample sample = CreateSample(distribution, 10, i);
-                FitResult fit = BetaDistribution.FitToSample(sample);
-                UncertainValue a = fit.Parameter(0);
-                UncertainValue b = fit.Parameter(1);
+                BetaFitResult fit = BetaDistribution.FitToSample(sample);
+                UncertainValue a = fit.Alpha;
+                UncertainValue b = fit.Beta;
                 values.Add(a.Value, b.Value);
                 uncertainties.Add(a.Uncertainty, b.Uncertainty);
             }
@@ -1111,7 +1111,7 @@ namespace Test {
             MultiLinearLogisticRegressionResult result3 = sample2.LogisticLinearRegression(1);
 
             //LinearLogisticRegressionResult result4 = Bivariate.LinearLogisticRegression(sample1.X.ToList(), sample1.Y.Select(x => (x == 1.0)).ToList());
-            MultiLinearLogisticRegressionResult result5 = sample1.Y.Select(x => (x == 1.0)).ToList().MultiLinearLogisticRegression(new IReadOnlyList<double>[] { sample1.X });
+            //MultiLinearLogisticRegressionResult result5 = sample1.Y.Select(x => (x == 1.0)).ToList().MultiLinearLogisticRegression(new IReadOnlyList<double>[] { sample1.X });
  
             // Fits should give same result
             /*

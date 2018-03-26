@@ -11,7 +11,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents a fit to a non-linear function.
     /// </summary>
-    public sealed class NonlinearRegressionResult : BaseFitResult {
+    public sealed class NonlinearRegressionResult : FitResult {
 
         internal NonlinearRegressionResult(
             IReadOnlyList<double> x, IReadOnlyList<double> y,

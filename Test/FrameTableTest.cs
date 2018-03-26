@@ -20,10 +20,10 @@ namespace Test {
         public void FrameViewColumnCoercion () {
 
             // Create nullable double and integer columns.
-            FrameTable table = new FrameTable(
-                new ColumnDefinition<double?>("one"),
-                new ColumnDefinition<int>("two")
-            );
+            FrameTable table = new FrameTable();
+            table.AddColumn<double?>("one");
+            table.AddColumn<int>("two");
+
             table.AddRow(1.1, 2);
             table.AddRow(null, 3);
 
@@ -36,7 +36,7 @@ namespace Test {
                 Assert.Fail();
             } catch (Exception) { }
 
-            // Coerce integer to double.
+            // Coerce the integer to a double.
             IReadOnlyList<double> two = table.Columns[1].As<double>();
             Assert.IsTrue(two[0] == 2.0);
 
@@ -45,43 +45,80 @@ namespace Test {
         [TestMethod]
         public void FrameTableManipulation () {
 
-            FrameTable table = new FrameTable(
-                new ColumnDefinition<int>("Id"),
-                new ColumnDefinition<DateTime>("Birthdate"),
-                new ColumnDefinition<List<int>>("Results")
-            );
+            FrameTable table = new FrameTable();
+            table.AddColumn<int>("Id");
+            table.AddColumn<DateTime?>("Birthdate");
+            table.AddColumns<string>("FirstName", "LastName");
+            Assert.IsTrue(table.Columns.Count == 4);
 
+            // Index lookup should work
             Assert.IsTrue(table.GetColumnIndex("Birthdate") >= 0);
             Assert.IsTrue(table.GetColumnIndex("None") < 0);
 
             // Add rows
             Assert.IsTrue(table.Rows.Count == 0);
-            table.AddRow(1, DateTime.Parse("1990-01-01"), new List<int>() { 1, 2, 4 });
-            table.AddRow(2, DateTime.Parse("2000-02-02"), new List<int>() { 2, 3 });
-            Assert.IsTrue(table.Rows.Count == 2);
+            table.AddRow(1, DateTime.Parse("1990-01-01"), "a", "p");
+            table.AddRow(2, DateTime.Parse("2000-02-02"), null, null);
+            table.AddRow(new Dictionary<string, object>() {
+                {"Id", 3}, {"Birthdate", null }, { "FirstName", "c" }, { "LastName", "r" }
+            });
+            Assert.IsTrue(table.Rows.Count == 3);
+
+            // Adding rows with the wrong types and/or entries should fail
+            // Careful, some of these will leave the table in a bad state
+            //try {
+            //    table.AddRow(4, DateTime.Parse("2010-04-04"), 1.0, "s");
+            //    Assert.Fail();
+            //} catch (Exception) { }
+            try {
+                table.AddRow(4, DateTime.Parse("2010-04-04"));
+                Assert.Fail();
+            } catch (Exception) { }
+            //try {
+            //    table.AddRow(new Dictionary<string, object>() {
+            //        {"Id", 4}, { "FirstName", "d" }, { "LastName", "r" }
+            //    });
+            //    Assert.Fail();
+            //} catch (Exception) { }
+            //try {
+            //    table.AddRow(new Dictionary<string, object>() {
+            //        {"Id", 4}, { "Birthdate", null }, { "FirstName", "d" }, { "LastName", "r" }, { "MiddleName", "u" }
+            //    });
+            //    Assert.Fail();
+            //} catch (Exception) { }
 
             // Adding a new column with the wrong length should fail
             try {
-                table.AddColumn(new ColumnDefinition<string>("Name"));
+                table.AddColumn<double>("Score");
                 Assert.Fail();
             } catch (Exception) { }
+            Assert.IsTrue(table.GetColumnIndex("Score") < 0);
+
+            // Adding a new column with the right length should work
+            List<double> scores = new List<double>() { 1.1, 1.2, 1.3 };
+            table.AddColumn("Score", scores);
+            Assert.IsTrue(table.GetColumnIndex("Score") >= 0);
 
             // Adding a new computed column should work
-            table.AddColumn(
-                new ComputedColumnDefinition<TimeSpan?>("Age", r => {
-                    DateTime? b = (DateTime?) r["Birthdate"];
-                    if (b.HasValue) {
-                        return (DateTime.Now - b.Value);
-                    } else {
-                        return (null);
-                    }
-                })
-            );
+            table.AddComputedColumn<TimeSpan?>("Age", r=> {
+                DateTime? b = (DateTime?) r["Birthdate"];
+                if (b.HasValue) {
+                    return (DateTime.Now - b.Value);
+                } else {
+                    return (null);
+                }
+            });
             Assert.IsTrue(table.GetColumnIndex("Age") >= 0);
-            table.AddRow(new Dictionary<string, object>() { { "Id", 3 }, { "Birthdate", DateTime.Now.AddYears(-3) }, { "Results", null } });
 
-            Assert.IsTrue((int) table.Columns["Id"][0] == 1);
+            // Changing a value should change the result of the computed column that depends on it
+            int birthdateIndex = table.GetColumnIndex("Birthdate");
+            int ageIndex = table.GetColumnIndex("Age");
+            TimeSpan age1 = (TimeSpan) table[0, ageIndex];
+            table[0, birthdateIndex] = DateTime.Parse("2010-01-01");
+            TimeSpan age2 = (TimeSpan) table[0, ageIndex];
+            Assert.IsTrue(age2 != age1);
 
+            // Clearing a table should work
             table.Clear();
             Assert.IsTrue(table.Columns.Count > 0);
             Assert.IsTrue(table.Rows.Count == 0);

@@ -7,9 +7,10 @@ using System.IO;
 namespace Meta.Numerics.Data
 {
 
-    // Supported storage types: int, double, bool, datetime, string
-    // Supported data types: continuous, count, ordinal, categorical
-    // Supported addenda: iid, series, circular
+    // Consider adding flags to indicate data types and properties, and having statistics
+    // functions check for these flags.
+    // Data types could include: continuous, count, ordinal, categorical
+    // Additional flags could include: iid, series, circular
 
     /// <summary>
     /// A modify-able array of data.
@@ -18,27 +19,19 @@ namespace Meta.Numerics.Data
     /// <para>This is the central class for storing data in our data frame system.</para>
     /// <para>Use the <see cref="FromCsv"/> method to create a frame table from a comma-separated values
     /// file or the <see cref="FromDictionaries"/> method to create a frame table from JSON or another
-    /// collection-of-dictionaries representation. Or create one programmatically by supplying the
-    /// <see cref="FrameTable(ColumnDefinition[])"/> constructor with a set of column definitions.</para>
+    /// collection-of-dictionaries representation. Or create one programmatically by using the
+    /// <see cref="FrameTable()"/> constructor and then <see cref="AddColumn{T}(string)"/> method.</para>
     /// <para>You can add, remove, or insert rows or columns using the methods of this class.</para>
-    /// <para>Using the methods of the <see cref="FrameView"/> class, you can filter, re-order,
+    /// <para>Using the methods inherited from the <see cref="FrameView"/> class, you can filter, re-order,
     /// manipulate, and analyze data without incurring the space or time costs of copying the stored data.</para>
     /// </remarks>
     public sealed partial class FrameTable : FrameView {
 
-        private FrameTable () : base(new List<NamedList>(), new List<int>()) {
-
-        }
-
         /// <summary>
-        /// Initializes a new data frame with the columns specified by the given headers.
+        /// Initializes a new, empty frame table.
         /// </summary>
-        /// <param name="columnDefinitions">The definitions of the columns.</param>
-        public FrameTable(params ColumnDefinition[] columnDefinitions) : this() {
-            if (columnDefinitions == null) throw new ArgumentNullException(nameof(columnDefinitions));
-            foreach(ColumnDefinition columnDefinition in columnDefinitions) {
-                AddColumn(columnDefinition.CreateList(this));
-            }
+        public FrameTable () : base(new List<NamedList>(), new List<int>()) {
+
         }
 
         internal FrameTable(params NamedList[] columns) : this((IEnumerable<NamedList>) columns) {
@@ -125,48 +118,65 @@ namespace Meta.Numerics.Data
         }
         */
 
-        // IReadableDataList
-        // IDataList : IReadableDataList
-        // IReadableDataList<T> : IReadableDataList
-        // IDataList<T> : IReadableDataList<T>, IDataList
-
-        // DataView
-        //    DataTable
-        //    VirtualDataTable
-
-        // DataColumn
-        //    DataList
-        //    VirtualDataColumn
-        //    ComputedDataColumn
-
-        /// <summary>
-        /// Adds the given data list as a column to the data frame.
-        /// </summary>
-        /// <param name="column">The data list to add.</param>
-        /// <returns>The index of the new column.</returns>
-        internal int AddColumn(NamedList column)
+        internal void AddColumn(NamedList column)
         {
             if (column == null) throw new ArgumentNullException(nameof(column));
             if (this.columns.Count == 0) {
+                // This is the first column; create a row map.
                 for (int i = 0; i < column.Count; i++) {
                     this.map.Add(i);
                 }
             } else {
+                // This is not the first column; if it isn't computed, it's length must match the existing columns.
                 if (!column.IsComputed && column.Count != map.Count) throw new DimensionMismatchException();
             }
-            int columnCount = this.columns.Count;
+            this.columnMap.Add(column.Name, this.columns.Count);
             this.columns.Add(column);
-            this.columnMap[column.Name] = columnCount;
-            return (columnCount);
         }
 
         /// <summary>
-        /// Adds the given column to the data frame.
+        /// Add the given column to the data frame.
         /// </summary>
-        /// <param name="column">The column to add.</param>
-        public void AddColumn(ColumnDefinition column) {
-            if (column == null) throw new ArgumentNullException(nameof(column));
-            AddColumn(column.CreateList(this));
+        /// <typeparam name="T">The type of the column.</typeparam>
+        /// <param name="name">The name of the column.</param>
+        public void AddColumn<T>(string name) {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            AddColumn(new NamedList<T>(name));
+        }
+
+        /// <summary>
+        /// Adds a new column with the given name and stored values.
+        /// </summary>
+        /// <typeparam name="T">The type of the column.</typeparam>
+        /// <param name="name">The name of the column.</param>
+        /// <param name="storage">The stored values.</param>
+        /// <remarks>
+        /// <para>Use this overload when you already have a collection of column values
+        /// and want to use it as a column in an existing <see cref="FrameTable"/>.
+        /// Note that the values are not copied; the collection you provide is used directly
+        /// as the column storage. Therefore any changes you make to the collection after
+        /// adding the column will affect the frame table. To avoid problems, do not
+        /// alter the collection after submitting it to this method.</para>
+        /// </remarks>
+        public void AddColumn<T>(string name, List<T> storage) {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            if (storage == null) throw new ArgumentNullException(nameof(storage));
+            AddColumn(new NamedList<T>(name, storage));
+        }
+
+        /// <summary>
+        /// Adds the given columns to the data frame.
+        /// </summary>
+        /// <typeparam name="T">The type of the columns.</typeparam>
+        /// <param name="names">The names of the columns.</param>
+        /// <remarks>
+        /// <para>This method is useful for adding multiple columns of the same type.</para>
+        /// </remarks>
+        public void AddColumns<T>(params string[] names) {
+            if (names == null) throw new ArgumentNullException(nameof(names));
+            foreach (string name in names) {
+                AddColumn(new NamedList<T>(name));
+            }
         }
 
         /// <summary>
@@ -335,6 +345,24 @@ namespace Meta.Numerics.Data
                 }
             }
 
+        }
+
+        /// <summary>
+        /// Constructs a new frame table from a sequence of dictionaries.
+        /// </summary>
+        /// <param name="dictionaries">A enumerable set of dictionaries, one for each row, whose
+        /// keys are the column names and whose values are the cell value of the column for that row.</param>
+        /// <returns>A new frame table with data from the dictionaries.</returns>
+        /// <remarks><para>The storage type of each column is inferred from the types of objects
+        /// encountered are the frame table is constructed.</para></remarks>
+        public static FrameTable FromDictionaries (IEnumerable<IReadOnlyDictionary<string, object>> dictionaries) {
+            if (dictionaries == null) throw new ArgumentNullException(nameof(dictionaries));
+
+            List<NamedList> columns = DictionaryHelper.ReadDictionaries(dictionaries);
+
+            // Collect the results into a frame table.
+            FrameTable result = new FrameTable(columns);
+            return (result);
         }
 
     }

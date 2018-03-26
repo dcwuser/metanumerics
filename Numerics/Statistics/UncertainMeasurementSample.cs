@@ -98,7 +98,7 @@ namespace Meta.Numerics.Statistics {
         /// of the quality of the fit.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="functions"/> is null.</exception>
         /// <exception cref="InsufficientDataException">There are fewer data points than fit parameters.</exception>
-        public FitResult FitToLinearFunction (Func<T, double>[] functions) {
+        public UncertainMeasurementFitResult FitToLinearFunction (Func<T, double>[] functions) {
 
             if (functions == null) throw new ArgumentNullException(nameof(functions));
             if (functions.Length > data.Count) throw new InsufficientDataException();
@@ -122,36 +122,6 @@ namespace Meta.Numerics.Statistics {
             SymmetricMatrix C;
             QRDecomposition.SolveLinearSystem(A, b, out a, out C);
 
-            /*
-            // construct the data matrix
-            SymmetricMatrix A = new SymmetricMatrix(functions.Length);
-            for (int i = 0; i < A.Dimension; i++) {
-                for (int j = 0; j <= i; j++) {
-                    double Aij = 0.0;
-                    for (int k = 0; k < data.Count; k++) {
-                        Aij += functions[i](data[k].X) * functions[j](data[k].X) / Math.Pow(data[k].Y.Uncertainty, 2);
-                    }
-                    A[i, j] = Aij;
-                }
-            }
-
-            // construct the rhs
-            double[] b = new double[functions.Length];
-            for (int i = 0; i < b.Length; i++) {
-                b[i] = 0.0;
-                for (int j = 0; j < data.Count; j++) {
-                    b[i] += data[j].Y.Value * functions[i](data[j].X) / Math.Pow(data[j].Y.Uncertainty, 2);
-                }
-            }
-
-            // solve the system
-            CholeskyDecomposition CD = A.CholeskyDecomposition();
-            if (CD == null) throw new InvalidOperationException();
-            Debug.Assert(CD != null);
-            SymmetricMatrix C = CD.Inverse();
-            ColumnVector a = CD.Solve(b);
-            */
-
             // do a chi^2 test
             double chi2 = 0.0;
             for (int i = 0; i < data.Count; i++) {
@@ -164,9 +134,10 @@ namespace Meta.Numerics.Statistics {
             TestResult test = new TestResult("χ²", chi2, TestType.RightTailed, new ChiSquaredDistribution(data.Count - functions.Length));
 
             // return the results
-            FitResult fit = new FitResult(a, C, test);
-            return (fit);
-
+            string[] names = new string[functions.Length];
+            for (int j = 0; j < names.Length; j++) names[j] = j.ToString();
+            ParameterCollection parameters = new ParameterCollection(names, a, C);
+            return (new UncertainMeasurementFitResult(parameters, test));
         }
 
         /// <summary>
@@ -180,21 +151,12 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are fewer data points than fit parameters.</exception>
         /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
         /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
-        public FitResult FitToFunction (Func<double[], T, double> function, double[] start) {
+        public UncertainMeasurementFitResult FitToFunction (Func<double[], T, double> function, double[] start) {
             if (function == null) throw new ArgumentNullException(nameof(function));
             if (start == null) throw new ArgumentNullException(nameof(start));
 
             // you can't do a fit with less data than parameters
             if (this.Count < start.Length) throw new InsufficientDataException();
-
-            /*
-            Func<IList<double>, double> function0 = (IList<double> x0) => {
-                double[] x = new double[x0.Count];
-                x0.CopyTo(x, 0);
-                return(function(x));
-            };
-            MultiExtremum minimum0 = MultiFunctionMath.FindMinimum(function0, start);
-            */
 
             // create a chi^2 fit metric and minimize it 
             FitMetric<T> metric = new FitMetric<T>(this, function);
@@ -207,14 +169,16 @@ namespace Meta.Numerics.Statistics {
             SymmetricMatrix C = CD.Inverse();
 
             // package up the results and return them
-            TestResult test = new TestResult("ChiSquare", minimum.Value, TestType.RightTailed, new ChiSquaredDistribution(this.Count - minimum.Dimension));
-            FitResult fit = new FitResult(minimum.Location(), C, test);
-            return (fit);
-
+            TestResult test = new TestResult("χ²", minimum.Value, TestType.RightTailed, new ChiSquaredDistribution(this.Count - minimum.Dimension));
+            ParameterCollection parameters = new ParameterCollection(NumberNames(start.Length), new ColumnVector(minimum.Location(), 0, 1, start.Length, true), C);
+            return (new UncertainMeasurementFitResult(parameters, test));
         }
 
-        // can't expose this yet, because IEnumerable<DataPoint<double>> would conflict
-        // with IEnumerable<DataPoint>; eliminating non-generic DataPoint would fix this
+        private IReadOnlyList<string> NumberNames (int n) {
+            string[] names = new string[n];
+            for (int i = 0; i < names.Length; i++) names[i] = i.ToString();
+            return (names);
+        }
 
         /// <summary>
         /// Gets an enumerator over the measurements.
@@ -277,7 +241,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>A fit result containing the best combined value and a &#x3C7;<sup>2</sup> test of the quality of the fit.</returns>
         /// <remarks><para>This method provides a simple way to </para></remarks>
         /// <exception cref="InsufficientDataException">There are fewer than one data points.</exception>
-        public FitResult FitToConstant () {
+        public UncertainMeasurementFitResult FitToConstant () {
 
             if (Count < 1) throw new InsufficientDataException();
 
@@ -294,7 +258,7 @@ namespace Meta.Numerics.Statistics {
 
             // compute best value for m for model x2 = m
             double m = Sy / S;
-            double dm = 1.0 / Math.Sqrt(S);
+            double vm = 1.0 / S;
 
             // compute chi^2
             double chi2 = 0.0;
@@ -304,9 +268,10 @@ namespace Meta.Numerics.Statistics {
                 double z = (y - m) / dy;
                 chi2 += z * z;
             }
-            TestResult test = new TestResult("ChiSquared", chi2, TestType.RightTailed, new ChiSquaredDistribution(Count - 1));
+            TestResult test = new TestResult("χ²", chi2, TestType.RightTailed, new ChiSquaredDistribution(Count - 1));
 
-            return (new FitResult(m, dm, test));
+            ParameterCollection parameters = new ParameterCollection("Constant", m, vm);
+            return (new UncertainMeasurementFitResult(parameters, test));
         }
 
         /// <summary>
@@ -315,7 +280,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>A fit result containing the best-fit proportionality constant parameter and a &#x3C7;<sup>2</sup> test of the
         /// quality of the fit.</returns>
         /// <exception cref="InsufficientDataException">There are fewer than one data points.</exception>
-        public FitResult FitToProportionality () {
+        public UncertainMeasurementFitResult FitToProportionality () {
 
             if (Count < 1) throw new InsufficientDataException();
 
@@ -333,7 +298,7 @@ namespace Meta.Numerics.Statistics {
 
             // fit to x2 = a x1
             double a = Sxy / Sxx;
-            double da = 1.0 / Math.Sqrt(Sxx);
+            double va = 1.0 / Sxx;
 
             // compute chi^2
             double chi2 = 0.0;
@@ -344,10 +309,12 @@ namespace Meta.Numerics.Statistics {
                 double z = (y - a * x) / dy;
                 chi2 += z * z;
             }
-            TestResult test = new TestResult("ChiSquared", chi2, TestType.RightTailed, new ChiSquaredDistribution(Count - 1));
+            TestResult test = new TestResult("χ²", chi2, TestType.RightTailed, new ChiSquaredDistribution(Count - 1));
 
             // return results
-            return (new FitResult(a, da, test));
+            ParameterCollection parameters = new ParameterCollection("Proportionality", a, va);
+            return (new UncertainMeasurementFitResult(parameters, test));
+            //return (new FitResult(a, da, test));
         }
 
         /// <summary>
@@ -356,7 +323,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>A fit result containing the best-fit intercept and slope parameters and a &#x3C7;<sup>2</sup> test of
         /// the quality of the fit.</returns>
         /// <exception cref="InsufficientDataException">There are fewer than two data points.</exception>
-        public FitResult FitToLine () {
+        public UncertainMeasurementFitResult FitToLine () {
 
             if (Count < 2) throw new InsufficientDataException();
 
@@ -367,8 +334,6 @@ namespace Meta.Numerics.Statistics {
             double Sxx = 0.0;
             double Sxy = 0.0;
             foreach (UncertainMeasurement<double> datum in this) {
-                //for (int i = 0; i < data.Count; i++) {
-                //DataPoint datum = data[i];
                 double x = datum.X;
                 double y = datum.Y.Value;
                 double dy = datum.Y.Uncertainty;
@@ -383,9 +348,9 @@ namespace Meta.Numerics.Statistics {
 
             // fit to x2 = m x1 + b
             double b = (Sy * Sxx - Sx * Sxy) / D;
-            double db = Math.Sqrt(Sxx / D);
+            double vb = Sxx / D;
             double m = (S * Sxy - Sx * Sy) / D;
-            double dm = Math.Sqrt(S / D);
+            double vm = S / D;
             double cov = -Sx / D;
 
             // compute chi^2
@@ -399,18 +364,19 @@ namespace Meta.Numerics.Statistics {
             }
             TestResult test = new TestResult("χ²", chi2, TestType.RightTailed, new ChiSquaredDistribution(Count - 2));
 
-            return (new FitResult(b, db, m, dm, cov, test));
+            ParameterCollection parameters = new ParameterCollection("Intercept", b, vb, "Slope", m, vm, cov);
+            return (new UncertainMeasurementFitResult(parameters, test));
         }
 
         /// <summary>
         /// Fits the data to a polynomial.
         /// </summary>
         /// <param name="order">The order of the polynomial to fit.</param>
-        /// <returns>A fit result containg the best-fit polynomial coefficients, in order of ascending power from 0 to <paramref name="order"/>,
+        /// <returns>A fit result containing the best-fit polynomial coefficients, in order of ascending power from 0 to <paramref name="order"/>,
         /// and a &#x3C7;<sup>2</sup> test of the quality of the fit.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="order"/> is negative.</exception>
         /// <exception cref="InsufficientDataException">There are more polynomial coefficients than data points.</exception>
-        public FitResult FitToPolynomial (int order) {
+        public UncertainMeasurementFitResult FitToPolynomial (int order) {
 
             if (order < 0) throw new ArgumentOutOfRangeException(nameof(order));
             if (Count < order) throw new InsufficientDataException();
@@ -425,7 +391,7 @@ namespace Meta.Numerics.Statistics {
             }
 
             // call the linear function fitter
-            FitResult fit = FitToLinearFunction(functions);
+            UncertainMeasurementFitResult fit = FitToLinearFunction(functions);
             return (fit);
 
         }
@@ -457,6 +423,28 @@ namespace Meta.Numerics.Statistics {
                 chi2 += z * z;
             }
             return (chi2);
+        }
+
+    }
+
+    public class UncertainMeasurementFitResult : FitResult {
+
+        internal UncertainMeasurementFitResult(ParameterCollection parameters, TestResult goodnessOfFit) : base() {
+            this.parameters = parameters;
+            this.goodnessOfFit = goodnessOfFit;
+        }
+
+        private readonly ParameterCollection parameters;
+        private readonly TestResult goodnessOfFit;
+
+        public TestResult GoodnessOfFit {
+            get {
+                return (goodnessOfFit);
+            }
+        }
+
+        internal override ParameterCollection CreateParameters () {
+            return (parameters);
         }
 
     }

@@ -10,7 +10,7 @@ namespace Meta.Numerics.Extended {
     /// <remarks>
     /// <para>The double double format uses two <see cref="Double"/> values to effectively
     /// double the precision with which a number can be stored and manipulated as compared to
-    /// to <see cref="Double"/>, to approximately 31 decimal digits of precision.</para>
+    /// to the <see cref="Double"/> structure, i.e. to approximately 31 decimal digits of precision.</para>
     /// <para>Of all the extended precision floating point systems, double double is the
     /// fastest when implemented in software. A typical floating point operation on
     /// double doubles is 3-4 times slower than on <see cref="Double"/>s.</para>

@@ -42,9 +42,9 @@ namespace Test {
                     xyzSample.Add(x, y, z);
                 }
                 MultiLinearRegressionResult fit = xyzSample.LinearRegression(2);
-                double fcx = fit.Parameters.Best[0];
-                double fcy = fit.Parameters.Best[1];
-                double fcz = fit.Parameters.Best[2];
+                double fcx = fit.Parameters.ValuesVector[0];
+                double fcy = fit.Parameters.ValuesVector[1];
+                double fcz = fit.Parameters.ValuesVector[2];
 
                 r2Sample.Add(fit.RSquared);
             }

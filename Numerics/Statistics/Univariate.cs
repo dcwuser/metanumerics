@@ -4,21 +4,55 @@ using System.Diagnostics;
 
 namespace Meta.Numerics.Statistics {
 
-
     /// <summary>
     /// Contains methods for analyzing univariate samples.
     /// </summary>
+    /// <remarks>
+    /// <para>This is the central class for the analysis of univariate samples of independent, identically
+    /// distributed values.</para>
+    /// <para>To compute moments of the sample data, you can use methods such as
+    /// <see cref="Mean(IReadOnlyCollection{double})">Mean</see>,
+    /// <see cref="Variance(IReadOnlyCollection{double})">Variance</see>,
+    /// <see cref="RawMoment(IReadOnlyCollection{double}, int)">RawMoment</see>, and
+    /// <see cref="CentralMoment(IReadOnlyCollection{double}, int)">CentralMoment</see>.
+    /// Note that these are moments of the sample data, not estimates of the moments of the underlying
+    /// population from which the sample was drawn.</para>
+    /// <para>To obtain estimates of the moments of the underlying population from which the sample was
+    /// drawn, you can use methods such as
+    /// <see cref="PopulationMean(IReadOnlyCollection{double})">PopulationMean</see>,
+    /// <see cref="PopulationStandardDeviation(IReadOnlyCollection{double})">PopulationStandardDeviation</see>,
+    /// <see cref="PopulationRawMoment(IReadOnlyCollection{double}, int)">PopulationRawMoment</see>,
+    /// and <see cref="PopulationCentralMoment(IReadOnlyCollection{double}, int)">PopulationCentralMoment</see>.
+    /// These estimates all come with associated error bars, so they return <see cref="UncertainValue"/> structures.</para>
+    /// <para>You can fit a sample to any number of distributions using methods such as
+    /// <see cref="FitToExponential(IReadOnlyList{double})"/>,
+    /// <see cref="FitToLognormal(IReadOnlyList{double})"/>,
+    /// <see cref="FitToNormal(IReadOnlyList{double})"/>,
+    /// <see cref="FitToWeibull(IReadOnlyList{double})"/>.
+    /// </para>
+    /// <para>You can perform statistical tests on a single sample,
+    /// such as the <see cref="StudentTTest(IReadOnlyCollection{double}, double)"/> or
+    /// <see cref="SignTest(IReadOnlyCollection{double}, double)"/>
+    /// to compare a sample to a reference value, or the <see cref="ShapiroFranciaTest(IReadOnlyList{double})"/> to test
+    /// a sample for normality. You can also perform statistical tests comparing multiple samples,
+    /// such as the two-sample <see cref="StudentTTest(IReadOnlyCollection{double}, IReadOnlyCollection{double})"/>,
+    /// and <see cref="MannWhitneyTest(IReadOnlyList{double}, IReadOnlyList{double})" />, or the multi-sample
+    /// <see cref="OneWayAnovaTest(IReadOnlyCollection{double}[])"/> and
+    /// <see cref="KruskalWallisTest(IReadOnlyList{double}[])"/>.</para>
+    /// <para>Most of the methods in this class are extension methods that accept as a sample any type
+    /// that implements the appropriate collection interface. So, for example, given
+    /// sample values in a <see cref="List{T}">List&lt;string&gt;</see> named <tt>s</tt>, you could estimate
+    /// the variance of the population from which it was drawn either by <tt>s.PopulationVariance()</tt>
+    /// or <tt>Univariate.PopulationVariance(s)</tt>.</para>
+    /// </remarks>
     public static partial class Univariate {
 
         /// <summary>
         /// Computes the sample mean.
         /// </summary>
         /// <param name="sample">The sample.</param>
-        /// <returns>The sample mean.</returns>
-        /// <remarks>
-        /// <para>Note this method can be called either as a static method of the <see cref="Univariate"/> class, or as an
-        /// extension method of any collection that implements <see cref="IReadOnlyCollection{Double}"/>.</para>
-        /// </remarks>
+        /// <returns>The mean of the sample.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         public static double Mean (this IReadOnlyCollection<double> sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
@@ -39,19 +73,18 @@ namespace Meta.Numerics.Statistics {
         /// Computes the sample variance.
         /// </summary>
         /// <param name="sample">The sample.</param>
-        /// <returns>The sample variance.</returns>
+        /// <returns>The variance of the sample data.</returns>
         /// <remarks>
-        /// <para>Note that a few authors use the term "sample variance" to mean "the population variance as estimated by the sample". We do not
-        /// adopt this aberant convention, which is contrary to all other conventional meanings of sample moments. In other words, what is returned
-        /// by this methods is the sum of squared deviations divided by n, not divided by (n-1). If you want an estimate of the population
-        /// variance, use the <see cref="PopulationVariance"/> method.</para>
-        /// <para>Note this method can be called either as a static method of the <see cref="Univariate"/> class, or as an
-        /// extension method of any collection that implements <see cref="IReadOnlyCollection{Double}"/>.</para>
+        /// <para>Note that some  authors use the term "sample variance" to mean "the population variance as estimated by the sample". We do not
+        /// adopt this aberrant convention, which is contrary to the conventional meanings of all other sample moments. This means that
+        /// what is returned by this method is the sum of squared deviations divided by n, not divided by (n-1). If you want an estimate
+        /// of the population variance, use the <see cref="PopulationVariance"/> method.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         public static double Variance (this IReadOnlyCollection<double> sample) {
 
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 2) return (Double.NaN);
+            if (sample.Count < 1) return (Double.NaN);
 
             int n;
             double mean, sumOfSquares;
@@ -65,15 +98,12 @@ namespace Meta.Numerics.Statistics {
         /// Computes the sample skewness.
         /// </summary>
         /// <param name="sample">The sample.</param>
-        /// <returns>The sample skewness.</returns>
-        /// <remarks>
-        /// <para>Note this method can be called either as a static method of the <see cref="Univariate"/> class, or as an
-        /// extension method of any collection that implements <see cref="IReadOnlyCollection{Double}"/>.</para>
-        /// </remarks>
+        /// <returns>The skewness of the sample data.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Skewness"/>
         public static double Skewness (this IReadOnlyCollection<double> sample) {
-
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 3) return (Double.NaN);
+            if (sample.Count < 1) return (Double.NaN);
 
             int n;
             double m1, c2, c3;
@@ -188,23 +218,23 @@ namespace Meta.Numerics.Statistics {
         /// Computes the sample standard deviation.
         /// </summary>
         /// <param name="sample">The sample.</param>
-        /// <returns>The sample standard deviation.</returns>
+        /// <returns>The standard deviation of the sample data.</returns>
         /// <remarks>
         /// <para>Note that a few authors use the term "sample standard deviation" to mean "the square root of the population variance as estimated by the sample".
-        /// We do not adopt this aberant convention, which is contrary to all other conventional meanings of sample moments. In other words, what is returned
+        /// We do not adopt this aberrant convention, which is contrary to all other conventional meanings of sample moments. In other words, what is returned
         /// by this methods is the square root of the sum of squared deviations divided by n, not divided by (n-1). If you want an estimate of the population
         /// standard deviation, use the <see cref="PopulationStandardDeviation"/> method.</para>
-        /// <para>This method can be called either as a static method of the <see cref="Univariate"/> class, or as an
-        /// extension method of any collection that implements <see cref="IReadOnlyCollection{Double}"/>.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         public static double StandardDeviation (this IReadOnlyCollection<double> sample) {
             return (Math.Sqrt(Variance(sample)));
         }
 
-
         /// <summary>
         /// Computes the Bessel-corrected standard deviation.
         /// </summary>
+        /// <param name="sample">The sample.</param>
+        /// <returns>The Bessel-corrected standard deviation.</returns>
         /// <remarks>
         /// <para>This probably isn't the quantity you want, even though it's what many software
         /// packages refer to as the "standard deviation". It is the square root of the sum of
@@ -218,12 +248,13 @@ namespace Meta.Numerics.Statistics {
         /// reason this property exists at all is to satisfy users who want to compute the exact
         /// same value that another software package did.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <seealso cref="StandardDeviation"/>
         /// <seealso cref="PopulationStandardDeviation"/>
         /// <seealso href="https://en.wikipedia.org/wiki/Bessel%27s_correction"/>
         /// <seealso href="https://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation"/>
         /// <seealso href="https://en.wikipedia.org/wiki/Bias_of_an_estimator"/>
-        public static double CorrectedStandardDeviation (IReadOnlyCollection<double> sample) {
+        public static double CorrectedStandardDeviation (this IReadOnlyCollection<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) return (Double.NaN);
 
@@ -238,9 +269,10 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Computes the given sample raw moment.
         /// </summary>
-        /// <param name="sample">The sample containing the data.</param>
+        /// <param name="sample">The sample.</param>
         /// <param name="r">The order of the moment to compute.</param>
-        /// <returns>The <paramref name="r"/>th raw moment of the sample.</returns>
+        /// <returns>The <paramref name="r"/>th raw moment of the sample data.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         public static double RawMoment (this IReadOnlyCollection<double> sample, int r) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 1) throw new InsufficientDataException();
@@ -262,13 +294,14 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Computes the given sample central moment.
         /// </summary>
-        /// <param name="sample">The sample containing the data.</param>
+        /// <param name="sample">The sample.</param>
         /// <param name="r">The order of the moment to compute.</param>
         /// <returns>The <paramref name="r"/>th central moment of the sample.</returns>
         /// <remarks>
-        /// <para>This method computes the central momements of the sample data, not the estimated
+        /// <para>This method computes the central moments of the sample data, not the estimated
         /// central moments of the underlying population; to obtain the latter, use <see cref="PopulationCentralMoment(IReadOnlyCollection{double},int)"/>.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         public static double CentralMoment(this IReadOnlyCollection<double> sample, int r) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 1) throw new InsufficientDataException();

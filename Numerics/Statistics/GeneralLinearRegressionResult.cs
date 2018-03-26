@@ -4,62 +4,10 @@ using System.Collections.Generic;
 
 namespace Meta.Numerics.Statistics {
 
-    // Rename to RegressionResult or FitResult
-
     /// <summary>
-    /// The base class of all fit results.
+    /// Represents the result of any linear regression.
     /// </summary>
-    public class BaseFitResult {
-
-        internal BaseFitResult ()
-        {
-            this.parameters = new Lazy<ParameterCollection>(CreateParameters);
-            this.logLikelihood = Double.NaN;
-        }
-
-        internal BaseFitResult (ParameterCollection parameters, double logLikelihood) {
-            Debug.Assert(parameters != null);
-            this.parameters = new Lazy<ParameterCollection>(() => parameters);
-            this.logLikelihood = logLikelihood;
-        }
-
-        //private readonly ParameterCollection parameters;
-
-        private readonly Lazy<ParameterCollection> parameters;
-
-        private readonly double logLikelihood;
-
-        /// <summary>
-        /// Gets the parameters of the regression.
-        /// </summary>
-        public virtual ParameterCollection Parameters {
-            get {
-                return (parameters.Value);
-            }
-        }
-
-        internal virtual ParameterCollection CreateParameters ()
-        {
-            throw new InvalidOperationException();
-        }
-
-        /*
-        /// <summary>
-        /// Gets the log-likelihood value of the fit.
-        /// </summary>
-        /// <see href="https://en.wikipedia.org/wiki/Likelihood_function"/>
-        public virtual double LogLikelihood {
-            get {
-                return (logLikelihood);
-            }
-        }
-        */
-    }
-
-    /// <summary>
-    /// Represents the result of a general linear regression.
-    /// </summary>
-    public abstract class GeneralLinearRegressionResult : BaseFitResult {
+    public abstract class GeneralLinearRegressionResult : FitResult {
 
         internal GeneralLinearRegressionResult () : base() {
             this.anova = new Lazy<OneWayAnovaResult>(CreateAnova);
@@ -70,12 +18,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets an estimate of the intercept.
         /// </summary>
-        public virtual UncertainValue Intercept {
-            get {
-                return (Parameters["Intercept"].Estimate);
-            }
-        }
-
+        public abstract UncertainValue Intercept { get; }
 
         /// <summary>
         /// Gets r<sup>2</sup> for the regression. 

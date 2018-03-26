@@ -99,10 +99,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        // We expect to get P = 0 at left boundary and P = 1 at right boundary
-        // If we use exclusive summation, we get P = 0 at left boundary but P < 1 at right boundary
-        // If we use inclusive summation, we get P = 1 at right bountary but P > 1 at left boundary
-
         public override double LeftExclusiveProbability (int k) {
             if (k < sMin) {
                 return (0.0);
@@ -167,7 +163,6 @@ namespace Meta.Numerics.Statistics.Distributions {
             int shiftIncrement = n * (n + 1) / 2;
             sMin = n * (n + 1) * (n + 2) / 6;
             sMax = n * (n + 1) * (2 * n + 1) / 6;
-            //Console.WriteLine("sMin = {0} sMax = {1}", sMin, sMax);
 
             // to improve performance, we calculate counts only up to the middle bin and use symmetry to obtain the higher ones
             // the midpoint is of course (sMin+sMax)/2, but for even n this is a half-integer
@@ -181,7 +176,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             // only the entries between sMin and sMax matter, as per (1) and (2) above
             long[] totalP = new long[sMid + 1];
 
-            // as per Ryser's formula, loop over all cominations of rows
+            // as per Ryser's formula, loop over all combinations of rows
             // use b as a length 2^n bitmask indicating which columns to include in a combination
             ulong bmax = (((ulong) 1) << n);
 
@@ -198,19 +193,15 @@ namespace Meta.Numerics.Statistics.Distributions {
             while (p < sMin) p += shiftIncrement;
             while (p <= sMid) {
                 totalP[p] += baseSign ? -1 : 1;
-                //totalP[p] += 1;
                 p += shiftIncrement;
             }
 
             // okay, now we are ready for the remaining combinations of columns
             for (ulong b = 3; b < bmax; b += 2) {
-                //Console.WriteLine("k={0}", k);
-
                 // compute the row sum polynomial for the first row
                 // while we are at it, we compute the sign of the combination
                 // and note the degree of the polynomial as well
                 long[] productP = new long[n + 1];
-                //bool sign = true;
                 bool sign = baseSign;
                 int d = 0;
                 for (int c = 0; c < n; c++) {
@@ -233,14 +224,10 @@ namespace Meta.Numerics.Statistics.Distributions {
                     productP = LongPolynomialMultiply(productP, da, b, d, r + 1, sMid);
                 }
 
-                //LongPolynomialMath.Write(productP, 0, productP.Length-1);
-
                 // add the contribution that particular k,
                 // then the contributions from left-shifting it,
                 // which as per (3) are obtained by shifting the powers by n(n+1)/2
                 // for each left-shift
-
-                /* int shift = 0; */
                 int shift = shiftIncrement;
                 ulong k2 = b;
                 while (k2 < bmax) {
@@ -251,20 +238,8 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             }
 
-            // include the overall (-1)^n
-            //if (n % 2 == 0) {
-            //    LongPolynomialNegate(totalP, sMin, sMid);
-            //}
-
             counts = new long[sMid - sMin + 1];
             Array.Copy(totalP, sMin, counts, 0, counts.Length);
-            //for (int i = 0; i < counts.Length; i++) {
-            //    counts[i] = totalP[sMin + i];
-            //}
-            //for (int i = sMin; i <= sMid; i++) {
-            //    Console.WriteLine("{0} {1}", i, totalP[i]);
-            //}
-
         }
 
         // a is a polynomial a[0] + a[1] x + a[2] x^2 + \cdots + a[d_a] x^{d_a} of degree d_a, so a.Length >= da + 1

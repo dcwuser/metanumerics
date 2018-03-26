@@ -53,21 +53,6 @@ namespace Meta.Numerics.Matrices {
                 det = det * luStore[dimension * i + i];
             }
             return (det);
-            
-            /*
-            double lnDet = 0.0;
-            int sign = parity;
-            for (int i = 0; i < Dimension; i++) {
-                double t = luStore[dimension * i + i];
-                if (t < 0.0) {
-                    sign = -sign;
-                    lnDet += Math.Log(-t);
-                } else {
-                    lnDet += Math.Log(t);
-                }
-            }
-            return (Math.Exp(lnDet) * sign);
-            */
         }
 
 
@@ -175,7 +160,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Gets the L factor.
         /// </summary>
-        /// <returns>The lower-left trangular factor L of the LU decomposition.</returns>
+        /// <returns>The lower-left triangular factor L of the LU decomposition.</returns>
         /// <remarks>
         /// <para>The pivoted LU decomposition algorithm guarantees that the diagonal entries of this matrix are all one, and
         /// that the magnitudes of the sub-diagonal entries are all less than or equal to one.</para>

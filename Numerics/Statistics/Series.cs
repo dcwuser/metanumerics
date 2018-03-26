@@ -271,6 +271,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Fits an AR(1) model to the time series.
         /// </summary>
+        /// <param name="series">The data series.</param>
         /// <returns>The fit with parameters lag-1 coefficient, mean, and standard deviation.</returns>
         public static AR1FitResult FitToAR1 (this IReadOnlyList<double> series) {
 

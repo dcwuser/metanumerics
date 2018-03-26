@@ -74,7 +74,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the set of best-fit parameters, as a vector.
         /// </summary>
-        public ColumnVector Best {
+        public ColumnVector ValuesVector {
             get {
                 return (best);
             }
@@ -83,7 +83,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the covariance matrix of the fit parameters.
         /// </summary>
-        public SymmetricMatrix Covariance {
+        public SymmetricMatrix CovarianceMatrix {
             get {
                 return (covariance);
             }

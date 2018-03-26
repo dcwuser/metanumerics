@@ -107,9 +107,6 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="name">The name of the input column.</param>
         /// <returns>The best-fit value the coefficient, with uncertainty.</returns>
-        /// <remarks>
-        /// <para>Note that the <paramref name="k"/>=0 term is the intercept.</para>
-        /// </remarks>
         public UncertainValue CoefficientOf (string name) {
             return (this.Parameters[name].Estimate);
         }

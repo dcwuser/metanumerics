@@ -220,12 +220,8 @@ namespace Test {
             UncertainMeasurementSample DataSet = new UncertainMeasurementSample();
             
             for (int i = 0; i < 10; i++) DataSet.Add(X_axis[i], Y_axis[i], 1);
-            //for (int i = 0; i < 10; i++) DataSet.Add(X_axis[i] - 40270.0, Y_axis[i] - 247.0, 1);
 
-            FitResult DataFit = DataSet.FitToPolynomial(3);
- 
-            for (int i = 0; i < DataFit.Dimension; i++)
-                Console.WriteLine("a" + i.ToString() + " = " + DataFit.Parameter(i).Value);
+            UncertainMeasurementFitResult DataFit = DataSet.FitToPolynomial(3);
 
             BivariateSample bs = new BivariateSample();
             for (int i = 0; i < 10; i++) bs.Add(X_axis[i], Y_axis[i]);

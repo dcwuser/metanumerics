@@ -11,6 +11,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="sample">The sample.</param>
         /// <returns>The minimum value in the sample.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         public static double Minimum (this IReadOnlyCollection<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 1) return (Double.NaN);
@@ -26,6 +27,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="sample">The sample.</param>
         /// <returns>The maximum value in the sample.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         public static double Maximum (this IReadOnlyCollection<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 1) return (Double.NaN);
@@ -37,15 +39,15 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Finds the median of the sample.
+        /// Finds the median.
         /// </summary>
         /// <param name="sample">The sample.</param>
         /// <returns>The median of the sample.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Median"/> 
         public static double Median (this IReadOnlyList<double> sample) {
-
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 1) throw new InsufficientDataException();
+            if (sample.Count < 1) return(Double.NaN);
 
             int[] order = GetSortOrder(sample);
 
@@ -61,26 +63,36 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Finds the interquartile range of sample measurmements.
+        /// Finds the interquartile range.
         /// </summary>
         /// <param name="sample">The sample.</param>
-        /// <remarks>The interquartile range is the interval between the 25th and the 75th percentile.</remarks>
+        /// <returns>The interquartile range of the sample.</returns>
+        /// <remarks>
+        /// <para>The interquartile range is the interval between the 25th and the 75th percentile.
+        /// Statistics textbooks define this range as the width of this interval, but since we
+        /// have to compute the endpoints to get the width, we return the full <see cref="Interval"/>.
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <seealso cref="InverseLeftProbability(IReadOnlyList{Double},Double)"/>
         /// <seealso href="https://en.wikipedia.org/wiki/Interquartile_range"/>
         public static Interval InterquartileRange (this IReadOnlyList<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample.Count < 2) throw new InsufficientDataException();
             int[] order = GetSortOrder(sample);
             return (Interval.FromEndpoints(InverseLeftProbability(sample, 0.25, order), InverseLeftProbability(sample, 0.75, order)));
         }
 
         /// <summary>
-        /// Finds the trimean.
+        /// Finds the tri-mean.
         /// </summary>
         /// <param name="sample">The sample.</param>
-        /// <returns>Tukey's trimean for the sample.</returns>
+        /// <returns>Tukey's tri-mean for the sample.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Trimean"/>
         public static double Trimean (this IReadOnlyList<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample.Count < 1) return (Double.NaN);
             int[] order = GetSortOrder(sample);
             double x1 = InverseLeftProbability(sample, 0.25, order);
             double x2 = InverseLeftProbability(sample, 0.50, order);
@@ -89,13 +101,19 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Finds the sample value corresponding to a given percentile score.
+        /// Finds the sample value corresponding to a given percentile.
         /// </summary>
         /// <param name="sample">The sample.</param>
         /// <param name="P">The percentile, which must lie between zero and one.</param>
         /// <returns>The corresponding value.</returns>
+        /// <remarks>
+        /// <para>For percentile inputs which do not lie exactly on a sample value,
+        /// this method interpolates linearly between the two nearest sample values.
+        /// Therefore you cannot be certain that the value returned will be contained in the sample.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="P"/> lies outside [0,1].</exception>
-        /// <exception cref="InsufficientDataException"><see cref="Sample.Count"/> is less than two.</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Quantile_function"/>
         public static double InverseLeftProbability (this IReadOnlyList<double> sample, double P) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
@@ -122,7 +140,9 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="sample">The sample.</param>
         /// <param name="value">The reference value.</param>
-        /// <returns>The fraction of values in the sample that are less than or equal to the given reference value.</returns>
+        /// <returns>The empirical distribution function.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
+        /// <see href="https://en.wikipedia.org/wiki/Empirical_distribution_function"/>
         public static double LeftProbability (this IReadOnlyList<double> sample, double value) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             int[] order = GetSortOrder(sample);

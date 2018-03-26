@@ -11,7 +11,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents the result of a linear logistic regression fit.
     /// </summary>
-    public sealed class LinearLogisticRegressionResult : BaseFitResult {
+    public sealed class LinearLogisticRegressionResult : FitResult {
 
         // We need a goodness-of-fit measurement
 

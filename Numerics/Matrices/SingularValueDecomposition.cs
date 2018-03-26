@@ -11,7 +11,7 @@ namespace Meta.Numerics.Matrices {
     /// <para>The singular value decomposition of a matrix represents it as a product of a left orthogonal matrix U, a quasi-diagonal
     /// &#x3A3; matrix, and a right orthogonal matrix V.</para>
     /// <img src="../images/SVDEquation.png" />
-    /// <para>Any rectangular matrix has an SVD decomposition. The matrix need not be square. If square, it need not be invertable.
+    /// <para>Any rectangular matrix has an SVD decomposition. The matrix need not be square. If square, it need not be invertible.
     /// The dimensions of the decomposition factors are illustrated in the following diagram.</para>
     /// <img src="../images/SVDForm.png" />
     /// <para>The elements of the &#x3A3; are called the singular values of the original matrix.</para>
@@ -19,7 +19,7 @@ namespace Meta.Numerics.Matrices {
     /// orthonormal basis for the domain of the operator, while the columns of U form an orthonormal
     /// basis for the range of the operator. These rows and columns are called, respectively, the right and left singular vectors
     /// of the matrix.</para>
-    /// <para>The right singular vectors corresponding to zero singular values span the nullspace of A, that is the
+    /// <para>The right singular vectors corresponding to zero singular values span the null-space of A, that is the
     /// set of all x for which Ax = 0. The left singular vectors corresponding to non-zero singular values span the range of A,
     /// that is the space into which all Ax fall; the left singular vectors corresponding to zero singular values span the
     /// complementary space into which no Ax fall. The total number of non-zero singular values is the rank of A.</para>
@@ -29,7 +29,7 @@ namespace Meta.Numerics.Matrices {
     /// <para>Notice that elements in the last columns of U do not contribute to A since they will be multiplied with elements of zero rows of &#x3A3;.
     /// Many applications use a "thin" or "reduced" form of the SVD, in which the last columns of U and the last rows of &#x3A3; are omitted;
     /// this makes U not square (and therefore not orthogonal) and &#x3A3; square (and diagonal). Since the remaining elements are the same, you
-    /// can obtain the thin SVD from this object by simply ignoring the irrelevent elements.</para>
+    /// can obtain the thin SVD from this object by simply ignoring the irrelevant elements.</para>
     /// <para>Use the <see cref="RectangularMatrix.SingularValueDecomposition"/> of the <see cref="RectangularMatrix"/> class
     /// to obtain the SVD of an rectangular matrix, or the corresponding <see cref="SquareMatrix.SingularValueDecomposition"/>
     /// method of the <see cref="SquareMatrix"/> class to obtain the SVD of a square matrix.</para>
@@ -74,27 +74,29 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Returns the left transform matrix.
+        /// Gets the left transform matrix.
         /// </summary>
-        /// <returns>The matrix U, such that A = U S V<sup>T</sup>.</returns>
+        /// <value>The matrix U, such that A = U S V<sup>T</sup>.</value>
         /// <remarks>
         /// <para>The returned matrix is read-only. If you need to make changes to it, you can call <see cref="SquareMatrix.Copy"/> to obtain a writable copy.</para>
         /// </remarks>
-        public SquareMatrix LeftTransformMatrix () {
-            return (new SquareMatrix(utStore, 0, rows, 1, rows, true));
-            //double[] left = MatrixAlgorithms.Transpose(utStore, rows, rows);
-            //return (new SquareMatrix(left, rows));
+        public SquareMatrix LeftTransformMatrix {
+            get {
+                return (new SquareMatrix(utStore, 0, rows, 1, rows, true));
+            }
         }
 
         /// <summary>
-        /// Returns the right transform matrix.
+        /// Gets the right transform matrix.
         /// </summary>
-        /// <returns>The matrix V, such that A = U S V<sup>T</sup>.</returns>
+        /// <value>The matrix V, such that A = U S V<sup>T</sup>.</value>
         /// <remarks>
         /// <para>The returned matrix is read-only. If you need to make changes to it, you can call <see cref="SquareMatrix.Copy"/> to obtain a writable copy.</para>
         /// </remarks>
-        public SquareMatrix RightTransformMatrix () {
-            return (new SquareMatrix(vStore, cols, true));
+        public SquareMatrix RightTransformMatrix {
+            get {
+                return (new SquareMatrix(vStore, cols, true));
+            }
         }
 
         /// <summary>
@@ -112,10 +114,14 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Gets the specificed singular value.
+        /// Gets the specified singular value.
         /// </summary>
         /// <param name="n">The (zero-based) index.</param>
         /// <returns>The <paramref name="n"/>th singular value.</returns>
+        /// <remarks>
+        /// <para>Larger singular values have smaller indexes. The largest singular value, therefore, is
+        /// obtained by <tt>svd.SingularValue(0)</tt>.</para>
+        /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> lies outside the range [0, <see cref="Dimension"/> - 1].</exception>
         public double SingularValue (int n) {
             if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException(nameof(n));
@@ -154,7 +160,7 @@ namespace Meta.Numerics.Matrices {
         /// Returns the condition number of the matrix.
         /// </summary>
         /// <remarks>
-        /// <para>The conidition number is the ratio of the largest singular value to smallest singular value. It is therefore always larger than one.</para>
+        /// <para>The condition number is the ratio of the largest singular value to smallest singular value. It is therefore always larger than one.</para>
         /// </remarks>
         public double ConditionNumber {
             get {

@@ -75,39 +75,6 @@ namespace Meta.Numerics.Data
         {
             return (((IEnumerable<FrameColumn>) this).GetEnumerator());
         }
-        /*
-        bool IReadOnlyDictionary<string, FrameColumn>.ContainsKey (string key) {
-            return (frame.GetColumnIndex(key) >= 0);
-        }
 
-        bool IReadOnlyDictionary<string, FrameColumn>.TryGetValue (string key, out FrameColumn value) {
-            int columnIndex = frame.GetColumnIndex(key);
-            if (columnIndex < 0) {
-                value = null;
-                return (false);
-            } else {
-                value = new FrameColumn(frame, columnIndex);
-                return (true);
-            }
-        }
-
-        IEnumerator<KeyValuePair<string, FrameColumn>> IEnumerable<KeyValuePair<string, FrameColumn>>.GetEnumerator () {
-            foreach(FrameColumn column in ((IEnumerable<FrameColumn>) this)) {
-                yield return (new KeyValuePair<string, FrameColumn>(column.Name, column));
-            }
-        }
-
-        IEnumerable<string> IReadOnlyDictionary<string, FrameColumn>.Keys {
-            get {
-                return (frame.columnMap.Keys);
-            }
-        }
-
-        IEnumerable<FrameColumn> IReadOnlyDictionary<string, FrameColumn>.Values {
-            get {
-                return ((IEnumerable<FrameColumn>) this);
-            }
-        }
-        */
     }
 }

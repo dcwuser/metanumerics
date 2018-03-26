@@ -657,7 +657,7 @@ namespace Test {
                 Console.WriteLine(SVD.SingularValue(i));
             }
 
-            SquareMatrix S = SVD.LeftTransformMatrix().Transpose() * H * SVD.RightTransformMatrix();
+            SquareMatrix S = SVD.LeftTransformMatrix.Transpose() * H * SVD.RightTransformMatrix;
             for (int i = 0; i < SVD.Dimension; i++) {
                 Console.WriteLine(S[i, i]);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(S[i, i], SVD.SingularValue(i)));
@@ -788,9 +788,9 @@ namespace Test {
                 for (int i = 0; i < d; i++) x[i] = i;
                 ColumnVector b = A * x;
 
-                ColumnVector b1 = SVD.LeftTransformMatrix().Transpose() * b;
+                ColumnVector b1 = SVD.LeftTransformMatrix.Transpose() * b;
                 for (int i = 0; i < SVD.Rank; i++) b1[i] = b1[i] / SVD.SingularValue(i);
-                ColumnVector b2 = SVD.RightTransformMatrix() * b1;
+                ColumnVector b2 = SVD.RightTransformMatrix * b1;
 
                 ColumnVector y = SVD.Solve(b);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(x, y));

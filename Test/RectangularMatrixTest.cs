@@ -265,18 +265,17 @@ namespace Test {
                 Assert.IsTrue(SVD.ColumnCount == SVD.ColumnCount);
                 Assert.IsTrue(SVD.Dimension == SVD.ColumnCount);
 
-                SquareMatrix U = SVD.LeftTransformMatrix();
+                SquareMatrix U = SVD.LeftTransformMatrix;
                 Assert.IsTrue(U.Dimension == R.RowCount);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(U.Transpose() * U, TestUtilities.CreateSquareUnitMatrix(U.Dimension)));
 
-                SquareMatrix V = SVD.RightTransformMatrix();
+                SquareMatrix V = SVD.RightTransformMatrix;
                 Assert.IsTrue(V.Dimension == R.ColumnCount);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(V.Transpose() * V, TestUtilities.CreateSquareUnitMatrix(V.Dimension)));
 
                 RectangularMatrix S = U.Transpose() * R * V;
                 for (int i = 0; i < SVD.Dimension; i++) {
                     double w = SVD.SingularValue(i);
-                    Console.WriteLine("  {0} {1}", w, S[i, i]);
                     Assert.IsTrue(w >= 0.0);
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(S[i, i], w));
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(R * SVD.RightSingularVector(i), w * SVD.LeftSingularVector(i)));
@@ -327,8 +326,8 @@ namespace Test {
             }
 
             // reconstruct
-            SquareMatrix U = SVD.LeftTransformMatrix();
-            SquareMatrix V = SVD.RightTransformMatrix();
+            SquareMatrix U = SVD.LeftTransformMatrix;
+            SquareMatrix V = SVD.RightTransformMatrix;
             double x1 = U[0, 0] * SVD.SingularValue(0) * V[0, 0] + U[0, 1] * SVD.SingularValue(1) * V[0, 1];
             Console.WriteLine("x1 = {0} {1}", x1, R[0, 0]);
             double y1 = U[0, 0] * SVD.SingularValue(0) * V[1, 0] + U[0, 1] * SVD.SingularValue(1) * V[1, 1];
@@ -376,9 +375,8 @@ namespace Test {
             A2[1, 0] = 0.0; A2[1, 1] = 1.0;
             // Singular values Sqrt(2), 0
             SingularValueDecomposition SVD2 = A2.SingularValueDecomposition();
-            SquareMatrix S2 = SVD2.LeftTransformMatrix().Transpose() * A2 * SVD2.RightTransformMatrix();
+            SquareMatrix S2 = SVD2.LeftTransformMatrix.Transpose() * A2 * SVD2.RightTransformMatrix;
             for (int i = 0; i < SVD2.Dimension; i++) {
-                Console.WriteLine("{0} {1}", S2[i, i], SVD2.SingularValue(i));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(S2[i, i], SVD2.SingularValue(i)));
             }
 

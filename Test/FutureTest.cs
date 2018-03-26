@@ -270,7 +270,7 @@ namespace Test {
                 new double[] { 1.0, 1.0 } 
             );
 
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(linearFit.Parameters.Best, nonlinearFit.Parameters.Best, Math.Sqrt(TestUtilities.TargetPrecision)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(linearFit.Parameters.ValuesVector, nonlinearFit.Parameters.ValuesVector, Math.Sqrt(TestUtilities.TargetPrecision)));
 
         }
 
@@ -608,7 +608,7 @@ namespace Test {
                 zSample.Add(yp - y0);
 
                 ColumnVector c = new ColumnVector(1.0, x0);
-                double v = c.Transpose() * (fit.Parameters.Covariance) * c;
+                double v = c.Transpose() * (fit.Parameters.CovarianceMatrix) * c;
                 vSample.Add(v);
 
                 double u = s2 * (1.0 + 1.0 / n + MoreMath.Sqr(x0 - mx) / (cxx * n));

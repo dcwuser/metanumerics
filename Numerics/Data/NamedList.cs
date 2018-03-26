@@ -64,28 +64,6 @@ namespace Meta.Numerics.Data
 
         internal abstract int AddItem (object value);
 
-        /*
-        object IReadOnlyList<object>.this[int index]
-        {
-            get
-            {
-                return (GetItem(index));
-            }
-        }
-
-        IEnumerator<object> IEnumerable<object>.GetEnumerator()
-        {
-            for (int index = 0; index < this.Count; index++)
-            {
-                yield return (GetItem(index));
-            }
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return (((IEnumerable<object>)this).GetEnumerator());
-        }
-        */
         internal static NamedList Create (string name, Type type) {
             Debug.Assert(name != null);
             Debug.Assert(type != null);

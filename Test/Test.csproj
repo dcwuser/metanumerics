@@ -91,7 +91,7 @@
     <Compile Include="ContingencyTableTest.cs" />
     <Compile Include="FrameTableTests.cs" />
     <Compile Include="DataListTests.cs" />
-    <Compile Include="DataSetTest.cs" />
+    <Compile Include="UncertainMeasurementSampleTests.cs" />
     <Compile Include="FrameViewTests.cs" />
     <Compile Include="DbTest.cs" />
     <Compile Include="DiscreteDistributionTest.cs" />

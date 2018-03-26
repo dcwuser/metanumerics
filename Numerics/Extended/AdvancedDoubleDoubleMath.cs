@@ -3,7 +3,7 @@
 namespace Meta.Numerics.Extended {
 
     /// <summary>
-    /// Contains method for computed advanced functions to double double accuracy.
+    /// Contains method for computing advanced functions to double double accuracy.
     /// </summary>
     public static class AdvancedDoubleDoubleMath {
 
@@ -12,6 +12,7 @@ namespace Meta.Numerics.Extended {
         /// </summary>
         /// <param name="x">The argument.</param>
         /// <returns>The value of erf(x).</returns>
+        /// <seealso cref="Meta.Numerics.Functions.AdvancedMath.Erf(double)"/>
         public static DoubleDouble Erf (DoubleDouble x) {
             if (x < 0.0) {
                 return (-Erf(-x));
@@ -23,10 +24,11 @@ namespace Meta.Numerics.Extended {
         }
 
         /// <summary>
-        /// Computes the complementatry error function.
+        /// Computes the complementary error function.
         /// </summary>
         /// <param name="x">The argument.</param>
         /// <returns>The value of erfc(x).</returns>
+        /// <seealso cref="Meta.Numerics.Functions.AdvancedMath.Erfc(double)"/>
         public static DoubleDouble Erfc (DoubleDouble x) {
             if (x < 4.0) {
                 return (1.0 - Erf_Series(x));

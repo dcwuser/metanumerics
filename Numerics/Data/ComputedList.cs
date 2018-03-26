@@ -8,16 +8,16 @@ using System.Threading.Tasks;
 namespace Meta.Numerics.Data
 {
 
-    internal class ComputedDataList<T> : NamedList, IEnumerable, IReadOnlyList<T>
+    internal class ComputedList<T> : NamedList, IEnumerable, IReadOnlyList<T>
     {
-        internal ComputedDataList (FrameView frame, string name, Func<FrameRow,T> function) : base(name) {
+        internal ComputedList (FrameView frame, string name, Func<FrameRow,T> function) : base(name) {
             this.frame = frame;
             this.name = name;
             this.function = function;
         }
 
         private readonly FrameView frame;
-        private string name;
+        private readonly string name;
         private readonly Func<FrameRow, T> function;
 
         public T this[int index]
@@ -37,21 +37,6 @@ namespace Meta.Numerics.Data
             }
         }
 
-        /*
-        public new string Name
-        {
-            get
-            {
-                return (name);
-            }
-
-            set
-            {
-                name = value;
-            }
-        }
-        */
-
         public override Type StorageType
         {
             get
@@ -65,13 +50,6 @@ namespace Meta.Numerics.Data
                 return (true);
             }
         }
-
-        /*
-        public int Add(object value)
-        {
-            throw new InvalidOperationException();
-        }
-        */
 
         public IEnumerator<T> GetEnumerator()
         {

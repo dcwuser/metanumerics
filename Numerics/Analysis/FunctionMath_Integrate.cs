@@ -12,8 +12,31 @@ namespace Meta.Numerics.Analysis {
         /// Evaluates a definite integral.
         /// </summary>
         /// <param name="integrand">The function to be integrated.</param>
+        /// <param name="start">The lower integration endpoint.</param>
+        /// <param name="end">The upper integration endpoint.</param>
+        /// <returns>The result of the integral.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="integrand"/> is <see langword="null"/>.</exception>
+        /// <exception cref="NonconvergenceException">The maximum number of function evaluations was exceeded before the integral
+        /// could be determined to the required precision.</exception>
+        /// <remarks>
+        /// <para>By default, integrals are evaluated to a relative precision of about 10<sup>-14</sup>, about two digits short of full
+        /// precision, or an absolute precision of about 10<sup>-16</sup>, using a budget of about 5000 evaluations.
+        /// To specify different evaluation settings use
+        /// <see cref="Integrate(Func{double, double}, double, double, IntegrationSettings)"/>.</para>
+        /// <para>See <see cref="Integrate(Func{double, double}, double, double, IntegrationSettings)"/> for detailed remarks on
+        /// numerical integration.</para>
+        /// </remarks>
+        public static IntegrationResult Integrate(Func<double, double> integrand, double start, double end) {
+            IntegrationSettings settings = new IntegrationSettings();
+            return (Integrate(integrand, start, end, settings));
+        }
+
+        /// <summary>
+        /// Evaluates a definite integral.
+        /// </summary>
+        /// <param name="integrand">The function to be integrated.</param>
         /// <param name="range">The range of integration.</param>
-        /// <returns>A numerical estimate of the given integral.</returns>
+        /// <returns>The result of the integral.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="integrand"/> is <see langword="null"/>.</exception>
         /// <exception cref="NonconvergenceException">The maximum number of function evaluations was exceeded before the integral
         /// could be determined to the required precision.</exception>
@@ -45,20 +68,32 @@ namespace Meta.Numerics.Analysis {
         /// <param name="integrand">The function to be integrated.</param>
         /// <param name="range">The range of integration.</param>
         /// <param name="settings">The settings which control the evaluation of the integral.</param>
-        /// <returns>The result of the integral, which includes an estimated value and an estimated uncertainty of that value.</returns>
+        /// <returns>The result of the integral.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="integrand"/> is <see langword="null"/>.</exception>
         /// <exception cref="NonconvergenceException">The maximum number of function evaluations was exceeded before the integral
         /// could be determined to the required precision.</exception>
         /// <remarks>
-        /// <para>To do integrals over infinite regions, simply set the lower bound of the <paramref name="range"/>
-        /// to <see cref="System.Double.NegativeInfinity"/> or the upper bound to <see cref="System.Double.PositiveInfinity"/>.</para>
-        /// <para>Our numerical integrator uses a Gauss-Kronrod rule that can integrate efficiently,
-        /// combined with an adaptive strategy that limits function
-        /// evaluations to those regions required to achieve the desired accuracy.</para>
+        /// <para>For information, see <see cref="Integrate(Func{double, double}, double, double, IntegrationSettings)"/>.</para>
+        /// </remarks>
+        public static IntegrationResult Integrate (Func<double, double> integrand, Interval range, IntegrationSettings settings) {
+            return (Integrate(integrand, range.LeftEndpoint, range.RightEndpoint, settings));
+        }
+
+        /// <summary>
+        /// Evaluates a definite integral with the given evaluation settings.
+        /// </summary>
+        /// <param name="integrand">The function to be integrated.</param>
+        /// <param name="start">The left integration endpoint.</param>
+        /// <param name="end">The right integration endpoint.</param>
+        /// <param name="settings">The settings which control the evaluation of the integral.</param>
+        /// <returns>The result of the integral.</returns>
+        /// <remarks>
+        /// <para>To do integrals over infinite regions, simply set <paramref name="start"/> or <paramref name="end"/>
+        /// to <see cref="System.Double.NegativeInfinity"/> or <see cref="System.Double.PositiveInfinity"/>.</para>
         /// <para>Our integrator handles smooth functions extremely efficiently. It handles integrands with
-        /// discontinuities, or discontinuities of derivatives, at the price of slightly more evaluations
-        /// of the integrand. It can handle oscillatory functions, as long as not too many periods contribute
-        /// significantly to the integral. It can integrate logarithmic and mild power-law singularities.</para>
+        /// discontinuities or kinks at the price of slightly more evaluations of the integrand.
+        /// It can handle oscillatory functions, as long as cancelation between positive and negative regions
+        /// is not too severe. It can integrate logarithmic and mild power-law singularities.</para>
         /// <para>Strong power-law singularities will cause the algorithm to fail with a <see cref="NonconvergenceException"/>.
         /// This is unavoidable for essentially any double-precision numerical integrator. Consider, for example,
         /// the integrable singularity x<sup>-1/2</sup>. Since
@@ -69,7 +104,7 @@ namespace Meta.Numerics.Analysis {
         /// to know the value of the integral to &#x3B5; &#x223C; 10<sup>-16</sup> precision, we would need to
         /// evaluate the contributions of points within &#x3B4; &#x223C; 10<sup>-32</sup> of the endpoints,
         /// which is far closer than we can get.</para>
-        /// <para>If you need to evaluate an integral with such a strong singularity, make an analytic
+        /// <para>If you need to evaluate an integral with such a strong singularity, try to make an analytic
         /// change of variable to absorb the singularity before attempting numerical integration. For example,
         /// to evaluate I = &#x222B;<sub>0</sub><sup>b</sup> f(x) x<sup>-1/2</sup> dx, substitute y = x<sup>1/2</sup>
         /// to obtain I = 2 &#x222B;<sub>0</sub><sup>&#x221A;b</sup> f(y<sup>2</sup>) dy.</para>
@@ -77,69 +112,57 @@ namespace Meta.Numerics.Analysis {
         /// <see cref="MultiFunctionMath.Integrate(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, IntegrationSettings)"/>.
         /// </para>
         /// </remarks>
-        public static IntegrationResult Integrate (Func<double,double> integrand, Interval range, IntegrationSettings settings) {
+        /// <exception cref="ArgumentNullException">The <paramref name="integrand"/> is <see langword="null"/>.</exception>
+        /// <exception cref="NonconvergenceException">The maximum number of function evaluations was exceeded before the integral
+        /// could be determined to the required precision.</exception>
+        public static IntegrationResult Integrate (Func<double,double> integrand, double start, double end, IntegrationSettings settings) {
 
             if (integrand == null) throw new ArgumentNullException(nameof(integrand));
             if (settings == null) throw new ArgumentNullException(nameof(settings));
 
-            settings = SetIntegrationDefaults(settings);
-
-            // remap infinite integrals to finite integrals
-
-            if (Double.IsNegativeInfinity(range.LeftEndpoint) && Double.IsPositiveInfinity(range.RightEndpoint)) {
-
-                // -infinity to +infinity
-
-                // remap to (-pi/2,pi/2)
-                Func<double, double> f0 = integrand;
-                Func<double, double> f1 = delegate (double t) {
-                    double x = Math.Tan(t);
-                    return (f0(x) * (1.0 + x * x));
-                };
-                Interval r1 = Interval.FromEndpoints(-Global.HalfPI, Global.HalfPI);
-
-                return (Integrate(f1, r1, settings));
-
-            } else if (Double.IsPositiveInfinity(range.RightEndpoint)) {
-
-                // finite to +infinity
-
-                // remap to interval (-1,1)
-                double a0 = range.LeftEndpoint;
-                Func<double, double> f0 = integrand;
-                Func<double, double> f1 = delegate (double t) {
-                    double q = 1.0 - t;
-                    double x = a0 + (1 + t) / q;
-                    return (f0(x) * (2.0 / q / q));
-                };
-                Interval r1 = Interval.FromEndpoints(-1.0, 1.0);
-
-                return (Integrate(f1, r1, settings));
-
-            } else if (Double.IsNegativeInfinity(range.LeftEndpoint)) {
-
-                // -infinity to finite
-
-                // remap to interval (-1,1)
-                double b0 = range.RightEndpoint;
-                Func<double, double> f0 = integrand;
-                Func<double, double> f1 = delegate (double t) {
-                    double q = t + 1.0;
-                    double x = b0 + (t - 1.0) / q;
-                    return(f0(x) * (2.0 / q / q));
-                };
-                Interval r1 = Interval.FromEndpoints(-1.0, 1.0);
-
-                return(Integrate(f1, r1, settings));
-
+            // Deal with right-to-left integrals
+            if (end < start) {
+                IntegrationResult r = Integrate(integrand, end, start, settings);
+                return (new IntegrationResult(-r.Estimate, r.EvaluationCount, r.Settings));
             }
 
-            // normal integral over a finite range
+            // Re-map infinite integrals to finite integrals
+            if (Double.IsNegativeInfinity(start) && Double.IsPositiveInfinity(end)) {
+                // -\infty to +\infty
+                // remap to (-\pi/2,\pi/2)
+                Func<double, double> f1 = delegate (double t) {
+                    double x = Math.Tan(t);
+                    return (integrand(x) * (1.0 + x * x));
+                };
+                return (Integrate(f1, -Global.HalfPI, +Global.HalfPI, settings));
+            } else if (Double.IsPositiveInfinity(end)) {
+                // finite to +\infty
+                // remap to interval (-1,1)
+                Func<double, double> f1 = delegate (double t) {
+                    double q = 1.0 / (1.0 - t);
+                    double x = start + (1.0 + t) * q;
+                    return (integrand(x) * 2.0 * q * q);
+                };
+                return (Integrate(f1, -1.0, +1.0, settings));
+            } else if (Double.IsNegativeInfinity(start)) {
+                // -\infty to finite
+                // remap to interval (-1,1)
+                Func<double, double> f1 = delegate (double t) {
+                    double q = t + 1.0;
+                    double x = end + (t - 1.0) / q;
+                    return(integrand(x) * (2.0 / q / q));
+                };
+                return(Integrate(f1, -1.0, +1.0, settings));
+            }
 
-            IAdaptiveIntegrator integrator = new GaussKronrodIntegrator(integrand, range);
+            // Fix settings.
+            settings = SetIntegrationDefaults(settings);
+
+            // normal integral over a finite range
+            Debug.Assert(end >= start);
+            IAdaptiveIntegrator integrator = new GaussKronrodIntegrator(integrand, Interval.FromEndpoints(start, end));
             IntegrationResult result = Integrate_Adaptive(integrator, settings);
             return (result);
-
         }
 
         // the drivers

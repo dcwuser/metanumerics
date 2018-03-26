@@ -9,7 +9,7 @@ using Meta.Numerics.Matrices;
 namespace Meta.Numerics.Statistics {
 
     /// <summary>
-    /// Represents the result of a linear logistic regression fit.
+    /// Describes the result of a linear logistic regression fit.
     /// </summary>
     public sealed class LinearLogisticRegressionResult : FitResult {
 

@@ -5,8 +5,9 @@ using System.Diagnostics;
 using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Statistics {
+
     /// <summary>
-    /// Represents the result of a multiple linear regression fit.
+    /// Describes the result of a multiple linear regression fit.
     /// </summary>
     public sealed class MultiLinearRegressionResult : GeneralLinearRegressionResult {
 

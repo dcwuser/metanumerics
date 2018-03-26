@@ -6,7 +6,7 @@ using Meta.Numerics.Statistics.Distributions;
 namespace Meta.Numerics.Statistics {
 
     /// <summary>
-    /// Represents the result of a statistical test.
+    /// Describes the result of a statistical test.
     /// </summary>
     /// <remarks>
     /// <para>A statistical test compares a data set to a model (or to another data set) and computes a single, real

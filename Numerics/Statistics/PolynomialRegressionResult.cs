@@ -7,7 +7,7 @@ using Meta.Numerics.Matrices;
 namespace Meta.Numerics.Statistics {
 
     /// <summary>
-    /// Represents the result of a polynomial regression fit.
+    /// Describes the result of a polynomial regression fit.
     /// </summary>
     public sealed class PolynomialRegressionResult : GeneralLinearRegressionResult {
 

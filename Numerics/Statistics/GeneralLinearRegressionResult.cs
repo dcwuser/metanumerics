@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace Meta.Numerics.Statistics {
 
     /// <summary>
-    /// Represents the result of any linear regression.
+    /// Describes the result of any generalized linear regression.
     /// </summary>
     public abstract class GeneralLinearRegressionResult : FitResult {
 

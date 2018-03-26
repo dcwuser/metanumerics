@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Meta.Numerics.Statistics {
 
     /// <summary>
-    /// Describes the result of a linear regression.
+    /// Describes the result of a linear regression fit.
     /// </summary>
     public sealed class LinearRegressionResult : GeneralLinearRegressionResult {
 

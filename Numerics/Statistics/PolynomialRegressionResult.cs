@@ -123,7 +123,10 @@ namespace Meta.Numerics.Statistics {
 
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Gets the residuals 
+        /// </summary>
+        /// <value>A list of the differences between each measured and predicted value.</value>
         public IReadOnlyList<double> Residuals {
             get {
                 return (residuals);

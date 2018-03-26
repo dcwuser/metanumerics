@@ -427,6 +427,9 @@ namespace Meta.Numerics.Statistics {
 
     }
 
+    /// <summary>
+    /// Contains the result of a fit to a sample of uncertain measurements.
+    /// </summary>
     public class UncertainMeasurementFitResult : FitResult {
 
         internal UncertainMeasurementFitResult(ParameterCollection parameters, TestResult goodnessOfFit) : base() {
@@ -437,6 +440,9 @@ namespace Meta.Numerics.Statistics {
         private readonly ParameterCollection parameters;
         private readonly TestResult goodnessOfFit;
 
+        /// <summary>
+        /// Gets a test of the goodness-of-fit of the model.
+        /// </summary>
         public TestResult GoodnessOfFit {
             get {
                 return (goodnessOfFit);

@@ -287,6 +287,7 @@ namespace Meta.Numerics.Statistics {
         /// Performs a principal component analysis of the columns.
         /// </summary>
         /// <param name="columns">The columns on which to perform the analysis.</param>
+        /// <returns>The result of the principal component analysis.</returns>
         public static PrincipalComponentAnalysis PrincipalComponentAnalysis (params IReadOnlyList<double>[] columns) {
             return (PrincipalComponentAnalysis((IReadOnlyList<IReadOnlyList<double>>) columns));
         }

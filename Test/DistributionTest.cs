@@ -53,8 +53,8 @@ namespace Test {
             Sample large = TestUtilities.CreateSample(distributions[1], 127);
             distributions.Add(small.KolmogorovSmirnovTest(distributions[2]).Distribution);
             distributions.Add(large.KolmogorovSmirnovTest(distributions[3]).Distribution);
-            distributions.Add(small.KuiperTest(distributions[4]).Distribution);
-            distributions.Add(large.KuiperTest(distributions[5]).Distribution);
+            //distributions.Add(small.KuiperTest(distributions[4]).Distribution);
+            //distributions.Add(large.KuiperTest(distributions[5]).Distribution);
             //distributions.Add(Sample.MannWhitneyTest(small, large).Distribution);
 
             BivariateSample two = new BivariateSample();

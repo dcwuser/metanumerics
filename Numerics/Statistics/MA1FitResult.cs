@@ -8,7 +8,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Contains the result of a fit of time series data to an MA(1) model.
     /// </summary>
-    public sealed class MA1FitResult : BaseFitResult {
+    public sealed class MA1FitResult : FitResult {
 
         internal MA1FitResult (UncertainValue mu, UncertainValue beta, UncertainValue sigma, IReadOnlyList<double> residuals) : base() {
             this.mu = mu;

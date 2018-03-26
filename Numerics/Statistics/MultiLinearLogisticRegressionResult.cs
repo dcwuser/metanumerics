@@ -10,7 +10,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents the result of a linear logistic regression fit.
     /// </summary>
-    public sealed class MultiLinearLogisticRegressionResult : BaseFitResult {
+    public sealed class MultiLinearLogisticRegressionResult : FitResult {
 
         internal MultiLinearLogisticRegressionResult (IReadOnlyList<bool> yColumn, IReadOnlyList<IReadOnlyList<double>> xColumns, IReadOnlyList<string> xNames) {
 
@@ -108,9 +108,6 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="name">The name of the input column.</param>
         /// <returns>The best-fit value the coefficient, with uncertainty.</returns>
-        /// <remarks>
-        /// <para>Note that the <paramref name="k"/>=0 term is the intercept.</para>
-        /// </remarks>
         public UncertainValue CoefficientOf (string name) {
             return (this.Parameters[name].Estimate);
         }

@@ -77,6 +77,7 @@
     <Compile Include="Analysis\MultiFunctor.cs" />
     <Compile Include="Analysis\MultiOdeEvaluationSettings.cs" />
     <Compile Include="Analysis\MultiOdeResult.cs" />
+    <Compile Include="Analysis\NamespaceDoc.cs" />
     <Compile Include="Analysis\OdeEvaluationSettings.cs" />
     <Compile Include="Analysis\OdeResult.cs" />
     <Compile Include="Analysis\OdeStrategy.cs" />
@@ -93,19 +94,18 @@
     <Compile Include="Core\PolynomialInterpolation.cs" />
     <Compile Include="Core\UncertainMath.cs" />
     <Compile Include="Core\UncertainValue.cs" />
-    <Compile Include="Data\AggregateDefinition.cs" />
-    <Compile Include="Data\ComputedColumn.cs" />
+    <Compile Include="Data\ComputedList.cs" />
     <Compile Include="Data\DataAdaptor.cs" />
     <Compile Include="Data\FrameColumn.cs" />
     <Compile Include="Data\FrameColumnCollection.cs" />
     <Compile Include="Data\FrameTable.cs" />
     <Compile Include="Data\CsvHelper.cs" />
-    <Compile Include="Data\FrameTable_Dictionary.cs" />
-    <Compile Include="Data\ColumnDefinition.cs" />
+    <Compile Include="Data\DictionaryHelper.cs" />
     <Compile Include="Data\NamedList.cs" />
     <Compile Include="Data\FrameRow.cs" />
     <Compile Include="Data\FrameRowCollection.cs" />
     <Compile Include="Data\FrameView.cs" />
+    <Compile Include="Data\NamespaceDoc.cs" />
     <Compile Include="Extended\AdvancedDoubleDoubleMath.cs" />
     <Compile Include="Extended\DoubleDouble.cs" />
     <Compile Include="Extended\DoubleInfo.cs" />
@@ -136,6 +136,7 @@
     <Compile Include="Analysis\FunctionMath_MultiExtrema.cs" />
     <Compile Include="Analysis\SobolSequence.cs" />
     <Compile Include="Functions\IntegerPartition.cs" />
+    <Compile Include="Functions\NamespaceDoc.cs" />
     <Compile Include="Functions\OrthogonalPolynomials.cs" />
     <Compile Include="Functions\Partition.cs" />
     <Compile Include="Functions\Permutation.cs" />
@@ -245,6 +246,7 @@
     <Compile Include="Statistics\MultiLinearRegressionResult.cs" />
     <Compile Include="Statistics\Multivariate.cs" />
     <Compile Include="Statistics\MultivariateSample.cs" />
+    <Compile Include="Statistics\NamespaceDoc.cs" />
     <Compile Include="Statistics\NonlinearRegressionResult.cs" />
     <Compile Include="Statistics\NullableDictionary.cs" />
     <Compile Include="Statistics\ParameterCollection.cs" />

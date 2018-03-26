@@ -80,16 +80,6 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets an estimate, with uncertainty, of the scatter of the data around the line.
-        /// </summary>
-        public UncertainValue Sigma {
-            get {
-                double sigma = Math.Sqrt(sigmaSquared);
-                return (new UncertainValue(sigma, sigma / Math.Sqrt(n)));
-            }
-        }
-
-        /// <summary>
         /// Predicts the Y value at a new X value.
         /// </summary>
         /// <param name="x">The new X value.</param>
@@ -100,7 +90,10 @@ namespace Meta.Numerics.Statistics {
             return (new UncertainValue(y, Math.Sqrt(yVariance)));
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Gets the residuals.
+        /// </summary>
+        /// <value>A list of the difference between the actual and predicted value for each point.</value>
         public IReadOnlyList<double> Residuals {
             get {
                 return (residuals);

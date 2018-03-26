@@ -16,12 +16,12 @@ namespace Test
 
         private FrameTable GetTestFrame ()
         {
-            FrameTable frame = new FrameTable(
-                new ColumnDefinition<string>("name"),
-                new ColumnDefinition<double>("height"),
-                new ColumnDefinition<double>("weight"),
-                new ColumnDefinition<bool?>("male")
-            );
+            FrameTable frame = new FrameTable();
+            frame.AddColumn<string>("name");
+            frame.AddColumn<double>("height");
+            frame.AddColumn<double>("weight");
+            frame.AddColumn<bool?>("male");
+            
             frame.AddRow("a", 7.0, 10.0, false);
             frame.AddRow(null, 6.5, 11.0, true);
             frame.AddRow("c", 6.0, 12.0, false);
@@ -30,7 +30,7 @@ namespace Test
             frame.AddRow("f", 4.5, 13.0, true);
             frame.AddRow(null, 4.0, 12.0, false);
 
-            frame.AddColumn(new ComputedColumnDefinition<double>("bmi", r => ((double) r["weight"]) / MoreMath.Sqr((double) r["height"])));
+            frame.AddComputedColumn("bmi", r => ((double) r["weight"]) / MoreMath.Sqr((double) r["height"]));
 
             return (frame);
         }
@@ -267,13 +267,16 @@ namespace Test
 
             HashSet<bool?> values = new HashSet<bool?>(original["male"].As<bool?>().Distinct());
 
-            FrameTable grouped = original.GroupBy(
-                "male",
-                new AggregateDefinition<double>("heightMean", v => v["height"].As<double>().Mean()),
-                new AggregateDefinition<double>("heightStandardDeviation", v => v.Rows.Count < 2 ? Double.NaN : v["height"].As<double>().StandardDeviation())
-            );
+            FrameTable grouped = original.GroupBy("male", v => {
+                SampleSummary summary = new SampleSummary(v["height"].As<double>());
+                return (new Dictionary<string, object>() {
+                    {"count", summary.Count },
+                    {"heightMean", summary.Mean },
+                    {"heightStandardDeviation", summary.StandardDeviation }
+                });
+            });
             Assert.IsTrue(grouped.Rows.Count == values.Count);
-            Assert.IsTrue(grouped.Columns.Count == 3);
+            Assert.IsTrue(grouped.Columns.Count == 4);
 
             for (int i = 0; i < grouped.Rows.Count; i++) {
 
@@ -286,8 +289,8 @@ namespace Test
                 double mean = selected["height"].As<double>().Mean();
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(grouped["heightMean"].As<double>()[i], mean));
 
-                double standardDeviation = selected.Rows.Count < 2 ? Double.NaN : selected["height"].As<double>().StandardDeviation();
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(grouped.Rows.Count < 2 ? Double.NaN : grouped["heightStandardDeviation"].As<double>()[i], standardDeviation));
+                double standardDeviation = selected["height"].As<double>().StandardDeviation();
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(grouped["heightStandardDeviation"].As<double>()[i], standardDeviation));
             }
 
         }
@@ -299,7 +302,7 @@ namespace Test
 
             HashSet<bool?> values = new HashSet<bool?>(original["male"].As<bool?>().Distinct());
 
-            FrameTable grouped = original.GroupBy("male", v => v["height"].As<double>().Mean(), "meanHeight");
+            FrameTable grouped = original.GroupBy("male", "meanHeight", v => v["height"].As<double>().Mean());
             Assert.IsTrue(grouped.Rows.Count == values.Count);
 
             foreach (FrameRow row in grouped.Rows) {

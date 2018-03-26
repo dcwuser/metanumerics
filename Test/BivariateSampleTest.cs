@@ -84,10 +84,10 @@ namespace Test {
 
             Polynomial m = Polynomial.FromCoefficients(-1.0, 2.0);
 
-            FrameTable table = new FrameTable(
-                new ColumnDefinition<double>("x"),
-                new ColumnDefinition<string>("z")
-            );
+            FrameTable table = new FrameTable();
+            table.AddColumn<double>("x");
+            table.AddColumn<string>("z");
+
             Random rng = new Random(2);
             ContinuousDistribution xDistribution = new CauchyDistribution(4.0, 2.0);
             for (int i = 0; i < 24; i++) {
@@ -111,15 +111,8 @@ namespace Test {
             double b = 1.0;
             ContinuousDistribution xDistribution = new StudentDistribution(2.0);
 
-            FrameTable data = new FrameTable(
-                new ColumnDefinition<double>("a"),
-                new ColumnDefinition<double>("da"),
-                new ColumnDefinition<double>("b"),
-                new ColumnDefinition<double>("db"),
-                new ColumnDefinition<double>("abcov"),
-                new ColumnDefinition<double>("p"),
-                new ColumnDefinition<double>("dp")
-            );
+            FrameTable data = new FrameTable();
+            data.AddColumns<double>("a", "da", "b", "db", "abcov", "p", "dp");
 
             // draw a sample from the model
             Random rng = new Random(3);
@@ -143,7 +136,7 @@ namespace Test {
                 data.AddRow(
                     result.Intercept.Value, result.Intercept.Uncertainty,
                     result.Slope.Value, result.Slope.Uncertainty,
-                    result.Parameters.Covariance[0, 1],
+                    result.Parameters.CovarianceMatrix[0, 1],
                     pp.Value, pp.Uncertainty
                 );
 
@@ -210,9 +203,9 @@ namespace Test {
                 Console.WriteLine("{0}, {1}", a, b);
 
                 // record estimated covariances
-                caa += r.Parameters.Covariance[0, 0];
-                cbb += r.Parameters.Covariance[1, 1];
-                cab += r.Parameters.Covariance[0, 1]; 
+                caa += r.Parameters.CovarianceMatrix[0, 0];
+                cbb += r.Parameters.CovarianceMatrix[1, 1];
+                cab += r.Parameters.CovarianceMatrix[0, 1]; 
 
             }
 
@@ -232,7 +225,63 @@ namespace Test {
         }
 
         [TestMethod]
-        public void BivariateLinearRegression () {
+        public void LinearRegressionSimple () {
+
+            double a = -1.0;
+            double b = 2.0;
+
+            ContinuousDistribution xDistribution = new CauchyDistribution();
+            ContinuousDistribution eDistribution = new NormalDistribution();
+
+            int n = 16;
+            Random rng = new Random(1);
+            double[] x = new double[n];
+            double[] y = new double[n];
+            for (int i = 0; i < 16; i++) {
+                x[i] = xDistribution.GetRandomValue(rng);
+                y[i] = a + b * x[i] + eDistribution.GetRandomValue(rng);
+            }
+
+            LinearRegressionResult result = y.LinearRegression(x);
+
+            // Parameters should be right
+            Assert.IsTrue(result.Intercept.ConfidenceInterval(0.95).ClosedContains(a));
+            Assert.IsTrue(result.Slope.ConfidenceInterval(0.95).ClosedContains(b));
+
+            // Reported values should be consistent
+            Assert.IsTrue(result.Intercept == result.Parameters["Intercept"].Estimate);
+            Assert.IsTrue(result.Intercept.Value == result.Parameters.ValuesVector[result.Parameters.IndexOf("Intercept")]);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Intercept.Uncertainty, Math.Sqrt(result.Parameters.VarianceOf("Intercept"))));
+            Assert.IsTrue(result.Slope == result.Parameters["Slope"].Estimate);
+            Assert.IsTrue(result.Slope.Value == result.Parameters.ValuesVector[result.Parameters.IndexOf("Slope")]);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Slope.Uncertainty, Math.Sqrt(result.Parameters.VarianceOf("Slope"))));
+
+            // Residuals should agree with definition
+            for (int i = 0; i < x.Length; i++) {
+                double yp = result.Predict(x[i]).Value;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Residuals[i], y[i] - yp));
+            }
+
+            // R and R-squared agree
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.RSquared, MoreMath.Sqr(result.R.Statistic)));
+
+            // F-test and R-test agree
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.F.Probability, result.R.Probability));
+
+            // ANOVA's sums of squares are correct
+            double SST = y.Variance() * y.Length;
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(SST, result.Anova.Total.SumOfSquares));
+            double SSR = 0.0;
+            foreach (double z in result.Residuals) SSR += z * z;
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(SSR, result.Anova.Residual.SumOfSquares));
+
+            // R is same as correlation coefficient
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(x.CorrelationCoefficient(y), result.R.Statistic));
+
+        }
+
+        [TestMethod]
+        public void LinearRegressionVariances () {
 
             // do a set of logistic regression fits
             // make sure not only that the fit parameters are what they should be, but that their variances/covariances are as returned
@@ -242,21 +291,10 @@ namespace Test {
             // define line parameters
             double a0 = 2.0; double b0 = -1.0;
 
-            // keep track of sample of returned a and b fit parameters
-            BivariateSample pSample = new BivariateSample();
+            // do a lot of fits, recording results of each
+            FrameTable data = new FrameTable();
+            data.AddColumns<double>("a", "va", "b", "vb", "abCov", "p", "dp");
 
-            // also keep track of returned covariance estimates
-            // since these vary slightly from fit to fit, we will average them
-            double caa = 0.0;
-            double cbb = 0.0;
-            double cab = 0.0;
-
-            // Record predictions for a new point
-            double x0 = 12.0;
-            Sample ySample = new Sample();
-            double ySigma = 0.0;
-
-            // do 100 fits
             for (int k = 0; k < 128; k++) {
 
                 // we should be able to draw x's from any distribution; noise should be drawn from a normal distribution
@@ -265,7 +303,7 @@ namespace Test {
 
                 // generate a synthetic data set
                 BivariateSample sample = new BivariateSample();
-                for (int i = 0; i < 16; i++) {
+                for (int i = 0; i < 12; i++) {
                     double x = xd.GetRandomValue(rng);
                     double y = a0 + b0 * x + nd.GetRandomValue(rng);
                     sample.Add(x, y);
@@ -274,64 +312,26 @@ namespace Test {
                 // do the regression
                 LinearRegressionResult result = sample.LinearRegression();
 
-                // test consistancy
-                Assert.IsTrue(result.Intercept == result.Parameters["Intercept"].Estimate);
-                Assert.IsTrue(result.Intercept.Value == result.Parameters.Best[result.Parameters.IndexOf("Intercept")]);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Intercept.Uncertainty, Math.Sqrt(result.Parameters.CovarianceOf("Intercept", "Intercept"))));
-                Assert.IsTrue(result.Slope == result.Parameters["Slope"].Estimate);
-                Assert.IsTrue(result.Slope.Value == result.Parameters.Best[result.Parameters.IndexOf("Slope")]);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Slope.Uncertainty, Math.Sqrt(result.Parameters.CovarianceOf("Slope","Slope"))));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.R.Statistic, sample.CorrelationCoefficient));
-
-                // Named parameters
-                Assert.IsTrue(result.Parameters[nameof(result.Intercept)].Estimate == result.Intercept);
-                Assert.IsTrue(result.Parameters[nameof(result.Slope)].Estimate == result.Slope);
-                Assert.IsTrue(result.Parameters.CovarianceOf(nameof(result.Intercept), nameof(result.Slope)) == result.Parameters.Covariance[0, 1]);
-
-                // record best fit parameters
-                double a = result.Parameters.Best[0];
-                double b = result.Parameters.Best[1];
-                pSample.Add(a, b);
-
-                // record estimated covariances
-                caa += result.Parameters.Covariance[0, 0];
-                cbb += result.Parameters.Covariance[1, 1];
-                cab += result.Parameters.Covariance[0, 1];
-
-                UncertainValue yPredict = result.Predict(x0);
-                ySample.Add(yPredict.Value);
-                ySigma += yPredict.Uncertainty;
-
-                double SST = 0.0;
-                foreach (double y in sample.Y) SST += MoreMath.Sqr(y - sample.Y.Mean);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(SST, result.Anova.Total.SumOfSquares));
-
-                double SSR = 0.0;
-                foreach (double z in result.Residuals) SSR += z * z;
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(SSR, result.Anova.Residual.SumOfSquares));
-
+                // record result
+                UncertainValue p = result.Predict(12.0);
+                data.AddRow(new Dictionary<string, object>() {
+                    {"a", result.Intercept.Value },
+                    {"va", result.Parameters.VarianceOf("Intercept") },
+                    {"b", result.Slope.Value},
+                    {"vb", result.Parameters.VarianceOf("Slope") },
+                    {"abCov", result.Parameters.CovarianceOf("Slope", "Intercept") },
+                    {"p", p.Value},
+                    {"dp", p.Uncertainty }
+                });
             }
 
-            caa /= pSample.Count;
-            cbb /= pSample.Count;
-            cab /= pSample.Count;
-            ySigma /= pSample.Count;
+            // variances of parameters should agree with predictions
+            Assert.IsTrue(data["a"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(data["va"].As<double>().Median()));
+            Assert.IsTrue(data["b"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(data["vb"].As<double>().Median()));
+            Assert.IsTrue(data["a"].As<double>().PopulationCovariance(data["b"].As<double>()).ConfidenceInterval(0.99).ClosedContains(data["abCov"].As<double>().Median()));
 
-            // check that mean parameter estimates are what they should be: the underlying population parameters
-            //Assert.IsTrue(pSample.X.PopulationMean.ConfidenceInterval(0.95).ClosedContains(a0));
-            //Assert.IsTrue(pSample.Y.PopulationMean.ConfidenceInterval(0.95).ClosedContains(b0));
-
-            //Console.WriteLine("{0} {1}", caa, pSample.X.PopulationVariance);
-            //Console.WriteLine("{0} {1}", cbb, pSample.Y.PopulationVariance);
-
-            // check that parameter covarainces are what they should be: the reported covariance estimates
-            Assert.IsTrue(pSample.X.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(caa));
-            Assert.IsTrue(pSample.Y.PopulationVariance.ConfidenceInterval(0.95).ClosedContains(cbb));
-            Assert.IsTrue(pSample.PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(cab));
-
-            // Check that the predicted ys conform to the model and the asserted uncertainty.
-            Assert.IsTrue(ySample.PopulationMean.ConfidenceInterval(0.95).ClosedContains(a0 + x0 * b0));
-            //Assert.IsTrue(ySample.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(ySigma));
+            // variance of prediction should agree with claim
+            Assert.IsTrue(data["p"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(data["dp"].As<double>().Median()));
 
         }
 
@@ -382,7 +382,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void BivariatePolynomialRegressionFit () {
+        public void BivariatePolynomialRegressionSimple () {
 
             // Pick a simple polynomial
             Polynomial p = Polynomial.FromCoefficients(3.0, -2.0, 1.0);
@@ -408,6 +408,9 @@ namespace Test {
                 double z = ys[i] - fit.Predict(xs[i]).Value;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(z, fit.Residuals[i]));
             }
+
+            // Intercept is same as coefficient of x^0
+            Assert.IsTrue(fit.Intercept == fit.Coefficient(0));
 
         }
 
@@ -454,14 +457,14 @@ namespace Test {
                 // do the regression
                 PolynomialRegressionResult r = s.PolynomialRegression(a.Length - 1);
 
-                ColumnVector ps = r.Parameters.Best;
+                ColumnVector ps = r.Parameters.ValuesVector;
                 //Console.WriteLine("{0} {1} {2}", ps[0], ps[1], ps[2]);
 
                 // record best fit parameters
                 A.Add(ps);
 
                 // record estimated covariances
-                C += r.Parameters.Covariance;
+                C += r.Parameters.CovarianceMatrix;
 
                 // record the fit statistic
                 F.Add(r.F.Statistic);
@@ -503,13 +506,48 @@ namespace Test {
             B.Add(2.0, 9.0);
             GeneralLinearRegressionResult PR = B.PolynomialRegression(1);
             GeneralLinearRegressionResult LR = B.LinearRegression();
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.Parameters.Best, LR.Parameters.Best));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.Parameters.Covariance, LR.Parameters.Covariance));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.Parameters.ValuesVector, LR.Parameters.ValuesVector));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(PR.Parameters.CovarianceMatrix, LR.Parameters.CovarianceMatrix));
 
         }
 
         [TestMethod]
-        public void BivariateNonlinearFit () {
+        public void BivariateNonlinearFitSimple () {
+
+            double t0 = 3.0;
+            double s0 = 1.0;
+
+            ContinuousDistribution xDistribution = new CauchyDistribution(0.0, 2.0);
+            ContinuousDistribution eDistribution = new NormalDistribution(0.0, 0.5);
+
+            Random rng = new Random(5);
+            List<double> x = TestUtilities.CreateDataSample(rng, xDistribution, 48).ToList();
+            List<double> y = x.Select(z => Math.Sin(2.0 * Math.PI * z / t0 + s0) + eDistribution.GetRandomValue(rng)).ToList();
+
+            Func<IReadOnlyDictionary<string, double>, double, double> fitFunction = (d, z) => {
+                double t = d["Period"];
+                double s = d["Phase"];
+                return (Math.Sin(2.0 * Math.PI * z / t + s));
+            };
+
+            Dictionary<string, double> start = new Dictionary<string, double>() {
+                {"Period", 2.5 }, {"Phase", 1.5 }
+            };
+
+            NonlinearRegressionResult result = y.NonlinearRegression(x, fitFunction, start);
+
+            Assert.IsTrue(result.Parameters["Period"].Estimate.ConfidenceInterval(0.99).ClosedContains(t0));
+            Assert.IsTrue(result.Parameters["Phase"].Estimate.ConfidenceInterval(0.99).ClosedContains(s0));
+
+            for (int i = 0; i < x.Count; i++) {
+                double yp = result.Predict(x[i]);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Residuals[i], y[i] - yp));
+            }
+
+        }
+
+        [TestMethod]
+        public void BivariateNonlinearFitVariances () {
 
             // Verify that we can fit a non-linear function,
             // that the estimated parameters do cluster around the true values,
@@ -521,8 +559,8 @@ namespace Test {
             ContinuousDistribution xDistribution = new ExponentialDistribution(2.0);
             ContinuousDistribution eDistribution = new NormalDistribution(0.0, 4.0);
 
-            FrameTable parameters = new FrameTable(new ColumnDefinition<double>("a"), new ColumnDefinition<double>("b"));
-            //MultivariateSample parameters = new MultivariateSample("a", "b");
+            FrameTable parameters = new FrameTable();
+            parameters.AddColumns<double>("a", "b");
             MultivariateSample covariances = new MultivariateSample(3);
 
             for (int i = 0; i < 64; i++) {
@@ -540,9 +578,8 @@ namespace Test {
                     new double[] { 1.0, 1.0 }
                 );
 
-                parameters.AddRow(fit.Parameters.Best);
-                //parameters.Add(fit.Parameters.Best);
-                covariances.Add(fit.Parameters.Covariance[0, 0], fit.Parameters.Covariance[1, 1], fit.Parameters.Covariance[0, 1]);
+                parameters.AddRow(fit.Parameters.ValuesVector);
+                covariances.Add(fit.Parameters.CovarianceMatrix[0, 0], fit.Parameters.CovarianceMatrix[1, 1], fit.Parameters.CovarianceMatrix[0, 1]);
 
             }
 
@@ -553,8 +590,6 @@ namespace Test {
             Assert.IsTrue(parameters["b"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(covariances.Column(1).Mean));
             Assert.IsTrue(parameters["a"].As<double>().PopulationCovariance(parameters["b"].As<double>()).ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
             Assert.IsTrue(Bivariate.PopulationCovariance(parameters["a"].As<double>(), parameters["b"].As<double>()).ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
-            //Assert.IsTrue(parameters.TwoColumns(0, 1).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
-
         }
 
     }

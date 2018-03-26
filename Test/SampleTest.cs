@@ -423,21 +423,17 @@ namespace Test {
             // record the reported parameter value and error of each
             BivariateSample values = new BivariateSample();
             MultivariateSample uncertainties = new MultivariateSample(3);
-            FrameTable table = new FrameTable(
-                new ColumnDefinition<int>("Id"),
-                new ColumnDefinition<double>("Scale"),
-                new ColumnDefinition<double>("Shape"),
-                new ColumnDefinition<double>("ScaleVariance"),
-                new ColumnDefinition<double>("ShapeVariance"),
-                new ColumnDefinition<double>("ScaleShapeCovariance")
-            );
+            FrameTable table = new FrameTable();
+            table.AddColumn<int>("Id");
+            table.AddColumns<double>("Scale", "Shape", "ScaleVariance", "ShapeVariance", "ScaleShapeCovariance");
+
             for (int i = 0; i < 50; i++) {
                 Sample sample = CreateSample(distribution, 10, i);
                 WeibullFitResult fit = WeibullDistribution.FitToSample(sample);
                 UncertainValue a = fit.Scale;
                 UncertainValue b = fit.Shape;
                 values.Add(a.Value, b.Value);
-                uncertainties.Add(a.Uncertainty, b.Uncertainty, fit.Parameters.Covariance[0,1]);
+                uncertainties.Add(a.Uncertainty, b.Uncertainty, fit.Parameters.CovarianceMatrix[0,1]);
                 table.AddRow(i, fit.Scale.Value, fit.Shape.Value,
                     fit.Parameters.CovarianceOf("Scale", "Scale"),
                     fit.Parameters.CovarianceOf("Shape", "Shape"),
@@ -718,47 +714,56 @@ namespace Test {
         }
 
         [TestMethod]
-        public void MaximumLikelihoodFitToNormal () {
+        public void MaximumLikelihoodNormalAgreement () {
 
             // create a normal sample
             double mu = -1.0;
             double sigma = 2.0;
-            ContinuousDistribution d = new NormalDistribution(mu, sigma);
-            Sample s = CreateSample(d, 1024);
+            ContinuousDistribution dist = new NormalDistribution(mu, sigma);
+            Random rng = new Random(1);
+            List<double> sample = TestUtilities.CreateDataSample(rng, dist, 256).ToList();
 
-            // do an explicit maximum likelyhood fit to a normal distribution
-            FitResult mf = s.MaximumLikelihoodFit((IReadOnlyList<double> p) => new NormalDistribution(p[0], p[1]), new double[] { mu + 1.0, sigma + 1.0 });
+            // do a maximum likelihood fit to the normal form
+            Func<IReadOnlyDictionary<string, double>, ContinuousDistribution> factory = dict => new NormalDistribution(dict["Mu"], dict["Sigma"]);
+            Dictionary<string, double> start = new Dictionary<string, double>() { { "Mu", 0.0 }, { "Sigma", 1.0 } };
+            DistributionFitResult<ContinuousDistribution> result  = sample.MaximumLikelihoodFit(factory, start);
 
-            // it should find the parameters
-            Assert.IsTrue(mf.Dimension == 2);
-            Assert.IsTrue(mf.Parameter(0).ConfidenceInterval(0.99).ClosedContains(mu));
-            Assert.IsTrue(mf.Parameter(1).ConfidenceInterval(0.99).ClosedContains(sigma));
-
-            // now do our analytic fit
-            NormalFitResult nf = NormalDistribution.FitToSample(s);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(0).Value, nf.Parameters[0].Estimate.Value, 1.0E-4));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(1).Value, nf.Parameters[1].Estimate.Value, 1.0E-3));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(0).Uncertainty, nf.Parameters[0].Estimate.Uncertainty, 1.0E-2));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(mf.Parameter(1).Uncertainty, nf.Parameters[1].Estimate.Uncertainty, 1.0E-2));
-
-
+            // the fit should find the right parameters
+            Assert.IsTrue(result.GoodnessOfFit.Probability > 0.05);
+            Assert.IsTrue(result.Parameters.Count == 2);
+            Assert.IsTrue(result.Parameters["Mu"].Estimate.ConfidenceInterval(0.99).ClosedContains(mu));
+            Assert.IsTrue(result.Parameters["Sigma"].Estimate.ConfidenceInterval(0.99).ClosedContains(sigma));
         }
 
         [TestMethod]
+        public void MaximumLikelihoodExponentialAgreement () {
+            Sample sample = CreateSample(new ExponentialDistribution(3.0), 256);
+
+            // Do an explicit exponential fit
+            ExponentialFitResult fit1 = ExponentialDistribution.FitToSample(sample);
+
+            // Do a maximum likelihood fit
+            Func<IReadOnlyList<double>, ContinuousDistribution> factory = p => new ExponentialDistribution(p[0]);
+            DistributionFitResult<ContinuousDistribution> fit2 = sample.MaximumLikelihoodFit(factory, new double[] { 1.0 });
+
+            // Results should at least approximately agree
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(fit1.Parameters[0].Estimate.Value, fit2.Parameters[0].Estimate.Value, 1.0E-4));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(fit1.Parameters[0].Estimate.Uncertainty, fit2.Parameters[0].Estimate.Uncertainty, 1.0E-2));
+        }
+
+        /*
+        [TestMethod]
         public void SampleMaximumLikelihoodFit () {
 
-            // normal distriubtion
+            // normal distribution
             Console.WriteLine("normal");
 
             double mu = -1.0;
             double sigma = 2.0;
             ContinuousDistribution nd = new NormalDistribution(mu, sigma);
             Sample ns = CreateSample(nd, 500);
-            //FitResult nr = ns.MaximumLikelihoodFit(new NormalDistribution(mu + 1.0, sigma + 1.0));
-            FitResult nr = ns.MaximumLikelihoodFit((IReadOnlyList<double> p) => new NormalDistribution(p[0], p[1]), new double[] { mu + 1.0, sigma + 1.0 });
 
-            Console.WriteLine(nr.Parameter(0));
-            Console.WriteLine(nr.Parameter(1));
+            DistributionFitResult<ContinuousDistribution> nr = ns.MaximumLikelihoodFit((IReadOnlyList<double> p) => new NormalDistribution(p[0], p[1]), new double[] { mu + 1.0, sigma + 1.0 });
 
             Assert.IsTrue(nr.Dimension == 2);
             Assert.IsTrue(nr.Parameter(0).ConfidenceInterval(0.95).ClosedContains(mu));
@@ -846,26 +851,8 @@ namespace Test {
             Assert.IsTrue(logistic_result.Parameter(0).ConfidenceInterval(0.95).ClosedContains(logistic_m));
             Assert.IsTrue(logistic_result.Parameter(1).ConfidenceInterval(0.95).ClosedContains(logistic_s));
 
-
-            // beta distribution
-            // not yet!
-            /*
-            double beta_alpha = 0.5;
-            double beta_beta = 2.0;
-            Distribution beta_distribution = new BetaDistribution(beta_alpha, beta_beta);
-            Sample beta_sample = CreateSample(beta_distribution, 100);
-            FitResult beta_result = beta_sample.MaximumLikelihoodFit(new BetaDistribution(1.0, 1.0));
-
-            Console.WriteLine("Beta:");
-            Console.WriteLine(beta_result.Parameter(0));
-            Console.WriteLine(beta_result.Parameter(1));
-
-            Assert.IsTrue(beta_result.Dimension == 2);
-            Assert.IsTrue(beta_result.Parameter(0).ConfidenceInterval(0.95).ClosedContains(beta_alpha));
-            Assert.IsTrue(beta_result.Parameter(1).ConfidenceInterval(0.95).ClosedContains(beta_beta));
-            */
         }
-
+        */
         /*
         [TestMethod]
         public void SampleMannWhitneyComputationTest () {

@@ -11,10 +11,12 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="sample">The sample.</param>
         /// <returns>An estimate, with uncertainty, of the mean of the distribution from which the sample was drawn.</returns>
-        /// <exception cref="InsufficientDataException">The sample contains fewer than 2 values.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than 2 values.</exception>
         /// <remarks>
-        /// <para>This method can be called either as a static method of the <see cref="Univariate"/> class, or as an
-        /// extension method of any collection that implements <see cref="IReadOnlyCollection{Double}"/>.</para>
+        /// <para>In contrast to the <see cref="Mean(IReadOnlyCollection{double})"/> method, this method estimates
+        /// the mean of the underlying population from which the sample was drawn, and provides a error estimate
+        /// for that value.</para>
         /// </remarks>
         public static UncertainValue PopulationMean (this IReadOnlyCollection<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
@@ -25,8 +27,15 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Estimates of the variance of the underlying population.
         /// </summary>
+        /// <param name="sample">The sample.</param>
         /// <returns>An estimate, with uncertainty, of the variance of the distribution from which the sample was drawn.</returns>
-        /// <exception cref="InsufficientDataException">The sample contains fewer than 3 values.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than 3 values.</exception>
+        /// <remarks>
+        /// <para>In contrast to the <see cref="Variance(IReadOnlyCollection{double})"/> method, this method estimates
+        /// the variance of the underlying population from which the sample was drawn, and provides a error estimate
+        /// for that value.</para>
+        /// </remarks>
         public static UncertainValue PopulationVariance (this IReadOnlyCollection<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
@@ -36,11 +45,27 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Estimates of the standard deviation of the underlying population.
         /// </summary>
+        /// <param name="sample">The sample.</param>
         /// <returns>An estimate, with uncertainty, of the standard deviation of the distribution from which the sample was drawn.</returns>
-        /// <exception cref="InsufficientDataException">The sample contains fewer than 3 values.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than 3 values.</exception>
         /// <remarks>
+        /// <para>In contrast to the <see cref="StandardDeviation(IReadOnlyCollection{double})"/> method, this method
+        /// estimates the standard deviation of the underlying population from which the sample was drawn, and provides
+        /// an error estimate for that value.</para>
         /// <para>Note that the value returned by this method is not exactly the square root
-        /// of the value returned by <see cref="PopulationVariance"/>. This is not an error.</para>
+        /// of the value returned by <see cref="PopulationVariance"/> (nor is it exactly the same as
+        /// the value of <see cref="CorrectedStandardDeviation(IReadOnlyCollection{double})"/>, which is
+        /// exactly the square root of the variance best estimate). This is not an error. The variance
+        /// estimator has a distribution. The mean of that distribution is equal to the variance of
+        /// the underlying population, which is what makes the estimator unbiased. An unbiased estimator
+        /// of the standard deviation will have that same property -- its mean will equal the standard
+        /// deviation of the underlying population. But the square root of the mean of a distributed
+        /// quantity is not the mean of the square root of that quantity, so the square root of the
+        /// unbiased estimator of the variance will not an be unbiased estimator of the standard deviation.
+        /// This method estimates that bias and corrects for it. The estimation is not exact, so the
+        /// value returned by this method will not be perfectly unbiased, but it is likely to be less
+        /// biased than <see cref="CorrectedStandardDeviation(IReadOnlyCollection{double})"/>.</para>
         /// </remarks>
         public static UncertainValue PopulationStandardDeviation (this IReadOnlyCollection<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
@@ -54,9 +79,11 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="sample">The sample data.</param>
         /// <param name="r">The order of the moment.</param>
-        /// <returns>An estimate of the <paramref name="r"/>th raw moment of the population.</returns>
+        /// <returns>An estimate, with uncertainty, of the <paramref name="r"/>th raw moment of the
+        /// distribution from which the sample was drawn.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than 2 values.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="r"/> is negative.</exception>
-        /// <exception cref="InsufficientDataException">The sample contains fewer than 2 values.</exception>
         public static UncertainValue PopulationRawMoment (this IReadOnlyCollection<double> sample, int r) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) throw new InsufficientDataException();
@@ -67,7 +94,7 @@ namespace Meta.Numerics.Statistics {
                 // the zeroth moment is exactly one for any distribution
                 return (new UncertainValue(1.0, 0.0));
             } else if (r == 1) {
-                // the first momemt is just the mean
+                // the first moment is just the mean
                 return (EstimateFirstCumulant(sample));
             } else {
                 // moments of order two and higher
@@ -81,11 +108,13 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Estimates the given central moment of the underlying population.
         /// </summary>
-        /// <param name="sample">The sample data.</param>
+        /// <param name="sample">The sample.</param>
         /// <param name="r">The order of the moment.</param>
-        /// <returns>An estimate of the <paramref name="r"/>th central moment of the population.</returns>
+        /// <returns>An estimate, with uncertainty, of the <paramref name="r"/>th central moment of the distribution
+        /// from which the sample was drawn.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than 3 values.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="r"/> is negative.</exception>
-        /// <exception cref="InsufficientDataException">The sample contains fewer than 3 values.</exception>
         public static UncertainValue PopulationCentralMoment (this IReadOnlyCollection<double> sample, int r) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
@@ -96,7 +125,7 @@ namespace Meta.Numerics.Statistics {
                 // the zeroth moment is exactly one for any distribution
                 return (new UncertainValue(1.0, 0.0));
             } else if (r == 1) {
-                // the first moment about the mean is exactly zero by the defintion of the mean
+                // the first moment about the mean is exactly zero by the definition of the mean
                 return (new UncertainValue(0.0, 0.0));
             } else if (r == 2) {
                 return (EstimateSecondCumulant(sample));
@@ -270,7 +299,6 @@ namespace Meta.Numerics.Statistics {
 
             return (new UncertainValue(c, Math.Sqrt(v / n)));
         }
-
 
     }
 }

@@ -69,7 +69,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="order">The desired ordering.</param>
         public void Sort (OrderBy order) {
 
-            // Create an auxiluary array of indexes to sort
+            // Create an auxiliary array of indexes to sort
             int[] ranks = new int[dimension];
             for (int i = 0; i < ranks.Length; i++) ranks[i] = i;
 

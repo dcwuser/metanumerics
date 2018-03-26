@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -682,5 +683,85 @@ namespace Meta.Numerics.Statistics {
             return (new WeibullFitResult(lambda1, k1, C, distribution, test));
         }
 
+        /// <summary>
+        /// Finds the parameters that make an arbitrary, parameterized distribution best fit the sample.
+        /// </summary>
+        /// <param name="sample">The sample.</param>
+        /// <param name="factory">A delegate that creates a distribution given its parameters.</param>
+        /// <param name="start">An initial guess at the parameter values.</param>
+        /// <returns>The best fit parameters.</returns>
+        public static DistributionFitResult<ContinuousDistribution> MaximumLikelihoodFit(this IReadOnlyList<double> sample, Func<IReadOnlyDictionary<string,double>, ContinuousDistribution> factory, IReadOnlyDictionary<string, double> start) {
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (factory == null) throw new ArgumentNullException(nameof(factory));
+            if (start == null) throw new ArgumentNullException(nameof(start));
+
+            List<string> names = start.Keys.ToList();
+
+            // Convert dictionary-based arguments from user to list-based arguments used internally.
+
+            Func<IReadOnlyList<double>, ContinuousDistribution> listFactory = a => {
+                Dictionary<string, double> d = new Dictionary<string, double>(names.Count);
+                for (int i = 0; i < names.Count; i++) {
+                    d.Add(names[i], a[i]);
+                }
+                return (factory(d));
+            };
+
+            List<double> listStart = new List<double>(start.Count);
+            foreach (string name in names) {
+                listStart.Add(start[name]);
+            }
+
+            return (MaximumLikelihoodFit(sample, listFactory, listStart, names));
+        }
+
+        internal static DistributionFitResult<ContinuousDistribution> MaximumLikelihoodFit (IReadOnlyList<double> sample, Func<IReadOnlyList<double>, ContinuousDistribution> factory, IReadOnlyList<double> start, IReadOnlyList<string> names) {
+
+            Debug.Assert(sample != null);
+            Debug.Assert(factory != null);
+            Debug.Assert(start != null);
+            Debug.Assert(names != null);
+            Debug.Assert(start.Count == names.Count);
+
+            // Define a log likelihood function
+            Func<IReadOnlyList<double>, double> logL = (IReadOnlyList<double> a) => {
+                ContinuousDistribution d = factory(a);
+                double lnP = 0.0;
+                foreach (double value in sample) {
+                    double P = d.ProbabilityDensity(value);
+                    if (P == 0.0) throw new InvalidOperationException();
+                    lnP += Math.Log(P);
+                }
+                return (lnP);
+            };
+
+            // Maximize it
+            MultiExtremum maximum = MultiFunctionMath.FindLocalMaximum(logL, start);
+            ColumnVector b = maximum.Location;
+            SymmetricMatrix C = maximum.HessianMatrix;
+            CholeskyDecomposition CD = C.CholeskyDecomposition();
+            if (CD == null) throw new DivideByZeroException();
+            C = CD.Inverse();
+
+            ContinuousDistribution distribution = factory(maximum.Location);
+            TestResult test = sample.KolmogorovSmirnovTest(distribution);
+
+            return (new ContinuousDistributionFitResult(names, b, C, distribution, test));
+        }
+
     }
+
+    internal class ContinuousDistributionFitResult : DistributionFitResult<ContinuousDistribution> {
+
+        public ContinuousDistributionFitResult (IReadOnlyList<string> names, ColumnVector parameters, SymmetricMatrix covariance, ContinuousDistribution distribution, TestResult goodnessOfFit) : base (distribution, goodnessOfFit) {
+            this.parameters = new ParameterCollection(names, parameters, covariance);
+        }
+
+        private readonly ParameterCollection parameters;
+
+        internal override ParameterCollection CreateParameters () {
+            return (parameters);
+        }
+    }
+
 }

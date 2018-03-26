@@ -9,6 +9,12 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Tracks summary statistics for a stream of data points.
     /// </summary>
+    /// <remarks>
+    /// <para>Unlike the methods of the <see cref="Univariate"/> class, which by and large expect
+    /// to work with sample data that is stored entirely within memory, this class is designed
+    /// to compute the most important summary statistics on streamed data, i.e. individual
+    /// data points which need only be presented once and may afterwards be discarded.</para>
+    /// </remarks>
     public sealed class SampleSummary {
 
         /// <summary>
@@ -20,7 +26,8 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Initializes a new summary of the given sample values.
         /// </summary>
-        /// <param name="values">The sample values to summarize.</param>
+        /// <param name="values">An enumerator which can iterate over the values to summarize.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="values"/> is <see langword="null"/>.</exception>
         public SampleSummary (IEnumerable<double> values) : this() {
             Add(values);
         }
@@ -57,14 +64,15 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Adds new values to the sample.
         /// </summary>
-        /// <param name="values">The values to add.</param>
+        /// <param name="values">An enumerator which can iterate over the values to add.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="values"/> is <see langword="null"/>.</exception>
         public void Add (IEnumerable<double> values) {
             if (values == null) throw new ArgumentNullException(nameof(values));
             foreach (double value in values) Add(value);
         }
 
         /// <summary>
-        /// Gets the number of values in the sample.
+        /// Gets the number of values observed.
         /// </summary>
         public int Count {
             get {
@@ -73,7 +81,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets the mean of the sample data.
+        /// Gets the mean of the observed data.
         /// </summary>
         public double Mean {
             get {
@@ -82,7 +90,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Get the variance of the sample data.
+        /// Get the variance of the observed data.
         /// </summary>
         public double Variance {
             get {
@@ -90,14 +98,8 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        public double FourthCentralMoment {
-            get {
-                return (s4 / n);
-            }
-        }
-
         /// <summary>
-        /// Gets the standard deviation of the sample data.
+        /// Gets the standard deviation of the observed data.
         /// </summary>
         public double StandardDeviation {
             get {
@@ -106,7 +108,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets the skewness of the sample data.
+        /// Gets the skewness of the observed data.
         /// </summary>
         public double Skewness {
             get {
@@ -115,7 +117,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets the smallest value in the sample.
+        /// Gets the smallest value observed.
         /// </summary>
         public double Minimum {
             get {
@@ -124,7 +126,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Gets the largest value in the sample.
+        /// Gets the largest value observed.
         /// </summary>
         public double Maximum {
             get {
@@ -156,7 +158,8 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Estimates the standard deviation of the underlying population.
         /// </summary>
-        /// <value>An estimate, with uncertainty, of the standard deviation of the distribution from which the sample was drawn.</value>
+        /// <value>An estimate, with uncertainty, of the standard deviation of the
+        /// distribution from which the sample was drawn.</value>
         public UncertainValue PopulationStandardDeviation {
             get {
                 double c2 = s2 / n;
@@ -171,10 +174,10 @@ namespace Meta.Numerics.Statistics {
 
 
         /// <summary>
-        /// Combines summaries of two samples.
+        /// Combines two sample summaries.
         /// </summary>
-        /// <param name="a">One sample.</param>
-        /// <param name="b">Another sample.</param>
+        /// <param name="a">One sample summary.</param>
+        /// <param name="b">Another sample summary.</param>
         /// <returns>Summary statistics of the combined sample.</returns>
         public static SampleSummary Combine (SampleSummary a, SampleSummary b) {
 
@@ -196,8 +199,6 @@ namespace Meta.Numerics.Statistics {
             return (ab);
         }
 
-
     }
-
 
 }

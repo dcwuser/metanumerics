@@ -1148,29 +1148,15 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The result of the fit, containing the parameters that result in the best fit,
         /// covariance matrix among those parameters, and a test of the goodness of fit.</returns>
         /// <seealso href="http://en.wikipedia.org/wiki/Maximum_likelihood"/>
-        public FitResult MaximumLikelihoodFit (Func<IReadOnlyList<double>, ContinuousDistribution> factory, IReadOnlyList<double> start) {
+        public DistributionFitResult<ContinuousDistribution> MaximumLikelihoodFit (Func<IReadOnlyList<double>, ContinuousDistribution> factory, IReadOnlyList<double> start) {
 
             if (factory == null) throw new ArgumentNullException(nameof(factory));
             if (start == null) throw new ArgumentNullException(nameof(start));
 
-            // Define a log likelyhood function
-            Func<IReadOnlyList<double>, double> L = (IReadOnlyList<double> parameters) => {
-                ContinuousDistribution distribution = factory(parameters);
-                double lnP = 0.0;
-                foreach (double value in data) {
-                    double P = distribution.ProbabilityDensity(value);
-                    if (P == 0.0) throw new InvalidOperationException();
-                    lnP += Math.Log(P);
-                }
-                return (-lnP);
-            };
+            List<string> names = new List<string>(start.Count);
+            for (int i = 0; i < start.Count; i++) names.Add(i.ToString());
 
-            // Maximize it
-            MultiExtremum min = MultiFunctionMath.FindLocalMinimum(L, start);
-
-            FitResult result = new FitResult(min.Location, min.HessianMatrix.CholeskyDecomposition().Inverse(), null);
-            return (result);
-
+            return (Univariate.MaximumLikelihoodFit(data, factory, start, names));
         }
 
         /// <summary>

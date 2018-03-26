@@ -20,40 +20,30 @@ namespace DataTest
         [TestMethod]
         public void FrameTableColumnManipulations ()
         {
-            ColumnDefinition column0 = new ColumnDefinition<int>("Integer");
-            ColumnDefinition column1 = new ColumnDefinition<double>("Double");
-            ColumnDefinition column2 = new ColumnDefinition<DateTime>("Timestamp");
 
-            FrameTable frame = new FrameTable(column0, column1);
+            FrameTable frame = new FrameTable();
+            frame.AddColumn<int>("Integer");
+            frame.AddColumn<double>("Double");
             Assert.IsTrue(frame.Columns.Count == 2);
 
-            Assert.IsTrue(frame.Columns[0].Name == column0.Name);
-            Assert.IsTrue(frame.Columns[0].StorageType == column0.StorageType);
-            Assert.IsTrue(frame.Columns[column0.Name].Name == column0.Name);
-            Assert.IsTrue(frame[column0.Name].Name == column0.Name);
+            Assert.IsTrue(frame.Columns[0].Name == frame[frame.Columns[0].Name].Name);
+            Assert.IsTrue(frame.Columns[0].StorageType == frame[frame.Columns[0].Name].StorageType);
 
-            frame.AddColumn(column2);
+            frame.AddColumn<DateTime>("Timestamp");
             Assert.IsTrue(frame.Columns.Count == 3);
 
-            Assert.IsTrue(frame.Columns[2].Name == column2.Name);
-            Assert.IsTrue(frame.Columns[2].StorageType == column2.StorageType);
-            Assert.IsTrue(frame[column2.Name].Name == column2.Name);
-
-            frame.RemoveColumn(column0.Name);
+            frame.RemoveColumn(frame.Columns[0].Name);
             Assert.IsTrue(frame.Columns.Count == 2);
-
-            Assert.IsTrue(frame.Columns[0].Name == column1.Name);
-            Assert.IsTrue(frame.Columns[0].StorageType == column1.StorageType);
-            Assert.IsTrue(frame[column1.Name].Name == column1.Name);
-
         }
 
         [TestMethod]
         public void FrameTableRowManipulations () {
 
             // In future, test with computed columns
-            FrameTable frame = new FrameTable(new ColumnDefinition<double>("Height"), new ColumnDefinition<string>("Name"));
-            //DataFrame frame = new DataFrame(new ColumnDefinition<double>("Height"), new ColumnDefinition<string>("Name"), new ComputedColumnDefinition<int>("NameLength", r => ((string) r["Name"]).Length));
+            FrameTable frame = new FrameTable();
+            frame.AddColumn<double>("Height");
+            frame.AddColumn<string>("Name");
+
             Assert.IsTrue(frame.Columns.Count == 2);
             Assert.IsTrue(frame.Rows.Count == 0);
 
@@ -132,11 +122,11 @@ namespace DataTest
         [TestMethod]
         public void FrameTableDictionariesRoundtrip()
         {
-            FrameTable frame = new FrameTable(
-                new ColumnDefinition<string>("name"),
-                new ColumnDefinition<double>("height"),
-                new ColumnDefinition<bool?>("male")
-            );
+            FrameTable frame = new FrameTable();
+            frame.AddColumn<string>("name");
+            frame.AddColumn<double>("height");
+            frame.AddColumn<bool?>("male");
+
             frame.AddRow("a", 5.0, false);
             frame.AddRow("b", 6.0, true);
             frame.AddRow("c", 5.5, null);
@@ -160,14 +150,14 @@ namespace DataTest
         public void FrameTableCsvRoundtrip2 () {
 
             // Let's exercise all our data adaptors
-            FrameTable original = new FrameTable(
-                new ColumnDefinition<string>("String"),
-                new ColumnDefinition<double?>("Double?"),
-                new ColumnDefinition<int>("Int"),
-                new ColumnDefinition<DateTime?>("DateTime?"),
-                new ColumnDefinition<TimeSpan>("TimeSpan"),
-                new ColumnDefinition<Boolean?>("Boolean?")
-            );
+            FrameTable original = new FrameTable();
+            original.AddColumn<string>("String");
+            original.AddColumn<double?>("Double?");
+            original.AddColumn<int>("Int");
+            original.AddColumn<DateTime?>("DateTime?");
+            original.AddColumn<TimeSpan>("TimeSpan");
+            original.AddColumn<Boolean?>("Boolean?");
+
             original.AddRow("z", null, 1, DateTime.Today, TimeSpan.FromMinutes(5.0), true);
             original.AddRow("y", 4.3, 2, null, TimeSpan.FromHours(4.0), null);
             original.AddRow("x", 2.0, 3, DateTime.UtcNow.Date, TimeSpan.FromDays(3.0), false);
@@ -212,8 +202,8 @@ namespace DataTest
             }
             frame.AddComputedColumn("tip_fraction", r => ((double) r["tip"]) / ((double) r["total_bill"]));
 
-            FrameView counts = frame.GroupBy("day", v => v.Rows.Count, "total").OrderBy("day");
-            FrameView means = frame.GroupBy("sex", v => v["tip_fraction"].As<double>().Mean(), "mean_tip_fraction");
+            FrameView counts = frame.GroupBy("day", "total", v => v.Rows.Count).OrderBy("day");
+            FrameView means = frame.GroupBy("sex", "mean_tip_fraction", v => v["tip_fraction"].As<double>().Mean());
 
         }
 
@@ -226,7 +216,7 @@ namespace DataTest
                 frame = FrameTable.FromCsv(stream);
             }
 
-            FrameView view = frame.GroupBy("carrier", (FrameView q) => q.Rows.Count, "count");
+            FrameView view = frame.GroupBy("carrier", "count", (FrameView q) => q.Rows.Count);
 
         }
     }

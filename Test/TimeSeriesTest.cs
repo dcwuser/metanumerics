@@ -194,14 +194,14 @@ namespace Test {
                 MA1FitResult result = series.FitToMA1();
 
                 //Assert.IsTrue(result.Dimension == 3);
-                parameters.Add(result.Parameters.Best);
+                parameters.Add(result.Parameters.ValuesVector);
                 covariances.Add(
-                    result.Parameters.Covariance[0, 0],
-                    result.Parameters.Covariance[1, 1],
-                    result.Parameters.Covariance[2, 2],
-                    result.Parameters.Covariance[0, 1],
-                    result.Parameters.Covariance[0, 2],
-                    result.Parameters.Covariance[1, 2]
+                    result.Parameters.CovarianceMatrix[0, 0],
+                    result.Parameters.CovarianceMatrix[1, 1],
+                    result.Parameters.CovarianceMatrix[2, 2],
+                    result.Parameters.CovarianceMatrix[0, 1],
+                    result.Parameters.CovarianceMatrix[0, 2],
+                    result.Parameters.CovarianceMatrix[1, 2]
                 );
                 tests.Add(result.GoodnessOfFit.Probability);
 
@@ -234,13 +234,12 @@ namespace Test {
             // For our fit to AR(1), we have incorporated bias correction (at least
             // for the most important parameter alpha), so we can do a small-n test.
 
-            FrameTable data = new FrameTable(
-                new ColumnDefinition<UncertainValue>("mu"),
-                new ColumnDefinition<UncertainValue>("alpha"),
-                new ColumnDefinition<UncertainValue>("sigma"),
-                new ColumnDefinition<SymmetricMatrix>("covariance"),
-                new ColumnDefinition<double>("p")
-            );
+            FrameTable data = new FrameTable();
+            data.AddColumn<UncertainValue>("mu");
+            data.AddColumn<UncertainValue>("alpha");
+            data.AddColumn<UncertainValue>("sigma");
+            data.AddColumn<SymmetricMatrix>("covariance");
+            data.AddColumn<double>("p");
 
             for (int i = 0; i < 128; i++) {
 
@@ -250,7 +249,7 @@ namespace Test {
 
                 data.AddRow(
                     result.Mu, result.Alpha, result.Sigma,
-                    result.Parameters.Covariance, result.GoodnessOfFit.Probability
+                    result.Parameters.CovarianceMatrix, result.GoodnessOfFit.Probability
                 );
 
             }

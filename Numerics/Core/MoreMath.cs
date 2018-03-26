@@ -103,10 +103,10 @@ namespace Meta.Numerics {
         /// </summary>
         /// <param name="x">The length of one side.</param>
         /// <param name="y">The length of another side.</param>
-        /// <returns>The length of the hypotenuse, sqrt(x<sup>2</sup> + y<sup>2</sup>).</returns>
+        /// <returns>The value of sqrt(x<sup>2</sup> + y<sup>2</sup>).</returns>
         /// <remarks>
         /// <para>The length is computed accurately, even in cases where
-        /// x<sup>2</sup> or y<sup>2</sup> would overflow.</para>
+        /// x<sup>2</sup> or y<sup>2</sup> would overflow or underflow.</para>
         /// </remarks>
         public static double Hypot (double x, double y) {
 
@@ -139,8 +139,8 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The value of e<sup>x</sup>-1.</returns>
         /// <remarks>
-        /// <para>If x is close to 0, then e<sup>x</sup> is close to 1, and computing e<sup>x</sup>-1 by <pre>Math.Exp(x) - 1.0</pre>
-        /// will be subject to severe loss of significance due to cancelation.
+        /// <para>If x is close to 0, then e<sup>x</sup> is close to 1, and computing e<sup>x</sup>-1 by
+        /// <tt>Math.Exp(x) - 1.0</tt> will be subject to severe loss of significance due to cancelation.
         /// This method maintains full precision for all values of x by switching to a series expansion for values of
         /// x near zero.</para>
         /// </remarks>
@@ -190,8 +190,10 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The value of log(1+x).</returns>
         /// <remarks>
-        /// <para>If x is close to 0, computing log(1+x) by <pre>Math.Log(1.0 + x)</pre> can result in a significant loss of accuracy.
-        /// This function maintains full precision of all values of x by switching to a series expansion for values of x near zero.</para>
+        /// <para>If x is close to 0, computing log(1+x) by <tt>Math.Log(1.0 + x)</tt> can result in a
+        /// significant loss of accuracy.
+        /// This function maintains full precision of all values of x by switching to a series expansion
+        /// for values of x near zero.</para>
         /// </remarks>
         public static double LogOnePlus (double x) {
             if (Math.Abs(x) < 0.125) {

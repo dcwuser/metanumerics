@@ -54,7 +54,7 @@ namespace Test {
                 parameters.Add(fit.Mean.Value, fit.StandardDeviation.Value);
 
                 // also record the claimed covariances among these parameters
-                covariances.Add(fit.Parameters.Covariance[0, 0], fit.Parameters.Covariance[1, 1], fit.Parameters.Covariance[0, 1]);
+                covariances.Add(fit.Parameters.CovarianceMatrix[0, 0], fit.Parameters.CovarianceMatrix[1, 1], fit.Parameters.CovarianceMatrix[0, 1]);
             }
 
             // the mean fit values should agree with the population distribution
@@ -128,7 +128,7 @@ namespace Test {
 
                 GumbelFitResult r = GumbelDistribution.FitToSample(s);
                 parameters.Add(r.Location.Value, r.Scale.Value);
-                variances.Add(r.Parameters.Covariance[0, 0], r.Parameters.Covariance[1, 1], r.Parameters.Covariance[0, 1]);
+                variances.Add(r.Parameters.CovarianceMatrix[0, 0], r.Parameters.CovarianceMatrix[1, 1], r.Parameters.CovarianceMatrix[0, 1]);
 
                 Assert.IsTrue(r.GoodnessOfFit.Probability > 0.01);
             }
@@ -149,19 +149,15 @@ namespace Test {
 
             WaldDistribution wald = new WaldDistribution(3.5, 2.5);
 
-            FrameTable results = new FrameTable(
-                new ColumnDefinition<double>("Mean"),
-                new ColumnDefinition<double>("Shape"),
-                new ColumnDefinition<double>("MeanVariance"),
-                new ColumnDefinition<double>("ShapeVariance"),
-                new ColumnDefinition<double>("MeanShapeCovariance")
-            );
+            FrameTable results = new FrameTable();
+            results.AddColumns<double>("Mean", "Shape", "MeanVariance", "ShapeVariance", "MeanShapeCovariance");
+
             for (int i = 0; i < 128; i++) {
                 Sample sample = SampleTest.CreateSample(wald, 16, i);
 
                 WaldFitResult result = WaldDistribution.FitToSample(sample);
-                Assert.IsTrue(result.Mean.Value == result.Parameters.Best[result.Parameters.IndexOf("Mean")]);
-                Assert.IsTrue(result.Shape.Value == result.Parameters.Best[result.Parameters.IndexOf("Shape")]);
+                Assert.IsTrue(result.Mean.Value == result.Parameters.ValuesVector[result.Parameters.IndexOf("Mean")]);
+                Assert.IsTrue(result.Shape.Value == result.Parameters.ValuesVector[result.Parameters.IndexOf("Shape")]);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Parameters.VarianceOf("Mean"), MoreMath.Sqr(result.Mean.Uncertainty)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Parameters.VarianceOf("Shape"), MoreMath.Sqr(result.Shape.Uncertainty)));
                 results.AddRow(

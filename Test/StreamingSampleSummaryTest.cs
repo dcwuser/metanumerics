@@ -24,7 +24,6 @@ namespace Test {
             Assert.IsTrue(summary.Count == sample.Count);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.Mean(), summary.Mean));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.Variance(), summary.Variance));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.CentralMoment(4), summary.FourthCentralMoment));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.PopulationMean(), summary.PopulationMean));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.PopulationVariance(), summary.PopulationVariance));
 
@@ -64,7 +63,6 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.Variance, summary.Variance));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.StandardDeviation, summary.StandardDeviation));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.Skewness, summary.Skewness));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.FourthCentralMoment, summary.FourthCentralMoment));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.PopulationMean, summary.PopulationMean));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.PopulationVariance, summary.PopulationVariance));
 

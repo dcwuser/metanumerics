@@ -120,11 +120,10 @@ namespace Test {
             Random rng = new Random(31415926);
 
             // Create a data structure to hold the results of Pearson, Spearman, and Kendall tests.
-            FrameTable data = new FrameTable(
-                new ColumnDefinition<double>("r"),
-                new ColumnDefinition<double>("ρ"),
-                new ColumnDefinition<double>("τ")
-            );
+            FrameTable data = new FrameTable();
+            data.AddColumn<double>("r");
+            data.AddColumn<double>("ρ");
+            data.AddColumn<double>("τ");
 
             // Create variables to hold the claimed distribution of each test statistic.
             ContinuousDistribution PRD = null;
@@ -192,11 +191,9 @@ namespace Test {
             // draw a sample from the model
             Random rng = new Random(1);
             MultivariateSample sample = new MultivariateSample("x0", "x1", "y");
-            FrameTable table = new FrameTable(
-                new ColumnDefinition<double>("x0"),
-                new ColumnDefinition<double>("x1"),
-                new ColumnDefinition<double>("y")
-            );
+            FrameTable table = new FrameTable();
+            table.AddColumns<double>("x0", "x1", "y");
+
             for (int i = 0; i < 100; i++) {
                 double x0 = x0distribution.GetRandomValue(rng);
                 double x1 = x1distribution.GetRandomValue(rng);
@@ -249,17 +246,8 @@ namespace Test {
             ContinuousDistribution x1distribution = new CauchyDistribution();
             ContinuousDistribution eDistribution = new NormalDistribution(0.0, 4.0);
 
-            FrameTable data = new FrameTable(
-                new ColumnDefinition<double>("a"),
-                new ColumnDefinition<double>("da"),
-                new ColumnDefinition<double>("b0"),
-                new ColumnDefinition<double>("db0"),
-                new ColumnDefinition<double>("b1"),
-                new ColumnDefinition<double>("db1"),
-                new ColumnDefinition<double>("ab1Cov"),
-                new ColumnDefinition<double>("p"),
-                new ColumnDefinition<double>("dp")
-            );
+            FrameTable data = new FrameTable();
+            data.AddColumns<double>("a", "da", "b0", "db0", "b1", "db1", "ab1Cov", "p", "dp");
 
             // draw a sample from the model
             Random rng = new Random(4);
@@ -389,11 +377,11 @@ namespace Test {
             // draw a sample from the model
             Random rng = new Random(1);
             MultivariateSample old = new MultivariateSample("y", "x0", "x1");
-            FrameTable table = new FrameTable(
-                new ColumnDefinition<double>("x0"),
-                new ColumnDefinition<double>("x1"),
-                new ColumnDefinition<bool>("y")
-            );
+            FrameTable table = new FrameTable();
+            table.AddColumn<double>("x0");
+            table.AddColumn<double>("x1");
+            table.AddColumn<bool>("y");
+            
             for (int i = 0; i < 100; i++) {
                 double x0 = x0distribution.GetRandomValue(rng);
                 double x1 = x1distribution.GetRandomValue(rng);
@@ -442,16 +430,8 @@ namespace Test {
             ContinuousDistribution x0distribution = new ExponentialDistribution();
             ContinuousDistribution x1distribution = new LognormalDistribution();
 
-            FrameTable data = new FrameTable(
-                new ColumnDefinition<double>("a"),
-                new ColumnDefinition<double>("da"),
-                new ColumnDefinition<double>("b0"),
-                new ColumnDefinition<double>("db0"),
-                new ColumnDefinition<double>("b1"),
-                new ColumnDefinition<double>("db1"),
-                new ColumnDefinition<double>("p"),
-                new ColumnDefinition<double>("dp")
-            );
+            FrameTable data = new FrameTable();
+            data.AddColumns<double>("a", "da", "b0", "db0", "b1", "db1", "p", "dp" );
 
             // draw a sample from the model
             Random rng = new Random(2);
@@ -460,11 +440,11 @@ namespace Test {
                 List<double> x1s = new List<double>();
                 List<bool> ys = new List<bool>();
 
-                FrameTable table = new FrameTable(
-                    new ColumnDefinition<double>("x0"),
-                    new ColumnDefinition<double>("x1"),
-                    new ColumnDefinition<bool>("y")
-                );
+                FrameTable table = new FrameTable();
+                table.AddColumn<double>("x0");
+                table.AddColumn<double>("x1");
+                table.AddColumn<bool>("y");
+                
                 for (int i = 0; i < 32; i++) {
                     double x0 = x0distribution.GetRandomValue(rng);
                     double x1 = x1distribution.GetRandomValue(rng);
@@ -574,21 +554,21 @@ namespace Test {
                 SA.Add(rng.NextDouble(), rng.NextDouble());
             }
             GeneralLinearRegressionResult RA = SA.LinearRegression(0);
-            ColumnVector PA = RA.Parameters.Best;
-            SymmetricMatrix CA = RA.Parameters.Covariance;
+            ColumnVector PA = RA.Parameters.ValuesVector;
+            SymmetricMatrix CA = RA.Parameters.CovarianceMatrix;
 
             MultivariateSample SB = SA.Columns(1, 0);
             GeneralLinearRegressionResult RB = SB.LinearRegression(1);
-            ColumnVector PB = RB.Parameters.Best;
-            SymmetricMatrix CB = RB.Parameters.Covariance;
+            ColumnVector PB = RB.Parameters.ValuesVector;
+            SymmetricMatrix CB = RB.Parameters.CovarianceMatrix;
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(PA[0], PB[1])); Assert.IsTrue(TestUtilities.IsNearlyEqual(PA[1], PB[0]));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 0], CB[1, 1])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 1], CB[1, 0])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[1, 1], CB[0, 0]));
 
             BivariateSample SC = SA.TwoColumns(1, 0);
             GeneralLinearRegressionResult RC = SC.LinearRegression();
-            ColumnVector PC = RC.Parameters.Best;
-            SymmetricMatrix CC = RC.Parameters.Covariance;
+            ColumnVector PC = RC.Parameters.ValuesVector;
+            SymmetricMatrix CC = RC.Parameters.CovarianceMatrix;
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(PA, PC));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(CA, CC));

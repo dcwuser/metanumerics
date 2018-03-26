@@ -10,8 +10,30 @@ using Meta.Numerics.Statistics.Distributions;
 namespace Meta.Numerics.Statistics {
 
     /// <summary>
-    /// Contains methods for performing statistics on bivariate samples.
+    /// Contains methods for analyzing on bivariate samples.
     /// </summary>
+    /// <remarks>
+    /// <para>A bivariate sample is a sample in which each observation contains measurements of two quantities.
+    /// A data set with height and weight measured for each person in the sample, for example, is bivariate.
+    /// A data set with height measured for each person in two different groups, for example, is <em>not</em>
+    /// bivariate. The first data set can be analyzed with the methods here. The second, which is just
+    /// two independent univariate samples, should be analyzed with the multi-sample methods of the
+    /// <see cref="Univariate"/> class.</para>
+    /// <para>One common task with bivariate data is to determine whether some association exists
+    /// between the two measured quantities. This can be accomplished with the
+    /// <see cref="PearsonRTest(IReadOnlyList{double}, IReadOnlyList{double})">PearsonRTest</see>, the
+    /// <see cref="SpearmanRhoTest(IReadOnlyList{double}, IReadOnlyList{double})">SpearmanRhoTest</see>, or the
+    /// <see cref="KendallTauTest(IReadOnlyList{double}, IReadOnlyList{double})">KendallTauTest</see>.
+    /// Simpler than testing for the statistical significance of any association is simply to measure
+    /// it by reporting the <see cref="CorrelationCoefficient(IReadOnlyList{double}, IReadOnlyList{double})"/>.</para>
+    /// <para>Another common operation on bivariate data is to try to predict one variable on the basis
+    /// of the other. There are many types of models you can construct to make such predictions, including
+    /// <see cref="LinearRegression(IReadOnlyList{double}, IReadOnlyList{double})"/>,
+    /// <see cref="PolynomialRegression(IReadOnlyList{double}, IReadOnlyList{double}, int)"/>, and
+    /// <see cref="NonlinearRegression(IReadOnlyList{double}, IReadOnlyList{double}, Func{IReadOnlyList{double}, double, double}, IReadOnlyList{double})"/>.
+    /// If the dependent variable is Boolean, you can use
+    /// <see cref="LinearLogisticRegression(IReadOnlyList{bool}, IReadOnlyList{double})"/> instead.</para>
+    /// </remarks>
     public static class Bivariate {
 
         internal static void ComputeBivariateMomentsUpToTwo (IEnumerable<double> x, IEnumerable<double> y, out int n, out double xMean, out double yMean, out double xxSum, out double yySum, out double xySum) {
@@ -184,7 +206,19 @@ namespace Meta.Numerics.Statistics {
             return (new PolynomialRegressionResult(x, y, m));
         }
 
-
+        /// <summary>
+        /// Finds the parameterized function that best fits the data.
+        /// </summary>
+        /// <param name="x">The ordinate values.</param>
+        /// <param name="y">The abscissa values.</param>
+        /// <param name="function">The parameterized function.</param>
+        /// <param name="start">An initial guess for the parameters.</param>
+        /// <returns>The fit result.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> or <paramref name="function"/> or <paramref name="start"/> is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException">The sizes of <paramref name="x"/> and <paramref name="y"/> do not match.</exception>
+        /// <exception cref="InsufficientDataException">There are not more data points than fit parameters.</exception>
+        /// <exception cref="DivideByZeroException">The curvature matrix is singular, indicating that the data is independent of
+        /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
         public static NonlinearRegressionResult NonlinearRegression (
             this IReadOnlyList<double> y,
             IReadOnlyList<double> x,
@@ -210,7 +244,7 @@ namespace Meta.Numerics.Statistics {
                 return (function(parameters, x2));
             };
 
-            return new NonlinearRegressionResult(x, y, f2, startValues, names);
+            return (new NonlinearRegressionResult(x, y, f2, startValues, names));
         }
 
         /// <summary>
@@ -381,7 +415,7 @@ namespace Meta.Numerics.Statistics {
 
             // for small enough sample, use the exact distribution
             ContinuousDistribution rhoDistribution;
-            if (n < 12) {
+            if (n < 14) {
                 // for small enough sample, use the exact distribution
                 // it would be nice to do this for at least slightly higher n, but computation time grows dramatically
                 // would like to ensure return in less than 100ms; current timings n=10 35ms, n=11 72ms, n=12 190ms

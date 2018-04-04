@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 using Meta.Numerics;
 
@@ -17,11 +18,14 @@ namespace Meta.Numerics.Analysis {
     /// </remarks>
     public sealed class IntegrationResult : EvaluationResult {
 
-        internal IntegrationResult (UncertainValue estimate, int evaluationCount, EvaluationSettings settings) : base(evaluationCount, settings) {
+        internal IntegrationResult (UncertainValue estimate, int evaluationCount, IntegrationSettings settings) : base(evaluationCount) {
+            Debug.Assert(settings != null);
             this.estimate = estimate;
+            this.settings = settings;
         }
 
         private readonly UncertainValue estimate;
+        private readonly IntegrationSettings settings;
 
         /// <summary>
         /// Gets the estimated value of the integral and its associated error bar.
@@ -53,7 +57,16 @@ namespace Meta.Numerics.Analysis {
         public static implicit operator double (IntegrationResult result) {
             return (result.Value);
         }
-        
+     
+        /// <summary>
+        /// Gets the settings used during integration.
+        /// </summary>
+        public IntegrationSettings Settings {
+            get {
+                return (settings);
+            }
+        }
+           
     }
 
 }

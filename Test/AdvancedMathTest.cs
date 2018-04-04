@@ -120,17 +120,16 @@ namespace Test {
         [TestMethod]
         public void IntegerBesselJIntegral () {
             // Abromowitz & Stegun 9.1.21
-            Interval r = Interval.FromEndpoints(0.0, Math.PI);
+            IntegrationSettings settings = new IntegrationSettings() { AbsolutePrecision = 2.5E-15, RelativePrecision = 0.0 };
             foreach (double x in TestUtilities.GenerateRealValues(0.1, 10.0, 8)) {
                 foreach (int n in TestUtilities.GenerateIntegerValues(1, 10, 4)) {
-                    Func<double, double> f = delegate(double t) {
-                        return (Math.Cos(x * Math.Sin(t) - n * t));
-                    };
-                    double J = FunctionMath.Integrate(f, r).Estimate.Value / Math.PI;
+                    double J = FunctionMath.Integrate(
+                        t => MoreMath.Cos(x * MoreMath.Sin(t) - n * t),
+                        0.0, Math.PI, settings
+                    ).Estimate.Value / Math.PI;
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        AdvancedMath.BesselJ(n, x), J,
-                        new EvaluationSettings() { AbsolutePrecision = 1.0E-15, RelativePrecision = 0.0 }
-                    ));
+                        AdvancedMath.BesselJ(n, x), J, settings
+                    ), $"n={n}, x={x}, J={J}");
                     // The integral can produce significant cancelation, so use an absolute criterion.
                 }
             }

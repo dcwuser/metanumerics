@@ -12,83 +12,87 @@ namespace Meta.Numerics.Analysis {
     public static partial class MultiFunctionMath {
 
         /// <summary>
-        /// Finds a local minimum of a multi-dimensional function in the vincinity of the given starting location.
+        /// Finds a local minimum of a multi-dimensional function in the vicinity of the given starting location.
         /// </summary>
         /// <param name="function">The multi-dimensional function to minimize.</param>
         /// <param name="start">The starting location for the search.</param>
         /// <returns>The local minimum.</returns>
+        /// <remarks>
+        /// <para>For two dimensions, the default evaluation settings target a precision of about 10<sup>-8</sup>
+        /// and allow up to about 1000 function evaluations. For increasing dimensions, these requirements are
+        /// gradually relaxed.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="function"/>, <paramref name="start"/> is <see langword="null"/>.</exception>
+        /// <exception cref="NonconvergenceException">The number of function evaluations required exceeded the evaluation budget.</exception>
         public static MultiExtremum FindLocalMinimum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start) {
-            return (FindLocalMinimum(function, start, new EvaluationSettings()));
+            return (FindLocalMinimum(function, start, new MultiExtremumSettings()));
         }
 
-        private static void SetDefaultOptimizationSettings (EvaluationSettings settings, int d) {
+        private static void SetDefaultOptimizationSettings (MultiExtremumSettings settings, int d) {
             if (settings.RelativePrecision < 0.0) settings.RelativePrecision = Math.Pow(10.0, -(10.0 + 4.0 / d));
             if (settings.AbsolutePrecision < 0.0) settings.AbsolutePrecision = Math.Pow(10.0, -(10.0 + 4.0 / d));
             if (settings.EvaluationBudget < 0) settings.EvaluationBudget = 16 * (d + 1) * (d + 2) * (d + 3);
         }
 
         /// <summary>
-        /// Finds a local minimum of a multi-dimensional function in the vincinity of the given starting location, subject to the given evaluation constraints.
+        /// Finds a local minimum of a multi-dimensional function in the vicinity of the given starting location,
+        /// subject to the given evaluation constraints.
         /// </summary>
         /// <param name="function">The multi-dimensional function to minimize.</param>
         /// <param name="start">The starting location for the search.</param>
         /// <param name="settings">The evaluation settings that govern the search for the minimum.</param>
         /// <returns>The local minimum.</returns>
         /// <remarks>
-        /// <para>The Hessian (matrix of second derivatives) returned with the minimum is an approximation that is constructed in the course of search. It should be
-        /// considered a crude approximation, and may not even be that if the minimum is highly non-quadratic.</para>
+        /// <para>The Hessian (matrix of second derivatives) returned with the minimum is an approximation that is constructed in the course of search.
+        /// It should be considered a crude approximation, and may not even be that if the minimum is highly non-quadratic.</para>
         /// <para>If you have a constrained minimization problem, require a high-precision solution, and do not have a good initial guess, consider first feeding
-        /// your constrained problem into <see cref="FindGlobalMinimum(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, EvaluationSettings)"/>,
+        /// your constrained problem into <see cref="FindGlobalMinimum(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, MultiExtremumSettings)"/>,
         /// which supports constraints but gives relatively lower precision solutions, then
         /// feeding the result of that method into this method, which finds relatively precise solutions but does not support constraints.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="function"/>, <paramref name="start"/>, or <paramref name="settings"/> is <see langword="null"/>.</exception>
         /// <exception cref="NonconvergenceException">The number of function evaluations required exceeded the evaluation budget.</exception>
-        public static MultiExtremum FindLocalMinimum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start, EvaluationSettings settings) {
-            if (function == null) throw new ArgumentNullException("function");
-            if (start == null) throw new ArgumentNullException("start");
-            if (settings == null) throw new ArgumentNullException("settings");
+        public static MultiExtremum FindLocalMinimum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start, MultiExtremumSettings settings) {
+            if (function == null) throw new ArgumentNullException(nameof(function));
+            if (start == null) throw new ArgumentNullException(nameof(start));
+            if (settings == null) throw new ArgumentNullException(nameof(settings));
             return (FindLocalExtremum(function, start, settings, false));
         }
 
         /// <summary>
-        /// Finds a local maximum of a multi-dimensional function in the vincinity of the given starting location.
+        /// Finds a local maximum of a multi-dimensional function in the vicinity of the given starting location.
         /// </summary>
         /// <param name="function">The multi-dimensional function to maximize.</param>
         /// <param name="start">The starting location for the search.</param>
         /// <returns>The local maximum.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="function"/>, <paramref name="start"/> is <see langword="null"/>.</exception>
+        /// <exception cref="NonconvergenceException">The number of function evaluations required exceeded the evaluation budget.</exception>
         public static MultiExtremum FindLocalMaximum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start) {
-            return (FindLocalMaximum(function, start, new EvaluationSettings()));
+            return (FindLocalMaximum(function, start, new MultiExtremumSettings()));
         }
 
         /// <summary>
-        /// Finds a local maximum of a multi-dimensional function in the vincinity of the given starting location, subject to the given evaluation constraints.
+        /// Finds a local maximum of a multi-dimensional function in the vicinity of the given starting location,
+        /// subject to the given evaluation constraints.
         /// </summary>
         /// <param name="function">The multi-dimensional function to maximize.</param>
         /// <param name="start">The starting location for the search.</param>
         /// <param name="settings">The evaluation settings that govern the search for the maximum.</param>
         /// <returns>The local maximum.</returns>
-        public static MultiExtremum FindLocalMaximum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start, EvaluationSettings settings) {
-            if (function == null) throw new ArgumentNullException("function");
-            if (start == null) throw new ArgumentNullException("start");
-            if (settings == null) throw new ArgumentNullException("settings");
+        public static MultiExtremum FindLocalMaximum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start, MultiExtremumSettings settings) {
+            if (function == null) throw new ArgumentNullException(nameof(function));
+            if (start == null) throw new ArgumentNullException(nameof(start));
+            if (settings == null) throw new ArgumentNullException(nameof(settings));
             return (FindLocalExtremum(function, start, settings, true));
         }
 
-        private static MultiExtremum FindLocalExtremum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start, EvaluationSettings settings, bool negate) {
+        private static MultiExtremum FindLocalExtremum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<double> start, MultiExtremumSettings settings, bool negate) {
             MultiFunctor f = new MultiFunctor(function, negate);
 
-            // Pick an initial radius; we need to do this better.
-            /*
-            double s = Double.MaxValue;
-            foreach (double x in start) s = Math.Min((Math.Abs(x) + 1.0 / 8.0) / 8.0, s);
-            */
-
+            // Pick an initial trust region radius; we need to do this better.
             double s = 0.0;
             foreach (double x in start) s += (Math.Abs(x) + 1.0 / 4.0) / 4.0;
             s = s / start.Count;
-
-            //double s = 0.2;
             Debug.WriteLine("s={0}", s);
 
             SetDefaultOptimizationSettings(settings, start.Count);
@@ -98,9 +102,9 @@ namespace Meta.Numerics.Analysis {
 
         // This method is due to Powell (http://en.wikipedia.org/wiki/Michael_J._D._Powell), but it is not what
         // is usually called Powell's Method (http://en.wikipedia.org/wiki/Powell%27s_method); Powell
-        // developed that method in the 1960s, it was included in Numerical Recipies and is very popular.
+        // developed that method in the 1960s, it was included in Numerical Recipes and is very popular.
         // This is a model trust algorithm developed by Powell in the 2000s. It typically uses many
-        // fewer function evaluations, but does more intensive calcuations between each evaluation.
+        // fewer function evaluations, but does more intensive calculations between each evaluation.
 
         // This is basically the UOBYQA variant of Powell's new methods. It maintains a quadratic model
         // that interpolates between (d + 1) (d + 2) / 2 points. The model is trusted
@@ -118,7 +122,7 @@ namespace Meta.Numerics.Analysis {
         // It should be very easy to extend this method to constrained optimization, either by incorporating the bounds into
         // the step limits or by mapping hyper-space into a hyper-cube.
 
-        private static MultiExtremum FindMinimum_ModelTrust (MultiFunctor f, IReadOnlyList<double> x, double s, EvaluationSettings settings) {
+        private static MultiExtremum FindMinimum_ModelTrust (MultiFunctor f, IReadOnlyList<double> x, double s, MultiExtremumSettings settings) {
 
             // Construct an initial model.
             QuadraticInterpolationModel model = QuadraticInterpolationModel.Construct(f, x, s);
@@ -139,19 +143,26 @@ namespace Meta.Numerics.Analysis {
                 double delta = model.MinimumValue - value;
                 double tol = settings.ComputePrecision(value);
 
-                // To terminate, we demand: a reduction, the reduction be small, the reduction be in line with its expected value, that we have run up against trust boundary,
-                // and that the gradient is small.
-                // I had wanted to demand delta > 0, but we run into some cases where delta keeps being very slightly negative, typically orders of magnitude less than tol,
-                // causing the trust radius to shrink in and endless cycle that causes our approximation to ultimately go sour, even though terminating on the original
+                if (delta > 0 && settings.Listener != null) {
+                    MultiExtremum report = new MultiExtremum(f.EvaluationCount, settings, point, value, Math.Max(Math.Abs(delta), 0.75 * tol), model.GetHessian());
+                    settings.Listener(report);
+                }
+
+                // To terminate, we demand: a reduction, that the reduction be small, that the reduction be in line with
+                // its expected value, that we have not run up against trust boundary, and that the gradient is small.
+                // I had wanted to demand delta > 0, but we run into some cases where delta keeps being very slightly
+                // negative, typically orders of magnitude less than tol, causing the trust radius to shrink in an
+                // endless cycle that causes our approximation to ultimately go sour, even though terminating on the original
                 // very slightly negative delta would have produced an accurate estimate. So we tolerate this case for now.
                 if ((-tol / 4.0 <= delta) && (delta <= tol)) {
                     // We demand that the model be decent, i.e. that the expected delta was within tol of the measured delta.
                     if (Math.Abs(delta - deltaExpected) <= tol) {
-                        // We demand that the step not just be small because it ran up against the trust radius. If it ran up against the trust radius,
-                        // there is probably more to be hand by continuing.
+                        // We demand that the step not just be small because it ran up against the trust radius.
+                        // If it ran up against the trust radius, there is probably more to be hand by continuing.
                         double zm = Blas1.dNrm2(z, 0, 1, z.Length);
                         if (zm < trustRadius) {
-                            // Finally, we demand that the gradient be small. You might think this was obvious since z was small, but if the Hessian is not positive definite
+                            // Finally, we demand that the gradient be small. You might think this was obvious since
+                            // z was small, but if the Hessian is not positive definite
                             // the interplay of the Hessian and the gradient can produce a small z even if the model looks nothing like a quadratic minimum.
                             double gm = Blas1.dNrm2(model.GetGradient(), 0, 1, z.Length);
                             if (gm * zm <= tol) {
@@ -161,7 +172,6 @@ namespace Meta.Numerics.Analysis {
                         }
                     }
                 }
-
 
                 // There are now three decisions to be made:
                 //   1. How to change the trust radius
@@ -186,7 +196,7 @@ namespace Meta.Numerics.Analysis {
                     if (bad > fBad) { iBad = i; fBad = bad; }
                 }
                 if (value < fMax) {
-                    Debug.WriteLine("iMax={0}, iBad={1}", iMax, iBad);
+                    //Debug.WriteLine("iMax={0}, iBad={1}", iMax, iBad);
                     model.ReplacePoint(iBad, point, z, value);
                 }
                 // There is some question about how best to choose which point to replace.

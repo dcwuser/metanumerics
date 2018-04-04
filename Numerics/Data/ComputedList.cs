@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Meta.Numerics.Data
 {
 
-    internal class ComputedList<T> : NamedList, IEnumerable, IReadOnlyList<T>
+    internal class ComputedList<T> : NamedList, IEnumerable, IEnumerable<T>, IReadOnlyList<T>
     {
         internal ComputedList (FrameView frame, string name, Func<FrameRow,T> function) : base(name) {
             this.frame = frame;

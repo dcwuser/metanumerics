@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace Meta.Numerics.Data
 {
@@ -8,10 +10,9 @@ namespace Meta.Numerics.Data
     /// <summary>
     /// One column of a data frame.
     /// </summary>
-    public sealed class FrameColumn : IEnumerable
-    {
-        internal FrameColumn(FrameView frame, int c)
-        {
+    public sealed class FrameColumn : IEnumerable {
+
+        internal FrameColumn(FrameView frame, int c) {
             this.frame = frame;
             this.column = frame.columns[c];
             this.map = frame.map;
@@ -24,10 +25,8 @@ namespace Meta.Numerics.Data
         /// <summary>
         /// Gets the name of the column.
         /// </summary>
-        public string Name
-        {
-            get
-            {
+        public string Name {
+            get {
                 return (column.Name);
             }
         }
@@ -35,10 +34,8 @@ namespace Meta.Numerics.Data
         /// <summary>
         /// Gets the type of data stored in the column.
         /// </summary>
-        public Type StorageType
-        {
-            get
-            {
+        public Type StorageType {
+            get {
                 return (column.StorageType);
             }
         }
@@ -46,10 +43,8 @@ namespace Meta.Numerics.Data
         /// <summary>
         /// Gets the number of values in the column.
         /// </summary>
-        public int Count
-        {
-            get
-            {
+        public int Count {
+            get {
                 return (map.Count);
             }
         }
@@ -59,10 +54,8 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="r">The (zero-based) index.</param>
         /// <returns>The value at index <paramref name="r"/>.</returns>
-        public object this[int r]
-        {
-            get
-            {
+        public object this[int r] {
+            get {
                 return (column.GetItem(map[r]));
             }
         }
@@ -78,11 +71,21 @@ namespace Meta.Numerics.Data
         /// operations directly against the already existing storage.</para>
         /// </remarks>
         public IReadOnlyList<T> As<T> () {
-            NamedList<T> typedColumn = column as NamedList<T>;
+            // If the requested column is of the requested type, expose it directly.
+            IReadOnlyList<T> typedColumn = column as IReadOnlyList<T>;
             if (typedColumn != null) {
-                return (new TypedFrameColumn<T>(typedColumn, map));
+                return (new TypedFrameColumn<T>(column.Name, typedColumn, map));
             } else {
-                return (new ConvertedFrameColumn<T>(column, map));
+                // If the requested column is cast-able to the requested type, cast it.
+                // Also, allow casts from null-able where the underlying type is cast-able.
+                TypeInfo targetTypeInfo = typeof(T).GetTypeInfo();
+                if (targetTypeInfo.IsAssignableFrom(column.StorageType.GetTypeInfo()) ||
+                    targetTypeInfo.IsAssignableFrom(Nullable.GetUnderlyingType(column.StorageType)?.GetTypeInfo())) {
+                    return (new CastFrameColumn<T>(column, map));
+                } else {
+                    // If nothing else works, use convert.
+                    return (new ConvertedFrameColumn<T>(column, map));
+                }
             }
         }
 
@@ -95,11 +98,10 @@ namespace Meta.Numerics.Data
         /// <returns>An object that allows a transformation of the column to be accessed as a typed list.</returns>
         public IReadOnlyList<TOut> As<TIn, TOut>(Func<TIn, TOut> transformation) {
             IReadOnlyList<TIn> inputColumn = this.As<TIn>();
-            return (new TransformedList<TIn, TOut>(inputColumn, transformation));
+            return (new TransformedList<TIn, TOut>(this.Name, inputColumn, transformation));
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
+        IEnumerator IEnumerable.GetEnumerator() {
             return (((IEnumerable) column).GetEnumerator());
         }
 
@@ -107,17 +109,22 @@ namespace Meta.Numerics.Data
 
     internal class TypedFrameColumn<T> : IReadOnlyList<T>, INamed {
 
-        public TypedFrameColumn(NamedList<T> column, List<int> map) {
+        public TypedFrameColumn(string name, IReadOnlyList<T> column, List<int> map) {
+            Debug.Assert(name != null);
+            Debug.Assert(column != null);
+            Debug.Assert(map != null);
+            this.name = name;
             this.column = column;
             this.map = map;
         }
 
-        private NamedList<T> column;
-        private List<int> map;
+        private readonly string name;
+        private readonly IReadOnlyList<T> column;
+        private readonly List<int> map;
 
         public string Name {
             get {
-                return (column.Name);
+                return (name);
             }
         }
 
@@ -144,17 +151,61 @@ namespace Meta.Numerics.Data
         }
     }
 
-    // Try to add Cast or something to support Nullable<->Non-nullable conversions
+    internal class CastFrameColumn<T> : IReadOnlyList<T>, INamed {
 
-    internal class ConvertedFrameColumn<T> : IReadOnlyList<T>, INamed {
-
-        public ConvertedFrameColumn(NamedList column, List<int> map) {
+        public CastFrameColumn (NamedList column, List<int> map) {
+            Debug.Assert(column != null);
+            Debug.Assert(map != null);
             this.column = column;
             this.map = map;
         }
 
-        private NamedList column;
-        private List<int> map;
+        private readonly NamedList column;
+        private readonly List<int> map;
+
+        public string Name {
+            get {
+                return (column.Name);
+            }
+        }
+
+        public T this[int index] {
+            get {
+                object value = column.GetItem(map[index]);
+                return ((T) value);
+            }
+        }
+
+        public int Count {
+            get {
+                return (map.Count);
+            }
+        }
+
+        public IEnumerator<T> GetEnumerator () {
+            foreach (int index in map) {
+                object value = column.GetItem(index);
+                yield return ((T) value);
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator () {
+            return (((IEnumerable<T>) this).GetEnumerator());
+        }
+
+    }
+
+    internal class ConvertedFrameColumn<T> : IReadOnlyList<T>, INamed {
+
+        public ConvertedFrameColumn(NamedList column, List<int> map) {
+            Debug.Assert(column != null);
+            Debug.Assert(map != null);
+            this.column = column;
+            this.map = map;
+        }
+
+        private readonly NamedList column;
+        private readonly List<int> map;
 
         public string Name {
             get {
@@ -188,16 +239,26 @@ namespace Meta.Numerics.Data
 
     }
 
-    internal class TransformedList<TIn, TOut> : IReadOnlyList<TOut> {
+    internal class TransformedList<TIn, TOut> : IReadOnlyList<TOut>, INamed {
 
-        public TransformedList(IReadOnlyList<TIn> input, Func<TIn, TOut> transformation) {
+        public TransformedList(string name, IReadOnlyList<TIn> input, Func<TIn, TOut> transformation) {
+            Debug.Assert(name != null);
+            Debug.Assert(input != null);
+            Debug.Assert(transformation != null);
+            this.name = name;
             this.input = input;
             this.transformation = transformation;
         }
 
+        private readonly string name;
         private readonly IReadOnlyList<TIn> input;
-
         private readonly Func<TIn, TOut> transformation;
+
+        public string Name {
+            get {
+                return (name);
+            }
+        }
 
         public int Count {
             get {

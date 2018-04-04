@@ -41,7 +41,7 @@ namespace Meta.Numerics.Functions {
         }
 
         public bool IsIdentity () {
-            // a permtuation is the identity if every cycle is of length 1
+            // a permutation is the identity if every cycle is of length 1
             foreach (int[] cycle in cycles) {
                 if (cycle.Length != 1) return (false);
             }
@@ -65,8 +65,10 @@ namespace Meta.Numerics.Functions {
         }
 
         public long Order () {
-            // Since the identity is obtained when every cycle completes at the same time, this is just the LCM of all the cycle lengths.
-            // There is no known simple closed expression for this, but it is known to grow like e^{\sqrt{n \ln n}} for large n.
+            // Since the identity is obtained when every cycle completes at the same time,
+            // this is just the LCM of all the cycle lengths.
+            // There is no known simple closed expression for this, but it is known to grow
+            // like e^{\sqrt{n \ln n}} for large n.
             // See http://mathworld.wolfram.com/LandausFunction.html.
             long order = 1;
             foreach (int[] cycle in cycles) {
@@ -137,12 +139,12 @@ namespace Meta.Numerics.Functions {
                 }
             }
 
-            // At this point the cycles are valid but not necessarily cannonical.
+            // At this point the cycles are valid but not necessarily canonical.
 
             // At this point we want to cannonicalize the cycles. We can do this by
             // shuffling and sorting rows, but a quick-and-dirty solution is to
             // just use the non-canonical cycles to generate a map and let the
-            // map to cycles logic generate cannonical cycles.
+            // map to cycles logic generate canonical cycles.
 
             result = new PermutationAsCycles(cycles);
 
@@ -351,9 +353,10 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="format">A standard or custom permutation format string.</param>
         /// <param name="formatProvider">An object that provides culture-specific formatting information.</param>
-        /// <returns>The requested string represenation of the permutation.</returns>
+        /// <returns>The requested string representation of the permutation.</returns>
         /// <remarks>
-        /// <para>The standard permutation format strings are "M", which produces a map representation, and "C", which produces a cycle representation.
+        /// <para>The standard permutation format strings are "M", which produces a map representation, and "C",
+        /// which produces a cycle representation.
         /// For explanations of the map and cycle representations of a permutation, see <see cref="Parse"/>.</para>
         /// </remarks>
         public string ToString (string format, IFormatProvider formatProvider) {
@@ -378,19 +381,18 @@ namespace Meta.Numerics.Functions {
         /// <returns>The corresponding permutation.</returns>
         /// <remarks>
         /// <para>This method is able to parse both map representations and cycle representations of permutations.</para>
-        /// <para>A map representation of an n-dimensional permutation is a space-seperated list of all integers between 0 and n-1,
+        /// <para>A map representation of an n-dimensional permutation is a space-separated list of all integers between 0 and n-1,
         /// enclosed in square brackets. Each number indicates the index of the location to which the object that appears at
         /// that location is mapped by the permutation. For example, [2 1 0] denotes the permutation that moves the object
         /// at index 0 to index 2, does not move the object at index 1, and moves the object at index 2 to index 0. Note
         /// that the numbers in the map representation are the same as the numbers on the second line of Cauchy's two-line
         /// notation.</para>
-        /// <para>A cycle representation of an n-dimensional representation is a space-seperated list of all integers between 0 and n-1,
+        /// <para>A cycle representation of an n-dimensional representation is a space-separated list of all integers between 0 and n-1,
         /// grouped into cycles by parenthesis. Each cycle indicates that the element at the location with the first index in the cycle is moved to
         /// the location with the second index in the cycle, the element at the location with the second index in the cycle is moved
         /// to the location with the third index in the cycle, and so on, until the element at the location with the last index
         /// is moved to the location with the first index. Thus (0 2)(1) indicates that the elements at locations 0 and 2 change
-        /// places and the element at location 1 is left there.</para>
-        /// <para>Note that (0 2)(1) and [2 1 0] represent the same permutation.</para>
+        /// places and the element at location 1 is left there. So (0 2)(1) and [2 1 0] represent the same permutation.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="text"/> is null.</exception>
         /// <exception cref="FormatException"><paramref name="text"/> is not a valid text representation of a permutation.</exception>
@@ -407,7 +409,7 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Attempts to convert a text representation into a permutation.
         /// </summary>
-        /// <param name="text">A text representaiton of the permutation.</param>
+        /// <param name="text">A text representation of the permutation.</param>
         /// <param name="output">The corresponding permutation.</param>
         /// <returns>True if the conversion succeeded, otherwise false.</returns>
         /// <remarks>
@@ -599,11 +601,11 @@ namespace Meta.Numerics.Functions {
         /// <returns>All permutations of the given dimension.</returns>
         /// <remarks>
         /// <para>The number of permutations of dimension n is n!, which increases very rapidly as n increases. Even in cases
-        /// where n! would overflow a <see cref="Int32"/> or <see cref="Int64"/>, we do successfully produce all permutations.
+        /// where n! would overflow a <see cref="Int32"/> or <see cref="Int64"/>, this method will successfully produce all permutations.
         /// Of course, in such cases, it will take a long time to enumerate them all.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="dimension"/> is negative.</exception>
-        public static IEnumerable<Permutation> Permutations (int dimension) {
+        public static IEnumerable<Permutation> GetPermutations (int dimension) {
             if (dimension < 0) throw new ArgumentOutOfRangeException("dimension");
 
             // The permutations are enumerated using the Steinhaus-Johnson-Trotter algorithm with Even's speedup.

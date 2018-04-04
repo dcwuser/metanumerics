@@ -22,7 +22,7 @@ namespace Test {
                 int evenCount = 0;
                 int derangementCount = 0;
 
-                foreach (Permutation p in Permutation.Permutations(n)) {
+                foreach (Permutation p in Permutation.GetPermutations(n)) {
                     totalCount++;
                     if (p.IsEven) evenCount++;
                     if (p.IsDerangement) derangementCount++;
@@ -170,7 +170,7 @@ namespace Test {
                 // Build a mapping that assigns each permutation a unique integer index from 0 to (n! - 1). 
                 Dictionary<Permutation, int> index = new Dictionary<Permutation, int>();
                 int count = 0;
-                foreach (Permutation p in Permutation.Permutations(n)) {
+                foreach (Permutation p in Permutation.GetPermutations(n)) {
                     index.Add(p, count);
                     count++;
                 }

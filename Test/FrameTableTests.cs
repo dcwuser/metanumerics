@@ -219,5 +219,36 @@ namespace DataTest
             FrameView view = frame.GroupBy("carrier", "count", (FrameView q) => q.Rows.Count);
 
         }
+
+
+        [TestMethod]
+        public void CsvWhitespaceParsing () {
+            StringBuilder text = new StringBuilder();
+            text.AppendLine(" c0 ,\tc1  ");
+            text.AppendLine(",");
+            text.AppendLine(" , ");
+            text.AppendLine("  ,\t");
+            text.AppendLine("\t\" \" ,  \"\t\" ");
+            text.AppendLine(" \" a\t\"\t,\t\"\t a \"");
+            text.AppendLine("\t \" \"\"\",  \" , \" ");
+
+            FrameTable table = FrameTable.FromCsv(new StringReader(text.ToString()));
+
+            Assert.IsTrue(table.Columns[0].Name == "c0");
+            Assert.IsTrue(table.Columns[1].Name == "c1");
+
+            Assert.IsTrue((string) table.Rows[0][0] == null);
+            Assert.IsTrue((string) table.Rows[0][1] == null);
+            Assert.IsTrue((string) table.Rows[1][0] == null);
+            Assert.IsTrue((string) table.Rows[1][1] == null);
+            Assert.IsTrue((string) table.Rows[2][0] == null);
+            Assert.IsTrue((string) table.Rows[2][1] == null);
+            Assert.IsTrue((string) table.Rows[3][0] == " ");
+            Assert.IsTrue((string) table.Rows[3][1] == "\t");
+            Assert.IsTrue((string) table.Rows[4][0] == " a\t");
+            Assert.IsTrue((string) table.Rows[4][1] == "\t a ");
+            Assert.IsTrue((string) table.Rows[5][0] == " \"");
+            Assert.IsTrue((string) table.Rows[5][1] == " , ");
+        }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Analysis {
 
@@ -8,13 +8,16 @@ namespace Meta.Numerics.Analysis {
     /// </summary>
     public class OdeResult : EvaluationResult {
 
-        internal OdeResult (double x, double y, double yPrime, int count, EvaluationSettings settings) : base(count, settings) {
+        internal OdeResult (double x, double y, double yPrime, int count, OdeSettings settings) : base(count) {
+            Debug.Assert(settings != null);
             this.x = x;
             this.y = y;
             this.yPrime = yPrime;
+            this.settings = settings;
         }
 
-        private double x, y, yPrime;
+        private readonly double x, y, yPrime;
+        private readonly OdeSettings settings;
 
         /// <summary>
         /// The value of the independent variable.
@@ -29,7 +32,7 @@ namespace Meta.Numerics.Analysis {
         /// <summary>
         /// The value of the dependent variable.
         /// </summary>
-        /// <value>The value of the abcissa.</value>
+        /// <value>The value of the function.</value>
         public double Y {
             get {
                 return (y);
@@ -45,6 +48,14 @@ namespace Meta.Numerics.Analysis {
             }
         }
 
+        /// <summary>
+        /// Gets the settings used during integration.
+        /// </summary>
+        public OdeSettings Settings {
+            get {
+                return (settings);
+            }
+        }
     }
 
 }

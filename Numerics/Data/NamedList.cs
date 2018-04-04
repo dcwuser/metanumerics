@@ -11,7 +11,7 @@ namespace Meta.Numerics.Data
     /// <summary>
     /// Represents a data list of any stored data type.
     /// </summary>
-    internal abstract class NamedList /*: IReadOnlyDataList<object> */
+    internal abstract class NamedList : INamed
     {
 
         internal NamedList (string name) {
@@ -80,7 +80,7 @@ namespace Meta.Numerics.Data
     /// Represents a data list of a particular stored type.
     /// </summary>
     /// <typeparam name="T">The type of value in the list.</typeparam>
-    internal class NamedList<T> : NamedList, /*IReadOnlyDataList<T>, IList<T>, ICollection<T>,*/ IEnumerable<T>, IEnumerable {
+    internal class NamedList<T> : NamedList, IReadOnlyList<T>, /*, IList<T>, ICollection<T>,*/ IEnumerable<T>, IEnumerable {
 
         /// <summary>
         /// Initializes a new data list with the given name.
@@ -163,9 +163,7 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="value">The value to add.</param>
         public void Add (T value) {
-            //int count = storage.Count;
             storage.Add(value);
-            //return (count);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator () {

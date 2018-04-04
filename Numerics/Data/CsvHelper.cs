@@ -45,8 +45,23 @@ namespace Meta.Numerics.Data {
             Debug.Assert((0 <= startIndex) && (startIndex < text.Length));
             Debug.Assert((startIndex <= index) && (index <= text.Length));
 
-            string cell;
+            string cell = text.Substring(startIndex, index - startIndex);
+            cell = cell.Trim();
+            if (cell.Length > 0) {
+                if (cell[0] == escape) {
+                    if (cell.Length < 2 || cell[cell.Length - 1] != escape) throw new FormatException();
+                    cell = cell.Substring(1, cell.Length - 2);
+                    cell = cell.Replace($"{escape}{escape}", Char.ToString(escape));
+                } else {
+                    if (cell.LastIndexOfAny(delimiterOrEscape) >= 0) throw new FormatException();
+                }
+            }
+            /*
             int endIndex = index - 1;
+            while (startIndex < endIndex && Char.IsWhiteSpace(text[startIndex])) startIndex++;
+            while (startIndex < endIndex && Char.IsWhiteSpace(text[endIndex])) endIndex--;
+
+            string cell;
             if (text[startIndex] == escape) {
                 startIndex++;
                 if (text[endIndex] != escape) throw new FormatException();
@@ -58,6 +73,7 @@ namespace Meta.Numerics.Data {
                 int forbiddenIndex = cell.IndexOfAny(delimiterOrEscape);
                 if (forbiddenIndex >= 0) throw new FormatException();
             }
+            */
             return (cell);
         }
 

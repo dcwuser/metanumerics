@@ -251,8 +251,7 @@ namespace Meta.Numerics.Data
             if (columnName == null) throw new ArgumentNullException(nameof(columnName));
             if (comparer == null) throw new ArgumentNullException(nameof(comparer));
 
-            int columnIndex = GetColumnIndex(columnName);
-            IReadOnlyList<T> column = (IReadOnlyList<T>)columns[columnIndex];
+            IReadOnlyList<T> column = this[columnName].As<T>();
 
             List<int> newMap = new List<int>(map);
             newMap.Sort((i, j) => comparer(column[i], column[j]));

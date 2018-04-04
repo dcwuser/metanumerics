@@ -23,7 +23,6 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// model our model fitting methods (<see cref="UncertainMeasurementSample{T}.FitToFunction"/>, <see cref="UncertainMeasurementSample{T}.FitToLinearFunction"/>,
     /// <see cref="UncertainMeasurementSample.FitToLine"/>, and others) follows a &#x3C7;<sup>2</sup> distribution.</para>
     /// </remarks>
-    /// <seealso cref="ContingencyTable.PearsonChiSquaredTest"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Chi-square_distribution" />
     public sealed class ChiSquaredDistribution : ContinuousDistribution {
 

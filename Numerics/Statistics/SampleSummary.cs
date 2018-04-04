@@ -14,13 +14,17 @@ namespace Meta.Numerics.Statistics {
     /// to work with sample data that is stored entirely within memory, this class is designed
     /// to compute the most important summary statistics on streamed data, i.e. individual
     /// data points which need only be presented once and may afterwards be discarded.</para>
+    /// <para>The <see cref="Combine(SummaryStatistics, SummaryStatistics)"/> method allows you
+    /// to combine two SummaryStatistics objects formed by processing disjoint data streams to
+    /// obtain a combined SummaryStatistics object which has accurate summary statistics
+    /// for the combined data set.</para>
     /// </remarks>
-    public sealed class SampleSummary {
+    public sealed class SummaryStatistics {
 
         /// <summary>
         /// Initializes a new summary for an empty sample.
         /// </summary>
-        public SampleSummary () { }
+        public SummaryStatistics () { }
 
 
         /// <summary>
@@ -28,7 +32,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="values">An enumerator which can iterate over the values to summarize.</param>
         /// <exception cref="ArgumentNullException"><paramref name="values"/> is <see langword="null"/>.</exception>
-        public SampleSummary (IEnumerable<double> values) : this() {
+        public SummaryStatistics (IEnumerable<double> values) : this() {
             Add(values);
         }
 
@@ -179,14 +183,14 @@ namespace Meta.Numerics.Statistics {
         /// <param name="a">One sample summary.</param>
         /// <param name="b">Another sample summary.</param>
         /// <returns>Summary statistics of the combined sample.</returns>
-        public static SampleSummary Combine (SampleSummary a, SampleSummary b) {
+        public static SummaryStatistics Combine (SummaryStatistics a, SummaryStatistics b) {
 
             double d = b.m - a.m;
             double d2 = d * d;
             double d3 = d2 * d;
             double d4 = d2 * d2;
 
-            SampleSummary ab = new SampleSummary();
+            SummaryStatistics ab = new SummaryStatistics();
             ab.n = a.n + b.n;
             ab.m = (a.n * a.m + b.n * b.m) / ab.n;
             ab.s2 = a.s2 + b.s2 + d2 * a.n * b.n / ab.n;

@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 
 using Meta.Numerics.Matrices;
 
@@ -9,19 +9,20 @@ namespace Meta.Numerics.Analysis {
     /// <summary>
     /// Represents the result of the integration of a set of couple ordinary differential equations.
     /// </summary>
-    public class MultiOdeResult : EvaluationResult {
+    public sealed class MultiOdeResult : EvaluationResult {
 
-        internal MultiOdeResult (double x, double[] y, double[] yPrime, int count, EvaluationSettings settings) : base(count, settings) {
+        internal MultiOdeResult (double x, double[] y, double[] yPrime, int count, MultiOdeSettings settings) : base(count) {
+            Debug.Assert(settings != null);
             this.x = x;
             this.y = y;
             this.yPrime = yPrime;
+            this.settings = settings;
         }
 
-        private double x;
-
-        private double[] y;
-
-        private double[] yPrime;
+        private readonly double x;
+        private readonly double[] y;
+        private readonly double[] yPrime;
+        private readonly MultiOdeSettings settings;
 
         /// <summary>
         /// The value of the independent variable.
@@ -36,7 +37,7 @@ namespace Meta.Numerics.Analysis {
         /// <summary>
         /// The value of the dependent variable.
         /// </summary>
-        /// <value>The value of the abcissa.</value>
+        /// <value>The value of the function.</value>
         public ColumnVector Y {
             get {
                 return (new ColumnVector(y, 0, 1, y.Length, true));
@@ -49,6 +50,15 @@ namespace Meta.Numerics.Analysis {
         public ColumnVector YPrime {
             get {
                 return (new ColumnVector(yPrime, 0, 1, yPrime.Length, true));
+            }
+        }
+
+        /// <summary>
+        /// Gets the settings used during integration.
+        /// </summary>
+        public MultiOdeSettings Settings {
+            get {
+                return (settings);
             }
         }
     }

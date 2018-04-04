@@ -20,7 +20,7 @@ namespace Test {
             Random rng = new Random(2);
             List<double> sample = new List<double>(TestUtilities.CreateDataSample(rng, new UniformDistribution(Interval.FromEndpoints(-4.0, 3.0)), 32));
 
-            SampleSummary summary = new SampleSummary(sample);
+            SummaryStatistics summary = new SummaryStatistics(sample);
             Assert.IsTrue(summary.Count == sample.Count);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.Mean(), summary.Mean));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.Variance(), summary.Variance));
@@ -40,7 +40,7 @@ namespace Test {
             Random rng = new Random(1);
             List<double> sample = new List<double>(TestUtilities.CreateDataSample(rng, new UniformDistribution(Interval.FromEndpoints(-4.0, 3.0)), 64));
 
-            SampleSummary summary = new SampleSummary(sample);
+            SummaryStatistics summary = new SummaryStatistics(sample);
             Assert.IsTrue(summary.Count == sample.Count);
 
             for (int i = 0; i < 4; i++) {
@@ -49,15 +49,15 @@ namespace Test {
                 int m = rng.Next(0, sample.Count);
 
                 // Create a summary of the first part.
-                SampleSummary summary1 = new SampleSummary(sample.Take(m));
+                SummaryStatistics summary1 = new SummaryStatistics(sample.Take(m));
                 Assert.IsTrue(summary1.Count == m);
 
                 // Create a summary of the second part.
-                SampleSummary summary2 = new SampleSummary(sample.Skip(m));
+                SummaryStatistics summary2 = new SummaryStatistics(sample.Skip(m));
                 Assert.IsTrue(summary2.Count == sample.Count - m);
 
                 // Combine them. Their summary statistics should agree with the original summary.
-                SampleSummary combined = SampleSummary.Combine(summary1, summary2);
+                SummaryStatistics combined = SummaryStatistics.Combine(summary1, summary2);
                 Assert.IsTrue(combined.Count == summary.Count);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.Mean, summary.Mean));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(combined.Variance, summary.Variance));

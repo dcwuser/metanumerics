@@ -16,12 +16,12 @@ namespace Meta.Numerics.Analysis {
         /// <param name="rhs">The right hand side function.</param>
         /// <param name="x0">The initial value of the independent variable.</param>
         /// <param name="y0">The initial values of the functions.</param>
-        /// <param name="yPrime0">The intial values of the functions' derivatives.</param>
+        /// <param name="yPrime0">The initial values of the functions' derivatives.</param>
         /// <param name="x1">The final value of the independent variable.</param>
         /// <returns>The solution, including the final value of the functions and their derivatives.</returns>
         /// <remarks>
         /// <para>For information on integrating coupled, conservative ODEs, see
-        /// <see cref="IntegrateConservativeOde(Func{double, IList{double}, IList{double}}, double, IList{double}, IList{double}, double, MultiOdeEvaluationSettings)"/>.</para>
+        /// <see cref="IntegrateConservativeOde(Func{double, IList{double}, IList{double}}, double, IList{double}, IList{double}, double, MultiOdeSettings)"/>.</para>
         /// <para>This overload uses default settings for precision and evaluation budget. It targets a relative precision of
         /// about 10<sup>-12</sup> and an absolute precision of about 10<sup>-24</sup> with an evaluation budget of about 8000.
         /// </para>
@@ -33,7 +33,7 @@ namespace Meta.Numerics.Analysis {
         /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision before exhausting
         /// the maximum allowed number of <paramref name="rhs"/>evaluations.</exception>
         public static MultiOdeResult IntegrateConservativeOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, IList<double> yPrime0, double x1) {
-            return (IntegrateConservativeOde(rhs, x0, y0, yPrime0, x1, new MultiOdeEvaluationSettings()));
+            return (IntegrateConservativeOde(rhs, x0, y0, yPrime0, x1, new MultiOdeSettings()));
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="rhs">The right hand side function.</param>
         /// <param name="x0">The initial value of the independent variable.</param>
         /// <param name="y0">The initial values of the functions.</param>
-        /// <param name="yPrime0">The intial values of the functions' derivatives.</param>
+        /// <param name="yPrime0">The initial values of the functions' derivatives.</param>
         /// <param name="x1">The final value of the independent variable.</param>
         /// <param name="settings">The settings to use when solving the problem.</param>
         /// <returns>The solution, including the final value of the functions and their derivatives.</returns>
@@ -53,9 +53,9 @@ namespace Meta.Numerics.Analysis {
         /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision before exhausting
         /// the maximum allowed number of <paramref name="rhs"/>evaluations.</exception>
         /// <remarks>
-        /// <para>For information on conservative ODEs, see <see cref="FunctionMath.IntegrateConservativeOde(Func{double, double, double}, double, double, double, double, OdeEvaluationSettings)"/>.</para>
+        /// <para>For information on conservative ODEs, see <see cref="FunctionMath.IntegrateConservativeOde(Func{double, double, double}, double, double, double, double, OdeSettings)"/>.</para>
         /// </remarks>
-        public static MultiOdeResult IntegrateConservativeOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, IList<double> yPrime0, double x1, MultiOdeEvaluationSettings settings) {
+        public static MultiOdeResult IntegrateConservativeOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, IList<double> yPrime0, double x1, MultiOdeSettings settings) {
 
             if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (y0 == null) throw new ArgumentNullException(nameof(y0));
@@ -76,7 +76,7 @@ namespace Meta.Numerics.Analysis {
         /// Solves a set of coupled ordinary differential equation initial value problems.
         /// </summary>
         /// <param name="rhs">The right hand side function, which returns the value of the derivative given
-        /// the values of the indepdent variable and the function.</param>
+        /// the values of the independent variable and the function.</param>
         /// <param name="x0">The initial value of the independent variable.</param>
         /// <param name="y0">The initial value of the function.</param>
         /// <param name="x1">The final value of the independent variable.</param>
@@ -85,21 +85,21 @@ namespace Meta.Numerics.Analysis {
         /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision before exhausting
         /// the maximum allowed number of <paramref name="rhs"/> evaluations.</exception>
         /// <remarks>
-        /// <para>For infomration about integrating coupled ODEs, see
-        /// <see cref="IntegrateOde(Func{double, IList{double}, IList{double}}, double, IList{double}, double, MultiOdeEvaluationSettings)"/>.</para>
+        /// <para>For information about integrating coupled ODEs, see
+        /// <see cref="IntegrateOde(Func{double, IList{double}, IList{double}}, double, IList{double}, double, MultiOdeSettings)"/>.</para>
         /// <para>This overload uses default settings for precision and evaluation budget. It targets a relative precision of
         /// about 10<sup>-12</sup> and an absolute precision of about 10<sup>-24</sup> with an evaluation budget of about 8000.
         /// </para>
         /// </remarks>
         public static MultiOdeResult IntegrateOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, double x1) {
-            return (IntegrateOde(rhs, x0, y0, x1, new MultiOdeEvaluationSettings()));
+            return (IntegrateOde(rhs, x0, y0, x1, new MultiOdeSettings()));
         }
 
         /// <summary>
         /// Solves a set of coupled ordinary differential equation initial value problems.
         /// </summary>
         /// <param name="rhs">The right hand side function, which returns the value of the derivative given
-        /// the values of the indepdent variable and the function.</param>
+        /// the values of the independent variable and the function.</param>
         /// <param name="x0">The initial value of the independent variable.</param>
         /// <param name="y0">The initial value of the function.</param>
         /// <param name="x1">The final value of the independent variable.</param>
@@ -115,7 +115,7 @@ namespace Meta.Numerics.Analysis {
         /// of each component. Each component's derivative may depend itself and any other components, as well as on the independent variable.
         /// The independent variable x still takes only a single real value.</para>
         /// </remarks>
-        public static MultiOdeResult IntegrateOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, double x1, MultiOdeEvaluationSettings settings) {
+        public static MultiOdeResult IntegrateOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, double x1, MultiOdeSettings settings) {
 
             if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (y0 == null) throw new ArgumentNullException(nameof(y0));
@@ -134,7 +134,7 @@ namespace Meta.Numerics.Analysis {
 
     internal abstract class MultiOdeEngine : OdeEngine {
 
-        public MultiOdeEngine (Func<double, IList<double>, IList<double>> rhs, double x, MultiOdeEvaluationSettings settings) : base(x) {
+        public MultiOdeEngine (Func<double, IList<double>, IList<double>> rhs, double x, MultiOdeSettings settings) : base(x) {
             Debug.Assert(rhs != null);
             Debug.Assert(settings != null);
             this.rhs = rhs;
@@ -143,7 +143,7 @@ namespace Meta.Numerics.Analysis {
 
         private readonly Func<double, IList<double>, IList<double>> rhs;
 
-        protected readonly MultiOdeEvaluationSettings settings;
+        protected readonly MultiOdeSettings settings;
 
         public IList<double> Evaluate (double x, IList<double> y) {
             if (count >= settings.EvaluationBudget) throw new NonconvergenceException();
@@ -173,7 +173,7 @@ namespace Meta.Numerics.Analysis {
 
     internal class MultiBulrischStoerEngine : MultiOdeEngine, IBulrischStoerEngine {
 
-        public MultiBulrischStoerEngine (Func<double, IList<double>, IList<double>> rhs, double x, IList<double> y, MultiOdeEvaluationSettings settings) : base(rhs, x, settings) {
+        public MultiBulrischStoerEngine (Func<double, IList<double>, IList<double>> rhs, double x, IList<double> y, MultiOdeSettings settings) : base(rhs, x, settings) {
 
             Debug.Assert(rhs != null);
             Debug.Assert(y != null);
@@ -279,7 +279,7 @@ namespace Meta.Numerics.Analysis {
 
     internal class MultiStoermerEngine : MultiOdeEngine, IBulrischStoerEngine {
 
-        public MultiStoermerEngine (Func<double, IList<double>, IList<double>> rhs, double x, IList<double> y, IList<double> yPrime, MultiOdeEvaluationSettings settings) : base(rhs, x, settings) {
+        public MultiStoermerEngine (Func<double, IList<double>, IList<double>> rhs, double x, IList<double> y, IList<double> yPrime, MultiOdeSettings settings) : base(rhs, x, settings) {
 
             Debug.Assert(rhs != null);
             Debug.Assert(y != null);

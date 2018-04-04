@@ -11,7 +11,7 @@ namespace Meta.Numerics.Analysis {
     // the best design, but it's better than what I started with.
 
     // One problem is that a lot of the details of each strategy depend on things like whether
-    // there are multiple variables and whether the RHS is y' or y''. So a naive implementation
+    // there are multiple variables and whether the RHS is y' or y''. So a naïve implementation
     // repeats a lot of strategy logic multiple times, one for each variation. The strategy/engine
     // split factors out all the variation-specific logic into the engine part, so the strategy
     // part appears only once.
@@ -41,9 +41,9 @@ namespace Meta.Numerics.Analysis {
 
                 // Try to take a step.
                 // This is the key method to be implemented by any stepper.
-                // After it is called, if the step is sucessful, it should advance X (presumably by DeltaX but smaller is okay),
+                // After it is called, if the step is successful, it should advance X (presumably by DeltaX but smaller is okay),
                 // and update the value of Y to correspond to the new X. If the step is unsuccessful, it should leave X and Y
-                // unchanged. If the stepper is adaptive, the method may also change DeltaX in preperation for the next step.
+                // unchanged. If the stepper is adaptive, the method may also change DeltaX in preparation for the next step.
 
                 Step();
 

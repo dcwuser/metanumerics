@@ -327,7 +327,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException"><paramref name="x"/> and <paramref name="y"/> do not contain the same number of entries.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than 3 entries in the sample.</exception>
-        /// <seealso cref="SpearmanRhoTest"/>
+        /// <seealso cref="SpearmanRhoTest(IReadOnlyList{double},IReadOnlyList{double})"/>
         /// <seealso cref="KendallTauTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Pearson_correlation_coefficient" />
         public static TestResult PearsonRTest (IReadOnlyList<double> x, IReadOnlyList<double> y) {
@@ -374,7 +374,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException"><paramref name="x"/> and <paramref name="y"/> do not contain the same number of entries.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
-        /// <seealso cref="PearsonRTest"/>
+        /// <seealso cref="PearsonRTest(IReadOnlyList{double},IReadOnlyList{double})"/>
         /// <seealso cref="KendallTauTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient"/>
         public static TestResult SpearmanRhoTest (IReadOnlyList<double> x, IReadOnlyList<double> y) {
@@ -459,8 +459,8 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="x"/> or <paramref name="y"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException"><paramref name="x"/> and <paramref name="y"/> do not contain the same number of entries.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than two entries in the sample.</exception>
-        /// <seealso cref="PearsonRTest"/>
-        /// <seealso cref="SpearmanRhoTest"/>
+        /// <seealso cref="PearsonRTest(IReadOnlyList{double},IReadOnlyList{double})"/>
+        /// <seealso cref="SpearmanRhoTest(IReadOnlyList{double},IReadOnlyList{double})"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Kendall_tau_test" />
         public static TestResult KendallTauTest (IReadOnlyList<double> x, IReadOnlyList<double> y) {
 

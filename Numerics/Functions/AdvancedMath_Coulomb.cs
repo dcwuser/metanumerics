@@ -626,7 +626,7 @@ namespace Meta.Numerics.Functions {
                         OdeResult r = FunctionMath.IntegrateConservativeOde(
                             (double x, double y) => ((L * (L + 1) / x + 2.0 * eta ) / x - 1.0) * y,
                             rho1, F, FP, rho,
-                            new OdeEvaluationSettings() {
+                            new OdeSettings() {
                                 RelativePrecision = 2.5E-13,
                                 AbsolutePrecision = 0.0,
                                 EvaluationBudget = 8192 * 2
@@ -664,7 +664,7 @@ namespace Meta.Numerics.Functions {
                         OdeResult r = FunctionMath.IntegrateConservativeOde(
                             (double x, double y) => (2.0 * eta / x - 1.0) * y,
                             rho2, G, GP, rho,
-                            new OdeEvaluationSettings() {
+                            new OdeSettings() {
                                 RelativePrecision = 2.5E-13,
                                 AbsolutePrecision = 0.0,
                                 EvaluationBudget = 8192 * 2
@@ -788,7 +788,7 @@ namespace Meta.Numerics.Functions {
                         OdeResult r = FunctionMath.IntegrateConservativeOde(
                             (double x, double y) => (2.0 * eta / x - 1.0) * y,
                             rho0, G, GP, rho,
-                            new OdeEvaluationSettings() {
+                            new OdeSettings() {
                                 RelativePrecision = 2.5E-13,
                                 AbsolutePrecision = 0.0,
                                 EvaluationBudget = 8192 * 2
@@ -949,7 +949,7 @@ namespace Meta.Numerics.Functions {
             OdeResult r = FunctionMath.IntegrateConservativeOde(
                 (double x, double y) => ((L * (L + 1) / x + 2.0 * eta) / x - 1.0) * y,
                 rho1, F, FP, rho,
-                new OdeEvaluationSettings() {
+                new OdeSettings() {
                     RelativePrecision = 2.5E-13,
                     AbsolutePrecision = 0.0,
                     EvaluationBudget = 8192 * 2

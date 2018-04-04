@@ -17,20 +17,21 @@ namespace Meta.Numerics.Analysis {
         /// <param name="rhs">The right hand side function.</param>
         /// <param name="x0">The initial value of the independent variable.</param>
         /// <param name="y0">The initial value of the function variable.</param>
-        /// <param name="yPrime0">The intial value of the function derivative.</param>
+        /// <param name="yPrime0">The initial value of the function derivative.</param>
         /// <param name="x1">The final value of the independent variable.</param>
         /// <returns>The solution, including the final value of the function and its derivative.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="rhs"/> is null.</exception>
-        /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision before exhausting the maximum allowed number of <paramref name="rhs"/> evaluations.</exception>
+        /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision
+        /// before exhausting the maximum allowed number of <paramref name="rhs"/> evaluations.</exception>
         /// <remarks>
         /// <para>For information on integrating conservative ODEs, see
-        /// <see cref="IntegrateConservativeOde(Func{double, double, double}, double, double, double, double, OdeEvaluationSettings)"/>.</para>
+        /// <see cref="IntegrateConservativeOde(Func{double, double, double}, double, double, double, double, OdeSettings)"/>.</para>
         /// <para>This overload uses default values for precision and evaluation budget. It targets a relative precision of
-        /// about 10<sup>-12</sup> and an absolute precision of about 10<sup>-24</sup> with an evaluation budget of about 8000.
+        /// about 10<sup>-12</sup> and an absolute precision of about 10<sup>-24</sup>, with an evaluation budget of about 8000.
         /// </para>
         /// </remarks>
         public static OdeResult IntegrateConservativeOde (Func<double, double, double> rhs, double x0, double y0, double yPrime0, double x1) {
-            return (IntegrateConservativeOde(rhs, x0, y0, yPrime0, x1, new OdeEvaluationSettings()));
+            return (IntegrateConservativeOde(rhs, x0, y0, yPrime0, x1, new OdeSettings()));
         }
 
 
@@ -40,7 +41,7 @@ namespace Meta.Numerics.Analysis {
         /// <param name="rhs">The right hand side function.</param>
         /// <param name="x0">The initial value of the independent variable.</param>
         /// <param name="y0">The initial value of the function variable.</param>
-        /// <param name="yPrime0">The intial value of the function derivative.</param>
+        /// <param name="yPrime0">The initial value of the function derivative.</param>
         /// <param name="x1">The final value of the independent variable.</param>
         /// <param name="settings">The settings to use when solving the problem.</param>
         /// <returns>The solution, including the final value of the function and its derivative.</returns>
@@ -55,7 +56,7 @@ namespace Meta.Numerics.Analysis {
         /// angular momentum. Our specialized conservative ODE integrator is not only more efficient for conservative ODEs, but does a
         /// better job of maintaining the conserved quantities.</para>
         /// </remarks>
-        public static OdeResult IntegrateConservativeOde (Func<double, double, double> rhs, double x0, double y0, double yPrime0, double x1, OdeEvaluationSettings settings) {
+        public static OdeResult IntegrateConservativeOde (Func<double, double, double> rhs, double x0, double y0, double yPrime0, double x1, OdeSettings settings) {
         
             if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (settings == null) throw new ArgumentNullException(nameof(settings));
@@ -73,57 +74,60 @@ namespace Meta.Numerics.Analysis {
         /// Solves an ordinary differential equation initial value problem.
         /// </summary>
         /// <param name="rhs">The right hand side function, which returns the value of the derivative given
-        /// the values of the indepdent variable and the function.</param>
+        /// the values of the independent variable and the function.</param>
         /// <param name="x0">The initial value of the independent variable.</param>
         /// <param name="y0">The initial value of the function.</param>
         /// <param name="x1">The final value of the independent variable.</param>
         /// <returns>The solution, including the final value of the function and its derivative.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="rhs"/> is null.</exception>
-        /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision before exhausting the maximum allowed number of <paramref name="rhs"/> evaluations.</exception>
+        /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision
+        /// before exhausting the maximum allowed number of <paramref name="rhs"/> evaluations.</exception>
         /// <remarks>
         /// <para>For information on integrating ODEs, see
-        /// <see cref="IntegrateOde(Func{double, double, double}, double, double, double, OdeEvaluationSettings)"/>.</para>
+        /// <see cref="IntegrateOde(Func{double, double, double}, double, double, double, OdeSettings)"/>.</para>
         /// <para>This overload uses default values for precision and evaluation budget. It targets a relative precision of
-        /// about 10<sup>-12</sup> and an absolute precision of about 10<sup>-24</sup> with an evaluation budget of about 8000.
+        /// about 10<sup>-12</sup> and an absolute precision of about 10<sup>-24</sup>,
+        /// with an evaluation budget of about 8000.
         /// </para>
         /// </remarks>
         /// <seealso href="https://en.wikipedia.org/wiki/Ordinary_differential_equation"/>
         public static OdeResult IntegrateOde (Func<double, double, double> rhs, double x0, double y0, double x1) {
-            return(IntegrateOde(rhs, x0, y0, x1, new OdeEvaluationSettings()));
+            return(IntegrateOde(rhs, x0, y0, x1, new OdeSettings()));
         }
 
         /// <summary>
         /// Solves an ordinary differential equation initial value problem.
         /// </summary>
         /// <param name="rhs">The right hand side function, which returns the value of the derivative given
-        /// the values of the indepdent variable and the function.</param>
+        /// the values of the independent variable and the function.</param>
         /// <param name="x0">The initial value of the independent variable.</param>
         /// <param name="y0">The initial value of the function.</param>
         /// <param name="x1">The final value of the independent variable.</param>
         /// <param name="settings">The settings to use when solving the problem.</param>
         /// <returns>The solution, including the final value of the function and its derivative.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="rhs"/> or <paramref name="settings"/> is null.</exception>
-        /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision before exhausting the maximum allowed number of <paramref name="rhs"/> evaluations.</exception>
+        /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision
+        /// before exhausting the maximum allowed number of <paramref name="rhs"/> evaluations.</exception>
         /// <remarks>
         /// <para>An ordinary differential equation (ODE) has the form:</para>
         /// <img src="../images/ODE.png" />
         /// <para>The function specifying the derivative as a function of x and y is called the right-hand-side (RHS).</para>
         /// <para>The integration of an ODE consists of specifying the value of y at some initial x and computing its value
         /// at a different x in accordance with the differential equation. The terms "initial" and "final" are derived from
-        /// the common case where the indepdent variable is time, but the technique applies whether the independent variable
-        /// repsents a time, a location, or a completely non-physical quantity, as long as the problem has the form of an ODE.</para>
+        /// the common case where the independent variable is time, but the algorithm works whether the independent variable
+        /// resents a time, a location, or a completely non-physical quantity, as long as the problem has the form of an ODE.</para>
         /// <para>ODEs involving multiple, coupled dependent variables can be integrated using the
-        /// <see cref="MultiFunctionMath.IntegrateOde(Func{double, IList{double}, IList{double}}, double, IList{double}, double, MultiOdeEvaluationSettings)"/>
+        /// <see cref="MultiFunctionMath.IntegrateOde(Func{double, IList{double}, IList{double}}, double, IList{double}, double, MultiOdeSettings)"/>
         /// method. Higher order ODEs can be integrated by representing them as coupled ODEs in which the zeroth component
         /// is the desired y, the first component is y', the second component is y'', etc. So-called conservative second order
         /// ODEs should be integrated using the
-        /// <see cref="FunctionMath.IntegrateConservativeOde(Func{double, double, double}, double, double, double, double, OdeEvaluationSettings)"/>
+        /// <see cref="FunctionMath.IntegrateConservativeOde(Func{double, double, double}, double, double, double, double, OdeSettings)"/>
         /// method. If your ODE's RHS depends only on x, the problem reduces to a simple integral, which can be solved more rapidly and
         /// accurately using the <see cref="FunctionMath.Integrate(Func{double, double}, Interval, IntegrationSettings)"/> method.
         /// Analytic techniques can also be used to reduce several other kinds of ODEs to simple integrals or lower-order ODEs.</para>
         /// </remarks>
         /// <seealso href="https://en.wikipedia.org/wiki/Ordinary_differential_equation"/>
-        public static OdeResult IntegrateOde (Func<double, double, double> rhs, double x0, double y0, double x1, OdeEvaluationSettings settings) {
+        public static OdeResult IntegrateOde (Func<double, double, double> rhs, double x0, double y0, double x1, OdeSettings settings) {
 
             if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (settings == null) throw new ArgumentNullException(nameof(settings));
@@ -396,7 +400,7 @@ namespace Meta.Numerics.Analysis {
 
     internal abstract class SingleOdeEngine : OdeEngine {
 
-        protected SingleOdeEngine (Func<double, double, double> rhs, double x, OdeEvaluationSettings settings) : base(x) {
+        protected SingleOdeEngine (Func<double, double, double> rhs, double x, OdeSettings settings) : base(x) {
             Debug.Assert(rhs != null);
             Debug.Assert(settings != null);
             this.rhs = rhs;
@@ -405,7 +409,7 @@ namespace Meta.Numerics.Analysis {
 
         private readonly Func<double, double, double> rhs;
 
-        protected readonly OdeEvaluationSettings settings;
+        protected readonly OdeSettings settings;
 
         public double Evaluate (double x, double y) {
             if (count >= settings.EvaluationBudget) throw new NonconvergenceException();
@@ -435,7 +439,7 @@ namespace Meta.Numerics.Analysis {
 
     internal class SingleStoermerEngine : SingleOdeEngine, IBulrischStoerEngine {
 
-        public SingleStoermerEngine (Func<double, double, double> rhs, double x, double y, double yPrime, OdeEvaluationSettings settings) : base(rhs, x, settings) {
+        public SingleStoermerEngine (Func<double, double, double> rhs, double x, double y, double yPrime, OdeSettings settings) : base(rhs, x, settings) {
             this.Y = y;
             this.YPrime = yPrime;
             this.YPrimePrime = this.Evaluate(x, y);
@@ -542,7 +546,7 @@ namespace Meta.Numerics.Analysis {
 
     internal class SingleBulrischStoerEngine : SingleOdeEngine, IBulrischStoerEngine {
 
-        public SingleBulrischStoerEngine (Func<double, double, double> rhs, double x, double y, OdeEvaluationSettings settings) : base(rhs, x, settings) {
+        public SingleBulrischStoerEngine (Func<double, double, double> rhs, double x, double y, OdeSettings settings) : base(rhs, x, settings) {
             this.Y = y;
             this.YPrime = this.Evaluate(x, y);
             ComputeInitialStep();

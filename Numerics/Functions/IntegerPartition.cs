@@ -11,14 +11,14 @@ namespace Meta.Numerics.Functions {
     /// <summary>
     /// Represents an integer partition.
     /// </summary>
-    public class IntegerPartition : IEquatable<IntegerPartition> {
+    public sealed class IntegerPartition : IEquatable<IntegerPartition> {
 
         internal IntegerPartition (int[] values) {
             Debug.Assert(values != null);
             this.values = values;
         }
 
-        private int[] values;
+        private readonly int[] values;
         private List<Element> elements;
 
         // Values is assumed to be in standard, ascending form, e.g.
@@ -49,7 +49,7 @@ namespace Meta.Numerics.Functions {
         /// Gets the values in the partition.
         /// </summary>
         /// <value>A read-only list of values that add up to the partitioned integer.</value>
-        public IList<int> Values {
+        public IReadOnlyList<int> Values {
             get {
                 return (new ReadOnlyCollection<int>(values));
             }
@@ -62,7 +62,7 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>This is the multiplicity representation of the partition.</para>
         /// </remarks>
-        public IList<Element> Elements {
+        public IReadOnlyList<Element> Elements {
             get {
                 if (elements == null) ComputeElements();
                 return (new ReadOnlyCollection<Element>(elements));

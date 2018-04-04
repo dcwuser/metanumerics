@@ -194,6 +194,28 @@ namespace Test
         }
 
         [TestMethod]
+        public void FrameViewOrderByAgreement () {
+
+            FrameView view = GetTestFrame();
+
+            FrameView sorted1 = view.OrderBy("bmi");
+            FrameView sorted2 = view.OrderBy("bmi", SortOrder.Descending);
+            FrameView sorted3 = view.OrderBy<double>("bmi", (v1, v2) => v1.CompareTo(v2));
+            FrameView sorted4 = view.OrderBy((r1, r2) => ((double) r1["bmi"]).CompareTo((double) r2["bmi"]));
+
+            List<double> sorted = view["bmi"].As<double>().ToList();
+            sorted.Sort();
+
+            for (int i = 0; i < sorted.Count; i++) {
+                Assert.IsTrue(sorted1["bmi"].As<double>()[i] == sorted[i]);
+                Assert.IsTrue(sorted2["bmi"].As<double>()[sorted.Count - 1 - i] == sorted[i]);
+                Assert.IsTrue(sorted3["bmi"].As<double>()[i] == sorted[i]);
+                Assert.IsTrue(sorted4["bmi"].As<double>()[i] == sorted[i]);
+            }
+
+        }
+
+        [TestMethod]
         public void FrameViewComputedColumn () {
 
             FrameView original = GetTestFrame();
@@ -268,7 +290,7 @@ namespace Test
             HashSet<bool?> values = new HashSet<bool?>(original["male"].As<bool?>().Distinct());
 
             FrameTable grouped = original.GroupBy("male", v => {
-                SampleSummary summary = new SampleSummary(v["height"].As<double>());
+                SummaryStatistics summary = new SummaryStatistics(v["height"].As<double>());
                 return (new Dictionary<string, object>() {
                     {"count", summary.Count },
                     {"heightMean", summary.Mean },

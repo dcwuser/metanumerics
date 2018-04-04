@@ -114,7 +114,7 @@ namespace Test {
             Func<double, double, double> f = (double x, double y) => MoreMath.Sqr(y);
 
             int count = 0;
-            OdeEvaluationSettings settings = new OdeEvaluationSettings() {
+            OdeSettings settings = new OdeSettings() {
                 RelativePrecision = 1.0E-8,
                 EvaluationBudget = 1024,
                 Listener = (OdeResult) => count++
@@ -173,7 +173,9 @@ namespace Test {
             // (i.e. right hand side depends only on y, not y')
 
             Func<double, double, double> f = (double x, double y) => -y;
-            OdeEvaluationSettings settings = new OdeEvaluationSettings() {
+
+            int count = 0;
+            OdeSettings settings = new OdeSettings() {
                 Listener = (OdeResult r) => {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         MoreMath.Sqr(r.Y) + MoreMath.Sqr(r.YPrime), 1.0, r.Settings
@@ -181,11 +183,12 @@ namespace Test {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         r.Y, MoreMath.Sin(r.X), r.Settings
                     ));
+                    count++;
                 }
             };
             OdeResult result = FunctionMath.IntegrateConservativeOde(f, 0.0, 0.0, 1.0, 5.0, settings);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result.Y, MoreMath.Sin(5.0)));
-            Console.WriteLine(result.EvaluationCount);
+            Assert.IsTrue(count > 0);
         }
 
         private static double EulerKineticEnergy (IList<double> I, IList<double> w) {
@@ -285,7 +288,7 @@ namespace Test {
             double T = 4.0 * AdvancedMath.EllipticK(k) / v;
 
             int listenerCount = 0;
-            MultiOdeEvaluationSettings settings = new MultiOdeEvaluationSettings() {
+            MultiOdeSettings settings = new MultiOdeSettings() {
                 Listener = (MultiOdeResult q) => {
                     listenerCount++;
 
@@ -365,7 +368,7 @@ namespace Test {
                 double E = OrbitEnergy(r0, rDot0);
                 double L = OrbitAngularMomentum(r0, rDot0);
 
-                MultiOdeEvaluationSettings settings = new MultiOdeEvaluationSettings() {
+                MultiOdeSettings settings = new MultiOdeSettings() {
                     Listener = (MultiOdeResult b) => {
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(OrbitAngularMomentum(b.Y, b.YPrime), L, b.Settings));
                         EvaluationSettings relaxed = new EvaluationSettings() { RelativePrecision = 2.0 * b.Settings.RelativePrecision, AbsolutePrecision = 2.0 * b.Settings.AbsolutePrecision };
@@ -478,7 +481,7 @@ namespace Test {
             double[] rp0 = new double[] { 0.0, -s * v, s * v, v, -c * v, -c * v };
 
             int count = 0;
-            MultiOdeEvaluationSettings settings = new MultiOdeEvaluationSettings() {
+            MultiOdeSettings settings = new MultiOdeSettings() {
                 RelativePrecision = 1.0E-12,
                 AbsolutePrecision = 1.0E-12,
                 Listener = (MultiOdeResult mer) => {
@@ -656,7 +659,7 @@ namespace Test {
                 u[0] * u[1] - beta * u[2]
             );
 
-            MultiOdeEvaluationSettings settings = new MultiOdeEvaluationSettings() {
+            MultiOdeSettings settings = new MultiOdeSettings() {
                 RelativePrecision = 1.0E-8,
                 EvaluationBudget = 10000
             };
@@ -748,7 +751,7 @@ namespace Test {
             double L0 = conservedQuantity(p0);
 
             // Set up a handler that verifies conservation and positivity
-            MultiOdeEvaluationSettings settings = new MultiOdeEvaluationSettings() {
+            MultiOdeSettings settings = new MultiOdeSettings() {
                 Listener = (MultiOdeResult rr) => {
                     double L = conservedQuantity(rr.Y);
                     Assert.IsTrue(rr.Y[0] > 0.0);
@@ -901,7 +904,7 @@ namespace Test {
                 q0[3 * i + 2] = planets[i].Velocity[2];
             }
 
-            MultiOdeEvaluationSettings settings = new MultiOdeEvaluationSettings() {
+            MultiOdeSettings settings = new MultiOdeSettings() {
                 RelativePrecision = 1.0E-8,
                 AbsolutePrecision = 1.0E-16
             };

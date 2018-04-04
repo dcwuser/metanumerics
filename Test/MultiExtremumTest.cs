@@ -57,7 +57,12 @@ namespace Test {
         [TestMethod]
         public void MinimizePerturbedQuadratic2D () {
 
-            EvaluationSettings s = new EvaluationSettings() { EvaluationBudget = 100, RelativePrecision = 1.0E-10 };
+            int count = 0;
+            MultiExtremumSettings s = new MultiExtremumSettings() {
+                EvaluationBudget = 100,
+                RelativePrecision = 1.0E-10,
+                Listener = r => { count++; }
+            };
 
             Func<IReadOnlyList<double>, double> f = (IReadOnlyList<double> x) =>
                 1.0 + 2.0 * MoreMath.Sqr(x[0] - 3.0) + 4.0 * (x[0] - 3.0) * (x[1] - 5.0) + 6.0 * MoreMath.Sqr(x[1] - 5.0) +
@@ -69,6 +74,7 @@ namespace Test {
             Assert.IsTrue(m.Dimension == 2);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(m.Value, 1.0, s));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(m.Location, new ColumnVector(3.0, 5.0), new EvaluationSettings() { RelativePrecision = Math.Sqrt(s.RelativePrecision) }));
+            Assert.IsTrue(count > 0);
 
         }
 
@@ -340,7 +346,7 @@ namespace Test {
                 ColumnVector start = new ColumnVector(n);
                 for (int i = 0; i < n; i++) start[i] = 1.0;
 
-                EvaluationSettings settings = new EvaluationSettings() { AbsolutePrecision = 1.0E-8, EvaluationBudget = 32 * n * n * n };
+                MultiExtremumSettings settings = new MultiExtremumSettings() { AbsolutePrecision = 1.0E-8, EvaluationBudget = 32 * n * n * n };
 
                 MultiExtremum minimum = MultiFunctionMath.FindLocalMinimum(function, start, settings);
 
@@ -372,7 +378,7 @@ namespace Test {
                 return (-20.0 * Math.Exp(-0.2 * Math.Sqrt(s / x.Count)) - Math.Exp(c / x.Count) + 20.0 + Math.E);
             };
 
-            EvaluationSettings settings = new EvaluationSettings() { AbsolutePrecision = 1.0E-8, EvaluationBudget = 10000000 };
+            MultiExtremumSettings settings = new MultiExtremumSettings() { AbsolutePrecision = 1.0E-8, EvaluationBudget = 10000000 };
 
             for (int n = 2; n < 16; n = (int) Math.Round(AdvancedMath.GoldenRatio * n)) {
                 Console.WriteLine("n={0}", n);
@@ -453,7 +459,7 @@ namespace Test {
                 Interval[] box = new Interval[n];
                 for (int i = 0; i < n; i++) box[i] = Interval.FromEndpoints(-100.0, 100.0);
 
-                EvaluationSettings settings = new EvaluationSettings() { AbsolutePrecision = 1.0E-6, EvaluationBudget = 1000000 };
+                MultiExtremumSettings settings = new MultiExtremumSettings() { AbsolutePrecision = 1.0E-6, EvaluationBudget = 1000000 };
 
                 MultiExtremum minimum = MultiFunctionMath.FindGlobalMinimum(function, box, settings);
 
@@ -477,7 +483,13 @@ namespace Test {
 
             IReadOnlyList<Interval> box = new Interval[] { Interval.FromEndpoints(-15.0, 0.0), Interval.FromEndpoints(-3.0, 3.0) };
 
-            EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 0.0, AbsolutePrecision = 1.0E-4, EvaluationBudget = 1000000 };
+            int count = 0;
+            MultiExtremumSettings settings = new MultiExtremumSettings() {
+                RelativePrecision = 0.0,
+                AbsolutePrecision = 1.0E-4,
+                EvaluationBudget = 1000000,
+                Listener = r => { count++; }
+            };
             /*
             settings.Update += (object result) => {
                 MultiExtremum e = (MultiExtremum) result;
@@ -492,6 +504,7 @@ namespace Test {
 
             // We do not end up finding the global minimum.
 
+            Assert.IsTrue(count > 0);
         }
 
         [TestMethod]
@@ -562,8 +575,8 @@ namespace Test {
                 Console.WriteLine("n={0}", n);
 
                 Func<IReadOnlyList<double>, double> function = (IReadOnlyList<double> x) => {
-                    // Intrepret coordinates as (x_1, y_1, x_2, y_2, \cdots, x_n, y_n)
-                    // Iterate over all pairs of points, finding smallest distance betwen any pair of points.
+                    // Interpret coordinates as (x_1, y_1, x_2, y_2, \cdots, x_n, y_n)
+                    // Iterate over all pairs of points, finding smallest distance between any pair of points.
                     double sMin = Double.MaxValue;
                     for (int i = 0; i < n; i++) {
                         for (int j = 0; j < i; j++) {
@@ -577,7 +590,7 @@ namespace Test {
                 Interval[] box = new Interval[2 * n];
                 for (int i = 0; i < box.Length; i++) box[i] = Interval.FromEndpoints(0.0, 1.0);
 
-                EvaluationSettings settings = new EvaluationSettings() { RelativePrecision = 1.0E-4, AbsolutePrecision = 1.0E-6, EvaluationBudget = 10000000 };
+                MultiExtremumSettings settings = new MultiExtremumSettings() { RelativePrecision = 1.0E-4, AbsolutePrecision = 1.0E-6, EvaluationBudget = 10000000 };
 
                 MultiExtremum maximum = MultiFunctionMath.FindGlobalMaximum(function, box, settings);
 
@@ -738,12 +751,13 @@ namespace Test {
                 25.759986531,
                 32.716949460,
                 40.596450510,
-                49.165253058 /* n = 12: isosahedron */
+                49.165253058 /* n = 12: icosahedron */
         };
 
         private Func<IReadOnlyList<double>, double> GetThompsonFunction (int n) {
 
-            // Define a function that assumes one point at spherical coordinates (0, 0) and others at given 2 * (n - 1) spherical coordinates
+            // Define a function that assumes one point at spherical coordinates (0, 0) and others at
+            // given 2 * (n - 1) spherical coordinates
 
             Func<IReadOnlyList<double>, double> f = (IReadOnlyList<double> u) => {
 
@@ -751,10 +765,6 @@ namespace Test {
                 List<double> v = u.ToList();
                 v.Add(0.0);
                 v.Add(0.0);
-                /*
-                double[] v = new double[2 * n];
-                u.CopyTo(v, 0);
-                */
                 double e = 0.0;
 
                 // iterate over all distinct pairs of points
@@ -809,76 +819,6 @@ namespace Test {
 
         }
 
-        /*
-        [TestMethod]
-        public void ThomsonLocalOld () {
-
-
-            for (int n = 2; n < 9; n++) {
-                Console.WriteLine(n);
-
-                // define the thompson metric
-                int count = 0;
-                Func<double[], double> f2 = (double[] u) => {
-
-                    // add a point at 0,0
-                    double[] v = new double[2 * n];
-                    u.CopyTo(v, 0);
-
-                    double e = 0.0;
-
-                    // iterate over all distinct pairs of points
-                    for (int i = 0; i < n; i++) {
-                        for (int j = 0; j < i; j++) {
-                            // compute the chord length between points i and j
-                            double dx = Math.Cos(v[2 * j]) * Math.Cos(v[2 * j + 1]) - Math.Cos(v[2 * i]) * Math.Cos(v[2 * i + 1]);
-                            double dy = Math.Cos(v[2 * j]) * Math.Sin(v[2 * j + 1]) - Math.Cos(v[2 * i]) * Math.Sin(v[2 * i + 1]);
-                            double dz = Math.Sin(v[2 * j]) - Math.Sin(v[2 * i]);
-                            double d = Math.Sqrt(dx * dx + dy * dy + dz * dz);
-                            e += 1.0 / d;
-                        }
-                    }
-
-                    count++;
-                    return (e);
-
-                };
-
-                // random distribution to start
-                // using antipodal pairs gives us a better starting configuration
-                Random r = new Random(1001110000);
-                double[] start = new double[2 * (n - 1)];
-                for (int i = 0; i < (n - 1) / 2; i++) {
-                    int j = 4 * i;
-                    start[j] = -Math.PI + 2.0 * r.NextDouble() * Math.PI;
-                    start[j + 1] = Math.Asin(2.0 * r.NextDouble() - 1.0);
-                    start[j + 2] = -(Math.PI - start[j]);
-                    start[j + 3] = -start[j + 1];
-                }
-                // add one more point if necessary
-                if (n % 2 == 0) {
-                    start[2 * n - 4] = -Math.PI + 2.0 * r.NextDouble() * Math.PI;
-                    start[2 * n - 3] = Math.Asin(2.0 * r.NextDouble() - 1.0);
-                }
-
-                //EvaluationSettings s = new EvaluationSettings() { RelativePrecision = 1.0E-8, AbsolutePrecision = 1.0E-12, EvaluationBudget = 10000 };
-
-                EvaluationSettings set = new EvaluationSettings() { RelativePrecision = 1.0E-9, EvaluationBudget = 50000 };
-                SpaceExtremum min = FunctionMath.FindMinimum(f2, start, set);
-                double tol = set.RelativePrecision * min.Value;
-
-                Console.WriteLine(min.Dimension);
-                Console.WriteLine(count);
-                Console.WriteLine("{0} ({1}) ?= {2}", min.Value, tol, thompsonSolutions[n]);
-
-                Assert.IsTrue(min.Dimension == 2 * (n - 1));
-                Console.WriteLine(TestUtilities.IsNearlyEqual(min.Value, thompsonSolutions[n], new EvaluationSettings() { AbsolutePrecision = 4.0 * tol }));
-
-            }
-                
-        }
-        */
-
         [TestMethod]
         public void ThomsonLocal () {
 
@@ -886,7 +826,7 @@ namespace Test {
             {
                 Console.WriteLine(n);
 
-                // define the thompson metric
+                // define the Thompson metric
                 Func<IReadOnlyList<double>, double> f = GetThompsonFunction(n);
 
                 // random distribution to start
@@ -906,7 +846,7 @@ namespace Test {
                     start[2 * n - 3] = Math.Asin(2.0 * r.NextDouble() - 1.0);
                 }
 
-                EvaluationSettings set = new EvaluationSettings() { RelativePrecision = 1.0E-9 };
+                MultiExtremumSettings set = new MultiExtremumSettings() { RelativePrecision = 1.0E-10 };
                 MultiExtremum min = MultiFunctionMath.FindLocalMinimum(f, start, set);
 
                 Console.WriteLine(min.Dimension);
@@ -914,7 +854,7 @@ namespace Test {
                 Console.WriteLine("{0} ({1}) ?= {2}", min.Value, min.Precision, thompsonSolutions[n]);
 
                 Assert.IsTrue(min.Dimension == 2 * (n - 1));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(min.Value, thompsonSolutions[n], new EvaluationSettings() { AbsolutePrecision = 4.0 * min.Precision }));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(min.Value, thompsonSolutions[n], new EvaluationSettings() { AbsolutePrecision = 8.0 * min.Precision }));
 
             }
 
@@ -963,19 +903,6 @@ namespace Test {
 
                     return (dmin);
                 };
-
-                /*
-                // Start with a random arrangement
-                Random r = new Random(1001110000);
-                double[] start = new double[2 * n];
-                for (int i = 0; i < n; i++) {
-                    start[2 * i] = -Math.PI + 2.0 * r.NextDouble() * Math.PI;
-                    start[2 * i + 1] = Math.Asin(2.0 * r.NextDouble() - 1.0);
-                }
-
-                // Maximize the minimum distance
-                MultiExtremum maximum = MultiFunctionMath.FindLocalMinimum(f, start);
-                */
                 
                 Interval[] limits = new Interval[2 * (n - 1)];
                 for (int i = 0; i < (n - 1); i++) {

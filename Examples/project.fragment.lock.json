@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "exports": {
+    "Numerics/1.0.0": {
+      "type": "project",
+      "framework": ".NETFramework,Version=v4.0",
+      "compile": {
+        "bin/Release/Meta.Numerics.dll": {}
+      },
+      "runtime": {
+        "bin/Release/Meta.Numerics.dll": {}
+      },
+      "contentFiles": {
+        "bin/Release/Meta.Numerics.pdb": {
+          "buildAction": "None",
+          "codeLanguage": "any",
+          "copyToOutput": true
+        }
+      }
+    }
+  }
+}

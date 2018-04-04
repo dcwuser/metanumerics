@@ -11,16 +11,12 @@ namespace Meta.Numerics.Analysis {
     /// </remarks>
     public class EvaluationResult {
 
-        internal EvaluationResult (int count, EvaluationSettings settings) {
+        internal EvaluationResult (int count) {
             Debug.Assert(count > 0);
-            Debug.Assert(settings != null);
             this.count = count;
-            this.settings = settings;
         }
 
         private readonly int count;
-
-        private readonly EvaluationSettings settings;
 
         /// <summary>
         /// Gets the number of function evaluations performed.
@@ -28,15 +24,6 @@ namespace Meta.Numerics.Analysis {
         public int EvaluationCount {
             get {
                 return (count);
-            }
-        }
-
-        /// <summary>
-        /// Gets the settings used for the analysis.
-        /// </summary>
-        public EvaluationSettings Settings {
-            get {
-                return (settings);
             }
         }
 

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
 using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
+using Meta.Numerics.Statistics.Distributions;
 
 namespace Test {
 
@@ -72,15 +74,28 @@ namespace Test {
         public void ContingencyTableOperations () {
 
             ContingencyTable t = new ContingencyTable(4, 3);
-            Assert.IsTrue(t.RowCount == 4);
-            Assert.IsTrue(t.ColumnCount == 3);
+            Assert.IsTrue(t.Rows.Count == 4);
+            Assert.IsTrue(t.Columns.Count == 3);
 
             Assert.IsTrue(t.RowTotal(2) == 0);
             Assert.IsTrue(t.ColumnTotal(1) == 0);
             Assert.IsTrue(t.Total == 0);
 
             t[1, 1] = 2;
+            Assert.IsTrue(t[1, 1] == 2);
             Assert.IsTrue(t.RowTotal(2) == 0);
+            Assert.IsTrue(t.ColumnTotal(1) == 2);
+            Assert.IsTrue(t.Total == 2);
+
+            t.Increment(2, 1);
+            Assert.IsTrue(t[2, 1] == 1);
+            Assert.IsTrue(t.RowTotal(2) == 1);
+            Assert.IsTrue(t.ColumnTotal(1) == 3);
+            Assert.IsTrue(t.Total == 3);
+
+            t.Decrement(1, 1);
+            Assert.IsTrue(t[1, 1] == 1);
+            Assert.IsTrue(t.RowTotal(2) == 1);
             Assert.IsTrue(t.ColumnTotal(1) == 2);
             Assert.IsTrue(t.Total == 2);
 
@@ -129,7 +144,7 @@ namespace Test {
 
                 // for each contingency table, compute estimates of various population quantities
 
-                UncertainValue p22 = T.Probability(2, 2);
+                UncertainValue p22 = T.ProbabilityOf(2, 2);
                 UncertainValue pr0 = T.ProbabilityOfRow(0);
                 UncertainValue pc1 = T.ProbabilityOfColumn(1);
                 UncertainValue pr2c0 = T.ProbabilityOfRowConditionalOnColumn(2, 0);
@@ -157,6 +172,46 @@ namespace Test {
             Assert.IsTrue(pr2c0s.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(pr2c0s.Y.Mean));
             Assert.IsTrue(pc1r2s.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(pc1r2s.Y.Mean));
 
+        }
+
+        [TestMethod]
+        public void McNemarTestDistribution () {
+
+            // Define a population and the accuracy of two tests for a condition
+            double fractionPositive = 0.4;
+            double aAccuracy = 0.2;
+            double bAccuracy = 0.9;
+
+            // Form a bunch of samples; we will run a McNemar test on each
+            List<double> statistics = new List<double>();
+            ContinuousDistribution distribution = null;
+            Random rng = new Random(1);
+            for (int i = 0; i < 32; i++) {
+
+                // Run a and b tests on each person.
+                List<bool> aResults = new List<bool>();
+                List<bool> bResults = new List<bool>();
+                for (int j = 0; j < 64; j++) {
+                    bool isPositive = rng.NextDouble() < fractionPositive;
+                    bool aResult = rng.NextDouble() < aAccuracy ? isPositive : !isPositive;
+                    aResults.Add(aResult);
+                    bool bResult = rng.NextDouble() < bAccuracy ? isPositive : !isPositive;
+                    bResults.Add(bResult);
+                }
+
+                // Do a McNemar test to determine whether tests are differently weighted.
+                // By our construction, they shouldn't be.
+                ContingencyTable<bool, bool> table = Bivariate.Crosstabs(aResults, bResults);
+                TestResult result = table.Binary.McNemarTest();
+                statistics.Add(result.Statistic);
+                distribution = result.Distribution;
+
+            }
+
+            // Since the null hypothesis is satisfied, the test statistic distribution should
+            // match the claimed null distribution.
+            TestResult test = statistics.KolmogorovSmirnovTest(distribution);
+            Assert.IsTrue(test.Probability > 0.05);
         }
 
 #if FUTURE

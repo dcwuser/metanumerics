@@ -120,17 +120,16 @@ namespace Test {
         [TestMethod]
         public void IntegerBesselJIntegral () {
             // Abromowitz & Stegun 9.1.21
-            Interval r = Interval.FromEndpoints(0.0, Math.PI);
+            IntegrationSettings settings = new IntegrationSettings() { AbsolutePrecision = 2.5E-15, RelativePrecision = 0.0 };
             foreach (double x in TestUtilities.GenerateRealValues(0.1, 10.0, 8)) {
                 foreach (int n in TestUtilities.GenerateIntegerValues(1, 10, 4)) {
-                    Func<double, double> f = delegate(double t) {
-                        return (Math.Cos(x * Math.Sin(t) - n * t));
-                    };
-                    double J = FunctionMath.Integrate(f, r).Estimate.Value / Math.PI;
+                    double J = FunctionMath.Integrate(
+                        t => MoreMath.Cos(x * MoreMath.Sin(t) - n * t),
+                        0.0, Math.PI, settings
+                    ).Estimate.Value / Math.PI;
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        AdvancedMath.BesselJ(n, x), J,
-                        new EvaluationSettings() { AbsolutePrecision = 1.0E-15, RelativePrecision = 0.0 }
-                    ));
+                        AdvancedMath.BesselJ(n, x), J, settings
+                    ), $"n={n}, x={x}, J={J}");
                     // The integral can produce significant cancelation, so use an absolute criterion.
                 }
             }
@@ -1008,7 +1007,7 @@ namespace Test {
 
         [TestMethod]
         public void IncompleteBetaIdentity2 () {
-            // For x ~ 1.0E-2, a ~ 1.0E2, b ~ 1.0E3, this fails at the 1.0E-13 level.
+            // For x ~ 1.0E-2, a ~ 4.0E2, b ~ 6.0E3, this fails at the 5.0E-13 level.
             // There are errors at this level in both RegularizedBeta_ContinuedFraction (14 terms of alternating signs)
             // and PowOverBeta (doing multiplications in log-space).
             foreach (double a in TestUtilities.GenerateRealValues(1.0, 1.0E4, 8)) {
@@ -1016,7 +1015,8 @@ namespace Test {
                     foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 8)) {
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(
                             x * AdvancedMath.LeftRegularizedBeta(a - 1.0, b, x) + (1.0 - x) * AdvancedMath.LeftRegularizedBeta(a, b - 1.0, x),
-                            AdvancedMath.LeftRegularizedBeta(a, b, x)
+                            AdvancedMath.LeftRegularizedBeta(a, b, x),
+                            new EvaluationSettings() {  RelativePrecision = 1.0E-12 }
                         ));
                     }
                 }

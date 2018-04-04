@@ -340,20 +340,33 @@ namespace Test {
             // equal to the probability of the observed matrix.
             // In particular for the symmetric case, the "opposite" table has the exact
             // same probability. But there is floating point noise, so sometimes it's
-            // calculated probability is infinitisimally larger and isn't counted.
+            // calculated probability is infinitesimally larger and isn't counted.
             // To fix this, we special-case the symmetric case. 
 
-            BinaryContingencyTable t1 = new BinaryContingencyTable(new int[,] {
+            ContingencyTable t1 = new ContingencyTable(new int[,] {
                 { 18, 16 }, { 12, 14 }
             });
 
-            BinaryContingencyTable t2 = new BinaryContingencyTable(new int[,] {
+            ContingencyTable t2 = new ContingencyTable(new int[,] {
                 { 12, 14 }, { 18, 16 }
             });
 
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(t1.FisherExactTest().Probability, t2.FisherExactTest().Probability));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(t1.Binary.FisherExactTest().Probability, t2.Binary.FisherExactTest().Probability));
 
         }
+
+        [TestMethod]
+        public void Bug2 () {
+
+            // Integrate failed with a NullReference exception when all NaNs were returned.
+            // Changed logic to ignore NaNs.
+
+            Func<double, double> integrand = x => Double.NaN;
+
+            IntegrationResult result = FunctionMath.Integrate(integrand, 0.0, 1.0);
+            Assert.IsTrue(result.Estimate.Value == 0.0);
+
+        } 
     }
 
 }

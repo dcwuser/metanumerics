@@ -6,7 +6,7 @@ using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Statistics {
     /// <summary>
-    /// Represents the result of a k-means clustering analysis.
+    /// Describes the result of a k-means clustering analysis.
     /// </summary>
     /// <seealso cref="MultivariateSample.MeansClustering(int)"/>
     public sealed class MeansClusteringResult {

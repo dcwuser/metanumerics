@@ -5,8 +5,9 @@ using System.Diagnostics;
 using Meta.Numerics.Matrices;
 
 namespace Meta.Numerics.Statistics {
+
     /// <summary>
-    /// Represents the result of a multiple linear regression fit.
+    /// Describes the result of a multiple linear regression fit.
     /// </summary>
     public sealed class MultiLinearRegressionResult : GeneralLinearRegressionResult {
 
@@ -153,7 +154,10 @@ namespace Meta.Numerics.Statistics {
 
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Gets the residuals 
+        /// </summary>
+        /// <value>A list of the differences between each measured and predicted value.</value>
         public IReadOnlyList<double> Residuals {
             get {
                 return (residuals);

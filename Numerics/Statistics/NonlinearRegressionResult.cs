@@ -9,7 +9,7 @@ using Meta.Numerics.Matrices;
 namespace Meta.Numerics.Statistics {
 
     /// <summary>
-    /// Represents a fit to a non-linear function.
+    /// Describes the result of a fit to a non-linear function.
     /// </summary>
     public sealed class NonlinearRegressionResult : FitResult {
 

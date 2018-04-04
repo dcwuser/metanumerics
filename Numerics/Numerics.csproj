@@ -19,6 +19,7 @@
     <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
+    <TargetFrameworks>netstandard1.1;net40</TargetFrameworks>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <SccProjectName>SAK</SccProjectName>
@@ -75,10 +76,10 @@
     <Compile Include="Analysis\MultiFunctionMath_Ode.cs" />
     <Compile Include="Analysis\MultiFunctionMath_Roots.cs" />
     <Compile Include="Analysis\MultiFunctor.cs" />
-    <Compile Include="Analysis\MultiOdeEvaluationSettings.cs" />
+    <Compile Include="Analysis\MultiOdeSettings.cs" />
     <Compile Include="Analysis\MultiOdeResult.cs" />
     <Compile Include="Analysis\NamespaceDoc.cs" />
-    <Compile Include="Analysis\OdeEvaluationSettings.cs" />
+    <Compile Include="Analysis\OdeSettings.cs" />
     <Compile Include="Analysis\OdeResult.cs" />
     <Compile Include="Analysis\OdeStrategy.cs" />
     <Compile Include="Core\BigFloat.cs" />
@@ -172,7 +173,7 @@
     <Compile Include="Functions\SpinState.cs" />
     <Compile Include="Statistics\Anova.cs" />
     <Compile Include="Statistics\AR1FitResult.cs" />
-    <Compile Include="Statistics\BinaryContingencyTable.cs" />
+    <Compile Include="Statistics\BinaryContingencyTableOperations.cs" />
     <Compile Include="Statistics\Bivariate.cs" />
     <Compile Include="Statistics\BivariateSample.cs" />
     <Compile Include="Statistics\ContingencyTable.cs" />

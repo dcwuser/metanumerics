@@ -138,8 +138,8 @@ namespace Test {
             FrameView males = view.Where("Gender", (string s) => (s == "Male"));
             FrameView females = view.Where("Gender", (string s) => (s == "Female"));
 
-            SampleSummary maleSummary = new SampleSummary(males["Height"].As<double>());
-            SampleSummary femaleSummary = new SampleSummary(females["Height"].As<double>());
+            SummaryStatistics maleSummary = new SummaryStatistics(males["Height"].As<double>());
+            SummaryStatistics femaleSummary = new SummaryStatistics(females["Height"].As<double>());
 
             TestResult allNormal = view["Height"].As<double>().ShapiroFranciaTest();
             TestResult maleNormal = males["Height"].As<double>().ShapiroFranciaTest();

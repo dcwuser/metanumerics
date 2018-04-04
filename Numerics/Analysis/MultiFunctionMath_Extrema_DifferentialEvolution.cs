@@ -6,7 +6,7 @@ using Meta.Numerics.Functions;
 
 namespace Meta.Numerics.Analysis {
 
-    internal class DifferentialEvolutionSettings : EvaluationSettings {
+    internal class DifferentialEvolutionSettings : MultiExtremumSettings {
 
         public double CrossoverProbability { get; set; }
 
@@ -16,7 +16,6 @@ namespace Meta.Numerics.Analysis {
 
     public static partial class MultiFunctionMath {
 
-        //private const double crossoverProbability =  1.0 - 1.0 / 8.0 - 1.0 / 14.0; //0.9286; //0.625; //0.5;
         private const double mutationFactor = 0.625; //0.5;
 
         /// <summary>
@@ -29,9 +28,9 @@ namespace Meta.Numerics.Analysis {
             return (FindGlobalExtremum(function, volume, null, false));
         }
 
-        private static DifferentialEvolutionSettings GetDefaultSettings (EvaluationSettings settings, int d) {
+        private static DifferentialEvolutionSettings GetDefaultSettings (MultiExtremumSettings settings, int d) {
 
-            if (settings == null) settings = new EvaluationSettings();
+            if (settings == null) settings = new MultiExtremumSettings();
 
             DifferentialEvolutionSettings deSettings = new DifferentialEvolutionSettings();
             deSettings.Population = 8 * d + 4;
@@ -41,17 +40,7 @@ namespace Meta.Numerics.Analysis {
             deSettings.AbsolutePrecision = (settings.AbsolutePrecision < 0.0) ? Math.Pow(10.0, -(4.0 + 8.0 / d)) : settings.AbsolutePrecision;
             deSettings.EvaluationBudget = (settings.EvaluationBudget < 0) ? 128 * d * d * d * d : settings.EvaluationBudget;
 
-            /*
-            if (settings == null) {
-                deSettings.RelativePrecision = Math.Pow(10.0, -(2.0 + 4.0 / d));
-                deSettings.AbsolutePrecision = MoreMath.Sqr(deSettings.RelativePrecision);
-                deSettings.EvaluationBudget = 128 * d * d * d * d;
-            } else {
-                deSettings.RelativePrecision = settings.RelativePrecision;
-                deSettings.AbsolutePrecision = settings.AbsolutePrecision;
-                deSettings.EvaluationBudget = settings.EvaluationBudget;
-            }
-            */
+            deSettings.Listener = settings.Listener;
 
             return (deSettings);
         }
@@ -65,14 +54,14 @@ namespace Meta.Numerics.Analysis {
         /// <returns>The global minimum.</returns>
         /// <remarks>
         /// <para>This algorithm attempts to find the global minimum of the given function within the entire given hyper-cube. It generally
-        /// requires many more function evaluations than <see cref="FindGlobalMinimum(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, EvaluationSettings)"/>,
+        /// requires many more function evaluations than <see cref="FindGlobalMinimum(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, MultiExtremumSettings)"/>,
         /// but is much more likely to find a global minimum in situations where multiple local minima exist.</para>
-        /// <para>Unlike <see cref="FindGlobalMinimum(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, EvaluationSettings)"/>,
+        /// <para>Unlike <see cref="FindGlobalMinimum(Func{IReadOnlyList{double}, double}, IReadOnlyList{Interval}, MultiExtremumSettings)"/>,
         /// this method does not return an approximate Hessian matrix near the minimum.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="function"/> or <paramref name="volume"/> is <see langword="null"/>.</exception>
         /// <exception cref="NonconvergenceException">The minimum could not be found within the given evaluation budget.</exception>
-        public static MultiExtremum FindGlobalMinimum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<Interval> volume, EvaluationSettings settings) {
+        public static MultiExtremum FindGlobalMinimum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<Interval> volume, MultiExtremumSettings settings) {
             return (FindGlobalExtremum(function, volume, settings, false));
         }
 
@@ -93,11 +82,11 @@ namespace Meta.Numerics.Analysis {
         /// <param name="volume">The volume to search.</param>
         /// <param name="settings">The evaluation constraints to apply.</param>
         /// <returns>The global maximum.</returns>
-        public static MultiExtremum FindGlobalMaximum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<Interval> volume, EvaluationSettings settings) {
+        public static MultiExtremum FindGlobalMaximum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<Interval> volume, MultiExtremumSettings settings) {
             return (FindGlobalExtremum(function, volume, settings, true));
         }
 
-        private static MultiExtremum FindGlobalExtremum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<Interval> volume, EvaluationSettings settings, bool negate) {
+        private static MultiExtremum FindGlobalExtremum (Func<IReadOnlyList<double>, double> function, IReadOnlyList<Interval> volume, MultiExtremumSettings settings, bool negate) {
             if (function == null) throw new ArgumentNullException(nameof(function));
             if (volume == null) throw new ArgumentNullException(nameof(volume));
             MultiFunctor f = new MultiFunctor(function, negate);
@@ -106,8 +95,8 @@ namespace Meta.Numerics.Analysis {
             return (extremum);
         }
 
-        // Differential evoluation is a global optimization algorithm over continuous inputs that is adapted from genetic algorithms for finite inputs.
-        // The idea is maintain a population of input vectors ("agents") and to vary that population over cycles ("generations") according to rules that incorporate
+        // Differential evolution is a global optimization algorithm over continuous inputs that is adapted from genetic algorithms for finite inputs.
+        // The idea is to maintain a population of input vectors ("agents") and to vary that population over cycles ("generations") according to rules that incorporate
         // random mutation but on average tend to bring them closer to optima ("fitter").
 
         private static MultiExtremum FindGlobalExtremum (MultiFunctor f, IReadOnlyList<Interval> volume, DifferentialEvolutionSettings settings) {
@@ -119,7 +108,6 @@ namespace Meta.Numerics.Analysis {
             Debug.WriteLine("d={0} m={1}", d, m);
 
             Random rng = new Random(3);
-            //Random rng = new Random(1001110000);
 
             // Start with random points in the allowed region.
             double[][] points = new double[m][];
@@ -134,9 +122,6 @@ namespace Meta.Numerics.Analysis {
 
 
             while (f.EvaluationCount < settings.EvaluationBudget) {
-
-                //double mutationFactor = 0.5 + 0.5 * rng.NextDouble();
-
                 double[][] newPoints = new double[m][];
                 double[] newValues = new double[m];
 
@@ -196,9 +181,10 @@ namespace Meta.Numerics.Analysis {
                 if (range <= tol) {
                     MultiExtremum result = new MultiExtremum(f.EvaluationCount, settings, points[minIndex], f.IsNegated ? -values[minIndex] : values[minIndex], Math.Max(range, 0.75 * tol), null);
                     return (result);
+                } else if (settings.Listener != null) {
+                    MultiExtremum report = new MultiExtremum(f.EvaluationCount, settings, points[minIndex], f.IsNegated ? -values[minIndex] : values[minIndex], Math.Max(range, 0.75 * tol), null);
+                    settings.Listener(report);
                 }
-
-                //settings.OnUpdate(new MultiExtremum(points[minIndex], values[minIndex], null, f.EvaluationCount));
 
             }
 

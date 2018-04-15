@@ -7,8 +7,8 @@ namespace Meta.Numerics.Statistics.Distributions {
     internal class KolmogorovTwoSampleExactDistribution : DiscreteDistribution {
 
         public KolmogorovTwoSampleExactDistribution (int n, int m) {
-            if (n < 1) throw new ArgumentOutOfRangeException("n");
-            if (m < 1) throw new ArgumentOutOfRangeException("m");
+            if (n < 1) throw new ArgumentOutOfRangeException(nameof(n));
+            if (m < 1) throw new ArgumentOutOfRangeException(nameof(m));
 
             // Ensure n >= m
             if (m > n) Global.Swap(ref n, ref m);

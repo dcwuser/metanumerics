@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace Meta.Numerics {
     
@@ -23,6 +25,7 @@ namespace Meta.Numerics {
         }
 
         // pre-calculate some often-used factors
+        // these are actually useless; the compiler pre-calculates them for us
 
         public const double TwoPI = 2.0 * Math.PI;
 
@@ -46,6 +49,17 @@ namespace Meta.Numerics {
         // pre-calculate some often-used logs
 
         public static readonly double LogTwo = Math.Log(2.0);
+
+        // IList defines CopyTo. IReadOnlyList doesn't. So in order to switch from IList to IReadOnlyList,
+        // we define an extension method to implement it.
+        public static void CopyTo<T> (this IReadOnlyList<T> source, T[] target, int startIndex) {
+            Debug.Assert(source != null);
+            Debug.Assert(target != null);
+            Debug.Assert(startIndex >= 0);
+            for (int i = 0; i < source.Count; i++) {
+                target[startIndex + i] = source[i];
+            }
+        }
 
     }
 

@@ -37,8 +37,8 @@ namespace Test {
                     TestResult r1 = sample.KolmogorovSmirnovTest(sampleDistribution);
 
                     // Record the test statistic value and the claimed null distribution
-                    testStatistics.Add(r1.Statistic);
-                    nullDistribution = r1.Distribution;
+                    testStatistics.Add(r1.Statistic.Value);
+                    nullDistribution = r1.Statistic.Distribution;
 
                 }
 
@@ -80,8 +80,8 @@ namespace Test {
                     TestResult r1 = sample.KuiperTest(sampleDistribution);
 
                     // Record the test statistic value and the claimed null distribution
-                    testStatistics.Add(r1.Statistic);
-                    nullDistribution = r1.Distribution;
+                    testStatistics.Add(r1.Statistic.Value);
+                    nullDistribution = r1.Statistic.Distribution;
 
                 }
 
@@ -116,8 +116,8 @@ namespace Test {
                         List<double> b = TestUtilities.CreateDataSample(rng, population, nb).ToList();
 
                         TestResult r = Univariate.KolmogorovSmirnovTest(a, b);
-                        d.Add(r.Statistic);
-                        nullDistribution = r.Distribution;
+                        d.Add(r.Statistic.Value);
+                        nullDistribution = r.Statistic.Distribution;
 
                     }
 
@@ -157,8 +157,8 @@ namespace Test {
                     }
 
                     TestResult tResult = Sample.StudentTTest(a, b);
-                    tSample.Add(tResult.Statistic);
-                    tDistribution = tResult.Distribution;
+                    tSample.Add(tResult.Statistic.Value);
+                    tDistribution = tResult.Statistic.Distribution;
 
                 }
 
@@ -200,8 +200,8 @@ namespace Test {
                         );
                     }
                     TestResult rTest = xySample.PearsonRTest();
-                    rSample.Add(rTest.Statistic);
-                    rDistribution = rTest.Distribution;
+                    rSample.Add(rTest.Statistic.Value);
+                    rDistribution = rTest.Statistic.Distribution;
                 }
 
                 // Check whether r is distributed as expected
@@ -238,8 +238,8 @@ namespace Test {
                     }
 
                     TestResult result = sample.SpearmanRhoTest();
-                    testStatistics.Add(result.Statistic);
-                    testDistribution = result.Distribution;
+                    testStatistics.Add(result.Statistic.Value);
+                    testDistribution = result.Statistic.Distribution;
                 }
 
                 TestResult r2 = testStatistics.KolmogorovSmirnovTest(testDistribution);
@@ -274,8 +274,8 @@ namespace Test {
                     }
 
                     TestResult result = sample.KendallTauTest();
-                    testStatistics.Add(result.Statistic);
-                    testDistribution = result.Distribution;
+                    testStatistics.Add(result.Statistic.Value);
+                    testDistribution = result.Statistic.Distribution;
                 }
 
                 // We should find that they are uncorrelated.
@@ -297,8 +297,12 @@ namespace Test {
             Random rng = new Random(271828);
             foreach (int n in TestUtilities.GenerateIntegerValues(4, 64, 4)) {
 
-                Sample wSample = new Sample();
-                ContinuousDistribution wDistribution = null;
+                Sample wContinuousSample = new Sample();
+                ContinuousDistribution wContinuousDistribution = null;
+
+                List<int> wDiscreteSample = new List<int>();
+                DiscreteDistribution wDiscreteDistribution = null;
+
                 for (int i = 0; i < 128; i++) {
                     BivariateSample sample = new BivariateSample();
                     for (int j = 0; j < n; j++) {
@@ -307,15 +311,25 @@ namespace Test {
                         sample.Add(x, y);
                     }
                     TestResult wilcoxon = sample.WilcoxonSignedRankTest();
-                    wSample.Add(wilcoxon.Statistic);
-                    wDistribution = wilcoxon.Distribution;
+                    if (wilcoxon.UnderlyingStatistic != null) {
+                        wDiscreteSample.Add(wilcoxon.UnderlyingStatistic.Value);
+                        wDiscreteDistribution = wilcoxon.UnderlyingStatistic.Distribution;
+                    } else {
+                        wContinuousSample.Add(wilcoxon.Statistic.Value);
+                        wContinuousDistribution = wilcoxon.Statistic.Distribution;
+                    }
                 }
 
-                TestResult ks = wSample.KolmogorovSmirnovTest(wDistribution);
-                Assert.IsTrue(ks.Probability > 0.05);
+                if (wDiscreteDistribution != null) {
+                    //TestResult chi2 = wDiscreteSample.ChiSquaredTest(wDiscreteDistribution);
+                    //Assert.IsTrue(chi2.Probability > 0.05);
+                } else {
+                    TestResult ks = wContinuousSample.KolmogorovSmirnovTest(wContinuousDistribution);
+                    Assert.IsTrue(ks.Probability > 0.05);
+                    Assert.IsTrue(wContinuousSample.PopulationMean.ConfidenceInterval(0.99).ClosedContains(wContinuousDistribution.Mean));
+                    Assert.IsTrue(wContinuousSample.PopulationStandardDeviation.ConfidenceInterval(0.99).ClosedContains(wContinuousDistribution.StandardDeviation));
+                }
 
-                Assert.IsTrue(wSample.PopulationMean.ConfidenceInterval(0.99).ClosedContains(wDistribution.Mean));
-                Assert.IsTrue(wSample.PopulationStandardDeviation.ConfidenceInterval(0.99).ClosedContains(wDistribution.StandardDeviation));
 
             }
 
@@ -333,8 +347,8 @@ namespace Test {
                 for (int i = 0; i < 256; i++) {
                     Sample zSample = TestUtilities.CreateSample(zDistribution, n, i);
                     TestResult sf = zSample.ShapiroFranciaTest();
-                    vSample.Add(sf.Statistic);
-                    vDistribution = sf.Distribution;
+                    vSample.Add(sf.Statistic.Value);
+                    vDistribution = sf.Statistic.Distribution;
                 }
 
                 TestResult ks = vSample.KolmogorovSmirnovTest(vDistribution);

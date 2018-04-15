@@ -116,11 +116,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             //    6  1
             // Note the distribution is symmetric around its midpoint. This is true generally.
             // Note the counts sum to 2^n. This is true generally.
-            // Note in our example W increased monotonically with the sign pattern intrepreted
+            // Note in our example W increased monotonically with the sign pattern interpreted
             // as a binary number. This is not true generally.
 
             // The example points to an obvious algorithm: Go through the numbers 0 to 2^n - 1.
-            // Intepret the binary representation of each number as a sign pattern. For each sign
+            // Interpret the binary representation of each number as a sign pattern. For each sign
             // pattern, compute W. Accumulate the counts. This algorithm is correct and workable.
             // You can tweak it a bit by messing with Gray codes and such. But it is much
             // slower than the better algorithm we present now.

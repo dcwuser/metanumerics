@@ -9,88 +9,69 @@ namespace Meta.Numerics.Statistics {
     /// Describes the result of a statistical test.
     /// </summary>
     /// <remarks>
-    /// <para>A statistical test compares a data set to a model (or to another data set) and computes a single, real
-    /// number, called the test statistic, which measures how much the data set differs from model (or the other data set).
-    /// The key to a useful statistical test is that the distribution of the test statistic, under the assumption that
-    /// the model actually explains the data (or that the other data set is drawn from the same distribution) is known.
-    /// This assumption is called the null hypothesis.</para>
+    /// <para>A statistical test compares data to a prediction, called the null hypothesis, and computes a number, 
+    /// called the test statistic, which measures how much the data differs from the prediction.
+    /// A key aspect of a useful statistical test is that the distribution of the test statistic under the null
+    /// hypothesis can be computed. Given this distribution, one can say how likely it is for the test statistic
+    /// value to take on as extreme a value was observed. If this probability is low, the null hypothesis is
+    /// likely false. If this probability is not too low, the data is compatible with the null hypothesis.</para>
     /// </remarks>
-    public class TestResult {
+    public sealed class TestResult {
 
-        private readonly string name;
-        private readonly double statistic;
-        private TestType type;
-        private readonly ContinuousDistribution distribution;
-
-        internal TestResult (string name, double statistic, TestType type, ContinuousDistribution distribution) {
-            Debug.Assert(!String.IsNullOrWhiteSpace(name));
-            Debug.Assert(distribution != null);
-            this.name = name;
-            this.statistic = statistic;
+        internal TestResult (string name, double value, ContinuousDistribution distribution, TestType type) {
+            this.continuousStatistic = new ContinuousTestStatistic(name, value, distribution);
+            this.discreteStatistic = null;
             this.type = type;
-            this.distribution = distribution;
         }
+
+        internal TestResult (string name, int value, DiscreteDistribution distribution, TestType type) {
+            this.continuousStatistic = new ContinuousTestStatistic(name, value, new DiscreteAsContinuousDistribution(distribution));
+            this.discreteStatistic = new DiscreteTestStatistic(name, value, distribution);
+            this.type = type;
+        }
+
+        internal TestResult (
+            string discreteName, int discreteValue, DiscreteDistribution discreteDistribution,
+            string continuousName, double continuousValue, ContinuousDistribution continuousDistribution,
+            TestType type) {
+            this.discreteStatistic = new DiscreteTestStatistic(discreteName, discreteValue, discreteDistribution);
+            this.continuousStatistic = new ContinuousTestStatistic(continuousName, continuousValue, continuousDistribution);
+            this.type = type;
+        }
+
+        private readonly ContinuousTestStatistic continuousStatistic;
+        private readonly DiscreteTestStatistic discreteStatistic;
+        private TestType type;
 
         /// <summary>
-        /// Gets the value of the test statistic.
+        /// Gets or sets the sided-ness of the statistical test.
         /// </summary>
-        public double Statistic {
-            get {
-                return (statistic);
-            }
-        }
+        public TestType Type { get { return (type); }  set { type = value; } }
 
         /// <summary>
-        /// Gets the distribution of the test statistic under the null hypothesis.
+        /// Gets the P-value of the statistical test.
         /// </summary>
-        public ContinuousDistribution Distribution {
-            get {
-                return (distribution);
-            }
-        }
-
-        private string Name {
-            get {
-                return (name);
-            }
-        }
-
-        /// <summary>
-        /// Gets a value indicating the type of statistical test.
-        /// </summary>
-        public TestType Type {
-            get {
-                return (type);
-            }
-        }
-
-        /// <summary>
-        /// Gets the P-value of the test.
-        /// </summary>
-        /// <value>The probability, under the test's null hypothesis, of obtaining such an extreme value of the statistic.</value>
+        /// <value>The probability, under the test's null hypothesis,
+        /// of obtaining such an extreme value of the statistic.</value>
         public double Probability {
             get {
-                switch (type) {
-                    case TestType.LeftTailed:
-                        return (distribution.LeftProbability(statistic));
-                    case TestType.RightTailed:
-                        return (distribution.RightProbability(statistic));
-                    case TestType.TwoTailed:
-                        // This implementation is only good for distributions
-                        // symmetric about the mean, so if we ever implement
-                        // a two-tailed test that does not fit this requirement,
-                        // we will need to revisit it.
-                        // Actually, we do, for the F-test, so deal with it.
-                        if (statistic < distribution.Mean) {
-                            return (2.0 * distribution.LeftProbability(statistic));
-                        } else {
-                            return (2.0 * distribution.RightProbability(statistic));
-                        }
-                    default:
-                        throw new NotSupportedException();
+                if (discreteStatistic != null) {
+                    return (discreteStatistic.Probability(type));
+                } else {
+                    return (continuousStatistic.Probability(type));
                 }
             }
         }
+
+        /// <summary>
+        /// Gets the test statistic.
+        /// </summary>
+        public ContinuousTestStatistic Statistic { get { return (continuousStatistic); } }
+
+        /// <summary>
+        /// Gets the underlying discrete test statistic.
+        /// </summary>
+        public DiscreteTestStatistic UnderlyingStatistic { get { return (discreteStatistic); } }
 
     }
 

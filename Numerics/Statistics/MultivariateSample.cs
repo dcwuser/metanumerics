@@ -278,7 +278,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="powers">The power to which each component should be raised.</param>
         /// <returns>The specified moment.</returns>
         public double RawMoment (params int[] powers) {
-            return (RawMoment((IReadOnlyList<int>) powers));
+            return (Multivariate.RawMoment(storage, powers));
 
         }
 
@@ -291,21 +291,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="DimensionMismatchException">The length of <paramref name="powers"/> is not
         /// equal to the <see cref="Dimension"/> of the multivariate sample.</exception>
         public double RawMoment (IReadOnlyList<int> powers) {
-            if (powers == null) throw new ArgumentNullException(nameof(powers));
-            if (powers.Count != Dimension) throw new DimensionMismatchException();
-
-            double M = 0.0;
-            for (int i = 0; i < Count; i++) {
-                double t = 1.0;
-                for (int j = 0; j < Dimension; j++) {
-                    t *= MoreMath.Pow(storage[j][i], powers[j]);
-                }
-                M += t;
-            }
-            M = M / Count;
-
-            return (M);
-
+            return (Multivariate.RawMoment(storage, powers));
         }
 
         /// <summary>

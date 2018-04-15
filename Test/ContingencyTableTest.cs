@@ -203,8 +203,8 @@ namespace Test {
                 // By our construction, they shouldn't be.
                 ContingencyTable<bool, bool> table = Bivariate.Crosstabs(aResults, bResults);
                 TestResult result = table.Binary.McNemarTest();
-                statistics.Add(result.Statistic);
-                distribution = result.Distribution;
+                statistics.Add(result.Statistic.Value);
+                distribution = result.Statistic.Distribution;
 
             }
 

@@ -238,7 +238,7 @@ namespace Test {
 
             ColumnVector I = new ColumnVector(3.0, 4.0, 5.0);
 
-            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> w) => {
+            Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs = (double t, IReadOnlyList<double> w) => {
                 return (new ColumnVector((I[1] - I[2]) * w[1] * w[2] / I[0], (I[2] - I[0]) * w[2] * w[0] / I[1], (I[0] - I[1]) * w[0] * w[1] / I[2]));
             };
 
@@ -248,7 +248,7 @@ namespace Test {
             double L2 = EulerAngularMomentum(I, w0);
             double E2 = EulerKineticEnergy(I, w0);
 
-            // As Landau points out, these inequalitites should be ensured by the definitions of E and L.
+            // As Landau points out, these inequalities should be ensured by the definitions of E and L.
             Debug.Assert(E2 * I[0] < L2);
             Debug.Assert(L2 < E2 * I[2]);
 
@@ -319,7 +319,7 @@ namespace Test {
         [TestMethod]
         public void OdeOrbit2 () {
 
-            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> r) => {
+            Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs = (double t, IReadOnlyList<double> r) => {
                 double d = MoreMath.Hypot(r[0], r[2]);
                 double d3 = MoreMath.Pow(d, 3);
                 return (new ColumnVector(r[1], -r[0] / d3, r[3], -r[2] / d3));
@@ -353,14 +353,13 @@ namespace Test {
             // Hull (1972) constructed initial conditions that guarantee a given orbital eccentricity
             // and a period of 2 \pi with unit masses and unit gravitational constant.
 
-            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> r) => {
+            Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs = (double t, IReadOnlyList<double> r) => {
                 double d = MoreMath.Hypot(r[0], r[1]);
                 double d3 = MoreMath.Pow(d, 3);
                 return (new double[] { -r[0] / d3, -r[1] / d3 });
             };
 
             foreach (double e in new double[] { 0.0, 0.1, 0.3, 0.5, 0.7, 0.9 }) {
-                Console.WriteLine("e = {0}", e);
 
                 ColumnVector r0 = new ColumnVector(1.0 - e, 0.0);
                 ColumnVector rDot0 = new ColumnVector(0.0, Math.Sqrt((1.0 + e) / (1.0 - e)));
@@ -384,7 +383,7 @@ namespace Test {
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(r0, r1, new EvaluationSettings() { RelativePrecision = 512 * result.Settings.RelativePrecision }));
 
-                // For large eccentricities, we loose precision. This is apparantly typical behavior.
+                // For large eccentricities, we loose precision. This is apparently typical behavior.
                 // Would be nice if we could quantify expected loss, or correct to do better.
 
             }
@@ -393,7 +392,7 @@ namespace Test {
         [TestMethod]
         public void OdeOrbitFigureEight () {
 
-            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> q) => {
+            Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs = (double t, IReadOnlyList<double> q) => {
 
                 double x01 = q[0] - q[2];
                 double y01 = q[1] - q[3];
@@ -444,7 +443,7 @@ namespace Test {
             // In this case the orbits are all along the same circle and the 
             // the triangle doesn't change size, it just rotates. 
 
-            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> r) => {
+            Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs = (double t, IReadOnlyList<double> r) => {
 
                 double x01 = r[0] - r[1];
                 double x02 = r[0] - r[2];
@@ -554,19 +553,19 @@ namespace Test {
             // Demanding zero net voltage across L, R, and C elements in series gives
             //   Q / C + \dot{Q} R + \ddot{Q} L = 0
             // This is a second order linear ODE with constant coefficients, i.e.
-            // universal damped harmonic oscialtor.
+            // universal damped harmonic oscillator.
 
             // Characteristic equation r^2 L + R r + r / C = 0 with solutions
             //   r = \frac{-R \pm \sqrt{R^2 - 4 L / C}{2L}. Define
             // t_0 = \sqrt{RC} = 1 / w_0 and t_1 = 2 L / R = 1 / w_1.
 
-            // If t_0 < t_1 the descriminant is negative and
+            // If t_0 < t_1 the discriminant is negative and
             //   r = - w_0 \pm i w
             // where w = \sqrt{ w_0^2 - w_1^2 } so
             //   Q = e^{-w_0 t} \left[ A cos(w t) + B sin(w t) \right]
-            // We get damped oscilatory behavoir.
+            // We get damped oscillatory behavior.
 
-            // If t_0 > t_1 the descriminant is postive and
+            // If t_0 > t_1 the discriminant is positive and
             //   r = \sqrt{ w_1^2 - w_0^2 } \pm w_1
             // so
             //   Q = A e^{-w_a t} + B^{-w_b t}
@@ -579,7 +578,7 @@ namespace Test {
                 foreach (double R in TestUtilities.GenerateRealValues(0.1, 1.0, 4, 2)) {
                     foreach (double C in TestUtilities.GenerateRealValues(0.1, 1.0, 4, 3)) {
 
-                        Func<double, IList<double>, IList<double>> rhs = (double x, IList<double> y) => {
+                        Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs = (double x, IReadOnlyList<double> y) => {
                             double q = y[0]; double qp = y[1];
                             return (new double[] {
                                 qp,
@@ -637,7 +636,7 @@ namespace Test {
             //  \frac{d^2 y}{dx^2} = \sqrt{1.0 + \left(\frac{dy}{dx}\right)^2}
             // with y(0) = 1 and y'(0) = 0 and solution y = \cosh(x)
 
-            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> y) =>
+            Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs = (double t, IReadOnlyList<double> y) =>
                 new double[] { y[1], MoreMath.Hypot(1.0, y[1]) };
 
             MultiOdeResult result = MultiFunctionMath.IntegrateOde(rhs, 0.0, new double[] { 1.0, 0.0 }, 2.0);
@@ -653,11 +652,12 @@ namespace Test {
             double beta = 8.0 / 3.0;
             double rho = 28.0;
 
-            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> u) => new ColumnVector(
-                sigma * (u[1] - u[0]),
-                u[0] * (rho - u[2]) - u[1],
-                u[0] * u[1] - beta * u[2]
-            );
+            Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs = (double t, IReadOnlyList<double> u) =>
+                new ColumnVector(
+                    sigma * (u[1] - u[0]),
+                    u[0] * (rho - u[2]) - u[1],
+                    u[0] * u[1] - beta * u[2]
+                );
 
             MultiOdeSettings settings = new MultiOdeSettings() {
                 RelativePrecision = 1.0E-8,
@@ -684,9 +684,10 @@ namespace Test {
 
             int n = 0;
 
-            Func<double, IList<double>, IList<double>> rhs = (double x, IList<double> t) => new ColumnVector(
-                t[1], -MoreMath.Pow(t[0], n) - 2.0 * (x == 0.0 ? 0.0 : t[1] / x)
-            );
+            Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs = (double x, IReadOnlyList<double> t) =>
+                new ColumnVector(
+                    t[1], -MoreMath.Pow(t[0], n) - 2.0 * (x == 0.0 ? 0.0 : t[1] / x)
+                );
 
             ColumnVector t0 = new ColumnVector(1.0, 0.0);
 
@@ -738,10 +739,11 @@ namespace Test {
             // Try A = 20, B = 1, C = 30, D = 1, X = 8, Y = 12, T = 1
             // Try A = 1.5, B = 1 C = 3, D = 1, X = 10, Y = 5, T = 10
  
-            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> p) => new double[] {
-                A * p[0] - B * p[0] * p[1],
-                -C * p[1] + D * p[0] * p[1]
-            };
+            Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs = (double t, IReadOnlyList<double> p) =>
+                new double[] {
+                    A * p[0] - B * p[0] * p[1],
+                    -C * p[1] + D * p[0] * p[1]
+                };
 
             Func<IList<double>, double> conservedQuantity = (IList<double> p) =>
                 -D * p[0] + C * Math.Log(p[0]) - B * p[1] + A * Math.Log(p[1]);
@@ -773,7 +775,7 @@ namespace Test {
         [TestMethod]
         public void OdeDawson () {
 
-            // The Dawson function fufills a simple ODE.
+            // The Dawson function fulfills a simple ODE.
             //   \frac{dF}{dx} + 2 x F = 1 \qquad F(0) = 0
             // See e.g. https://en.wikipedia.org/wiki/Dawson_function
             // Verify that we get correct values via ODE integration.
@@ -864,7 +866,7 @@ namespace Test {
                 }
             };
 
-            Func<double, IList<double>, IList<double>> rhs = (double t, IList<double> p) => {
+            Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs = (double t, IReadOnlyList<double> p) => {
 
                 ColumnVector a = new ColumnVector(3 * planets.Length);
 

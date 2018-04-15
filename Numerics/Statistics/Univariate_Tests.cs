@@ -9,12 +9,12 @@ namespace Meta.Numerics.Statistics {
     public static partial class Univariate {
 
         /// <summary>
-        /// Performs a z-test.
+        /// Performs a z-test to test whether the given sample is compatible with the given normal reference population.
         /// </summary>
         /// <param name="sample">The sample.</param>
-        /// <param name="referenceMean">The mean of the comparison population.</param>
-        /// <param name="referenceStandardDeviation">The standard deviation of the comparison population.</param>
-        /// <returns>A test result indicating whether the sample mean is significantly different from that of the comparison population.</returns>
+        /// <param name="referenceMean">The mean of the reference population.</param>
+        /// <param name="referenceStandardDeviation">The standard deviation of the reference population.</param>
+        /// <returns>A test result indicating whether the sample mean is compatible with that of the given reference population.</returns>
         /// <remarks>
         /// <para>A z-test determines whether the sample is compatible with a normal population with known mean and standard deviation.
         /// In most cases, Student's t-test (<see cref="StudentTTest(IReadOnlyCollection{double},System.Double)"/>), which does not assume a known population standard deviation,
@@ -46,7 +46,7 @@ namespace Meta.Numerics.Statistics {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 1) throw new InsufficientDataException();
             double z = (sample.Mean() - referenceMean) / (referenceStandardDeviation / Math.Sqrt(sample.Count));
-            return (new TestResult("z", z, type, new NormalDistribution()));
+            return (new TestResult("z", z, new NormalDistribution(), type));
         }
 
         /// <summary>
@@ -54,18 +54,16 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="sample">The sample.</param>
         /// <param name="referenceMedian">The reference median.</param>
-        /// <returns>The result of the test.</returns>
+        /// <returns>A test result indicating whether the sample median is compatible with the given reference value.</returns>
         /// <remarks>
-        /// <para>The sign test is a non-parametric alternative to the Student t-test (<see cref="StudentTTest(IReadOnlyCollection{double},double)"/>).
+        /// <para>The sign test is a non-parametric alternative to the Student t-test
+        /// (<see cref="StudentTTest(IReadOnlyCollection{double},double)"/>).
         /// It tests whether the sample is consistent with the given reference median.</para>
         /// <para>The null hypothesis for the test is that the median of the underlying population from which the sample is
         /// drawn is the reference median. The test statistic is simply number of sample values that lie above the median. Since
         /// each sample value is equally likely to be below or above the population median, each draw is an independent Bernoulli
         /// trial, and the total number of values above the population median is distributed according to a binomial distribution
         /// (<see cref="BinomialDistribution"/>).</para>
-        /// <para>The left probability of the test result is the chance of the sample median being so low, assuming the sample to have been
-        /// drawn from a population with the reference median. The right probability of the test result is the chance of the sample median
-        /// being so high, assuming the sample to have been drawn from a population with the reference median.</para>
         /// </remarks>
         /// <seealso cref="StudentTTest(IReadOnlyCollection{double},double)"/>
         public static TestResult SignTest (this IReadOnlyCollection<double> sample, double referenceMedian) {
@@ -73,15 +71,14 @@ namespace Meta.Numerics.Statistics {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 1) throw new InsufficientDataException();
 
-            // count the number of entries that exceed the reference median
+            // Count the number of entries that exceed the reference median.
             int W = 0;
             foreach (double value in sample) {
                 if (value > referenceMedian) W++;
             }
 
-            // W should be distributed binomially
-            return (new TestResult("W", W, TestType.TwoTailed, new DiscreteAsContinuousDistribution(new BinomialDistribution(0.5, sample.Count))));
-
+            // W should be distributed binomially.
+            return (new TestResult("W", W, new BinomialDistribution(0.5, sample.Count), TestType.TwoTailed));
         }
 
         /// <summary>
@@ -89,10 +86,10 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="sample">The sample.</param>
         /// <param name="referenceMean">The reference mean.</param>
-        /// <returns>The result of the test. The test statistic is a t-value. If t &gt; 0, the one-sided likelyhood
-        /// to obtain a greater value under the null hypothesis is the (right) propability of that value. If t &lt; 0, the
-        /// corresponding one-sided likelyhood is the (left) probability of that value. The two-sided likelyhood to obtain
-        /// a t-value as far or farther from zero as the value obtained is just twice the one-sided likelyhood.</returns>
+        /// <returns>The result of the test. The test statistic is a t-value. If t &gt; 0, the one-sided likelihood
+        /// to obtain a greater value under the null hypothesis is the (right) probability of that value. If t &lt; 0, the
+        /// corresponding one-sided likelihood is the (left) probability of that value. The two-sided likelihood to obtain
+        /// a t-value as far or farther from zero as the value obtained is just twice the one-sided likelihood.</returns>
         /// <remarks>
         /// <para>The test statistic of Student's t-test is the difference between the sample mean and the reference mean,
         /// measured in units of the sample mean uncertainty. Under the null hypothesis that the sample was drawn from a normally
@@ -106,7 +103,7 @@ namespace Meta.Numerics.Statistics {
         /// <example>
         /// <para>In some country, the legal limit blood alcohol limit for drivers is 80 on some scale. Because they
         /// have noticed that the results given by their measuring device fluctuate, the police perform three
-        /// seperate measurements on a suspected drunk driver.
+        /// separate measurements on a suspected drunk driver.
         /// They obtain the results 81, 84, and 93. They argue that, because all three results exceed the
         /// limit, the court should be very confident that the driver's blood alcohol level did, in fact, exceed
         /// the legal limit. You are the driver's lawyer. Can you make an argument to that the court shouldn't be so
@@ -150,7 +147,7 @@ namespace Meta.Numerics.Statistics {
             double t = (mean - referenceMean) / se;
             int dof = n - 1;
 
-            return (new TestResult("t", t, type, new StudentDistribution(dof)));
+            return (new TestResult("t", t, new StudentDistribution(dof), type));
         }
 
         /// <summary>
@@ -184,8 +181,7 @@ namespace Meta.Numerics.Statistics {
             // compute the ratio
             double F = va / vb;
 
-            // right-tailed is only right if F > 1.
-            return (new TestResult("F", F, TestType.RightTailed, new FisherDistribution(a.Count - 1, b.Count - 1)));
+            return (new TestResult("F", F, new FisherDistribution(a.Count - 1, b.Count - 1), TestType.TwoTailed));
         }
 
         /// <summary>
@@ -229,7 +225,7 @@ namespace Meta.Numerics.Statistics {
             } else {
                 DDistribution = new TransformedDistribution(new KolmogorovAsymptoticDistribution(n), 0.0, 1.0 / Math.Sqrt(n));
             }
-            return (new TestResult("D", D, TestType.RightTailed, DDistribution));
+            return (new TestResult("D", D, DDistribution, TestType.RightTailed));
 
         }
 
@@ -269,7 +265,7 @@ namespace Meta.Numerics.Statistics {
             } else {
                 VDistribution = new TransformedDistribution(new KuiperAsymptoticDistribution(n), 0.0, 1.0 / Math.Sqrt(n));
             }
-            return (new TestResult("V", V, TestType.RightTailed, VDistribution));
+            return (new TestResult("V", V, VDistribution, TestType.RightTailed));
 
         }
 
@@ -359,7 +355,7 @@ namespace Meta.Numerics.Statistics {
 
             // N = 3: W' = W, 3/4 <= W <= 1, P = (6 / Pi)(Asin(Sqrt(W)) - Asin(Sqrt(3/4)))
 
-            return (new TestResult("ln(1-W')", lnV, TestType.RightTailed, nullDistribution));
+            return (new TestResult("ln(1-W')", lnV, nullDistribution, TestType.RightTailed));
 
         }
 
@@ -439,7 +435,7 @@ namespace Meta.Numerics.Statistics {
             double da = 0.0;
             double db = 0.0;
 
-            // find the maximum cdf seperation
+            // find the maximum cdf separation
             // this is a variant on the standard merge sort algorithm
             double d = 0.0;
             while ((ia < a.Count) && (ib < b.Count)) {
@@ -464,7 +460,7 @@ namespace Meta.Numerics.Statistics {
                 nullDistribution = new TransformedDistribution(new KolmogorovDistribution(), 0.0, Math.Sqrt(1.0 / a.Count + 1.0 / b.Count));
             }
 
-            return (new TestResult("D", d, TestType.RightTailed, nullDistribution));
+            return (new TestResult("D", d, nullDistribution, TestType.RightTailed));
 
         }
 
@@ -516,7 +512,7 @@ namespace Meta.Numerics.Statistics {
             // evaluate t
             double t = (ma - mb) / Math.Sqrt(v / n);
 
-            return (new TestResult("t", t, TestType.TwoTailed, new StudentDistribution(na + nb - 2)));
+            return (new TestResult("t", t, new StudentDistribution(na + nb - 2), TestType.TwoTailed));
 
         }
 
@@ -605,21 +601,20 @@ namespace Meta.Numerics.Statistics {
 
             // If possible, we want to use the exact distribution of U.
             // To compute it, we need to do exact integer arithmetic on numbers of order the total number of possible orderings,
-            // which is (a.Count + b.Count!).
+            // which is (a.Count + b.Count)!.
             // Since decimal is the built-in type that can hold the largest exact integers, we use it for the computation.
             // Therefore, to generate the exact distribution, the total number of possible orderings must be less than the capacity of a decimal. 
-            ContinuousDistribution uDistribution;
-            double lnTotal = AdvancedIntegerMath.LogFactorial(a.Count + b.Count) - AdvancedIntegerMath.LogFactorial(a.Count) - AdvancedIntegerMath.LogFactorial(b.Count);
+            double lnTotal = AdvancedIntegerMath.LogFactorial(a.Count + b.Count)
+                - AdvancedIntegerMath.LogFactorial(a.Count) - AdvancedIntegerMath.LogFactorial(b.Count);
             if (lnTotal > Math.Log((double) Decimal.MaxValue)) {
                 double mu = a.Count * b.Count / 2.0;
                 double sigma = Math.Sqrt(mu * (a.Count + b.Count + 1) / 6.0);
-                uDistribution = new NormalDistribution(mu, sigma);
+                ContinuousDistribution uDistribution = new NormalDistribution(mu, sigma);
+                return (new TestResult("U", ua, uDistribution, TestType.TwoTailed));
             } else {
-                uDistribution = new DiscreteAsContinuousDistribution(new MannWhitneyExactDistribution(a.Count, b.Count));
+                DiscreteDistribution uDistribution = new MannWhitneyExactDistribution(a.Count, b.Count);
+                return (new TestResult("U", ua, uDistribution, TestType.TwoTailed));
             }
-
-            return (new TestResult("U", ua, TestType.TwoTailed, uDistribution));
-
         }
 
         /// <summary>
@@ -679,7 +674,7 @@ namespace Meta.Numerics.Statistics {
         /// define arbitrary bins of continuously variable data in order to form groups, then your
         /// ANOVA results will depend on your choice of bins.</para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="samples"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="samples"/> is <see langword="null"/>.</exception>
         /// <exception cref="ArgumentException"><paramref name="samples"/> contains fewer than two samples.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Analysis_of_variance"/>
         /// <seealso href="https://en.wikipedia.org/wiki/One-way_analysis_of_variance"/>
@@ -729,7 +724,7 @@ namespace Meta.Numerics.Statistics {
             int dW = n - 1 - dB;
 
             // determine F statistic
-            double F = (SSB / dB) / (SSW / dW);
+            //double F = (SSB / dB) / (SSW / dW);
 
             AnovaRow factor = new AnovaRow(SSB, dB);
             AnovaRow residual = new AnovaRow(SSW, dW);
@@ -829,7 +824,187 @@ namespace Meta.Numerics.Statistics {
             H = 12.0 / N / (N + 1) * H;
 
             // use the chi-squared approximation to the null distribution
-            return (new TestResult("H", H, TestType.RightTailed, new ChiSquaredDistribution(samples.Count - 1)));
+            return (new TestResult("H", H, new ChiSquaredDistribution(samples.Count - 1), TestType.RightTailed));
+
+        }
+
+
+        /// <summary>
+        /// Performs a two-way analysis of variance.
+        /// </summary>
+        /// <param name="samples">A two-dimensional array of samples, all of which must have equal counts.</param>
+        /// <returns>The result of the analysis.</returns>
+        /// <remarks>
+        /// <para>A two-way ANOVA analyzes the effects of two separate input factors, each with
+        /// two or more nominal values, on a continuous output variable.</para>
+        /// <para>The only design supported is complete and balanced: samples must exist
+        /// for all combinations of treatment factors, and each of those samples must
+        /// contain the same number of data points. These samples are passed to the method
+        /// as a two-dimensional array <paramref name="samples"/>, whose (i, j)th entry
+        /// contains the sample with the ith row factor value and jth column factor value.</para>
+        /// <para>For more information on ANOVA tests and when to use them, see the remarks for
+        /// <see cref="OneWayAnovaTest(IReadOnlyCollection{double}[])"/>.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="samples"/> is <see langword="null"/>,
+        /// or one of its entries is <see langword="null"/>.</exception>
+        /// <exception cref="InvalidOperationException">The design is not complete or balanced.</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Two-way_analysis_of_variance"/>
+        public static TwoWayAnovaResult TwoWayAnovaTest (IReadOnlyCollection<double>[,] samples) {
+
+            if (samples == null) throw new ArgumentNullException(nameof(samples));
+
+            int rCount = samples.GetLength(0);
+            int cCount = samples.GetLength(1);
+            if (rCount < 2) throw new InvalidOperationException();
+            if (cCount < 2) throw new InvalidOperationException();
+
+            // Determine mean, within group variance
+            int m = -1;
+            int n = 0;
+            double mean = 0.0;
+            double SSE = 0.0;
+            double[,] means = new double[rCount, cCount];
+            for (int r = 0; r < rCount; r++) {
+                for (int c = 0; c < cCount; c++) {
+                    IReadOnlyCollection<double> sample = samples[r, c];
+                    if (sample == null) throw new ArgumentNullException(String.Format("{0}[{1},{2}]", nameof(samples), r, c));
+                    if (m < 0) {
+                        m = sample.Count;
+                    } else {
+                        if (sample.Count != m) throw new InvalidOperationException();
+                    }
+                    int sample_n;
+                    double sample_mean, sample_sumOfSquaredDeviations;
+                    ComputeMomentsUpToSecond(sample, out sample_n, out sample_mean, out sample_sumOfSquaredDeviations);
+                    n += sample_n;
+                    mean += sample_mean;
+                    SSE += sample_sumOfSquaredDeviations;
+                    means[r, c] = sample_mean;
+                }
+            }
+            mean = mean / (rCount * cCount);
+
+            // Determine between group variance
+            double SSF = 0.0;
+            for (int r = 0; r < rCount; r++) {
+                for (int c = 0; c < cCount; c++) {
+                    SSF += MoreMath.Sqr(means[r,c] - mean);
+                }
+            }
+            SSF = SSF * m;
+
+            // Determine row-wise variance
+            double SSA = 0.0;
+            for (int r = 0; r < rCount; r++) {
+                double rMean = 0.0;
+                for (int c = 0; c < cCount; c++) {
+                    rMean += means[r, c];
+                }
+                rMean = rMean / cCount;
+                SSA += MoreMath.Sqr(rMean - mean);
+            }
+            SSA = SSA * m * cCount;
+
+            // Determine column-wise variance
+            double SSB = 0.0;
+            for (int c = 0; c < cCount; c++) {
+                double cMean = 0.0;
+                for (int r = 0; r < rCount; r++) {
+                    cMean += means[r, c];
+                }
+                cMean = cMean / rCount;
+                SSB += MoreMath.Sqr(cMean - mean);
+            }
+            SSB = SSB * m * rCount;
+
+            // Finding the interaction effect by subtraction allows us to determine it
+            // without storing multiple row and column means. But it introduces a risk
+            // of getting a tiny negative value due to round-off error, so we should
+            // probably just go ahead and store the row and column means.
+            double SSI = SSF - SSA - SSB;
+            Debug.Assert(SSI >= 0.0);
+
+            AnovaRow row = new AnovaRow(SSA, rCount - 1);
+            AnovaRow column = new AnovaRow(SSB, cCount - 1);
+            AnovaRow interaction = new AnovaRow(SSI, (rCount - 1) * (cCount - 1));
+            AnovaRow error = new AnovaRow(SSE, n - rCount * cCount);
+
+            TwoWayAnovaResult result = new TwoWayAnovaResult(row, column, interaction, error);
+            return (result);
+
+        }
+
+        /// <summary>
+        /// Tests whether the sample is compatible with the given discrete distribution.
+        /// </summary>
+        /// <param name="sample">The sample.</param>
+        /// <param name="distribution">The distribution.</param>
+        /// <returns>A test result indicating whether the sample is compatible with the given discrete distribution.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> or <paramref name="distribution"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than two values.</exception>
+        public static TestResult ChiSquaredTest (this IReadOnlyCollection<int> sample, DiscreteDistribution distribution) {
+
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (distribution == null) throw new ArgumentNullException(nameof(distribution));
+            if (sample.Count < 2) throw new InsufficientDataException();
+
+            int m;
+            double chi2 = ComputeChiSquared(sample, distribution, out m);
+            return (new TestResult("χ²", chi2, new ChiSquaredDistribution(m - 1), TestType.RightTailed));
+
+        }
+
+        private static double ComputeChiSquared(IEnumerable<int> sample, DiscreteDistribution distribution, out int m) {
+
+            Debug.Assert(sample != null);
+            Debug.Assert(distribution != null);
+
+            // Find counts for all values in sample.
+            int n = 0;
+            int min = Int32.MaxValue;
+            int max = Int32.MinValue;
+            Dictionary<int, int> counts = new Dictionary<int, int>();
+            foreach (int value in sample) {
+                n++;
+
+                if (value < min) min = value;
+                if (value > max) max = value;
+
+                int count = 0;
+                counts.TryGetValue(value, out count);
+                count++;
+                counts[value] = count;
+            }
+
+            // Pick limits to include all measured values and
+            // all theoretical values with expected counts 2 or greater.
+            double e = 2.0 / n;
+            min = Math.Min(distribution.InverseLeftProbability(e), min);
+            max = Math.Max(distribution.InverseLeftProbability(1.0 - e), max);
+
+            // Compute chi squared and count bins.
+            m = 0;
+            double chi2 = 0.0;
+            for (int k = min; k <= max; k++) {
+                double expectedCount = n * distribution.ProbabilityMass(k);
+                Debug.Assert(expectedCount >= 0.0);
+
+                int count = 0;
+                counts.TryGetValue(k, out count);
+                Debug.Assert(count >= 0);
+
+                // Picking which bins to include is a bit subjective, but for the near-normal approximation
+                // to be anywhere near right, 4 is minimum. Also don't ignore discrepancies that are
+                // disqualifying.
+                if ((expectedCount >= 4.0) || (count >= 4) || ((expectedCount == 0.0) && (count > 0))) {
+                    m++;
+                    chi2 += MoreMath.Sqr(count - expectedCount) / expectedCount;
+                } else {
+                    Debug.WriteLine($"Skipped {k} with count={count} and expected={expectedCount}.");
+                }
+            }
+
+            return (chi2);
 
         }
 

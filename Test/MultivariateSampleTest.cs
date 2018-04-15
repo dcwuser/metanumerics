@@ -146,12 +146,12 @@ namespace Test {
                 TestResult SR = Bivariate.SpearmanRhoTest(x, y);
                 TestResult KT = Bivariate.KendallTauTest(x, y);
 
-                PRD = PR.Distribution;
-                SRD = SR.Distribution;
-                KTD = KT.Distribution;
+                PRD = PR.Statistic.Distribution;
+                SRD = SR.Statistic.Distribution;
+                KTD = KT.Statistic.Distribution;
 
                 data.AddRow(new Dictionary<string, object>() {
-                    {"r", PR.Statistic}, {"ρ", SR.Statistic}, {"τ", KT.Statistic}
+                    {"r", PR.Statistic.Value}, {"ρ", SR.Statistic.Value}, {"τ", KT.Statistic.Value}
                 });
             }
 
@@ -535,7 +535,7 @@ namespace Test {
                     ms.Add(x);
                 }
                 GeneralLinearRegressionResult r = ms.LinearRegression(0);
-                fs.Add(r.F.Statistic);
+                fs.Add(r.F.Statistic.Value);
             }
 
             // conduct a KS test to check that F follows the expected distribution
@@ -616,15 +616,15 @@ namespace Test {
 
             // check that the PCs behave as expected
             for (int i = 0; i < pca.Dimension; i++) {
-                PrincipalComponent pc = pca.Component(i);
+                PrincipalComponent pc = pca.Components[i];
                 Assert.IsTrue(pc.Index == i);
                 Assert.IsTrue(pc.Analysis == pca);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(pc.Weight * pc.NormalizedVector(), pc.ScaledVector()));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(pc.Weight * pc.NormalizedVector, pc.ScaledVector()));
                 Assert.IsTrue((0.0 <= pc.VarianceFraction) && (pc.VarianceFraction <= 1.0));
                 if (i == 0) {
                     Assert.IsTrue(pc.VarianceFraction == pc.CumulativeVarianceFraction);
                 } else {
-                    PrincipalComponent ppc = pca.Component(i - 1);
+                    PrincipalComponent ppc = pca.Components[i - 1];
                     Assert.IsTrue(pc.VarianceFraction <= ppc.VarianceFraction);
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(ppc.CumulativeVarianceFraction + pc.VarianceFraction, pc.CumulativeVarianceFraction));
                 }
@@ -639,14 +639,14 @@ namespace Test {
                 foreach (double[] cEntry in csample) {
                     RowVector x = mu.Copy();
                     for (int i = 0; i < rD; i++) {
-                        PrincipalComponent pc = pca.Component(i);
-                        x += (cEntry[i] * pc.Weight) * pc.NormalizedVector();
+                        PrincipalComponent pc = pca.Components[i];
+                        x += (cEntry[i] * pc.Weight) * pc.NormalizedVector;
                     }
                     rSample.Add(x);
                 }
                 double rVariance = GetTotalVariance(rSample);
                 Console.WriteLine("{0} {1}", rD, rVariance);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(rVariance / tVariance, pca.Component(rD-1).CumulativeVarianceFraction));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(rVariance / tVariance, pca.Components[rD-1].CumulativeVarianceFraction));
             }
 
         }
@@ -655,9 +655,19 @@ namespace Test {
         public void MeansClustering2 () {
 
             ColumnVector[] centers = new ColumnVector[] {
-                new ColumnVector(0.0, 0.0, 0.0), new ColumnVector(2.0, 0.0, 0.0), new ColumnVector(0.0, 2.0, 0.0), new ColumnVector(0.0, 0.0, 2.0)
+                new ColumnVector(0.0, 0.0, 0.0),
+                new ColumnVector(2.0, 0.0, 0.0),
+                new ColumnVector(0.0, 2.0, 0.0),
+                new ColumnVector(0.0, 0.0, 2.0)
             };
 
+            FrameTable table = new FrameTable();
+            string alphabet = "abcdefghijklmnopqrstuvwxyz";
+            for(int j = 0; j < 3; j++) {
+                table.AddColumn<double>(alphabet[j].ToString());
+            }
+            
+             
             List<int> inputAssignments = new List<int>();
             List<ColumnVector> inputVectors = new List<ColumnVector>();
             Random rng = new Random(2);
@@ -670,11 +680,14 @@ namespace Test {
                     inputVector[k] += dist.GetRandomValue(rng);
                 }
                 inputVectors.Add(inputVector);
+                table.AddRow<double>(inputVector);
             }
 
-            MultivariateSample s = new MultivariateSample(3);
-            foreach (ColumnVector v in inputVectors) { s.Add(v); }
-            MeansClusteringResult result = s.MeansClustering(centers.Length);
+            MeansClusteringResult result = table.AsColumns<double>().MeansClustering(centers.Length);
+
+            //MultivariateSample s = new MultivariateSample(3);
+            //foreach (ColumnVector v in inputVectors) { s.Add(v); }
+            //MeansClusteringResult result = s.MeansClustering(centers.Length);
 
             List<int> outputAssignments = new List<int>();
             for (int i = 0; i < inputVectors.Count; i++) {

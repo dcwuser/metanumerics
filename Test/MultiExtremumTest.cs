@@ -824,8 +824,6 @@ namespace Test {
 
             for (int n = 2; n < 8; n++)
             {
-                Console.WriteLine(n);
-
                 // define the Thompson metric
                 Func<IReadOnlyList<double>, double> f = GetThompsonFunction(n);
 
@@ -846,15 +844,11 @@ namespace Test {
                     start[2 * n - 3] = Math.Asin(2.0 * r.NextDouble() - 1.0);
                 }
 
-                MultiExtremumSettings set = new MultiExtremumSettings() { RelativePrecision = 1.0E-10 };
+                MultiExtremumSettings set = new MultiExtremumSettings() { RelativePrecision = 1.0E-9, AbsolutePrecision = 0.0 };
                 MultiExtremum min = MultiFunctionMath.FindLocalMinimum(f, start, set);
 
-                Console.WriteLine(min.Dimension);
-                Console.WriteLine(min.EvaluationCount);
-                Console.WriteLine("{0} ({1}) ?= {2}", min.Value, min.Precision, thompsonSolutions[n]);
-
                 Assert.IsTrue(min.Dimension == 2 * (n - 1));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(min.Value, thompsonSolutions[n], new EvaluationSettings() { AbsolutePrecision = 8.0 * min.Precision }));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(min.Value, thompsonSolutions[n], new EvaluationSettings() { AbsolutePrecision = 10.0 * min.Precision }));
 
             }
 

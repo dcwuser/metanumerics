@@ -4,13 +4,13 @@ using System.Text;
 
 namespace Meta.Numerics.Matrices {
 
-    // BLAS (Basic Linear Algebra Subsysem) operations
+    // BLAS (Basic Linear Algebra Subsystem) operations
     
-    // I tried making these IList<double> instead of double[], but performance degraded significantly. Arrays appers to be intrinsically faster.
+    // I tried making these IList<double> instead of double[], but performance degraded significantly. Arrays appear to be intrinsically faster.
 
-    // BLAS Level 1 functions support O(N) operations with O(1) auxiluary storage requirements, basically scalar/vector operations
-    // BLAS Level 2 functions support O(N^2) operations with O(N) auxiluary storage requirements, basically matrix/vector operations
-    // BLAS Level 3 functions support O(N^3) operations with O(N^2) auxiluary storage requirements, basically matrix/matrix operations
+    // BLAS Level 1 functions support O(N) operations with O(1) auxiliary storage requirements, basically scalar/vector operations
+    // BLAS Level 2 functions support O(N^2) operations with O(N) auxiliary storage requirements, basically matrix/vector operations
+    // BLAS Level 3 functions support O(N^3) operations with O(N^2) auxiliary storage requirements, basically matrix/matrix operations
 
     internal static class Blas1 {
 
@@ -50,8 +50,8 @@ namespace Meta.Numerics.Matrices {
         public static double dNrm2 (double[] store, int offset, int stride, int count) {
 
             // This is essentially Blue's algorithm. Divide the double range into numbers whose square would
-            // overflow (large), numbers whose square would underflow (small), and numbers in betweeen (medium).
-            // Sum each seperately, scaling large and small to avoid to avoid over- and under-flow before squaring.
+            // overflow (large), numbers whose square would underflow (small), and numbers in between (medium).
+            // Sum each separately, scaling large and small to avoid to avoid over- and under-flow before squaring.
             // Then combine sums when finished. In "usual" circumstances (medium numbers only), this requires
             // no more flops than a straight sum-of-squares, just a few extra comparisons.
 
@@ -164,7 +164,7 @@ namespace Meta.Numerics.Matrices {
         // Solve a triangular system
         //   aIsUpper indicates whether A is upper/right or lower/left
         //   aIsUnit indicates whether A's diagonal elements are all 1 or not
-        // The relevent elements of xStore are overwritten by the solution vector
+        // The relevant elements of xStore are overwritten by the solution vector
 
         public static void dTrsv (
             bool aIsUpper, bool aIsUnit, double[] aStore, int aOffset, int aRowStride, int aColStride,

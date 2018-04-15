@@ -502,15 +502,16 @@ namespace Meta.Numerics.Statistics {
             //    \frac{n}{\lambda} = \sum_i \left( \frac{1}{x_i} - \frac{1}{\mu} \right)
             //  i.e. \lambda^{-1} = <(x^{-1} - \mu^{-1})>
 
-            int n = sample.Count;
-            double mu = sample.Mean();
+            int n;
+            double mu;
+            ComputeMomentsUpToFirst(sample, out n, out mu);
             double mui = 1.0 / mu;
             double lambda = 0.0;
             foreach (double value in sample) {
                 if (value <= 0.0) throw new InvalidOperationException();
                 lambda += (1.0 / value - mui);
             }
-            lambda = (sample.Count - 3) / lambda;
+            lambda = (n - 3) / lambda;
 
             // If x ~ IG(\mu, \lambda), then \sum_i x_i ~ IG(n \mu, n^2 \lambda), so \hat{\mu} ~ IG (\mu, n \lambda). This gives us
             // not just the exact mean and variance of \hat{\mu}, but its entire distribution. Since its mean is \mu, \hat{\mu} is an
@@ -535,8 +536,8 @@ namespace Meta.Numerics.Statistics {
             // Mixed derivative vanishes, so matrix is trivially invertible to obtain covariances. These results agree with the
             // results from exact distributions in the asymptotic regime.
 
-            double v_mu_mu = mu * mu * mu / lambda / sample.Count;
-            double v_lambda_lambda = 2.0 * lambda * lambda / (sample.Count - 5);
+            double v_mu_mu = mu * mu * mu / lambda / n;
+            double v_lambda_lambda = 2.0 * lambda * lambda / (n - 5);
             //double v_mu_lambda = 0.0;
 
             WaldDistribution dist = new WaldDistribution(mu, lambda);

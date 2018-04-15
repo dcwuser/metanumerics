@@ -27,7 +27,7 @@ namespace Test {
             HashSet<IntegerPartition> set = new HashSet<IntegerPartition>();
             HashSet<IntegerPartition> conjugateSet = new HashSet<IntegerPartition>();
 
-            foreach(IntegerPartition partition in AdvancedIntegerMath.Partitions(n)) {
+            foreach(IntegerPartition partition in IntegerPartition.GetPartitions(n)) {
 
                 Assert.IsTrue(partition != null);
 
@@ -62,7 +62,7 @@ namespace Test {
                 }
                 Assert.IsTrue(cCount == n);
 
-                // Conujate should be generated only once
+                // Conjugate should be generated only once
                 Assert.IsTrue(!conjugateSet.Contains(conjugate));
                 conjugateSet.Add(conjugate);
 
@@ -106,7 +106,7 @@ namespace Test {
         }
 
         private long PartitionFunction (int n) {
-            return (AdvancedIntegerMath.Partitions(n).LongCount());
+            return (IntegerPartition.GetPartitions(n).LongCount());
         }
 
     }

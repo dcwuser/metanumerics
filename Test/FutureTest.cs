@@ -35,7 +35,7 @@ namespace Test {
                     s.Add(d.GetRandomValue(rng));
                 }
                 TestResult r = s.ShapiroFranciaTest();
-                w.Add(r.Statistic);
+                w.Add(r.Statistic.Value);
             }
 
         }

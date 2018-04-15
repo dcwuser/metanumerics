@@ -46,14 +46,16 @@ namespace Meta.Numerics.Statistics {
     /// </code>
     /// </example>
     /// <seealso cref="Sample.OneWayAnovaTest(System.Collections.Generic.IReadOnlyCollection{Sample})"/>
-    public class OneWayAnovaResult : IAnovaResult {
+    public sealed class OneWayAnovaResult : IAnovaResult {
 
         internal OneWayAnovaResult (AnovaRow factor, AnovaRow residual, AnovaRow total) {
-
+            Debug.Assert(factor != null);
+            Debug.Assert(residual != null);
+            Debug.Assert(total != null);
+            Debug.Assert(factor.DegreesOfFreedom + residual.DegreesOfFreedom == total.DegreesOfFreedom);
             this.Factor = new AnovaTestRow(factor.SumOfSquares, factor.DegreesOfFreedom, this);
             this.Residual = residual;
             this.Total = total;
-
         }
 
         /// <summary>
@@ -119,6 +121,7 @@ namespace Meta.Numerics.Statistics {
     public class AnovaTestRow : AnovaRow {
 
         internal AnovaTestRow (double sumOfSquares, int degreesOfFreedom, IAnovaResult result) : base(sumOfSquares, degreesOfFreedom) {
+            Debug.Assert(result != null);
             this.result = result;
         }
 
@@ -131,7 +134,7 @@ namespace Meta.Numerics.Statistics {
             get {
                 double F = (this.SumOfSquares / this.DegreesOfFreedom) / (result.Residual.SumOfSquares / result.Residual.DegreesOfFreedom);
                 ContinuousDistribution D = new FisherDistribution(this.DegreesOfFreedom, result.Residual.DegreesOfFreedom);
-                return (new TestResult("F", F, TestType.RightTailed, D));
+                return (new TestResult("F", F, D, TestType.RightTailed));
             }
         }
 

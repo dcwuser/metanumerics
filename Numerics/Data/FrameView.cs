@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -31,21 +32,23 @@ namespace Meta.Numerics.Data
     /// A read-only view of an array of data.
     /// </summary>
     /// <remarks>
-    /// <para>This is the central class for read-only views of data in our data frame system.</para>
+    /// <para>This is the central class for viewing data in our data frame system.</para>
     /// <para>The methods of this class allow rows and columns of data to be re-ordered, filtered,
     /// manipulated, and analyzed. Most of the methods produce a new FrameView that presents a new
-    /// view of the underlying data without incurring the time and space costs of copying the underlying
+    /// view of the underlying data, without incurring the time and space costs of copying the underlying
     /// stored data.</para>
     /// <para>The simplest data manipulations supported by views include filtering columns using
-    /// <see cref="Select(string[])"/> and <see cref="Discard(string[])"/> and filtering rows
-    /// using <see cref="Where(Func{FrameRow, bool})"/> and <see cref="WhereNotNull(string[])"/>.</para>
+    /// <see cref="Select(string[])" autoUpgrade="true"/> and <see cref="Discard(string[])" autoUpgrade="true" />
+    /// and filtering rows using <see cref="Where(Func{FrameRow, bool})" autoUpgrade="true"/> and
+    /// <see cref="WhereNotNull(string[])" autoUpgrade="true"/>.</para>
     /// <para>More advanced manipulations include the addition of computed columns using
     /// <see cref="AddComputedColumn{T}(string, Func{FrameRow, T})"/> and the computation of aggregate
     /// values of groups using <see cref="GroupBy" autoUpgrade="true" />.</para>
     /// <para>After you have created the view of your data that you want to analyze, the easiest way
-    /// to hand individual columns of data to column-oriented analysis APIs like those in the
-    /// <see cref="Meta.Numerics.Statistics"/> namespace is to use the
-    /// <see cref="this[string]"/> accessor together with the <see cref="FrameColumn.As{T}"/> type-caster.
+    /// to hand individual columns of data to column-oriented analysis APIs (like those in the
+    /// <see cref="Meta.Numerics.Statistics"/> namespace) is to use the
+    /// <see cref="this[string]"/> accessor to get a column, together with the <see cref="FrameColumn.As{T}"/>
+    /// caster to expose it as a collection of the required type.
     /// For example, to obtain a estimate of the mean of the population from the sample in the
     /// column named "heights", write <tt>view["height"].As&lt;double&gt;().PopulationMean()</tt>.</para>
     /// <para>To create the original array of data that will be manipulated, use the <see cref="FrameTable"/>
@@ -303,14 +306,17 @@ namespace Meta.Numerics.Data
             if (columnName == null) throw new ArgumentNullException(nameof(columnName));
             if (selector == null) throw new ArgumentNullException(nameof(selector));
 
-            int columnIndex = GetColumnIndex(columnName);
-            NamedList<T> column = (NamedList<T>) columns[columnIndex];
+            //int columnIndex = GetColumnIndex(columnName);
+            //NamedList<T> column = (NamedList<T>) columns[columnIndex];
+            IReadOnlyList<T> column = this[columnName].As<T>();
 
             List<int> newMap = new List<int>();
-            for (int i = 0; i < map.Count; i++) {
-                T value = column[map[i]];
-                bool include = selector(value);
+            for (int i = 0; i < column.Count; i++) {
+                bool include = selector(column[i]);
                 if (include) newMap.Add(map[i]);
+                //T value = column[map[i]];
+                //bool include = selector(value);
+                //if (include) newMap.Add(map[i]);
             }
 
             return (new FrameView(this.columns, newMap));
@@ -575,6 +581,30 @@ namespace Meta.Numerics.Data
             int columnIndex = columns.Count;
             columns.Add(column);
             columnMap[columnName] = columnIndex;
+        }
+
+        /// <summary>
+        /// Exposes a list of columns of uniform type.
+        /// </summary>
+        /// <typeparam name="T">The type of the data.</typeparam>
+        /// <returns>A column-oriented, read-only collection of all the data in the view.</returns>
+        /// <remarks>
+        /// <para>Some methods, such as <see cref="Multivariate.MeansClustering(IReadOnlyList{IReadOnlyList{double}}, int)"/>
+        /// and <see cref="Multivariate.PrincipalComponentAnalysis(IReadOnlyList{IReadOnlyList{double}})"/>,
+        /// require their inputs as column-oriented array of uniform type. This method exposes the view as such
+        /// a collection.</para>
+        /// <remarks>
+        /// <para>This operation is both time and memory efficient. It does not copy every element
+        /// into a new collection, but instead simply instantiates a converter that implements the list
+        /// operations directly against the already existing storage.</para>
+        /// </remarks>
+        /// </remarks>
+        public IReadOnlyList<IReadOnlyList<T>> AsColumns<T>() {
+            IReadOnlyList<T>[] asColumns = new IReadOnlyList<T>[columns.Count];
+            for (int c = 0; c < asColumns.Length; c++) {
+                asColumns[c] = this.Columns[c].As<T>();
+            }
+            return (new ReadOnlyCollection<IReadOnlyList<T>>(asColumns));
         }
 
         // CSV output method

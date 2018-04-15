@@ -263,7 +263,7 @@ namespace Test {
             }
 
             // R and R-squared agree
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.RSquared, MoreMath.Sqr(result.R.Statistic)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.RSquared, MoreMath.Sqr(result.R.Statistic.Value)));
 
             // F-test and R-test agree
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result.F.Probability, result.R.Probability));
@@ -276,7 +276,7 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SSR, result.Anova.Residual.SumOfSquares));
 
             // R is same as correlation coefficient
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(x.CorrelationCoefficient(y), result.R.Statistic));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(x.CorrelationCoefficient(y), result.R.Statistic.Value));
 
         }
 
@@ -361,13 +361,13 @@ namespace Test {
                 }
                 LinearRegressionResult result = sample.LinearRegression();
 
-                rSample.Add(result.R.Statistic);
-                rDistribution = result.R.Distribution;
+                rSample.Add(result.R.Statistic.Value);
+                rDistribution = result.R.Statistic.Distribution;
 
-                fSample.Add(result.F.Statistic);
-                fDistribution = result.F.Distribution;
+                fSample.Add(result.F.Statistic.Value);
+                fDistribution = result.F.Statistic.Distribution;
 
-                Assert.IsTrue(result.F.Statistic == result.Anova.Result.Statistic);
+                Assert.IsTrue(result.F.Statistic.Value == result.Anova.Result.Statistic.Value);
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     result.R.Probability, result.F.Probability,
@@ -458,7 +458,6 @@ namespace Test {
                 PolynomialRegressionResult r = s.PolynomialRegression(a.Length - 1);
 
                 ColumnVector ps = r.Parameters.ValuesVector;
-                //Console.WriteLine("{0} {1} {2}", ps[0], ps[1], ps[2]);
 
                 // record best fit parameters
                 A.Add(ps);
@@ -467,8 +466,7 @@ namespace Test {
                 C += r.Parameters.CovarianceMatrix;
 
                 // record the fit statistic
-                F.Add(r.F.Statistic);
-                //Console.WriteLine("F={0}", r.GoodnessOfFit.Statistic);
+                F.Add(r.F.Statistic.Value);
 
             }
 
@@ -476,14 +474,12 @@ namespace Test {
 
             // check that mean parameter estimates are what they should be: the underlying population parameters
             for (int i = 0; i < A.Dimension; i++) {
-                Console.WriteLine("{0} {1}", A.Column(i).PopulationMean, a[i]);
                 Assert.IsTrue(A.Column(i).PopulationMean.ConfidenceInterval(0.95).ClosedContains(a[i]));
             }
 
             // check that parameter covarainces are what they should be: the reported covariance estimates
             for (int i = 0; i < A.Dimension; i++) {
                 for (int j = i; j < A.Dimension; j++) {
-                    Console.WriteLine("{0} {1} {2} {3}", i, j, C[i, j], A.TwoColumns(i, j).PopulationCovariance);
                     Assert.IsTrue(A.TwoColumns(i, j).PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(C[i, j]));
                 }
             }

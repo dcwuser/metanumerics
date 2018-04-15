@@ -7,7 +7,7 @@ using Meta.Numerics.Functions;
 namespace Meta.Numerics {
 
     /// <summary>
-    /// Provides simple functions of complex arguments. 
+    /// Contains methods that compute basic functions of complex arguments. 
     /// </summary>
     public static class ComplexMath {
 

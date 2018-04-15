@@ -8,8 +8,12 @@ namespace Meta.Numerics.Data
 {
 
     /// <summary>
-    /// One column of a data frame.
+    /// Represents one column of a data frame.
     /// </summary>
+    /// <remarks>
+    /// <para>To obtained strongly typed values of the data in the column,
+    /// use the <see cref="As{T}" autoUpgrade="true"/> method.</para>
+    /// </remarks>
     public sealed class FrameColumn : IEnumerable {
 
         internal FrameColumn(FrameView frame, int c) {
@@ -61,7 +65,7 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
-        /// Returns the column as a typed list.
+        /// Exposes the column as a list of uniform type.
         /// </summary>
         /// <typeparam name="T">The type of the list.</typeparam>
         /// <returns>An object that allows the column to be accessed as a typed list.</returns>
@@ -69,6 +73,9 @@ namespace Meta.Numerics.Data
         /// <para>This operation is both time and memory efficient. It does not convert every element
         /// into a new list, but instead simply instantiates a converter that implements the list
         /// operations directly against the already existing storage.</para>
+        /// <para>The type specified by <typeparamref name="T"/> need not be the same as the
+        /// underlying stored type of the column. As long as the exposed values can be cast or
+        /// converted to the specified type, the typed list returned will work as required.</para>
         /// </remarks>
         public IReadOnlyList<T> As<T> () {
             // If the requested column is of the requested type, expose it directly.

@@ -3,7 +3,7 @@
 namespace Meta.Numerics.Functions {
 
     /// <summary>
-    /// Contains types that evaluate advanced functions.
+    /// Contains types that compute advanced functions.
     /// </summary>
     /// <remarks>
     /// <para>This namespace contains types for computing nearly 100 advanced functions.</para>

@@ -80,8 +80,8 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="rhs">The right-hand-side vector.</param>
         /// <returns>The left-hand-side (solution) vector.</returns>
-        public ColumnVector Solve (IList<double> rhs) {
-            if (rhs == null) throw new ArgumentNullException("rhs");
+        public ColumnVector Solve (IReadOnlyList<double> rhs) {
+            if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (rhs.Count != Dimension) throw new DimensionMismatchException();
 
             // Determine Ly = x

@@ -188,7 +188,6 @@ namespace Meta.Numerics.Statistics {
             double d = b.m - a.m;
             double d2 = d * d;
             double d3 = d2 * d;
-            double d4 = d2 * d2;
 
             SummaryStatistics ab = new SummaryStatistics();
             ab.n = a.n + b.n;

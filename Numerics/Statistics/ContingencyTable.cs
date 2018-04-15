@@ -283,7 +283,7 @@ namespace Meta.Numerics.Statistics {
             int nu = (rCounts.Length - 1) * (cCounts.Length - 1);
 
             // return the test result
-            return (new TestResult("χ²", chi2, TestType.RightTailed, new ChiSquaredDistribution(nu)));
+            return (new TestResult("χ²", chi2, new ChiSquaredDistribution(nu), TestType.RightTailed));
 
         }
 

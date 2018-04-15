@@ -20,8 +20,8 @@ namespace Meta.Numerics.Data
     /// <para>Use the <see cref="FromCsv"/> method to create a frame table from a comma-separated values
     /// file or the <see cref="FromDictionaries"/> method to create a frame table from JSON or another
     /// collection-of-dictionaries representation. Or create one programmatically by using the
-    /// <see cref="FrameTable()"/> constructor and then <see cref="AddColumn{T}(string)"/> method.</para>
-    /// <para>You can add, remove, or insert rows or columns using the methods of this class.</para>
+    /// <see cref="FrameTable()"/> constructor to instantiate an empty data frame and
+    /// <see cref="AddColumn{T}(string)"/> and <see cref="AddRow(object[])"/> to add columns and rows.</para>
     /// <para>Using the methods inherited from the <see cref="FrameView"/> class, you can filter, re-order,
     /// manipulate, and analyze data without incurring the space or time costs of copying the stored data.</para>
     /// </remarks>
@@ -135,7 +135,7 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
-        /// Add the given column to the data frame.
+        /// Adds a new column with the given name and type.
         /// </summary>
         /// <typeparam name="T">The type of the column.</typeparam>
         /// <param name="name">The name of the column.</param>
@@ -165,7 +165,7 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
-        /// Adds the given columns to the data frame.
+        /// Adds the new columns with the given names.
         /// </summary>
         /// <typeparam name="T">The type of the columns.</typeparam>
         /// <param name="names">The names of the columns.</param>

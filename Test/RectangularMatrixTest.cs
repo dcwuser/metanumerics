@@ -317,11 +317,10 @@ namespace Test {
             Console.WriteLine("PCA");
 
             PrincipalComponentAnalysis PCA = MS.PrincipalComponentAnalysis();
-            Console.WriteLine("Dimension = {0} Count = {1}", PCA.Dimension, PCA.Count);
             for (int i = 0; i < PCA.Dimension; i++) {
-                PrincipalComponent PC = PCA.Component(i);
+                PrincipalComponent PC = PCA.Components[i];
                 Console.WriteLine("  {0} {1} {2} {3}", PC.Index, PC.Weight, PC.VarianceFraction, PC.CumulativeVarianceFraction);
-                RowVector v = PC.NormalizedVector();
+                RowVector v = PC.NormalizedVector;
                 Console.WriteLine("  {0} {1}", v[0], v[1]);
             }
 

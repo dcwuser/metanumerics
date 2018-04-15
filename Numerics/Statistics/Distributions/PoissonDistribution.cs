@@ -77,7 +77,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (k < 0) {
                 return (0.0);
             } else {
-                // these are equivilent expressions, but the explicit sum is faster for if the number of terms is small
+                // these are equivalent expressions, but the explicit sum is faster for if the number of terms is small
                 if (k < 16) {
                     double ds = 1.0;
                     double s = ds;
@@ -134,7 +134,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (k);
             }
 
-            // If kmax is too big to be sure direct sumation would be quick, we
+            // If kmax is too big to be sure direct summation would be quick, we
             // will do binary search instead. We want to start with the best limits
             // we can quickly compute to avoid extra evaluations of the CDF.
 

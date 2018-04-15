@@ -19,13 +19,13 @@ namespace Meta.Numerics.Functions {
         /// correspond to integer partitions.</para>
         /// <para>The number of partitions grows very rapidly with n. Since enumerating through partitions does not require us to count them,
         /// no overflows will occur even for large values of <paramref name="n"/>. However, completing the enumeration of
-        /// such a large number of paritions will take a long time, even though our algorithm produces each partition very quickly. For
+        /// such a large number of partitions will take a long time, even though our algorithm produces each partition very quickly. For
         /// example, there are about two hundred million partitions of the integer 100.
         /// </para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is not positive.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Integer_partition"/>
-        public static IEnumerable<IntegerPartition> Partitions (int n) {
+        internal static IEnumerable<IntegerPartition> Partitions (int n) {
 
             if (n < 1) throw new ArgumentOutOfRangeException(nameof(n));
 

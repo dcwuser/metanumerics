@@ -15,8 +15,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="n">The number of elements in the second sample.</param>
         public MannWhitneyExactDistribution (int m, int n) {
 
-            if (m < 1) throw new ArgumentOutOfRangeException("m");
-            if (n < 1) throw new ArgumentOutOfRangeException("n");
+            if (m < 1) throw new ArgumentOutOfRangeException(nameof(m));
+            if (n < 1) throw new ArgumentOutOfRangeException(nameof(n));
 
             this.m = m;
             this.n = n;
@@ -33,21 +33,20 @@ namespace Meta.Numerics.Statistics.Distributions {
         private double total;
         private decimal[] counts;
 
-        // this routine is based on the recurrsion
+        // this routine is based on the recursion
         // [ m n ] = ( 1 - q^m ) / ( 1 - q^(m-n) ) [ m-1 n ]
         // and the starting point [ n n ] = 1
 
         // the coefficients are integers and get large quickly as m and n increase
         // we use decimal because it handles larger integers than long
         // we can't use double because the calculation requires delicate cancelations
-        // among large intermediate values, thus necessicating exact integer arithmetic
+        // among large intermediate values, thus necessitating exact integer arithmetic
         // look into using an arbitrary-sized integer structure in the future
 
         private static decimal[] GaussianBinomialCoefficients (int m, int n) {
 
-            if (m < 0) throw new ArgumentOutOfRangeException("m");
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
-
+            Debug.Assert(m >= 0);
+            Debug.Assert(n >= 0);
             Debug.Assert(m >= n);
 
             // create  an array to hold our coefficients
@@ -63,7 +62,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             // it needs to be larger than the previous array by (m-n) to hold intermediate polynomials
             decimal[] b = new decimal[c.Length + (m - n)];
 
-            // interate from [n n] up to [m n]
+            // iterate from [n n] up to [m n]
             for (int k = n + 1; k <= m; k++) {
 
                 // multiply by (1-q^k)
@@ -127,8 +126,15 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-       /// <inheritdoc />
-       public override double LeftExclusiveProbability (int k) {
+        /// <inheritdoc />
+        public override double ExcessKurtosis {
+            get {
+                return (12.0 / 5.0 * (m + m * m + m * n + n * n + n) / (m * n * (m + n + 1)));
+            }
+        }
+
+        /// <inheritdoc />
+        public override double LeftExclusiveProbability (int k) {
             if (k < 0) {
                 return (0.0);
             } else if (k >= m * n) {
@@ -162,7 +168,7 @@ namespace Meta.Numerics.Statistics.Distributions {
        /// <inheritdoc />
        public override double CentralMoment (int r) {
            if (r < 0) {
-               throw new ArgumentOutOfRangeException("r");
+               throw new ArgumentOutOfRangeException(nameof(r));
            } else if (r == 0) {
                return (1.0);
            } else if (r % 2 != 0) {
@@ -181,5 +187,5 @@ namespace Meta.Numerics.Statistics.Distributions {
     // Using values for the Bernoulli numbers and formulas for sums of powers, this implies
     //   K_2 = \frac{1}{12} m n ( m + n + 1 )
     //   K_4 = -\frac{1}{60} m n ( m + n + 1 ) ( m + m^2 + m n + n^2 + n )
-    // Testing against our distrubtion, these appear to be correct.
+    // Testing against our distribution, these appear to be correct.
 }

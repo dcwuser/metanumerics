@@ -91,7 +91,7 @@ namespace Meta.Numerics.Statistics {
 
             double t = MoreMath.Sqr(counts[0, 1] - counts[1, 0]) / (counts[0, 1] + counts[1, 0]);
 
-            return (new TestResult("t", t, TestType.RightTailed, new ChiSquaredDistribution(1)));
+            return (new TestResult("t", t, new ChiSquaredDistribution(1), TestType.RightTailed));
 
             // Adapt this to: (1) support one-sidedness (our squaring (b-c) currently prevents this)
             // and (2) be exact for small counts.
@@ -185,7 +185,7 @@ namespace Meta.Numerics.Statistics {
                 }
             }
 
-            return (new TestResult("P", P, TestType.LeftTailed, new UniformDistribution(Interval.FromEndpoints(0.0, 1.0))));
+            return (new TestResult("P", P, new UniformDistribution(Interval.FromEndpoints(0.0, 1.0)), TestType.LeftTailed));
         }
 
     }

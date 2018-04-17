@@ -695,20 +695,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException"><see cref="Sample.Count"/> is zero.</exception>
         /// <seealso cref="StudentTTest(double)"/>
         public TestResult ZTest (double referenceMean, double referenceStandardDeviation) {
-            return (ZTest(referenceMean, referenceStandardDeviation, TestType.TwoTailed));
-        }
-
-        /// <summary>
-        /// Performs a z-test with the given sidedness.
-        /// </summary>
-        /// <param name="referenceMean">The mean of the comparison population.</param>
-        /// <param name="referenceStandardDeviation">he standard deviation of the comparison population.</param>
-        /// <param name="type">The sidedness of the test to perform.</param>
-        /// <returns>A test result indicating whether the sample mean is significantly different from that of the comparison population
-        /// in the direction indicated by <paramref name="type"/>.</returns>
-        /// <seealso cref="ZTest(double, double)"/>
-        public TestResult ZTest (double referenceMean, double referenceStandardDeviation, TestType type) {
-            return (data.ZTest(referenceMean, referenceStandardDeviation, type));
+            return (data.ZTest(referenceMean, referenceStandardDeviation));
         }
 
         /// <summary>
@@ -751,18 +738,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="StudentDistribution" />
         /// <seealso href="https://en.wikipedia.org/wiki/Student%27s_t-test"/>
         public TestResult StudentTTest (double referenceMean) {
-            return (StudentTTest(referenceMean, TestType.TwoTailed));
-        }
-
-        /// <summary>
-        /// Tests whether the sample mean differs from the reference mean in the specified direction.
-        /// </summary>
-        /// <param name="referenceMean">The reference mean.</param>
-        /// <param name="type">The sidedness of the test to perform.</param>
-        /// <returns>A test result indicating whether the sample mean is significantly different from the reference mean
-        /// in the direction indicated by <paramref name="type"/>.</returns>
-        public TestResult StudentTTest (double referenceMean, TestType type) {
-            return (data.StudentTTest(referenceMean, type));
+            return (data.StudentTTest(referenceMean));
         }
 
         /// <summary>

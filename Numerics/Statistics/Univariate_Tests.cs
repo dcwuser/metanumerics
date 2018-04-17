@@ -29,24 +29,10 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException"><see cref="Sample.Count"/> is zero.</exception>
         /// <seealso cref="StudentTTest(IReadOnlyCollection{double},double)"/>
         public static TestResult ZTest (this IReadOnlyCollection<double> sample, double referenceMean, double referenceStandardDeviation) {
-            return (ZTest(sample, referenceMean, referenceStandardDeviation, TestType.TwoTailed));
-        }
-
-        /// <summary>
-        /// Performs a z-test with the given sidedness.
-        /// </summary>
-        /// <param name="sample">The sample.</param>
-        /// <param name="referenceMean">The mean of the comparison population.</param>
-        /// <param name="referenceStandardDeviation">he standard deviation of the comparison population.</param>
-        /// <param name="type">The sidedness of the test to perform.</param>
-        /// <returns>A test result indicating whether the sample mean is significantly different from that of the comparison population
-        /// in the direction indicated by <paramref name="type"/>.</returns>
-        /// <seealso cref="ZTest(IReadOnlyCollection{double},double, double)"/>
-        public static TestResult ZTest (this IReadOnlyCollection<double> sample, double referenceMean, double referenceStandardDeviation, TestType type) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 1) throw new InsufficientDataException();
             double z = (sample.Mean() - referenceMean) / (referenceStandardDeviation / Math.Sqrt(sample.Count));
-            return (new TestResult("z", z, new NormalDistribution(), type));
+            return (new TestResult("z", z, new NormalDistribution(), TestType.TwoTailed));
         }
 
         /// <summary>
@@ -122,18 +108,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="StudentDistribution" />
         /// <seealso href="https://en.wikipedia.org/wiki/Student%27s_t-test"/>
         public static TestResult StudentTTest (this IReadOnlyCollection<double> sample, double referenceMean) {
-            return (StudentTTest(sample, referenceMean, TestType.TwoTailed));
-        }
 
-        /// <summary>
-        /// Tests whether the sample mean differs from the reference mean in the specified direction.
-        /// </summary>
-        /// <param name="sample">The sample.</param>
-        /// <param name="referenceMean">The reference mean.</param>
-        /// <param name="type">The sidedness of the test to perform.</param>
-        /// <returns>A test result indicating whether the sample mean is significantly different from the reference mean
-        /// in the direction indicated by <paramref name="type"/>.</returns>
-        public static TestResult StudentTTest (this IReadOnlyCollection<double> sample, double referenceMean, TestType type) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) throw new InsufficientDataException();
 
@@ -147,7 +122,7 @@ namespace Meta.Numerics.Statistics {
             double t = (mean - referenceMean) / se;
             int dof = n - 1;
 
-            return (new TestResult("t", t, new StudentDistribution(dof), type));
+            return (new TestResult("t", t, new StudentDistribution(dof), TestType.TwoTailed));
         }
 
         /// <summary>

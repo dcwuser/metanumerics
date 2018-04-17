@@ -464,7 +464,7 @@ namespace Meta.Numerics.Data
         /// the columns.</para>
         /// <para>To produce more than one aggregate value, use <see cref="GroupBy(string, Func{FrameView, IReadOnlyDictionary{string, object}})"/>.</para>
         /// </remarks>
-        public FrameTable GroupBy<T>(string groupByColumnName, string aggregateColumnName, Func<FrameView, T> aggregator)
+        public FrameTable GroupBy<T>(string groupByColumnName, Func<FrameView, T> aggregator, string aggregateColumnName)
         {
             if (groupByColumnName == null) throw new ArgumentNullException(nameof(groupByColumnName));
             if (aggregator == null) throw new ArgumentNullException(nameof(aggregator));

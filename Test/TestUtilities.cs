@@ -408,10 +408,10 @@ namespace Test {
         }
 
         public static IEnumerable<double> CreateDataSample (Random rng, ContinuousDistribution distribution, int count) {
-
-            for (int i = 0; i < count; i++) {
-                yield return distribution.GetRandomValue(rng);
-            }
+            return (distribution.GetRandomValues(rng, count));
+            //for (int i = 0; i < count; i++) {
+            //    yield return distribution.GetRandomValue(rng);
+            //}
 
         }
 

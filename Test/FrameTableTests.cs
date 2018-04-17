@@ -202,8 +202,8 @@ namespace DataTest
             }
             frame.AddComputedColumn("tip_fraction", r => ((double) r["tip"]) / ((double) r["total_bill"]));
 
-            FrameView counts = frame.GroupBy("day", "total", v => v.Rows.Count).OrderBy("day");
-            FrameView means = frame.GroupBy("sex", "mean_tip_fraction", v => v["tip_fraction"].As<double>().Mean());
+            FrameView counts = frame.GroupBy("day", v => v.Rows.Count, "total").OrderBy("day");
+            FrameView means = frame.GroupBy("sex", v => v["tip_fraction"].As<double>().Mean(), "mean_tip_fraction");
 
         }
 
@@ -216,7 +216,7 @@ namespace DataTest
                 frame = FrameTable.FromCsv(stream);
             }
 
-            FrameView view = frame.GroupBy("carrier", "count", (FrameView q) => q.Rows.Count);
+            FrameView view = frame.GroupBy("carrier", (FrameView q) => q.Rows.Count, "count");
 
         }
 

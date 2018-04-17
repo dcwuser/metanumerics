@@ -42,7 +42,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (x >= Support.RightEndpoint) {
                 return (1.0);
             } else {
-                return (FunctionMath.Integrate(ProbabilityDensity, Interval.FromEndpoints(Support.LeftEndpoint, x)).Estimate.Value);
+                return (FunctionMath.Integrate(ProbabilityDensity, Support.LeftEndpoint, x).Estimate.Value);
             }
         }
 
@@ -68,7 +68,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (x >= Support.RightEndpoint) {
                 return (0.0);
             } else {
-                return (FunctionMath.Integrate(ProbabilityDensity, Interval.FromEndpoints(Support.LeftEndpoint, x)).Estimate.Value);
+                return (FunctionMath.Integrate(ProbabilityDensity, x, Support.RightEndpoint).Estimate.Value);
             }
         }
 
@@ -197,7 +197,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="rng">A random number generator.</param>
         /// <param name="n">The number of variates to generate.</param>
-        /// <returns>An interator that returns the requested number
+        /// <returns>An iterator that returns the requested number
         /// of variates distributed according to the distribution.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="rng"/> is <see langword="null"/>.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>

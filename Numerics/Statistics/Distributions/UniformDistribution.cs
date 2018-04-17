@@ -36,7 +36,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             if (range.ClosedContains(x)) {
-                return (1.0 / (range.Width));
+                return (1.0 / range.Width);
             } else {
                 return (0.0);
             }
@@ -44,12 +44,23 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double LeftProbability (double x) {
-            if (x < range.LeftEndpoint) {
+            if (x <= range.LeftEndpoint) {
                 return (0.0);
-            } else if (x > range.RightEndpoint) {
+            } else if (x >= range.RightEndpoint) {
                 return (1.0);
             } else {
                 return ((x - range.LeftEndpoint) / range.Width);
+            }
+        }
+
+        /// <inheritdoc />
+        public override double RightProbability (double x) {
+            if (x <= range.LeftEndpoint) {
+                return (1.0);
+            } else if (x >= range.RightEndpoint) {
+                return (0.0);
+            } else {
+                return ((range.RightEndpoint - x) / range.Width);
             }
         }
 

@@ -303,7 +303,7 @@ namespace Test {
                 List<int> wDiscreteSample = new List<int>();
                 DiscreteDistribution wDiscreteDistribution = null;
 
-                for (int i = 0; i < 128; i++) {
+                for (int i = 0; i < 256; i++) {
                     BivariateSample sample = new BivariateSample();
                     for (int j = 0; j < n; j++) {
                         double x = d.GetRandomValue(rng);
@@ -321,11 +321,11 @@ namespace Test {
                 }
 
                 if (wDiscreteDistribution != null) {
-                    //TestResult chi2 = wDiscreteSample.ChiSquaredTest(wDiscreteDistribution);
-                    //Assert.IsTrue(chi2.Probability > 0.05);
+                    TestResult chi2 = wDiscreteSample.ChiSquaredTest(wDiscreteDistribution);
+                    Assert.IsTrue(chi2.Probability > 0.01);
                 } else {
                     TestResult ks = wContinuousSample.KolmogorovSmirnovTest(wContinuousDistribution);
-                    Assert.IsTrue(ks.Probability > 0.05);
+                    Assert.IsTrue(ks.Probability > 0.01);
                     Assert.IsTrue(wContinuousSample.PopulationMean.ConfidenceInterval(0.99).ClosedContains(wContinuousDistribution.Mean));
                     Assert.IsTrue(wContinuousSample.PopulationStandardDeviation.ConfidenceInterval(0.99).ClosedContains(wContinuousDistribution.StandardDeviation));
                 }

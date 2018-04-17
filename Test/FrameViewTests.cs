@@ -324,7 +324,7 @@ namespace Test
 
             HashSet<bool?> values = new HashSet<bool?>(original["male"].As<bool?>().Distinct());
 
-            FrameTable grouped = original.GroupBy("male", "meanHeight", v => v["height"].As<double>().Mean());
+            FrameTable grouped = original.GroupBy("male", v => v["height"].As<double>().Mean(), "meanHeight");
             Assert.IsTrue(grouped.Rows.Count == values.Count);
 
             foreach (FrameRow row in grouped.Rows) {

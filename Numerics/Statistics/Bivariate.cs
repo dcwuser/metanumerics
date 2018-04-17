@@ -331,17 +331,6 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="KendallTauTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Pearson_correlation_coefficient" />
         public static TestResult PearsonRTest (IReadOnlyList<double> x, IReadOnlyList<double> y) {
-            return (PearsonRTest(x, y, TestType.TwoTailed));
-        }
-
-        /// <summary>
-        /// Performs a Pearson correlation test for association with the given sided-ness.
-        /// </summary>
-        /// <param name="x">The values of the first variable.</param>
-        /// <param name="y">The values of the second variable.</param>
-        /// <param name="type">The sided-ness of the test.</param>
-        /// <returns>The result of the test.</returns>
-        public static TestResult PearsonRTest (IReadOnlyList<double> x, IReadOnlyList<double> y, TestType type) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
@@ -354,7 +343,7 @@ namespace Meta.Numerics.Statistics {
             ComputeBivariateMomentsUpToTwo(x, y, out n, out xMean, out yMean, out xxSum, out yySum, out xySum);
             double r = xySum / Math.Sqrt(xxSum * yySum);
             ContinuousDistribution p = new PearsonRDistribution(n);
-            return (new TestResult("r", r, p, type));
+            return (new TestResult("r", r, p, TestType.TwoTailed));
         }
 
         /// <summary>
@@ -378,17 +367,6 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="KendallTauTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient"/>
         public static TestResult SpearmanRhoTest (IReadOnlyList<double> x, IReadOnlyList<double> y) {
-            return (SpearmanRhoTest(x, y, TestType.TwoTailed));
-        }
-
-        /// <summary>
-        /// Performs a Spearman rank-order test of association between the two variables with the given sided-ness.
-        /// </summary>
-        /// <param name="x">The values of the first variable.</param>
-        /// <param name="y">The values of the second variable.</param>
-        /// <param name="type">The sided-ness of the test.</param>
-        /// <returns>The result of the test.</returns>
-        public static TestResult SpearmanRhoTest (IReadOnlyList<double> x, IReadOnlyList<double> y, TestType type) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
@@ -436,7 +414,7 @@ namespace Meta.Numerics.Statistics {
                 // badly, even giving negative probabilities for extreme values, which are quite likely for null-violating samples.
                 // Look into bounded quasi-normal distributions such as the logit-normal and truncated normal.
                 ContinuousDistribution rhoDistribution = new NormalDistribution(0.0, 1.0 / Math.Sqrt(n - 1));
-                return (new TestResult("ρ", rho, rhoDistribution, type));
+                return (new TestResult("ρ", rho, rhoDistribution, TestType.TwoTailed));
             }
 
         }

@@ -588,5 +588,63 @@ namespace Test {
             Assert.IsTrue(Bivariate.PopulationCovariance(parameters["a"].As<double>(), parameters["b"].As<double>()).ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
         }
 
+        [TestMethod]
+        public void BivariateAssociationDiscreteNullDistribution ()
+        {
+            Random rng = new Random(1);
+
+            // Pick very non-normal distributions for our non-parameteric tests
+            ContinuousDistribution xd = new FrechetDistribution(1.0);
+            ContinuousDistribution yd = new CauchyDistribution();
+
+            // Pick small sample sizes to get exact distributions
+            foreach (int n in TestUtilities.GenerateIntegerValues(4, 24, 4))
+            {
+
+                // Do a bunch of test runs, recording reported statistic for each.
+                List<int> spearmanStatistics = new List<int>();
+                List<int> kendallStatistics = new List<int>();
+                DiscreteDistribution spearmanDistribution = null;
+                DiscreteDistribution kendallDistribution = null;
+
+                for (int i = 0; i < 512; i++)
+                {
+                    List<double> x = new List<double>();
+                    List<double> y = new List<double>();
+                    for (int j = 0; j < n; j++)
+                    {
+                        x.Add(xd.GetRandomValue(rng));
+                        y.Add(yd.GetRandomValue(rng));
+                    }
+
+                    DiscreteTestStatistic spearman = Bivariate.SpearmanRhoTest(x, y).UnderlyingStatistic;
+                    if (spearman != null)
+                    {
+                        spearmanStatistics.Add(spearman.Value);
+                        spearmanDistribution = spearman.Distribution;
+                    }
+                    DiscreteTestStatistic kendall = Bivariate.KendallTauTest(x, y).UnderlyingStatistic;
+                    if (kendall != null)
+                    {
+                        kendallStatistics.Add(kendall.Value);
+                        kendallDistribution = kendall.Distribution;
+                    }
+                }
+
+                // Test whether statistics are actually distributed as claimed
+                if (spearmanDistribution != null)
+                {
+                    TestResult spearmanChiSquared = spearmanStatistics.ChiSquaredTest(spearmanDistribution);
+                    Assert.IsTrue(spearmanChiSquared.Probability > 0.01);
+                }
+                if (kendallDistribution != null)
+                {
+                    TestResult kendallChiSquared = kendallStatistics.ChiSquaredTest(kendallDistribution);
+                    Assert.IsTrue(kendallChiSquared.Probability > 0.01);
+                }
+
+            }
+        }
+
     }
 }

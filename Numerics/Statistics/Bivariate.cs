@@ -411,7 +411,10 @@ namespace Meta.Numerics.Statistics {
             int S = 0;
             double C = 0.0;
             for (int i = 0; i < n; i++) {
-                S += rx[i] * ry[i];
+                // Statisticians define S using 1-based ranks, so add 1 to each
+                // rank when computing S. This isn't important for C, because
+                // we are subtracting off mean.
+                S += (rx[i] + 1) * (ry[i] + 1);
                 C += (rx[i] - M) * (ry[i] - M);
             }
             C = C / n;

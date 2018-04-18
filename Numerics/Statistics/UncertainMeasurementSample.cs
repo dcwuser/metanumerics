@@ -174,7 +174,7 @@ namespace Meta.Numerics.Statistics {
             return (new UncertainMeasurementFitResult(parameters, test));
         }
 
-        private IReadOnlyList<string> NumberNames (int n) {
+        private static IReadOnlyList<string> NumberNames (int n) {
             string[] names = new string[n];
             for (int i = 0; i < names.Length; i++) names[i] = i.ToString();
             return (names);

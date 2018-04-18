@@ -61,8 +61,14 @@ namespace Meta.Numerics.Statistics {
         /// Converts a continuous test statistic to its value.
         /// </summary>
         /// <param name="statistic">The continuous test statistic.</param>
+        /// <returns>The <see cref="Value"/> of the test statistic.</returns>
         public static implicit operator double (ContinuousTestStatistic statistic) {
             return (statistic.Value);
+        }
+
+        /// <inheritdoc/>
+        public override string ToString () {
+            return ($"{this.Name} = {this.Value}");
         }
 
     }
@@ -118,6 +124,11 @@ namespace Meta.Numerics.Statistics {
                 default:
                     throw new NotSupportedException();
             }
+        }
+
+        /// <inheritdoc/>
+        public override string ToString () {
+            return ($"{this.Name} = {this.Value}");
         }
 
     }

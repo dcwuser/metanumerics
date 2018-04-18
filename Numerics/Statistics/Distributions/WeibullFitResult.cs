@@ -42,7 +42,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <summary>
-        /// Gets and estimate, with uncertainty, of the shape parameter.
+        /// Gets an estimate, with uncertainty, of the shape parameter.
         /// </summary>
         public UncertainValue Shape {
             get {

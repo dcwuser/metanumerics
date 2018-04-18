@@ -66,6 +66,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the normalized component vector.
         /// </summary>
+        /// <value>A unit-length vector that defines the direction of the principal component.</value>
         public RowVector NormalizedVector {
             get {
                 return (new RowVector(analysis.vStore, analysis.cols * index, 1, analysis.cols, true));
@@ -80,6 +81,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the scaled component vector.
         /// </summary>
+        /// <returns>The <see cref="NormalizedVector"/> multiplied by its associated weight.</returns>
         public RowVector ScaledVector () {
             //get {
             return (analysis.wStore[index] * NormalizedVector);

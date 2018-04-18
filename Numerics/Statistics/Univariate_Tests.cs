@@ -26,6 +26,7 @@ namespace Meta.Numerics.Statistics {
         /// You can use the z-test to determine how likely it is that the subpopulation mean really is lower than the population mean,
         /// that is that their slightly lower mean score in your sample is not merely a fluke.</para>
         /// </example>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException"><see cref="Sample.Count"/> is zero.</exception>
         /// <seealso cref="StudentTTest(IReadOnlyCollection{double},double)"/>
         public static TestResult ZTest (this IReadOnlyCollection<double> sample, double referenceMean, double referenceStandardDeviation) {
@@ -51,6 +52,8 @@ namespace Meta.Numerics.Statistics {
         /// trial, and the total number of values above the population median is distributed according to a binomial distribution
         /// (<see cref="BinomialDistribution"/>).</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="sample"/> is empty.</exception>
         /// <seealso cref="StudentTTest(IReadOnlyCollection{double},double)"/>
         public static TestResult SignTest (this IReadOnlyCollection<double> sample, double referenceMedian) {
 
@@ -104,6 +107,7 @@ namespace Meta.Numerics.Statistics {
         /// </code>
         /// <para>What level of statistical confidence do you think should a court require in order to pronounce a defendant guilty?</para>
         /// </example>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than two data points in the sample.</exception>
         /// <seealso cref="StudentDistribution" />
         /// <seealso href="https://en.wikipedia.org/wiki/Student%27s_t-test"/>
@@ -132,6 +136,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="b">The second sample.</param>
         /// <returns>The result of the test.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="a"/> or <paramref name="b"/> contains fewer than two values.</exception>
         public static TestResult FisherFTest (IReadOnlyCollection<double> a, IReadOnlyCollection<double> b) {
             if (a == null) throw new ArgumentNullException(nameof(a));
             if (b == null) throw new ArgumentNullException(nameof(b));
@@ -281,6 +286,11 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="sample">The sample to test for normality.</param>
         /// <returns>The result of the test.</returns>
+        /// <remarks>
+        /// <para>Our current implementation requires the sample to contain at least 16 values. While
+        /// the Shapiro-Francia test is perfectly well-defined for smaller samples, the parameterization of
+        /// the null distribution for such small samples requires special handling that we have not yet coded.</para>
+        /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than 16 values in the sample.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Shapiro%E2%80%93Francia_test"/>
@@ -460,8 +470,8 @@ namespace Meta.Numerics.Statistics {
         /// a chemist who worked for the Guinness brewing company. Since Guinness was concerned that other breweries might take
         /// advantage of a technique published by one of its chemists, Gosset published his work under the pseudonym Student.</para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is null.</exception>
-        /// <exception cref="InsufficientDataException"><paramref name="a"/> or <paramref name="b"/> contains less than two values.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="a"/> or <paramref name="b"/> contains fewer than two values.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Student's_t-test"/>
         public static TestResult StudentTTest (IReadOnlyCollection<double> a, IReadOnlyCollection<double> b) {
 
@@ -505,6 +515,8 @@ namespace Meta.Numerics.Statistics {
         /// Essentially, it supposes that the medians of the two samples are equal and tests
         /// the likelihood of this null hypothesis. Unlike the t-test, it does not assume that the sample distributions are normal.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InsufficientDataException"><paramref name="a"/> or <paramref name="b"/> contains fewer than two values.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Mann-Whitney_U_test"/>
         public static TestResult MannWhitneyTest (IReadOnlyList<double> a, IReadOnlyList<double> b) {
 
@@ -649,7 +661,8 @@ namespace Meta.Numerics.Statistics {
         /// define arbitrary bins of continuously variable data in order to form groups, then your
         /// ANOVA results will depend on your choice of bins.</para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="samples"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="samples"/> is <see langword="null"/>,
+        /// or one of the samples in it is <see langword="null"/>.</exception>
         /// <exception cref="ArgumentException"><paramref name="samples"/> contains fewer than two samples.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Analysis_of_variance"/>
         /// <seealso href="https://en.wikipedia.org/wiki/One-way_analysis_of_variance"/>
@@ -676,7 +689,7 @@ namespace Meta.Numerics.Statistics {
             double mean = 0.0;
             double SSW = 0.0;
             foreach (ICollection<double> sample in samples) {
-                if (sample == null) throw new ArgumentNullException("sample");
+                if (sample == null) throw new ArgumentNullException(nameof(samples));
 
                 int n_sample;
                 double mean_sample, sumOfSquaredDeviations_sample;

@@ -64,7 +64,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="rhs">The right-hand-side b.</param>
         /// <returns>The column vector x for which A x is closest to b.</returns>
-        public ColumnVector Solve (IList<double> rhs) {
+        public ColumnVector Solve (IReadOnlyList<double> rhs) {
 
             if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (rhs.Count != rows) throw new DimensionMismatchException();

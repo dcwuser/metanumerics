@@ -744,19 +744,4 @@ namespace Meta.Numerics.Analysis {
 
     }
 
-    // IList defines CopyTo. IReadOnlyList doesn't. So in order to switch from IList to IReadOnlyList,
-    // we define an extension method to implement it.
-
-    internal static class CopyHelper {
-
-        public static void CopyTo<T> (this IReadOnlyList<T> source, T[] target, int startIndex) {
-            Debug.Assert(source != null);
-            Debug.Assert(target != null);
-            Debug.Assert(startIndex >= 0);
-            for (int i = 0; i < source.Count; i++) {
-                target[startIndex + i] = source[i];
-            }
-        }
-
-    }
 }

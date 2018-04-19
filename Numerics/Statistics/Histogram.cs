@@ -270,7 +270,7 @@ namespace Meta.Numerics.Statistics {
             }
 
             ContinuousDistribution nullDistribution = new ChiSquaredDistribution(dof);
-            return (new TestResult("ChiSquared", chi2, TestType.RightTailed, nullDistribution));
+            return (new TestResult("χ²", chi2, nullDistribution, TestType.RightTailed));
 
         }
 

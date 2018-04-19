@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using Meta.Numerics.Statistics.Distributions;
+
 namespace Meta.Numerics.Statistics {
 
     /// <summary>
@@ -38,7 +40,7 @@ namespace Meta.Numerics.Statistics {
 
             rTest = new Lazy<TestResult>(() => {
                 double r = xySum / Math.Sqrt(xxSum * yySum);
-                TestResult rTest = new TestResult("r", r, TestType.TwoTailed, new Distributions.PearsonRDistribution(n));
+                TestResult rTest = new TestResult("r", r, new PearsonRDistribution(n), TestType.TwoTailed);
                 return (rTest);
             });
 

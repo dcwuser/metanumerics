@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Meta.Numerics.Data {
@@ -7,7 +8,8 @@ namespace Meta.Numerics.Data {
     /// Contains types used to import and export, filter, and transform data sets.
     /// </summary>
     /// <remarks>
-    /// <para>This namespace contains types for data wrangling, i.e. reading data and preparing it for analysis.</para>
+    /// <para>This namespace contains types for data wrangling, i.e. importing and exporting data
+    /// and preparing it for analysis.</para>
     /// <para>Our data wrangling system is based on the data frames concept. Data frames are table-based
     /// data stores with the following characteristics:</para>
     /// <list type="bullet">
@@ -27,6 +29,8 @@ namespace Meta.Numerics.Data {
     /// When a new <see cref="FrameView"/> is returned, the original
     /// data is not copied, but simply referenced, so these manipulations are typically fast
     /// and have a much smaller memory footprint than the data they expose.</para>
+    /// <para>Frames support null data values in structure-typed columns using
+    /// .NET's <see cref="Nullable{T}"/> structure.</para>
     /// <para>After using the types of this namespace to prepare your data, you can
     /// extract columns from your views as strongly-typed lists (which implement
     /// <see cref="IReadOnlyList{T}"/>, <see cref="IReadOnlyCollection{T}"/>, and

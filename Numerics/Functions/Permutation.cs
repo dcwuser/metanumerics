@@ -397,7 +397,7 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentNullException"><paramref name="text"/> is null.</exception>
         /// <exception cref="FormatException"><paramref name="text"/> is not a valid text representation of a permutation.</exception>
         public static Permutation Parse (string text) {
-            if (text == null) throw new ArgumentNullException("text");
+            if (text == null) throw new ArgumentNullException(nameof(text));
             Permutation output;
             if (TryParse(text, out output)) {
                 return (output);
@@ -488,11 +488,11 @@ namespace Meta.Numerics.Functions {
         /// <typeparam name="T">The type of the list.</typeparam>
         /// <param name="x">The list.</param>
         public void Apply<T> (IList<T> x) {
-            if (x == null) throw new ArgumentNullException("x");
+            if (x == null) throw new ArgumentNullException(nameof(x));
             if (x.Count != this.Dimension) throw new DimensionMismatchException();
             if (cycles == null) ComputeCycles();
             cycles.Apply(x);
-            // Obviously it's also possible to apply a permutation given its map representation, but doing so requires auxiluary storage.
+            // Obviously it's also possible to apply a permutation given its map representation, but doing so requires auxiliary storage.
         }
 
         /// <summary>
@@ -514,8 +514,8 @@ namespace Meta.Numerics.Functions {
         /// <para>The product ab means first applying b, then applying a. This right-to-left convention arises from the convention that operators are applied to the right.</para>
         /// </remarks>
         public static Permutation operator * (Permutation a, Permutation b) {
-            if (a == null) throw new ArgumentNullException("a");
-            if (b == null) throw new ArgumentNullException("b");
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
             if (a.Dimension != b.Dimension) throw new DimensionMismatchException();
 
             if (a.map == null) a.ComputeMap();
@@ -606,7 +606,7 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="dimension"/> is negative.</exception>
         public static IEnumerable<Permutation> GetPermutations (int dimension) {
-            if (dimension < 0) throw new ArgumentOutOfRangeException("dimension");
+            if (dimension < 0) throw new ArgumentOutOfRangeException(nameof(dimension));
 
             // The permutations are enumerated using the Steinhaus-Johnson-Trotter algorithm with Even's speedup.
             // See http://en.wikipedia.org/wiki/Steinhaus%E2%80%93Johnson%E2%80%93Trotter_algorithm and Knuth 7.2.1.2.
@@ -694,7 +694,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="dimension">The number of elements on which the permutation acts.</param>
         /// <returns>The identity permutation of the requested dimension.</returns>
         public static Permutation Identity (int dimension) {
-            if (dimension < 0) throw new ArgumentOutOfRangeException("dimension");
+            if (dimension < 0) throw new ArgumentOutOfRangeException(nameof(dimension));
             return (new Permutation(PermutationAsMap.Identity(dimension)));
         }
 
@@ -774,8 +774,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="rng">A random number generator.</param>
         /// <returns>A random permutation of the specified dimension. All permutations of the specified dimension are equally likely.</returns>
         public static Permutation GetRandomPermutation (int dimension, Random rng) {
-            if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
-            if (rng == null) throw new ArgumentNullException("rng");
+            if (dimension < 1) throw new ArgumentOutOfRangeException(nameof(dimension));
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
             return (new Permutation(PermutationAsMap.GetRandomPermutation(dimension, rng)));
         }
 

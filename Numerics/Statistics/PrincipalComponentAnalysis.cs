@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Diagnostics;
 
 using Meta.Numerics.Matrices;
 
@@ -11,11 +10,11 @@ namespace Meta.Numerics.Statistics {
     /// Represents a principal component analysis.
     /// </summary>
     /// <remarks>
-    /// <para>Principal component analysis (PCA) is a form of factor analysis. It attempts to identify a small number number of factors
-    /// such that, by specifing only values of these few factors for each row, the value of each variable can be accurately
-    /// predicted.</para>
-    /// <para>Mathematically, PCA constructs an alternative set of orthonormal basis vectors for a multi-variate data set. These
-    /// basis vectors, called principal components, are ordered by the total variance explained by each.</para>
+    /// <para>Principal component analysis (PCA) is a form of factor analysis or dimension reduction.
+    /// It attempts to identify a small number of factors which allow most of the variation in the
+    /// data to be explained by giving the vales for the factor dimensions.</para>
+    /// <para>Mathematically, PCA constructs an alternative set of orthonormal basis vectors for a multivariate data set. These
+    /// basis vectors, called the principal components, are ordered by the total variance explained by each.</para>
     /// <para>Suppose, for example, you measure the value of different possessions possessions for a sample of people:
     /// home value, car value, furniture value, etc. You might expect that much of the variation in these numbers can
     /// be explained by one underlying factor, which you might call "richness". If this is true, then a PCA analysis will
@@ -23,10 +22,17 @@ namespace Meta.Numerics.Statistics {
     /// principal components will explain only small fractions of the total variance.</para>
     /// <para>Note that PCA is not invariant with respect to the re-scaling of individual variables.</para>
     /// <para>Note that PCA is an exploratory technique, not a hypothesis test.</para>
+    /// <para>To carry out a principal component analysis, call the <see cref="Multivariate.PrincipalComponentAnalysis(IReadOnlyList{IReadOnlyList{double}})" autoUpgrade="true"/> method.</para>
     /// </remarks>
+    /// <seealso href="https://en.wikipedia.org/wiki/Principal_component_analysis"/>
     public sealed class PrincipalComponentAnalysis {
 
         internal PrincipalComponentAnalysis (double[] utStore, double[] wStore, double[] vStore, int rows, int cols) {
+            Debug.Assert(utStore != null);
+            Debug.Assert(wStore != null);
+            Debug.Assert(vStore != null);
+            Debug.Assert(rows > 0);
+            Debug.Assert(cols > 0);
             this.rows = rows;
             this.cols = cols;
             this.utStore = utStore;
@@ -40,9 +46,9 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
-        internal int rows, cols;
-        internal double[] utStore, wStore, vStore;
-        internal double[] wSquaredSum;
+        internal readonly int rows, cols;
+        internal readonly double[] utStore, wStore, vStore;
+        internal readonly double[] wSquaredSum;
 
         /// <summary>
         /// Gets the number of components.
@@ -66,6 +72,15 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
+        /// Gets a collection of the principal components.
+        /// </summary>
+        public PrincipalComponentCollection Components {
+            get {
+                return (new PrincipalComponentCollection(this));
+            }
+        }
+
+        /// <summary>
         /// Gets the minimum number of principal components that must be included to explain the given fraction of the total variance.
         /// </summary>
         /// <param name="P">The fraction of the variance to explain, which must lie between zero and one.</param>
@@ -78,21 +93,6 @@ namespace Meta.Numerics.Statistics {
                 if (wSquaredSum[i] >= wss) return (i + 1);
             }
             return (wSquaredSum.Length);
-        }
-
-        /// <summary>
-        /// Gets the requested principal component.
-        /// </summary>
-        /// <param name="componentIndex">The (zero-based) index of the principal component.</param>
-        /// <returns>The requested principal component.</returns>
-        /// <remarks>
-        /// <para>Principal components are ordered by strength. The most principal component, i.e. the component which explains
-        /// the most variance, has index zero. The least principal component has the highest index.</para>
-        /// </remarks>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="componentIndex"/> lies outside the range [0, <see cref="Dimension"/>-1].</exception>
-        public PrincipalComponent Component (int componentIndex) {
-            if ((componentIndex < 0) || (componentIndex >= Dimension)) throw new ArgumentOutOfRangeException("componentIndex");
-            return(new PrincipalComponent(componentIndex, this));
         }
 
         /// <summary>
@@ -110,88 +110,8 @@ namespace Meta.Numerics.Statistics {
             return (scores);
         }
 
-
     }
 
-    /// <summary>
-    /// Represents a component of a principal component analysis.
-    /// </summary>
-    /// <seealso cref="PrincipalComponentAnalysis"/>
-    public sealed class PrincipalComponent {
 
-        internal PrincipalComponent (int index, PrincipalComponentAnalysis analysis) {
-            this.index = index;
-            this.analysis = analysis;
-        }
-
-        private int index;
-        private PrincipalComponentAnalysis analysis;
-
-        /// <summary>
-        /// Gets the index of the principal component.
-        /// </summary>
-        public int Index { 
-            get {
-                return(index);
-            }
-        }
-
-        /// <summary>
-        /// Gets the principal component analysis to which the component belongs.
-        /// </summary>
-        public PrincipalComponentAnalysis Analysis {
-            get {
-                return(analysis);
-            }
-        }
-
-        /// <summary>
-        /// Gets the weight of the component.
-        /// </summary>
-        public double Weight {
-            get {
-                return (analysis.wStore[index]);
-            }
-        }
-
-        /// <summary>
-        /// Gets the fraction of the total variance accounted for by the principal component.
-        /// </summary>
-        public double VarianceFraction {
-            get {
-                return (MoreMath.Sqr(analysis.wStore[index]) / analysis.wSquaredSum[analysis.wSquaredSum.Length - 1]);
-            }
-        }
-
-        /// <summary>
-        /// Gets the fraction of the total variance accounted for by the principal component and all strong principal components.
-        /// </summary>
-        public double CumulativeVarianceFraction {
-            get {
-                return (analysis.wSquaredSum[index] / analysis.wSquaredSum[analysis.wSquaredSum.Length - 1]);
-            }
-        }
-
-        /// <summary>
-        /// Gets the normalized component vector.
-        /// </summary>
-        public RowVector NormalizedVector () {
-            //get {
-                double[] pc = new double[analysis.cols];
-                Blas1.dCopy(analysis.vStore, analysis.cols * index, 1, pc, 0, 1, analysis.cols);
-                return (new RowVector(pc, pc.Length));
-            //}
-        }
-
-        /// <summary>
-        /// Gets the scaled component vector.
-        /// </summary>
-        public RowVector ScaledVector () {
-            //get {
-                return (analysis.wStore[index] * NormalizedVector());
-            //}
-        }
-
-    }
 
 }

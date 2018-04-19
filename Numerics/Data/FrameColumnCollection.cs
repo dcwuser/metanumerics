@@ -7,7 +7,7 @@ namespace Meta.Numerics.Data
 {
 
     /// <summary>
-    /// A collection of data frame columns.
+    /// Represents a collection of columns of a data frame.
     /// </summary>
     public sealed class FrameColumnCollection : IReadOnlyCollection<FrameColumn>, IReadOnlyList<FrameColumn>, IEnumerable<FrameColumn> /*, IReadOnlyDictionary<string,FrameColumn> */
     {

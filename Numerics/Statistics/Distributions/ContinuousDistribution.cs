@@ -20,39 +20,56 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="x">The reference point.</param>
         /// <returns>The probability density p(x).</returns>
         /// <remarks>
-        /// <para>The probability density function (PDF) gives the relative probability of obtaining different values.</para>
+        /// <para>The probability density function (PDF) gives the relative probabilities of obtaining different values.</para>
         /// </remarks>
+        /// <seealso href="https://en.wikipedia.org/wiki/Probability_density_function"/>
         public abstract double ProbabilityDensity (double x);
 
         /// <summary>
         /// Returns the cumulative probability to the left of (below) the given point.
         /// </summary>
         /// <param name="x">The reference point.</param>
-        /// <returns>The integrated probability to obtain a result below the reference point.</returns>
+        /// <returns>The integrated probability P(x) to obtain a result below the reference point.</returns>
         /// <remarks>
         /// <para>The left probability function is commonly called the cumulative distribution function (CDF).</para>
+        /// <para>If you want a right-tailed value, you should use <see cref="RightProbability(double)"/>
+        /// instead.</para>
         /// </remarks>
+        /// <seealso href="https://en.wikipedia.org/wiki/Cumulative_distribution_function"/>
         public virtual double LeftProbability (double x) {
             if (x <= Support.LeftEndpoint) {
                 return (0.0);
             } else if (x >= Support.RightEndpoint) {
                 return (1.0);
             } else {
-                return (FunctionMath.Integrate(ProbabilityDensity, Interval.FromEndpoints(Support.LeftEndpoint, x)).Estimate.Value);
+                return (FunctionMath.Integrate(ProbabilityDensity, Support.LeftEndpoint, x).Estimate.Value);
             }
         }
 
         /// <summary>
-        /// Return the cumulative probability to the right of (above) the given point.
+        /// Returns the cumulative probability to the right of (above) the given point.
         /// </summary>
         /// <param name="x">The reference point.</param>
-        /// <returns>The integrated probability 1-P(x1) to obtain a result above the reference point.</returns>
+        /// <returns>The integrated probability Q(x) = 1 - P(x) to obtain a result above the reference point.</returns>
         /// <remarks>
         /// <para>In survival analysis, the right probability function is commonly called the survival function, because it gives the
         /// fraction of the population remaining after the given time.</para>
+        /// <para>If you want a right-tailed probability, it is better to call this
+        /// method directly instead of computing 1.0 - LeftProbability(x), because the
+        /// latter will loose accuracy as P(x) gets close to 1. (In fact, in the far right tail
+        /// where Q(x) &lt; 1.0E-16, it will give 0.0, whereas this method is likely to give
+        /// an accurate tiny value.)</para>
         /// </remarks>
+        /// <seealso href="http://mathworld.wolfram.com/SurvivalFunction.html"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Survival_function"/>
         public virtual double RightProbability (double x) {
-            return (1.0 - LeftProbability(x));
+            if (x <= Support.LeftEndpoint) {
+                return (1.0);
+            } else if (x >= Support.RightEndpoint) {
+                return (0.0);
+            } else {
+                return (FunctionMath.Integrate(ProbabilityDensity, x, Support.RightEndpoint).Estimate.Value);
+            }
         }
 
         /// <summary>
@@ -65,6 +82,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// it tells which variable value is the lower border of that quantile.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="P"/> lies outside [0,1].</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Quantile_function"/>
         public virtual double InverseLeftProbability (double P) {
             // find x where LeftProbability(x) = P 
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
@@ -98,6 +116,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <remarks>
         /// <para>Also known as the failure rate or force of mortality.</para>
         /// </remarks>
+        /// <seealso href="http://mathworld.wolfram.com/HazardFunction.html"/>
         public virtual double Hazard (double x) {
             return (ProbabilityDensity(x) / RightProbability(x));
         }
@@ -152,24 +171,44 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="f">The function.</param>
         /// <returns>The expectation value of the function.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="f"/> is <see langword="null"/>.</exception>
         public virtual double ExpectationValue (Func<double, double> f) {
             if (f == null) throw new ArgumentNullException(nameof(f));
             return (FunctionMath.Integrate(x => f(x) * ProbabilityDensity(x), Support).Estimate.Value);
         }
 
         /// <summary>
-        /// Returns a random value.
+        /// Generates a random variate.
         /// </summary>
         /// <param name="rng">A random number generator.</param>
-        /// <returns>A number distributed according to the distribution.</returns>
+        /// <returns>A value distributed according to the distribution.</returns>
         /// <remarks>
         /// <para>Note that the random number generator <paramref name="rng"/> will be advanced by this method. The next call to its
         /// generator methods will not give the same value as it would had it not been passed to this method.</para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="rng"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="rng"/> is <see langword="null"/>.</exception>
         public virtual double GetRandomValue (Random rng) {
             if (rng == null) throw new ArgumentNullException(nameof(rng));
             return (InverseLeftProbability(rng.NextDouble()));
+        }
+
+        /// <summary>
+        /// Generates the given number of random variates.
+        /// </summary>
+        /// <param name="rng">A random number generator.</param>
+        /// <param name="n">The number of variates to generate.</param>
+        /// <returns>An iterator that returns the requested number
+        /// of variates distributed according to the distribution.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="rng"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
+        public virtual IEnumerable<double> GetRandomValues (Random rng, int n)
+        {
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+            for (int i = 0; i < n; i++)
+            {
+                yield return (GetRandomValue(rng));
+            }
+
         }
 
         // compute central moments from raw moments

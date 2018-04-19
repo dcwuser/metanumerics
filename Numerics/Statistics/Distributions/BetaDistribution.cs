@@ -13,7 +13,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents a beta distribution.
     /// </summary>
     /// <remarks>
-    /// <para>The beta distribution is defined on the interval [0,1]. Depending on its two shape parameters, it can take on a wide
+    /// <para>The beta distribution is defined on the interval [0,1]. Depending on its two shape parameters, it can take on a
     /// variety of forms on this interval.</para>
     /// <para>If the two shape parameters are equal, the distribution is symmetric. If the first shape parameter is less than one,
     /// the distribution has a singularity at its left endpoint. If the first shape parameter is greater than one, the distribution
@@ -24,7 +24,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>Beta distributions describe the maximum and minimum values obtained from multiple, independent draws from a standard
     /// uniform distribution. For n draws, the maximum value is distributed as B(n,1).</para>
     /// <img src="../images/BetaFromUniform.png" />
-    /// <para>Similiarly, the minimum value is distributed as B(1,n).</para>
+    /// <para>Similarly, the minimum value is distributed as B(1,n).</para>
     /// <para>Because of the wide variety of shapes it can take, the beta distribution is sometimes
     /// used as an ad hoc model to describe any distribution observed on a finite interval.</para>
     /// </remarks>
@@ -42,9 +42,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <paramref name="beta"/> shape parameter controls the form of the distribution near z=1. If a shape parameter
         /// is less than one, the PDF diverges on the side of the distribution it controls. If a shape parameter
         /// is greater than one, the PDF goes to zero on the side of the distribution it controls. If the left and right
-        /// shapre parameters are equal, the distribution is symmetric about x=1/2.</para>
+        /// shape parameters are equal, the distribution is symmetric about x=1/2.</para>
         /// </remarks>
-        /// <seealso href="http://en.wikipedia.org/wiki/Beta_distribution" />
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="alpha"/> or <paramref name="beta"/> is non-positive.</exception>
         public BetaDistribution (double alpha, double beta) {
             if (alpha <= 0.0) throw new ArgumentOutOfRangeException(nameof(alpha));
             if (beta <= 0.0) throw new ArgumentOutOfRangeException(nameof(beta));
@@ -106,7 +106,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else {
                 // the value is I_x(a,b), which is LeftRegularizedBeta
                 // since we have precomputed bigB, use it here instead of calling
-                // that method, which would recompute it
+                // that method, which would re-compute it
                 return (AdvancedMath.LeftRegularizedBeta(alpha, beta, x));
             }
         }
@@ -271,69 +271,6 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="InvalidOperationException">Not all the entries in <paramref name="sample" /> lie between zero and one.</exception>
         public static BetaFitResult FitToSample (Sample sample) {
             return (Univariate.FitToBeta(sample.data));
-            /*
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 3) throw new InsufficientDataException();
-
-            // maximum likelyhood calculation
-            //   \log L = \sum_i \left[ (\alpha-1) \log x_i + (\beta-1) \log (1-x_i) - \log B(\alpha,\beta) \right]
-            // using \frac{\partial B(a,b)}{\partial a} = \psi(a) - \psi(a+b), we have
-            //   \frac{\partial \log L}{\partial \alpha} = \sum_i \log x_i -     N \left[ \psi(\alpha) - \psi(\alpha+\beta) \right]
-            //   \frac{\partial \log L}{\partial \beta}  = \sum_i \log (1-x_i) - N \left[ \psi(\beta)  - \psi(\alpha+\beta) \right]
-            // set equal to zero to get equations for \alpha, \beta
-            //   \psi(\alpha) - \psi(\alpha+\beta) = <\log x>
-            //   \psi(\beta) - \psi(\alpha+\beta) = <\log (1-x)>
-
-            // compute the mean log of x and (1-x)
-            // these are the (logs of) the geometric means
-            double ga = 0.0; double gb = 0.0;
-            foreach (double value in sample) {
-                if ((value <= 0.0) || (value >= 1.0)) throw new InvalidOperationException();
-                ga += Math.Log(value); gb += Math.Log(1.0 - value);
-            }
-            ga /= sample.Count; gb /= sample.Count;
-
-            // define the function to zero
-            Func<IReadOnlyList<double>, IReadOnlyList<double>> f = delegate(IReadOnlyList<double> x) {
-                double pab = AdvancedMath.Psi(x[0] + x[1]);
-                return (new double[] {
-                    AdvancedMath.Psi(x[0]) - pab - ga,
-                    AdvancedMath.Psi(x[1]) - pab - gb
-                });
-            };
-
-            // guess initial values using the method of moments
-            //   M1 = \frac{\alpha}{\alpha+\beta} C2 = \frac{\alpha\beta}{(\alpha+\beta)^2 (\alpha+\beta+1)}
-            // implies
-            //   \alpha = M1 \left( \frac{M1 (1-M1)}{C2} - 1 \right)
-            //   \beta = (1 - M1) \left( \frac{M1 (1-M1)}{C2} -1 \right)
-            double m = sample.Mean; double mm = 1.0 - m;
-            double q = m * mm / sample.Variance - 1.0;
-            double[] x0 = new double[] { m * q, mm * q };
-
-            // find the parameter values that zero the two equations
-            IList<double> x1 = MultiFunctionMath.FindZero(f, x0);
-            double a = x1[0]; double b = x1[1];
-
-            // take more derivatives of \log L to get curvature matrix
-            //   \frac{\partial^2 \log L}{\partial\alpha^2} = - N \left[ \psi'(\alpha) - \psi'(\alpha+\beta) \right]
-            //   \frac{\partial^2 \log L}{\partial\beta^2}  = - N \left[ \psi'(\beta)  - \psi'(\alpha+\beta) \right]
-            //   \frac{\partial^2 \log L}{\partial \alpha \partial \beta} = - N \psi'(\alpha+\beta)
-            // covariance matrix is inverse of curvature matrix
-            SymmetricMatrix CI = new SymmetricMatrix(2);
-            CI[0, 0] = sample.Count * (AdvancedMath.Psi(1, a) - AdvancedMath.Psi(1, a + b));
-            CI[1, 1] = sample.Count * (AdvancedMath.Psi(1, b) - AdvancedMath.Psi(1, a + b));
-            CI[0, 1] = sample.Count * AdvancedMath.Psi(1, a + b);
-            CholeskyDecomposition CD = CI.CholeskyDecomposition();
-            SymmetricMatrix C = CD.Inverse();
-
-            // do a KS test on the result
-            TestResult test = sample.KolmogorovSmirnovTest(new BetaDistribution(a, b));
-
-            // return the results
-            FitResult result = new FitResult(x1, C, test);
-            return (result);
-            */
         }
 
     }

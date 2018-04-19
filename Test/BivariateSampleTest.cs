@@ -263,7 +263,7 @@ namespace Test {
             }
 
             // R and R-squared agree
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.RSquared, MoreMath.Sqr(result.R.Statistic)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result.RSquared, MoreMath.Sqr(result.R.Statistic.Value)));
 
             // F-test and R-test agree
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result.F.Probability, result.R.Probability));
@@ -276,7 +276,7 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SSR, result.Anova.Residual.SumOfSquares));
 
             // R is same as correlation coefficient
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(x.CorrelationCoefficient(y), result.R.Statistic));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(x.CorrelationCoefficient(y), result.R.Statistic.Value));
 
         }
 
@@ -361,13 +361,13 @@ namespace Test {
                 }
                 LinearRegressionResult result = sample.LinearRegression();
 
-                rSample.Add(result.R.Statistic);
-                rDistribution = result.R.Distribution;
+                rSample.Add(result.R.Statistic.Value);
+                rDistribution = result.R.Statistic.Distribution;
 
-                fSample.Add(result.F.Statistic);
-                fDistribution = result.F.Distribution;
+                fSample.Add(result.F.Statistic.Value);
+                fDistribution = result.F.Statistic.Distribution;
 
-                Assert.IsTrue(result.F.Statistic == result.Anova.Result.Statistic);
+                Assert.IsTrue(result.F.Statistic.Value == result.Anova.Result.Statistic.Value);
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     result.R.Probability, result.F.Probability,
@@ -458,7 +458,6 @@ namespace Test {
                 PolynomialRegressionResult r = s.PolynomialRegression(a.Length - 1);
 
                 ColumnVector ps = r.Parameters.ValuesVector;
-                //Console.WriteLine("{0} {1} {2}", ps[0], ps[1], ps[2]);
 
                 // record best fit parameters
                 A.Add(ps);
@@ -467,8 +466,7 @@ namespace Test {
                 C += r.Parameters.CovarianceMatrix;
 
                 // record the fit statistic
-                F.Add(r.F.Statistic);
-                //Console.WriteLine("F={0}", r.GoodnessOfFit.Statistic);
+                F.Add(r.F.Statistic.Value);
 
             }
 
@@ -476,14 +474,12 @@ namespace Test {
 
             // check that mean parameter estimates are what they should be: the underlying population parameters
             for (int i = 0; i < A.Dimension; i++) {
-                Console.WriteLine("{0} {1}", A.Column(i).PopulationMean, a[i]);
                 Assert.IsTrue(A.Column(i).PopulationMean.ConfidenceInterval(0.95).ClosedContains(a[i]));
             }
 
             // check that parameter covarainces are what they should be: the reported covariance estimates
             for (int i = 0; i < A.Dimension; i++) {
                 for (int j = i; j < A.Dimension; j++) {
-                    Console.WriteLine("{0} {1} {2} {3}", i, j, C[i, j], A.TwoColumns(i, j).PopulationCovariance);
                     Assert.IsTrue(A.TwoColumns(i, j).PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(C[i, j]));
                 }
             }
@@ -590,6 +586,64 @@ namespace Test {
             Assert.IsTrue(parameters["b"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(covariances.Column(1).Mean));
             Assert.IsTrue(parameters["a"].As<double>().PopulationCovariance(parameters["b"].As<double>()).ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
             Assert.IsTrue(Bivariate.PopulationCovariance(parameters["a"].As<double>(), parameters["b"].As<double>()).ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
+        }
+
+        [TestMethod]
+        public void BivariateAssociationDiscreteNullDistribution ()
+        {
+            Random rng = new Random(1);
+
+            // Pick very non-normal distributions for our non-parameteric tests
+            ContinuousDistribution xd = new FrechetDistribution(1.0);
+            ContinuousDistribution yd = new CauchyDistribution();
+
+            // Pick small sample sizes to get exact distributions
+            foreach (int n in TestUtilities.GenerateIntegerValues(4, 24, 4))
+            {
+
+                // Do a bunch of test runs, recording reported statistic for each.
+                List<int> spearmanStatistics = new List<int>();
+                List<int> kendallStatistics = new List<int>();
+                DiscreteDistribution spearmanDistribution = null;
+                DiscreteDistribution kendallDistribution = null;
+
+                for (int i = 0; i < 512; i++)
+                {
+                    List<double> x = new List<double>();
+                    List<double> y = new List<double>();
+                    for (int j = 0; j < n; j++)
+                    {
+                        x.Add(xd.GetRandomValue(rng));
+                        y.Add(yd.GetRandomValue(rng));
+                    }
+
+                    DiscreteTestStatistic spearman = Bivariate.SpearmanRhoTest(x, y).UnderlyingStatistic;
+                    if (spearman != null)
+                    {
+                        spearmanStatistics.Add(spearman.Value);
+                        spearmanDistribution = spearman.Distribution;
+                    }
+                    DiscreteTestStatistic kendall = Bivariate.KendallTauTest(x, y).UnderlyingStatistic;
+                    if (kendall != null)
+                    {
+                        kendallStatistics.Add(kendall.Value);
+                        kendallDistribution = kendall.Distribution;
+                    }
+                }
+
+                // Test whether statistics are actually distributed as claimed
+                if (spearmanDistribution != null)
+                {
+                    TestResult spearmanChiSquared = spearmanStatistics.ChiSquaredTest(spearmanDistribution);
+                    Assert.IsTrue(spearmanChiSquared.Probability > 0.01);
+                }
+                if (kendallDistribution != null)
+                {
+                    TestResult kendallChiSquared = kendallStatistics.ChiSquaredTest(kendallDistribution);
+                    Assert.IsTrue(kendallChiSquared.Probability > 0.01);
+                }
+
+            }
         }
 
     }

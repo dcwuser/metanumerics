@@ -15,16 +15,16 @@ namespace Meta.Numerics.Statistics {
     /// Contains methods for analyzing multivariate samples.
     /// </summary>
     /// <remarks>
-    /// <para>A multi-variate sample is one in which each element of the sample consists of measurements of
+    /// <para>A multivariate sample is one in which each element of the sample consists of measurements of
     /// multiple quantities. For example, a survey in which we record the sex, income, education level,
-    /// and race of each participant is a multi-variate sample. Note that the types of each quantity
+    /// and race of each participant is a multivariate sample. Note that the types of each quantity
     /// measured need not be the same.</para>
-    /// <para>One common form of statistical analysis of a multi-variate sample is to try to predict
+    /// <para>One common form of statistical analysis of a multivariate sample is to try to predict
     /// one variable on the basis of some of the others. To do this you can use
     /// <see cref="MultiLinearRegression(IReadOnlyList{double}, IReadOnlyList{double}[])"/>
     /// or, if the dependent variable is Boolean,
     /// <see cref="MultiLinearLogisticRegression(IReadOnlyList{bool}, IReadOnlyList{double}[])"/>.</para>
-    /// <para>Another common operation of multi-variate data is to try to organize the observations
+    /// <para>Another common operation of multivariate data is to try to organize the observations
     /// into clusters, which you can do using
     /// <see cref="MeansClustering(IReadOnlyList{IReadOnlyList{double}}, int)"/>.</para>
     /// <para>Instead of trying to reduce all the observations to a few important representatives,
@@ -34,7 +34,7 @@ namespace Meta.Numerics.Statistics {
     public static class Multivariate {
 
         /// <summary>
-        /// Performs a multi-variate linear regression on the named columns.
+        /// Performs a multivariate linear regression on the named columns.
         /// </summary>
         /// <param name="yColumn">A column of dependent variable observations to be predicted.</param>
         /// <param name="xColumnDictionary">A dictionary of columns of independent variable observations
@@ -57,7 +57,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Performs a multi-variate linear regression.
+        /// Performs a multivariate linear regression.
         /// </summary>
         /// <param name="yColumn">A column of dependent variable observations to be predicted.</param>
         /// <param name="xColumns">Columns of independent variable observations
@@ -75,7 +75,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Performs a multi-variate linear regression on the listed columns.
+        /// Performs a multivariate linear regression on the listed columns.
         /// </summary>
         /// <param name="yColumn">A column of dependent variable observations to be predicted.</param>
         /// <param name="xColumns">A list of columns of independent variable observations
@@ -147,7 +147,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Performs a multi-variate linear logistic regression.
+        /// Performs a multivariate linear logistic regression.
         /// </summary>
         /// <param name="yColumn">A column of dependent Boolean variable observations to be predicted.</param>
         /// <param name="xColumns">Columns of independent variable observations
@@ -165,7 +165,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Performs a multi-variate linear logistic regression on the listed columns.
+        /// Performs a multivariate linear logistic regression on the listed columns.
         /// </summary>
         /// <param name="yColumn">A column of dependent Boolean variable observations to be predicted.</param>
         /// <param name="xColumns">Columns of independent variable observations
@@ -195,7 +195,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
-        /// Performs a multi-variate linear logistic regression on the named columns.
+        /// Performs a multivariate linear logistic regression on the named columns.
         /// </summary>
         /// <param name="yColumn">A column of dependent Boolean variable observations to be predicted.</param>
         /// <param name="xColumnDictionary">A dictionary of columns of independent variable observations
@@ -220,6 +220,63 @@ namespace Meta.Numerics.Statistics {
         }
 
         /// <summary>
+        /// Computes the specified multivariate raw moment.
+        /// </summary>
+        /// <param name="columns">The multivariate sample in column-oriented form.</param>
+        /// <param name="powers">The power to which each column variable should be raised.</param>
+        /// <returns>The requested multivariate moment.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="columns"/> or <paramref name="powers"/> is
+        /// <see langword="null"/>, or one of the columns in <paramref name="columns"/> is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException">The length of <paramref name="powers"/> is not
+        /// equal to the length of <paramref name="columns"/>, or lengths of all the component
+        /// columns of <paramref name="columns"/> are not equal.</exception>
+        public static double RawMoment (this IReadOnlyList<IReadOnlyList<double>> columns, params int[] powers) {
+            return (RawMoment(columns, (IReadOnlyList<int>) powers));
+        }
+
+        /// <summary>
+        /// Computes the multivariate raw moment specified by the listed powers.
+        /// </summary>
+        /// <param name="columns">The multivariate sample in column-oriented form.</param>
+        /// <param name="powers">The power to which each column variable should be raised.</param>
+        /// <returns>The requested multivariate moment.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="columns" />
+        /// or <paramref name="powers"/> is <see langword="null"/>, or one of the columns
+        /// in <paramref name="columns" /> is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException">The length of <paramref name="powers"/> is not
+        /// equal to the length of <paramref name="columns"/>, or lengths of all the component
+        /// columns of <paramref name="columns"/> are not equal.</exception>
+        public static double RawMoment (this IReadOnlyList<IReadOnlyList<double>> columns, IReadOnlyList<int> powers) {
+
+            if (columns == null) throw new ArgumentNullException(nameof(columns));
+            if (powers == null) throw new ArgumentNullException(nameof(powers));
+            if (columns.Count != powers.Count) throw new DimensionMismatchException();
+
+            int count = -1;
+            foreach (IReadOnlyList<double> column in columns) {
+                if (column == null) throw new ArgumentNullException(nameof(columns));
+                if (count < 0) {
+                    count = column.Count;
+                } else {
+                    if (count != column.Count) throw new DimensionMismatchException();
+                }
+            }
+
+            double M = 0.0;
+            for (int i = 0; i < count; i++) {
+                double t = 1.0;
+                for (int j = 0; j < columns.Count; j++) {
+                    t *= MoreMath.Pow(columns[j][i], powers[j]);
+                }
+                M += t;
+            }
+            M = M / count;
+
+            return (M);
+
+        }
+
+        /// <summary>
         /// Performs a principal component analysis of the multivariate sample.
         /// </summary>
         /// <returns>The result of the principal component analysis.</returns>
@@ -228,6 +285,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="DimensionMismatchException">The columns do not all have the same number of entries.</exception>
         /// <exception cref="InsufficientDataException">The number of entries is less than the number of columns.</exception>
         /// <remarks>
+        /// <para>For background on principal component analysis, see the remarks at <see cref="Meta.Numerics.Statistics.PrincipalComponentAnalysis"/>.</para>
         /// <para>Note that the <paramref name="columns"/> argument is column-oriented, i.e. it is a list of columns,
         /// not row-oriented, i.e. a list of rows. Either of these would match the method signature, but only
         /// column-oriented inputs will produce correct results.</para>

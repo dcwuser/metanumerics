@@ -117,7 +117,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Gets the parameter with the given index.
         /// </summary>
-        /// <param name="index">The index of the paramter.</param>
+        /// <param name="index">The index of the parameter.</param>
         /// <returns>The requested parameter.</returns>
         public Parameter this[int index] {
             get {

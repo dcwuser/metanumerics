@@ -14,7 +14,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// We represent the outcomes by 0 and 1, which are the only two integers for which the Bernoulli probability
     /// does not vanish.</para>
     /// <para>When multiple, independent Bernoulli trials are conducted, the binomial distribution (<see cref="BinomialDistribution"/>)
-    /// describes the probablity of obtaining any particular number of successes.</para>
+    /// describes the probability of obtaining any particular number of successes.</para>
     /// </remarks>
     /// <seealso cref="BinomialDistribution"/>
     /// <seealso href="http://mathworld.wolfram.com/BinomialDistribution.html"/>
@@ -212,7 +212,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             double vp = p * q / n;
 
             double chi2 = MoreMath.Sqr(n * q - n0) + MoreMath.Sqr(n * p - n1);
-            TestResult test = new TestResult("chi2", chi2, TestType.RightTailed, new ChiSquaredDistribution(1));
+            TestResult test = new TestResult("χ²", chi2, new ChiSquaredDistribution(1), TestType.RightTailed);
 
             return (new BernoulliFitResult(new UncertainValue(p, Math.Sqrt(vp)), test));
         }

@@ -629,7 +629,7 @@ namespace Meta.Numerics.Statistics {
             }
             Q = c.Length * (c.Length + 2) * Q;
 
-            return (new TestResult("Q", Q, TestType.RightTailed, new ChiSquaredDistribution(kMax)));
+            return (new TestResult("Q", Q, new ChiSquaredDistribution(kMax), TestType.RightTailed));
         }
 
     }

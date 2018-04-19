@@ -117,7 +117,7 @@ namespace Meta.Numerics.Analysis {
         /// the common case where the independent variable is time, but the algorithm works whether the independent variable
         /// resents a time, a location, or a completely non-physical quantity, as long as the problem has the form of an ODE.</para>
         /// <para>ODEs involving multiple, coupled dependent variables can be integrated using the
-        /// <see cref="MultiFunctionMath.IntegrateOde(Func{double, IList{double}, IList{double}}, double, IList{double}, double, MultiOdeSettings)"/>
+        /// <see cref="MultiFunctionMath.IntegrateOde(Func{double, IReadOnlyList{double}, IReadOnlyList{double}}, double, IReadOnlyList{double}, double, MultiOdeSettings)"/>
         /// method. Higher order ODEs can be integrated by representing them as coupled ODEs in which the zeroth component
         /// is the desired y, the first component is y', the second component is y'', etc. So-called conservative second order
         /// ODEs should be integrated using the

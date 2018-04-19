@@ -7,7 +7,7 @@ namespace Meta.Numerics.Data
 {
 
     /// <summary>
-    /// A collection of rows from a frame.
+    /// Represents a collection of rows of a data frame.
     /// </summary>
     public sealed class FrameRowCollection : IReadOnlyCollection<FrameRow>, IReadOnlyList<FrameRow>, IEnumerable<FrameRow> {
 

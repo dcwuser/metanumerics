@@ -60,10 +60,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="rhs">The right-hand-side vector b.</param>
         /// <returns>The solution vector x.</returns>
-        /// <remarks>
-        /// <para>The components of <paramref name="rhs"/> are not modified.</para>
-        /// </remarks>
-        public ColumnVector Solve (IList<double> rhs) {
+        public ColumnVector Solve (IReadOnlyList<double> rhs) {
 
             if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (rhs.Count != dimension) throw new DimensionMismatchException();

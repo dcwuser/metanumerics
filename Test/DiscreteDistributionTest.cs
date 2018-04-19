@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -196,6 +196,25 @@ namespace Test {
             PoissonDistribution pd = new PoissonDistribution(0.5);
             double x = pd.InverseLeftProbability(0.7716);
             Console.WriteLine(x);
+
+        }
+
+        [TestMethod]
+        public void DiscreteDistributionChisquaredTest () {
+
+            Random rng = new Random(271828);
+            foreach (DiscreteDistribution distribution in distributions) {
+
+                // see bug about problematic Poisson for high means
+                if (distribution is PoissonDistribution) continue;
+
+                List<int> sample = new List<int>();
+                for (int i = 0; i < 128; i++) sample.Add(distribution.GetRandomValue(rng));
+
+                TestResult chi2 = sample.ChiSquaredTest(distribution);
+                Console.WriteLine($"{distribution.GetType().Name} {((ChiSquaredDistribution) chi2.Statistic.Distribution).DegreesOfFreedom}");
+                Assert.IsTrue(chi2.Probability > 0.01);
+            }
 
         }
 

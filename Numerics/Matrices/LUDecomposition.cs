@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Matrices {
 
@@ -22,16 +22,19 @@ namespace Meta.Numerics.Matrices {
     public sealed class LUDecomposition {
 
         internal LUDecomposition (double[] luStore, int[] permutation, int parity, int dimension) {
+            Debug.Assert(luStore != null);
+            Debug.Assert(permutation != null);
+            Debug.Assert(Math.Abs(parity) == 1);
             this.luStore = luStore;
             this.permutation = permutation;
             this.parity = parity;
             this.dimension = dimension;
         }
 
-        private double[] luStore;
-        private int[] permutation;
-        int parity;
-        int dimension;
+        private readonly double[] luStore;
+        private readonly int[] permutation;
+        private readonly int parity;
+        private readonly int dimension;
 
         /// <summary>
         /// Gets the dimension of the system.
@@ -63,9 +66,9 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The solution vector x.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="rhs"/> is <c>null</c>.</exception>
         /// <exception cref="DimensionMismatchException">The dimension of <paramref name="rhs"/> is not the same as the dimension of the matrix.</exception>
-        public ColumnVector Solve (IList<double> rhs) {
+        public ColumnVector Solve (IReadOnlyList<double> rhs) {
 
-            if (rhs == null) throw new ArgumentNullException("rhs");
+            if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (rhs.Count != dimension) throw new DimensionMismatchException();
 
             // copy rhs into an array, reshuffling according to permutations

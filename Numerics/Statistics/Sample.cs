@@ -695,20 +695,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException"><see cref="Sample.Count"/> is zero.</exception>
         /// <seealso cref="StudentTTest(double)"/>
         public TestResult ZTest (double referenceMean, double referenceStandardDeviation) {
-            return (ZTest(referenceMean, referenceStandardDeviation, TestType.TwoTailed));
-        }
-
-        /// <summary>
-        /// Performs a z-test with the given sidedness.
-        /// </summary>
-        /// <param name="referenceMean">The mean of the comparison population.</param>
-        /// <param name="referenceStandardDeviation">he standard deviation of the comparison population.</param>
-        /// <param name="type">The sidedness of the test to perform.</param>
-        /// <returns>A test result indicating whether the sample mean is significantly different from that of the comparison population
-        /// in the direction indicated by <paramref name="type"/>.</returns>
-        /// <seealso cref="ZTest(double, double)"/>
-        public TestResult ZTest (double referenceMean, double referenceStandardDeviation, TestType type) {
-            return (data.ZTest(referenceMean, referenceStandardDeviation, type));
+            return (data.ZTest(referenceMean, referenceStandardDeviation));
         }
 
         /// <summary>
@@ -751,18 +738,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="StudentDistribution" />
         /// <seealso href="https://en.wikipedia.org/wiki/Student%27s_t-test"/>
         public TestResult StudentTTest (double referenceMean) {
-            return (StudentTTest(referenceMean, TestType.TwoTailed));
-        }
-
-        /// <summary>
-        /// Tests whether the sample mean differs from the reference mean in the specified direction.
-        /// </summary>
-        /// <param name="referenceMean">The reference mean.</param>
-        /// <param name="type">The sidedness of the test to perform.</param>
-        /// <returns>A test result indicating whether the sample mean is significantly different from the reference mean
-        /// in the direction indicated by <paramref name="type"/>.</returns>
-        public TestResult StudentTTest (double referenceMean, TestType type) {
-            return (data.StudentTTest(referenceMean, type));
+            return (data.StudentTTest(referenceMean));
         }
 
         /// <summary>
@@ -928,87 +904,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InvalidOperationException">The design is not complete or balanced.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Two-way_analysis_of_variance"/>
         public static TwoWayAnovaResult TwoWayAnovaTest (Sample[,] samples) {
-
-            if (samples == null) throw new ArgumentNullException(nameof(samples));
-
-            int rCount = samples.GetLength(0);
-            int cCount = samples.GetLength(1);
-            if (rCount < 2) throw new InvalidOperationException();
-            if (cCount < 2) throw new InvalidOperationException();
-
-            // Determine mean, within group variance
-            int m = -1;
-            int n = 0;
-            double mean = 0.0;
-            double SSE = 0.0;
-            for (int r = 0; r < rCount; r++) {
-                for (int c = 0; c < cCount; c++) {
-                    Sample sample = samples[r, c];
-                    if (sample == null) throw new ArgumentNullException(String.Format("{0}[{1},{2}]", nameof(samples), r, c));
-                    if (sample.Count != m) {
-                        if (m < 0) {
-                            m = sample.Count;
-                        } else {
-                            throw new InvalidOperationException();
-                        }
-                    }
-                    n += sample.Count;
-                    mean += sample.Count * sample.Mean;
-                    SSE += sample.Count * sample.Variance;
-                }
-            }
-            mean = mean / n;
-
-            // Determine between group variance
-            double SSF = 0.0;
-            for (int r = 0; r < rCount; r++) {
-                for (int c = 0; c < cCount; c++) {
-                    SSF += MoreMath.Sqr(samples[r, c].Mean - mean);
-                }
-            }
-            SSF = SSF * samples[0, 0].Count;
-
-            // Determine row-wise variance
-            double SSA = 0.0;
-            for (int r = 0; r < rCount; r++) {
-                double rMean = 0.0;
-                for (int c = 0; c < cCount; c++) {
-                    rMean += samples[r, c].Mean;
-                }
-                rMean = rMean / samples.GetLength(1);
-
-                SSA += MoreMath.Sqr(rMean - mean);
-            }
-            SSA = SSA * samples[0, 0].Count * cCount;
-
-            // Determine column-wise variance
-            double SSB = 0.0;
-            for (int c = 0; c < cCount; c++) {
-                double cMean = 0.0;
-                for (int r = 0; r < rCount; r++) {
-                    cMean += samples[r, c].Mean;
-                }
-                cMean = cMean / rCount;
-
-                SSB += MoreMath.Sqr(cMean - mean);
-            }
-            SSB = SSB * samples[0, 0].Count * rCount;
-
-            // Finding the interaction effect by subtraction allows us to determine it
-            // without storing multiple row and column means. But it introduces a risk
-            // of getting a tiny negative value due to roundoff error, so we should
-            // probably just go ahead and store the row and column means.
-            double SSI = SSF - SSA - SSB;
-            Debug.Assert(SSI >= 0.0);
-
-            AnovaRow row = new AnovaRow(SSA, rCount - 1);
-            AnovaRow column = new AnovaRow(SSB, cCount - 1);
-            AnovaRow interaction = new AnovaRow(SSI, (rCount - 1) * (cCount - 1));
-            AnovaRow error = new AnovaRow(SSE, n - rCount * cCount);
-
-            TwoWayAnovaResult result = new TwoWayAnovaResult(row, column, interaction, error);
-            return (result);
-
+            return (Univariate.TwoWayAnovaTest(samples));
         }
 
         /// <summary>
@@ -1060,12 +956,12 @@ namespace Meta.Numerics.Statistics {
         /// obtaining such a large value of D under the assumption that the sample is drawn from the given distribution.</returns>
         /// <remarks>
         /// <para>The null hypothesis of the Kolmogorov-Smirnov (KS) test is that the sample is drawn from the given continuous distribution.
-        /// The test statsitic D is the maximum deviation of the sample's empirical distribution function (EDF) from
+        /// The test statistic D is the maximum deviation of the sample's empirical distribution function (EDF) from
         /// the distribution's cumulative distribution function (CDF). A high value of the test statistic, corresponding
         /// to a low right tail probability, indicates that the sample distribution disagrees with the given distribution
         /// to a degree unlikely to arise from statistical fluctuations.</para>
         /// <para>For small sample sizes, we compute the null distribution of D exactly. For large sample sizes, we use an accurate
-        /// asympototic approximation. Therefore it is safe to use this method for all sample sizes.</para>
+        /// asymptotic approximation. Therefore it is safe to use this method for all sample sizes.</para>
         /// <para>A variant of this test, <see cref="KolmogorovSmirnovTest(Sample, Sample)"/>, allows you to non-parametrically
         /// test whether two samples are drawn from the same underlying distribution, without having to specify that distribution.</para>
         /// </remarks>
@@ -1087,7 +983,7 @@ namespace Meta.Numerics.Statistics {
         /// <para>Like the Kolmogorov-Smirnov test ((<see cref="KolmogorovSmirnovTest(ContinuousDistribution)"/>,
         /// Kuiper's test compares the EDF of the sample to the CDF of the given distribution.</para>
         /// <para>For small sample sizes, we compute the null distribution of V exactly. For large sample sizes, we use an accurate
-        /// asympototic approximation. Therefore it is safe to use this method for all sample sizes.</para>
+        /// asymptotic approximation. Therefore it is safe to use this method for all sample sizes.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="distribution"/> is <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException">There is no data in the sample.</exception>

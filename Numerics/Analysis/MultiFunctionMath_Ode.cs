@@ -21,7 +21,7 @@ namespace Meta.Numerics.Analysis {
         /// <returns>The solution, including the final value of the functions and their derivatives.</returns>
         /// <remarks>
         /// <para>For information on integrating coupled, conservative ODEs, see
-        /// <see cref="IntegrateConservativeOde(Func{double, IList{double}, IList{double}}, double, IList{double}, IList{double}, double, MultiOdeSettings)"/>.</para>
+        /// <see cref="IntegrateConservativeOde(Func{double, IReadOnlyList{double}, IReadOnlyList{double}}, double, IReadOnlyList{double}, IReadOnlyList{double}, double, MultiOdeSettings)"/>.</para>
         /// <para>This overload uses default settings for precision and evaluation budget. It targets a relative precision of
         /// about 10<sup>-12</sup> and an absolute precision of about 10<sup>-24</sup> with an evaluation budget of about 8000.
         /// </para>
@@ -32,7 +32,7 @@ namespace Meta.Numerics.Analysis {
         /// dimension.</exception>
         /// <exception cref="NonconvergenceException">The ODE could not be integrated to the required precision before exhausting
         /// the maximum allowed number of <paramref name="rhs"/>evaluations.</exception>
-        public static MultiOdeResult IntegrateConservativeOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, IList<double> yPrime0, double x1) {
+        public static MultiOdeResult IntegrateConservativeOde (Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs, double x0, IReadOnlyList<double> y0, IReadOnlyList<double> yPrime0, double x1) {
             return (IntegrateConservativeOde(rhs, x0, y0, yPrime0, x1, new MultiOdeSettings()));
         }
 
@@ -55,7 +55,7 @@ namespace Meta.Numerics.Analysis {
         /// <remarks>
         /// <para>For information on conservative ODEs, see <see cref="FunctionMath.IntegrateConservativeOde(Func{double, double, double}, double, double, double, double, OdeSettings)"/>.</para>
         /// </remarks>
-        public static MultiOdeResult IntegrateConservativeOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, IList<double> yPrime0, double x1, MultiOdeSettings settings) {
+        public static MultiOdeResult IntegrateConservativeOde (Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs, double x0, IReadOnlyList<double> y0, IReadOnlyList<double> yPrime0, double x1, MultiOdeSettings settings) {
 
             if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (y0 == null) throw new ArgumentNullException(nameof(y0));
@@ -86,12 +86,12 @@ namespace Meta.Numerics.Analysis {
         /// the maximum allowed number of <paramref name="rhs"/> evaluations.</exception>
         /// <remarks>
         /// <para>For information about integrating coupled ODEs, see
-        /// <see cref="IntegrateOde(Func{double, IList{double}, IList{double}}, double, IList{double}, double, MultiOdeSettings)"/>.</para>
+        /// <see cref="IntegrateOde(Func{double, IReadOnlyList{double}, IReadOnlyList{double}}, double, IReadOnlyList{double}, double, MultiOdeSettings)"/>.</para>
         /// <para>This overload uses default settings for precision and evaluation budget. It targets a relative precision of
         /// about 10<sup>-12</sup> and an absolute precision of about 10<sup>-24</sup> with an evaluation budget of about 8000.
         /// </para>
         /// </remarks>
-        public static MultiOdeResult IntegrateOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, double x1) {
+        public static MultiOdeResult IntegrateOde (Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs, double x0, IReadOnlyList<double> y0, double x1) {
             return (IntegrateOde(rhs, x0, y0, x1, new MultiOdeSettings()));
         }
 
@@ -115,7 +115,7 @@ namespace Meta.Numerics.Analysis {
         /// of each component. Each component's derivative may depend itself and any other components, as well as on the independent variable.
         /// The independent variable x still takes only a single real value.</para>
         /// </remarks>
-        public static MultiOdeResult IntegrateOde (Func<double, IList<double>, IList<double>> rhs, double x0, IList<double> y0, double x1, MultiOdeSettings settings) {
+        public static MultiOdeResult IntegrateOde (Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs, double x0, IReadOnlyList<double> y0, double x1, MultiOdeSettings settings) {
 
             if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (y0 == null) throw new ArgumentNullException(nameof(y0));
@@ -134,22 +134,26 @@ namespace Meta.Numerics.Analysis {
 
     internal abstract class MultiOdeEngine : OdeEngine {
 
-        public MultiOdeEngine (Func<double, IList<double>, IList<double>> rhs, double x, MultiOdeSettings settings) : base(x) {
+        public MultiOdeEngine (Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs, double x, MultiOdeSettings settings) : base(x) {
             Debug.Assert(rhs != null);
             Debug.Assert(settings != null);
             this.rhs = rhs;
             this.settings = settings;
         }
 
-        private readonly Func<double, IList<double>, IList<double>> rhs;
+        private readonly Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs;
 
         protected readonly MultiOdeSettings settings;
 
-        public IList<double> Evaluate (double x, IList<double> y) {
+        public IReadOnlyList<double> Evaluate (double x, IReadOnlyList<double> y) {
             if (count >= settings.EvaluationBudget) throw new NonconvergenceException();
             count++;
-            ReadOnlyCollection<double> yWrapper = new ReadOnlyCollection<double>(y);
-            IList<double> z = rhs(x, yWrapper);
+            // ReadOnlyCollection doesn't have a constructor that accepts IReadOnlyList.
+            // But being an IReadOnlyList doesn't protect us from be cast back to a mutable
+            // type, so for the moment this is actually not safe from poorly behaved
+            // rhs's. 
+            //ReadOnlyCollection<double> yWrapper = new ReadOnlyCollection<double>(y);
+            IReadOnlyList<double> z = rhs(x, y);
             if (z == null) throw new InvalidOperationException();
             return (z);
         }
@@ -173,7 +177,7 @@ namespace Meta.Numerics.Analysis {
 
     internal class MultiBulrischStoerEngine : MultiOdeEngine, IBulrischStoerEngine {
 
-        public MultiBulrischStoerEngine (Func<double, IList<double>, IList<double>> rhs, double x, IList<double> y, MultiOdeSettings settings) : base(rhs, x, settings) {
+        public MultiBulrischStoerEngine (Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs, double x, IReadOnlyList<double> y, MultiOdeSettings settings) : base(rhs, x, settings) {
 
             Debug.Assert(rhs != null);
             Debug.Assert(y != null);
@@ -218,7 +222,7 @@ namespace Meta.Numerics.Analysis {
             double[] nY1 = new double[Y.Length];
             for (int i = 0; i < nY1.Length; i++) { nY0[i] = Y[i]; nY1[i] = Y[i] + h * YPrime[i]; }
 
-            IList<double> F;
+            IReadOnlyList<double> F;
             for (int k = 1; k < n; k++) {
                 F = Evaluate(X + k * h, nY1);
                 for (int i = 0; i < nY1.Length; i++) { double t = nY1[i]; nY1[i] = nY0[i] + 2.0 * h * F[i]; nY0[i] = t; }
@@ -279,7 +283,7 @@ namespace Meta.Numerics.Analysis {
 
     internal class MultiStoermerEngine : MultiOdeEngine, IBulrischStoerEngine {
 
-        public MultiStoermerEngine (Func<double, IList<double>, IList<double>> rhs, double x, IList<double> y, IList<double> yPrime, MultiOdeSettings settings) : base(rhs, x, settings) {
+        public MultiStoermerEngine (Func<double, IReadOnlyList<double>, IReadOnlyList<double>> rhs, double x, IReadOnlyList<double> y, IReadOnlyList<double> yPrime, MultiOdeSettings settings) : base(rhs, x, settings) {
 
             Debug.Assert(rhs != null);
             Debug.Assert(y != null);
@@ -401,7 +405,7 @@ namespace Meta.Numerics.Analysis {
 
             int d = Y.Length;
 
-            IList<double> F;
+            IReadOnlyList<double> F;
             Y1 = new double[d];
             double[] D1 = new double[d];
 

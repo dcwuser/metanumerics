@@ -224,7 +224,7 @@ namespace Meta.Numerics.Matrices {
         /// <exception cref="InvalidOperationException">The original matrix is not square.</exception>
         /// <remarks>
         /// <para>For singular and nearly-singular matrices, this method operates differently than other solution methods like
-        /// <see cref="SquareQRDecomposition.Solve(IList{double})"/> and <see cref="LUDecomposition.Solve(IList{double})"/>.
+        /// <see cref="SquareQRDecomposition.Solve(IReadOnlyList{double})"/> and <see cref="LUDecomposition.Solve(IReadOnlyList{double})"/>.
         /// For singular and nearly-singular matrices, those methods
         /// tend to produce very large or even infinite solution components that delicately cancel to produce the required right-hand-side,
         /// but have little significance to the problem being modeled because they arise from inverting very small singular values
@@ -236,7 +236,7 @@ namespace Meta.Numerics.Matrices {
         /// as other methods.</para>
         /// <para>This method is only available for square original matrices.</para>
         /// </remarks>
-        public ColumnVector Solve (IList<double> rhs) {
+        public ColumnVector Solve (IReadOnlyList<double> rhs) {
 
             if (rows != cols) throw new InvalidOperationException();
             if (rhs == null) throw new ArgumentNullException(nameof(rhs));

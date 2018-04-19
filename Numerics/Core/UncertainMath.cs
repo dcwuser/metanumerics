@@ -4,7 +4,7 @@ namespace Meta.Numerics {
 
 
     /// <summary>
-    /// Contains methods for computing basic mathematical functions of uncertain values.
+    /// Contains methods that compute basic functions of uncertain values.
     /// </summary>
     /// <remarks><para>The methods in this static class perform the same basic mathematical operations as the methods of
     /// the <see cref="System.Math"/> class, accounting for the uncertainty in the inputs to produce a corresponding

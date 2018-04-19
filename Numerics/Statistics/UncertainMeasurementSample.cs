@@ -37,8 +37,8 @@ namespace Meta.Numerics.Statistics {
         /// Adds a new data point to the set.
         /// </summary>
         /// <param name="x">The value of the ordinate (independent variable).</param>
-        /// <param name="y">The value of the abcissa (dependent variable).</param>
-        /// <param name="dy">The uncertainty of the abcissa (dependent variable).</param>
+        /// <param name="y">The value of the abscissa (dependent variable).</param>
+        /// <param name="dy">The uncertainty of the abscissa (dependent variable).</param>
         public void Add (T x, double y, double dy) {
             data.Add(new UncertainMeasurement<T>(x, y, dy));
         }
@@ -131,7 +131,7 @@ namespace Meta.Numerics.Statistics {
                 }
                 chi2 += Math.Pow((data[i].Y.Value - f) / data[i].Y.Uncertainty, 2);
             }
-            TestResult test = new TestResult("χ²", chi2, TestType.RightTailed, new ChiSquaredDistribution(data.Count - functions.Length));
+            TestResult test = new TestResult("χ²", chi2, new ChiSquaredDistribution(data.Count - functions.Length), TestType.RightTailed);
 
             // return the results
             string[] names = new string[functions.Length];
@@ -169,12 +169,12 @@ namespace Meta.Numerics.Statistics {
             SymmetricMatrix C = CD.Inverse();
 
             // package up the results and return them
-            TestResult test = new TestResult("χ²", minimum.Value, TestType.RightTailed, new ChiSquaredDistribution(this.Count - minimum.Dimension));
+            TestResult test = new TestResult("χ²", minimum.Value, new ChiSquaredDistribution(this.Count - minimum.Dimension), TestType.RightTailed);
             ParameterCollection parameters = new ParameterCollection(NumberNames(start.Length), new ColumnVector(minimum.Location(), 0, 1, start.Length, true), C);
             return (new UncertainMeasurementFitResult(parameters, test));
         }
 
-        private IReadOnlyList<string> NumberNames (int n) {
+        private static IReadOnlyList<string> NumberNames (int n) {
             string[] names = new string[n];
             for (int i = 0; i < names.Length; i++) names[i] = i.ToString();
             return (names);
@@ -268,7 +268,7 @@ namespace Meta.Numerics.Statistics {
                 double z = (y - m) / dy;
                 chi2 += z * z;
             }
-            TestResult test = new TestResult("χ²", chi2, TestType.RightTailed, new ChiSquaredDistribution(Count - 1));
+            TestResult test = new TestResult("χ²", chi2, new ChiSquaredDistribution(Count - 1), TestType.RightTailed);
 
             ParameterCollection parameters = new ParameterCollection("Constant", m, vm);
             return (new UncertainMeasurementFitResult(parameters, test));
@@ -309,7 +309,7 @@ namespace Meta.Numerics.Statistics {
                 double z = (y - a * x) / dy;
                 chi2 += z * z;
             }
-            TestResult test = new TestResult("χ²", chi2, TestType.RightTailed, new ChiSquaredDistribution(Count - 1));
+            TestResult test = new TestResult("χ²", chi2, new ChiSquaredDistribution(Count - 1), TestType.RightTailed);
 
             // return results
             ParameterCollection parameters = new ParameterCollection("Proportionality", a, va);
@@ -362,7 +362,7 @@ namespace Meta.Numerics.Statistics {
                 double z = (y - (m * x + b)) / dy;
                 chi2 += z * z;
             }
-            TestResult test = new TestResult("χ²", chi2, TestType.RightTailed, new ChiSquaredDistribution(Count - 2));
+            TestResult test = new TestResult("χ²", chi2, new ChiSquaredDistribution(Count - 2), TestType.RightTailed);
 
             ParameterCollection parameters = new ParameterCollection("Intercept", b, vb, "Slope", m, vm, cov);
             return (new UncertainMeasurementFitResult(parameters, test));

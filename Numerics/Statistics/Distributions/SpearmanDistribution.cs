@@ -13,7 +13,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     //   \rho = 1 - \frac{6 D}{n (n+1) (n-1)}
     //   D = n (n+1) (2n + 1) / 3 - 2 S
     // These can be derived by plugging the expressions for the sum of the first n integers and the squares of the first
-    // n integers into the definitions of \rho and D above. The only remaining terms invovle S.
+    // n integers into the definitions of \rho and D above. The only remaining terms involve S.
 
     // The limits of \rho, D, and S are easy to derive
     //   max   \rho = 1    D = 0                    S = n (n+1) (2n + 1) / 6
@@ -21,8 +21,8 @@ namespace Meta.Numerics.Statistics.Distributions {
     //   mid   \rho = 0    D = n (n+1) (n-1) / 6    S = n (n+1)^2 / 4
     // Note the midpoint of S is not an integer for even n.
 
-    // Under null hypothesis of independence, all relative orderings are equally likely. To compute null distribution, enumerate
-    // all orderings, i.e. all n! permutations of n integers. E.g. n=3 has 3!=6 permutations
+    // Under null hypothesis of independence, all relative orderings are equally likely. To compute null distribution,
+    // enumerate all orderings, i.e. all n! permutations of n integers. E.g. n=3 has 3!=6 permutations
     //   1 2 3   S = 1*1 + 2*2 + 3*3 = 14
     //   1 3 2   S = 1*1 + 2*3 + 3*2 = 13
     //   2 1 3   S = 1*2 + 2*1 + 3*3 = 13
@@ -31,7 +31,8 @@ namespace Meta.Numerics.Statistics.Distributions {
     //   3 2 1   S = 1*3 + 2*2 + 3*1 = 10
     // Thus the distribution of S is 10->1, 11->2, 13->2, 14->1
 
-    // It is also true that the distribution of S is given by the coefficients of the polynomial perm(A) where A_{ij} = x^{ij}. E.g.
+    // It is also true that the distribution of S is given by the coefficients of the polynomial perm(A)
+    // where A_{ij} = x^{ij}. E.g.
     //        | x    x^2  x^3 |
     //   perm | x^2  x^4  x^6 | = x^10 + 2 x^11 + 2 x^13 + x^14
     //        | x^3  x^6  x^9 |
@@ -45,8 +46,9 @@ namespace Meta.Numerics.Statistics.Distributions {
     //   110   -     (x^2 + x^3) * (x^4 + x^6) * (x^6 + x^9) = x^12 + x^13 + x^14 + 2 x^15 + x^16 + x^17 + x^18
     //   111   +     (x + x^2 + x^3) * (x^2 + x^4 + x^6) * (x^3 + x^6 + x^9) =
     //                 x^6 + x^7 + 2 x^8 + 2 x^9 + 3 x^10 + 3 x^11 + 3 x^12 + 3 x^13 + 3 x^14 + 2 x^15 + 2 x^16 + x^17 + x^18
-    // Adding all gives x^10 + 2 x^11 + 0 x^12 + 2 x^13 + x^14, same as above. (Yeah, for n=3 this is more work than enumeration, but
-    // for higher n it's less. Enumeration work grows like n! while work for Ryser's permanent grows like 2^n.)
+    // Adding all gives x^10 + 2 x^11 + 0 x^12 + 2 x^13 + x^14, same as above.
+    // (Yeah, for n=3 this is more work than enumeration, but for higher n it's less.
+    // Enumeration work grows like n! while work for Ryser's permanent grows like 2^n.)
     // Note some things that help us:
     //    1. We know from the start that coefficients of powers below S_min will vanish, so we needn't compute them if we can avoid it.
     //    2. We know from the start that coefficients of powers above S_mid will mirror those below, so we needn't compute them either.

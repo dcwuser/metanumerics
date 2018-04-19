@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Data
 {
@@ -11,13 +9,13 @@ namespace Meta.Numerics.Data
     internal class ComputedList<T> : NamedList, IEnumerable, IEnumerable<T>, IReadOnlyList<T>
     {
         internal ComputedList (FrameView frame, string name, Func<FrameRow,T> function) : base(name) {
+            Debug.Assert(frame != null);
+            Debug.Assert(function != null);
             this.frame = frame;
-            this.name = name;
             this.function = function;
         }
 
         private readonly FrameView frame;
-        private readonly string name;
         private readonly Func<FrameRow, T> function;
 
         public T this[int index]

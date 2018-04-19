@@ -470,7 +470,8 @@ namespace Test {
                 // each sample has 9 values
                 List<double> xSample = TestUtilities.CreateDataSample(rng, xDistribution, 9).ToList();
                 TestResult tResult = xSample.StudentTTest(2.0);
-                double t = tResult.Statistic;
+                Assert.IsTrue(tResult.Statistic.Name == "t");
+                double t = tResult.Statistic.Value;
                 tSample.Add(t);
             }
 
@@ -509,7 +510,7 @@ namespace Test {
                 for (int j = 0; j < 8; j++) { xSample.Add(xDistribution.GetRandomValue(rng)); }
                 //Sample xSample = CreateSample(xDistribution, 8, i);
                 TestResult wResult = xSample.SignTest(xDistribution.Median);
-                double W = wResult.Statistic;
+                double W = wResult.Statistic.Value;
                 //Console.WriteLine("W = {0}", W);
                 wSample.Add(W);
             }
@@ -554,13 +555,7 @@ namespace Test {
             for (int i = 0; i < distributions.Length; i++) {
                 bSamples[i] = CreateSample(distributions[i], 80, 2);
             }
-
-            KolmogorovDistribution kd = new KolmogorovDistribution();
-            Console.WriteLine("P={0} => D={1}", 0.50, kd.InverseLeftProbability(0.50));
-            Console.WriteLine("P={0} => D={1}", 0.90, kd.InverseLeftProbability(0.90));
-            Console.WriteLine("P={0} => D={1}", 0.95, kd.InverseLeftProbability(0.95));
-            Console.WriteLine("P={0} => D={1}", 0.99, kd.InverseLeftProbability(0.99));
-
+            
             // cross-test using KS; like samples should agree and unlike samples should be distinguished
             for (int i = 0; i < aSamples.Length; i++) {
                 for (int j = 0; j < bSamples.Length; j++) {
@@ -574,7 +569,7 @@ namespace Test {
 
                     // the order shouldn't matter
                     TestResult reverse = Sample.KolmogorovSmirnovTest(bSamples[j], aSamples[i]);
-                    Assert.IsTrue(reverse.Statistic == result.Statistic);
+                    Assert.IsTrue(reverse.Statistic.Value == result.Statistic.Value);
                     Assert.IsTrue(reverse.Probability == result.Probability);
 
                 }
@@ -644,9 +639,9 @@ namespace Test {
                 for (int i = 0; i < 32; i++) {
                     List<double> sample = TestUtilities.CreateDataSample(rng, distribution, n).ToList();
                     TestResult ks = sample.KolmogorovSmirnovTest(distribution);
-                    double D = ks.Statistic;
+                    double D = ks.Statistic.Value;
                     DSample.Add(D);
-                    DDistribution = ks.Distribution;
+                    DDistribution = ks.Statistic.Distribution;
                 }
 
                 // check on the mean
@@ -692,9 +687,9 @@ namespace Test {
                 for (int i = 0; i < 32; i++) {
                     List<double> sample = TestUtilities.CreateDataSample(rng, distribution, n).ToList();
                     TestResult kp = sample.KuiperTest(distribution);
-                    double V = kp.Statistic;
+                    double V = kp.Statistic.Value;
                     VSample.Add(V);
-                    VDistribution = kp.Distribution;
+                    VDistribution = kp.Statistic.Distribution;
                 }
 
                 // check on the mean
@@ -886,26 +881,17 @@ namespace Test {
             TestResult f21 = Sample.FisherFTest(sample2, sample1);
 
             // sample 1 has a smaller variance
-            Console.WriteLine(f12.Statistic);
-            Assert.IsTrue(f12.Statistic < 1.0);
+            Assert.IsTrue(f12.Statistic.Value < 1.0);
 
             // 1/2 is the inverse of 2/1
             Assert.IsTrue(TestUtilities.IsNearlyEqual(f12.Statistic, 1.0 / f21.Statistic));
 
             // the F test detects the difference between the variance of 1 and 2
-            if (f12.Statistic > 1) {
-                Assert.IsTrue(f12.Distribution.RightProbability(f12.Statistic) < 0.05);
-            } else {
-                Assert.IsTrue(f12.Distribution.LeftProbability(f12.Statistic) < 0.05);
-            }
+            Assert.IsTrue(f12.Probability < 0.05);
 
             // the F test detects no difference between the variance of 1 and 3
             TestResult f13 = Sample.FisherFTest(sample1, sample3);
-            Assert.IsTrue(
-                f13.Distribution.LeftProbability(f13.Statistic) > 0.05 &&
-                f13.Distribution.RightProbability(f13.Statistic) > 0.05
-            );
-
+            Assert.IsTrue(f13.Probability > 0.05);
         }
 
         [TestMethod]
@@ -916,9 +902,9 @@ namespace Test {
             ContinuousDistribution d2 = new ExponentialDistribution(3.0);
 
             // create three samples from them
-            Sample s1a = CreateSample(d1, 20, 1);
-            Sample s1b = CreateSample(d1, 40, 2);
-            Sample s2 = CreateSample(d2, 80, 3);
+            Sample s1a = CreateSample(d1, 15, 1);
+            Sample s1b = CreateSample(d1, 30, 2);
+            Sample s2 = CreateSample(d2, 60, 3);
 
             // Mann-Whitney test 1a vs. 1b; they should not be distinguished
             TestResult rab = Sample.MannWhitneyTest(s1a, s1b);
@@ -928,7 +914,6 @@ namespace Test {
             // with 1 consistently less than 2, so U abnormally small
             TestResult r12 = Sample.MannWhitneyTest(s1b, s2);
             Assert.IsTrue(r12.Probability < 0.05);
-            Assert.IsTrue(r12.Distribution.LeftProbability(r12.Statistic) < 0.05);
 
         }
 
@@ -952,7 +937,7 @@ namespace Test {
 
             Assert.IsTrue(result.Total.DegreesOfFreedom == A.Count + B.Count + C.Count - 1);
 
-            Assert.IsTrue(result.Result.Statistic == result.Factor.Result.Statistic);
+            Assert.IsTrue(result.Result.Statistic.Value == result.Factor.Result.Statistic.Value);
 
         }
         
@@ -1024,7 +1009,7 @@ namespace Test {
                 // For each sample, do a z-test against the population.
                 TestResult zResult = sample.ZTest(population.Mean, population.StandardDeviation);
                 zSample.Add(zResult.Statistic);
-                zDistribution = zResult.Distribution;
+                zDistribution = zResult.Statistic.Distribution;
             }
 
             // The z's should be distributed normally, in accordance with the claimed distribution.

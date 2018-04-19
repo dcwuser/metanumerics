@@ -178,7 +178,7 @@ namespace Meta.Numerics.Functions {
         public override int GetHashCode () {
             int hash = values.Length;
             int max = Math.Min(values.Length, 16);
-            for(int i = 0; i < max; i++) {
+            for (int i = 0; i < max; i++) {
                 hash = values[i] + 17 * hash;
             }
             return (hash);
@@ -193,6 +193,30 @@ namespace Meta.Numerics.Functions {
             }
             return (text.ToString());
         }
+
+        /// <summary>
+        /// Enumerates all partitions of the given integer
+        /// </summary>
+        /// <param name="n">The integer to partition, which must be positive.</param>
+        /// <returns>An enumeration of all partitions of the given integer.</returns>
+        /// <remarks>
+        /// <para>Integer partitions are ways to write an integer as a sum of smaller integers. For example, the integer 4 has 5 partitions: 4,
+        /// 3 + 1, 2 + 2, 2 + 1 + 1, and 1 + 1 + 1 + 1.</para>
+        /// <para>Integer partitions appear in combinatoric problems and solutions to problems that may be mapped into combinatoric problems.
+        /// For example, the terms which appear in <a href="http://en.wikipedia.org/wiki/Fa%C3%A0_di_Bruno%27s_formula">Faà di Bruno's formula</a>
+        /// correspond to integer partitions.</para>
+        /// <para>The number of partitions grows very rapidly with n. Since enumerating through partitions does not require us to count them,
+        /// no overflows will occur even for large values of <paramref name="n"/>. However, completing the enumeration of
+        /// such a large number of partitions will take a long time, even though our algorithm produces each partition very quickly. For
+        /// example, there are about two hundred million partitions of the integer 100.
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is not positive.</exception>
+        /// <seealso href="http://en.wikipedia.org/wiki/Integer_partition"/>
+        public static IEnumerable<IntegerPartition> GetPartitions (int n) {
+            return (AdvancedIntegerMath.Partitions(n));
+        }
+
     }
 
     /// <summary>

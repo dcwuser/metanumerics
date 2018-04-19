@@ -111,6 +111,7 @@
     <Compile Include="Extended\DoubleDouble.cs" />
     <Compile Include="Extended\DoubleInfo.cs" />
     <Compile Include="Extended\ExtendedMath.cs" />
+    <Compile Include="Extended\NamespaceDoc.cs" />
     <Compile Include="Functions\AdvancedIntegerMath.cs" />
     <Compile Include="Functions\AdvancedIntegerMath_Partitions.cs" />
     <Compile Include="Functions\AdvancedMath.cs" />
@@ -139,7 +140,6 @@
     <Compile Include="Functions\IntegerPartition.cs" />
     <Compile Include="Functions\NamespaceDoc.cs" />
     <Compile Include="Functions\OrthogonalPolynomials.cs" />
-    <Compile Include="Functions\Partition.cs" />
     <Compile Include="Functions\Permutation.cs" />
     <Compile Include="Functions\SolutionPair.cs" />
     <Compile Include="Matrices\AnyMatrix.cs" />
@@ -252,12 +252,15 @@
     <Compile Include="Statistics\NullableDictionary.cs" />
     <Compile Include="Statistics\ParameterCollection.cs" />
     <Compile Include="Statistics\PolynomialRegressionResult.cs" />
+    <Compile Include="Statistics\PrincipalComponent.cs" />
     <Compile Include="Statistics\PrincipalComponentAnalysis.cs" />
     <Compile Include="Statistics\GeneralLinearRegressionResult.cs" />
+    <Compile Include="Statistics\PrincipalComponentCollection.cs" />
     <Compile Include="Statistics\Sample.cs" />
-    <Compile Include="Statistics\SampleSummary.cs" />
+    <Compile Include="Statistics\SummaryStatistics.cs" />
     <Compile Include="Statistics\Series.cs" />
     <Compile Include="Statistics\TestResult.cs" />
+    <Compile Include="Statistics\TestStatistic.cs" />
     <Compile Include="Statistics\TimeSeries.cs" />
     <Compile Include="Statistics\TimeSeriesPopulationStatistics.cs" />
     <Compile Include="Statistics\UncertainMeasurement.cs" />
@@ -267,9 +270,6 @@
     <Compile Include="Statistics\Univariate_Percentiles.cs" />
     <Compile Include="Statistics\Univariate_PopulationMoments.cs" />
     <Compile Include="Statistics\Univariate_Tests.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Special\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

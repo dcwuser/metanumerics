@@ -58,13 +58,9 @@ namespace Meta.Numerics.Statistics {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 1) return (Double.NaN);
 
-            int n = 0;
-            double mean = 0.0;
-            foreach (double value in sample) {
-                n++;
-                double delta = value - mean;
-                mean += delta / n;
-            }
+            int n;
+            double mean;
+            ComputeMomentsUpToFirst(sample, out n, out mean);
 
             return (mean);
         }
@@ -131,6 +127,20 @@ namespace Meta.Numerics.Statistics {
 
         // The second moment update formula can also be written using the difference between x_n and both the pre-update and post-update mean.
         //   (x_n - m) (x_n - m') = (x_n - m - d)(x_n - m') = (d n - d) d n = n (n - 1) d^2 = e
+
+        internal static void ComputeMomentsUpToFirst(IEnumerable<double> sample, out int n, out double mean) {
+
+            Debug.Assert(sample != null);
+
+            n = 0;
+            mean = 0.0;
+
+            foreach (double value in sample) {
+                n++;
+                mean += (value - mean) / n;
+            }
+
+        }
 
         internal static void ComputeMomentsUpToSecond (IEnumerable<double> sample, out int n, out double mean, out double sumOfSquaredDeviations) {
 

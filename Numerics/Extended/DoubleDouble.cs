@@ -5,15 +5,15 @@ using System.Text;
 namespace Meta.Numerics.Extended {
 
     /// <summary>
-    /// Represents a floating point number with extended precision.
+    /// Represents a floating point number with quadruple precision.
     /// </summary>
     /// <remarks>
     /// <para>The double double format uses two <see cref="Double"/> values to effectively
     /// double the precision with which a number can be stored and manipulated as compared to
-    /// to the <see cref="Double"/> structure, i.e. to approximately 31 decimal digits of precision.</para>
+    /// to the <see cref="Double"/> structure, i.e. to approximately 31 decimal digits of accuracy.</para>
     /// <para>Of all the extended precision floating point systems, double double is the
     /// fastest when implemented in software. A typical floating point operation on
-    /// double doubles is 3-4 times slower than on <see cref="Double"/>s.</para>
+    /// double doubles is just 3-4 times slower than on <see cref="Double"/>s.</para>
     /// </remarks>
     public struct DoubleDouble : IEquatable<DoubleDouble>, IComparable<DoubleDouble> {
         internal DoubleDouble (double hi, double lo) {

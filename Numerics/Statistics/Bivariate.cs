@@ -331,17 +331,6 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="KendallTauTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Pearson_correlation_coefficient" />
         public static TestResult PearsonRTest (IReadOnlyList<double> x, IReadOnlyList<double> y) {
-            return (PearsonRTest(x, y, TestType.TwoTailed));
-        }
-
-        /// <summary>
-        /// Performs a Pearson correlation test for association with the given sided-ness.
-        /// </summary>
-        /// <param name="x">The values of the first variable.</param>
-        /// <param name="y">The values of the second variable.</param>
-        /// <param name="type">The sided-ness of the test.</param>
-        /// <returns>The result of the test.</returns>
-        public static TestResult PearsonRTest (IReadOnlyList<double> x, IReadOnlyList<double> y, TestType type) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
@@ -354,7 +343,7 @@ namespace Meta.Numerics.Statistics {
             ComputeBivariateMomentsUpToTwo(x, y, out n, out xMean, out yMean, out xxSum, out yySum, out xySum);
             double r = xySum / Math.Sqrt(xxSum * yySum);
             ContinuousDistribution p = new PearsonRDistribution(n);
-            return (new TestResult("r", r, type, p));
+            return (new TestResult("r", r, p, TestType.TwoTailed));
         }
 
         /// <summary>
@@ -378,17 +367,6 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="KendallTauTest"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient"/>
         public static TestResult SpearmanRhoTest (IReadOnlyList<double> x, IReadOnlyList<double> y) {
-            return (SpearmanRhoTest(x, y, TestType.TwoTailed));
-        }
-
-        /// <summary>
-        /// Performs a Spearman rank-order test of association between the two variables with the given sided-ness.
-        /// </summary>
-        /// <param name="x">The values of the first variable.</param>
-        /// <param name="y">The values of the second variable.</param>
-        /// <param name="type">The sided-ness of the test.</param>
-        /// <returns>The result of the test.</returns>
-        public static TestResult SpearmanRhoTest (IReadOnlyList<double> x, IReadOnlyList<double> y, TestType type) {
 
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
@@ -397,37 +375,47 @@ namespace Meta.Numerics.Statistics {
             int n = x.Count;
             if (n < 3) throw new InsufficientDataException();
 
-            // analytic expressions for the mean and variance of ranks
-            double M = (n - 1) / 2.0;
-            double V = (n + 1) * (n - 1) / 12.0;
-
-            // compute the covariance of ranks
+            // Find the ranks.
             int[] rx = Univariate.GetRanks(x);
             int[] ry = Univariate.GetRanks(y);
+
+            // Compute the statistic and its null distribution.
+            // Use analytic expressions for the mean M and variance V of the ranks.
+            // C is the covariance of the ranks, rho is just the corresponding correlation coefficient.
+            // S encodes the same information, but as an integer that varies in steps of one, so
+            // its null distribution can be described by a DiscreteDistribution.
+            double M = (n - 1) / 2.0;
+            double V = (n + 1) * (n - 1) / 12.0;
+            int S = 0;
             double C = 0.0;
             for (int i = 0; i < n; i++) {
+                // Statisticians define S using 1-based ranks, so add 1 to each
+                // rank when computing S. This isn't important for C, because
+                // we are subtracting off mean.
+                S += (rx[i] + 1) * (ry[i] + 1);
                 C += (rx[i] - M) * (ry[i] - M);
             }
             C = C / n;
-
-            // compute rho
             double rho = C / V;
 
-            // for small enough sample, use the exact distribution
-            ContinuousDistribution rhoDistribution;
-            if (n < 14) {
-                // for small enough sample, use the exact distribution
-                // it would be nice to do this for at least slightly higher n, but computation time grows dramatically
-                // would like to ensure return in less than 100ms; current timings n=10 35ms, n=11 72ms, n=12 190ms
-                rhoDistribution = new DiscreteAsContinuousDistribution(new SpearmanExactDistribution(n), Interval.FromEndpoints(-1.0, 1.0));
+            // Compute the null distribution.
+            if (n < 12) {
+                // For small enough samples, use the exact distribution.
+                // It would be nice to do this for at least slightly higher n, but the time to compute the exact
+                // distribution grows dramatically with n. I would like to return in less than about 100ms.
+                // Current timings are n = 10 35ms, n = 11, 72ms, n = 12 190ms.
+                DiscreteDistribution sDistribution = new SpearmanExactDistribution(n);
+                ContinuousDistribution rhoDistribution = new DiscreteAsContinuousDistribution(new SpearmanExactDistribution(n), Interval.FromEndpoints(-1.0, 1.0));
+                return (new TestResult("s", S, sDistribution, "ρ", rho, rhoDistribution, TestType.TwoTailed));
             } else {
-                // for larger samples, use the normal approximation
-                // would like to fit support and C_4 too; look into logit-normal
-                // i was not happy with Edgeworth expansion, which can fit C_4 but screws up tails badly, even giving negative probabilities
-                rhoDistribution = new NormalDistribution(0.0, 1.0 / Math.Sqrt(n - 1));
+                // For larger samples, use the normal approximation.
+                // It would be nice to fit support and/or fourth cumulant.
+                // I was not happy with an Edgeworth expansion, which can fit the fourth cumulant, but screws up the tails
+                // badly, even giving negative probabilities for extreme values, which are quite likely for null-violating samples.
+                // Look into bounded quasi-normal distributions such as the logit-normal and truncated normal.
+                ContinuousDistribution rhoDistribution = new NormalDistribution(0.0, 1.0 / Math.Sqrt(n - 1));
+                return (new TestResult("ρ", rho, rhoDistribution, TestType.TwoTailed));
             }
-
-            return (new TestResult("ρ", rho, type, rhoDistribution));
 
         }
 
@@ -491,21 +479,21 @@ namespace Meta.Numerics.Statistics {
 
                 }
             }
+            double tau = 1.0 * (C - D) / (C + D);
 
-            // compute tau
-            double t = 1.0 * (C - D) / (C + D);
+            // Concordant and discordant counts should sum to total pairs.
+            Debug.Assert(C + D == n * (n - 1) / 2);
 
-            // compute tau distribution
-            ContinuousDistribution tauDistribution;
+            // Compute null distribution.
             if (n <= 20) {
-                tauDistribution = new DiscreteAsContinuousDistribution(new KendallExactDistribution(n), Interval.FromEndpoints(-1.0, 1.0));
+                DiscreteDistribution dDistribution = new KendallExactDistribution(n);
+                ContinuousDistribution tauDistribution = new DiscreteAsContinuousDistribution(dDistribution, Interval.FromEndpoints(-1.0, +1.0));
+                return (new TestResult("D", D, dDistribution, "τ", tau, tauDistribution, TestType.TwoTailed));
             } else {
-                double dt = Math.Sqrt((4 * n + 10) / 9.0 / n / (n - 1));
-                tauDistribution = new NormalDistribution(0.0, dt);
+                double dTau = Math.Sqrt((4 * n + 10) / 9.0 / n / (n - 1));
+                ContinuousDistribution tauDistribution = new NormalDistribution(0.0, dTau);
+                return (new TestResult("τ", tau, tauDistribution, TestType.TwoTailed));
             }
-
-            return (new TestResult("τ", t, TestType.TwoTailed, tauDistribution));
-
         }
 
         /// <summary>
@@ -551,7 +539,7 @@ namespace Meta.Numerics.Statistics {
             // t is the mean deviation as a fraction of standard error
             double t = m / s;
 
-            return (new TestResult("t", t, TestType.TwoTailed, new StudentDistribution(n - 1)));
+            return (new TestResult("t", t, new StudentDistribution(n - 1), TestType.TwoTailed));
 
         }
 
@@ -595,18 +583,15 @@ namespace Meta.Numerics.Statistics {
                 if (z[i] > 0.0) W += (i + 1);
             }
 
-            ContinuousDistribution nullDistribution;
             if (n < 32) {
-                DiscreteDistribution wilcoxon = new WilcoxonDistribution(n);
-                nullDistribution = new DiscreteAsContinuousDistribution(wilcoxon);
+                DiscreteDistribution wDistribution = new WilcoxonDistribution(n);
+                return (new TestResult("W", W, wDistribution, TestType.TwoTailed));
             } else {
                 double mu = n * (n + 1.0) / 4.0;
                 double sigma = Math.Sqrt(mu * (2.0 * n + 1.0) / 6.0);
-                nullDistribution = new NormalDistribution(mu, sigma);
+                ContinuousDistribution wDistribution = new NormalDistribution(mu, sigma);
+                return (new TestResult("W", W, wDistribution, TestType.TwoTailed));
             }
-
-            return (new TestResult("W", W, TestType.TwoTailed, nullDistribution));
-
         }
 
         /// <summary>

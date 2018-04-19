@@ -26,12 +26,11 @@ namespace Meta.Numerics.Matrices {
         internal VectorBase (int dimension) : this(new double[dimension], dimension) { }
 
         internal VectorBase (IReadOnlyList<double> list) {
-            if (list == null) throw new ArgumentNullException("list");
+            if (list == null) throw new ArgumentNullException(nameof(list));
             dimension = list.Count;
             store = list.ToArray();
             offset = 0;
             stride = 1;
-            //((IList<double>) list).CopyTo(store, 0);
         }
 
         // this storage is internal so that other routines can access it for fast operations (e.g. multiplication)
@@ -47,11 +46,11 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The value of the specified vector component.</returns>
         public virtual double this[int index] {
             get {
-                if ((index < 0) || (index >= dimension)) throw new ArgumentOutOfRangeException("index");
+                if ((index < 0) || (index >= dimension)) throw new ArgumentOutOfRangeException(nameof(index));
                 return (store[offset + stride * index]);
             }
             set {
-                if ((index < 0) || (index >= dimension)) throw new ArgumentOutOfRangeException("index");
+                if ((index < 0) || (index >= dimension)) throw new ArgumentOutOfRangeException(nameof(index));
                 if (IsReadOnly) throw new InvalidOperationException();
                 store[offset + stride * index] = value;
             }

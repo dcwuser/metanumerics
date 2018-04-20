@@ -608,7 +608,7 @@ namespace Test {
                 zSample.Add(yp - y0);
 
                 ColumnVector c = new ColumnVector(1.0, x0);
-                double v = c.Transpose() * (fit.Parameters.CovarianceMatrix) * c;
+                double v = c.Transpose * (fit.Parameters.CovarianceMatrix) * c;
                 vSample.Add(v);
 
                 double u = s2 * (1.0 + 1.0 / n + MoreMath.Sqr(x0 - mx) / (cxx * n));

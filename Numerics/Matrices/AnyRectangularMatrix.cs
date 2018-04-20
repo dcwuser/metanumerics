@@ -192,6 +192,11 @@ namespace Meta.Numerics.Matrices {
         /// Computes the product of the matrix and its transpose.
         /// </summary>
         /// <returns>The product matrix A A<sup>T</sup>.</returns>
+        /// <remarks>
+        /// <para>This particular matrix multiplication is guaranteed to produce a symmetric matrix.
+        /// Carrying out the multiplication using this method is not only faster than 
+        /// calling A * A.Transpose, but also returns the result as a <see cref="SymmetricMatrix"/>.</para>
+        /// </remarks>
         public virtual SymmetricMatrix MultiplySelfByTranspose () {
             SymmetricMatrix AAT = new SymmetricMatrix(this.RowCount);
             for (int r = 0; r < this.RowCount; r++) {
@@ -210,6 +215,11 @@ namespace Meta.Numerics.Matrices {
         /// Computes the product of the matrix's transpose and itself.
         /// </summary>
         /// <returns>The product matrix A<sup>T</sup> A.</returns>
+        /// <remarks>
+        /// <para>This particular matrix multiplication is guaranteed to produce a symmetric matrix.
+        /// Carrying out the multiplication using this method is not only faster than 
+        /// calling A.Transpose * A, but also returns the result as a <see cref="SymmetricMatrix"/>.</para>
+        /// </remarks>
         public virtual SymmetricMatrix MultiplyTransposeBySelf () {
             SymmetricMatrix ATA = new SymmetricMatrix(this.ColumnCount);
             for (int r = 0; r < this.ColumnCount; r++) {

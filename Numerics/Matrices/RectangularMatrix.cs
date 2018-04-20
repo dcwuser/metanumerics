@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 
 namespace Meta.Numerics.Matrices {
@@ -30,6 +31,7 @@ namespace Meta.Numerics.Matrices {
         /// Initializes a rectangular matrix from the given 2D array.
         /// </summary>
         /// <param name="source">The source 2D array.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/>.</exception>
         public RectangularMatrix (double[,] source) {
             if (source == null) throw new ArgumentNullException(nameof(source));
             rows = source.GetLength(0);
@@ -42,14 +44,19 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
-        internal RectangularMatrix (double[] store, int rows, int cols, bool isReadOnly) : base(isReadOnly) {
+        internal RectangularMatrix (double[] store, int offset, int rowStride, int colStride, int rows, int cols, bool isReadOnly) : base(isReadOnly) {
+            Debug.Assert(store != null);
+            Debug.Assert(rows > 0);
+            Debug.Assert(cols > 0);
             this.store = store;
-            offset = 0;
-            rowStride = 1;
-            colStride = rows;
+            this.offset = offset;
+            this.rowStride = rowStride;
+            this.colStride = colStride;
             this.rows = rows;
             this.cols = cols;
         }
+
+        internal RectangularMatrix (double[] store, int rows, int cols, bool isReadOnly) : this(store, 0, 1, rows, rows, cols, isReadOnly) { }
 
         internal RectangularMatrix (double[] store, int rows, int cols) : this(store, rows, cols, false) { }
 
@@ -84,7 +91,7 @@ namespace Meta.Numerics.Matrices {
             get { return (cols); }
         }
 
-        // optional, optomized replacements for RectangularMatrixBase operations
+        // optional, optimized replacements for RectangularMatrixBase operations
 
         /// <inheritdoc />
         public override double OneNorm () {
@@ -118,6 +125,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The first matrix.</param>
         /// <param name="B">The second matrix.</param>
         /// <returns>The sum matrix <paramref name="A"/> + <paramref name="B"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException"><paramref name="A"/> and <paramref name="B"/> do not have the same dimensions.</exception>
         public static RectangularMatrix operator + (RectangularMatrix A, RectangularMatrix B) {
             if (A == null) throw new ArgumentNullException(nameof(A));
             if (B == null) throw new ArgumentNullException(nameof(B));
@@ -137,6 +146,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The first matrix.</param>
         /// <param name="B">The second matrix.</param>
         /// <returns>The sum matrix <paramref name="A"/> - <paramref name="B"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException"><paramref name="A"/> and <paramref name="B"/> do not have the same dimensions.</exception>
         public static RectangularMatrix operator - (RectangularMatrix A, RectangularMatrix B) {
             if (A == null) throw new ArgumentNullException(nameof(A));
             if (B == null) throw new ArgumentNullException(nameof(B));
@@ -156,6 +167,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The first matrix.</param>
         /// <param name="B">The second matrix.</param>
         /// <returns>The product matrix AB.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException">The column count of <paramref name="A"/> does not equal the row count of <paramref name="B"/>.</exception>
         public static RectangularMatrix operator * (RectangularMatrix A, RectangularMatrix B) {
             // This is faster than the base operator, because it knows about the underlying storage structure
             if (A == null) throw new ArgumentNullException(nameof(A));
@@ -174,7 +187,8 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="alpha">The constant.</param>
         /// <param name="A">The matrix.</param>
-        /// <returns>The product aA.</returns>
+        /// <returns>The product &#x3B1;A.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> is <see langword="null"/>.</exception>
         public static RectangularMatrix operator * (double alpha, RectangularMatrix A) {
             if (A == null) throw new ArgumentNullException(nameof(A));
             double[] store = MatrixAlgorithms.Multiply(alpha, A.store, A.offset, A.rowStride, A.colStride, A.rows, A.cols);
@@ -186,7 +200,8 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="A">The matrix.</param>
         /// <param name="alpha">The constant.</param>
-        /// <returns>The quotient A/a.</returns>
+        /// <returns>The quotient A/&#x3B1;.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> is <see langword="null"/>.</exception>
         public static RectangularMatrix operator / (RectangularMatrix A, double alpha) {
             if (A == null) throw new ArgumentNullException(nameof(A));
             double[] store = MatrixAlgorithms.Multiply(1.0 / alpha, A.store, A.offset, A.rowStride, A.colStride, A.rows, A.cols);
@@ -198,6 +213,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="A">The matrix.</param>
         /// <returns>The matrix -A.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> is <see langword="null"/>.</exception>
         public static RectangularMatrix operator - (RectangularMatrix A) {
             if (A == null) throw new ArgumentNullException(nameof(A));
             double[] store = MatrixAlgorithms.Multiply(-1.0, A.store, A.offset, A.rowStride, A.colStride, A.rows, A.cols);
@@ -209,20 +225,33 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Copies the matrix.
         /// </summary>
-        /// <returns>An indpendent copy of the matrix.</returns>
+        /// <returns>An independent copy of the matrix.</returns>
         public RectangularMatrix Copy () {
             double[] cStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, rows, cols);
             return (new RectangularMatrix(cStore, rows, cols));
         }
 
         /// <summary>
-        /// Returns the transpose of the matrix.
+        /// Gets the transpose of the matrix.
         /// </summary>
-        /// <returns>M<sup>T</sup></returns>
-        public RectangularMatrix Transpose () {
-            // Just copy with rows <-> columns to get transpose
-            double[] transpose = MatrixAlgorithms.Copy(store, offset, colStride, rowStride, cols, rows);
-            return (new RectangularMatrix(transpose, cols, rows));
+        /// <value>M<sup>T</sup></value>
+        /// <remarks>
+        /// <para>The returned transpose matrix is not independent of the original matrix.
+        /// Instead, it is a read-only view into the same storage as the original matrix with row an column indices reversed.
+        /// This has the advantage that is can be produced with almost no time and memory cost.
+        /// It has the disadvantage that any subsequent changes to the original matrix will be reflected in the returned transpose,
+        /// which might not be what you expected. If you want an independent, write-able transpose matrix, call <see cref="Copy"/>
+        /// on the returned matrix.
+        /// </para>
+        /// </remarks>
+        /// <seealso href="https://en.wikipedia.org/wiki/Transpose"/>
+        public RectangularMatrix Transpose {
+            get {
+                // Just switch rows <-> columns on same storage
+                return (new RectangularMatrix(store, offset, colStride, rowStride, cols, rows, true));
+            }
+            //double[] transpose = MatrixAlgorithms.Copy(store, offset, colStride, rowStride, cols, rows);
+            //return (new RectangularMatrix(transpose, cols, rows));
         }
 
 
@@ -260,10 +289,10 @@ namespace Meta.Numerics.Matrices {
 
             if (rows >= cols) {
 
-                // copy the matrix so as not to distrub the original
+                // copy the matrix so as not to disturb the original
                 double[] copy = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, rows, cols);
 
-                // bidiagonalize it
+                // bi-diagonalize it
                 double[] a, b;
                 MatrixAlgorithms.Bidiagonalize(copy, rows, cols, out a, out b);
 
@@ -271,7 +300,7 @@ namespace Meta.Numerics.Matrices {
                 double[] left = MatrixAlgorithms.AccumulateBidiagonalU(copy, rows, cols);
                 double[] right = MatrixAlgorithms.AccumulateBidiagonalV(copy, rows, cols);
 
-                // find the singular values of the bidiagonal matrix
+                // find the singular values of the bi-diagonal matrix
                 MatrixAlgorithms.ExtractSingularValues(a, b, left, right, rows, cols);
 
                 // sort them
@@ -332,7 +361,7 @@ namespace Meta.Numerics.Matrices {
         /// <para>It can occur that the mode of construction of a RectangularMatrix guarantees that it is
         /// actually square. For example, if you multiply an N X M rectangular matrix by an M X N rectangular matrix,
         /// the result is an N X N square matrix. However, when determining the type of the product, the .NET
-        /// compiler considers only the types of the multiplicants. Since a RectangularMatrix times a RectangularMatrix
+        /// compiler considers only the types of the multiplicands. Since a RectangularMatrix times a RectangularMatrix
         /// yields a RectangularMatrix, it will consider the type of the product to be RetangularMatrix, even though
         /// its rows and column dimensions will be equal. You can use this explicit cast to obtain a SquareMatrix type.
         /// </para>

@@ -172,7 +172,7 @@ namespace Test {
 
                 Assert.IsTrue(TestUtilities.IsSumNearlyEqual(es, tr));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    D, E.TransformMatrix.Transpose() * M * E.TransformMatrix
+                    D, E.TransformMatrix.Transpose * M * E.TransformMatrix
                 ));
 
             }
@@ -257,7 +257,7 @@ namespace Test {
             SymmetricMatrix A = new SymmetricMatrix(d);
             for (int i = 0; i < d; i++) {
                 for (int j = 0; j <= i; j++) {
-                    A[i, j] = V[i].Transpose() * V[j];
+                    A[i, j] = V[i].Transpose * V[j];
                 }
             }
 

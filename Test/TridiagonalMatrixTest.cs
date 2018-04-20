@@ -115,19 +115,15 @@ namespace Test {
             TridiagonalMatrix TC = T.Copy();
             Assert.IsTrue(TC == T);
 
-            // check that clone is independend
+            // check that clone is independent
             TC[0, 0] += 1.0;
             Assert.IsTrue(TC != T);
 
             // check that transpose of transpose is original
-            TridiagonalMatrix TT = T.Transpose();
+            TridiagonalMatrix TT = T.Transpose;
             Assert.IsTrue(TT != T);
-            TridiagonalMatrix TTT = TT.Transpose();
+            TridiagonalMatrix TTT = TT.Transpose;
             Assert.IsTrue(TTT == T);
-
-            // check that transpose is independent
-            TTT[0, 0] += 1.0;
-            Assert.IsTrue(TTT != T);
 
         }
 

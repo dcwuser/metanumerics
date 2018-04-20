@@ -13,6 +13,9 @@ namespace Meta.Numerics.Matrices {
         private double[] eigenvectorStorage;
 
         internal RealEigensystem (int dimension, double[] eigenvalues, double[] eigenvectorStorage) {
+            Debug.Assert(dimension > 0);
+            Debug.Assert(eigenvalues != null);
+            Debug.Assert(eigenvectorStorage != null);
             this.dimension = dimension;
             this.eigenvalues = eigenvalues;
             this.eigenvectorStorage = eigenvectorStorage;
@@ -46,14 +49,14 @@ namespace Meta.Numerics.Matrices {
         /// <para>The returned vector is read-only. If you need to make changes to it, you can call <see cref="ColumnVector.Copy"/> to obtain a writable copy.</para>
         /// </remarks>
         public ColumnVector Eigenvector (int n) {
-            if ((n < 0) || (n >= dimension)) throw new ArgumentOutOfRangeException("n");
+            if ((n < 0) || (n >= dimension)) throw new ArgumentOutOfRangeException(nameof(n));
             return (new ColumnVector(eigenvectorStorage, n * dimension, 1, dimension, true));
         }
 
         /// <summary>
         /// Gets the transformation matrix that diagonalizes the original matrix.
         /// </summary>
-        /// <value>The orthogonal matrix V such that V<sup>T</sup>AV = D, where A is the orignal matrix and D is diagonal.</value>
+        /// <value>The orthogonal matrix V such that V<sup>T</sup>AV = D, where A is the original matrix and D is diagonal.</value>
         /// <remarks>
         /// <para>The returned matrix is read-only. If you need to make changes to it, you can call <see cref="SquareMatrix.Copy"/> to obtain a writable copy.</para>
         /// </remarks>

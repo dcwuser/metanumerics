@@ -31,8 +31,6 @@ namespace Meta.Numerics.Matrices {
 
         internal RowVector(double[] store, int offset, int stride, int dimension, bool isReadonly) : base(store, offset, stride, dimension, isReadonly) { }
 
-        internal RowVector (double[] store, int dimension, bool isReadOnly) : base(store, dimension, isReadOnly) { }
-
         internal RowVector (double[] store, int dimension) : base(store, dimension) { }
 
         /// <inheritdoc />
@@ -62,10 +60,11 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Returns the transpose of the row vector.
         /// </summary>
-        /// <returns>An independent column vector with the same components as the row vector.</returns>
-        public ColumnVector Transpose () {
-            double[] copy = VectorAlgorithms.Copy(store, offset, stride, dimension);
-            return (new ColumnVector(copy, dimension));
+        /// <value>A column vector with the same components as the row vector.</value>
+        public ColumnVector Transpose {
+            get {
+                return (new ColumnVector(store, offset, stride, dimension, true));
+            }
         }
 
         /// <summary>

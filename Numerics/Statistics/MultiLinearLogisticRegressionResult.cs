@@ -141,8 +141,8 @@ namespace Meta.Numerics.Statistics {
                 }
             }
 
-            double t = v.Transpose() * b;
-            double vt = v.Transpose() * C * v;
+            double t = v.Transpose * b;
+            double vt = v.Transpose * C * v;
 
             double e = Math.Exp(-t);
             double p = 1.0 / (1.0 + e);

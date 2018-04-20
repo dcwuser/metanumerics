@@ -7,7 +7,7 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents the LU decomposition of a square matrix.
     /// </summary>
-    /// <remarks><para>An LU decomposition is a representation of a matrix M as the product of a lower-left-triagular matrix L and
+    /// <remarks><para>An LU decomposition is a representation of a matrix M as the product of a lower-left-triangular matrix L and
     /// and an upper-right-triangular matrix U. To reduce numerical instabilities, we actually decompose a row-wise
     /// permutation of a matrix, so that we have P A = L U, where P is a permutation matrix.</para>
     /// <para>For example, here is an LU decomposition of a permutation of a simple 3 X 3 matrix:</para>

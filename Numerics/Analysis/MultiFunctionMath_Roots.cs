@@ -83,7 +83,7 @@ namespace Meta.Numerics.Analysis {
 
                 // update B
                 ColumnVector dF = F1 - F;
-                RectangularMatrix dB = (dF - B * dx) * (dx / (dx.Transpose() * dx)).Transpose();
+                RectangularMatrix dB = (dF - B * dx) * (dx / (dx.Transpose * dx)).Transpose;
                 //RectangularMatrix dB = F1 * ( dx / MoreMath.Pow(dx.Norm(), 2) ).Transpose();
                 for (int i = 0; i < d; i++) {
                     for (int j = 0; j < d; j++) {

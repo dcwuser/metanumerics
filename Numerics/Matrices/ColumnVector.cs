@@ -47,13 +47,13 @@ namespace Meta.Numerics.Matrices {
         /// <inheritdoc />
         public override double this[int r, int c] {
             get {
-                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
-                if (c != 0) throw new ArgumentOutOfRangeException("c");
+                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+                if (c != 0) throw new ArgumentOutOfRangeException(nameof(c));
                 return (base[r]);
             }
             set {
-                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
-                if (c != 0) throw new ArgumentOutOfRangeException("c");
+                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+                if (c != 0) throw new ArgumentOutOfRangeException(nameof(c));
                 base[r] = value;
             }
         }
@@ -61,10 +61,11 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Returns the transpose of the column vector.
         /// </summary>
-        /// <returns>An independent row vector with the same components as the column vector.</returns>
-        public RowVector Transpose () {
-            double[] copy = VectorAlgorithms.Copy(store, offset, stride, dimension);
-            return (new RowVector(copy, dimension));
+        /// <value>A row vector with the same components as the column vector.</value>
+        public RowVector Transpose {
+            get {
+                return (new RowVector(store, offset, stride, dimension, true));
+            }
         }
 
         /// <summary>
@@ -83,8 +84,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="v2">The second column vector.</param>
         /// <returns>The sum <paramref name="v1"/> + <paramref name="v2"/>.</returns>
         public static ColumnVector operator + (ColumnVector v1, ColumnVector v2) {
-            if (v1 == null) throw new ArgumentNullException("v1");
-            if (v2 == null) throw new ArgumentNullException("v2");
+            if (v1 == null) throw new ArgumentNullException(nameof(v1));
+            if (v2 == null) throw new ArgumentNullException(nameof(v2));
             if (v1.dimension != v2.dimension) throw new DimensionMismatchException();
             double[] store = VectorAlgorithms.Add(v1.store, v1.offset, v1.stride, v2.store, v2.offset, v2.stride, v1.dimension);
             return (new ColumnVector(store, v1.dimension));
@@ -97,8 +98,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="v2">The second column vector.</param>
         /// <returns>The difference <paramref name="v1"/> - <paramref name="v2"/>.</returns>
         public static ColumnVector operator - (ColumnVector v1, ColumnVector v2) {
-            if (v1 == null) throw new ArgumentNullException("v1");
-            if (v2 == null) throw new ArgumentNullException("v2");
+            if (v1 == null) throw new ArgumentNullException(nameof(v1));
+            if (v2 == null) throw new ArgumentNullException(nameof(v2));
             if (v1.dimension != v2.dimension) throw new DimensionMismatchException();
             double[] store = VectorAlgorithms.Subtract(v1.store, v1.offset, v1.stride, v2.store, v2.offset, v2.stride, v1.dimension);
             return (new ColumnVector(store, v1.dimension));
@@ -109,9 +110,9 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="alpha">The real, scalar constant.</param>
         /// <param name="v">The column vector.</param>
-        /// <returns>The product.</returns>
+        /// <returns>The product &#x3B1;v.</returns>
         public static ColumnVector operator * (double alpha, ColumnVector v) {
-            if (v == null) throw new ArgumentNullException("v");
+            if (v == null) throw new ArgumentNullException(nameof(v));
             double[] store = VectorAlgorithms.Multiply(alpha, v.store, v.offset, v.stride, v.dimension);
             return (new ColumnVector(store, v.dimension));
         }
@@ -121,9 +122,9 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="alpha">The real, scalar constant.</param>
         /// <param name="v">The column vector.</param>
-        /// <returns>The product.</returns>
+        /// <returns>The quotient v / &#x3B1;.</returns>
         public static ColumnVector operator / (ColumnVector v, double alpha) {
-            if (v == null) throw new ArgumentNullException("v");
+            if (v == null) throw new ArgumentNullException(nameof(v));
             double[] store = VectorAlgorithms.Multiply(1.0 / alpha, v.store, v.offset, v.stride, v.dimension);
             return (new ColumnVector(store, v.dimension));
         }

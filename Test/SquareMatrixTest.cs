@@ -129,7 +129,7 @@ namespace Test {
             SquareMatrix MB = MA / 2.0;
             Assert.IsTrue(MB == M);
 
-            // Subraction of self same as multiplication by zero
+            // Subtraction of self same as multiplication by zero
             SquareMatrix MS = M - M;
             SquareMatrix M0 = 0.0 * M;
             Assert.IsTrue(MS == M0);
@@ -140,7 +140,7 @@ namespace Test {
             Assert.IsTrue(MN == MM);
 
             // check transpose
-            SquareMatrix MT = M.Transpose();
+            SquareMatrix MT = M.Transpose;
             Assert.IsTrue(MT != M);
 
             // matrix multiplication is not ableian
@@ -149,7 +149,7 @@ namespace Test {
             Assert.IsFalse(MMT == MTM);
 
             // check that transpose of transpose is original
-            SquareMatrix MTT = MT.Transpose();
+            SquareMatrix MTT = MT.Transpose;
             Assert.IsTrue(MTT == M);
 
         }
@@ -657,7 +657,7 @@ namespace Test {
                 Console.WriteLine(SVD.SingularValue(i));
             }
 
-            SquareMatrix S = SVD.LeftTransformMatrix.Transpose() * H * SVD.RightTransformMatrix;
+            SquareMatrix S = SVD.LeftTransformMatrix.Transpose * H * SVD.RightTransformMatrix;
             for (int i = 0; i < SVD.Dimension; i++) {
                 Console.WriteLine(S[i, i]);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(S[i, i], SVD.SingularValue(i)));
@@ -757,7 +757,7 @@ namespace Test {
 
             // Create a rank-1 matrix
             ColumnVector v = new ColumnVector(1.0, 2.0, 3.0, 4.0);
-            RectangularMatrix A = v * v.Transpose();
+            RectangularMatrix A = v * v.Transpose;
 
             SingularValueDecomposition SVD = A.SingularValueDecomposition();
 
@@ -788,7 +788,7 @@ namespace Test {
                 for (int i = 0; i < d; i++) x[i] = i;
                 ColumnVector b = A * x;
 
-                ColumnVector b1 = SVD.LeftTransformMatrix.Transpose() * b;
+                ColumnVector b1 = SVD.LeftTransformMatrix.Transpose * b;
                 for (int i = 0; i < SVD.Rank; i++) b1[i] = b1[i] / SVD.SingularValue(i);
                 ColumnVector b2 = SVD.RightTransformMatrix * b1;
 

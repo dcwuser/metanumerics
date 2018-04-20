@@ -520,7 +520,7 @@ namespace Test {
                 // Compute the integral
                 Func<IReadOnlyList<double>, double> f = (IReadOnlyList<double> x) => {
                     ColumnVector v = new ColumnVector(x);
-                    double s = v.Transpose() * (A * v);
+                    double s = v.Transpose * (A * v);
                     return (Math.Exp(-s));
                 };
 

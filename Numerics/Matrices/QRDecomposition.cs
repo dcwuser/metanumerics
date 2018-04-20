@@ -15,6 +15,7 @@ namespace Meta.Numerics.Matrices {
     /// <para>The method <see cref="RectangularMatrix.QRDecomposition"/> of the <see cref="RectangularMatrix"/> class can be used to QR decompose a
     /// rectangular matrix.</para>
     /// </remarks>
+    /// <seealso href="https://en.wikipedia.org/wiki/QR_decomposition"/>
     public sealed class QRDecomposition {
 
         private readonly double[] qtStore;

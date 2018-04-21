@@ -304,20 +304,16 @@ namespace Test {
             for (int d = 1; d <= 8; d++) {
                 SquareMatrix H = CreateVandermondeMatrix(d);
                 double tr = H.Trace();
-                ComplexEigensystem E = H.Eigensystem();
+                ComplexEigendecomposition E = H.Eigendecomposition();
                 double sum = 0.0;
-                for (int i = 0; i < d; i++) {
-                    Console.WriteLine(E.Eigenvalue(i));
-                    double e = E.Eigenvalue(i).Re;
+                foreach(ComplexEigenpair pair in E.Eigenpairs) {
+                    double e = pair.Eigenvalue.Re;
                     sum += e;
-                    Complex[] vc = E.Eigenvector(i);
+                    ComplexColumnVector vc = pair.Eigenvector;
                     ColumnVector v = new ColumnVector(d);
                     for (int j = 0; j < d; j++) {
-                        //Console.WriteLine("  {0}", vc[j]);
                         v[j] = vc[j].Re;
                     }
-                    ColumnVector Hv = H * v;
-                    ColumnVector ev = e * v;
                     Assert.IsTrue(TestUtilities.IsNearlyEigenpair(H, v, e));
                 }
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(tr, sum));
@@ -332,14 +328,14 @@ namespace Test {
                 SquareMatrix M = CreateSquareRandomMatrix(d, d);
                 double tr = M.Trace();
                 DateTime start = DateTime.Now;
-                ComplexEigensystem E = M.Eigensystem();
+                ComplexEigendecomposition E = M.Eigendecomposition();
                 DateTime finish = DateTime.Now;
                 Console.WriteLine("d={0} t={1} ms", d, (finish - start).Milliseconds);
                 Assert.IsTrue(E.Dimension == d);
                 Complex[] es = new Complex[d];
                 for (int i = 0; i < d; i++) {
-                    es[i] = E.Eigenvalue(i);
-                    Complex[] v = E.Eigenvector(i);
+                    es[i] = E.Eigenpairs[i].Eigenvalue;
+                    ComplexColumnVector v = E.Eigenpairs[i].Eigenvector;
                     Assert.IsTrue(TestUtilities.IsNearlyEigenpair(M, v, es[i]));
                 }
                 Assert.IsTrue(TestUtilities.IsSumNearlyEqual(es, tr));
@@ -362,12 +358,12 @@ namespace Test {
         public void SquareUnitMatrixEigensystem () {
             int d = 3;
             SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
-            ComplexEigensystem E = I.Eigensystem();
+            ComplexEigendecomposition E = I.Eigendecomposition();
             Assert.IsTrue(E.Dimension == d);
             for (int i = 0; i < d; i++) {
-                Complex val = E.Eigenvalue(i);
+                Complex val = E.Eigenpairs[i].Eigenvalue;
                 Assert.IsTrue(val == 1.0);
-                Complex[] vec = E.Eigenvector(i);
+                ComplexColumnVector vec = E.Eigenpairs[i].Eigenvector;
                 for (int j = 0; j < d; j++) {
                     if (i == j) {
                         Assert.IsTrue(vec[j] == 1.0);
@@ -380,8 +376,8 @@ namespace Test {
 
         [TestMethod]
         public void SquareMatrixDifficultEigensystem () {
-            // this requires > 30 iterations to converge, looses more accuracy than it should
-            // this example throws a NonConvergenceException without the ad hoc shift but works once the ad hoc shift is included
+            // This matrix requires > 30 iterations to converge, looses more accuracy than it should.
+            // This example throws a NonConvergenceException without the ad hoc shift but works once the ad hoc shift is included.
             SquareMatrix M = new SquareMatrix(4);
             M[0,1] = 2;
             M[0,3] = -1;
@@ -390,14 +386,10 @@ namespace Test {
             M[3,2] = 1;
             // The eigenvalues of this matrix are -1, -1, 1, 1.
             // There are only two distinct eigenvectors: (1, -1, 1, -1) with eigenvalue -1, and (1, 1, 1, 1) with eigenvalue 1.
-            ComplexEigensystem E = M.Eigensystem();
-            for (int i = 0; i < E.Dimension; i++) {
-                Console.WriteLine(E.Eigenvalue(i));
-                for (int j = 0; j < E.Dimension; j++) {
-                    Console.Write("{0} ", E.Eigenvector(i)[j]);
-                }
-                Console.WriteLine();
-                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(M, E.Eigenvector(i), E.Eigenvalue(i)));
+            ComplexEigendecomposition E = M.Eigendecomposition();
+            foreach(ComplexEigenpair pair in E.Eigenpairs)
+            {
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(M, pair.Eigenvector, pair.Eigenvalue));
             }
         }
 
@@ -408,7 +400,7 @@ namespace Test {
             // This example is presented in http://people.inf.ethz.ch/arbenz/ewp/Lnotes/chapter3.pdf
             // It has eigenvalues 1 \pm 2i, 3, 4, 5 \pm 6i
 
-            double[,] souce = new double[,] {
+            double[,] source = new double[,] {
                 { 7, 3, 4, -11, -9, -2},
                 {-6, 4, -5, 7, 1, 12},
                 {-1, -9, 2, 2, 9, 1},
@@ -417,12 +409,7 @@ namespace Test {
                 {6, 1, 4, -11, -7, -1}
             };
 
-            SquareMatrix A = new SquareMatrix(6);
-            for (int r = 0; r < souce.GetLength(0); r++) {
-                for (int c = 0; c < souce.GetLength(1); c++) {
-                    A[r, c] = souce[r, c];
-                }
-            }
+            SquareMatrix A = new SquareMatrix(source);
 
             Complex[] eigenvalues = A.Eigenvalues();
 
@@ -434,20 +421,19 @@ namespace Test {
         [TestMethod]
         public void DegenerateEigenvalues () {
 
-            double[,] souce = new double[,] {
+            double[,] source = new double[,] {
                 {1, 0, 1},
                 {0, 2, 0},
                 {1, 0, 1}
             };
-            SquareMatrix A = new SquareMatrix(3);
-            for (int r = 0; r < souce.GetLength(0); r++) {
-                for (int c = 0; c < souce.GetLength(1); c++) {
-                    A[r, c] = souce[r, c];
-                }
+            SquareMatrix A = new SquareMatrix(source);
+
+            ComplexEigendecomposition e = A.Eigendecomposition();
+
+            foreach (ComplexEigenpair pair in e.Eigenpairs)
+            {
+                TestUtilities.IsNearlyEigenpair(A, pair.Eigenvector, pair.Eigenvalue);
             }
-
-            ComplexEigensystem e = A.Eigensystem();
-
 
         }
 
@@ -525,11 +511,10 @@ namespace Test {
             }
 
             //Complex[] v = R.Eigenvalues();
-            ComplexEigensystem E = R.Eigensystem();
+            ComplexEigendecomposition E = R.Eigendecomposition();
 
             for (int i = 0; i < E.Dimension; i++) {
-                Console.WriteLine(E.Eigenvalue(i));
-                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(R, E.Eigenvector(i), E.Eigenvalue(i)));
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(R, E.Eigenpairs[i].Eigenvector, E.Eigenpairs[i].Eigenvalue));
             }
 
         }
@@ -675,10 +660,7 @@ namespace Test {
             CM[1, 2] = -3.0;
             CM[2, 1] = 1.0;
             CM[2, 2] = -3.0;
-            ComplexEigensystem EM = CM.Eigensystem();
-            for (int i = 0; i < EM.Dimension; i++) {
-                Console.WriteLine("! {0}", EM.Eigenvalue(i));
-            }
+            ComplexEigendecomposition EM = CM.Eigendecomposition();
 
 
             for (int d = 2; d <= 8; d++) {
@@ -693,11 +675,7 @@ namespace Test {
                     C[r, d - 1] = -AdvancedIntegerMath.BinomialCoefficient(d, r);
                 }
 
-                ComplexEigensystem e = C.Eigensystem();
-                for (int i = 0; i < e.Dimension; i++) {
-                    Console.WriteLine("!! {0}", e.Eigenvalue(i));
-                }
-
+                ComplexEigendecomposition e = C.Eigendecomposition();
 
             }
 

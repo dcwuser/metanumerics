@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
@@ -268,7 +271,7 @@ namespace Test {
 
         }
 
-        public static bool IsNearlyEigenpair (AnySquareMatrix A, Complex[] v, Complex a) {
+        public static bool IsNearlyEigenpair (AnySquareMatrix A, IReadOnlyList<Complex> v, Complex a) {
 
             int d = A.Dimension;
 
@@ -413,6 +416,23 @@ namespace Test {
             //    yield return distribution.GetRandomValue(rng);
             //}
 
+        }
+
+        public static void TestEnumerable<T>(IEnumerable<T> source) where T : IEquatable<T>
+        {
+            IEnumerator<T> typed = source.GetEnumerator();
+            IEnumerator untyped = ((IEnumerable)source).GetEnumerator();
+
+            for (int i = 0; i < 4; i++)
+            {
+                bool typedMove = typed.MoveNext();
+                bool untypedMove = untyped.MoveNext();
+                Assert.IsTrue(typedMove == untypedMove);
+                if (!typedMove) break;
+                T typedResult = typed.Current;
+                T untypedResult = (T) untyped.Current;
+                Assert.IsTrue(typedResult.Equals(untypedResult));
+            }
         }
 
     }

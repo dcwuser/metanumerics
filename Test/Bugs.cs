@@ -40,9 +40,9 @@ namespace Test {
                 }
             }
 
-            ComplexEigensystem S = A.Eigensystem();
-            for (int i = 0; i < S.Dimension; i++) {
-                TestUtilities.IsNearlyEigenpair(A, S.Eigenvector(i), S.Eigenvalue(i));
+            ComplexEigendecomposition S = A.Eigendecomposition();
+            foreach (ComplexEigenpair pair in S.Eigenpairs)  {
+                TestUtilities.IsNearlyEigenpair(A, pair.Eigenvector, pair.Eigenvalue);
             }
 
             Complex[] eigenvalues = A.Eigenvalues();
@@ -187,15 +187,12 @@ namespace Test {
             matrix[1, n] = 1.0 / 8;
             matrix[n, 1] = 1.0 / 8;
 
-            ComplexEigensystem ces = matrix.Eigensystem();
+            ComplexEigendecomposition ces = matrix.Eigendecomposition();
 
-            Console.WriteLine("output");
             SquareMatrix V = new SquareMatrix(n + 1);
             for (int i = 0; i < n + 1; i++) {
-                Console.WriteLine("#{0}: {1}", i, ces.Eigenvalue(i));
                 for (int j = 0; j < n + 1; j++) {
-                    V[i, j] = ces.Eigenvector(i)[j].Re;
-                    Console.WriteLine(V[i, j]);
+                    V[i, j] = ces.Eigenpairs[i].Eigenvector[j].Re;
                 }
             }
 

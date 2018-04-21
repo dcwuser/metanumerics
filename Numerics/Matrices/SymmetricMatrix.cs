@@ -370,7 +370,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Computes the eigenvalues and eigenvectors of the matrix.
         /// </summary>
-        /// <returns>A representation of the eigenvalues and eigenvectors of the matrix.</returns>
+        /// <returns>A decomposition of the matrix that manifests its eigenvalues and eigenvectors.</returns>
         /// <remarks>
         /// <para>For a generic vector v and matrix M, Mv = u will point in some direction with no particular relationship to v.
         /// The eigenvectors of a matrix M are vectors z that satisfy Mz = &#x3BB;z, i.e. multiplying an eigenvector by a
@@ -393,12 +393,13 @@ namespace Meta.Numerics.Matrices {
         /// <para>If you require only the eigenvalues, not the eigenvectors, of the matrix, the <see cref="Eigenvalues"/> method
         /// will produce them faster than this method.</para>
         /// </remarks>
-        public RealEigensystem Eigensystem () {
+        /// <see href="https://en.wikipedia.org/wiki/Eigendecomposition_of_a_matrix"/>
+        public RealEigendecomposition Eigendecomposition () {
             
             double[][] A = SymmetricMatrixAlgorithms.Copy(values, dimension);
             double[] V = SquareMatrixAlgorithms.CreateUnitMatrix(dimension);
             SymmetricMatrixAlgorithms.JacobiEigensystem(A, V, dimension);
-            return (new RealEigensystem(dimension, SymmetricMatrixAlgorithms.GetDiagonal(A, dimension), V));
+            return (new RealEigendecomposition(SymmetricMatrixAlgorithms.GetDiagonal(A, dimension), V, dimension));
 
         }
 
@@ -408,7 +409,7 @@ namespace Meta.Numerics.Matrices {
         /// <returns>An array containing the matrix eigenvalues.</returns>
         /// <remarks>
         /// <para>If you require only the eigenvalues of the matrix, not its eigenvectors, this method will return them faster than
-        /// the <see cref="Eigensystem"/> method. If you do need the eigenvectors as well as the eigenvalues, use the <see cref="Eigensystem"/>
+        /// the <see cref="Eigendecomposition"/> method. If you do need the eigenvectors as well as the eigenvalues, use the <see cref="Eigendecomposition"/>
         /// method instead.</para>
         /// </remarks>
         public double[] Eigenvalues () {

@@ -148,10 +148,10 @@
     <Compile Include="Matrices\Blas.cs" />
     <Compile Include="Matrices\CholeskyDecomposition.cs" />
     <Compile Include="Matrices\ColumnVector.cs" />
-    <Compile Include="Matrices\ComplexEigensystem.cs" />
+    <Compile Include="Matrices\ComplexEigendecomposition.cs" />
     <Compile Include="Matrices\ComplexVector.cs" />
     <Compile Include="Matrices\QRDecomposition.cs" />
-    <Compile Include="Matrices\RealEigensystem.cs" />
+    <Compile Include="Matrices\RealEigendecomposition.cs" />
     <Compile Include="Matrices\RectangularMatrix.cs" />
     <Compile Include="Matrices\RectangularMatrixAlgorithms.cs" />
     <Compile Include="Matrices\RowVector.cs" />

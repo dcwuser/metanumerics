@@ -23,7 +23,7 @@ namespace Meta.Numerics.Matrices {
             subDiag = new double[dimension - 1];
         }
 
-        internal TridiagonalMatrix (int dimension, double[] superDiag, double[] diag, double[] subDiag) {
+        internal TridiagonalMatrix (int dimension, double[] superDiag, double[] diag, double[] subDiag, bool isReadOnly) : base(isReadOnly) {
             Debug.Assert(dimension > 0);
             Debug.Assert(superDiag != null);
             Debug.Assert(diag != null);
@@ -76,8 +76,8 @@ namespace Meta.Numerics.Matrices {
         }
 
         private int BoundsCheck (int r, int c) {
-            if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
-            if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
+            if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+            if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
             return (c - r);
         }
 
@@ -129,7 +129,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>An independent copy of the matrix.</returns>
         public TridiagonalMatrix Copy () {
-            return (new TridiagonalMatrix(dimension, CopyArray(superDiag), CopyArray(diag), CopyArray(subDiag)));
+            return (new TridiagonalMatrix(dimension, CopyArray(superDiag), CopyArray(diag), CopyArray(subDiag), false));
         }
 
         private double[] CopyArray (double[] array) {
@@ -154,7 +154,7 @@ namespace Meta.Numerics.Matrices {
         public TridiagonalMatrix Transpose {
             get {
                 // switch super-diagonal and sub-diagonal
-                return (new TridiagonalMatrix(dimension, subDiag, diag, superDiag));
+                return (new TridiagonalMatrix(dimension, subDiag, diag, superDiag, true));
             }
         }
 

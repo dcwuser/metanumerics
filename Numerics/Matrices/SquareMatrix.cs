@@ -163,14 +163,6 @@ namespace Meta.Numerics.Matrices {
             get {
                 return (new SquareMatrix(store, offset, colStride, rowStride, dimension, true));
             }
-            /*
-            // To transpose, just copy with
-            double[] transpose = MatrixAlgorithms.Copy(store, offset, colStride, rowStride, dimension, dimension);
-            return (new SquareMatrix(transpose, dimension));
-            //return (new SquareMatrix(store, 0, colStride, rowStride, dimension, false));
-            //double[] tStore = MatrixAlgorithms.Transpose(store, dimension, dimension);
-            //return (new SquareMatrix(tStore, dimension));
-            */
         }
 
         /// <summary>
@@ -235,7 +227,7 @@ namespace Meta.Numerics.Matrices {
         /// Computes the eigenvalues of the matrix.
         /// </summary>
         /// <returns>The eigenvalues of the matrix.</returns>
-        /// <seealso cref="Eigensystem"/>
+        /// <seealso cref="Eigendecomposition"/>
         public Complex[] Eigenvalues () {
             double[] aStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, dimension, dimension);
             SquareMatrixAlgorithms.IsolateCheapEigenvalues(aStore, null, dimension);
@@ -248,7 +240,7 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Computes the eigenvalues and eigenvectors of the matrix.
         /// </summary>
-        /// <returns>A representation of the eigenvalues and eigenvectors of the matrix.</returns>
+        /// <returns>A decomposition that makes the eigenvalues and eigenvectors manifest.</returns>
         /// <remarks>
         /// <para>For a generic vector v and matrix M, Mv = u will point in some direction with no particular relationship to v.
         /// The eigenvectors of a matrix M are vectors z that satisfy Mz = &#x3BB;z, i.e. multiplying an eigenvector by a
@@ -272,7 +264,7 @@ namespace Meta.Numerics.Matrices {
         /// eigenvalues of a matrix, the <see cref="Eigenvalues"/> method is more efficient.</para>
         /// </remarks>
         /// <seealso href="https://en.wikipedia.org/wiki/Eigendecomposition_of_a_matrix"/>
-        public ComplexEigensystem Eigensystem () {
+        public ComplexEigendecomposition Eigendecomposition () {
 
             //double[] aStore = MatrixAlgorithms.Copy(store, dimension, dimension);
             double[] aStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, dimension, dimension);
@@ -315,7 +307,7 @@ namespace Meta.Numerics.Matrices {
                 eigenvectors[i] = v;
             }
 
-            ComplexEigensystem eigensystem = new ComplexEigensystem(dimension, eigenvalues, eigenvectors);
+            ComplexEigendecomposition eigensystem = new ComplexEigendecomposition(dimension, eigenvalues, eigenvectors);
             return (eigensystem);
 
         }
@@ -397,7 +389,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="n">The power to which to raise the matrix, which must be positive.</param>
         /// <returns>The matrix A<sup>n</sup>.</returns>
         /// <remarks>
-        /// <para>This method uses exponentiation-by-squaring, so typically many fewer than <paramref name="n"/> multiplications are required.
+        /// <para>This method uses exponentiation-by-squaring, so typically only of order log(n) matrix multiplications are required.
         /// This improves not only the speed with which the matrix power is computed, but also the accuracy.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>

@@ -150,38 +150,44 @@ namespace Test {
         [TestMethod]
         public void SymmetricRandomMatrixEigenvectors () {
             for (int d = 1; d <= 100; d = d + 11) {
-                Console.WriteLine("d={0}", d);
 
                 SymmetricMatrix M = CreateSymmetricRandomMatrix(d, 1);
 
                 double tr = M.Trace();
 
-                RealEigensystem E = M.Eigensystem();
+                RealEigendecomposition E = M.Eigendecomposition();
 
                 Assert.IsTrue(E.Dimension == M.Dimension);
 
                 SquareMatrix D = new SquareMatrix(E.Dimension);
-                double[] es = new double[E.Dimension];
+                double[] eigenvalues = new double[E.Dimension];
                 for (int i = 0; i < E.Dimension; i++) {
-                    double e = E.Eigenvalue(i);
-                    ColumnVector v = E.Eigenvector(i);
+                    double e = E.Eigenpairs[i].Eigenvalue;
+                    ColumnVector v = E.Eigenpairs[i].Eigenvector;
+                    // Eigenvectors work
                     Assert.IsTrue(TestUtilities.IsNearlyEigenpair(M, v, e));
                     D[i, i] = e;
-                    es[i] = e;
+                    eigenvalues[i] = e;
                 }
 
-                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(es, tr));
+                // Eigenvectors sum to trace
+                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(eigenvalues, tr));
+
+                // Eigendecomposition works
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     D, E.TransformMatrix.Transpose * M * E.TransformMatrix
                 ));
 
+                // Transform matrix is orthogonal
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    E.TransformMatrix.Transpose * E.TransformMatrix, TestUtilities.CreateSquareUnitMatrix(d)
+                ));
             }
         }
 
         [TestMethod]
         public void SymmetricHilbertMatrixEigenvalues () {
             for (int d = 1; d <= 8; d++) {
-                Console.WriteLine("d={0}", d);
                 SymmetricMatrix H = TestUtilities.CreateSymmetricHilbertMatrix(d);
                 double tr = H.Trace();
                 double[] es = H.Eigenvalues();
@@ -197,32 +203,31 @@ namespace Test {
             Random rng = new Random(d + 1);
             SymmetricMatrix A = new SymmetricMatrix(d);
             A.Fill((int r, int c) => -1.0 + 2.0 * rng.NextDouble());
-            RealEigensystem E = A.Eigensystem();
+            RealEigendecomposition E = A.Eigendecomposition();
+            RealEigenpairCollection pairs = E.Eigenpairs;
 
-            for (int i = 0; i < E.Dimension; i++) Console.WriteLine(E.Eigenvalue(i));
-
-            E.Sort(OrderBy.ValueAscending);
-            for (int i = 1; i < E.Dimension; i++) {
-                Assert.IsTrue(E.Eigenvalue(i - 1) <= E.Eigenvalue(i));
-                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, E.Eigenvector(i), E.Eigenvalue(i)));
+            pairs.Sort(OrderBy.ValueAscending);
+            for (int i = 1; i < pairs.Count; i++) {
+                Assert.IsTrue(pairs[i - 1].Eigenvalue <= pairs[i].Eigenvalue);
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, pairs[i].Eigenvector, pairs[i].Eigenvalue));
              }
 
-            E.Sort(OrderBy.ValueDescending);
-            for (int i = 1; i < E.Dimension; i++) {
-                Assert.IsTrue(E.Eigenvalue(i - 1) >= E.Eigenvalue(i));
-                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, E.Eigenvector(i), E.Eigenvalue(i)));
+            pairs.Sort(OrderBy.ValueDescending);
+            for (int i = 1; i < pairs.Count; i++) {
+                Assert.IsTrue(pairs[i - 1].Eigenvalue >= pairs[i].Eigenvalue);
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, pairs[i].Eigenvector, pairs[i].Eigenvalue));
             }
 
-            E.Sort(OrderBy.MagnitudeAscending);
-            for (int i = 1; i < E.Dimension; i++) {
-                Assert.IsTrue(Math.Abs(E.Eigenvalue(i - 1)) <= Math.Abs(E.Eigenvalue(i)));
-                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, E.Eigenvector(i), E.Eigenvalue(i)));
+            pairs.Sort(OrderBy.MagnitudeAscending);
+            for (int i = 1; i < pairs.Count; i++) {
+                Assert.IsTrue(Math.Abs(pairs[i - 1].Eigenvalue) <= Math.Abs(pairs[i].Eigenvalue));
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, pairs[i].Eigenvector, pairs[i].Eigenvalue));
             }
 
-            E.Sort(OrderBy.MagnitudeDescending);
-            for (int i = 1; i < E.Dimension; i++) {
-                Assert.IsTrue(Math.Abs(E.Eigenvalue(i - 1)) >= Math.Abs(E.Eigenvalue(i)));
-                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, E.Eigenvector(i), E.Eigenvalue(i)));
+            pairs.Sort(OrderBy.MagnitudeDescending);
+            for (int i = 1; i < pairs.Count; i++) {
+                Assert.IsTrue(Math.Abs(pairs[i - 1].Eigenvalue) >= Math.Abs(pairs[i].Eigenvalue));
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, pairs[i].Eigenvector, pairs[i].Eigenvalue));
             }
 
         }

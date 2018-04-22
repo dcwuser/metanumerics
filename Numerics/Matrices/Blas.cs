@@ -16,19 +16,7 @@ namespace Meta.Numerics.Matrices {
 
         // y <- x
         public static void dCopy (double[] xStore, int xOffset, int xStride, double[] yStore, int yOffset, int yStride, int count) {
-            if ((xStride == 1) && (yStride == 1)) {
-                Array.Copy(xStore, xOffset, yStore, yOffset, count);
-            } else {
-                int n = 0;
-                int x = xOffset;
-                int y = yOffset;
-                while (n < count) {
-                    yStore[y] = xStore[x];
-                    n++;
-                    x += xStride;
-                    y += yStride;
-                }
-            }
+            Copy<double>(xStore, xOffset, xStride, yStore, yOffset, yStride, count);
         }
 
         internal static void Copy<T>(T[] xStore, int xOffset, int xStride, T[] yStore, int yOffset, int yStride, int count)

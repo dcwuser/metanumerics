@@ -522,102 +522,7 @@ namespace Meta.Numerics.Matrices {
         }
 
 #endif
-        /*
-        internal static void PrintMatrix (IMatrix M) {
-            for (int r = 0; r < M.RowCount; r++) {
-                for (int c = 0; c < M.ColumnCount; c++) {
-                    Console.Write("{0} ", M[r, c]);
-                }
-                Console.WriteLine();
-            }
-            if (M.RowCount == 3) {
-                double det =
-                    M[0, 0] * M[1, 1] * M[2, 2] + M[0, 1] * M[1, 2] * M[2, 0] + M[0, 2] * M[1, 0] * M[2, 1] -
-                    M[0, 2] * M[1, 1] * M[2, 0] - M[0, 0] * M[1, 2] * M[2, 1] - M[0, 1] * M[1, 0] * M[2, 2];
-                Console.WriteLine("det = {0}", det);
-            }
-            Console.WriteLine("--");
-        }
-        */
-
-        /*
-        internal static void PrintMatrix (double[,] M) {
-            for (int r = 0; r < M.GetLength(0); r++) {
-                for (int c = 0; c < M.GetLength(1); c++) {
-                    Console.Write("{0} ", M[r, c]);
-                }
-                Console.WriteLine();
-            }
-            Console.WriteLine("--");
-        }
-        */
-
-        // operators
-
-        /*
-
-        /// <inheritdoc />
-        public override int GetHashCode () {
-            return base.GetHashCode();
-        }
-
-        internal static bool Equals (SymmetricMatrix M1, SymmetricMatrix M2) {
-            if (Object.ReferenceEquals(M1, null)) {
-                if (Object.ReferenceEquals(M2, null)) {
-                    // both are null
-                    return(true);
-                } else {
-                    // only M1 is null
-                    return (false);
-                }
-            } else {
-                if (Object.ReferenceEquals(M2, null)) {
-                    // only M2 is null
-                    return(false);
-                } else {
-                    // both are non-null
-                    if (M1.Dimension != M2.Dimension) throw new DimensionMismatchException();
-                    for (int r = 0; r < M1.Dimension; r++) {
-                        for (int c = 0; c <= r; c++) {
-                            if (M1[r, c] != M2[r, c]) return (false);
-                        }
-                    }
-                    return (true);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Determines whether two symmetric matrices are equal.
-        /// </summary>
-        /// <param name="M1">The first matrix.</param>
-        /// <param name="M2">The second matrix.</param>
-        /// <returns>True if <paramref name="M1"/> and <paramref name="M2"/> are equal, otherwise false.</returns>
-        public static bool operator == (SymmetricMatrix M1, SymmetricMatrix M2) {
-            return (Equals(M1, M2));
-        }
-
-        /// <summary>
-        /// Determines whether two symmetric matrices are not equal.
-        /// </summary>
-        /// <param name="M1">The first matrix.</param>
-        /// <param name="M2">The second matrix.</param>
-        /// <returns>False if <paramref name="M1"/> and <paramref name="M2"/> are equal, otherwise true.</returns>
-        public static bool operator != (SymmetricMatrix M1, SymmetricMatrix M2) {
-            return (!Equals(M1, M2));
-        }
-
-        /// <summary>
-        /// Determines whether the given object is an equal matrix.
-        /// </summary>
-        /// <param name="obj">The object to compare.</param>
-        /// <returns>True if <paramref name="obj"/> is an equal matrix, otherwise false.</returns>
-        public override bool Equals (object obj) {
-            return (Matrix.Equals(this, obj as IMatrix));
-        }
-
-        */
-
+       
         // arithmetic operators
 
         /// <summary>
@@ -689,6 +594,24 @@ namespace Meta.Numerics.Matrices {
                 }
             }
             return (new SymmetricMatrix(resultStore, A.dimension));
+        }
+
+
+        /// <summary>
+        /// Copies the matrix entries into an independent square matrix.
+        /// </summary>
+        /// <returns>An independent, square matrix with the same entries.</returns>
+        public SquareMatrix ToSquareMatrix () {
+            SquareMatrix A = new SquareMatrix(this.dimension);
+            for (int r = 0; r < this.dimension; r++) {
+                for (int c = 0; c < r; c++) {
+                    double value = values[r][c];
+                    A[r, c] = value;
+                    A[c, r] = value;
+                }
+                A[r, r] = values[r][r];
+            }
+            return (A);
         }
 
     }

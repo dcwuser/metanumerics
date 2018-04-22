@@ -251,7 +251,7 @@ namespace Meta.Numerics.Functions {
             double rho0 = CoulombTurningPoint(L, eta);
             if (rho > rho0) nmax += (int) Math.Floor(2.0 * (rho - rho0));
 
-            // use Wallis method of continued fraction evalution
+            // use Wallis method of continued fraction evaluation
 
             double f = (L + 1.0) / rho + eta / (L + 1.0);
             sign = 1;
@@ -349,50 +349,6 @@ namespace Meta.Numerics.Functions {
 
             // Abromowitz & Stegun 14.5 describes this asymptotic expansion
 
-            /*
-            double F, G;
-            Coulomb_Asymptotic(L, eta, rho, out F, out G);
-            return (new SolutionPair(F, 0.0, G, 0.0));
-            */
-            /*
-            // Old reduction algorithm
-            double t0 = Reduce(rho, -L / 4.0);
-            double t1 = Reduce(AdvancedComplexMath.LogGamma(new Complex(L + 1.0, eta)).Im - eta * Math.Log(2.0 * rho), 0.0);
-            double t = t0 + t1;
-            double s = Math.Sin(t);
-            double c = Math.Cos(t);
-            */
-
-            /*
-            // New reduction algorithm
-            double t = AdvancedComplexMath.LogGamma(new Complex(L + 1.0, eta)).Im - eta * Math.Log(2.0 * rho) + rho;
-            double s = MoreMath.Sin(t);
-            double c = MoreMath.Cos(t);
-
-            int r = -((int) L) % 4;
-            if (r < 0) r += 4;
-
-            switch (r) {
-                case 0:
-                    // no change
-                    break;
-                case 1:
-                    Global.Swap(ref s, ref c);
-                    c = -c;
-                    break;
-                case 2:
-                    s = -s;
-                    c = -c;
-                    break;
-                case 3:
-                    Global.Swap(ref s, ref c);
-                    s = -s;
-                    break;
-                default:
-                    throw new InvalidOperationException();
-            };
-            */
-
             
             long t00; double t01;
             RangeReduction.ReduceByPiHalves(rho, out t00, out t01);
@@ -408,26 +364,6 @@ namespace Meta.Numerics.Functions {
             double s = RangeReduction.Sin(t0, t1);
             double c = RangeReduction.Cos(t0, t1);
             
-            /*
-            long tt0; double tt1;
-            RangeReduction.ReduceByPiHalves(rho - eta * Math.Log(2.0 * rho) + AdvancedComplexMath.LogGamma(new Complex(L + 1.0, eta)).Im, out tt0, out tt1);
-
-            tt0 -= (long) L;
-
-            double s = RangeReduction.Sin(tt0, tt1);
-            double c = RangeReduction.Cos(tt0, tt1);
-            */
-
-            /*
-            // compute phase
-            // reducing the eta = 0 and eta != 0 parts seperately preserves accuracy for large rho and small eta
-            double t0 = Reduce(rho, -L / 4.0);
-            double t1 = Reduce(AdvancedComplexMath.LogGamma(new Complex(L + 1.0, eta)).Im - eta * Math.Log(2.0 * rho), 0.0);
-            double t = t0 + t1;
-            double s = Math.Sin(t);
-            double c = Math.Cos(t);
-            */
-
             // determine the weights of sin and cos
             double f0 = 1.0;
             double g0 = 0.0;
@@ -445,7 +381,7 @@ namespace Meta.Numerics.Functions {
                 double f_old = f;
                 double g_old = g;
                 double fp_old = fp;
-                double gp_old = gp;
+                //double gp_old = gp;
 
                 // Compute the next corrections
                 double q = 2 * (k + 1) * rho;
@@ -485,55 +421,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        /*
-        private static void Coulomb_Asymptotic (double L, double eta, double rho, out double F, out double G) {
-
-            // compute phase
-            // reducing the eta = 0 and eta != 0 parts seperately preserves accuracy for large rho and small eta
-            double t0 = Reduce(rho, -L / 4.0);
-            double t1 = Reduce(AdvancedComplexMath.LogGamma(new Complex(L + 1.0, eta)).Im - eta * Math.Log(2.0 * rho), 0.0);
-            double t = t0 + t1;
-            double s = Math.Sin(t);
-            double c = Math.Cos(t);
-
-            // determine the weights of sin and cos
-            double f0 = 1.0;
-            double g0 = 0.0;
-            double f = f0;
-            double g = g0;
-            for (int k = 0; true; k++) {
-
-                // compute the next contributions to f and g
-                double q = 2 * (k + 1) * rho;
-                double a = (2 * k + 1) * eta / q;
-                double b = ((L * (L + 1) - k * (k + 1)) + eta * eta) / q;
-                double f1 = a * f0 - b * g0;
-                double g1 = a * g0 + b * f0;
-
-                // add them
-                double f_old = f;
-                f += f1;
-                double g_old = g;
-                g += g1;
-
-                if ((f == f_old) && (g == g_old)) break;
-
-                // check for non-convergence
-                if (k > Global.SeriesMax) throw new NonconvergenceException();
-
-                // prepare for the next iteration
-                f0 = f1;
-                g0 = g1;
-
-            }
-
-            F = g * c + f * s;
-            G = f * c - g * s;
-
-        }
-        */
-
-        // for rho < turning point, CWF are exponential; for rho > turning point, CWF are oscilatory
+        // for rho < turning point, CWF are exponential; for rho > turning point, CWF are oscillatory
         // we use this in several branching calculations
 
         private static double CoulombTurningPoint (double L, double eta) {
@@ -553,7 +441,7 @@ namespace Meta.Numerics.Functions {
         /// Computes the regular and irregular Coulomb wave functions and their derivatives.
         /// </summary>
         /// <param name="L">The angular momentum number, which must be non-negative.</param>
-        /// <param name="eta">The charge parameter, which can be postive or negative.</param>
+        /// <param name="eta">The charge parameter, which can be positive or negative.</param>
         /// <param name="rho">The radial distance parameter, which must be non-negative.</param>
         /// <returns>The values of F, F', G, and G' for the given parameters.</returns>
         /// <remarks>
@@ -562,12 +450,12 @@ namespace Meta.Numerics.Functions {
         /// <para>They satisfy the differential equation:</para>
         /// <img src="../images/CoulombODE.png" />
         /// <para>A repulsive potential is represented by &#x3B7; &gt; 0, an attractive potential by &#x3B7; &lt; 0.</para>
-        /// <para>F is oscilatory in the region beyond the classical turning point. In the quantum tunneling region inside
-        /// the classical turning point, F is exponentially supressed and vanishes at the origin, while G grows exponentially and
+        /// <para>F is oscillatory in the region beyond the classical turning point. In the quantum tunneling region inside
+        /// the classical turning point, F is exponentially suppressed and vanishes at the origin, while G grows exponentially and
         /// diverges at the origin.</para>
         /// <para>Many numerical libraries compute Coulomb wave functions in the quantum tunneling region using a WKB approximation,
-        /// which accurately determine only the first handfull of digits; our library computes Coulomb wave functions even in this
-        /// computationaly difficult region to nearly full precision -- all but the last 3-4 digits can be trusted.</para>
+        /// which accurately determine only the first few decimal digits; our library computes Coulomb wave functions even in this
+        /// computationally difficult region to nearly full precision -- all but the last 4-5 decimal digits can be trusted.</para>
         /// <para>The irregular Coulomb wave functions G<sub>L</sub>(&#x3B7;,&#x3C1;) are the complementary independent solutions
         /// of the same differential equation.</para>
         /// </remarks>
@@ -687,7 +575,7 @@ namespace Meta.Numerics.Functions {
         /// Computes the regular Coulomb wave function.
         /// </summary>
         /// <param name="L">The angular momentum number, which must be non-negative.</param>
-        /// <param name="eta">The charge parameter, which can be postive or negative.</param>
+        /// <param name="eta">The charge parameter, which can be positive or negative.</param>
         /// <param name="rho">The radial distance parameter, which must be non-negative.</param>
         /// <returns>The value of F<sub>L</sub>(&#x3B7;,&#x3C1;).</returns>
         /// <remarks>
@@ -709,7 +597,7 @@ namespace Meta.Numerics.Functions {
                 CoulombF_Series(L, eta, rho, out F, out FP);
                 return (F);
             } else if (rho > 32.0 + (L * L + eta * eta) / 2.0) {
-                // if rho is large enrough, use the asymptotic expansion
+                // if rho is large enough, use the asymptotic expansion
                 SolutionPair s = Coulomb_Asymptotic(L, eta, rho);
                 return (s.FirstSolutionValue);
                 //double F, G;
@@ -733,7 +621,7 @@ namespace Meta.Numerics.Functions {
         /// Computes the irregular Coulomb wave function.
         /// </summary>
         /// <param name="L">The angular momentum number, which must be non-negative.</param>
-        /// <param name="eta">The charge parameter, which can be postive or negative.</param>
+        /// <param name="eta">The charge parameter, which can be positive or negative.</param>
         /// <param name="rho">The radial distance parameter, which must be non-negative.</param>
         /// <returns>The value of G<sub>L</sub>(&#x3B7;,&#x3C1;).</returns>
         /// <remarks>
@@ -768,7 +656,7 @@ namespace Meta.Numerics.Functions {
                 } else {
                     
                     // we will start at L=0 (which has a smaller turning point radius) and recurse up to the desired L
-                    // this is okay because G increasees with increasing L
+                    // this is okay because G increases with increasing L
 
                     double G, GP;
 
@@ -776,7 +664,7 @@ namespace Meta.Numerics.Functions {
                     if (rho < rho0) {
 
                         // if inside the turning point even for L=0, start at the turning point and integrate in
-                        // this is okay becaue G increases with decraseing rho
+                        // this is okay because G increases with decreasing rho
 
                         // use Steed's method at the turning point
                         // for large enough eta, we could use the turning point expansion at L=0, but it contributes
@@ -797,22 +685,6 @@ namespace Meta.Numerics.Functions {
 
                         G = r.Y;
                         GP = r.YPrime;
-
-                        /*
-                        BulrischStoerStoermerStepper s = new BulrischStoerStoermerStepper();
-                        s.RightHandSide = delegate(double x, double U) {
-                            return ((2.0 * eta / x - 1.0) * U);
-                        };
-                        s.X = 2.0 * eta;
-                        s.Y = G;
-                        s.YPrime = GP;
-                        s.DeltaX = 0.25;
-                        s.Accuracy = 2.5E-13;
-                        s.Integrate(rho);
-
-                        G = s.Y;
-                        GP = s.YPrime;
-                        */
 
                     } else {
 
@@ -956,23 +828,6 @@ namespace Meta.Numerics.Functions {
                 }
             );
 
-            /*
-            F = r.Y;
-            FP = r.YPrime;
-
-            // integrate out to rho
-            BulrischStoerStoermerStepper s = new BulrischStoerStoermerStepper();
-            s.RightHandSide = delegate(double x, double U) {
-                return ((L * (L + 1) / x / x + 2.0 * eta / x - 1.0) * U);
-            };
-            s.X = rho0;
-            s.Y = F;
-            s.YPrime = FP;
-            s.DeltaX = 0.25;
-            s.Accuracy = 2.5E-13;
-            s.Integrate(rho);
-            */
-
             // return the result
             return (r.Y);
 
@@ -980,209 +835,4 @@ namespace Meta.Numerics.Functions {
 
     }
 
-    /*
-
-    // the following infrastructure is for numerical integration of ODEs
-    // eventually we should expose it, but for now it is just for computing Coulomb wave functions
-
-    internal abstract class OdeStepper {
-
-        /// <summary>
-        /// The current value of the independent variable.
-        /// </summary>
-        public double X { get; set; }
-
-        /// <summary>
-        /// The current value of the dependent variable.
-        /// </summary>
-        public double Y { get; set; }
-
-        /// <summary>
-        /// The right-hand side of the differential equation.
-        /// </summary>
-        public Func<double, double, double> RightHandSide { get; set; }
-
-        protected double Evaluate (double x, double y) {
-            count++;
-            return (RightHandSide(x, y));
-        }
-
-        private int count;
-
-        public int EvaluationCount {
-            get {
-                return (count);
-            }
-        }
-
-        /// <summary>
-        /// The current step size.
-        /// </summary>
-        public double DeltaX { get; set; }
-
-        /// <summary>
-        /// The target accuracy.
-        /// </summary>
-        public double Accuracy {
-            get {
-                return (accuracy);
-            }
-            set {
-                if ((value < Global.Accuracy) || (value >= 1.0)) throw new InvalidOperationException();
-                accuracy = value;
-            }
-        }
-
-        private double accuracy;
-
-        public abstract void Step ();
-
-        public virtual void Integrate (double X1) {
-
-            double X0 = X;
-
-            // reverse direction, if necessary
-            if (Math.Sign(DeltaX) != Math.Sign(X1 - X0)) DeltaX = -DeltaX;
-
-            // we can't just check (X < X1) because sometimes we integrate the other way
-            // so instead check that "we are on the same side of X1 as X0"
-            while (Math.Sign(X-X1) == Math.Sign(X0-X1)) {
-
-                // if we would overshoot in the next step, reduce it
-                if (Math.Sign(X + DeltaX-X1) != Math.Sign(X0 - X1)) DeltaX = X1 - X;
-
-                Step();
-
-            }
-
-        }
-
-    }
-
-    internal class BulrischStoerStoermerStepper : OdeStepper {
-
-        public double YPrime { get; set; }
-
-        public override void Step () {
-
-            // a step consists of trial steps with different numbers of intermediate points (substep sizes)
-            // the values obtained using different points are recorded and extrapolated to an infinite number
-            // of points (zero substep size)
-
-            // we store the values in a tableau whoose first row contains the measured values and
-            // whoose lower rows contain values extrapolated using different degree polynomials
-
-            // y_1    y_2    y_3    y_4
-            // y_12   y_23   y_34
-            // y_123  y_234
-            // y_1234
-
-            // Neville's algorithm is used to fill out this tableau
-
-            // initialize the tableau (for both variable and derivative)
-            double[][] T = new double[N.Length][];
-            double[][] U = new double[N.Length][];
-
-            T[0] = new double[N.Length]; U[0] = new double[N.Length];
-            TrialStep(N[0], out T[0][0], out U[0][0]);
-
-            // keep track of total number of evaluations
-            int A = N[0];
-
-
-            // set the window
-            int kMin, kMax;
-            if (target_k < 1) {
-                kMin = 1;
-                kMax = N.Length - 1;
-            } else {
-                kMin = target_k - 1;
-                if (kMin < 1) kMin = 1;
-                kMax = target_k + 1;
-                if (kMax > N.Length - 1) kMax = N.Length - 1;
-            }
-            double target_work_per_step = Double.MaxValue;
-            double target_expansion_factor = 1.0;
-
-            // try different substep sizes
-            for (int k = 1; k <= kMax; k++) {
-
-                // add a row to the tableau
-                T[k] = new double[N.Length - k]; U[k] = new double[N.Length - k];
-
-                // perform the substep
-                TrialStep(N[k], out T[0][k], out U[0][k]);
-                A += N[k];
-
-                // fill out new entries in the tableau
-                for (int j = 1; j <= k; j++) {
-                    double x = 1.0 * N[k] / N[k - j];
-                    T[j][k - j] = T[j - 1][k - j + 1] + (T[j - 1][k - j + 1] - T[j - 1][k - j]) / ((x + 1.0) * (x - 1.0));
-                    U[j][k - j] = U[j - 1][k - j + 1] + (U[j - 1][k - j + 1] - U[j - 1][k - j]) / ((x + 1.0) * (x - 1.0));
-                }
-
-                // check for convergence and predict work in target window
-                if ((k >= kMin) && (k <= kMax)) {
-
-                    double absolute_error = Math.Abs(T[k][0] - T[k - 1][0]);
-                    double relative_error = Math.Abs(absolute_error / T[k][0]);
-                    double expansion_factor = Math.Pow(Accuracy / relative_error, 1.0 / (2 * N[k]));
-                    double work_per_step = A / expansion_factor;
-
-                    if (work_per_step < target_work_per_step) {
-                        target_k = k;
-                        target_work_per_step = work_per_step;
-                        target_expansion_factor = expansion_factor;
-                    }
-
-                }
-
-            }
-
-            if (Math.Abs(T[kMax][0] - T[kMax - 1][0]) <= Accuracy * Math.Abs(T[kMax][0])) {
-                // converged
-                X = X + DeltaX;
-                Y = T[kMax][0];
-                YPrime = U[kMax][0];
-                if (target_expansion_factor > 2.0) target_expansion_factor = 2.0;
-                if (target_expansion_factor < 0.25) target_expansion_factor = 0.25;
-            } else {
-                // didn't converge
-                if (target_expansion_factor > 0.5) target_expansion_factor = 0.5;
-                if (target_expansion_factor < 0.0625) target_expansion_factor = 0.0625;
-            }
-
-            DeltaX = DeltaX * target_expansion_factor;
-           
-        }
-
-        private static readonly int[] N = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-
-        private int target_k = 0;
-
-        // do a step consisting of n mini-steps
-
-        private void TrialStep (int n, out double Y1, out double Y1P) {
-
-            // this is Stoermer's rule for 2nd order conservative equations
-
-            double h = DeltaX / n;
-
-            Y1 = Y;
-            double D1 = h * (YPrime + h * Evaluate(X, Y) / 2.0);
-
-            for (int k = 1; k < n; k++) {
-                Y1 += D1;
-                D1 += h * h * Evaluate(X + k * h, Y1);
-            }
-
-            Y1 += D1;
-
-            Y1P = D1 / h + h * Evaluate(X + DeltaX, Y1) / 2.0;
-
-        }
-
-    }
-
-    */
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -50,10 +51,10 @@ namespace Meta.Numerics.Matrices {
             this.cols = cols;
         }
 
-        private readonly int rows, cols;
-        private readonly double[] utStore;
-        private readonly double[] wStore;
-        private readonly double[] vStore;
+        internal readonly int rows, cols;
+        internal readonly double[] utStore;
+        internal readonly double[] wStore;
+        internal readonly double[] vStore;
 
         /// <summary>
         /// Gets the number of rows in the original matrix.
@@ -114,50 +115,16 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Gets the specified singular value.
+        /// Gets a collection of all the terms contributing to the singular value decomposition.
         /// </summary>
-        /// <param name="n">The (zero-based) index.</param>
-        /// <returns>The <paramref name="n"/>th singular value.</returns>
-        /// <remarks>
-        /// <para>Larger singular values have smaller indexes. The largest singular value, therefore, is
-        /// obtained by <tt>svd.SingularValue(0)</tt>.</para>
-        /// </remarks>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> lies outside the range [0, <see cref="Dimension"/> - 1].</exception>
-        public double SingularValue (int n) {
-            if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException(nameof(n));
-            return (wStore[n]);
+        public SingularValueContributorCollection Contributors {
+            get {
+                return (new SingularValueContributorCollection(this));
+            }
         }
 
         /// <summary>
-        /// Returns the specified left singular vector.
-        /// </summary>
-        /// <param name="n">The (zero-based) index.</param>
-        /// <returns>The <paramref name="n"/>th left singular vector.</returns>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> lies outside the range [0, <see cref="Dimension"/> - 1].</exception>
-        /// <remarks>
-        /// <para>The returned vector is read-only. If you need to make changes to it, you can call <see cref="ColumnVector.Copy"/> to obtain a writable copy.</para>
-        /// </remarks>
-        public ColumnVector LeftSingularVector (int n) {
-            if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException(nameof(n));
-            return (new ColumnVector(utStore, n, rows, rows, true));
-        }
-
-        /// <summary>
-        /// Returns the specified right singular vector.
-        /// </summary>
-        /// <param name="n">The (zero-based) index.</param>
-        /// <returns>The <paramref name="n"/>th right singular vector.</returns>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> lies outside the range [0, <see cref="Dimension"/> - 1].</exception>
-        /// <remarks>
-        /// <para>The returned vector is read-only. If you need to make changes to it, you can call <see cref="ColumnVector.Copy"/> to obtain a writable copy.</para>
-        /// </remarks> 
-        public ColumnVector RightSingularVector (int n) {
-            if ((n < 0) || (n >= wStore.Length)) throw new ArgumentOutOfRangeException(nameof(n));
-            return (new ColumnVector(vStore, n * cols, 1, cols, true));
-        }
-
-        /// <summary>
-        /// Returns the condition number of the matrix.
+        /// Gets the condition number of the matrix.
         /// </summary>
         /// <remarks>
         /// <para>The condition number is the ratio of the largest singular value to smallest singular value. It is therefore always larger than one.</para>
@@ -264,6 +231,104 @@ namespace Meta.Numerics.Matrices {
 
             return (new ColumnVector(x, rows));
         }
+    }
+
+    /// <summary>
+    /// Contains all the terms contributing to the singular value decomposition of a matrix.
+    /// </summary>
+    public sealed class SingularValueContributorCollection : IReadOnlyList<SingularValueContributor> {
+
+        internal SingularValueContributorCollection(SingularValueDecomposition system) {
+            Debug.Assert(system != null);
+            this.system = system;
+        }
+
+        private readonly SingularValueDecomposition system;
+
+        /// <summary>
+        /// Gets the singular value contributor with the given index.
+        /// </summary>
+        /// <param name="index">The (zero-based) index.</param>
+        /// <returns>The singular value contributor with the given index.</returns>
+        /// <remarks>
+        /// <para>More significant singular values have lower indexes. The most significant singular
+        /// value with have index 0.</para>
+        /// </remarks>
+        public SingularValueContributor this[int index] {
+            get {
+                return (new SingularValueContributor(system, index));
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of singular value contributors.
+        /// </summary>
+        public int Count {
+            get {
+                return (system.wStore.Length);
+            }
+        }
+
+        IEnumerator<SingularValueContributor> IEnumerable<SingularValueContributor>.GetEnumerator () {
+            for (int i = 0; i < this.Count; i++) {
+                yield return (this[i]);
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator () {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Contains the value and left and right vectors of one term in a singular value decomposition.
+    /// </summary>
+    public sealed class SingularValueContributor {
+
+        internal SingularValueContributor (SingularValueDecomposition system, int n) {
+            Debug.Assert(system != null);
+            Debug.Assert(n >= 0 && n < system.wStore.Length);
+            this.system = system;
+            this.n = n;
+        }
+
+        private readonly SingularValueDecomposition system;
+        private readonly int n;
+
+        /// <summary>
+        /// Gets the singular value.
+        /// </summary>
+        public double SingularValue {
+            get {
+                return (system.wStore[n]);
+            }
+        }
+
+        /// <summary>
+        /// Gets the left singular vector.
+        /// </summary>
+        /// <remarks>
+        /// <para>The returned vector is read-only. If you need to make changes to it, you can call <see cref="ColumnVector.Copy"/> to obtain a writable copy.</para>
+        /// </remarks>
+        public ColumnVector LeftSingularVector {
+            get {
+                return (new ColumnVector(system.utStore, n, system.rows, system.rows, true));
+            }
+        }
+
+
+        /// <summary>
+        /// Gets right singular vector.
+        /// </summary>
+        /// <remarks>
+        /// <para>The returned vector is read-only. If you need to make changes to it, you can call <see cref="ColumnVector.Copy"/> to obtain a writable copy.</para>
+        /// </remarks> 
+        public ColumnVector RightSingularVector {
+            get {
+                return (new ColumnVector(system.vStore, n * system.cols, 1, system.cols, true));
+            }
+        }
+
     }
 
 }

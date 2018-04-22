@@ -49,13 +49,23 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Gets the transformation matrix that diagonalizes the original matrix.
         /// </summary>
-        /// <value>The orthogonal matrix V, such that V<sup>T</sup>AV = D, where A is the original matrix and D is diagonal.</value>
+        /// <value>The read-only, orthogonal matrix V, such that V<sup>T</sup>AV = D, where A is the original matrix and D is the <see cref="DiagonalizedMatrix"/>.</value>
         /// <remarks>
         /// <para>The returned matrix is read-only. If you need to modify it, call <see cref="SquareMatrix.Copy"/> to obtain a writable copy.</para>
         /// </remarks>
         public SquareMatrix TransformMatrix {
             get {
                 return (new SquareMatrix(eigenvectors, dimension, true));
+            }
+        }
+
+        /// <summary>
+        /// Gets the diagonalized matrix.
+        /// </summary>
+        /// <value>A read-only, diagonal matrix D, such that V<sup>T</sup>AV = D, where A is the original matrix and V is the orthogonal <see cref="TransformMatrix"/>.</value>
+        public DiagonalMatrix DiagonalizedMatrix {
+            get {
+                return (new DiagonalMatrix(eigenvalues, true));
             }
         }
 

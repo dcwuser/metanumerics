@@ -79,16 +79,19 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The value of the specified matrix entry M<sub>r c</sub>.</returns>
         public override double this[int r, int c] {
             get {
-                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
-                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
+                CheckBounds(r, c);
                 return (store[MatrixAlgorithms.GetIndex(offset, rowStride, colStride, r, c)]);
             }
             set {
-                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
-                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
+                CheckBounds(r, c);
                 if (IsReadOnly) throw new InvalidOperationException();
                 store[MatrixAlgorithms.GetIndex(offset, rowStride, colStride, r, c)] = value;
             }
+        }
+
+        private void CheckBounds (int r, int c) {
+            if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+            if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
         }
 
         /// <inheritdoc />

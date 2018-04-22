@@ -88,7 +88,9 @@
     <Compile Include="ComplexInteropTest.cs" />
     <Compile Include="ComplexMathTest.cs" />
     <Compile Include="ComplexTest.cs" />
+    <Compile Include="ComplexVectorTests.cs" />
     <Compile Include="ContingencyTableTest.cs" />
+    <Compile Include="DiagonalMatrixTests.cs" />
     <Compile Include="FrameTableTests.cs" />
     <Compile Include="DataListTests.cs" />
     <Compile Include="UncertainMeasurementSampleTests.cs" />
@@ -135,6 +137,7 @@
     <Compile Include="TridiagonalMatrixTest.cs" />
     <Compile Include="UncertainMathTest.cs" />
     <Compile Include="UncertainValueTest.cs" />
+    <Compile Include="UnitMatrixTest.cs" />
     <Compile Include="UnivariateDistributionTest.cs" />
     <Compile Include="VectorTest.cs" />
   </ItemGroup>

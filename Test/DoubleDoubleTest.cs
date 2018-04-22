@@ -74,7 +74,7 @@ namespace Test {
             DoubleDouble x = DoubleDouble.E;
             DoubleDouble y = DoubleDouble.Pi;
 
-            Assert.IsTrue(x == x);
+            Assert.IsTrue(x == DoubleDouble.E);
             Assert.IsTrue(DoubleDouble.Equals(x, x));
             Assert.IsTrue(x.Equals(x));
 
@@ -92,10 +92,10 @@ namespace Test {
             DoubleDouble x = DoubleDouble.E;
             DoubleDouble y = DoubleDouble.Pi;
 
-            Assert.IsTrue(x <= x);
-            Assert.IsTrue(x >= x);
-            Assert.IsFalse(x < x);
-            Assert.IsFalse(x > x);
+            Assert.IsTrue(x <= DoubleDouble.E);
+            Assert.IsTrue(x >= DoubleDouble.E);
+            Assert.IsFalse(x < DoubleDouble.E);
+            Assert.IsFalse(x > DoubleDouble.E);
             Assert.IsTrue(x.CompareTo(x) == 0);
 
             Assert.IsTrue(x < y);

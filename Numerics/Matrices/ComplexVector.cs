@@ -25,6 +25,17 @@ namespace Meta.Numerics.Matrices {
             this.dimension = dimension;
         }
 
+        /// <summary>
+        /// Initializes a new complex column vector with the given components.
+        /// </summary>
+        /// <param name="components">The components of the vector.</param>
+        public ComplexColumnVector(params Complex[] components) {
+            if (components == null) throw new ArgumentNullException(nameof(components));
+            this.store = components;
+            this.offset = 0;
+            this.dimension = components.Length;
+        }
+
         internal ComplexColumnVector(Complex[] store, int offset, int dimension, bool isReadOnly) : base(isReadOnly)
         {
             Debug.Assert(store != null);
@@ -122,7 +133,7 @@ namespace Meta.Numerics.Matrices {
         {
             Complex[] copy = new Complex[dimension];
             Blas1.Copy(store, offset, 1, copy, 0, 1, dimension);
-            return (new ComplexColumnVector(store, 0, dimension, false));
+            return (new ComplexColumnVector(copy, 0, dimension, false));
         }
 
         IEnumerator<Complex> IEnumerable<Complex>.GetEnumerator()

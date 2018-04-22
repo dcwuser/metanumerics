@@ -177,25 +177,6 @@ namespace Test {
             return (true);
         }
 
-        /*
-        public static bool IsNearlyEigenvalue (ISquareMatrix M, ColumnVector v, double c) {
-            double n = MatrixNorm(M);
-            double ep = e;
-            if (Math.Abs(n / c) < 0.1) ep = e / n;
-
-
-        }
-        */
-
-        private static double MatrixNorm (AnyRectangularMatrix M) {
-            double n = 0.0;
-            for (int r = 0; r < M.RowCount; r++) {
-                for (int c = 0; c < M.ColumnCount; c++) {
-                    n += Math.Abs(M[r, c]);
-                }
-            }
-            return (n);
-        }
 
         // matrix creation utilities
 
@@ -205,18 +186,6 @@ namespace Test {
                 I[i, i] = 1.0;
             }
             return (I);
-        }
-
-        
-
-        public static SquareMatrix CreateHilbertMatrix (int n) {
-            SquareMatrix H = new SquareMatrix(n);
-            for (int r = 0; r < n; r++) {
-                for (int c = 0; c < n; c++) {
-                    H[r, c] = 1.0 / (r + c + 1);
-                }
-            }
-            return (H);
         }
 
         public static SymmetricMatrix CreateSymmetricHilbertMatrix (int n) {
@@ -237,11 +206,12 @@ namespace Test {
         }
 
         public static bool IsNearlyEqual (AnyRectangularMatrix A, AnyRectangularMatrix B, double e) {
-            double nA = MatrixNorm(A);
-            double nB = MatrixNorm(B);
+            double nA = A.FrobeniusNorm();
+            double nB = B.FrobeniusNorm();
+            double tol = e * (nA + nB);
             for (int r = 0; r < A.RowCount; r++) {
                 for (int c = 0; c < A.ColumnCount; c++) {
-                    if (Math.Abs(A[r, c] - B[r, c]) > e * (nA + nB)) return (false);
+                    if (Math.Abs(A[r, c] - B[r, c]) > tol) return (false);
                 }
             }
             return (true);
@@ -257,13 +227,13 @@ namespace Test {
             ColumnVector Av = A * v;
             ColumnVector av = a * v;
 
-            // compute tolorance
+            // compute tolerance
             int d = v.Dimension;
-            double N = MatrixNorm(A);
-            double n = MatrixNorm(v);
+            double N = A.MaxNorm();
+            double n = v.MaxNorm();
             double ep = TargetPrecision * (Math.Abs(N*n)/d + Math.Abs(a*n));
 
-            // compare elements within tolorance
+            // compare elements within tolerance
             for (int i = 0; i < d; i++) {
                 if (Math.Abs(Av[i] - av[i]) > ep) return (false);
             }
@@ -271,7 +241,7 @@ namespace Test {
 
         }
 
-        public static bool IsNearlyEigenpair (AnySquareMatrix A, IReadOnlyList<Complex> v, Complex a) {
+        public static bool IsNearlyEigenpair (AnySquareMatrix A, ComplexColumnVector v, Complex a) {
 
             int d = A.Dimension;
 
@@ -283,20 +253,17 @@ namespace Test {
                     Av[i] += A[i,j]*v[j];
                 }
             }
-            Complex[] av = new Complex[d];
-            for (int i=0; i<d; i++) {
-                av[i] = a * v[i];
-            }
+            ComplexColumnVector av = a * v;
 
-            // compute tolorance
-            double N = MatrixNorm(A);
+            // compute tolerance
+            double N = A.MaxNorm();
             double n = 0.0;
             for (int i = 0; i < d; i++) {
                 n += ComplexMath.Abs(v[i]);
             }
             double ep = TargetPrecision * (N * n / d + ComplexMath.Abs(a) * n);
 
-            // compare elements within tollerance
+            // compare elements within tolerance
             for (int i = 0; i < d; i++) {
                 if (ComplexMath.Abs(Av[i] - av[i]) > ep) return (false);
             }
@@ -412,10 +379,6 @@ namespace Test {
 
         public static IEnumerable<double> CreateDataSample (Random rng, ContinuousDistribution distribution, int count) {
             return (distribution.GetRandomValues(rng, count));
-            //for (int i = 0; i < count; i++) {
-            //    yield return distribution.GetRandomValue(rng);
-            //}
-
         }
 
         public static void TestEnumerable<T>(IEnumerable<T> source) where T : IEquatable<T>

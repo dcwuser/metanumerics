@@ -150,6 +150,7 @@
     <Compile Include="Matrices\ColumnVector.cs" />
     <Compile Include="Matrices\ComplexEigendecomposition.cs" />
     <Compile Include="Matrices\ComplexVector.cs" />
+    <Compile Include="Matrices\DiagonalMatrix.cs" />
     <Compile Include="Matrices\QRDecomposition.cs" />
     <Compile Include="Matrices\RealEigendecomposition.cs" />
     <Compile Include="Matrices\RectangularMatrix.cs" />
@@ -163,6 +164,7 @@
     <Compile Include="Matrices\SquareQRDecomposition.cs" />
     <Compile Include="Matrices\SymmetricMatrix.cs" />
     <Compile Include="Matrices\TridiagonalMatrix.cs" />
+    <Compile Include="Matrices\UnitMatrix.cs" />
     <Compile Include="Matrices\VectorAlgorithms.cs" />
     <Compile Include="Matrices\VectorBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

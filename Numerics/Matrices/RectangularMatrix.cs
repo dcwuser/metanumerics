@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 
 namespace Meta.Numerics.Matrices {
@@ -69,16 +70,20 @@ namespace Meta.Numerics.Matrices {
         /// <inheritdoc />
         public override double this[int r, int c] {
             get {
-                if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException(nameof(r));
-                if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException(nameof(c));
+                CheckBounds(r, c);
                 return (store[MatrixAlgorithms.GetIndex(offset, rowStride, colStride, r, c)]);
             }
             set {
-                if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException(nameof(r));
-                if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException(nameof(c));
+                CheckBounds(r, c);
                 if (IsReadOnly) throw new InvalidOperationException();
                 store[MatrixAlgorithms.GetIndex(offset, rowStride, colStride, r, c)] = value;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void CheckBounds(int r, int c) {
+            if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException(nameof(r));
+            if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException(nameof(c));
         }
 
         /// <inheritdoc />

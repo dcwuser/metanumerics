@@ -149,7 +149,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <remarks>
         /// <para>The returned vector is read-only.
-        /// For applications that do not require modifying it, this makes producing it much faster and more memory-effecient.
+        /// For applications that do not require modifying it, this makes producing it much faster and more memory-efficient.
         /// To obtain a modifyable copy, call <see cref="ComplexColumnVector.Copy"/>.</para>
         /// </remarks>
         public ComplexColumnVector Eigenvector

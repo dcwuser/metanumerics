@@ -69,7 +69,6 @@ namespace Meta.Numerics.Statistics {
 
         public void Add (double value) {
             data.Add(value);
-            int n = data.Count;
             summary.Add(value);
             order = null;
         }

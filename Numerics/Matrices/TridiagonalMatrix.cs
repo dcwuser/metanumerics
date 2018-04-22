@@ -132,7 +132,7 @@ namespace Meta.Numerics.Matrices {
             return (new TridiagonalMatrix(dimension, CopyArray(superDiag), CopyArray(diag), CopyArray(subDiag), false));
         }
 
-        private double[] CopyArray (double[] array) {
+        private static double[] CopyArray (double[] array) {
             double[] copy = new double[array.Length];
             Array.Copy(array, copy, array.Length);
             return (copy);

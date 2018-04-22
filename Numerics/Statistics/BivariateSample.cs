@@ -183,9 +183,6 @@ namespace Meta.Numerics.Statistics {
             get {
                 return (isReadOnly);
             }
-            internal set {
-                isReadOnly = value;
-            }
         }
 
         /// <summary>
@@ -459,7 +456,6 @@ namespace Meta.Numerics.Statistics {
         /// one or more parameters, or that two or more parameters are linearly dependent.</exception>
         public NonlinearRegressionResult NonlinearRegression (Func<IReadOnlyList<double>, double, double> f, IReadOnlyList<double> start) {
             if (start == null) throw new ArgumentNullException(nameof(start));
-            KeyValuePair<string, double>[] startParameters = new KeyValuePair<string, double>[start.Count];
             return (Bivariate.NonlinearRegression(yData, xData, f, start));
         }
 

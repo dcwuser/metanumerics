@@ -17,12 +17,10 @@ namespace Meta.Numerics.Data
     public sealed class FrameColumn : IEnumerable {
 
         internal FrameColumn(FrameView frame, int c) {
-            this.frame = frame;
             this.column = frame.columns[c];
             this.map = frame.map;
         }
 
-        private readonly FrameView frame;
         private readonly NamedList column;
         private readonly List<int> map;
 

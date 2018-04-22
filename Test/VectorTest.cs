@@ -159,7 +159,7 @@ namespace Test {
         [TestMethod]
         public void ExtendedVectorNorm () {
 
-            // Check that vector norm is correctly computed even when vector is enormous (square would overflow) or tiny (square woudl underflow)
+            // Check that vector norm is correctly computed even when vector is enormous (square would overflow) or tiny (square would underflow)
 
             double x = Double.MaxValue / 32.0;
 
@@ -196,5 +196,42 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void VectorAsIList () {
+
+            // Vectors should implement IList in same weird way as arrays
+            IList<double> v = new ColumnVector(0.0, 1.0);
+
+            foreach (double x in v) {
+                Assert.IsTrue(v.Contains(x));
+            }
+            Assert.IsTrue(!v.Contains(2.0));
+
+            try {
+                v.Add(2.0);
+                Assert.Fail();
+            } catch (NotSupportedException) { }
+
+            try {
+                v.Remove(2.0);
+                Assert.Fail();
+            } catch (NotSupportedException) { }
+
+            try {
+                v.Clear();
+                Assert.Fail();
+            } catch (NotSupportedException) { }
+
+            try {
+                v.Insert(0, -1.0);
+                Assert.Fail();
+            } catch (NotSupportedException) { }
+
+            try {
+                v.RemoveAt(0);
+                Assert.Fail();
+            } catch (NotSupportedException) { }
+
+        }
     }
 }

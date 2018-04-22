@@ -28,10 +28,10 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value of n!.</returns>
         /// <remarks>
         /// <para>The factorial of an integer n is the product of all integers from 1 to n. For example, 4! = 4 * 3 * 2 * 1 = 24.</para>
-        /// <para>n! also has a combinatorial intrepretation as the number of permutations of n objects. For example, a set of 3
+        /// <para>n! also has a combinatorial interpretation as the number of permutations of n objects. For example, a set of 3
         /// objects (abc) has 3! = 6 permutations: (abc), (bac), (cba), (acb), (cab), (bca).</para>
-        /// <para>Because n! grows extremely quickly with increasing n, we return the result as a double, even though
-        /// the value is always an integer. (13! would overlow an int, 21! would overflow a long, 171! overflows even a double.)</para>
+        /// <para>Because n! grows extremely quickly with increasing n, we return the result as a <see cref="Double"/>, even though
+        /// the value is always an integer. (13! would overflow an int, 21! would overflow a long, 171! overflows even a double.)</para>
         /// <para>In order to deal with factorials of larger numbers, you can use the <see cref="LogFactorial"/> method, which
         /// returns accurate values of ln(n!) even for values of n for which n! would overflow a double.</para>
         /// <para>The factorial is generalized to non-integer arguments by the &#x393; function (<see cref="AdvancedMath.Gamma(double)"/>).</para>
@@ -51,7 +51,7 @@ namespace Meta.Numerics.Functions {
 		}
 
         /// <summary>
-        /// Computes the logrithm of the factorial of an integer.
+        /// Computes the logarithm of the factorial of an integer.
         /// </summary>
         /// <param name="n">The argument, which must be non-negative.</param>
         /// <returns>The value of ln(n!).</returns>
@@ -81,7 +81,7 @@ namespace Meta.Numerics.Functions {
         /// <img src="../images/BinomialExpansion.png" />
         /// <para>Writing n over m in parenthesis, as in the expression above, is by far the most common notation for binomial
         /// coefficients, even though it is difficult to write inline.</para>
-        /// <para>C(n,m) can also be given a combinatoric intrepretation as the total number of ways to pick m items from a set of
+        /// <para>C(n,m) can also be given a combinatoric interpretation as the total number of ways to pick m items from a set of
         /// n distinct items. For this reason, it is often read as "n choose m".</para>
         /// <para>For example C(4,2) = 6. This can be seen by expanding (1+x)<sup>4</sup> = 
         /// 1 + 4 x + 6 x<sup>2</sup> + 4 x<sup>3</sup> + x<sup>4</sup> and noting that the coefficient of the x<sup>2</sup> term is 6.
@@ -95,8 +95,8 @@ namespace Meta.Numerics.Functions {
         /// (Proceeding in this fashion from C(0, 0) to the desired C(n, m) would be a very inefficient algorithm
         /// for generating C(n, m). It is not how this method is implemented.) Pascal's triangle exhibits many other
         /// fascinating patterns that arise from various binomial coefficient identities.</para>
-        /// <para>If you need multiple sequential binomial coefficients from a row of Pascal's triangle,
-        /// that is mutiple C(n, m) with the same n and increasing m, it is much more efficient to use
+        /// <para>If you need multiple, sequential binomial coefficients from a row of Pascal's triangle,
+        /// that is multiple C(n, m) with the same n and increasing m, it is much more efficient to use
         /// <see cref="BinomialCoefficients(int)"/>, which generates the coefficients iteratively, than to call this
         /// method independently for each one.</para>
         /// </remarks>
@@ -109,7 +109,7 @@ namespace Meta.Numerics.Functions {
 
             // make lower argument small
             if (m > n / 2) m = n - m;
-            // this increases the likelyhood that we will be able to do factorial table lookup and increases the accuracy
+            // this increases the likelihood that we will be able to do factorial table lookup and increases the accuracy
             // of the upper bound (e n / m)^k
 
 			if ((n<factorialTable.Length) && (m<factorialTable.Length)) {
@@ -274,7 +274,7 @@ namespace Meta.Numerics.Functions {
                 throw new ArgumentOutOfRangeException(nameof(n));
             } else {
                 // Begin with relation F_n = \frac{\phi^n - (-\phi)^{-n}}{\sqrt{5}}, which is exact. For large n, the second
-                // term becomes negligable, so we certainly expect F_n = \left[ \frac{\phi^n}{\sqrt{5}} \right] for large enough n.
+                // term becomes negligible, so we certainly expect F_n = \left[ \frac{\phi^n}{\sqrt{5}} \right] for large enough n.
                 // What's surprising is that n = 0 is already large enough, giving us a really fast way to get the nth Fibonacci
                 // number (at least to floating point precision) without computing any lower Fibonacci numbers, much less all of them.
                 return (Math.Round(MoreMath.Pow(AdvancedMath.GoldenRatio, n) / Math.Sqrt(5.0)));
@@ -315,7 +315,7 @@ namespace Meta.Numerics.Functions {
         }
 
         // Store the even Bernoulli numbers B_{2n} = Bernoulli[n].
-        // The only nonvanishing odd Bernoulli number is B_1 = -1/2, which must be handled seperately if you
+        // The only non-vanishing odd Bernoulli number is B_1 = -1/2, which must be handled separately if you
         // use these numbers in any series expansion.
 
         internal static readonly double[] Bernoulli = new double[] {
@@ -576,13 +576,8 @@ namespace Meta.Numerics.Functions {
 			return( u / GCF(u,v) * v );
 		}
 
-		// primality testing
-
 		// Bernoulli and Euler polynomials
         
-        // Stirling numbers
-
-
         /// <summary>
         /// Computes a power of an integer in modular arithmetic.
         /// </summary>
@@ -748,7 +743,7 @@ namespace Meta.Numerics.Functions {
                     x = AdvancedIntegerMath.PowMod(x, 2, n) + 1;
                     if (x == n) x = 0;
                 } else {
-                    // g is a factor of n; in all likelyhood, it is prime, although this isn't guaranteed
+                    // g is a factor of n; in all likelihood, it is prime, although this isn't guaranteed
                     // for our current approximate-factoring purposes, we will assume it is prime
                     // it is at least co-prime to all other recognized factors
                     int m = 0;
@@ -765,30 +760,5 @@ namespace Meta.Numerics.Functions {
         }
 
 	}
-
-    /*
-    internal struct Element {
-
-        internal Element (int value, int multiplicity) {
-            this.value = value;
-            this.multiplicity = multiplicity;
-        }
-
-        private readonly int value, multiplicity;
-
-        public int Value {
-            get {
-                return (value);
-            }
-        }
-
-        public int Multiplicity {
-            get {
-                return (multiplicity);
-            }
-        }
-
-    }
-    */
 
 }

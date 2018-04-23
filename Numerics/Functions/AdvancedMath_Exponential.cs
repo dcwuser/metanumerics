@@ -161,10 +161,8 @@ namespace Meta.Numerics.Functions {
                 b += 2.0;
                 D = 1.0 / (b + a * D);
                 Df = (b * D - 1.0) * Df;
-                //Debug.WriteLine(String.Format("D={0} Df={1}", D, Df));
                 f += Df;
                 if (f == f_old) {
-                    //Debug.WriteLine(String.Format("f={0} e={1} ef={2}", f, Math.Exp(-x), Math.Exp(-x) * f));
                     return (Math.Exp(-x) * f);
                 }
             }
@@ -179,7 +177,7 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The cosine integral is defined as:</para>
         /// <img src="../images/CiIntegral.png" />
-        /// <para>The cosine integral diverges logrithmically to negative inifity at the origin and executes a damped oscilation arround zero as its argument increases.</para>
+        /// <para>The cosine integral diverges logarithmically to negative infinity at the origin and executes a damped oscillation around zero as its argument increases.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         public static double IntegralCi (double x) {
@@ -199,7 +197,7 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The sine integral is defined as:</para>
         /// <img src="../images/SiIntegral.png" />
-        /// <para>The sine integral is zero at the origin and executes a damped oscilation arround &#x3C0;/2 as its argument increases.</para>
+        /// <para>The sine integral is zero at the origin and executes a damped oscillation around &#x3C0;/2 as its argument increases.</para>
         /// </remarks>
         public static double IntegralSi (double x) {
             if (x < 0.0) {
@@ -271,7 +269,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value of Ti<sub>2</sub>(x).</returns>
         /// <remarks>
-        /// <para>The inverse tanget integral is defined by:</para>
+        /// <para>The inverse tangent integral is defined by:</para>
         /// <img src="..\images\IntegralTi.png" />
         /// </remarks>
         /// <seealso href="http://mathworld.wolfram.com/InverseTangentIntegral.html"/>

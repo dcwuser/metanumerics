@@ -124,7 +124,6 @@
     <Compile Include="Functions\AdvancedMath_Gamma.cs" />
     <Compile Include="Functions\AdvancedMath_Harmonic.cs" />
     <Compile Include="Functions\AdvancedMath_Hypergeometric.cs" />
-    <Compile Include="Functions\AdvancedMath_Inverse.cs" />
     <Compile Include="Functions\AdvancedMath_Jacobi.cs" />
     <Compile Include="Functions\AdvancedMath_Kelvin.cs" />
     <Compile Include="Functions\AdvancedMath_Lambert.cs" />

@@ -17,8 +17,7 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The Carlson F integral is:</para>
         /// <img src="../images/CarlsonFIntegral.png" />
-        /// <para>As can be seen from the integral, all three parameters are equivilent, so R<sub>F</sub> is symmetric with respect to any
-        /// permutation of the parameters.</para>
+        /// <para>As can be seen from the definition, R<sub>F</sub> is symmetric with respect to permutations among its parameters.</para>
         /// <para>The Carlson integrals can be used to express integrals of rational functions. In that sense, they are replacements for
         /// the Legendre elliptic functions.</para>
         /// </remarks>
@@ -63,7 +62,7 @@ namespace Meta.Numerics.Functions {
 
                     double F = 1.0 - E2 / 10.0 - E3 / 14.0 + E2 * E2 / 24.0 + 3.0 * E2 * E3 / 44.0 - 5.0 / 208.0 * E2 * E2 * E2 + 3.0 / 104.0 * E3 * E3 - E2 * E2 * E3 / 16.0;
 
-                    // Rather unsymmetricly, Carlson defines dz = dx + dy which gives it the opposite sign, which gives E3 the opposite sign, which gives terms with odd powers
+                    // Rather unsymmetrically, Carlson defines dz = dx + dy which gives it the opposite sign, which gives E3 the opposite sign, which gives terms with odd powers
                     // of E3 the opposite sign. So don't get confused when you look at Carlson's DLMF article and 1994 paper.
 
                     return (F / Math.Sqrt(m));
@@ -110,7 +109,7 @@ namespace Meta.Numerics.Functions {
 
             if ((x == 0.0) && (y == 0.0)) return (Double.PositiveInfinity);
 
-            // To compute CarlsonD, we use a similiar technique as we did for CarlsonF: use a shift identity
+            // To compute CarlsonD, we use a similar technique as we did for CarlsonF: use a shift identity
             // to move the arguments closer together, then expand about the equal-arguments point
 
             // The shift and homogeneity relationships are
@@ -304,7 +303,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="EllipticF"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Elliptic_integral"/>
         public static double EllipticK (double k) {
-            if ((k < 0) || (k > 1.0)) throw new ArgumentOutOfRangeException("k");
+            if ((k < 0) || (k > 1.0)) throw new ArgumentOutOfRangeException(nameof(k));
             if (k < 0.25) {
                 // For small k, use the series near k~0.
                 return (EllipticK_Series(k));

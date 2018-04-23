@@ -26,9 +26,9 @@ namespace Meta.Numerics.Functions {
         /// <para>Hermite polynomials are orthogonal on the interval (-&#8734;,+&#8734;) with the
         /// weight e<sup>-x<sup>2</sup></sup>.</para>
         /// <img src="../images/HermiteHOrthonormality.png" />
-        /// <para>They appear in the solution of the one-dimensional, quantum mehanical, harmonic oscilator.</para>
+        /// <para>They appear in the solution of the one-dimensional, quantum mechanical, harmonic oscillator.</para>
         /// <para>Statisticans' Hermite polynomials (see <see cref="HermiteHe"/>) are related to physicists' Hermite
-        /// polynomials via H<sub>n</sub>(x) = 2<sup>n</sup>H<sub>n</sub>(x &#x221A;2). Staticians' Hermite polynomials
+        /// polynomials via H<sub>n</sub>(x) = 2<sup>n</sup>H<sub>n</sub>(x &#x221A;2). Statisticians' Hermite polynomials
         /// do not grow as quickly as physicists', and may therefore be preferable for large values of <paramref name="n"/>
         /// and <paramref name="x"/> which could overflow <see cref="System.Double"/>.</para>
         /// </remarks>
@@ -37,11 +37,11 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/HermitePolynomial.html" />
 		public static double HermiteH (int n, double x) {
             if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n == 0) {
                 return (1.0);
             } else {
-                // use recurrance H_{n+1} = 2x H_n - 2n H_{n-1}
+                // use recurrence H_{n+1} = 2x H_n - 2n H_{n-1}
                 // the recurrence is unstable, but H is the dominant solution
                 double H0 = 1.0;
                 double H1 = 2.0 * x;
@@ -64,8 +64,8 @@ namespace Meta.Numerics.Functions {
         /// <para>Hermite polynomials are orthogonal on the interval (-&#8734;,+&#8734;) with a
         /// weight function equal to the standard normal probability distribution.</para>
         /// <img src="../images/HermiteHeOrthonormality.png" />
-        /// <para>Their orthonormality relation makes them a useful basis for expressing pertubations
-        /// arround a normal distribution.</para>
+        /// <para>Their ortho-normality relation makes them a useful basis for expressing perturbations
+        /// around a normal distribution.</para>
         /// <para>Physicists' Hermite polynomials (see <see cref="HermiteH"/>) are related to statisticians' Hermite
         /// polynomials via H<sub>n</sub>(x) = 2<sup>n</sup>H<sub>n</sub>(x &#x221A;2).</para>
         /// </remarks>
@@ -74,7 +74,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Hermite_polynomial" />
         public static double HermiteHe (int n, double x) {
             if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n == 0) {
                 return (1.0);
             } else {
@@ -105,8 +105,8 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/LaguerrePolynomial.html" />
         /// <seealso cref="LaguerreL(int,double,double)"/>
 		public static double LaguerreL (int n, double x) {
-			if (n<0) throw new ArgumentOutOfRangeException("n");
-			if (x<0.0) throw new ArgumentOutOfRangeException("x");
+			if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+			if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
 
 			if (n==0) return(1.0);
             // use recurrence (n+1)L_{n+1} = (2n+1-x)L_{n} - nL_{n-1}
@@ -130,14 +130,14 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value L<sub>n</sub><sup>a</sup>(x).</returns>
         /// <remarks>
-        /// <para>The associated Laguerre polynomials are orthonogal on the interval [0,+&#8734;) with the weight
+        /// <para>The associated Laguerre polynomials are orthogonal on the interval [0,+&#8734;) with the weight
         /// x<sup>a</sup> e<sup>-x</sup>.</para>
         /// </remarks>
         /// <seealso href="http://mathworld.wolfram.com/LaguerrePolynomial.html" />
 		public static double LaguerreL (int n, double a, double x) {
-			if (n<0) throw new ArgumentOutOfRangeException("n");
-			if (a<=-1) throw new ArgumentOutOfRangeException("a"); 
-			if (x<0.0) throw new ArgumentOutOfRangeException("x");
+			if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+			if (a <= -1) throw new ArgumentOutOfRangeException(nameof(a)); 
+			if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
 
             // standard recurrence on n is claimed stable
 
@@ -168,7 +168,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Legendre_polynomial"/>
         /// <seealso href="http://mathworld.wolfram.com/LegendrePolynomial.html"/>
         public static double LegendreP (int l, double x) {
-			if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException("x");
+			if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException(nameof(x));
 
             if (l < 0) {
                 return (LegendreP(-l - 1, x));
@@ -187,38 +187,6 @@ namespace Meta.Numerics.Functions {
             }
 		}
 
-        /*
-		// use recurrance (l-m)P_{l,m} = x (2l-a)P{l-1,m} - (l+m-1)P_{l-2,m}
-		// start from P_{m,m} and increase order to l
-        /// <summary>
-        /// Computes the value of an associated Legendre polynomial.
-        /// </summary>
-        /// <param name="l">The order, which must be non-negative.</param>
-        /// <param name="m">The associated order, which must lie between 0 and l inclusive.</param>
-        /// <param name="x">The argument, which must lie on the closed interval betwen -1 and +1.</param>
-        /// <returns>The value of P<sub>l,m</sub>(x).</returns>
-		public static double LegendreP (int l, int m, double x) {
-			if ((x < -1.0) || (x > 1.0)) throw new ArgumentOutOfRangeException("x");
-			if (l < 0) throw new ArgumentOutOfRangeException("l");
-			if ((m < 0) || (m > l)) throw new ArgumentOutOfRangeException("m");
-			// determine PM0 = P{m,m}
-			double xx = Math.Sqrt((1-x)*(1+x));
-			double PM0 = 1.0;
-			for (int k=(2*m-1); k>0; k-=2) {
-				PM0 = PM0 * -k * xx;
-			}
-			if (l == m) return(PM0);
-			// determine PM1 = P{m+1,m}
-			double PM1 = x * (2*m+1) * PM0;
-			if (l ==(m+1)) return(PM1);
-			for (int lp=(m+1);lp<l;lp++) {
-				double PM2 = ( x*(2*lp-1)*PM1 - (lp+m-1)*PM0 )/(lp-m);
-				PM0 = PM1;
-				PM1 = PM2;
-			}
-			return(PM1);
-		}
-        */
 
         // Legendre polynomials normalized for their use in the spherical harmonics
 
@@ -227,7 +195,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="l">The order, which must be non-negative.</param>
         /// <param name="m">The associated order, which must lie between -l and l inclusive.</param>
-        /// <param name="x">The argument, which must lie on the closed interval betwen -1 and +1.</param>
+        /// <param name="x">The argument, which must lie on the closed interval between -1 and +1.</param>
         /// <returns>The value of P<sub>l,m</sub>(x).</returns>
         /// <remarks>
         /// <para>Associated Legendre polynomials appear in the definition of the <see cref="AdvancedMath.SphericalHarmonic"/> functions.</para>
@@ -236,13 +204,13 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Associated_Legendre_polynomials"/>
         public static double LegendreP (int l, int m, double x) {
 
-            if (l < 0) throw new ArgumentOutOfRangeException("l");
+            if (l < 0) throw new ArgumentOutOfRangeException(nameof(l));
 
             //if (l < 0) {
             //    return (LegendreP(-l + 1, m, x));
             //}
 
-            if (Math.Abs(m) > l) throw new ArgumentOutOfRangeException("m");
+            if (Math.Abs(m) > l) throw new ArgumentOutOfRangeException(nameof(m));
 
             double f;
             if (l < 10) {
@@ -265,13 +233,13 @@ namespace Meta.Numerics.Functions {
         }
 
 
-        // renormalized associated legendre polynomials Pe{l,m} = sqrt( (l-m)! / (l+m)! ) P{l,m}
-        // unlike the unrenormalized P{l,m}, the renormalized Pe{l,m} do not get too big
+        // renormalized associated Legendre polynomials Pe{l,m} = sqrt( (l-m)! / (l+m)! ) P{l,m}
+        // unlike the un-renormalized P{l,m}, the renormalized Pe{l,m} do not get too big
 
         // this is not quite the same renormalization used by NR; it omits a factor sqrt((2l+1)/4Pi)
         // by omitting this factor, we avoid some unnecessary factors and divisions by 4Pi
 
-        // the l-recurrsion (l-m) P{l,m} = x (2l-1) P{l-1,m} - (l+m-1) P{l-2,m} becomes
+        // the l-recursion (l-m) P{l,m} = x (2l-1) P{l-1,m} - (l+m-1) P{l-2,m} becomes
         // sqrt((l-m)(l+m)) P{l,m} = x (2l-1) P{l-1,m} - sqrt((l-1-m)(l-1+m)) P{l-2,m}
         // this is stable for increasing l
 

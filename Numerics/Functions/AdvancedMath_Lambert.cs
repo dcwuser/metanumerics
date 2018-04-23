@@ -19,7 +19,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://www.apmaths.uwo.ca/~djeffrey/Offprints/W-adv-cm.pdf"/>
         public static double LambertW (double x) {
 
-            if (x < -EI) throw new ArgumentOutOfRangeException("x");
+            if (x < -EI) throw new ArgumentOutOfRangeException(nameof(x));
 
             // use an initial approximation
             double W;
@@ -91,8 +91,6 @@ namespace Meta.Numerics.Functions {
         }
 
         private static readonly double[] Lambert_SeriesBranch_Coefficients = ComputeLambertBranchCoefficients(8);
-        
-        //new double[] { -1.0, 1.0, -1.0 / 3.0, 1.0 / 36.0, 1.0 / 270.0, 1.0 / 4320, -1.0 / 17010.0 };
 
         private static double[] ComputeLambertBranchCoefficients (int n) {
             double[] c = new double[n];

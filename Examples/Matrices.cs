@@ -61,6 +61,61 @@ namespace Examples {
         }
 
         [ExampleMethod]
+        public static void QRDecomposition () {
+
+            SquareMatrix A = new SquareMatrix(new double[,] {
+                { 1, -2, 3 },
+                { 2, -5, 12 },
+                { 0, 2, -10 }
+            });
+
+            ColumnVector b = new ColumnVector(2, 8, -4);
+
+                        SquareQRDecomposition qrd = A.QRDecomposition();
+            ColumnVector x = qrd.Solve(b);
+            PrintMatrix("x", x);
+
+            SquareMatrix Q = qrd.QMatrix;
+            SquareMatrix R = qrd.RMatrix;
+            PrintMatrix("QR", Q * R);
+
+            PrintMatrix("Q  Q^T", Q.MultiplySelfByTranspose());
+
+            SquareMatrix AI = qrd.Inverse();
+            PrintMatrix("A^{-1}", AI);
+            PrintMatrix("A^{-1} A", AI * A);
+
+        }
+
+        public static void LUDecomposition () {
+
+            SquareMatrix A = new SquareMatrix(new double[,] {
+                { 1, -2, 3 },
+                { 2, -5, 12 },
+                { 0, 2, -10 }
+            });
+
+            ColumnVector b = new ColumnVector(2, 8, -4);
+
+            LUDecomposition lud = A.LUDecomposition();
+            ColumnVector x = lud.Solve(b);
+            PrintMatrix("x", x);
+            PrintMatrix("Ax", A * x);
+
+            SquareMatrix L = lud.LMatrix();
+            SquareMatrix U = lud.UMatrix();
+            SquareMatrix P = lud.PMatrix();
+            PrintMatrix("LU", L * U);
+            PrintMatrix("PA", P * A);
+
+            SquareMatrix AI = lud.Inverse();
+            PrintMatrix("A * AI", A * AI);
+
+            Console.WriteLine($"det(a) = {lud.Determinant()}");
+
+        }
+
+        [ExampleMethod]
        public static void SingularValueDecomposition () {
 
             SquareMatrix A = new SquareMatrix(new double[,] {
@@ -69,8 +124,13 @@ namespace Examples {
                 { 0, 2, -10 }
             });
 
-            SingularValueDecomposition SVD = A.SingularValueDecomposition();
-            Console.WriteLine($"A has rank = {SVD.Rank}, condition number = {SVD.ConditionNumber}.");
+            SingularValueDecomposition svd = A.SingularValueDecomposition();
+            Console.WriteLine($"A has rank = {svd.Rank}, condition number = {svd.ConditionNumber}.");
+
+            SquareMatrix V = svd.LeftTransformMatrix;
+            SquareMatrix W = svd.RightTransformMatrix;
+            SquareMatrix S = new SquareMatrix(A.Dimension);
+            PrintMatrix("S", V.Transpose * A * W);
 
             ColumnVector b = new ColumnVector(0.0, 1.0, 2.0);
             ColumnVector x = SVD.Solve(b);

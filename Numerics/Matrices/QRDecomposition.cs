@@ -70,11 +70,9 @@ namespace Meta.Numerics.Matrices {
             if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (rhs.Count != rows) throw new DimensionMismatchException();
 
-            // copy rhs into an array, if necessary
-            double[] x;
-            if (rhs is double[]) {
-                x = (double[]) rhs;
-            } else {
+            // BLAS requires an array, but doesn't modify it, so if given one, use it directly
+            double[] x = rhs as double[];
+            if (x == null) {
                 x = new double[rows];
                 rhs.CopyTo(x, 0);
             }

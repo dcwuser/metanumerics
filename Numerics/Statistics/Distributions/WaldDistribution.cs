@@ -197,11 +197,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         public static WaldFitResult FitToSample (Sample sample) {
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
             return (Univariate.FitToWald(sample.data));
         }
 
         /// <inheritdoc />
         public override double GetRandomValue (Random rng) {
+
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
 
             // This is a rather weird transformation generator described in Michael et al, "Generating Random Variates
             // Using Transformations with Multiple Roots", The American Statistician 30 (1976) 88-90.

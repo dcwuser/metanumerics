@@ -9,7 +9,7 @@ namespace Meta.Numerics.Matrices {
     /// <remarks>
     /// <para>An N-dimensional column vector is an N X 1 dimensional matrix.</para>
     /// </remarks>
-    public sealed class ColumnVector : VectorBase {
+    public sealed class ColumnVector : AnyVector {
 
         /// <summary>
         /// Initializes a new column vector with the given dimension.
@@ -137,18 +137,6 @@ namespace Meta.Numerics.Matrices {
         public static ColumnVector operator - (ColumnVector v) {
             return (-1.0 * v);
         }
-
-        /*
-        public static RectangularMatrix operator * (ColumnVector u, RowVector v) {
-            RectangularMatrix M = new RectangularMatrix(u.Dimension, v.Dimension);
-            for (int r = 0; r < u.Dimension; r++) {
-                for (int c = 0; c < v.Dimension; c++) {
-                    M[r, c] = u[r] * v[c];
-                }
-            }
-            return (M);
-        }
-        */
 
     }
 

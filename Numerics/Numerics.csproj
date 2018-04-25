@@ -165,7 +165,7 @@
     <Compile Include="Matrices\TridiagonalMatrix.cs" />
     <Compile Include="Matrices\UnitMatrix.cs" />
     <Compile Include="Matrices\VectorAlgorithms.cs" />
-    <Compile Include="Matrices\VectorBase.cs" />
+    <Compile Include="Matrices\AnyVector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SignalProcessing\FourierAlgorithms.cs" />
     <Compile Include="SignalProcessing\FourierTransformer.cs" />

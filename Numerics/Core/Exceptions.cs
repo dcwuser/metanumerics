@@ -9,20 +9,20 @@ namespace Meta.Numerics {
     public class NonconvergenceException : Exception {
 
         /// <summary>
-        /// Initializes a new nonconvergence exception.
+        /// Initializes a new non-convergence exception.
         /// </summary>
         public NonconvergenceException () : base("The algorithm did not converge within the allowed number of iterations.") { }
 
         /// <summary>
-        /// Inititalizes a new nonconvergence exception with the given exception message.
+        /// Initializes a new non-convergence exception with the given exception message.
         /// </summary>
         /// <param name="message">The exception message.</param>
         public NonconvergenceException (String message) : base(message) { }
 
         /// <summary>
-        /// Initializes a new nonconvergence exception with the given exception message and inner exception.
+        /// Initializes a new non-convergence exception with the given exception message and inner exception.
         /// </summary>
-        /// <param name="message">The exeption message.</param>
+        /// <param name="message">The exception message.</param>
         /// <param name="innerException">The inner exception.</param>
         public NonconvergenceException (String message, Exception innerException) : base(message, innerException) { }
 
@@ -39,7 +39,7 @@ namespace Meta.Numerics {
         public DimensionMismatchException () : base("The object(s) did not have the expected dimension(s).") { }
 
         /// <summary>
-        /// Inititalizes a new dimension mismatch exception with the given exception message.
+        /// Initializes a new dimension mismatch exception with the given exception message.
         /// </summary>
         /// <param name="message">The exception message.</param>
         public DimensionMismatchException (String message) : base(message) { }
@@ -47,7 +47,7 @@ namespace Meta.Numerics {
         /// <summary>
         /// Initializes a new dimension mismatch exception with the given exception message and inner exception.
         /// </summary>
-        /// <param name="message">The exeption message.</param>
+        /// <param name="message">The exception message.</param>
         /// <param name="innerException">The inner exception.</param>
         public DimensionMismatchException (String message, Exception innerException) : base(message, innerException) { }
 

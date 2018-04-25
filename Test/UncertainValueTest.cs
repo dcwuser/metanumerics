@@ -17,7 +17,8 @@ namespace Test
         [TestMethod]
         public void UncertainValueEquality () {
 
-            Assert.IsTrue(a == a);
+            UncertainValue aCopy = a;
+            Assert.IsTrue(a == aCopy);
             Assert.IsTrue(a.Equals(a));
             Assert.IsTrue(a.Equals((object) a));
 

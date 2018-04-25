@@ -274,6 +274,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
         public static LognormalFitResult FitToSample (Sample sample) {
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
             return (Univariate.FitToLognormal(sample.data));
         }
 

@@ -9,7 +9,7 @@ namespace Meta.Numerics.Matrices {
     /// <remarks>
     /// <para>An N-dimensional row vector is an 1 X N dimensional matrix.</para>
     /// </remarks>
-    public sealed class RowVector : VectorBase {
+    public sealed class RowVector : AnyVector {
 
         /// <summary>
         /// Initializes a new row vector with the given dimension.

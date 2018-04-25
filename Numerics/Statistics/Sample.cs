@@ -787,6 +787,8 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException"><paramref name="a"/> or <paramref name="b"/> contains less than two values.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Student's_t-test"/>
         public static TestResult StudentTTest (Sample a, Sample b) {
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
             return (Univariate.StudentTTest(a.data, b.data));
         }
 
@@ -805,6 +807,8 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Mann-Whitney_U_test"/>
         public static TestResult MannWhitneyTest (Sample a, Sample b) {
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
             return (Univariate.MannWhitneyTest(a.data, b.data));
         }
 
@@ -1002,6 +1006,8 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">One or both of the samples is empty.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
         public static TestResult KolmogorovSmirnovTest (Sample a, Sample b) {
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
             return (Univariate.KolmogorovSmirnovTest(a.data, b.data));
         }
 
@@ -1013,6 +1019,8 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The result of the test.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="a"/> or <paramref name="b"/> is <see langword="null"/>.</exception>
         public static TestResult FisherFTest (Sample a, Sample b) {
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
             return (Univariate.FisherFTest(a.data, b.data));
         }
 

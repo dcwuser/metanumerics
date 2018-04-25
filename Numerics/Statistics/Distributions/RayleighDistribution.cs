@@ -144,6 +144,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="sample">The sample to fit, which must have at least 2 values.</param>
         /// <returns>The fit result. The only parameter is the scale parameter.</returns>
         public static RayleighFitResult FitToSample (Sample sample) {
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
             return (Univariate.FitToRayleigh(sample.data));
         }
     }

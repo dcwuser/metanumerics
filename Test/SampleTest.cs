@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Meta.Numerics;
-using Meta.Numerics.Analysis;
 using Meta.Numerics.Data;
+using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 
@@ -260,12 +260,14 @@ namespace Test {
             // fit to normal should be bad
             NormalFitResult nfit = NormalDistribution.FitToSample(sample);
             Assert.IsTrue(nfit.GoodnessOfFit.Probability < 0.05);
+            ValidateParameterCollection(nfit.Parameters);
 
             // fit to lognormal should be good
             LognormalFitResult efit = LognormalDistribution.FitToSample(sample);
             Assert.IsTrue(efit.GoodnessOfFit.Probability > 0.05);
             Assert.IsTrue(efit.Mu.ConfidenceInterval(0.95).ClosedContains(distribution.Mu));
             Assert.IsTrue(efit.Sigma.ConfidenceInterval(0.95).ClosedContains(distribution.Sigma));
+            ValidateParameterCollection(efit.Parameters);
 
         }
 
@@ -283,10 +285,12 @@ namespace Test {
             Assert.IsTrue(RB.Alpha.ConfidenceInterval(0.99).ClosedContains(B.Alpha));
             Assert.IsTrue(RB.Beta.ConfidenceInterval(0.99).ClosedContains(B.Beta));
             Assert.IsTrue(RB.GoodnessOfFit.Probability > 0.05);
+            ValidateParameterCollection(RB.Parameters);
 
             // Fit to a normal distribution should be bad
             NormalFitResult RN = NormalDistribution.FitToSample(S);
             Assert.IsTrue(RN.GoodnessOfFit.Probability < 0.05);
+            ValidateParameterCollection(RN.Parameters);
         }
 
         [TestMethod]
@@ -332,6 +336,7 @@ namespace Test {
             Assert.IsTrue(R.Shape.ConfidenceInterval(0.95).ClosedContains(B.Shape));
             Assert.IsTrue(R.Scale.ConfidenceInterval(0.95).ClosedContains(B.Scale));
             Assert.IsTrue(R.GoodnessOfFit.Probability > 0.05);
+            ValidateParameterCollection(R.Parameters);
 
         }
 
@@ -374,10 +379,12 @@ namespace Test {
             // this is harder than others, because a chi^2 isn't so very different from a normal; to help, increase N or decrease nu
             NormalFitResult nfit = NormalDistribution.FitToSample(sample);
             Assert.IsTrue(nfit.GoodnessOfFit.Probability < 0.05);
+            ValidateParameterCollection(nfit.Parameters);
 
             // fit to exponential should also be bad
             ExponentialFitResult efit = ExponentialDistribution.FitToSample(sample);
             Assert.IsTrue(efit.GoodnessOfFit.Probability < 0.05);
+            ValidateParameterCollection(efit.Parameters);
         }
 
         [TestMethod]
@@ -390,6 +397,7 @@ namespace Test {
                 Assert.IsTrue(R.Scale.ConfidenceInterval(0.99).ClosedContains(W.Scale));
                 Assert.IsTrue(R.Shape.ConfidenceInterval(0.99).ClosedContains(W.Shape));
                 Assert.IsTrue(R.GoodnessOfFit.Probability > 0.01);
+                ValidateParameterCollection(R.Parameters);
             }
 
         }
@@ -577,41 +585,6 @@ namespace Test {
 
         }
 
-        public void TestMoments (ContinuousDistribution d) {
-
-            // the support gives the limits of integration
-            Interval support = d.Support;
-
-            // raw moments
-            double[] M = new double[6];
-            for (int n = 0; n < 6; n++) {
-                // define x^n p(x)
-                Func<double, double> raw = delegate(double x) {
-                    return (Math.Pow(x, n) * d.ProbabilityDensity(x));
-                }; 
-                // integrate it
-                M[n] = FunctionMath.Integrate(raw, support);
-                // compare with the claimed result
-                Console.WriteLine("M{0} {1} v. {2}", n, M[n], d.RawMoment(n));
-            }
-
-            // central moments
-            double[] C = new double[6];
-            for (int n = 0; n < 6; n++) {
-                // define (x-m)^n p(x)
-                Func<double, double> central = delegate(double x) {
-                    return (Math.Pow(x - M[1], n) * d.ProbabilityDensity(x));
-                };
-                // integrate it
-                C[n] = FunctionMath.Integrate(central, support);
-                // compare with the claimed result
-                Console.WriteLine("C{0} {1} v. {2}", n, C[n], d.CentralMoment(n));
-            }
-
-            Console.WriteLine("Mean {0} v. {1}", M[1], d.Mean);
-            Console.WriteLine("Standard Deviation {0} v. {1}", Math.Sqrt(C[2]), d.StandardDeviation);
-
-        }
 
         [TestMethod]
         public void SampleKolmogorovSmirnovTest () {
@@ -1127,6 +1100,18 @@ namespace Test {
             for (int i = 0; i < result.Parameters.Count; i++) {
                 Console.WriteLine(result.Parameters[i].Estimate);
                 Assert.IsTrue(result.Parameters[i].Estimate.ConfidenceInterval(0.99).ClosedContains(c[i]));
+            }
+        }
+
+        public void ValidateParameterCollection(ParameterCollection parameters) {
+            for (int i = 0; i < parameters.Count; i++) {
+                string iName = parameters[i].Name;
+                Assert.IsTrue(parameters[i].Estimate.Value == parameters.ValuesVector[i]);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(parameters[i].Estimate.Uncertainty, Math.Sqrt(parameters.CovarianceMatrix[i, i])));
+                Assert.IsTrue(parameters.VarianceOf(iName) == parameters.CovarianceMatrix[i, i]);
+                foreach (Parameter jParameter in parameters) {
+                    Assert.IsTrue(parameters.CovarianceOf(iName, jParameter.Name) == parameters.CovarianceMatrix[i, jParameter.Index]);
+                }
             }
         }
 

@@ -17,27 +17,28 @@ namespace Meta.Numerics.Statistics {
     public static class Series {
 
         /// <summary>
-        /// Computes the autocovariance of the series at the given lag.
+        /// Computes the auto-covariance of the series at the given lag.
         /// </summary>
-        /// <param name="series">The data series from which to compute the autocovariance.</param>
-        /// <param name="lag">The lag at which to compute the autocovariance.</param>
-        /// <returns>The value of the autocovariance at the given lag.</returns>
+        /// <param name="series">The data series from which to compute the auto-covariance.</param>
+        /// <param name="lag">The lag at which to compute the auto-covariance.</param>
+        /// <returns>The value of the auto-covariance at the given lag.</returns>
         /// <remarks>
         /// <para>In a length-N time series, there are N-k lag-k observations. Nonetheless,
-        /// the definition of the lag-k autocovariance requires division by N, not N-k. This
-        /// counterintuitive convention ensures that the autocovariance has desirable
+        /// the definition of the lag-k auto-covariance requires division by N, not N-k. This
+        /// counterintuitive convention ensures that the auto-covariance has desirable
         /// positive definiteness properties and agrees with the computation via FFT.</para>
-        /// <para>The computation of an autocovariance via this method is O(N). If
-        /// you need to compute more than a handfull of autocovariances, it is
+        /// <para>The computation of an auto-covariance via this method is O(N). If
+        /// you need to compute more than a handful of auto-covariances, it is
         /// more efficient to call the <see cref="Autocovariance(IReadOnlyList{double})"/>, which
         /// computes all of them in O(N log N).</para>
-        /// <para>While the sample autocovariance does converge to the population
-        /// autocovariance in the large-N limit, this convergence is very slow. If you
-        /// want an estimate of the population autocovariance, use
+        /// <para>While the sample auto-covariance does converge to the population
+        /// auto-covariance in the large-N limit, this convergence is very slow. If you
+        /// want an estimate of the population auto-covariance, use
         /// <see cref="SeriesPopulationStatistics(IReadOnlyList{double})"/>
         /// to obtain a much better estimate.</para>
         /// </remarks>
         /// <seealso cref="Autocovariance(IReadOnlyList{double})"/>
+        /// <see href="https://en.wikipedia.org/wiki/Autocovariance"/>
         public static double Autocovariance (this IReadOnlyList<double> series, int lag) {
 
             if (series == null) throw new ArgumentNullException(nameof(series));
@@ -55,27 +56,28 @@ namespace Meta.Numerics.Statistics {
             // It appears to be standard practice to divide by n instead of n-k, even though
             // (1) there are n-k terms, not n, (2) dividing by n gives a biased estimator
             // of the population mean, while dividing by n-k yields an unbiased estimator.
-            // I really don't undertand this practice, but it does appear to be necessary 
+            // I really don't understand this practice, but it does appear to be necessary 
             // for agreement with the FFT computation.
 
         }
 
         /// <summary>
-        /// Computes the autocovariance for all lags.
+        /// Computes the auto-covariance for all lags.
         /// </summary>
         /// <param name="series">The data series.</param>
-        /// <returns>An array of autocovariance values, with the array index equal to the lag index.</returns>
+        /// <returns>An array of auto-covariance values, with the array index equal to the lag index.</returns>
         /// <remarks>
-        /// <para>The computation of the autocovariance for a given lag is an O(N) operation.
-        /// Naively, the computation of the autocovariance for all N possible lags is therefore an
+        /// <para>The computation of the auto-covariance for a given lag is an O(N) operation.
+        /// Naively, the computation of the auto-covariance for all N possible lags is therefore an
         /// O(N^2) operation; this is in fact the cost of N invocations of
         /// <see cref="Autocovariance(IReadOnlyList{double},int)"/>.
         /// However, using Fourier techniques, it is possible to simultaneously compute
-        /// the autocovariance for all possible lags in O(N log N) operations. This method
-        /// uses the Fourier technique and should be called if you require the autocovariance
-        /// for more than a handfull of lag values.</para>
+        /// the auto-covariance for all possible lags in O(N log N) operations. This method
+        /// uses the Fourier technique and should be called if you require the auto-covariance
+        /// for more than a handful of lag values.</para>
         /// </remarks>
         /// <seealso cref="Autocovariance(IReadOnlyList{double},int)"/>
+        /// <see href="https://en.wikipedia.org/wiki/Autocovariance"/>
         public static double[] Autocovariance (this IReadOnlyList<double> series) {
 
             if (series == null) throw new ArgumentNullException(nameof(series));
@@ -148,10 +150,10 @@ namespace Meta.Numerics.Statistics {
         /// <returns>A collection of population statistics.</returns>
         /// <remarks>
         /// <para>Just as is the case for the variance of a sample (<see cref="Sample.Variance"/>),
-        /// the sample autocovariances of a time series
-        /// are not unbiased estimates of the autocovariances of the population from which
+        /// the sample auto-covariances of a time series
+        /// are not unbiased estimates of the auto-covariances of the population from which
         /// the series is drawn. Additional computations must be performed to calculate
-        /// unbiased estimates and error estimates for the time series mean and autocovariances.</para>
+        /// unbiased estimates and error estimates for the time series mean and auto-covariances.</para>
         /// <para>Unlike the case of a sample of uncorrelated values, these computations are complicated
         /// and the same computation is relevant for all moments. Therefore, the computation is performed
         /// once by this method, which returns a object from which all population statistics can be
@@ -176,7 +178,7 @@ namespace Meta.Numerics.Statistics {
             Debug.Assert(series != null);
             if (series.Count < 4) throw new InsufficientDataException();
 
-            // For an ergodic series, the naive mean
+            // For an ergodic series, the naïve mean
             //   m = \frac{1}{n} \sum_{i=1}{n} y_i
             // is an unbiased estimator of the population mean E(m) = \mu. It's not
             // hard to show that the estimator has variance
@@ -199,7 +201,7 @@ namespace Meta.Numerics.Statistics {
             // the g_k given the c_k, but it turns out it is very much not.
 
             // One simple approach would be to note that the deviation of c_k from g_k looks
-            // to be supressed by 1/n, so a good first approximation should be to compute v
+            // to be suppressed by 1/n, so a good first approximation should be to compute v
             // from the c_k and then use it to correct them. But this doesn't work because
             // v = 0 when computed using the c_k. This is a sum identity of the FFT, which
             // tends to make the higher c_k artificially negative so as to produce the required
@@ -208,14 +210,14 @@ namespace Meta.Numerics.Statistics {
             // Next you might note that our formula effectively defines a matrix A that
             // relates c = A g, if c and g are understood as vectors. If we just invert the
             // matrix we should be able to recover g = A^{-1} c. But A turns out to be
-            // rank n-1 and so is not invertable. (Presumably because the same sum identity
+            // rank n-1 and so is not invertible. (Presumably because the same sum identity
             // effectively defines a linear relationship among the c's.) I also tried
             // doing an SVD on A and inverting using the pseudo-inverse, but didn't get
             // very good g's. (Presumably there is a lot of freedom to move power
             // around between the different g's, and the pseudo-inverse doesn't pick
-            // what we want, which is one that supresses higher g's.)
+            // what we want, which is one that suppresses higher g's.)
 
-            // What finally worked was to introduce a window function into v that supresses
+            // What finally worked was to introduce a window function into v that suppresses
             // the contribution of higher g's. The simplest is a hard window which just
             // does the sum up to some maximum j. This makes A invertible but it is
             // simpler and faster just do a few v -> g -> v -> cycles. Such an
@@ -471,134 +473,13 @@ namespace Meta.Numerics.Statistics {
                 residuals
            ));
         }
-        /*
-        /// <summary>
-        /// Fits an AR(1) model to the time series.
-        /// </summary>
-        /// <returns>The fit with parameters lag-1 coefficient, mean, and standard deviation.</returns>
-        public FitResult FitToAR1 () {
-
-            // AR1 model is
-            //   (x_t - \mu) = \alpha (x_{t-1} - \mu) + u_{t}
-            // where u_{t} \sim N(0, \sigma) are IID
-
-            // It's easy to show
-            //   m = E(x_t) = \mu
-            //   c_0 = V(x_t) = E((x_t - m)^2) = \frac{\sigma^2}{1 - \alpha^2}
-            //   c_1 = V(x_t, x_t-1) = E((x_t - m)(x_{t-1} - m)) = \alpha c_0
-            // which gives a way to get paramters via the method of moments. In particular,
-            //   \alpha = c_1 / c_0
-
-            // For maximum likelyhood estimation (MLE), we need
-            //   \log L = -\frac{1}{2} \sum_i \left[ \log (2 \pi \sigma^2)
-            //            + \left[\frac{(x_i - \mu) - \alpha (x_{i-1} - \mu)}{\sigma}\right]^2
-
-            // Treatment of the 1st value a bit subtle. We could treat it as normally distributed as
-            // per m and c_0, but then it enters differently than all other values, which significantly
-            // complicates the equations. Or we could regard it as given and compute log likelihood
-            // conditional on it; then all values enter in the same way, but sum begins with the second
-            // value. We do the latter, which is called the "conditional MLE" in the literature.
-
-            // Differentiating once
-            //   \frac{\partial L}{\partial \alpha} = \frac{1}{\sigma^2} \sum_i ( x_i - \mu - \alpha x_{i-1} ) x_{i-1}
-            //   \frac{\partial L}{\partial \mu} = \frac{1}{\sigma^2} \sum_i ( x_i - \mu - \alpha x_{i-1} )
-            //   \frac{\partial L}{\partial \sigma} = \sum_i \left[ \frac{(x_i - \mu - \alpha x_{i-1})^2}{\sigma^3} - \frac{1}{\sigma} \right]
-            // Set equal to zero to get equations for \mu, \alpha, \sigma. First two give a 2X2 system
-            // that can be solved for \mu and \alpha, then thrid for \sigma. The third equation just says
-            //   \sum_i (x_i - \mu - \alpha x_{i-1})^2 = \sum_i \sigma^2
-            // that \sigma is the rms of residuals. If we play a little fast and loose with index ranges
-            // (e.g. ingoring difference between quantities computed over first n-1 and last n-1 values),
-            // then the other two give the same results as from the method of moments.
-
-            // Differentiating twice
-            //   \frac{\partial^2 L}{\partial \alpha^2} = \frac{-1}{\sigma^2} \sum_i x_{i-1} x_{i-1} = \frac{-n (c_0 + m^2)}{\sigma^2}
-            //   \frac{\partial^2 L}{\partial \mu^2} = \frac{-1}{\sigma^2} \sum_i 1 = \frac{-n}{\sigma^2}
-            //   \frac{\partial^2 L}{\partial \sigma^2} = \frac{-2 n}{\sigma^2}
-            //  Mixed derivatives vanish because of the first derivative conditions.
-
-            if (data.Count < 4) throw new InsufficientDataException();
-
-            int n = data.Count;
-
-            // compute mean, variance, lag-1 autocorrelation
-
-            double m = data.Mean;
-
-            double c0 = 0.0;
-            for (int i = 1; i < data.Count; i++) {
-                c0 += MoreMath.Sqr(data[i] - m);
-            }
-
-            double c1 = 0.0;
-            for (int i = 1; i < data.Count; i++) {
-                c1 += (data[i] - m) * (data[i - 1] - m);
-            }
-
-            double alpha = c1 / c0;
-
-            // This expression for alpha is guaranteed to be asymptotically unbiased by MLE,
-            // but it is known to be biased at finite n, and in fact the bias is known.
-
-            // See http://www.alexchinco.com/bias-in-time-series-regressions/ for simulations and explanation.
-            // He cites Kendall, "Note on Bias in the Estimation of Autocorrelation", Biometrika (1954) 41 (3-4) 403-404
-
-            // See Shaman and Stine, "The Bias of Autogregressive Coefficient Estimators",
-            // Journal of the American Statistical Association (1988) Vol. 83, No. 403, pp. 842-848
-            // (http://www-stat.wharton.upenn.edu/~steele/Courses/956/Resource/YWSourceFiles/ShamanStine88.pdf)
-            // for derivation and formulas for AR(1)-AR(6).
-
-            // For AR(1), MLE systematically underestimates alpha:
-            //   \hat{\alpha} = \alpha - \frac{1 + 3 \alpha}{n}
-            // I have confrimed the accuracy of this formula via my own simulations.
-
-            alpha = alpha + (1.0 + 3.0 * alpha) / n;
-
-            double sigma2 = 0.0;
-            TimeSeries residuals = new TimeSeries();
-            for (int i = 1; i < data.Count; i++) {
-                double r = (data[i] - m) - alpha * (data[i - 1] - m);
-                residuals.Add(r);
-                sigma2 += MoreMath.Sqr(r);
-            }
-            sigma2 = sigma2 / (data.Count - 3);
-
-            // Solution to MLE says denominator is n-1, but (i) Fuller says to use n-3,
-            // (ii) simulations show n-3 is a better estimate, (iii) n-3 makes intuitive
-            // sense because there are 3 parameters. I would prefer a more rigorous
-            // argument, but that's good enough for now.
-
-            // The formulas for the variances of alpha and sigma follow straightforwardly from
-            // the second derivatives of the likelyhood function. For the variance of the mean
-            // we use the exact formula with the \gamma_k for an AR(1) model with the fitted
-            // alpha. After quite a bit of manipulation, that is
-            //   v = \frac{\sigma^2}{(1-\alpha)^2} \left[ 1 -
-            //         \frac{2\alpha}{n} \frac{1 - \alpha^n}{1 - \alpha^2} \right]
-            // which gives a finite-n correction to the MLE result. Near \alpha \approx \pm 1,
-            // we should use a series expansion to preserve accuracy.
-
-            double[] parameters = new double[] { alpha, m, Math.Sqrt(sigma2) };
-
-            SymmetricMatrix covariances = new SymmetricMatrix(3);
-            covariances[0, 0] = (1.0 - alpha * alpha) / n;
-            covariances[1, 1] = sigma2 / MoreMath.Sqr(1.0 - alpha) * (1.0 - 2.0 * alpha * (1.0 - MoreMath.Pow(alpha, n)) / (1.0 - alpha * alpha) / n) / n;
-            covariances[2, 2] = sigma2 / 2.0 / n;
-
-            TestResult test = residuals.LjungBoxTest();
-
-            return (new FitResult(
-               parameters,
-               covariances,
-               test
-           ));
-
-        }
-        */
 
         /// <summary>
         /// Performs a Ljung-Box test for non-correlation.
         /// </summary>
         /// <param name="series">The data series.</param>
         /// <returns>The result of the test.</returns>
+        /// <seealso href="https://en.wikipedia.org/wiki/Ljung%E2%80%93Box_test"/>
         public static TestResult LjungBoxTest (this IReadOnlyList<double> series) {
             if (series == null) throw new ArgumentNullException(nameof(series));
             if (series.Count < 2) throw new InsufficientDataException();

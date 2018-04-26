@@ -672,7 +672,6 @@ namespace Test {
                 for (int k = 0; k < n; k++) Assert.IsTrue(TestUtilities.IsNearlyEqual(rawOutputs[k], distribution.RawMoment(k)));
 
                 // Convert cumulants to central moments
-                if (distribution.GetType() == typeof(LaplaceDistribution)) continue; // fix this!
                 double[] cumulantInputs = new double[n];
                 for (int k = 0; k < n; k++) cumulantInputs[k] = distribution.Cumulant(k);
                 double[] centralOutputs = MomentMath.CumulantToCentral(cumulantInputs);

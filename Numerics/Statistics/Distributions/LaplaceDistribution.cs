@@ -34,11 +34,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         // Location parameter
         private readonly double a;
 
-        // Scale paramter
+        // Scale parameter
         private readonly double b;
 
         /// <summary>
-        /// Gets the location parmater of the distribution.
+        /// Gets the location parameter of the distribution.
         /// </summary>
         public double Location {
             get {
@@ -191,7 +191,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (r == 1) {
                 return (a);
             } else if (r % 2 == 0) {
-                return (AdvancedIntegerMath.Factorial(r - 1) * Math.Pow(b, r));
+                return (2.0 * AdvancedIntegerMath.Factorial(r - 1) * Math.Pow(b, r));
             } else {
                 return (0.0);
             }

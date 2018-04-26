@@ -129,7 +129,7 @@ namespace Test {
             SquareMatrix MB = MA / 2.0;
             Assert.IsTrue(MB == M);
 
-            // Subraction of self same as multiplication by zero
+            // Subtraction of self same as multiplication by zero
             SquareMatrix MS = M - M;
             SquareMatrix M0 = 0.0 * M;
             Assert.IsTrue(MS == M0);
@@ -140,7 +140,7 @@ namespace Test {
             Assert.IsTrue(MN == MM);
 
             // check transpose
-            SquareMatrix MT = M.Transpose();
+            SquareMatrix MT = M.Transpose;
             Assert.IsTrue(MT != M);
 
             // matrix multiplication is not ableian
@@ -149,33 +149,30 @@ namespace Test {
             Assert.IsFalse(MMT == MTM);
 
             // check that transpose of transpose is original
-            SquareMatrix MTT = MT.Transpose();
+            SquareMatrix MTT = MT.Transpose;
             Assert.IsTrue(MTT == M);
 
         }
 
         [TestMethod]
         public void SquareVandermondeMatrixInverse () {
-            for (int d = 1; d <= 8; d++) {
-                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
+            for (int d = 1; d < 8; d++) {
                 SquareMatrix H = CreateVandermondeMatrix(d);
                 DateTime start = DateTime.Now;
                 SquareMatrix HI = H.Inverse();
                 DateTime finish = DateTime.Now;
                 Console.WriteLine("d={0} t={1} ms", d, (finish - start).Milliseconds);
-                PrintMatrix(HI);
-                PrintMatrix(H * HI);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(H * HI, I));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(H * HI, UnitMatrix.OfDimension(d)));
             }
         }
 
         [TestMethod]
         public void SquareRandomMatrixInverse () {
             for (int d = 1; d <= 100; d=d+11) {
-                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
                 SquareMatrix M = CreateSquareRandomMatrix(d, 1);
                 SquareMatrix MI = M.Inverse();
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(M * MI, I));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(M * MI, UnitMatrix.OfDimension(d)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(MI * M, UnitMatrix.OfDimension(d)));
             }
         }
 
@@ -188,23 +185,22 @@ namespace Test {
 
                 SquareMatrix M = CreateSquareRandomMatrix(d);
 
-                // QR decompose the matrix
+                // QR decompose the matrix.
                 SquareQRDecomposition QRD = M.QRDecomposition();
 
-                // the dimension should be right
+                // The dimension should be right.
                 Assert.IsTrue(QRD.Dimension == M.Dimension);
 
-                // test that the decomposition works
+                // Test that the decomposition works.
                 SquareMatrix Q = QRD.QMatrix;
                 SquareMatrix R = QRD.RMatrix;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(Q * R, M));
 
-                // check that the inverse works
+                // Check that the inverse works.
                 SquareMatrix MI = QRD.Inverse();
-                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(M * MI, I));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(M * MI, UnitMatrix.OfDimension(d)));
 
-                // test that a solution works
+                // Test that a solution works.
                 ColumnVector t = new ColumnVector(d);
                 for (int i = 0; i < d; i++) t[i] = i;
                 ColumnVector s = QRD.Solve(t);
@@ -216,8 +212,6 @@ namespace Test {
         [TestMethod]
         public void SquareRandomMatrixLUDecomposition () {
             for (int d = 1; d <= 256; d += 11) {
-
-                Console.WriteLine("d={0}", d);
 
                 SquareMatrix M = CreateSquareRandomMatrix(d);
 
@@ -237,8 +231,7 @@ namespace Test {
 
                 // check that the inverse works
                 SquareMatrix MI = LU.Inverse();
-                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(M * MI, I));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(M * MI, UnitMatrix.OfDimension(d)));
 
                 // test that a solution works
                 ColumnVector t = new ColumnVector(d);
@@ -252,10 +245,9 @@ namespace Test {
         [TestMethod]
         public void SquareVandermondeMatrixLUDecomposition () {
             // fails now for d = 8 because determinant slightly off
-            for (int d = 1; d <= 7; d++) {
+            for (int d = 1; d < 8; d++) {
 
-                Console.WriteLine("d={0}", d);
-
+                // Analytic expression for determinant
                 double[] x = new double[d];
                 for (int i = 0; i < d; i++) {
                     x[i] = i;
@@ -271,24 +263,20 @@ namespace Test {
                 SquareMatrix V = CreateVandermondeMatrix(d);
                 LUDecomposition LU = V.LUDecomposition();
 
-                // test that the decomposition works
+                // Test that the decomposition works
                 SquareMatrix P = LU.PMatrix();
                 SquareMatrix L = LU.LMatrix();
                 SquareMatrix U = LU.UMatrix();
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(P * V, L * U));
 
-                // check that the determinant agrees with the analytic expression
-                Console.WriteLine("det {0} {1}", LU.Determinant(), det);
+                // Check that the determinant agrees with the analytic expression
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(LU.Determinant(), det));
 
-                // check that the inverse works
+                // Check that the inverse works
                 SquareMatrix VI = LU.Inverse();
-                //PrintMatrix(VI);
-                //PrintMatrix(V * VI);
-                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(V * VI, I));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(V * VI, UnitMatrix.OfDimension(d)));
 
-                // test that a solution works
+                // Test that a solution works
                 ColumnVector t = new ColumnVector(d);
                 for (int i = 0; i < d; i++) t[i] = 1.0;
                 ColumnVector s = LU.Solve(t);
@@ -297,27 +285,21 @@ namespace Test {
             }
         }
 
-        // eigensystem of Vandermonde matrices
-
         [TestMethod]
         public void SquareVandermondeMatrixEigenvalues () {
             for (int d = 1; d <= 8; d++) {
                 SquareMatrix H = CreateVandermondeMatrix(d);
                 double tr = H.Trace();
-                ComplexEigensystem E = H.Eigensystem();
+                ComplexEigendecomposition E = H.Eigendecomposition();
                 double sum = 0.0;
-                for (int i = 0; i < d; i++) {
-                    Console.WriteLine(E.Eigenvalue(i));
-                    double e = E.Eigenvalue(i).Re;
+                foreach(ComplexEigenpair pair in E.Eigenpairs) {
+                    double e = pair.Eigenvalue.Re;
                     sum += e;
-                    Complex[] vc = E.Eigenvector(i);
+                    ComplexColumnVector vc = pair.Eigenvector;
                     ColumnVector v = new ColumnVector(d);
                     for (int j = 0; j < d; j++) {
-                        //Console.WriteLine("  {0}", vc[j]);
                         v[j] = vc[j].Re;
                     }
-                    ColumnVector Hv = H * v;
-                    ColumnVector ev = e * v;
                     Assert.IsTrue(TestUtilities.IsNearlyEigenpair(H, v, e));
                 }
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(tr, sum));
@@ -328,18 +310,17 @@ namespace Test {
         [TestMethod]
         public void SquareRandomMatrixEigenvalues () {
             for (int d = 1; d <= 67; d = d + 11) {
-                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
                 SquareMatrix M = CreateSquareRandomMatrix(d, d);
                 double tr = M.Trace();
                 DateTime start = DateTime.Now;
-                ComplexEigensystem E = M.Eigensystem();
+                ComplexEigendecomposition E = M.Eigendecomposition();
                 DateTime finish = DateTime.Now;
                 Console.WriteLine("d={0} t={1} ms", d, (finish - start).Milliseconds);
                 Assert.IsTrue(E.Dimension == d);
                 Complex[] es = new Complex[d];
                 for (int i = 0; i < d; i++) {
-                    es[i] = E.Eigenvalue(i);
-                    Complex[] v = E.Eigenvector(i);
+                    es[i] = E.Eigenpairs[i].Eigenvalue;
+                    ComplexColumnVector v = E.Eigenpairs[i].Eigenvector;
                     Assert.IsTrue(TestUtilities.IsNearlyEigenpair(M, v, es[i]));
                 }
                 Assert.IsTrue(TestUtilities.IsSumNearlyEqual(es, tr));
@@ -349,7 +330,7 @@ namespace Test {
         [TestMethod]
         public void SquareUnitMatrixLUDecomposition () {
             for (int d = 1; d <= 10; d++) {
-                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
+                SquareMatrix I = UnitMatrix.OfDimension(d).ToSquareMatrix();
                 Assert.IsTrue(I.Trace() == d);
                 LUDecomposition LU = I.LUDecomposition();
                 Assert.IsTrue(LU.Determinant() == 1.0);
@@ -361,13 +342,13 @@ namespace Test {
         [TestMethod]
         public void SquareUnitMatrixEigensystem () {
             int d = 3;
-            SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
-            ComplexEigensystem E = I.Eigensystem();
+            SquareMatrix I = UnitMatrix.OfDimension(d).ToSquareMatrix();
+            ComplexEigendecomposition E = I.Eigendecomposition();
             Assert.IsTrue(E.Dimension == d);
             for (int i = 0; i < d; i++) {
-                Complex val = E.Eigenvalue(i);
+                Complex val = E.Eigenpairs[i].Eigenvalue;
                 Assert.IsTrue(val == 1.0);
-                Complex[] vec = E.Eigenvector(i);
+                ComplexColumnVector vec = E.Eigenpairs[i].Eigenvector;
                 for (int j = 0; j < d; j++) {
                     if (i == j) {
                         Assert.IsTrue(vec[j] == 1.0);
@@ -380,8 +361,8 @@ namespace Test {
 
         [TestMethod]
         public void SquareMatrixDifficultEigensystem () {
-            // this requires > 30 iterations to converge, looses more accuracy than it should
-            // this example throws a NonConvergenceException without the ad hoc shift but works once the ad hoc shift is included
+            // This matrix requires > 30 iterations to converge, looses more accuracy than it should.
+            // This example throws a NonConvergenceException without the ad hoc shift but works once the ad hoc shift is included.
             SquareMatrix M = new SquareMatrix(4);
             M[0,1] = 2;
             M[0,3] = -1;
@@ -390,14 +371,10 @@ namespace Test {
             M[3,2] = 1;
             // The eigenvalues of this matrix are -1, -1, 1, 1.
             // There are only two distinct eigenvectors: (1, -1, 1, -1) with eigenvalue -1, and (1, 1, 1, 1) with eigenvalue 1.
-            ComplexEigensystem E = M.Eigensystem();
-            for (int i = 0; i < E.Dimension; i++) {
-                Console.WriteLine(E.Eigenvalue(i));
-                for (int j = 0; j < E.Dimension; j++) {
-                    Console.Write("{0} ", E.Eigenvector(i)[j]);
-                }
-                Console.WriteLine();
-                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(M, E.Eigenvector(i), E.Eigenvalue(i)));
+            ComplexEigendecomposition E = M.Eigendecomposition();
+            foreach(ComplexEigenpair pair in E.Eigenpairs)
+            {
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(M, pair.Eigenvector, pair.Eigenvalue));
             }
         }
 
@@ -408,7 +385,7 @@ namespace Test {
             // This example is presented in http://people.inf.ethz.ch/arbenz/ewp/Lnotes/chapter3.pdf
             // It has eigenvalues 1 \pm 2i, 3, 4, 5 \pm 6i
 
-            double[,] souce = new double[,] {
+            double[,] source = new double[,] {
                 { 7, 3, 4, -11, -9, -2},
                 {-6, 4, -5, 7, 1, 12},
                 {-1, -9, 2, 2, 9, 1},
@@ -417,12 +394,7 @@ namespace Test {
                 {6, 1, 4, -11, -7, -1}
             };
 
-            SquareMatrix A = new SquareMatrix(6);
-            for (int r = 0; r < souce.GetLength(0); r++) {
-                for (int c = 0; c < souce.GetLength(1); c++) {
-                    A[r, c] = souce[r, c];
-                }
-            }
+            SquareMatrix A = new SquareMatrix(source);
 
             Complex[] eigenvalues = A.Eigenvalues();
 
@@ -434,20 +406,19 @@ namespace Test {
         [TestMethod]
         public void DegenerateEigenvalues () {
 
-            double[,] souce = new double[,] {
+            double[,] source = new double[,] {
                 {1, 0, 1},
                 {0, 2, 0},
                 {1, 0, 1}
             };
-            SquareMatrix A = new SquareMatrix(3);
-            for (int r = 0; r < souce.GetLength(0); r++) {
-                for (int c = 0; c < souce.GetLength(1); c++) {
-                    A[r, c] = souce[r, c];
-                }
+            SquareMatrix A = new SquareMatrix(source);
+
+            ComplexEigendecomposition e = A.Eigendecomposition();
+
+            foreach (ComplexEigenpair pair in e.Eigenpairs)
+            {
+                TestUtilities.IsNearlyEigenpair(A, pair.Eigenvector, pair.Eigenvalue);
             }
-
-            ComplexEigensystem e = A.Eigensystem();
-
 
         }
 
@@ -525,17 +496,22 @@ namespace Test {
             }
 
             //Complex[] v = R.Eigenvalues();
-            ComplexEigensystem E = R.Eigensystem();
+            ComplexEigendecomposition E = R.Eigendecomposition();
 
             for (int i = 0; i < E.Dimension; i++) {
-                Console.WriteLine(E.Eigenvalue(i));
-                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(R, E.Eigenvector(i), E.Eigenvalue(i)));
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(R, E.Eigenpairs[i].Eigenvector, E.Eigenpairs[i].Eigenvalue));
             }
 
         }
 
         [TestMethod]
         public void CirculantEigenvalues () {
+
+            // See https://en.wikipedia.org/wiki/Circulant_matrix
+
+            // Definition is C_{ij} = c_{|i - j|} for any n-vector c.
+            // jth eigenvector known to be (1, \omega_j, \omega_j^2, \cdots, \omega_j^{n-1}) where \omega_j = \exp(2 \pi i j / n) are nth roots of unity
+            // jth eigenvalue known to be c_0 + c_{n-1} \omega_j + c_{n-2} \omega_j^2 + \cdots + c_1 \omega_j^{n-1}
 
             int n = 12;
 
@@ -583,34 +559,6 @@ namespace Test {
             return (u);
         }
 
-        public static void PrintMatrix (double[,] A) {
-            for (int r = 0; r < A.GetLength(0); r++) {
-                for (int c = 0; c < A.GetLength(1); c++) {
-                    Console.Write("  {0}", A[r, c]);
-                }
-                Console.WriteLine();
-            }
-            Console.WriteLine();
-        }
-
-        public void TimedEigenvalues () {
-
-            int n = 200;
-            Random rng = new Random(1);
-
-            SquareMatrix A = new SquareMatrix(n);
-            for (int r = 0; r < n; r++) {
-                for (int c = 0; c < n; c++) {
-                    A[r, c] = rng.NextDouble();
-                }
-            }
-
-            Stopwatch s = Stopwatch.StartNew();
-            Complex[] eigenvalues = A.Eigenvalues();
-            s.Stop();
-            Console.WriteLine(s.ElapsedMilliseconds);
-
-        }
 
         [TestMethod]
         public void SquareMatrixNorms () {
@@ -619,25 +567,36 @@ namespace Test {
             Assert.IsTrue(Z.OneNorm() == 0.0);
             Assert.IsTrue(Z.InfinityNorm() == 0.0);
             Assert.IsTrue(Z.FrobeniusNorm() == 0.0);
+            Assert.IsTrue(Z.MaxNorm() == 0.0);
 
             SquareMatrix A = CreateSquareRandomMatrix(4);
             Assert.IsTrue(A.OneNorm() > 0.0);
             Assert.IsTrue(A.InfinityNorm() > 0.0);
             Assert.IsTrue(A.FrobeniusNorm() > 0.0);
+            Assert.IsTrue(A.MaxNorm() > 0.0);
 
             SquareMatrix B = CreateVandermondeMatrix(4);
             Assert.IsTrue(B.OneNorm() > 0.0);
             Assert.IsTrue(B.InfinityNorm() > 0.0);
             Assert.IsTrue(B.FrobeniusNorm() > 0.0);
+            Assert.IsTrue(B.MaxNorm() > 0.0);
 
             SquareMatrix S = A + B;
             Assert.IsTrue(S.OneNorm() <= A.OneNorm() + B.OneNorm());
             Assert.IsTrue(S.InfinityNorm() <= A.InfinityNorm() + B.InfinityNorm());
             Assert.IsTrue(S.FrobeniusNorm() <= A.FrobeniusNorm() + B.FrobeniusNorm());
+            Assert.IsTrue(S.MaxNorm() <= A.MaxNorm() + B.MaxNorm());
 
+            double t = -1.5;
+            SquareMatrix M = t * A;
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(M.OneNorm(), Math.Abs(t) * A.OneNorm()));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(M.InfinityNorm(), Math.Abs(t) * A.InfinityNorm()));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(M.FrobeniusNorm(), Math.Abs(t) * A.FrobeniusNorm()));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(M.MaxNorm(), Math.Abs(t) * A.MaxNorm()));
+
+            // Frobenius norm is sub-multiplicative
             SquareMatrix P = A * B;
             Assert.IsTrue(P.FrobeniusNorm() <= A.FrobeniusNorm() * B.FrobeniusNorm());
-            // Frobenium norm is sub-multiplicative
 
         }
 
@@ -645,23 +604,24 @@ namespace Test {
         public void HilbertMatrixSVD () {
 
             int n = 4;
-            SquareMatrix H = new SquareMatrix(n);
-            for (int r = 0; r < n; r++) {
-                for (int c = 0; c < n; c++) {
-                    H[r, c] = 1.0 / (r + c + 1);
-                }
-            }
+            SquareMatrix H = TestUtilities.CreateSymmetricHilbertMatrix(n).ToSquareMatrix();
 
             SingularValueDecomposition SVD = H.SingularValueDecomposition();
-            for (int i = 0; i < n; i++) {
-                Console.WriteLine(SVD.SingularValue(i));
+            Assert.IsTrue(SVD.RowCount == n);
+            Assert.IsTrue(SVD.ColumnCount == n);
+            Assert.IsTrue(SVD.ConditionNumber > 1.0);
+
+            // Reconstruct matrix
+            SquareMatrix H2 = new SquareMatrix(n);
+            foreach (SingularValueContributor contributor in SVD.Contributors) {
+                H2 += contributor.SingularValue * ((SquareMatrix) (contributor.LeftSingularVector * contributor.RightSingularVector.Transpose));
             }
 
-            SquareMatrix S = SVD.LeftTransformMatrix.Transpose() * H * SVD.RightTransformMatrix;
-            for (int i = 0; i < SVD.Dimension; i++) {
-                Console.WriteLine(S[i, i]);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(S[i, i], SVD.SingularValue(i)));
-            }
+            // Use SVD to solve
+            ColumnVector b = new ColumnVector(n);
+            for (int i = 0; i < b.Dimension; i++) b[i] = i;
+            ColumnVector x = SVD.Solve(b);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(H * x, b));
 
         }
 
@@ -675,10 +635,7 @@ namespace Test {
             CM[1, 2] = -3.0;
             CM[2, 1] = 1.0;
             CM[2, 2] = -3.0;
-            ComplexEigensystem EM = CM.Eigensystem();
-            for (int i = 0; i < EM.Dimension; i++) {
-                Console.WriteLine("! {0}", EM.Eigenvalue(i));
-            }
+            ComplexEigendecomposition EM = CM.Eigendecomposition();
 
 
             for (int d = 2; d <= 8; d++) {
@@ -693,11 +650,7 @@ namespace Test {
                     C[r, d - 1] = -AdvancedIntegerMath.BinomialCoefficient(d, r);
                 }
 
-                ComplexEigensystem e = C.Eigensystem();
-                for (int i = 0; i < e.Dimension; i++) {
-                    Console.WriteLine("!! {0}", e.Eigenvalue(i));
-                }
-
+                ComplexEigendecomposition e = C.Eigendecomposition();
 
             }
 
@@ -757,7 +710,7 @@ namespace Test {
 
             // Create a rank-1 matrix
             ColumnVector v = new ColumnVector(1.0, 2.0, 3.0, 4.0);
-            RectangularMatrix A = v * v.Transpose();
+            RectangularMatrix A = v * v.Transpose;
 
             SingularValueDecomposition SVD = A.SingularValueDecomposition();
 
@@ -765,10 +718,10 @@ namespace Test {
             Assert.IsTrue(SVD.Rank == 1);
 
             // Only the first singular value should be non-zero
-            Console.WriteLine(SVD.SingularValue(0));
-            for (int i = 1; i < SVD.Dimension; i++) {
-                Console.WriteLine(SVD.SingularValue(i));
-                Assert.IsTrue(SVD.SingularValue(i) < TestUtilities.TargetPrecision * SVD.SingularValue(0));
+            double w = SVD.Contributors[0].SingularValue;
+            Assert.IsTrue(w > 0.0);
+            for (int i = 1; i < SVD.Contributors.Count; i++) {
+                Assert.IsTrue(SVD.Contributors[i].SingularValue < TestUtilities.TargetPrecision * w);
             }
 
         }
@@ -776,7 +729,7 @@ namespace Test {
         [TestMethod]
         public void SquareMatrixSVD () {
 
-            for (int d = 4; d < 50; d += 7) {
+            for (int d = 4; d < 64; d += 7) {
 
                 SquareMatrix A = CreateSquareRandomMatrix(d, d);
 
@@ -784,14 +737,29 @@ namespace Test {
 
                 Assert.IsTrue(SVD.Dimension == A.Dimension);
 
+                // U has right dimensions and is orthogonal
+                SquareMatrix U = SVD.LeftTransformMatrix;
+                Assert.IsTrue(U.Dimension == A.Dimension);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(U.MultiplyTransposeBySelf(), UnitMatrix.OfDimension(U.Dimension)));
+
+                // V has right dimensions and is orthogonal
+                SquareMatrix V = SVD.RightTransformMatrix;
+                Assert.IsTrue(V.Dimension == A.Dimension);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(V.MultiplyTransposeBySelf(), UnitMatrix.OfDimension(V.Dimension)));
+                Assert.IsTrue(SVD.Dimension == A.Dimension);
+
+                // The transforms decompose the matrix with the claimed singular values
+                SquareMatrix S = U.Transpose * A * V;
+                for (int i = 0; i < SVD.Contributors.Count; i++) {
+                    SingularValueContributor t = SVD.Contributors[i];
+                    Assert.IsTrue(t.SingularValue >= 0.0);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(S[i, i], t.SingularValue));
+                }
+
+                // We can solve a rhs using the SVD
                 ColumnVector x = new ColumnVector(d);
                 for (int i = 0; i < d; i++) x[i] = i;
                 ColumnVector b = A * x;
-
-                ColumnVector b1 = SVD.LeftTransformMatrix.Transpose() * b;
-                for (int i = 0; i < SVD.Rank; i++) b1[i] = b1[i] / SVD.SingularValue(i);
-                ColumnVector b2 = SVD.RightTransformMatrix * b1;
-
                 ColumnVector y = SVD.Solve(b);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(x, y));
 
@@ -799,6 +767,31 @@ namespace Test {
 
         }
 
+
+        [TestMethod]
+        public void SquareMatrixLowRankSVD () {
+
+            // Form a rank-2 dimension-3 square matrix
+            ColumnVector c1 = new ColumnVector(1.0, 1.0, 0.0);
+            ColumnVector c2 = new ColumnVector(1.0, -1.0, 0.0);
+            SquareMatrix A = (SquareMatrix) (1.0E6 * c1 * c1.Transpose + 1.03 * c2 * c2.Transpose);
+
+            SingularValueDecomposition SVD = A.SingularValueDecomposition();
+
+            // We should see the rank
+            Assert.IsTrue(SVD.Rank == 2);
+
+            // Solve a solve-able problem even though matrix is singular
+            ColumnVector b = new ColumnVector(2.0, 1.0, 0.0);
+            ColumnVector x = SVD.Solve(b);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(A * x, b, 1.0E-6));
+
+            // Increasing the tolerance should decrease the rank
+            SVD.Tolerance = 1.0E-4;
+            Assert.IsTrue(SVD.Tolerance == 1.0E-4);
+            Assert.IsTrue(SVD.Rank == 1);
+
+        }
     }
 
 }

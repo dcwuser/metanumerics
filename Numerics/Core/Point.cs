@@ -13,7 +13,7 @@ namespace Meta.Numerics {
         /// <summary>
         /// Initializes a new point with the given coordinates.
         /// </summary>
-        /// <param name="x">The X-corrdinate.</param>
+        /// <param name="x">The X-coordinate.</param>
         /// <param name="y">The Y-coordinate.</param>
         public XY (double x, double y) {
             this.x = x;
@@ -44,7 +44,7 @@ namespace Meta.Numerics {
         /// Converts a point into a two-tuple.
         /// </summary>
         /// <param name="point">The point to convert.</param>
-        /// <returns>The equivilent two-tuple, with <see cref="X"/> as the first item and
+        /// <returns>The equivalent two-tuple, with <see cref="X"/> as the first item and
         /// <see cref="Y"/> as the second item.</returns>
         public static implicit operator Tuple<double, double> (XY point) {
             return (new Tuple<double, double>(point.x, point.y));
@@ -54,7 +54,7 @@ namespace Meta.Numerics {
         /// Converts a two-tuple into a point.
         /// </summary>
         /// <param name="point">The two-tuple to convert.</param>
-        /// <returns>The equivilent point, with <see cref="X"/> equalto first item and
+        /// <returns>The equivalent point, with <see cref="X"/> equal to first item and
         /// <see cref="Y"/> equal to the second item.</returns>
         public static implicit operator XY (Tuple<double, double> point) {
             return (new XY(point.Item1, point.Item2));

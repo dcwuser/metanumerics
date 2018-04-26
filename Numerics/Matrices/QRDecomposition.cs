@@ -15,6 +15,7 @@ namespace Meta.Numerics.Matrices {
     /// <para>The method <see cref="RectangularMatrix.QRDecomposition"/> of the <see cref="RectangularMatrix"/> class can be used to QR decompose a
     /// rectangular matrix.</para>
     /// </remarks>
+    /// <seealso href="https://en.wikipedia.org/wiki/QR_decomposition"/>
     public sealed class QRDecomposition {
 
         private readonly double[] qtStore;
@@ -69,11 +70,9 @@ namespace Meta.Numerics.Matrices {
             if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (rhs.Count != rows) throw new DimensionMismatchException();
 
-            // copy rhs into an array, if necessary
-            double[] x;
-            if (rhs is double[]) {
-                x = (double[]) rhs;
-            } else {
+            // BLAS requires an array, but doesn't modify it, so if given one, use it directly
+            double[] x = rhs as double[];
+            if (x == null) {
                 x = new double[rows];
                 rhs.CopyTo(x, 0);
             }

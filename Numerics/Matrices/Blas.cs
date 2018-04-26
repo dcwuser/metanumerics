@@ -16,13 +16,22 @@ namespace Meta.Numerics.Matrices {
 
         // y <- x
         public static void dCopy (double[] xStore, int xOffset, int xStride, double[] yStore, int yOffset, int yStride, int count) {
-            if ((xStride == 1) && (yStride == 1)) {
+            Copy<double>(xStore, xOffset, xStride, yStore, yOffset, yStride, count);
+        }
+
+        internal static void Copy<T>(T[] xStore, int xOffset, int xStride, T[] yStore, int yOffset, int yStride, int count)
+        {
+            if ((xStride == 1) && (yStride == 1))
+            {
                 Array.Copy(xStore, xOffset, yStore, yOffset, count);
-            } else {
+            }
+            else
+            {
                 int n = 0;
                 int x = xOffset;
                 int y = yOffset;
-                while (n < count) {
+                while (n < count)
+                {
                     yStore[y] = xStore[x];
                     n++;
                     x += xStride;
@@ -126,11 +135,26 @@ namespace Meta.Numerics.Matrices {
         }
 
         // y <- a x + y
+
         public static void dAxpy (double alpha, double[] xStore, int xOffset, int xStride, double[] yStore, int yOffset, int yStride, int count) {
             int n = 0;
             int x = xOffset;
             int y = yOffset;
             while (n < count) {
+                yStore[y] += alpha * xStore[x];
+                n++;
+                x += xStride;
+                y += yStride;
+            }
+        }
+
+        public static void zAxpy(Complex alpha, Complex[] xStore, int xOffset, int xStride, Complex[] yStore, int yOffset, int yStride, int count)
+        {
+            int n = 0;
+            int x = xOffset;
+            int y = yOffset;
+            while (n < count)
+            {
                 yStore[y] += alpha * xStore[x];
                 n++;
                 x += xStride;

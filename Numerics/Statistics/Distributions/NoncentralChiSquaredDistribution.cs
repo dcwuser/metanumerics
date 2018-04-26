@@ -6,16 +6,16 @@ using Meta.Numerics.Functions;
 namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
-    /// Represents a noncentral chi squared distribution.
+    /// Represents a non-central chi squared distribution.
     /// </summary>
     /// <seealso href="https://en.wikipedia.org/wiki/Noncentral_chi-squared_distribution"/>
     public sealed class NoncentralChiSquaredDistribution : ContinuousDistribution {
 
         /// <summary>
-        /// Initializes a new instance of the noncentral chi squared distribution.
+        /// Initializes a new instance of the non-central chi squared distribution.
         /// </summary>
         /// <param name="nu">The number of degrees of freedom, which must be positive.</param>
-        /// <param name="lambda">The noncentrality parameter, which must be greater than zero.</param>
+        /// <param name="lambda">The non-centrality parameter, which must be greater than zero.</param>
         public NoncentralChiSquaredDistribution (int nu, double lambda) {
             if (nu <= 0) throw new ArgumentOutOfRangeException(nameof(nu));
             if (lambda <= 0.0) throw new ArgumentOutOfRangeException(nameof(lambda));
@@ -37,7 +37,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <summary>
-        /// Gets the noncentrality parameter of the distribution.
+        /// Gets the non-centrality parameter of the distribution.
         /// </summary>
         public double Noncentrality {
             get {
@@ -71,6 +71,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         // 0F1(k/2, lambda x/4)
 
+        /*
         private double Series (double x) {
             double t = lambda * x / 2.0;
 
@@ -86,6 +87,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
             throw new NonconvergenceException();
         }
+        */
 
         /// <inheritdoc/>
         public override double LeftProbability (double x) {
@@ -195,7 +197,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 // Integrating the pdf gives: 
                 //   M_r = < x^r > = 2^r Hypergeometric1F1(-r, \nu / 2, -\lambda / 2) ( \nu / 2 )_r
                 // The confluent hypergeometric recurrence then implies:
-                //   M_{r+1| = \left[ ( \nu + \lmabda ) 4 r \right] M_{r} - 2 n \left[ \nu + 2(n - 1) \right] M_{r-1}
+                //   M_{r+1| = \left[ ( \nu + \lambda ) 4 r \right] M_{r} - 2 n \left[ \nu + 2(n - 1) \right] M_{r-1}
                 // This appears to be stable for the \nu, \lambda regions I have tried.
 
                 double mu = nu + lambda;

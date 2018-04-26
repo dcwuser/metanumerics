@@ -43,7 +43,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="dimension">The dimension of the matrix, which must be positive.</param>
         public SparseSquareMatrix (int dimension) {
-            if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
+            if (dimension < 1) throw new ArgumentOutOfRangeException(nameof(dimension));
             this.dimension = dimension;
             rows = new SparseMatrixElement[dimension];
             columns = new SparseMatrixElement[dimension];
@@ -273,7 +273,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The sparse matrix.</param>
         /// <returns>The product sparse matrix.</returns>
         public static SparseSquareMatrix operator * (double alpha, SparseSquareMatrix A) {
-            if (A == null) throw new ArgumentNullException("A");
+            if (A == null) throw new ArgumentNullException(nameof(A));
             SparseSquareMatrix aA = A.Copy();
             if (alpha == 0.0) return (aA);
             for (int r = 0; r < aA.dimension; r++) {
@@ -295,8 +295,8 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The product column vector.</returns>
         public static ColumnVector operator * (SparseSquareMatrix A, ColumnVector v) {
 
-           if (A == null) throw new ArgumentNullException("A");
-           if (v == null) throw new ArgumentNullException("v");
+           if (A == null) throw new ArgumentNullException(nameof(A));
+           if (v == null) throw new ArgumentNullException(nameof(v));
            if (A.Dimension != v.Dimension) throw new DimensionMismatchException();
 
            ColumnVector Av = new ColumnVector(A.Dimension);
@@ -320,8 +320,8 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The product row vector.</returns>
         public static RowVector operator * (RowVector v, SparseSquareMatrix A) {
 
-            if (v == null) throw new ArgumentNullException("v");
-            if (A == null) throw new ArgumentNullException("A");
+            if (v == null) throw new ArgumentNullException(nameof(v));
+            if (A == null) throw new ArgumentNullException(nameof(A));
             if (v.Dimension != A.Dimension) throw new DimensionMismatchException();
 
             RowVector vA = new RowVector(A.Dimension);
@@ -353,7 +353,7 @@ namespace Meta.Numerics.Matrices {
         /// <exception cref="NonconvergenceException">The method did not converge to a solution.</exception>
         public ColumnVector Solve (ColumnVector rhs) {
 
-            if (rhs == null) throw new ArgumentNullException("rhs");
+            if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (rhs.Dimension != dimension) throw new DimensionMismatchException();
 
             // accuracy and iteration limits are very huristic, revisit later
@@ -367,7 +367,7 @@ namespace Meta.Numerics.Matrices {
             for (int i = 0; i < x.Dimension; i++) x[i] = 1.0;
 
             // 
-            RowVector rt = x.Transpose();
+            RowVector rt = x.Transpose;
 
             // r is the deviation vector that we are trying to drive to zero
             ColumnVector r = rhs - this * x;
@@ -389,7 +389,7 @@ namespace Meta.Numerics.Matrices {
                 ColumnVector s = r - a * v;
                 ColumnVector t = this * s;
 
-                omega = (t.Transpose() * s) / (t.Transpose() * t);
+                omega = (t.Transpose * s) / (t.Transpose * t);
 
                 x = x + a * p + omega * s;
 

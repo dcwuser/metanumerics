@@ -14,7 +14,7 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The dilogarithm can be defined by an infinite sum.</para>
         /// <img src="../images/DilogSum.png" />
-        /// <para>The function gets is name from the similiarity of this series to the expansion of ln(1-x), the
+        /// <para>The function gets is name from the similarity of this series to the expansion of ln(1-x), the
         /// difference being that the integer in the denominator is raised to the second power.</para>
         /// <para>Li<sub>2</sub>(x) is real for -&#x221E; &lt; x &#x2264; 1; for values outside this range,
         /// use the complex version <see cref="AdvancedComplexMath.DiLog"/>.</para>
@@ -23,7 +23,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Dilogarithm" />
         public static double DiLog (double x) {
             if (x > 1.0) {
-                throw new ArgumentOutOfRangeException("x");
+                throw new ArgumentOutOfRangeException(nameof(x));
             } else if (x > 0.625) {
                 // use Li(x) + Li(1-x) = \frac{\pi^2}{6} - \log x \log (1-x)
                 // to map x near 1 to x near 0
@@ -101,7 +101,7 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         public static double PolyLog (int n, double x) {
 
-            if (x > 1.0) throw new ArgumentOutOfRangeException("x");
+            if (x > 1.0) throw new ArgumentOutOfRangeException(nameof(x));
 
             if (n == 0) {
                 return (x / (1.0 - x));
@@ -114,7 +114,6 @@ namespace Meta.Numerics.Functions {
                     double w = Math.Log(-x);
                     double s = PolyLog_BernoulliSum(n, w);
                     double t = PolyLog(n, 1.0 / x);
-                    Debug.WriteLine("s={0} t={1}", s, t);
                     if (n % 2 == 0) {
                         return (s - t);
                     } else {
@@ -124,7 +123,7 @@ namespace Meta.Numerics.Functions {
                     // For -1 <= x <= 0, reflect x -> -x, unless we are close enough to just directly use the series.
                     // The terms have opposite signs, so we should worry about cancelation. But since Li(x) increases
                     // monotonically, Li_n(x^2) will be smaller than Li(x) on 0 < x < 1, and that term is additionally
-                    // supressed by 2^{1-n} for all n > 1.
+                    // suppressed by 2^{1-n} for all n > 1.
                     return (-PolyLog(n, -x) + MoreMath.Pow(2.0, 1 - n) * PolyLog(n, x * x));
                 } else if (x < 0.25) {
                     // For |x| < 0.25, use the defining series.
@@ -146,7 +145,6 @@ namespace Meta.Numerics.Functions {
                 double ds = (1.0 - MoreMath.Pow(2.0, 1 - k)) * Math.Abs(AdvancedIntegerMath.BernoulliNumber(k)) *
                     MoreMath.Pow(Global.TwoPI, k) / AdvancedIntegerMath.Factorial(k) *
                     MoreMath.Pow(w, n - k) / AdvancedIntegerMath.Factorial(n - k);
-                Debug.WriteLine("k={0} ds={1}", k, ds);
                 s -= ds;
             }
             s -= MoreMath.Pow(w, n) / AdvancedIntegerMath.Factorial(n);
@@ -292,7 +290,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="z">The complex argument.</param>
         /// <returns>The value Li<sub>2</sub>(z).</returns>
         /// <remarks>
-        /// <para>This function is the analyic continuation of the dilogarithm function (<see cref="AdvancedMath.DiLog"/>) into the complex plane.</para>
+        /// <para>This function is the analytic continuation of the dilogarithm function (<see cref="AdvancedMath.DiLog"/>) into the complex plane.</para>
         /// <para>The image below shows the complex dilogarithm function near the origin, using domain coloring.</para>
         /// <img src="../images/ComplexDiLogPlot.png" />
         /// </remarks>

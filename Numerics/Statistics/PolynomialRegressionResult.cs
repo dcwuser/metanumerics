@@ -113,9 +113,9 @@ namespace Meta.Numerics.Statistics {
             }
             ColumnVector v = new ColumnVector(vStore, vStore.Length);
 
-            double y = v.Transpose() * b;
+            double y = v.Transpose * b;
 
-            double vCv = v.Transpose() * C * v;
+            double vCv = v.Transpose * C * v;
 
             double dy = Math.Sqrt(sigma2 + vCv);
 

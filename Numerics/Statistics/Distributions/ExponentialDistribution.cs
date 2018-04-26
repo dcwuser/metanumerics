@@ -15,7 +15,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <img src="../images/ExponentialPlot.png" />
     /// <para>The exponential distribution describes the distribution of decay times of radioactive particles.</para>
     /// <para>An exponential distribution with mean one is called a standard exponential distribution. Any exponential distribution
-    /// can be converted to a standard exponential by reparameterizing the data into "fractions of the mean,"
+    /// can be converted to a standard exponential by re-parameterizing the data into "fractions of the mean,"
     /// i.e. z = x / &#x3BC;.</para>
     /// <para>Processes resulting in events that are exponentially distributed in time are said to be "ageless" because the hazard function
     /// of the exponential distribution is constant. The Weibull distribution (<see cref="WeibullDistribution"/>) is a generalization
@@ -113,7 +113,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (0.0);
             } else {
                 // Subfactorial !r, see http://mathworld.wolfram.com/Subfactorial.html for properties of subfactorial.
-                // Most relevent for fast computation is (!r) = round[ r! / e ].
+                // Most relevant for fast computation is (!r) = round[ r! / e ].
                 return (Math.Round(AdvancedIntegerMath.Factorial(r) / Math.E) * MoreMath.Pow(mu, r));
             }
         }
@@ -192,6 +192,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than two values.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
         public static ExponentialFitResult FitToSample (Sample sample) {
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
             return (Univariate.FitToExponential(sample.data));
         }
 

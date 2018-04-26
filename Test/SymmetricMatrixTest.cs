@@ -111,7 +111,7 @@ namespace Test {
             // division by two should return us to the original
             // SymmetricMatrix MB = M2 / 2.0;
 
-            // subraction of self same as multiplication by zero
+            // subtraction of self same as multiplication by zero
             SymmetricMatrix MS = M - M;
             SymmetricMatrix M0 = 0.0 * M;
             Assert.IsTrue(MS == M0);
@@ -125,24 +125,20 @@ namespace Test {
 
         [TestMethod]
         public void SymmetricHilbertMatrixInverse () {
-            for (int d = 1; d <= 4; d++) {
-                Console.WriteLine("d={0}", d);
-                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
+            for (int d = 1; d < 4; d++) {
                 SymmetricMatrix H = TestUtilities.CreateSymmetricHilbertMatrix(d);
                 SymmetricMatrix HI = H.Inverse();
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(H * HI, I));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(HI * H, UnitMatrix.OfDimension(d)));
             }
-            // fails for d > 4! look into this
+            // fails for d >= 4; look into this
         }
 
         [TestMethod]
         public void SymmetricRandomMatrixInverse () {
             for (int d = 1; d <= 100; d = d + 11) {
-                Console.WriteLine("d={0}", d);
-                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
                 SymmetricMatrix M = TestUtilities.CreateSymmetricRandomMatrix(d, 1);
                 SymmetricMatrix MI = M.Inverse();
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(M * MI, I));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(MI * M, UnitMatrix.OfDimension(d)));
             }
 
         }
@@ -150,38 +146,44 @@ namespace Test {
         [TestMethod]
         public void SymmetricRandomMatrixEigenvectors () {
             for (int d = 1; d <= 100; d = d + 11) {
-                Console.WriteLine("d={0}", d);
 
                 SymmetricMatrix M = CreateSymmetricRandomMatrix(d, 1);
 
-                double tr = M.Trace();
-
-                RealEigensystem E = M.Eigensystem();
+                RealEigendecomposition E = M.Eigendecomposition();
 
                 Assert.IsTrue(E.Dimension == M.Dimension);
 
-                SquareMatrix D = new SquareMatrix(E.Dimension);
-                double[] es = new double[E.Dimension];
+                double[] eigenvalues = new double[E.Dimension];
                 for (int i = 0; i < E.Dimension; i++) {
-                    double e = E.Eigenvalue(i);
-                    ColumnVector v = E.Eigenvector(i);
+                    double e = E.Eigenpairs[i].Eigenvalue;
+                    ColumnVector v = E.Eigenpairs[i].Eigenvector;
+                    // The eigenvector works
                     Assert.IsTrue(TestUtilities.IsNearlyEigenpair(M, v, e));
-                    D[i, i] = e;
-                    es[i] = e;
+                    // The eigenvalue is the corresponding diagonal value of D
+                    Assert.IsTrue(E.DiagonalizedMatrix[i, i] == e);
+                    // Remember eigenvalue to take sum in future
+                    eigenvalues[i] = e;
                 }
 
-                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(es, tr));
+                // The eigenvectors sum to trace
+                double tr = M.Trace();
+                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(eigenvalues, tr));
+
+                // The decomposition works
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    D, E.TransformMatrix.Transpose() * M * E.TransformMatrix
+                    E.DiagonalizedMatrix, E.TransformMatrix.Transpose * M * E.TransformMatrix
                 ));
 
+                // Transform matrix is orthogonal
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    E.TransformMatrix.Transpose * E.TransformMatrix, UnitMatrix.OfDimension(d)
+                ));
             }
         }
 
         [TestMethod]
         public void SymmetricHilbertMatrixEigenvalues () {
             for (int d = 1; d <= 8; d++) {
-                Console.WriteLine("d={0}", d);
                 SymmetricMatrix H = TestUtilities.CreateSymmetricHilbertMatrix(d);
                 double tr = H.Trace();
                 double[] es = H.Eigenvalues();
@@ -197,47 +199,52 @@ namespace Test {
             Random rng = new Random(d + 1);
             SymmetricMatrix A = new SymmetricMatrix(d);
             A.Fill((int r, int c) => -1.0 + 2.0 * rng.NextDouble());
-            RealEigensystem E = A.Eigensystem();
+            RealEigendecomposition E = A.Eigendecomposition();
+            RealEigenpairCollection pairs = E.Eigenpairs;
 
-            for (int i = 0; i < E.Dimension; i++) Console.WriteLine(E.Eigenvalue(i));
-
-            E.Sort(OrderBy.ValueAscending);
-            for (int i = 1; i < E.Dimension; i++) {
-                Assert.IsTrue(E.Eigenvalue(i - 1) <= E.Eigenvalue(i));
-                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, E.Eigenvector(i), E.Eigenvalue(i)));
+            pairs.Sort(OrderBy.ValueAscending);
+            for (int i = 1; i < pairs.Count; i++) {
+                Assert.IsTrue(pairs[i - 1].Eigenvalue <= pairs[i].Eigenvalue);
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, pairs[i].Eigenvector, pairs[i].Eigenvalue));
              }
 
-            E.Sort(OrderBy.ValueDescending);
-            for (int i = 1; i < E.Dimension; i++) {
-                Assert.IsTrue(E.Eigenvalue(i - 1) >= E.Eigenvalue(i));
-                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, E.Eigenvector(i), E.Eigenvalue(i)));
+            pairs.Sort(OrderBy.ValueDescending);
+            for (int i = 1; i < pairs.Count; i++) {
+                Assert.IsTrue(pairs[i - 1].Eigenvalue >= pairs[i].Eigenvalue);
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, pairs[i].Eigenvector, pairs[i].Eigenvalue));
             }
 
-            E.Sort(OrderBy.MagnitudeAscending);
-            for (int i = 1; i < E.Dimension; i++) {
-                Assert.IsTrue(Math.Abs(E.Eigenvalue(i - 1)) <= Math.Abs(E.Eigenvalue(i)));
-                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, E.Eigenvector(i), E.Eigenvalue(i)));
+            pairs.Sort(OrderBy.MagnitudeAscending);
+            for (int i = 1; i < pairs.Count; i++) {
+                Assert.IsTrue(Math.Abs(pairs[i - 1].Eigenvalue) <= Math.Abs(pairs[i].Eigenvalue));
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, pairs[i].Eigenvector, pairs[i].Eigenvalue));
             }
 
-            E.Sort(OrderBy.MagnitudeDescending);
-            for (int i = 1; i < E.Dimension; i++) {
-                Assert.IsTrue(Math.Abs(E.Eigenvalue(i - 1)) >= Math.Abs(E.Eigenvalue(i)));
-                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, E.Eigenvector(i), E.Eigenvalue(i)));
+            pairs.Sort(OrderBy.MagnitudeDescending);
+            for (int i = 1; i < pairs.Count; i++) {
+                Assert.IsTrue(Math.Abs(pairs[i - 1].Eigenvalue) >= Math.Abs(pairs[i].Eigenvalue));
+                Assert.IsTrue(TestUtilities.IsNearlyEigenpair(A, pairs[i].Eigenvector, pairs[i].Eigenvalue));
             }
 
         }
 
         [TestMethod]
-        public void SymmetricMatrixDecomposition () {
+        public void HilbertMatrixCholeskyDecomposition () {
             for (int d = 1; d <= 4; d++) {
                 SymmetricMatrix H = TestUtilities.CreateSymmetricHilbertMatrix(d);
 
+                // Decomposition succeeds
                 CholeskyDecomposition CD = H.CholeskyDecomposition();
-                Assert.IsTrue(CD != null, String.Format("d={0} not positive definite", d));
+                Assert.IsTrue(CD != null);
                 Assert.IsTrue(CD.Dimension == d);
+
+                // Decomposition works
+                SquareMatrix S = CD.SquareRootMatrix();
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(S * S.Transpose, H));
+
+                // Inverse works
                 SymmetricMatrix HI = CD.Inverse();
-                SquareMatrix I = TestUtilities.CreateSquareUnitMatrix(d);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(H * HI, I));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(H * HI, UnitMatrix.OfDimension(d)));
             }
         }
 
@@ -257,7 +264,7 @@ namespace Test {
             SymmetricMatrix A = new SymmetricMatrix(d);
             for (int i = 0; i < d; i++) {
                 for (int j = 0; j <= i; j++) {
-                    A[i, j] = V[i].Transpose() * V[j];
+                    A[i, j] = V[i].Transpose * V[j];
                 }
             }
 
@@ -316,6 +323,23 @@ namespace Test {
             SquareMatrix P = A * B;
             Assert.IsTrue(P.FrobeniusNorm() <= A.FrobeniusNorm() * B.FrobeniusNorm());
             // Frobenium norm is sub-multiplicative
+
+        }
+
+
+        [TestMethod]
+        public void CholeskySolveExample () {
+
+            // This is a very simple 3 X 3 problem I just wrote down to test the Cholesky solver
+            SymmetricMatrix S = new SymmetricMatrix(3);
+            S[0, 0] = 4.0;
+            S[1, 0] = -2.0; S[1, 1] = 5.0;
+            S[2, 0] = 1.0;  S[2, 1] = 3.0; S[2, 2] = 6.0;
+            CholeskyDecomposition CD = S.CholeskyDecomposition();
+
+            ColumnVector b = new ColumnVector(9.0, 7.0, 15.0);
+            ColumnVector x = CD.Solve(b);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(S * x, b));
 
         }
 

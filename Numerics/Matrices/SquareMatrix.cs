@@ -20,7 +20,7 @@ namespace Meta.Numerics.Matrices {
         /// Initializes a new square matrix.
         /// </summary>
         /// <param name="dimension">The dimension of the matrix, which must be positive.</param>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="dimension"/> &lt; 1.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="dimension"/> &lt; 1.</exception>
         public SquareMatrix (int dimension) {
             if (dimension < 1) throw new ArgumentOutOfRangeException(nameof(dimension));
             this.dimension = dimension;
@@ -31,8 +31,9 @@ namespace Meta.Numerics.Matrices {
         /// Initializes a new square matrix from the given 2D array.
         /// </summary>
         /// <param name="entries">The source 2D array.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="entries"/> is null.</exception>
-        /// <exception cref="DimensionMismatchException">The first and second dimensions of <paramref name="entries"/> are not equal.</exception>
+        /// <remarks><para>The entries are copied, so changes to <paramref name="entries"/> after the matrix is initialized do not affect matrix entries.</para></remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="entries"/> is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException">The two dimensions of <paramref name="entries"/> are not equal.</exception>
         public SquareMatrix (double[,] entries) {
             if (entries == null) throw new ArgumentNullException(nameof(entries));
             if (entries.GetLength(0) != entries.GetLength(1)) throw new DimensionMismatchException();
@@ -78,16 +79,19 @@ namespace Meta.Numerics.Matrices {
         /// <returns>The value of the specified matrix entry M<sub>r c</sub>.</returns>
         public override double this[int r, int c] {
             get {
-                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
-                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
+                CheckBounds(r, c);
                 return (store[MatrixAlgorithms.GetIndex(offset, rowStride, colStride, r, c)]);
             }
             set {
-                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
-                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
+                CheckBounds(r, c);
                 if (IsReadOnly) throw new InvalidOperationException();
                 store[MatrixAlgorithms.GetIndex(offset, rowStride, colStride, r, c)] = value;
             }
+        }
+
+        private void CheckBounds (int r, int c) {
+            if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+            if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
         }
 
         /// <inheritdoc />
@@ -108,7 +112,7 @@ namespace Meta.Numerics.Matrices {
         /// <remarks>
         /// <para>The returned vector is independent of the matrix.
         /// If an entry of the returned vector is updated, the corresponding entry of the original matrix will not be updated
-        /// as well, Similiarly, if an entry in the matrix is updated after this method is called, the corresponding
+        /// as well, Similarly, if an entry in the matrix is updated after this method is called, the corresponding
         /// entry of the vector will not change.</para>
         /// </remarks>
         public override RowVector Row (int r) {
@@ -122,11 +126,11 @@ namespace Meta.Numerics.Matrices {
         /// Gets a copy of one column of the the matrix.
         /// </summary>
         /// <param name="c">The (zero-based) column number to return.</param>
-        /// <returns>An independent copy of the specificed column.</returns>
+        /// <returns>An independent copy of the specified column.</returns>
         /// <remarks>
         /// <para>The returned vector is independent of the matrix.
         /// If an entry of the returned vector is updated, the corresponding entry of the original matrix will not be updated
-        /// as well, Similiarly, if an entry in the matrix is updated after this method is called, the corresponding
+        /// as well, Similarly, if an entry in the matrix is updated after this method is called, the corresponding
         /// entry of the vector will not change.</para>
         /// </remarks>
         public override ColumnVector Column (int c) {
@@ -146,16 +150,22 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Creates a transpose of the matrix.
+        /// Gets the transpose of the matrix.
         /// </summary>
-        /// <returns>The matrix transpose M<sup>T</sup>.</returns>
-        public SquareMatrix Transpose () {
-            // To transpose, just copy with
-            double[] transpose = MatrixAlgorithms.Copy(store, offset, colStride, rowStride, dimension, dimension);
-            return (new SquareMatrix(transpose, dimension));
-            //return (new SquareMatrix(store, 0, colStride, rowStride, dimension, false));
-            //double[] tStore = MatrixAlgorithms.Transpose(store, dimension, dimension);
-            //return (new SquareMatrix(tStore, dimension));
+        /// <value>The matrix transpose M<sup>T</sup>.</value>
+        /// <remarks>
+        /// <para>The returned transpose matrix is not independent of the original matrix.
+        /// Instead, it is a read-only view into the same storage as the original matrix with row an column indices reversed.
+        /// This has the advantage that is can be produced with almost no time and memory cost.
+        /// It has the disadvantage that any subsequent changes to the original matrix will be reflected in the returned transpose,
+        /// which might not be what you expected. If you want an independent, write-able transpose matrix, call <see cref="Copy"/>
+        /// on the returned matrix.
+        /// </para>
+        /// </remarks>
+        public SquareMatrix Transpose {
+            get {
+                return (new SquareMatrix(store, offset, colStride, rowStride, dimension, true));
+            }
         }
 
         /// <summary>
@@ -163,7 +173,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>The matrix inverse M<sup>-1</sup>.</returns>
         /// <remarks>
-        /// <para>The inverse of a matrix M is a matrix M<sup>-1</sup> such that M<sup>-1</sup>M = I, whhere I is the identity matrix.</para>
+        /// <para>The inverse of a matrix M is a matrix M<sup>-1</sup> such that M<sup>-1</sup>M = I, where I is the identity matrix.</para>
         /// <para>If the matrix is singular, inversion is not possible. In that case, this method will fail with a <see cref="DivideByZeroException"/>.</para>
         /// <para>The inversion of a matrix is an O(N<sup>3</sup>) operation.</para>
         /// </remarks>
@@ -180,7 +190,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <remarks>
         /// <para>This method replaces the elements of M with the elements of M<sup>-1</sup>.</para>
-        /// <para>In place matrix inversion saves memory, since seperate storage of M and M<sup>-1</sup> is not required.</para></remarks>
+        /// <para>In place matrix inversion saves memory, since separate storage of M and M<sup>-1</sup> is not required.</para></remarks>
         private void InvertInPlace () {
         }
         */
@@ -220,7 +230,7 @@ namespace Meta.Numerics.Matrices {
         /// Computes the eigenvalues of the matrix.
         /// </summary>
         /// <returns>The eigenvalues of the matrix.</returns>
-        /// <seealso cref="Eigensystem"/>
+        /// <seealso cref="Eigendecomposition"/>
         public Complex[] Eigenvalues () {
             double[] aStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, dimension, dimension);
             SquareMatrixAlgorithms.IsolateCheapEigenvalues(aStore, null, dimension);
@@ -233,21 +243,21 @@ namespace Meta.Numerics.Matrices {
         /// <summary>
         /// Computes the eigenvalues and eigenvectors of the matrix.
         /// </summary>
-        /// <returns>A representation of the eigenvalues and eigenvectors of the matrix.</returns>
+        /// <returns>A decomposition that makes the eigenvalues and eigenvectors manifest.</returns>
         /// <remarks>
         /// <para>For a generic vector v and matrix M, Mv = u will point in some direction with no particular relationship to v.
         /// The eigenvectors of a matrix M are vectors z that satisfy Mz = &#x3BB;z, i.e. multiplying an eigenvector by a
-        /// matrix reproduces the same vector, up to a prortionality constant &#x3BB; called the eigenvalue.</para>
+        /// matrix reproduces the same vector, up to a proportionality constant &#x3BB; called the eigenvalue.</para>
         /// <para>For v to be an eigenvector of M with eigenvalue &#x3BB;, (M - &#x3BB;I)z = 0. But for a matrix to
-        /// anihilate any non-zero vector, that matrix must have determinant, so det(M - &#x3BB;I)=0. For a matrix of
+        /// annihilate any non-zero vector, that matrix's determinant must vanish, so det(M - &#x3BB;I)=0. For a matrix of
         /// order N, this is an equation for the roots of a polynomial of order N. Since an order-N polynomial always has exactly
         /// N roots, an order-N matrix always has exactly N eigenvalues.</para>
         /// <para>Since a polynomial with real coefficients can still have complex roots, a real square matrix can nonetheless
-        /// have complex eigenvalues (and correspondly complex eigenvectors). However, again like the complex roots of a real
+        /// have complex eigenvalues (and corresponding complex eigenvectors). However, again like the complex roots of a real
         /// polynomial, such eigenvalues will always occurs in complex-conjugate pairs.</para>
         /// <para>Although the eigenvalue polynomial ensures that an order-N matrix has N eigenvalues, it can occur that there
         /// are not N corresponding independent eigenvectors. A matrix with fewer eigenvectors than eigenvalues is called
-        /// defective. Like singularity, defectiveness represents a delecate balance between the elements of a matrix that can
+        /// defective. Like singularity, defectiveness represents a delicate balance between the elements of a matrix that can
         /// typically be disturbed by just an infinitesimal perturbation of elements. Because of round-off-error, then, floating-point
         /// algorithms cannot reliably identify defective matrices. Instead, this method will return a full set of eigenvectors,
         /// but some eigenvectors, corresponding to very nearly equal eigenvalues, will be very nearly parallel.</para>
@@ -256,7 +266,8 @@ namespace Meta.Numerics.Matrices {
         /// <para>Determining the eigenvalues and eigenvectors of a matrix is an O(N<sup>3</sup>) operation. If you need only the
         /// eigenvalues of a matrix, the <see cref="Eigenvalues"/> method is more efficient.</para>
         /// </remarks>
-        public ComplexEigensystem Eigensystem () {
+        /// <seealso href="https://en.wikipedia.org/wiki/Eigendecomposition_of_a_matrix"/>
+        public ComplexEigendecomposition Eigendecomposition () {
 
             //double[] aStore = MatrixAlgorithms.Copy(store, dimension, dimension);
             double[] aStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, dimension, dimension);
@@ -299,7 +310,7 @@ namespace Meta.Numerics.Matrices {
                 eigenvectors[i] = v;
             }
 
-            ComplexEigensystem eigensystem = new ComplexEigensystem(dimension, eigenvalues, eigenvectors);
+            ComplexEigendecomposition eigensystem = new ComplexEigendecomposition(dimension, eigenvalues, eigenvectors);
             return (eigensystem);
 
         }
@@ -380,6 +391,12 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="n">The power to which to raise the matrix, which must be positive.</param>
         /// <returns>The matrix A<sup>n</sup>.</returns>
+        /// <remarks>
+        /// <para>This method uses exponentiation-by-squaring, so typically only of order log(n) matrix multiplications are required.
+        /// This improves not only the speed with which the matrix power is computed, but also the accuracy.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Exponentiation_by_squaring"/>
         public SquareMatrix Power (int n) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException(nameof(n));
@@ -401,7 +418,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The first matrix.</param>
         /// <param name="B">The second matrix.</param>
         /// <returns>The sum matrix <paramref name="A"/> + <paramref name="B"/>.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException">The dimension of <paramref name="A"/> is not the same as the dimension of <paramref name="B"/>.</exception>
         public static SquareMatrix operator + (SquareMatrix A, SquareMatrix B) {
             if (A == null) throw new ArgumentNullException(nameof(A));
@@ -424,7 +441,7 @@ namespace Meta.Numerics.Matrices {
         /// <remarks>
         /// <para>Matrix subtraction is an O(N<sup>2</sup>) process.</para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException">The dimension of <paramref name="A"/> is not the same as the dimension of <paramref name="B"/>.</exception>
         public static SquareMatrix operator - (SquareMatrix A, SquareMatrix B) {
             if (A == null) throw new ArgumentNullException(nameof(A));
@@ -448,7 +465,7 @@ namespace Meta.Numerics.Matrices {
         /// <para>Note that matrix multiplication is not commutative, i.e. M1*M2 is generally not the same as M2*M1.</para>
         /// <para>Matrix multiplication is an O(N<sup>3</sup>) process.</para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="B"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException">The dimension of <paramref name="A"/> is not the same as the dimension of <paramref name="B"/>.</exception>
         public static SquareMatrix operator * (SquareMatrix A, SquareMatrix B) {
             // this is faster than the base operator, because it knows about the underlying structure
@@ -471,7 +488,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The matrix.</param>
         /// <param name="v">The column vector.</param>
         /// <returns>The column vector Av.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="v"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="v"/> is <see langword="null"/>.</exception>
         /// <exception cref="DimensionMismatchException">The dimension of <paramref name="A"/> is not the same as the dimension of <paramref name="v"/>.</exception>
         public static ColumnVector operator * (SquareMatrix A, ColumnVector v) {
             if (A == null) throw new ArgumentNullException(nameof(A));
@@ -489,7 +506,8 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="alpha">The constant.</param>
         /// <param name="A">The matrix.</param>
-        /// <returns>The product aA.</returns>
+        /// <returns>The product &#x3B1;A.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> is <see langword="null"/>.</exception>
         public static SquareMatrix operator * (double alpha, SquareMatrix A) {
             if (A == null) throw new ArgumentNullException(nameof(A));
             double[] store = MatrixAlgorithms.Multiply(alpha, A.store, A.offset, A.rowStride, A.colStride, A.dimension, A.dimension);
@@ -501,7 +519,8 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="A">The matrix.</param>
         /// <param name="alpha">The constant.</param>
-        /// <returns>The quotient A/a.</returns>
+        /// <returns>The quotient A/&#x3B1;.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> is <see langword="null"/>.</exception>
         public static SquareMatrix operator / (SquareMatrix A, double alpha) {
             if (A == null) throw new ArgumentNullException(nameof(A));
             double[] store = MatrixAlgorithms.Multiply(1.0 / alpha, A.store, A.offset, A.rowStride, A.colStride, A.dimension, A.dimension);
@@ -513,25 +532,13 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="A">The matrix.</param>
         /// <returns>The matrix -A.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="A"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> is <see langword="null"/>.</exception>
         public static SquareMatrix operator - (SquareMatrix A) {
             if (A == null) throw new ArgumentNullException(nameof(A));
             double[] store = MatrixAlgorithms.Multiply(-1.0, A.store, A.offset, A.rowStride, A.colStride, A.dimension, A.dimension);
             return (new SquareMatrix(store, A.dimension));
         }
 
-        /*
-
-        /// <summary>
-        /// Computes the the quotient of a square matrix and a real number.
-        /// </summary>
-        /// <param name="M">The matrix.</param>
-        /// <param name="x">The real number.</param>
-        /// <returns>The quotient <paramref name="M"/>/<paramref name="x"/>.</returns>
-        public static SquareMatrix operator / (SquareMatrix M, double x) {
-            return (Multiply(1.0 / x, M));
-        }
-        */
     }
 
 

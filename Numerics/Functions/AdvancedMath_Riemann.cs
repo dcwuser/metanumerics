@@ -24,7 +24,7 @@ namespace Meta.Numerics.Functions {
             } else {
                 double xm1 = x - 1.0;
                 if (Math.Abs(xm1) < 0.25) {
-                    // near the sigularity, use the Stjielts expansion
+                    // near the singularity, use the Stjielts expansion
                     return (RiemannZeta_LaurentSeries(xm1));
                 } else {
                     // call Dirichlet function, which converges faster
@@ -50,12 +50,12 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="RiemannZeta"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Dirichlet_eta_function"/>
         public static double DirichletEta (double x) {
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
             return (DirichletEta_Borwein(x));
         }
 
         // Borwein's amazing method for computing eta is detailed at http://numbers.computation.free.fr/Constants/Miscellaneous/zetaevaluations.html.
-        // The orginal paper is http://www.cecm.sfu.ca/personal/pborwein/PAPERS/P155.pdf.
+        // The original paper is http://www.cecm.sfu.ca/personal/pborwein/PAPERS/P155.pdf.
 
         // An amazing, fast, fixed-length sequence approximation to eta that is good to 1/8^(DirichletEta_Coefficients.Length) for all s > 0.
 
@@ -151,7 +151,7 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value of &#x3B6;(z).</returns>
         /// <remarks>
         /// <para>As the imaginary part of the argument increases, the computation of the zeta function becomes slower and more difficult.
-        /// The computation time is approximately proprotional to the imaginary part of z. The result also slowly looses accuracy for arguments with
+        /// The computation time is approximately proportional to the imaginary part of z. The result also slowly looses accuracy for arguments with
         /// very large imaginary parts; for arguments with z.Im of order 10^d, approximately the last d digits of the result are suspect.</para>
         /// <para>The image below shows the complex &#x393; function near the origin using domain coloring. You can see the first non-trivial
         /// zeros at (1/2, &#177;14.13...) as well as the trivial zeros along the negative real axis.</para>

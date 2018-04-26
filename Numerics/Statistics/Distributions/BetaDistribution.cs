@@ -180,7 +180,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (0.0);
             } else {
 
-                // use recurrsion
+                // use recursion
 
                 double alphaPlusBeta = alpha + beta;
                 double betaMinusAlpha = beta - alpha;
@@ -270,6 +270,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         /// <exception cref="InvalidOperationException">Not all the entries in <paramref name="sample" /> lie between zero and one.</exception>
         public static BetaFitResult FitToSample (Sample sample) {
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
             return (Univariate.FitToBeta(sample.data));
         }
 
@@ -338,7 +339,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             x = ma + d;
             y = mb - d;
 
-            // Accept only if not too close to boundries
+            // Accept only if not too close to boundaries
             return ((x > s / 4.0) && (y > s / 4.0));
 
         }
@@ -402,7 +403,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 }
             }
 
-            // If the paramters are large enough that the shape is vaguely normal, try
+            // If the parameters are large enough that the shape is vaguely normal, try
             // a normal approximation. But reject if the result is too close to the edge
             // of the allowed range.
 
@@ -493,7 +494,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 y = 1.0 - x;
 
                 // If the change is small enough, we're finished.
-                // Change x -> Min(x, y) to treat x and y symmetricaly, but that causes problems with bounds enforcement.
+                // Change x -> Min(x, y) to treat x and y symmetrically, but that causes problems with bounds enforcement.
                 if (Math.Abs(dx) <= x * Global.Accuracy) return;
 
             }

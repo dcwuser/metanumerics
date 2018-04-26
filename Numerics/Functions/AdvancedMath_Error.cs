@@ -225,13 +225,13 @@ namespace Meta.Numerics.Functions {
 
             // Then we refine via Halley's method (http://en.wikipedia.org/wiki/Halley%27s_method), an extension of Newton's method.
 
-            // Given f(x) = f0 + f1 x, Netwon's method sets f(x) = 0 to obtain x = - f0 / f1.
+            // Given f(x) = f0 + f1 x, Newton's method sets f(x) = 0 to obtain x = - f0 / f1.
 
             // Given f(x) = f0 + f1 x + 1/2 f2 x^2, Halley's method sets f(x) = 0 to obtain x = - f0 / (f1 + 1/2 f2 x) and uses the Netwon result
             // for x in the RHS to obtain x = - f0 / (f1 - 1/2 f2 f0 / f1).
 
             // Sufficiently close to the root, Newton's method is quadratic (significant digits double each iteration) and Halley's method is cubic (significant
-            // digits tripple each iteration). So an initial estimate with precision 10^{-4} should get us to full precision in two iterations.
+            // digits triple each iteration). So an initial estimate with precision 10^{-4} should get us to full precision in two iterations.
 
             // For f_0 = erfc(x) - y, f_1 = - \frac{2}{\sqrt{\pi}} e^{-x^2}, and f_2 = \frac{4 x}{\sqrt{\pi}} e^{-x^2} = -2 x f_1.
             // Defining r = - f0 / f1 as the Newton estimate, the Halley estimate is simply r / (1 - x r). Since the second
@@ -244,7 +244,7 @@ namespace Meta.Numerics.Functions {
                 x += dx;
              }
 
-            // We hard-code exactly two steps instead of testing for convergence because the interation can get into loops of tiny changes instead
+            // We hard-code exactly two steps instead of testing for convergence because the iteration can get into loops of tiny changes instead
             // of producing a zero change, and we know that two iterations will be sufficient.
 
             return (x);
@@ -252,7 +252,7 @@ namespace Meta.Numerics.Functions {
         }
 
         // Blair et al., Mathematics of Computation 30 (1976) 827 write that "by inverting the standard asymptotic series" for erf x in terms of 1/x
-        // "we can derive am asymptotic expansion for inverf" and then give the expansion encoded here. Their expansion is the most accurate I've
+        // "we can derive an asymptotic expansion for inverf" and then give the expansion encoded here. Their expansion is the most accurate I've
         // found, and I would love to derive more terms, but I can't figure out how they derived it. The DLMF (http://dlmf.nist.gov/7.17) says
         // their expansion 7.17.3 "follows from Blair et al. (1976), after modifications" but they must have made an error in their modifications
         // because their accuracy sucks compared to Blair et al.
@@ -400,8 +400,8 @@ namespace Meta.Numerics.Functions {
             throw new NonconvergenceException();
         }
 
-        // a rather strange algorithm by Rybicki, described in Numerical Recipies
-        // it expresses Dawson's integral as a sum over exponentially supressed terms with a suppression factor h
+        // a rather strange algorithm by Rybicki, described in Numerical Recipes
+        // it expresses Dawson's integral as a sum over exponentially suppressed terms with a suppression factor h
         // his result derives essentially from doing the integral numerically with a step size h
         // it converges in the limit h->0 and the error for non-zero h goes like e^{-(pi/2h)^2}; since the error
         // goes down exponentially with h, even quite moderate value of h give good results: we use h~0.25 to get full precision
@@ -705,10 +705,10 @@ namespace Meta.Numerics.Functions {
                 //return (Faddeeva_Series(z));
             } else if ((z.Im < 0.1) && (z.Re < 30.0)) {
                 // this is a special, awkward region
-                // along the real axis, Re{w(x)} ~ e^{-x^2}; the Weideman algorthm doesen't compute this small number
+                // along the real axis, Re{w(x)} ~ e^{-x^2}; the Weideman algorithm doesn't compute this small number
                 // well and the Laplace continued fraction misses it entirely; therefore very close to the real axis
                 // we will use an analytic result on the real axis and Taylor expand to where we need to go.
-                // unfortunately the Taylor expansion converges poorly for large x, so we drop this work-arround near x~30,
+                // unfortunately the Taylor expansion converges poorly for large x, so we drop this work-around near x~30,
                 // when this real part becomes too small to represent as a double anyway
                 double x = z.Re;
                 double y = z.Im;
@@ -863,7 +863,7 @@ namespace Meta.Numerics.Functions {
                 } else {
                     return (1.0 - ComplexMath.Exp(-ComplexMath.Sqr(z)) * Faddeeva(ComplexMath.I * z));
                 }
-                // we don't do this near the origin beause we would loose accuracy in the very small real parts there by subtracting from 1
+                // we don't do this near the origin because we would loose accuracy in the very small real parts there by subtracting from 1
             } 
 
         }

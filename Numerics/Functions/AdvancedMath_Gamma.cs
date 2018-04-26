@@ -8,7 +8,7 @@ namespace Meta.Numerics.Functions {
 		// one-argument functions
 
         /// <summary>
-        /// Computes the natural logrithm of the Gamma function.
+        /// Computes the natural logarithm of the Gamma function.
         /// </summary>
         /// <param name="x">The argument, which must be positive.</param>
         /// <returns>The log Gamma function ln(&#x393;(x)).</returns>
@@ -190,11 +190,11 @@ namespace Meta.Numerics.Functions {
                 // only even or odd powers of r appear at any given order; this fact allows us to use just one array:
                 // the entries of one parity are the source (and are set to zero after being used), the of the other parity are the target
                 for (int j = i; j >= 0; j -= 2) {
-                    // add -j times our coeffcient to the coefficient above
+                    // add -j times our coefficient to the coefficient above
                     p[j + 1] += -j * p[j];
                     // same for the coefficient below; we need not add since no one else has addressed it yet (since we are moving down)
                     if (j > 0) p[j - 1] = -j * p[j];
-                    // we are done with this coefficeint; make it zero for the next time
+                    // we are done with this coefficient; make it zero for the next time
                     p[j] = 0.0;
                 }
 
@@ -352,7 +352,7 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The Beta function can be defined by the integral:</para>
         /// <img src="..\images\BetaIntegral.png" />
-        /// <para>Equivalently, it can be defined as a commonly occuring ratio of Gamma functions:</para>
+        /// <para>Equivalently, it can be defined as a commonly occurring ratio of Gamma functions:</para>
         /// <img src="..\images\BetaGammaRelation.png" />
         /// <para>When evaluating such a ratio of Gamma functions, it is better to use this method than to call
         /// <see cref="Gamma(double)"/> three times and form the ratio explicitly. One reason is that this method
@@ -378,7 +378,7 @@ namespace Meta.Numerics.Functions {
 		}
 
         /// <summary>
-        /// Computes the lograrithm of the Beta function.
+        /// Computes the logarithm of the Beta function.
         /// </summary>
         /// <param name="a">The first parameter, which must be positive.</param>
         /// <param name="b">The second parameter, which must be positive.</param>
@@ -431,7 +431,7 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Computes the normalized upper (right) incomplete Gamma function.
         /// </summary>
-        /// <param name="a">The shape paraemter, which must be positive.</param>
+        /// <param name="a">The shape parameter, which must be positive.</param>
         /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The value of &#x393;(a,x)/&#x393;(a).</returns>
         /// <remarks>
@@ -481,7 +481,7 @@ namespace Meta.Numerics.Functions {
         /// Computes the incomplete Beta function.
         /// </summary>
         /// <param name="a">The left shape parameter, which must be non-negative.</param>
-        /// <param name="b">The right shape paraemter, which must be non-negative.</param>
+        /// <param name="b">The right shape parameter, which must be non-negative.</param>
         /// <param name="x">The integral endpoint, which must lie in [0,1].</param>
         /// <returns>The value of B<sub>x</sub>(a, b).</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is negative, or
@@ -552,7 +552,7 @@ namespace Meta.Numerics.Functions {
         /// Computes the regularized incomplete Beta function.
         /// </summary>
         /// <param name="a">The left shape parameter, which must be non-negative.</param>
-        /// <param name="b">The right shape paraemter, which must be non-negative.</param>
+        /// <param name="b">The right shape parameter, which must be non-negative.</param>
         /// <param name="x">The integral endpoint, which must lie in [0,1].</param>
         /// <returns>The value of I<sub>x</sub>(a, b) = B<sub>x</sub>(a, b) / B(a, b).</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is negative or zero,
@@ -633,7 +633,7 @@ namespace Meta.Numerics.Functions {
         //   P = erfc(-z) / 2 -  R     Q = erfc(z) / 2 + R
         // where the erfc term is (nearly) the Normal(a,sqrt(a)) approximation and R is a correction term.
 
-        // The first odditity is that z is not quite (x-a)/sqrt(2a). Instead
+        // The first oddity is that z is not quite (x-a)/sqrt(2a). Instead
         //   z^2 / a = eta^2 / 2 = (x-a)/a - log(x/a) = e - log(1+e) = exp(u) - 1 - u
         // where e = (x-a)/a and u = x/a. Note for x ~ a, this makes z have nearly the expected value, but with O(e)~O(u) corrections.
 
@@ -813,7 +813,7 @@ namespace Meta.Numerics.Functions {
 
 
 
-    // This class handles the Lanczos approximation to the \Gamma function and the correspoding approximations to associated functions.
+    // This class handles the Lanczos approximation to the \Gamma function and the corresponding approximations to associated functions.
     // For basic background to the Lanczos approximation, see http://en.wikipedia.org/wiki/Lanczos_approximation and
     // http://mathworld.wolfram.com/LanczosApproximation.html and http://www.boost.org/doc/libs/1_53_0/libs/math/doc/sf_and_dist/html/math_toolkit/backgrounders/lanczos.html.
     // The basic Lanczos formula is:
@@ -839,7 +839,7 @@ namespace Meta.Numerics.Functions {
 
         // Godfrey's coefficients, claimed relative error < 10^(-15), documented at http://my.fit.edu/~gabdo/gamma.txt and in NR 3rd edition section 6.1.
         // Measured relative deviation at integers 1, 1, 4, 1, 4, 5, 6, 3 X 10^(-16) so this appears about right.
-        // These improves to 1, 1, 2, 1, 3, 3, 3 X 10^(-16) when we pull the 1/e into Math.Pow(t/e, z+1/2) instead of calling Math.Exp(-t) seperately.
+        // These improves to 1, 1, 2, 1, 3, 3, 3 X 10^(-16) when we pull the 1/e into Math.Pow(t/e, z+1/2) instead of calling Math.Exp(-t) separately.
 
         private const double LanczosG = 607.0 / 128.0;
 
@@ -998,7 +998,7 @@ namespace Meta.Numerics.Functions {
 
         // If we just compute Exp( LogGamma(x) + LogGamma(y) - LogGamma(x+y) ) then several leading terms in the sum cancel,
         // potentially introducing cancelation error. So we write out the ratios explicitly and take the opportunity
-        // to write the result in terms of some naturally occuring ratios.
+        // to write the result in terms of some naturally occurring ratios.
 
         public static double Beta (double x, double y) {
             double tx = x + LanczosGP;
@@ -1122,8 +1122,8 @@ namespace Meta.Numerics.Functions {
         // To compute this ratio, we bring x and (1-x) inside the a and b powers that we need to take anyway to compute B(a,b).
         
         // At first we tried doing this explicitly, computing (x / (a / ab))^a * ((1-x) / (b / ab))^b. While this does work over a larger range
-        // than computing x^a * (1-x)^b and B(a,b) seperately, there are still many values for which one of the powers is unrepresentably small (0)
-        // the other is unrepresentably large (Infinity), so the product becomes 0 * Infinity = NaN. We threfore fall back and do this in log-space.
+        // than computing x^a * (1-x)^b and B(a,b) separately, there are still many values for which one of the powers is unrepresentably small (0)
+        // the other is unrepresentably large (Infinity), so the product becomes 0 * Infinity = NaN. We therefore fall back and do this in log-space.
 
         public static double PowOverBeta (double a, double b, double x) {
             double ab = a + b;

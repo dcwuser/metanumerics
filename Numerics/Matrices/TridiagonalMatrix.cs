@@ -7,26 +7,40 @@ namespace Meta.Numerics.Matrices {
 
 
     /// <summary>
-    /// Represents a tridiagonal matrix.
+    /// Represents a tri-diagonal matrix.
     /// </summary>
     public sealed class TridiagonalMatrix : AnySquareMatrix {
 
         /// <summary>
-        /// Initializes a new tridiagonal matrix of the given dimension.
+        /// Initializes a new tri-diagonal matrix of the given dimension.
         /// </summary>
         /// <param name="dimension">The dimension of the matrix, which must be positive.</param>
         public TridiagonalMatrix (int dimension) {
-            if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
+            if (dimension < 1) throw new ArgumentOutOfRangeException(nameof(dimension));
             this.dimension = dimension;
-            U = new double[dimension - 1];
-            D = new double[dimension];
-            L = new double[dimension - 1];
+            superDiag = new double[dimension - 1];
+            diag = new double[dimension];
+            subDiag = new double[dimension - 1];
         }
 
-        int dimension;
-        private double[] U;
-        private double[] D;
-        private double[] L;
+        internal TridiagonalMatrix (int dimension, double[] superDiag, double[] diag, double[] subDiag, bool isReadOnly) : base(isReadOnly) {
+            Debug.Assert(dimension > 0);
+            Debug.Assert(superDiag != null);
+            Debug.Assert(diag != null);
+            Debug.Assert(subDiag != null);
+            Debug.Assert(superDiag.Length == dimension - 1);
+            Debug.Assert(diag.Length == dimension);
+            Debug.Assert(subDiag.Length == dimension - 1);
+            this.dimension = dimension;
+            this.superDiag = superDiag;
+            this.diag = diag;
+            this.subDiag = subDiag;
+        }
+
+        private readonly int dimension;
+        private readonly double[] superDiag;
+        private readonly double[] diag;
+        private readonly double[] subDiag;
 
         /// <summary>
         /// Gets the dimension of the matrix.
@@ -38,32 +52,32 @@ namespace Meta.Numerics.Matrices {
         }
 
         internal double GetDiagonalElement (int i) {
-            return (D[i]);
+            return (diag[i]);
         }
 
         internal double GetSuperdiagonalElement (int i) {
-            return (U[i]);
+            return (superDiag[i]);
         }
 
         internal double GetSubdiagonalElement (int i) {
-            return (L[i]);
+            return (subDiag[i]);
         }
 
         internal void SetDiagonalElement (int i, double value) {
-            D[i] = value;
+            diag[i] = value;
         }
 
         internal void SetSuperdiagonalElement (int i, double value) {
-            U[i] = value;
+            superDiag[i] = value;
         }
 
         internal void SetSubdiagonalElement (int i, double value) {
-            L[i] = value;
+            subDiag[i] = value;
         }
 
         private int BoundsCheck (int r, int c) {
-            if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
-            if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
+            if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+            if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
             return (c - r);
         }
 
@@ -74,7 +88,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="c">The (zero-based) column number of the element.</param>
         /// <returns>M<sub>r,c</sub></returns>
         /// <remarks>
-        /// <para>Elements on the tridiagonal strip can be set and gotten normally. Other elements
+        /// <para>Get and set operates normally for elements on the tri-diagonal strip. Other elements
         /// will always have the value zero, and any attempt to set them to a non-zero value will
         /// result in an <see cref="InvalidOperationException"/>.
         /// </para>
@@ -84,13 +98,10 @@ namespace Meta.Numerics.Matrices {
                 switch (BoundsCheck(r, c)) {
                     case -1:
                         return (GetSubdiagonalElement(c));
-                        //break;
                     case 0:
                         return (GetDiagonalElement(r));
-                        //break;
                     case +1:
                         return (GetSuperdiagonalElement(r));
-                        //break;
                     default:
                         return (0.0);
                 }
@@ -118,53 +129,53 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>An independent copy of the matrix.</returns>
         public TridiagonalMatrix Copy () {
-            TridiagonalMatrix C = new TridiagonalMatrix(dimension);
-            for (int i = 0; i < (dimension-1); i++) {
-                C.SetDiagonalElement(i, GetDiagonalElement(i));
-                C.SetSubdiagonalElement(i, GetSubdiagonalElement(i));
-                C.SetSuperdiagonalElement(i, GetSuperdiagonalElement(i));
-            }
-            C.SetDiagonalElement(dimension - 1, GetDiagonalElement(dimension - 1));
-            return (C);
+            return (new TridiagonalMatrix(dimension, CopyArray(superDiag), CopyArray(diag), CopyArray(subDiag), false));
+        }
+
+        private static double[] CopyArray (double[] array) {
+            double[] copy = new double[array.Length];
+            Array.Copy(array, copy, array.Length);
+            return (copy);
         }
 
         /// <summary>
         /// Creates a transpose of the matrix.
         /// </summary>
-        /// <returns>The matrix transpose M<sup>T</sup>.</returns>
-        public TridiagonalMatrix Transpose () {
-            TridiagonalMatrix T = new TridiagonalMatrix(dimension);
-            for (int i = 0; i < (dimension - 1); i++) {
-                T.SetDiagonalElement(i, GetDiagonalElement(i));
-                T.SetSubdiagonalElement(i, GetSuperdiagonalElement(i));
-                T.SetSuperdiagonalElement(i, GetSubdiagonalElement(i));
+        /// <value>The matrix transpose M<sup>T</sup>.</value>
+        /// <remarks>
+        /// <para>The returned transpose matrix is not independent of the original matrix.
+        /// Instead, it is a read-only view into the same storage as the original matrix with row an column indices reversed.
+        /// This has the advantage that is can be produced with almost no time and memory cost.
+        /// It has the disadvantage that any subsequent changes to the original matrix will be reflected in the returned transpose,
+        /// which might not be what you expected. If you want an independent, write-able transpose matrix, call <see cref="Copy"/>
+        /// on the returned matrix.
+        /// </para>
+        /// </remarks>
+        public TridiagonalMatrix Transpose {
+            get {
+                // switch super-diagonal and sub-diagonal
+                return (new TridiagonalMatrix(dimension, subDiag, diag, superDiag, true));
             }
-            T.SetDiagonalElement(dimension - 1, GetDiagonalElement(dimension - 1));
-            return (T);
         }
 
 
         /// <summary>
-        /// Computes the determinant of the matrxi.
+        /// Computes the determinant of the matrix.
         /// </summary>
         /// <returns>The determinant det M.</returns>
         /// <remarks>
-        /// <para>Computing the determinant of a tridiagonal matrix is an O(N) operation.</para>
+        /// <para>Computing the determinant of a tri-diagonal matrix is an O(N) operation.</para>
         /// </remarks>
         public double Determinant () {
 
             // the determinant is just the determinant of T, which can be computed by the recursion
             // det A_{n,n} = a_{n, n} det A_{n-1,n-1} - a_{n, n-1} a_{n-1, n} det A_{n-2,n-2}
 
-            int n = Dimension;
-
             double a0 = GetDiagonalElement(0);
-
-            if (n == 1) return (a0);
-
+            if (dimension == 1) return (a0);
             double a1 = GetDiagonalElement(1) * GetDiagonalElement(0) - GetSubdiagonalElement(0) * GetSuperdiagonalElement(0);
 
-            for (int i = 2; i < n; i++) {
+            for (int i = 2; i < dimension; i++) {
                 double a2 = GetDiagonalElement(i) * a1 - GetSubdiagonalElement(i - 1) * GetSuperdiagonalElement(i - 1) * a0;
                 a0 = a1;
                 a1 = a2;
@@ -179,13 +190,13 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <returns>The LU decomposition of the matrix.</returns>
         /// <remarks>
-        /// <para>Computiong the LU decomposition of a tridiagonal matrix is an O(N) operation.</para>
+        /// <para>Computing the LU decomposition of a tri-diagonal matrix is an O(N) operation.</para>
         /// </remarks>
         public TridiagonalLUDecomposition LUDecomposition () {
 
-            double[] LC = (double[]) L.Clone();
-            double[] DC = (double[]) D.Clone();
-            double[] UC = (double[]) U.Clone();
+            double[] LC = CopyArray(subDiag);
+            double[] DC = CopyArray(diag);
+            double[] UC = CopyArray(superDiag);
 
             double[] V;
             int[] P;
@@ -217,7 +228,7 @@ namespace Meta.Numerics.Matrices {
             for (int i = 0; i < (n - 1); i++) {
 
                 if (Math.Abs(L[i]) > Math.Abs(D[i])) {
-                    // the subdiagonal element is larger, so permute it onto the diagonal for use as a pivot
+                    // the sub-diagonal element is larger, so permute it onto the diagonal for use as a pivot
                     double t;
                     t = D[i];
                     D[i] = L[i];
@@ -260,7 +271,7 @@ namespace Meta.Numerics.Matrices {
 
         }
 
-        // tridiagonal matrix arithmetic
+        // tri- diagonal matrix arithmetic
 
         // ( X X       ) ( Y Y       )
         // ( X X X     ) ( Y Y Y     )
@@ -269,18 +280,18 @@ namespace Meta.Numerics.Matrices {
         // (       X X ) (       Y Y )
 
         /// <summary>
-        /// Adds two tridiagonal matrices.
+        /// Adds two tri-diagonal matrices.
         /// </summary>
-        /// <param name="T1">The first matrix M<sub>1</sub>.</param>
-        /// <param name="T2">The first matrix M<sub>2</sub>.</param>
-        /// <returns>The sum M<sub>1</sub> + M<sub>2</sub>.</returns>
-        public static TridiagonalMatrix operator + (TridiagonalMatrix T1, TridiagonalMatrix T2) {
+        /// <param name="A">The first matrix.</param>
+        /// <param name="B">The second matrix.</param>
+        /// <returns>The matrix sum A + B.</returns>
+        public static TridiagonalMatrix operator + (TridiagonalMatrix A, TridiagonalMatrix B) {
 
-            if (T1 == null) throw new ArgumentNullException("T1");
-            if (T2 == null) throw new ArgumentNullException("T1");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
 
-            int n = T1.Dimension;
-            if (T2.Dimension != n) throw new DimensionMismatchException();
+            int n = A.Dimension;
+            if (B.Dimension != n) throw new DimensionMismatchException();
 
             TridiagonalMatrix T = new TridiagonalMatrix(n);
 
@@ -288,13 +299,13 @@ namespace Meta.Numerics.Matrices {
             // this is a glorified for-next loop structured so as to minimize the
             // integer arithmetic required to keep track of two numbers one unit apart
             // and avoid if-tests inside the loop
-            T.SetDiagonalElement(0, T1.GetDiagonalElement(0) + T2.GetDiagonalElement(0));
+            T.SetDiagonalElement(0, A.GetDiagonalElement(0) + B.GetDiagonalElement(0));
             int i0 = 0;
             int i1 = 1;
             while (i1 < n) {
-                T.SetDiagonalElement(i1, T1.GetDiagonalElement(i1) + T2.GetDiagonalElement(i1));
-                T.SetSubdiagonalElement(i0, T1.GetSubdiagonalElement(i0) + T2.GetSubdiagonalElement(i0));
-                T.SetSuperdiagonalElement(i0, T1.GetSuperdiagonalElement(i0) + T2.GetSuperdiagonalElement(i0));
+                T.SetDiagonalElement(i1, A.GetDiagonalElement(i1) + B.GetDiagonalElement(i1));
+                T.SetSubdiagonalElement(i0, A.GetSubdiagonalElement(i0) + B.GetSubdiagonalElement(i0));
+                T.SetSuperdiagonalElement(i0, A.GetSuperdiagonalElement(i0) + B.GetSuperdiagonalElement(i0));
                 i0 = i1;
                 i1++;
             }
@@ -304,18 +315,18 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Subtracts two tridiagonal matrices.
+        /// Subtracts two tri-diagonal matrices.
         /// </summary>
-        /// <param name="T1">The first matrix M<sub>1</sub>.</param>
-        /// <param name="T2">The first matrix M<sub>2</sub>.</param>
-        /// <returns>The difference M<sub>1</sub> - M<sub>2</sub>.</returns>
-        public static TridiagonalMatrix operator - (TridiagonalMatrix T1, TridiagonalMatrix T2) {
+        /// <param name="A">The first matrix.</param>
+        /// <param name="B">The second matrix.</param>
+        /// <returns>The difference matrix A - B.</returns>
+        public static TridiagonalMatrix operator - (TridiagonalMatrix A, TridiagonalMatrix B) {
 
-            if (T1 == null) throw new ArgumentNullException("T1");
-            if (T2 == null) throw new ArgumentNullException("T1");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
 
-            int n = T1.Dimension;
-            if (T2.Dimension != n) throw new DimensionMismatchException();
+            int n = A.Dimension;
+            if (B.Dimension != n) throw new DimensionMismatchException();
 
             TridiagonalMatrix T = new TridiagonalMatrix(n);
 
@@ -323,13 +334,13 @@ namespace Meta.Numerics.Matrices {
             // this is a glorified for-next loop structured so as to minimize the
             // integer arithmetic required to keep track of two numbers one unit apart
             // and avoid if-tests inside the loop
-            T.SetDiagonalElement(0, T1.GetDiagonalElement(0) - T2.GetDiagonalElement(0));
+            T.SetDiagonalElement(0, A.GetDiagonalElement(0) - B.GetDiagonalElement(0));
             int i0 = 0;
             int i1 = 1;
             while (i1 < n) {
-                T.SetDiagonalElement(i1, T1.GetDiagonalElement(i1) - T2.GetDiagonalElement(i1));
-                T.SetSubdiagonalElement(i0, T1.GetSubdiagonalElement(i0) - T2.GetSubdiagonalElement(i0));
-                T.SetSuperdiagonalElement(i0, T1.GetSuperdiagonalElement(i0) - T2.GetSuperdiagonalElement(i0));
+                T.SetDiagonalElement(i1, A.GetDiagonalElement(i1) - B.GetDiagonalElement(i1));
+                T.SetSubdiagonalElement(i0, A.GetSubdiagonalElement(i0) - B.GetSubdiagonalElement(i0));
+                T.SetSuperdiagonalElement(i0, A.GetSuperdiagonalElement(i0) - B.GetSuperdiagonalElement(i0));
                 i0 = i1;
                 i1++;
             }
@@ -339,14 +350,14 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Multiplies a tridiagonal matrix by a real constant.
+        /// Multiplies a tri-diagonal matrix by a real constant.
         /// </summary>
         /// <param name="f">The constant.</param>
         /// <param name="T">The matrix.</param>
         /// <returns>The product matrix.</returns>
         public static TridiagonalMatrix operator * (double f, TridiagonalMatrix T) {
 
-            if (T == null) throw new ArgumentNullException("T");
+            if (T == null) throw new ArgumentNullException(nameof(T));
 
             int n = T.Dimension;
             TridiagonalMatrix fT = new TridiagonalMatrix(n);
@@ -448,7 +459,7 @@ namespace Meta.Numerics.Matrices {
     }
 
     /// <summary>
-    /// Represents the LU decomposition of a tridiagonal matrix.
+    /// Represents the LU decomposition of a tri-diagonal matrix.
     /// </summary>
     public class TridiagonalLUDecomposition {
 
@@ -502,15 +513,13 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Solves a tridiagonal system of linear equations.
+        /// Solves a tri-diagonal system of linear equations.
         /// </summary>
         /// <param name="rhs">The right-hand side vector b.</param>
-        /// <returns>A vector x which satisties Ax = b.</returns>
+        /// <returns>A vector x which satisfies Ax = b.</returns>
         public ColumnVector Solve (IList<double> rhs) {
 
-            if (rhs == null) throw new ArgumentNullException("rhs");
-            if (rhs.Count != n) throw new DimensionMismatchException();
-
+            if (rhs == null) throw new ArgumentNullException(nameof(rhs));
             if (rhs.Count != n) throw new DimensionMismatchException();
 
             ColumnVector x = new ColumnVector(n);
@@ -518,20 +527,13 @@ namespace Meta.Numerics.Matrices {
                 x[i] = rhs[i];
             }
 
-            //PrintVector(x);
-
             // forward-substitute to solve Ly=z
             for (int i = 0; i < (n-1); i++) {
 
                 double t = x[i+1-P[i]+i] - L[i] * x[P[i]];
                 x[i] = x[P[i]];
                 x[i+1] = t;
-
-
-                //x[i] = x[i] - L[i - 1] * x[i - 1];
             }
-
-            //PrintVector(x);
 
             // back-substitute to solve Ux=y
             x[n - 1] = x[n - 1] / D[n - 1];
@@ -541,9 +543,6 @@ namespace Meta.Numerics.Matrices {
                     x[i] = (x[i] - U[i] * x[i + 1] - V[i] * x[i + 2]) / D[i];
                 }
             }
-
-            //PrintVector(x);
-
 
             return (x);
 

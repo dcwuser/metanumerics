@@ -113,7 +113,7 @@ namespace Meta.Numerics.Statistics {
             xNames = new List<string>();
             xColumnsCopy = new List<IReadOnlyList<double>>();
             foreach (IReadOnlyList<double> xColumn in xColumns) {
-                if (xColumn == null) throw new ArgumentNullException("xColumn");
+                if (xColumn == null) throw new ArgumentNullException(nameof(xColumns));
                 if (xColumn.Count != expectedLength) throw new DimensionMismatchException();
                 INamed named = xColumn as INamed;
                 if (named == null) {
@@ -290,6 +290,9 @@ namespace Meta.Numerics.Statistics {
         /// not row-oriented, i.e. a list of rows. Either of these would match the method signature, but only
         /// column-oriented inputs will produce correct results.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="columns"/>, or one of the columns in it, is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException">Not all of the columns in <paramref name="columns"/> have the same length.</exception>
+        /// <exception cref="InsufficientDataException">There are fewer rows than columns.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Principal_component_analysis"/>
         public static PrincipalComponentAnalysis PrincipalComponentAnalysis (this IReadOnlyList<IReadOnlyList<double>> columns) {
 
@@ -299,7 +302,7 @@ namespace Meta.Numerics.Statistics {
             int count = -1;
             for (int c = 0; c < dimension; c++) {
                 IReadOnlyList<double> column = columns[c];
-                if (column == null) throw new ArgumentNullException(nameof(column));
+                if (column == null) throw new ArgumentNullException(nameof(columns));
                 if (count < 0) {
                     count = column.Count;
                 } else {
@@ -361,6 +364,9 @@ namespace Meta.Numerics.Statistics {
         /// not row-oriented, i.e. a list of rows. Either of these would match the method signature, but only
         /// column-oriented inputs will produce correct results.</para>
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="columns"/>, or one of the columns in it, is <see langword="null"/>.</exception>
+        /// <exception cref="DimensionMismatchException">Not all of the columns in <paramref name="columns"/> have the same length.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">There are fewer data points than the request cluster number <paramref name="m"/>.</exception>
         public static MeansClusteringResult MeansClustering (this IReadOnlyList<IReadOnlyList<double>> columns, int m) {
 
             if (columns == null) throw new ArgumentNullException(nameof(columns));
@@ -369,7 +375,7 @@ namespace Meta.Numerics.Statistics {
             int n = -1;
             for (int c = 0; c < d; c++) {
                 IReadOnlyList<double> column = columns[c];
-                if (column == null) throw new ArgumentNullException(nameof(column));
+                if (column == null) throw new ArgumentNullException(nameof(columns));
                 if (n < 0) {
                     n = column.Count;
                 } else {

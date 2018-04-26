@@ -26,9 +26,9 @@ namespace Meta.Numerics.Functions {
         /// regarded as approaching their values. For example, in general, if x = 0, F = 1. On the other hand,
         /// in general, if c = -1, F is infinite. If x = 0 and c = -1, the value depends on which limit is taken first.
         /// </para>
-        /// <para>Our implemenation does not achieve full precision in all parameter regions.
+        /// <para>Our implementation does not achieve full precision in all parameter regions.
         /// For |x| &lt; 1/2 and |a|, |b| &lt; 10, we achieve approximately full precision.
-        /// For |x| &gt; 1/2, we loose about a decimal digit of precision, and for
+        /// For |x| &gt; 1/2, we loose about one decimal digit of precision, and for
         /// every order of magnitude that |a| or |b| exceeds 10, we loose about one decimal digit of precision.
         /// </para>
         /// </remarks>
@@ -59,7 +59,7 @@ namespace Meta.Numerics.Functions {
             // Check for c canceling with a or b.
             // (This check must occur after the polynomial check to agree with Mathematica's result for -3,-1/2,-3,
             // which appears to be required to fulfill recurrence. Basically, it looks like there is some tension
-            // between fulfilling recurrence and fulfilling quadratic transfoms for polynomial cases; look into this.)
+            // between fulfilling recurrence and fulfilling quadratic transforms for polynomial cases; look into this.)
             if (c == a) return (Math.Pow(1.0 - x, -b));
             if (c == b) return (Math.Pow(1.0 - x, -a));
 
@@ -69,7 +69,7 @@ namespace Meta.Numerics.Functions {
 
             if (x < -1.0) {
 
-                // x -> 1/(1-x) maps (-inf, -1) -> (0, 1/2)
+                // x -> 1/(1-x) maps (-\inf, -1) -> (0, 1/2)
                 double xPrime = 1.0 / (1.0 - x);
 
                 double bma = b - a;
@@ -196,13 +196,13 @@ namespace Meta.Numerics.Functions {
         // where e E_{e}(x) = \exp(e x) - 1, which we also know how to compute accurately even in the small-e limit.
 
         // This deals with G_{e}(x) for positive x. But L_{e}(x) and \Gamma(x + e) still blow up for x or x + e
-        // near a nonpositive integer, and our Lanczos machinery for L_{e}(x) assumes positive x. To deal with
+        // near a non-positive integer, and our Lanczos machinery for L_{e}(x) assumes positive x. To deal with
         // the left half-plane, use the reflection formula
         //   \Gamma(z) \Gamma(1 - z) = \frac{\pi}{\sin(\pi z)}
         // on both Gamma functions in the definition of G_{e}(x) to get
         //   e G_{e}(x) = \frac{\sin(\pi x)}{\pi} \Gamma(1 - x) - \frac{\sin(\pi x + \pi e)}{\pi} \Gamma(1 - x - e)
         // Use the angle addition formula on the second \sin and the definition of the Pochhammer symbol
-        // to get all terms proportional to one Gamma function with a guarnateed positive argument.
+        // to get all terms proportional to one Gamma function with a guaranteed positive argument.
         //   \frac{e G_{e}(x)}{\Gamma(1 - x - e)} =
         //     \frac{\sin(\pi x)}{\pi} \left[ (1 - x - e)_{e} - \cos(\pi e) \right] -  \frac{\cos(\pi x) \sin(\pi e)}{\pi}
         // We need the RHS ~e to for small e. That's manifestly true for the second term because of the factor \sin(\pi e).
@@ -384,10 +384,10 @@ namespace Meta.Numerics.Functions {
             double b = a + m + e;
 
             double g_c = AdvancedMath.Gamma(c);
-            double rg_a = 1.0 / AdvancedMath.Gamma(a);
+            //double rg_a = 1.0 / AdvancedMath.Gamma(a);
             double rg_b = 1.0 / AdvancedMath.Gamma(b);
             double rg_cma = 1.0 / AdvancedMath.Gamma(c - a);
-            double rg_cmb = 1.0 / AdvancedMath.Gamma(c - b);
+            //double rg_cmb = 1.0 / AdvancedMath.Gamma(c - b);
 
             // Pochhammer product, keeps track of (a)_k (c-b)_k (x')^{a + k}
             double p = Math.Pow(x1, a);

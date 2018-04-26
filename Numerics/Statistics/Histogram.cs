@@ -234,6 +234,8 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The test result.</returns>
         public TestResult ChiSquaredTest (DiscreteDistribution distribution) {
 
+            if (distribution == null) throw new ArgumentNullException(nameof(distribution));
+
             double chi2 = 0.0;
             int dof = 0;
 
@@ -273,31 +275,6 @@ namespace Meta.Numerics.Statistics {
             return (new TestResult("χ²", chi2, nullDistribution, TestType.RightTailed));
 
         }
-
-        /*
-       public TestResult ChiSquaredTest (DiscreteDistribution distribution) {
-
-           int N = TotalCounts;
-
-           double chi2 = 0.0;
-           for (int i = 0; i < counts.Length; i++) {
-               HistogramBin bin = this[i];
-               double p = 0.0;
-               foreach (int k in bin.Range.GetContainedIntegers()) {
-                   p += distribution.ProbabilityMass(k);
-               }
-               double n = p * N;
-               if (n > 0.0) {
-                   chi2 += MoreMath.Pow2(bin.Counts - n) / n;
-               } else {
-                   if (bin.Counts != 0) chi2 += Double.PositiveInfinity;
-               }
-           }
-
-           return (new TestResult(chi2, new ChiSquaredDistribution(counts.Length - 1)));
-
-        }
-        */
 
     }
     

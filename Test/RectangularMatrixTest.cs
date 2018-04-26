@@ -171,7 +171,7 @@ namespace Test {
             RectangularMatrix MM = -1.0 * M;
             Assert.IsTrue(MN == MM);
 
-            RectangularMatrix MT = M.Transpose();
+            RectangularMatrix MT = M.Transpose;
             Assert.IsTrue(MT.RowCount == M.ColumnCount);
             Assert.IsTrue(MT.ColumnCount == M.RowCount);
 
@@ -192,7 +192,7 @@ namespace Test {
 
             SquareMatrix Q = QRD.QMatrix;
             Assert.IsTrue(Q.Dimension == M.RowCount);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(Q * Q.Transpose(), TestUtilities.CreateSquareUnitMatrix(Q.Dimension)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(Q * Q.Transpose, UnitMatrix.OfDimension(Q.Dimension)));
 
             RectangularMatrix R = QRD.RMatrix;
             Assert.IsTrue(R.RowCount == M.RowCount);
@@ -265,26 +265,37 @@ namespace Test {
                 Assert.IsTrue(SVD.ColumnCount == SVD.ColumnCount);
                 Assert.IsTrue(SVD.Dimension == SVD.ColumnCount);
 
+                // U has right dimensions and is orthogonal
                 SquareMatrix U = SVD.LeftTransformMatrix;
                 Assert.IsTrue(U.Dimension == R.RowCount);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(U.Transpose() * U, TestUtilities.CreateSquareUnitMatrix(U.Dimension)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(U.Transpose * U, UnitMatrix.OfDimension(U.Dimension)));
 
+                // V has right dimensions and is orthogonal
                 SquareMatrix V = SVD.RightTransformMatrix;
                 Assert.IsTrue(V.Dimension == R.ColumnCount);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(V.Transpose() * V, TestUtilities.CreateSquareUnitMatrix(V.Dimension)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(V.Transpose * V, UnitMatrix.OfDimension(V.Dimension)));
 
-                RectangularMatrix S = U.Transpose() * R * V;
-                for (int i = 0; i < SVD.Dimension; i++) {
-                    double w = SVD.SingularValue(i);
-                    Assert.IsTrue(w >= 0.0);
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(S[i, i], w));
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(R * SVD.RightSingularVector(i), w * SVD.LeftSingularVector(i)));
+                // The transforms decompose the matrix with the claimed singular values
+                RectangularMatrix S = U.Transpose * R * V;
+                for (int i = 0; i < SVD.Contributors.Count; i++) {
+                    SingularValueContributor t = SVD.Contributors[i];
+                    Assert.IsTrue(t.SingularValue >= 0.0);
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(S[i, i], t.SingularValue));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(R * t.RightSingularVector, t.SingularValue * t.LeftSingularVector));
                 }
+
+                // We can reconstruct the original matrix from the claimed singular values
+                RectangularMatrix R2 = new RectangularMatrix(SVD.RowCount, SVD.ColumnCount);
+                foreach (SingularValueContributor t in SVD.Contributors) {
+                    R2 += t.SingularValue * t.LeftSingularVector * t.RightSingularVector.Transpose;
+                }
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(R, R2));
 
             }
 
         }
 
+        /*
         [TestMethod]
         public void PC () {
 
@@ -353,6 +364,7 @@ namespace Test {
             RSE.Dispose();
 
         }
+        */
 
         [TestMethod]
         public void SmallSVD () {
@@ -360,25 +372,28 @@ namespace Test {
             SquareMatrix A0 = new SquareMatrix(1);
             A0[0, 0] = 0.0;
             SingularValueDecomposition SVD0 = A0.SingularValueDecomposition();
-            Console.WriteLine(SVD0.SingularValue(0));
-            Assert.IsTrue(SVD0.SingularValue(0) == 0.0);
+            Assert.IsTrue(SVD0.Contributors.Count == 1);
+            Assert.IsTrue(SVD0.Contributors[0].SingularValue == 0.0);
 
             SquareMatrix A1 = new SquareMatrix(1);
             A1[0, 0] = 1.0;
             SingularValueDecomposition SVD1 = A1.SingularValueDecomposition();
-            Console.WriteLine(SVD1.SingularValue(0));
-            //Assert.IsTrue(SVD1.SingularValue(0) == 1.0);
+            Assert.IsTrue(SVD1.Contributors.Count == 1);
+            Assert.IsTrue(SVD1.Contributors[0].SingularValue == 1.0);
 
             SquareMatrix A2 = new SquareMatrix(2);
             A2[0, 0] = 0.0; A2[0, 1] = 1.0;
             A2[1, 0] = 0.0; A2[1, 1] = 1.0;
-            // Singular values Sqrt(2), 0
+            // Singular values should be Sqrt(2), 0
+            double[] s = new double[] { Math.Sqrt(2.0), 0.0 };
             SingularValueDecomposition SVD2 = A2.SingularValueDecomposition();
-            SquareMatrix S2 = SVD2.LeftTransformMatrix.Transpose() * A2 * SVD2.RightTransformMatrix;
-            for (int i = 0; i < SVD2.Dimension; i++) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(S2[i, i], SVD2.SingularValue(i)));
+            SquareMatrix S2 = SVD2.LeftTransformMatrix.Transpose * A2 * SVD2.RightTransformMatrix;
+            Assert.IsTrue(SVD2.Contributors.Count == 2);
+            for (int i = 0; i < SVD2.Contributors.Count; i++) {
+                double w = SVD2.Contributors[i].SingularValue;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(w, s[i]));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(S2[i, i], w));
             }
-
         }
 
         [TestMethod]
@@ -387,10 +402,10 @@ namespace Test {
             RectangularMatrix A = GenerateRandomMatrix(3, 4);
 
             SymmetricMatrix AAT = A.MultiplySelfByTranspose();
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AAT, A * A.Transpose()));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AAT, A * A.Transpose));
 
             SymmetricMatrix ATA = A.MultiplyTransposeBySelf();
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(ATA, A.Transpose() * A));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(ATA, A.Transpose * A));
 
         }
 
@@ -436,7 +451,7 @@ namespace Test {
 
             RectangularMatrix A = GenerateRandomMatrix(2, 3);
 
-            RectangularMatrix AT = A.Transpose();
+            RectangularMatrix AT = A.Transpose;
 
             RectangularMatrix ATA1 = AT * A;
 

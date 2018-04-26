@@ -16,7 +16,7 @@ namespace Meta.Numerics.Matrices {
     /// idea to accept a <see cref="AnyRectangularMatrix"/>, so that any concrete implementation
     /// can also be passed into your function.</para>
     /// </remarks>
-    public abstract class AnyRectangularMatrix : AnyMatrix<double>, IEquatable<AnyRectangularMatrix> {
+    public abstract class AnyRectangularMatrix : AnyMatrix<double> {
 
         internal AnyRectangularMatrix (bool isReadOnly) : base(isReadOnly) { }
 
@@ -78,6 +78,7 @@ namespace Meta.Numerics.Matrices {
         /// of all the elements. In the case of a row or column vector, this reduces
         /// to the Euclidean vector norm.</para>
         /// </remarks>
+        /// <seealso href="http://mathworld.wolfram.com/FrobeniusNorm.html"/>
         public virtual double FrobeniusNorm () {
             double norm = 0.0;
             for (int r = 0; r < RowCount; r++) {
@@ -86,6 +87,21 @@ namespace Meta.Numerics.Matrices {
                 }
             }
             return (Math.Sqrt(norm));
+        }
+
+        /// <summary>
+        /// Computes the max-norm of the matrix.
+        /// </summary>
+        /// <returns>The largest absolute value of an element.</returns>
+        public virtual double MaxNorm () {
+            double norm = 0.0;
+            for (int r = 0; r < RowCount; r++) {
+                for (int c = 0; c < ColumnCount; c++) {
+                    double abs = Math.Abs(this[r, c]);
+                    if (abs > norm) norm = abs;
+                }
+            }
+            return (norm);
         }
 
         /// <summary>
@@ -192,6 +208,11 @@ namespace Meta.Numerics.Matrices {
         /// Computes the product of the matrix and its transpose.
         /// </summary>
         /// <returns>The product matrix A A<sup>T</sup>.</returns>
+        /// <remarks>
+        /// <para>This particular matrix multiplication is guaranteed to produce a symmetric matrix.
+        /// Carrying out the multiplication using this method is not only faster than 
+        /// calling A * A.Transpose, but also returns the result as a <see cref="SymmetricMatrix"/>.</para>
+        /// </remarks>
         public virtual SymmetricMatrix MultiplySelfByTranspose () {
             SymmetricMatrix AAT = new SymmetricMatrix(this.RowCount);
             for (int r = 0; r < this.RowCount; r++) {
@@ -210,6 +231,11 @@ namespace Meta.Numerics.Matrices {
         /// Computes the product of the matrix's transpose and itself.
         /// </summary>
         /// <returns>The product matrix A<sup>T</sup> A.</returns>
+        /// <remarks>
+        /// <para>This particular matrix multiplication is guaranteed to produce a symmetric matrix.
+        /// Carrying out the multiplication using this method is not only faster than 
+        /// calling A.Transpose * A, but also returns the result as a <see cref="SymmetricMatrix"/>.</para>
+        /// </remarks>
         public virtual SymmetricMatrix MultiplyTransposeBySelf () {
             SymmetricMatrix ATA = new SymmetricMatrix(this.ColumnCount);
             for (int r = 0; r < this.ColumnCount; r++) {
@@ -288,7 +314,7 @@ namespace Meta.Numerics.Matrices {
 
         // equality operations
         // do not re-implement for concrete implementations, because people shouldn't be doing matrix equality comparisons anyway
-
+        /*
         private static bool InternalEquals (AnyRectangularMatrix A, AnyRectangularMatrix B) {
             Debug.Assert(!Object.ReferenceEquals(A, null));
             Debug.Assert(!Object.ReferenceEquals(B, null));
@@ -366,7 +392,7 @@ namespace Meta.Numerics.Matrices {
         public override int GetHashCode () {
             throw new NotSupportedException();
         }
-
+        */
 #if SHO
         /// <summary>
         /// Produces the representation of the matrix for the Python interactive console.

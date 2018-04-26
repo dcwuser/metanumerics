@@ -148,9 +148,6 @@ namespace Meta.Numerics.Analysis {
         // Then f(y) / p(y) is evaluated and the result recorded for future refinements
         // before being returned. Note x is changed upon return.
 
-        public double Evaluate (MultiFunctor f, double[] x) {
-            return (Evaluate(f, null, x));
-        }
 
         public double Evaluate (MultiFunctor f, CoordinateTransform[] map, double[] x) {
 

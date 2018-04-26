@@ -73,7 +73,7 @@ namespace Test {
             Assert.IsTrue(MC.Dimension == M.RowCount);
 
             // dot multiply
-            RowVector CT = C.Transpose();
+            RowVector CT = C.Transpose;
             double dot = CT * C;
             Assert.IsTrue(dot > 0);
 
@@ -102,7 +102,7 @@ namespace Test {
             Assert.IsTrue(RM.Dimension == M.ColumnCount);
 
             // dot multiply
-            ColumnVector RT = R.Transpose();
+            ColumnVector RT = R.Transpose;
             double dot = R * RT;
             Assert.IsTrue(dot > 0);
 
@@ -159,11 +159,11 @@ namespace Test {
         [TestMethod]
         public void ExtendedVectorNorm () {
 
-            // Check that vector norm is correctly computed even when vector is enormous (square would overflow) or tiny (square woudl underflow)
+            // Check that vector norm is correctly computed even when vector is enormous (square would overflow) or tiny (square would underflow)
 
             double x = Double.MaxValue / 32.0;
 
-            // Use the pythagorian quadrouple (2, 3, 6, 7)
+            // Use the Pythagorean quadruple (2, 3, 6, 7)
             ColumnVector v = new ColumnVector(2.0, 3.0, 6.0);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(v.Norm(), 7.0));
             ColumnVector bv = x * v;
@@ -171,7 +171,7 @@ namespace Test {
             ColumnVector sv = v / x;
             Assert.IsTrue(TestUtilities.IsNearlyEqual(sv.Norm(), 7.0 / x));
 
-            // Use the pythagorian 7-tuple (1, 2, 3, 4, 5, 27, 28)
+            // Use the Pythagorean 7-tuple (1, 2, 3, 4, 5, 27, 28)
             RowVector u = new RowVector(1.0, 2.0, 3.0, 4.0, 5.0, 27.0);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(u.Norm(), 28.0));
             RowVector bu = x * u;
@@ -189,12 +189,49 @@ namespace Test {
             r[0, 1] = 0.0;
             Assert.IsTrue(r[1] == 0.0);
 
-            ColumnVector c = r.Transpose();
+            ColumnVector c = r.Transpose.Copy();
             Assert.IsTrue(c[1, 0] == 0.0);
             c[1, 0] = 2.0;
             Assert.IsTrue(c[1] == 2.0);
 
         }
 
+        [TestMethod]
+        public void VectorAsIList () {
+
+            // Vectors should implement IList in same weird way as arrays
+            IList<double> v = new ColumnVector(0.0, 1.0);
+
+            foreach (double x in v) {
+                Assert.IsTrue(v.Contains(x));
+            }
+            Assert.IsTrue(!v.Contains(2.0));
+
+            try {
+                v.Add(2.0);
+                Assert.Fail();
+            } catch (NotSupportedException) { }
+
+            try {
+                v.Remove(2.0);
+                Assert.Fail();
+            } catch (NotSupportedException) { }
+
+            try {
+                v.Clear();
+                Assert.Fail();
+            } catch (NotSupportedException) { }
+
+            try {
+                v.Insert(0, -1.0);
+                Assert.Fail();
+            } catch (NotSupportedException) { }
+
+            try {
+                v.RemoveAt(0);
+                Assert.Fail();
+            } catch (NotSupportedException) { }
+
+        }
     }
 }

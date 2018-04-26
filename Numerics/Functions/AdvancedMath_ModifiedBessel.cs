@@ -16,7 +16,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The values of I, I', K, and K' for the given order and argument.</returns>
         /// <remarks>
-        /// <para>The modified bessel functions fufill a differential equation similiar to the bessel differential equation.</para>
+        /// <para>The modified Bessel functions fulfill a differential equation similar to the Bessel differential equation.</para>
         /// <img src="../images/ModifiedBesselODE.png" />
         /// </remarks>
         public static SolutionPair ModifiedBessel (double nu, double x) {
@@ -64,13 +64,13 @@ namespace Meta.Numerics.Functions {
                 ModifiedBessel_CF_K(mu, x, out sK, out g);
                 double sKP = g * sK;
 
-                // recurse upward to order nu
+                // recurr upward to order nu
                 ModifiedBesselK_RecurrUpward(mu, x, ref sK, ref sKP, n);
 
                 // determine I'/I at the desired point
                 double f = ModifiedBessel_CF1(nu, x);
 
-                // Use the wronskian relationship K I' - I K' = 1/x to determine I and I' seperately
+                // Use the Wronskian relationship K I' - I K' = 1/x to determine I and I' separately
                 double sI = 1.0 / (f * sK - sKP) / x;
                 double sIP = f * sI;
 
@@ -82,7 +82,7 @@ namespace Meta.Numerics.Functions {
         }
 
 
-        // Unlike the analogous recurrance for J, Y, this recurrence, as written, is only good for K, not I
+        // Unlike the analogous recurrence for J, Y, this recurrence, as written, is only good for K, not I
         // I and e^{i\pi\nu} K share the same recurrence, but we have written it here so as to avoid the e^{i\pi\nu} factor
 
         private static void ModifiedBesselK_RecurrUpward (double mu, double x, ref double K, ref double KP, int n) {
@@ -97,7 +97,7 @@ namespace Meta.Numerics.Functions {
         }
 
         /// <summary>
-        /// Computes the regular modified cynlindrical Bessel function.
+        /// Computes the regular modified cylindrical Bessel function.
         /// </summary>
         /// <param name="nu">The order parameter.</param>
         /// <param name="x">The argument, which must be non-negative.</param>
@@ -105,7 +105,7 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>The modified Bessel functions appear as the solutions of hyperbolic differential equations with
         /// cylindrical or circular symmetry, for example the conduction of heat through a cylindrical pipe.</para>
-        /// <para>The regular modified Bessel functions are related to the Bessel fuctions with pure imaginary arguments.</para>
+        /// <para>The regular modified Bessel functions are related to the Bessel functions with pure imaginary arguments.</para>
         /// <img src="../images/BesselIBesselJRelation.png" />
         /// <para>The regular modified Bessel functions increase monotonically and exponentially from the origin.</para>
         /// </remarks>
@@ -164,13 +164,13 @@ namespace Meta.Numerics.Functions {
         }
 
         /// <summary>
-        /// Computes the irregular modified cynlindrical Bessel function.
+        /// Computes the irregular modified cylindrical Bessel function.
         /// </summary>
         /// <param name="nu">The order parameter.</param>
         /// <param name="x">The argument.</param>
         /// <returns>The value of K<sub>&#x3BD;</sub>(x).</returns>
         /// <remarks>
-        /// <para>The modified Bessel functions are related to the Bessel fuctions with pure imaginary arguments.</para>
+        /// <para>The modified Bessel functions are related to the Bessel functions with pure imaginary arguments.</para>
         /// <para>The irregular modified Bessel function decreases monotonically and exponentially from the origin.</para>
         /// </remarks>
         public static double ModifiedBesselK (double nu, double x) {
@@ -323,38 +323,8 @@ namespace Meta.Numerics.Functions {
 
             }
 
-
             throw new NonconvergenceException();
 
-            /*
-            double fI = 1.0;
-            double fK = 1.0;
-            double df = 1.0;
-            for (int k = 1; k < Global.SeriesMax; k++) {
-
-                double fI_old = fI; double fK_old = fK;
-
-                df = df * (2.0 * (nu - k) + 1.0) * (2.0 * (nu + k) - 1.0) / k / (8.0 * x);
-
-                if (k % 2 == 0) {
-                    fI += df;
-                } else {
-                    fI -= df;
-                }
-
-                fK += df;
-
-                if ((fI == fI_old) && (fK == fK_old)) {
-                    sI = fI / Math.Sqrt(Global.TwoPI * x);
-                    sK = fK / Math.Sqrt(2.0 * x / Math.PI);
-                    return;
-
-                }
-
-            }
-
-            throw new NonconvergenceException();
-            */
         }
 
         // compute I'/I via continued fraction
@@ -397,7 +367,7 @@ namespace Meta.Numerics.Functions {
             double Df = a / b;
             double f = Df;
 
-            // Thompson-Barnett do normalizing sum using these auxiluary variables (see Numerical Recipies)
+            // Thompson-Barnett do normalizing sum using these auxiliary variables (see Numerical Recipes)
 
             double C = (0.5 - nu) * (0.5 + nu);
             double q0 = 0.0;
@@ -441,25 +411,6 @@ namespace Meta.Numerics.Functions {
         }
 
         // use Wronskian I' K - I K' = 1/x, plus values of I'/I, K'/K, and K, to compute I, I', K, and K'
-
-        /*
-        private static SolutionPair ModifiedBessel_Steed (double nu, double x) {
-
-            double f = ModifiedBessel_CF1(nu, x);
-
-            double K, g;
-            ModifiedBessel_CF_K(nu, x, out K, out g);
-
-            double KP = g * K;
-
-            double I = 1.0 / K / (f - g) / x;
-
-            double IP = f * I;
-
-            return (new SolutionPair(nu, x, I, IP, K, KP));
-
-        }
-        */
 
         // Temme's series for K0 and K1 for small nu and small x
         // applies only for -1/2 <= nu <= 1/2
@@ -747,7 +698,7 @@ namespace Meta.Numerics.Functions {
                 return (-Math.Sqrt(-x) / 2.0 * (J / Global.SqrtThree + Y));
             } else if (x < 5.0) {
                 // The Bi series is better than the Ai series for positive values, because it blows up rather than down.
-                // It's also slightly better for negative values, because a given number of oscilations occur further out.  
+                // It's also slightly better for negative values, because a given number of oscillations occur further out.  
                 return (AiryBi_Series(x));
             } else {
                 double y = 2.0 / 3.0 * Math.Pow(x, 3.0 / 2.0);
@@ -783,11 +734,11 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>Airy functions are solutions to the Airy differential equation:</para>
         /// <img src="../images/AiryODE.png" />
-        /// <para>The Airy functions appear in quantum mechanics in the semiclassical WKB solution to the wave functions in a potential.</para>
-        /// <para>For negative arguments, Ai(x) and Bi(x) are oscilatory. For positive arguments, Ai(x) decreases exponentially and Bi(x) increases
+        /// <para>The Airy functions appear in quantum mechanics in the semi classical WKB solution to the wave functions in a potential.</para>
+        /// <para>For negative arguments, Ai(x) and Bi(x) are oscillatory. For positive arguments, Ai(x) decreases exponentially and Bi(x) increases
         /// exponentially with increasing x.</para>
         /// <para>This method simultaneously computes both Airy functions and their derivatives. If you need both Ai and Bi, it is faster to call
-        /// this method once than to call <see cref="AiryAi(double)"/> and <see cref="AiryBi(double)"/> seperately. If on, the other hand, you need
+        /// this method once than to call <see cref="AiryAi(double)"/> and <see cref="AiryBi(double)"/> separately. If on, the other hand, you need
         /// only Ai or only Bi, it is faster to call the appropriate method to compute the one you need.</para>
         /// </remarks>
         /// <seealso cref="AiryAi"/>
@@ -828,7 +779,7 @@ namespace Meta.Numerics.Functions {
 
             // It might appear that we can optimize by not computing both \sqrt{x} and x^{3/2} explicitly, but instead computing \sqrt{x} and
             // then (\sqrt{x})^3. But the latter method looses accuracy, presumably because \sqrt{x} compresses range and cubing then expands
-            // it, skipping over the double that is actuall closest to x^{3/2}. So we compute both explicitly.
+            // it, skipping over the double that is actually closest to x^{3/2}. So we compute both explicitly.
 
         }
 

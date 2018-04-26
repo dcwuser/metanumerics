@@ -144,9 +144,9 @@ namespace Meta.Numerics.Statistics {
                 }
             }
 
-            double y = v.Transpose() * b;
+            double y = v.Transpose * b;
 
-            double vCv = v.Transpose() * C * v;
+            double vCv = v.Transpose * C * v;
 
             double dy = Math.Sqrt(sigma2 + vCv);
 

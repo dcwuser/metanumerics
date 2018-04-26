@@ -10,7 +10,6 @@ namespace Meta.Numerics.Data
     /// <summary>
     /// Represents one row of a data frame.
     /// </summary>
-    [DebuggerDisplay("{DebuggerDisplay()}")]
     public sealed class FrameRow : IReadOnlyDictionary<string, object>, IReadOnlyList<object> {
 
         internal FrameRow (FrameView frame, int r) {
@@ -85,8 +84,8 @@ namespace Meta.Numerics.Data
         /// <summary>
         /// Returns a dictionary containing the row data.
         /// </summary>
-        /// <returns>A dictionary whoose keys are the column names
-        /// and whoose values are the coresponding cell values for the row.
+        /// <returns>A dictionary whose keys are the column names
+        /// and whose values are the corresponding cell values for the row.
         /// This dictionary is an independent copy, so any subsequent changes to the
         /// frame data will not change it.</returns>
         public Dictionary<string, object> ToDictionary () {
@@ -95,18 +94,6 @@ namespace Meta.Numerics.Data
                 result.Add(entry.Key, entry.Value);
             }
             return (result);
-        }
-
-        private string DebuggerDisplay () {
-            StringBuilder builder = new StringBuilder();
-            builder.Append("{ ");
-            for (int c = 0; c < Math.Min(4, frame.columns.Count - 1); c++) {
-                builder.AppendFormat("{0} ", this[c]);
-            }
-            if (frame.columns.Count > 4) builder.Append("... ");
-            if (frame.columns.Count > 0) builder.Append(this[frame.columns.Count - 1]);
-            builder.Append(" }");
-            return (builder.ToString());
         }
 
         bool IReadOnlyDictionary<string, object>.ContainsKey (string key) {

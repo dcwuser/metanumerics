@@ -185,6 +185,9 @@ namespace Meta.Numerics.Statistics {
         /// <returns>Summary statistics of the combined sample.</returns>
         public static SummaryStatistics Combine (SummaryStatistics a, SummaryStatistics b) {
 
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
+
             double d = b.m - a.m;
             double d2 = d * d;
 

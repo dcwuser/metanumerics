@@ -229,6 +229,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="sample">The sample to fit.</param>
         /// <returns>The fit result.</returns>
         public static GumbelFitResult FitToSample (Sample sample) {
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
             return (Univariate.FitToGumbel(sample.data));
         }
 

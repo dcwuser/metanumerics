@@ -16,7 +16,7 @@ namespace Meta.Numerics.Statistics {
         public InsufficientDataException () : base("There is insufficient data available to perform the requested operation.") { }
 
         /// <summary>
-        /// Inititalizes a new insufficient data exception with the given exception message.
+        /// Initializes a new insufficient data exception with the given exception message.
         /// </summary>
         /// <param name="message">The exception message.</param>
         public InsufficientDataException (String message) : base(message) { }
@@ -24,7 +24,7 @@ namespace Meta.Numerics.Statistics {
         /// <summary>
         /// Initializes a new insufficient data exception with the given exception message and inner exception.
         /// </summary>
-        /// <param name="message">The exeption message.</param>
+        /// <param name="message">The exception message.</param>
         /// <param name="innerException">The inner exception.</param>
         public InsufficientDataException (String message, Exception innerException) : base(message, innerException) { }
 

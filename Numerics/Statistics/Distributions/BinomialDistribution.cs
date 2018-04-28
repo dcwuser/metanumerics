@@ -182,7 +182,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (0.0);
             } else {
                 // use direct summation in tails
-                return (AdvancedMath.Beta(k + 1, n - k, p) / AdvancedMath.Beta(k + 1, n - k));
+                return (AdvancedMath.LeftRegularizedBeta(k + 1, n - k, p));
             }
         }
 

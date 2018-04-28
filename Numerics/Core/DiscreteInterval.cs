@@ -61,5 +61,10 @@ namespace Meta.Numerics {
             }
         }
 
+        /// <inheritdoc/>
+        public override string ToString () {
+            return ($"[{LeftEndpoint},{RightEndpoint}]");
+        }
+
     }
 }

@@ -1,9 +1,11 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 using Meta.Numerics;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics;
+using Meta.Numerics.Statistics.Distributions;
 
 namespace Examples {
     
@@ -130,6 +132,34 @@ namespace Examples {
 
             TestResult fisher = contingency.Binary.FisherExactTest();
             Console.WriteLine($"Fisher exact test has P = {fisher.Probability}.");
+
+        }
+
+        [ExampleMethod]
+        public static void FitToDistribution () {
+
+            Random rng = new Random(7);
+            WeibullDistribution distribution = new WeibullDistribution(3.0, 1.5);
+            List<double> sample = distribution.GetRandomValues(rng, 500).ToList();
+
+            WeibullFitResult weibull = sample.FitToWeibull();
+            Console.WriteLine($"Best fit scale: {weibull.Scale}");
+            Console.WriteLine($"Best fit shape: {weibull.Shape}");
+            Console.WriteLine($"Probability of fit: {weibull.GoodnessOfFit.Probability}");
+
+            LognormalFitResult lognormal = sample.FitToLognormal();
+            Console.WriteLine($"Best fit mu: {lognormal.Mu}");
+            Console.WriteLine($"Best fit sigma: {lognormal.Sigma}");
+            Console.WriteLine($"Probability of fit: {lognormal.GoodnessOfFit.Probability}");
+
+            var result = sample.MaximumLikelihoodFit(parameters => {
+                    return (new WeibullDistribution(parameters["Scale"], parameters["Shape"]));
+                },
+                    new Dictionary<string, double>() { {"Scale", 1.0}, {"Shape", 1.0}}
+                );
+            foreach(Parameter parameter in result.Parameters) {
+                Console.WriteLine($"{parameter.Name} = {parameter.Estimate}");
+            }
 
         }
 

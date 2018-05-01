@@ -1,0 +1,326 @@
+[
+  {
+    "Id": 0,
+    "Name": "Alex",
+    "Sex": "M",
+    "Birthdate": "1961-03-14T00:00:00-08:00",
+    "Height": 195.00270002503265,
+    "Weight": 96.497299939592438,
+    "Result": true
+  },
+  {
+    "Id": 1,
+    "Name": "Chris",
+    "Sex": "M",
+    "Birthdate": "1982-07-13T00:00:00-07:00",
+    "Height": 158.00128993434583,
+    "Weight": 55.731961175275821,
+    "Result": true
+  },
+  {
+    "Id": 2,
+    "Name": "David",
+    "Sex": "M",
+    "Birthdate": "1961-09-27T00:00:00-07:00",
+    "Height": 182.61926869112341,
+    "Weight": 88.021400918426082,
+    "Result": true
+  },
+  {
+    "Id": 3,
+    "Name": "Eric",
+    "Sex": "M",
+    "Birthdate": "1970-04-05T00:00:00-08:00",
+    "Height": 158.14786565195635,
+    "Weight": 54.733190173966847,
+    "Result": false
+  },
+  {
+    "Id": 4,
+    "Name": "Frederic",
+    "Sex": "M",
+    "Birthdate": "1968-04-12T00:00:00-07:00",
+    "Height": 181.02282130501419,
+    "Weight": 77.005314271887826,
+    "Result": true
+  },
+  {
+    "Id": 5,
+    "Name": "George",
+    "Sex": "M",
+    "Birthdate": "1987-08-27T00:00:00-07:00",
+    "Height": 192.63182711610352,
+    "Weight": 88.382239842508412,
+    "Result": true
+  },
+  {
+    "Id": 6,
+    "Name": "Hans",
+    "Sex": "M",
+    "Birthdate": "1987-04-25T00:00:00-07:00",
+    "Height": 158.99235186882228,
+    "Weight": 61.029592987845461,
+    "Result": false
+  },
+  {
+    "Id": 7,
+    "Name": "Igor",
+    "Sex": "M",
+    "Birthdate": "1970-12-31T00:00:00-08:00",
+    "Height": 173.85533221329328,
+    "Weight": 84.6326390799972,
+    "Result": true
+  },
+  {
+    "Id": 8,
+    "Name": "John",
+    "Sex": "M",
+    "Birthdate": "1953-12-15T00:00:00-08:00",
+    "Height": 189.0506260998784,
+    "Weight": 100.95065199521862,
+    "Result": true
+  },
+  {
+    "Id": 9,
+    "Name": "Kevin",
+    "Sex": "M",
+    "Birthdate": "1953-06-12T00:00:00-07:00",
+    "Height": 197.47114852416846,
+    "Weight": 77.419304933784574,
+    "Result": true
+  },
+  {
+    "Id": 10,
+    "Name": "Luke",
+    "Sex": "M",
+    "Birthdate": "1966-08-19T00:00:00-07:00",
+    "Height": 156.57236507021369,
+    "Weight": 47.781656356578544,
+    "Result": false
+  },
+  {
+    "Id": 11,
+    "Name": "Mark",
+    "Sex": "M",
+    "Birthdate": "1967-02-09T00:00:00-08:00",
+    "Height": 178.17077931674814,
+    "Weight": 84.1877123598489,
+    "Result": false
+  },
+  {
+    "Id": 12,
+    "Name": "Oscar",
+    "Sex": "M",
+    "Birthdate": "1990-04-16T00:00:00-07:00",
+    "Height": 158.64337129990432,
+    "Weight": 62.335799717945193,
+    "Result": true
+  },
+  {
+    "Id": 13,
+    "Name": "Peter",
+    "Sex": "M",
+    "Birthdate": "1983-11-11T00:00:00-08:00",
+    "Height": 192.93956939280469,
+    "Weight": 88.279960302626989,
+    "Result": true
+  },
+  {
+    "Id": 14,
+    "Name": "Richard",
+    "Sex": "M",
+    "Birthdate": "1958-10-27T00:00:00-08:00",
+    "Height": 170.94469975728188,
+    "Weight": 69.777699260842027,
+    "Result": true
+  },
+  {
+    "Id": 15,
+    "Name": "Stephan",
+    "Sex": "M",
+    "Birthdate": "1974-12-26T00:00:00-08:00",
+    "Height": 191.030695408274,
+    "Weight": 96.918714078148611,
+    "Result": true
+  },
+  {
+    "Id": 16,
+    "Name": "Thomas",
+    "Sex": "M",
+    "Birthdate": "1963-12-08T00:00:00-08:00",
+    "Height": 150.98392574080947,
+    "Weight": 74.383620791629568,
+    "Result": true
+  },
+  {
+    "Id": 17,
+    "Name": "Vincent",
+    "Sex": "M",
+    "Birthdate": "1949-05-06T00:00:00-07:00",
+    "Height": 191.16793915328057,
+    "Weight": 82.568191028513255,
+    "Result": false
+  },
+  {
+    "Id": 18,
+    "Name": "Anne",
+    "Sex": "F",
+    "Birthdate": "1997-08-29T00:00:00-07:00",
+    "Height": 156.23215860402894,
+    "Weight": 50.268014808977256,
+    "Result": false
+  },
+  {
+    "Id": 19,
+    "Name": "Belle",
+    "Sex": "F",
+    "Birthdate": "1999-08-11T00:00:00-07:00",
+    "Height": 177.53741374777053,
+    "Weight": 83.6624491049266,
+    "Result": false
+  },
+  {
+    "Id": 20,
+    "Name": "Dorothy",
+    "Sex": "F",
+    "Birthdate": "1945-03-17T00:00:00-08:00",
+    "Height": 171.5250267377051,
+    "Weight": 72.947751475033115,
+    "Result": true
+  },
+  {
+    "Id": 21,
+    "Name": "Elizabeth",
+    "Sex": "F",
+    "Birthdate": "1977-04-24T00:00:00-07:00",
+    "Height": 149.95861208785755,
+    "Weight": 58.340836051095692,
+    "Result": true
+  },
+  {
+    "Id": 22,
+    "Name": "Fiona",
+    "Sex": "F",
+    "Birthdate": "1979-09-05T00:00:00-07:00",
+    "Height": 156.04470418146062,
+    "Weight": 57.135662328295879,
+    "Result": false
+  },
+  {
+    "Id": 23,
+    "Name": "Helen",
+    "Sex": "F",
+    "Birthdate": "1989-08-07T00:00:00-07:00",
+    "Height": 144.13563621197696,
+    "Weight": 53.478514804991732,
+    "Result": false
+  },
+  {
+    "Id": 24,
+    "Name": "Julia",
+    "Sex": "F",
+    "Birthdate": "1980-01-09T00:00:00-08:00",
+    "Height": 151.08536854124642,
+    "Weight": 42.368291291194573,
+    "Result": true
+  },
+  {
+    "Id": 25,
+    "Name": "Kate",
+    "Sex": "F",
+    "Birthdate": "1956-12-10T00:00:00-08:00",
+    "Height": 154.6451283221989,
+    "Weight": 47.166394945376354,
+    "Result": false
+  },
+  {
+    "Id": 26,
+    "Name": "Louise",
+    "Sex": "F",
+    "Birthdate": "1997-10-22T00:00:00-07:00",
+    "Height": 146.92141042705154,
+    "Weight": 45.59886896180241,
+    "Result": true
+  },
+  {
+    "Id": 27,
+    "Name": "Mary",
+    "Sex": "F",
+    "Birthdate": "1957-04-06T00:00:00-08:00",
+    "Height": 134.43593059873257,
+    "Weight": 37.480329197956038,
+    "Result": false
+  },
+  {
+    "Id": 28,
+    "Name": "Natalie",
+    "Sex": "F",
+    "Birthdate": "1955-04-30T00:00:00-07:00",
+    "Height": 163.0015926598177,
+    "Weight": 63.016701063025366,
+    "Result": true
+  },
+  {
+    "Id": 29,
+    "Name": "Olivia",
+    "Sex": "F",
+    "Birthdate": "1984-07-19T00:00:00-07:00",
+    "Height": 136.69750563953744,
+    "Weight": 38.360601881818582,
+    "Result": false
+  },
+  {
+    "Id": 30,
+    "Name": "Ruth",
+    "Sex": "F",
+    "Birthdate": "1983-03-04T00:00:00-08:00",
+    "Height": 166.01059662158713,
+    "Weight": 64.587903852829186,
+    "Result": true
+  },
+  {
+    "Id": 31,
+    "Name": "Sarah",
+    "Sex": "F",
+    "Birthdate": "1949-06-09T00:00:00-07:00",
+    "Height": 158.3806715679963,
+    "Weight": 69.409054582600561,
+    "Result": true
+  },
+  {
+    "Id": 32,
+    "Name": "Theresa",
+    "Sex": "F",
+    "Birthdate": "1993-07-03T00:00:00-07:00",
+    "Height": 153.81109790349788,
+    "Weight": 58.529937771557236,
+    "Result": false
+  },
+  {
+    "Id": 33,
+    "Name": "Viola",
+    "Sex": "F",
+    "Birthdate": "1992-09-08T00:00:00-07:00",
+    "Height": 143.42116282339396,
+    "Weight": 52.544859982132074,
+    "Result": false
+  },
+  {
+    "Id": 34,
+    "Name": null,
+    "Sex": "M",
+    "Birthdate": "1970-07-27T00:00:00",
+    "Height": 183.0,
+    "Weight": 74.0,
+    "Result": false
+  },
+  {
+    "Id": 35,
+    "Name": "Zoey",
+    "Sex": "F",
+    "Birthdate": "2007-09-17T00:00:00",
+    "Height": 138.0,
+    "Weight": null,
+    "Result": false
+  }
+]

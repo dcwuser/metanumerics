@@ -9,9 +9,78 @@ using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 
+using Newtonsoft.Json;
+
 namespace Examples {
     
     public static class Data {
+
+        public static void ConstructTestCsv () {
+
+            using (TextWriter writer = new StreamWriter(File.OpenWrite("test.csv"))) {
+                writer.WriteLine("Id, Name, Sex, Birthdate, Height, Weight, Result");
+                writer.WriteLine("1, John, M, 1970-01-02, 190.0, 75.0, True");
+                writer.WriteLine("2, Mary, F, 1980-02-03, 155.0, 40.0, True");
+                writer.WriteLine("3, Luke, M, 1990-03-04, 180.0, 60.0, False");
+            }
+
+        }
+
+        [ExampleMethod]
+        public static void ImportingData () {
+
+            FrameTable data;
+            using (TextReader reader = File.OpenText("test.csv")) {
+                data = FrameTable.FromCsv(reader);
+            }
+
+            Console.WriteLine($"Imported CSV file with {data.Rows.Count} rows.");
+            Console.WriteLine("The names and types of the columns are:");
+            foreach (FrameColumn column in data.Columns) {
+                Console.WriteLine($"  {column.Name} of type {column.StorageType}");
+            }
+
+            FrameTable titanic;
+            Uri url = new Uri("https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv");
+            WebRequest request = WebRequest.Create(url);
+            using (WebResponse response = request.GetResponse()) {
+                using (StreamReader reader = new StreamReader(response.GetResponseStream())) {
+                    titanic = FrameTable.FromCsv(reader);
+                }
+            }
+
+            Uri jsonUrl = new Uri("https://raw.githubusercontent.com/dcwuser/metanumerics/master/Examples/Data/example.json");
+            WebClient client = new WebClient();
+            string input = client.DownloadString(jsonUrl);
+            List<Dictionary<string,object>> output = JsonConvert.DeserializeObject<List<Dictionary<string,object>>>(input);
+            FrameTable jsonExample = FrameTable.FromDictionaries(output);
+
+            // Define the schema.
+            FrameTable table = new FrameTable();
+            table.AddColumn<int>("Id");
+            table.AddColumn<string>("Name");
+            table.AddColumn<string>("Sex");
+            table.AddColumn<DateTime>("Birthdate");
+            table.AddColumn<double>("Height");
+            table.AddColumn<double?>("Weight");
+            table.AddColumn<bool>("Result");
+            
+            // Add rows using as arrays of objects.
+            table.AddRow(1, "John", "M", DateTime.Parse("1970-01-02"), 190.0, 75.0, true);
+            table.AddRow(2, "Mary", "F", DateTime.Parse("1980-02-03"), 155.0, null, true);
+
+            // Add a row using a dictionary. This is more verbose, but very clear.
+            table.AddRow(new Dictionary<string,object>(){
+                {"Id", 3},
+                {"Name", null},
+                {"Sex", "M"},
+                {"Birthdate", DateTime.Parse("1990-03-04")},
+                {"Height", 180.0},
+                {"Weight", 60.0},
+                {"Result", false}
+            });            
+
+        }        
 
         [ExampleMethod]
         public static void ManipulatingData () {
@@ -82,8 +151,18 @@ namespace Examples {
                     table = FrameTable.FromCsv(reader);
                 }
             }
+            FrameView view = table.WhereNotNull();
 
-            SummaryStatistics summary = new SummaryStatistics(table["Height"].As<double>());
+            // Get the column with (zero-based) index 4.
+            FrameColumn column4 = view.Columns[4];
+            // Get the column named "Height".
+            FrameColumn heightsColumn = view.Columns["Height"];
+            // Even easier way to get the column named "Height".
+            FrameColumn alsoHeightsColumn = view["Height"];
+
+            IReadOnlyList<double> heights = view["Height"].As<double>();
+
+            SummaryStatistics summary = new SummaryStatistics(view["Height"].As<double>());
             Console.WriteLine($"Count = {summary.Count}");
             Console.WriteLine($"Mean = {summary.Mean}");
             Console.WriteLine($"Standard Deviation = {summary.StandardDeviation}");
@@ -92,73 +171,76 @@ namespace Examples {
             Console.WriteLine($"Estimated population standard deviation = {summary.PopulationStandardDeviation}");
 
             IReadOnlyList<double> maleHeights =
-                table.Where<string>("Sex", s => s == "M").Columns["Height"].As<double>();
+                view.Where<string>("Sex", s => s == "M").Columns["Height"].As<double>();
             IReadOnlyList<double> femaleHeights =
-                table.Where<string>("Sex", s => s == "F").Columns["Height"].As<double>();
+                view.Where<string>("Sex", s => s == "F").Columns["Height"].As<double>();
             TestResult test = Univariate.StudentTTest(maleHeights, femaleHeights);
-            Console.WriteLine($"{test.Statistic.Name} = {test.Statistic.Value}, P = {test.Probability}");
+            Console.WriteLine($"{test.Statistic.Name} = {test.Statistic.Value}");
+            Console.WriteLine($"P = {test.Probability}");
 
             TestResult maleHeightNormality = maleHeights.ShapiroFranciaTest();
-            TestResult totalHeightNormality = table["Height"].As<double>().ShapiroFranciaTest();
+            TestResult totalHeightNormality = view["Height"].As<double>().ShapiroFranciaTest();
             TestResult heightCompatibility = Univariate.KolmogorovSmirnovTest(maleHeights, femaleHeights);
 
             LinearRegressionResult fit =
-                table["Weight"].As<double>().LinearRegression(table["Height"].As<double>());
+                view["Weight"].As<double>().LinearRegression(view["Height"].As<double>());
             Console.WriteLine($"Model weight = ({fit.Slope}) * height + ({fit.Intercept}).");
             Console.WriteLine($"Model explains {fit.RSquared * 100.0}% of variation.");
 
             ContingencyTable<string, bool> contingency =
-                Bivariate.Crosstabs(table["Sex"].As<string>(), table["Result"].As<bool>());
+                Bivariate.Crosstabs(view["Sex"].As<string>(), view["Result"].As<bool>());
             Console.WriteLine($"Male incidence: {contingency.ProbabilityOfColumnConditionalOnRow(true, "M")}");
-            Console.WriteLine($"Female incidence: {contingency.ProbabilityOfColumnConditionalOnRow(false, "F")}");
+            Console.WriteLine($"Female incidence: {contingency.ProbabilityOfColumnConditionalOnRow(true, "F")}");
             Console.WriteLine($"Log odds ratio = {contingency.Binary.LogOddsRatio}");
 
-            table.AddComputedColumn("Bmi", r => ((double) r["Weight"])/MoreMath.Sqr((double) r["Height"] / 100.0));
-            table.AddComputedColumn("Age", r=> (DateTime.Now - (DateTime) r["Birthdate"]).TotalDays / 365.24);
+            view.AddComputedColumn("Bmi", r => ((double) r["Weight"])/MoreMath.Sqr((double) r["Height"] / 100.0));
+            view.AddComputedColumn("Age", r=> (DateTime.Now - (DateTime) r["Birthdate"]).TotalDays / 365.24);
 
             MultiLinearLogisticRegressionResult result = 
-                table["Result"].As<bool>().MultiLinearLogisticRegression(
-                    table["Bmi"].As<double>(),
-                    table["Sex"].As<string, double>(s => s == "M" ? 1.0 : 0.0)
+                view["Result"].As<bool>().MultiLinearLogisticRegression(
+                    view["Bmi"].As<double>(),
+                    view["Sex"].As<string, double>(s => s == "M" ? 1.0 : 0.0)
                 );
             foreach (Parameter parameter in result.Parameters) {
                 Console.WriteLine($"{parameter.Name} = {parameter.Estimate}");
             }
 
-            //TestResult ageResultPearson = Bivariate.PearsonRTest(table["Age"].As<double>(), table["Result"].As<double>());
-            TestResult spearman = Bivariate.SpearmanRhoTest(table["Age"].As<double>(), table["Result"].As<double>());
+            TestResult spearman = Bivariate.SpearmanRhoTest(view["Age"].As<double>(), view["Result"].As<double>());
             Console.WriteLine($"{spearman.Statistic.Name} = {spearman.Statistic.Value} P = {spearman.Probability}");
 
         }        
 
-        public static void ConstructData () {
+        public static void ConstructExampleData () {
 
             FrameTable table = new FrameTable();
             table.AddColumn<int>("Id");
             table.AddColumn<string>("Name");
             table.AddColumn<string>("Sex");
             table.AddColumn<DateTime>("Birthdate");
-            table.AddColumns<double>("Height", "Weight");
+            table.AddColumn<double>("Height");
+            table.AddColumns<double?>("Weight");
             table.AddColumn<bool>("Result");
 
-            //Random rng = new Random(3);
-            //Random rng = new Random(314159);
-            // Random rng = new Random(271828);
             Random rng = new Random(1000001);
 
-            //string[] maleNames = new string[1024];
             string[] maleNames = new string[] {"Alex", "Chris", "David", "Eric", "Frederic", "George", "Hans", "Igor", "John", "Kevin", "Luke", "Mark", "Oscar", "Peter", "Richard", "Stephan", "Thomas", "Vincent" };
             AddRows(table, maleNames, "M", 175.0, 12.0, 24.0, 3.0, 1, rng);
 
-            //string[] femaleNames = new string[1024];
             string[] femaleNames = new string[] {"Anne", "Belle", "Dorothy", "Elizabeth", "Fiona", "Helen", "Julia", "Kate", "Louise", "Mary", "Natalie", "Olivia", "Ruth", "Sarah", "Theresa", "Viola" };
             AddRows(table, femaleNames, "F", 160.0, 10.0, 24.0, 3.0, 0, rng);
 
-            string path = @"C:\Users\dawright\Documents\example.csv";
+            // add rows with nulls
+            table.AddRow(table.Rows.Count, null, "M", DateTime.Parse("1970-07-27"), 183.0, 74.0, false);
+            table.AddRow(table.Rows.Count, "Zoey", "F", DateTime.Parse("2007-09-17"), 138.0, null, false);
+
+            string path = @"example.csv";
             using (StreamWriter writer = new StreamWriter(File.OpenWrite(path))) {
                 table.ToCsv(writer);
             }
             Console.WriteLine(File.Exists(path));
+
+            string json = JsonConvert.SerializeObject(table.ToDictionaries(), Formatting.Indented);
+            File.WriteAllText("example.json", json);
 
         }
 

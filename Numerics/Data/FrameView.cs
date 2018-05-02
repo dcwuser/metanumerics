@@ -29,7 +29,7 @@ namespace Meta.Numerics.Data
 
 
     /// <summary>
-    /// A read-only view of an array of data.
+    /// Represents a read-only view of an array of data.
     /// </summary>
     /// <remarks>
     /// <para>This is the central class for viewing data in our data frame system.</para>
@@ -50,10 +50,14 @@ namespace Meta.Numerics.Data
     /// <see cref="this[string]"/> accessor to get a column, together with the <see cref="FrameColumn.As{T}"/>
     /// caster to expose it as a collection of the required type.
     /// For example, to obtain a estimate of the mean of the population from the sample in the
-    /// column named "heights", write <tt>view["height"].As&lt;double&gt;().PopulationMean()</tt>.</para>
+    /// column named "heights", write <tt>view["height"].As&lt;double&gt;().PopulationMean()</tt>.
+    /// Note that, for this to succeed, the underlying storage type of the heights column need not be double. As
+    /// long as the data are convertible to the target type, no problems will arise. For example,
+    /// the underlying storage type might be int, or double? as long as no null values are present in the view.</para>
     /// <para>To create the original array of data that will be manipulated, use the <see cref="FrameTable"/>
     /// class. Note that, because the underlying data is not copied when a new view is generated, changes
-    /// to the original table may not be reflected in the views that have been generated from it.</para>
+    /// to the original table may have unexpected consequences for the views linked to it. Best practice
+    /// is not to change the underlying data after generating views based on it.</para>
     /// <para>You can export a view to CSV or JSON formats using the <see cref="ToCsv(TextWriter)"/>
     /// and <see cref="ToDictionaries"/> methods.</para>
     /// </remarks>

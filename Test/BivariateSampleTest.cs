@@ -371,7 +371,7 @@ namespace Test {
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     result.R.Probability, result.F.Probability,
-                    new EvaluationSettings() { RelativePrecision = 1.0E-14, AbsolutePrecision = 1.0E-16 }
+                    new EvaluationSettings() { RelativePrecision = 1.0E-13, AbsolutePrecision = 1.0E-16 }
                 ));
 
             }

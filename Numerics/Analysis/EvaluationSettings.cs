@@ -5,12 +5,24 @@ using Meta.Numerics;
 namespace Meta.Numerics.Analysis {
 
     /// <summary>
-    /// Contains settings controling the evaluation of a function.
+    /// Contains settings governing the evaluation of a function.
     /// </summary>
+    /// <remarks>
+    /// <para>Negative values of <see cref="EvaluationBudget"/>,
+    /// <see cref="RelativePrecision"/>, and <see cref="AbsolutePrecision"/>
+    /// indicate that the analysis method should use its defaults for
+    /// that property. Override the default for a property by
+    /// setting it explicitly. If you set values for some properties
+    /// but not others, your setting will be applied to the property
+    /// you set and the others will use defaults.</para>
+    /// <para>When an analysis method returns an <see cref="EvaluationResult"/>
+    /// object, its evaluation setting object will contain the specific
+    /// settings used, so you can see which default values were applied.</para>
+    /// </remarks>
     public class EvaluationSettings {
 
         /// <summary>
-        /// Initializes a new set of default evaulation settings.
+        /// Initializes a new set of default evaluation settings.
         /// </summary>
         public EvaluationSettings () {
             evaluationBudget = -1;

@@ -23,7 +23,6 @@ namespace Examples
 
         static void Main(string[] args)
         {
-
             MethodInfo[] methods = GetExampleMethods();
             Dictionary<string, MethodInfo> index = new Dictionary<string, MethodInfo>();
             foreach (MethodInfo method in methods) {

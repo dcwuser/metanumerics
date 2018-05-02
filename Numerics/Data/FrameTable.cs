@@ -13,7 +13,7 @@ namespace Meta.Numerics.Data
     // Additional flags could include: iid, series, circular
 
     /// <summary>
-    /// A modify-able array of data.
+    /// Represents a modify-able array of data.
     /// </summary>
     /// <remarks>
     /// <para>This is the central class for storing data in our data frame system.</para>
@@ -21,7 +21,7 @@ namespace Meta.Numerics.Data
     /// file or the <see cref="FromDictionaries"/> method to create a frame table from JSON or another
     /// collection-of-dictionaries representation. Or create one programmatically by using the
     /// <see cref="FrameTable()"/> constructor to instantiate an empty data frame and
-    /// <see cref="AddColumn{T}(string)"/> and <see cref="AddRow(object[])"/> to add columns and rows.</para>
+    /// <see cref="AddColumn{T}(string)" autoUpgrade="true"/> and <see cref="AddRow(object[])" autoUpgrade="true"/> to add columns and rows.</para>
     /// <para>Using the methods inherited from the <see cref="FrameView"/> class, you can filter, re-order,
     /// manipulate, and analyze data without incurring the space or time costs of copying the stored data.</para>
     /// </remarks>
@@ -165,7 +165,7 @@ namespace Meta.Numerics.Data
         }
 
         /// <summary>
-        /// Adds the new columns with the given names.
+        /// Adds new columns with the given names.
         /// </summary>
         /// <typeparam name="T">The type of the columns.</typeparam>
         /// <param name="names">The names of the columns.</param>

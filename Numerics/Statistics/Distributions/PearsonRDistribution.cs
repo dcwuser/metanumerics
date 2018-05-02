@@ -25,7 +25,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (Math.Abs(x) > 1.0) {
                 return (0.0);
             } else {
-                return (Math.Pow(1.0 - x * x, (n - 4) / 2.0) / AdvancedMath.Beta(0.5, (n - 2) / 2.0));
+                return (Math.Pow((1.0 - x) * (1.0 + x), (n - 4) / 2.0) / AdvancedMath.Beta(0.5, (n - 2) / 2.0));
             }
         }
 
@@ -89,7 +89,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (x <= -1.0) {
                 return (0.0);
             } else if (x < 0.0) {
-                return (AdvancedMath.Beta((n - 2) / 2.0, 0.5, 1.0 - x * x) / AdvancedMath.Beta((n-2) / 2.0, 0.5) / 2.0);
+                return (AdvancedMath.Beta((n - 2) / 2.0, 0.5, (1.0 - x) * (1.0 + x)) / AdvancedMath.Beta((n-2) / 2.0, 0.5) / 2.0);
             } else if (x < 1.0) {
                 return ((1.0 + AdvancedMath.Beta(0.5, (n - 2) / 2.0, x * x) / AdvancedMath.Beta(0.5, (n-2) / 2.0)) / 2.0);
             } else {

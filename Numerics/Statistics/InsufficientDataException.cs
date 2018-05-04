@@ -1,7 +1,4 @@
 ﻿using System;
-#if !SILVERLIGHT
-using System.Runtime.Serialization;
-#endif
 
 namespace Meta.Numerics.Statistics {
 

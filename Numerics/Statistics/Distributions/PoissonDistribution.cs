@@ -26,13 +26,12 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (k < 0) {
                 return (0.0);
             } else {
-                // these are the same expression, but the form for small arguments is faster and the form for large arguments avoids overflow
+                // These are the same expression, but the form for small arguments is faster,
+                // while the form for large arguments avoids overflow and cancellation errors.
                 if (k < 16) {
                     return (Math.Exp(-mu) * MoreMath.Pow(mu, k) / AdvancedIntegerMath.Factorial(k));
                 } else {
-                    return (Math.Exp(
-                        k * Math.Log(mu) - AdvancedIntegerMath.LogFactorial(k) - mu
-                    ));
+                    return(Stirling.PoissonProbability(mu, k));
                 }
             }
         }

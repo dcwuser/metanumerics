@@ -555,28 +555,28 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
         public static double BesselJ (double nu, double x) {
 
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
 
-            // use reflection to turn negative orders into positive orders
+            // Use reflection to turn negative orders into positive orders.
             if (nu < 0.0) {
                 double mu = -nu;
-                return (Math.Cos(Math.PI * mu) * BesselJ(mu, x) - Math.Sin(Math.PI * mu) * BesselY(mu, x));
+                return (MoreMath.CosPi(mu) * BesselJ(mu, x) - MoreMath.SinPi(mu) * BesselY(mu, x));
             }
             
             if (x < 4.0 + Math.Sqrt(nu)) {
-                // we are close enough to origin to use series
+                // We are close enough to origin to use the series.
                 return(BesselJ_Series(nu, x));
             } else if (x > 32.0 + nu * nu / 2.0) {
-                // we are far enough from origin to use the asymptotic expansion
+                // We are far enough from origin to use the asymptotic expansion.
                 SolutionPair result = Bessel_Asymptotic(nu, x);
                 return (result.FirstSolutionValue);
             } else if (x > nu) {
-                // we are far enough from origin to evaluate CF2, so use Steed's method
+                // We are far enough from origin to evaluate CF2, so use Steed's method.
                 SolutionPair result = Bessel_Steed(nu, x);
                 return (result.FirstSolutionValue);
             } else {
-                // we have x < nu, but x is still not small enough to use series; this only occurs for nu >~ 6
-                // to handle this case, compute J_{nu+1}/J_{nu}, recurse down to mu where mu ~ x < nu; use
+                // We have x < nu, but x is still not small enough to use the series; this only occurs for nu >~ 6.
+                // To handle this case, compute J_{nu+1}/J_{nu}, recurse down to mu where mu ~ x < nu; use
                 // Steed's method to evaluate J_{mu} and re-normalize J_{nu}.
 
                 // for example, for mu = 16, x = 12, we can't evaluate CF2 because x < 16; so assume J_16=1, compute J_17 / J_16,
@@ -619,11 +619,10 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
         public static double BesselY (double nu, double x) {
 
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
 
             if (nu < 0.0) {
-                double np = nu * Math.PI;
-                return (Math.Cos(np) * BesselY(-nu, x) - Math.Sin(np) * BesselJ(-nu, x));
+                return (MoreMath.CosPi(nu) * BesselY(-nu, x) - MoreMath.SinPi(nu) * BesselJ(-nu, x));
             }
 
             if (x == 0.0) {
@@ -712,8 +711,8 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
         public static SolutionPair Bessel (double nu, double x) {
 
-            if (nu < 0.0) throw new ArgumentOutOfRangeException("nu");
-            if (x < 0.0) throw new ArgumentOutOfRangeException("x");
+            if (nu < 0.0) throw new ArgumentOutOfRangeException(nameof(nu));
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
 
             if (x == 0.0) {
                 return (Bessel_Zero(nu));

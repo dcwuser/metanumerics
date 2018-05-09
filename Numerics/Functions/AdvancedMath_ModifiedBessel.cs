@@ -228,7 +228,8 @@ namespace Meta.Numerics.Functions {
 
             double x2 = x / 2.0;
             double xx = x2 * x2;
-            double dI = AdvancedMath.PowOverGammaPlusOne(x2, nu);
+            double dI = Math.Pow(x2, nu) / AdvancedMath.Gamma(nu + 1.0);
+            //double dI = AdvancedMath.PowOverGammaPlusOne(x2, nu);
             I = dI;
             IP = nu * dI;
             for (int k = 1; k < Global.SeriesMax; k++) {
@@ -248,9 +249,10 @@ namespace Meta.Numerics.Functions {
 
         private static double ModifiedBesselI_Series (double nu, double x) {
 
-            double dI = AdvancedMath.PowOverGammaPlusOne(x / 2.0, nu);
+            double x2 = x / 2.0;
+            double dI = Math.Pow(x2, nu) / AdvancedMath.Gamma(nu + 1.0);
             double I = dI;
-            double xx = x * x / 4.0;
+            double xx = x2 * x2;
             for (int k = 1; k < Global.SeriesMax; k++) {
                 double I_old = I;
                 dI = dI * xx / (nu + k) / k;
@@ -619,6 +621,13 @@ namespace Meta.Numerics.Functions {
 
 #endif
 
+        private static readonly double Ai0 = 1.0 / (Math.Pow(3.0, 2.0 / 3.0) * AdvancedMath.Gamma(2.0 / 3.0));
+
+        private static readonly double AiPrime0 = -1.0 / (Math.Pow(3.0, 1.0 / 3.0) * AdvancedMath.Gamma(1.0 / 3.0));
+
+        private static readonly double Bi0 = 1.0 / (Math.Pow(3.0, 1.0 / 6.0) * AdvancedMath.Gamma(2.0 / 3.0));
+
+        private static readonly double BiPrime0 = Math.Pow(3.0, 1.0 / 6.0) / AdvancedMath.Gamma(1.0 / 3.0);
 
         /// <summary>
         /// Computes the Airy function of the first kind.
@@ -646,29 +655,25 @@ namespace Meta.Numerics.Functions {
             }
         }
 
-        // problematic for positive x once exponential decay sets in; don't use for x > 2
-
-        //private static readonly double AiryNorm1 = 1.0 / (Math.Pow(3.0, 2.0 / 3.0) * AdvancedMath.Gamma(2.0 / 3.0));
-
-        //private static readonly double AiryNorm2 = 1.0 / (Math.Pow(3.0, 1.0 / 3.0) * AdvancedMath.Gamma(1.0 / 3.0));
+        // The Maclaurin series for Ai (DLMF 9.4.1) is:
+        //   Ai(x) = Ai(0) [ 1 + 1/3! x^3 + 1 * 4 / 6! x^6 + 1 * 4 * 7 / 9! x^9 + \cdots] +
+        //           x Ai'(0) [ 1 + 2 / 4! x^3 + 2 * 5 / 7! x^6 + 2 * 5 * 8 / 10! x^9 + \cdots ]
 
         private static double AiryAi_Series (double x) {
 
-            double AiryNorm1 = 1.0 / (Math.Pow(3.0, 2.0 / 3.0) * AdvancedMath.Gamma(2.0 / 3.0));
-            double AiryNorm2 = 1.0 / (Math.Pow(3.0, 1.0 / 3.0) * AdvancedMath.Gamma(1.0 / 3.0));
+            // problematic for positive x once exponential decay sets in; don't use for x > 2
+            Debug.Assert(x <= 2.0);
 
-            double p = AiryNorm1;
-            double q = AiryNorm2 * x;
-            double f = p - q;
-            //double fp = -AiryNorm2;
+            double p = Ai0;
+            double q = AiPrime0 * x;
+            double f = p + q;
 
             double x3 = x * x * x;
             for (int k = 0; k < Global.SeriesMax; k+=3) {
                 double f_old = f;
-                p *= x3 / ((k + 2)*(k + 3));
-                q *= x3 / ((k + 3)*(k + 4));
-                f += p - q;
-                //fp += (k + 3) * p / x - (k + 4) * q / x;
+                p *= x3 / ((k + 2) * (k + 3));
+                q *= x3 / ((k + 3) * (k + 4));
+                f += p + q;
                 if (f == f_old) {
                     return (f);
                 }
@@ -691,16 +696,16 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Airy_functions" />
         public static double AiryBi (double x) {
             if (x < -3.0) {
-                // change to use a function that returns J and Y together
+                // Get from Bessel functions.
                 double y = 2.0 / 3.0 * Math.Pow(-x, 3.0 / 2.0);
-                double J = BesselJ(1.0 / 3.0, y);
-                double Y = BesselY(1.0 / 3.0, y);
-                return (-Math.Sqrt(-x) / 2.0 * (J / Global.SqrtThree + Y));
+                SolutionPair s = Bessel(1.0 / 3.0, y);
+                return (-Math.Sqrt(-x) / 2.0 * (s.FirstSolutionValue / Global.SqrtThree + s.SecondSolutionValue));
             } else if (x < 5.0) {
-                // The Bi series is better than the Ai series for positive values, because it blows up rather than down.
+                // The Bi series is better than the Ai series for positive values, because it blows up rather than cancelling down.
                 // It's also slightly better for negative values, because a given number of oscillations occur further out.  
                 return (AiryBi_Series(x));
             } else {
+                // Get from modified Bessel functions.
                 double y = 2.0 / 3.0 * Math.Pow(x, 3.0 / 2.0);
                 SolutionPair s = ModifiedBessel(1.0 / 3.0, y);
                 return (Math.Sqrt(x) * (2.0 / Global.SqrtThree * s.FirstSolutionValue + s.SecondSolutionValue / Math.PI));
@@ -709,8 +714,8 @@ namespace Meta.Numerics.Functions {
 
         private static double AiryBi_Series (double x) {
 
-            double p = 1.0 / (Math.Pow(3.0, 1.0 / 6.0) * AdvancedMath.Gamma(2.0 / 3.0));
-            double q = x * (Math.Pow(3.0, 1.0 / 6.0) / AdvancedMath.Gamma(1.0 / 3.0));
+            double p = Bi0;
+            double q = x * BiPrime0;
             double f = p + q;
 
             double x3 = x * x * x;
@@ -734,12 +739,12 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>Airy functions are solutions to the Airy differential equation:</para>
         /// <img src="../images/AiryODE.png" />
-        /// <para>The Airy functions appear in quantum mechanics in the semi classical WKB solution to the wave functions in a potential.</para>
+        /// <para>The Airy functions appear in quantum mechanics in the semi-classical WKB solution to the wave functions in a potential.</para>
         /// <para>For negative arguments, Ai(x) and Bi(x) are oscillatory. For positive arguments, Ai(x) decreases exponentially and Bi(x) increases
         /// exponentially with increasing x.</para>
         /// <para>This method simultaneously computes both Airy functions and their derivatives. If you need both Ai and Bi, it is faster to call
         /// this method once than to call <see cref="AiryAi(double)"/> and <see cref="AiryBi(double)"/> separately. If on, the other hand, you need
-        /// only Ai or only Bi, it is faster to call the appropriate method to compute the one you need.</para>
+        /// only Ai or only Bi, and no derivative values, it is faster to call the appropriate method to compute the one you need.</para>
         /// </remarks>
         /// <seealso cref="AiryAi"/>
         /// <seealso cref="AiryBi"/>

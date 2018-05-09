@@ -86,7 +86,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="P">The fraction of the variance to explain, which must lie between zero and one.</param>
         /// <returns>The required number of components.</returns>
         public int MinimumDimension (double P) {
-            if ((P < 0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             // binary search would be faster, but linear search will do for now
             double wss = P * wSquaredSum[wSquaredSum.Length-1];
             for (int i = 0; i < wSquaredSum.Length - 1; i++) {

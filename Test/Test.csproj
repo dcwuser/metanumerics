@@ -62,6 +62,7 @@
     <Compile Include="AdvancedMathTest_Hypergeometric.cs" />
     <Compile Include="AdvancedMathTest_Jacobi.cs" />
     <Compile Include="AnovaTest.cs" />
+    <Compile Include="BesselZeroTest.cs" />
     <Compile Include="BinaryContingencyTableTest.cs" />
     <Compile Include="BivariateSampleTest.cs" />
     <Compile Include="Bugs.cs" />

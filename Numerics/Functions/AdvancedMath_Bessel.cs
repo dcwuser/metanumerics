@@ -236,9 +236,12 @@ namespace Meta.Numerics.Functions {
         // having an integer-specific version is slightly faster
 
         private static double BesselJ_Series (int n, double x) {
-            double dJ = MoreMath.Pow(x / 2.0, n) / AdvancedIntegerMath.Factorial(n);
+            Debug.Assert(n >= 0);
+            Debug.Assert(x >= 0.0);
+            double z = x / 2.0;
+            double dJ = MoreMath.Pow(z, n) / AdvancedIntegerMath.Factorial(n);
             double J = dJ;
-            double zz = - x * x / 4.0;
+            double zz = - z * z;
             for (int k = 1; k < Global.SeriesMax; k++) {
                 double J_old = J;
                 dJ = dJ * zz / ((n + k) * k);
@@ -388,7 +391,11 @@ namespace Meta.Numerics.Functions {
 
         private static double BesselJ_Series (double nu, double x) {
             double z = x / 2.0;
-            double dJ = AdvancedMath.PowOverGammaPlusOne(z, nu);
+            // For a while, I was trying to combine Pow and Stirling Gamma for large nu,
+            // but there is really no advantage to be gained; z is small so both are small,
+            // there is no cancellation between them.
+            double dJ = Math.Pow(z, nu) / AdvancedMath.Gamma(nu + 1.0);
+            //double dJ = AdvancedMath.PowOverGammaPlusOne(z, nu);
             double J = dJ;
             double zz = -z * z;
             for (int k = 1; k < Global.SeriesMax; k++) {

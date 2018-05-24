@@ -74,6 +74,7 @@
     <Compile Include="DiagonalMatrixTests.cs" />
     <Compile Include="FrameTableTests.cs" />
     <Compile Include="DataListTests.cs" />
+    <Compile Include="UInt128Test.cs" />
     <Compile Include="UncertainMeasurementSampleTests.cs" />
     <Compile Include="FrameViewTests.cs" />
     <Compile Include="DbTest.cs" />

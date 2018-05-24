@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 
-using Meta.Numerics;
+using Meta.Numerics.Analysis;
 
 namespace Meta.Numerics.Functions {
 
@@ -85,7 +85,7 @@ namespace Meta.Numerics.Functions {
                 // These values grow fast. To avoid overflow, we will rescale our results if they get too big.
                 // Since we will multiply by (2k/x), which is greater than one since x < k, we set a limit
                 // that is smaller than the maximum double by this factor and a bit more.
-                double max = (Double.MaxValue / 16.0) / (2 * m / x); 
+                double max = (Double.MaxValue / 16.0) / (2 * m / x);
 
                 double Jp1 = 0.0;
                 double J = 1.0;
@@ -185,7 +185,7 @@ namespace Meta.Numerics.Functions {
 
                 // this doesn't seem to be working; use the real routine for now
                 return (BesselY((double) n, x));
-                
+
                 /*
                 double sum1 = 0.0;
                 double sum2 = 0.0;
@@ -229,7 +229,7 @@ namespace Meta.Numerics.Functions {
                 */
 
             }
-            
+
         }
 
         // this is just an integer version of the series we implement below for doubles;
@@ -241,7 +241,7 @@ namespace Meta.Numerics.Functions {
             double z = x / 2.0;
             double dJ = MoreMath.Pow(z, n) / AdvancedIntegerMath.Factorial(n);
             double J = dJ;
-            double zz = - z * z;
+            double zz = -z * z;
             for (int k = 1; k < Global.SeriesMax; k++) {
                 double J_old = J;
                 dJ = dJ * zz / ((n + k) * k);
@@ -425,7 +425,7 @@ namespace Meta.Numerics.Functions {
             // Note that the J' series is just with J series with teach term having one less power,
             // and each term multipled by the power it has in the J series.
             double x2 = x / 2.0;
-            double x22 = - x2 * x2;
+            double x22 = -x2 * x2;
             double dJ = AdvancedMath.PowOverGammaPlusOne(x2, nu);
             /*
             if (nu < 128.0) {
@@ -436,7 +436,7 @@ namespace Meta.Numerics.Functions {
             }
             */
             J = dJ;
-            JP = nu * dJ; 
+            JP = nu * dJ;
             for (int k = 1; k < Global.SeriesMax; k++) {
                 double J_old = J;
                 double JP_old = JP;
@@ -536,7 +536,7 @@ namespace Meta.Numerics.Functions {
             Complex D = 1.0 / b;
             Complex Df = a / b;
             Complex f = Df;
-            for (int k = 3; k < Global.SeriesMax; k+=2) {
+            for (int k = 3; k < Global.SeriesMax; k += 2) {
                 Complex f_old = f;
                 a = k * k / 4.0 - nu2;
                 //b.Im = b.Im + 2.0;
@@ -544,7 +544,7 @@ namespace Meta.Numerics.Functions {
                 D = 1.0 / (b + a * D);
                 Df = (b * D - 1.0) * Df;
                 f += Df;
-                if (f == f_old) return (-0.5/x + ComplexMath.I + ComplexMath.I * f / x);
+                if (f == f_old) return (-0.5 / x + ComplexMath.I + ComplexMath.I * f / x);
             }
             throw new NonconvergenceException();
         }
@@ -569,10 +569,10 @@ namespace Meta.Numerics.Functions {
                 double mu = -nu;
                 return (MoreMath.CosPi(mu) * BesselJ(mu, x) - MoreMath.SinPi(mu) * BesselY(mu, x));
             }
-            
+
             if (x < 4.0 + Math.Sqrt(nu)) {
                 // We are close enough to origin to use the series.
-                return(BesselJ_Series(nu, x));
+                return (BesselJ_Series(nu, x));
             } else if (x > 32.0 + nu * nu / 2.0) {
                 // We are far enough from origin to use the asymptotic expansion.
                 SolutionPair result = Bessel_Asymptotic(nu, x);
@@ -604,7 +604,7 @@ namespace Meta.Numerics.Functions {
                 }
 
                 Complex z = Bessel_CF2(mu, x);
-                SolutionPair result = Bessel_Steed(mu / x - Jp1 / J, z, 2.0 / Math.PI / x , Math.Sign(J));
+                SolutionPair result = Bessel_Steed(mu / x - Jp1 / J, z, 2.0 / Math.PI / x, Math.Sign(J));
 
                 return (result.FirstSolutionValue / J);
 
@@ -742,7 +742,7 @@ namespace Meta.Numerics.Functions {
                 Bessel_RecurrUpward(mu, x, ref Y, ref YP, n);
 
                 // return J, J', Y, Y' in a solution pair
-                return(new SolutionPair(J, JP, Y, YP));
+                return (new SolutionPair(J, JP, Y, YP));
 
             } else if (x > 32.0 + nu * nu / 2.0) {
                 // Far enough out, use the asymptotic series.
@@ -788,7 +788,7 @@ namespace Meta.Numerics.Functions {
         // While mathematically valid for F being either J or Y, it is unstable for J in the upward direction in the region x < nu
         // This is because Y >> J in that region, so a very small admixture of Y into F, introduced by roundoff error, will
         // quickly dwarf the desired J solution.
-   
+
         // This method recurrs upward n times, starting at the given nu value.
 
         private static void Bessel_RecurrUpward (double nu, double x, ref double F, ref double FP, int n) {
@@ -821,7 +821,7 @@ namespace Meta.Numerics.Functions {
             // use these results to compute J, JP, Y, and YP
             // what about zeros?
 
-            double g = (z.Re - r)/z.Im;
+            double g = (z.Re - r) / z.Im;
 
             double J = Math.Sqrt(W / (z.Im + g * (z.Re - r)));
             if (sign < 0) J = -J;
@@ -1013,9 +1013,9 @@ namespace Meta.Numerics.Functions {
 
             if (n < 0) {
                 if ((n % 2) == 0) {
-                    return(SphericalBesselY(-n-1, x));
+                    return (SphericalBesselY(-n - 1, x));
                 } else {
-                    return(-SphericalBesselY(-n-1, x));
+                    return (-SphericalBesselY(-n - 1, x));
                 }
             } else if (n == 0) {
                 return (SphericalBesselJ_Zero(x));
@@ -1028,7 +1028,7 @@ namespace Meta.Numerics.Functions {
                     return (SphericalBesselJ_Series(n, x));
                 } else if (x > (32.0 + n * n / 2.0)) {
                     // far enough from the origin, use the asymptotic expansion
-                    return (Math.Sqrt(Global.HalfPI / x) * Bessel_Asymptotic(n+0.5, x).FirstSolutionValue);
+                    return (Math.Sqrt(Global.HalfPI / x) * Bessel_Asymptotic(n + 0.5, x).FirstSolutionValue);
                 } else {
                     // in the transition region, use Miller's algorithm
                     return (SphericalBesselJ_Miller(n, x));
@@ -1056,9 +1056,9 @@ namespace Meta.Numerics.Functions {
 
             if (n < 0) {
                 if ((n % 2) == 0) {
-                    return(-SphericalBesselJ(-n-1, x));
+                    return (-SphericalBesselJ(-n - 1, x));
                 } else {
-                    return(SphericalBesselJ(-n-1, x));
+                    return (SphericalBesselJ(-n - 1, x));
                 }
             } else if (n == 0) {
                 return (SphericalBesselY_Zero(x));
@@ -1124,11 +1124,11 @@ namespace Meta.Numerics.Functions {
 
         private static double SphericalBesselJ_One (double x) {
             if (Math.Abs(x) < 0.5) {
-                return(SphericalBesselJ_SeriesOne(x));
+                return (SphericalBesselJ_SeriesOne(x));
             } else if (Math.Abs(x) > 100.0) {
                 return (Math.Sqrt(Global.HalfPI / x) * Bessel_Asymptotic(1.5, x).FirstSolutionValue);
             } else {
-                return((MoreMath.Sin(x) / x - MoreMath.Cos(x)) / x);
+                return ((MoreMath.Sin(x) / x - MoreMath.Cos(x)) / x);
             }
         }
 
@@ -1149,7 +1149,7 @@ namespace Meta.Numerics.Functions {
 
         private static double SphericalBesselY_Series (int n, double x) {
             double xx = x * x / 2.0;
-            double df = - AdvancedIntegerMath.DoubleFactorial(2 * n - 1) / MoreMath.Pow(x, n + 1);
+            double df = -AdvancedIntegerMath.DoubleFactorial(2 * n - 1) / MoreMath.Pow(x, n + 1);
             double f = df;
             for (int k = 1; k < Global.SeriesMax; k++) {
                 double f_old = f;
@@ -1196,11 +1196,11 @@ namespace Meta.Numerics.Functions {
         private static double SphericalBesselY_SeriesOne (double x) {
             if (x == 0) return (Double.NegativeInfinity);
             double xx = x * x / 2.0;
-            double dy = - 1.0 / (x * x);
+            double dy = -1.0 / (x * x);
             double y = dy;
             for (int i = 1; i < Global.SeriesMax; i++) {
                 double y_old = y;
-                dy = - dy * xx / i / (2 * i - 3);
+                dy = -dy * xx / i / (2 * i - 3);
                 y = y_old + dy;
                 if (y == y_old) return (y);
             }
@@ -1213,7 +1213,7 @@ namespace Meta.Numerics.Functions {
             } else if (Math.Abs(x) > 100.0) {
                 return (Math.Sqrt(Global.HalfPI / x) * Bessel_Asymptotic(1.5, x).SecondSolutionValue);
             } else {
-                return(-(MoreMath.Cos(x)/x + MoreMath.Sin(x))/x);
+                return (-(MoreMath.Cos(x) / x + MoreMath.Sin(x)) / x);
             }
         }
 
@@ -1251,6 +1251,142 @@ namespace Meta.Numerics.Functions {
             double j0 = SphericalBesselJ_Zero(x);
             return ((j0 / j) * jn);
 
+        }
+
+        // Functions needed for uniform asymptotic expansions
+
+        /// <summary>
+        /// Computes the requested zero of the regular Bessel function.
+        /// </summary>
+        /// <param name="nu">The order, which must be non-negative.</param>
+        /// <param name="k">The index of the zero, which must be positive.</param>
+        /// <returns>The <paramref name="k"/>th value of x for which J<sub>nu</sub>(x) = 0.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="nu"/> is negative or <paramref name="k"/> is non-positive.</exception>
+        public static double BesselJZero (double nu, int k) {
+            if (nu < 0.0) throw new ArgumentOutOfRangeException(nameof(nu));
+            if (k < 1) throw new ArgumentOutOfRangeException(nameof(k));
+
+            double jMin, jMax;
+            if (k == 1) {
+                // Rayleigh inequalities
+                // Cited in Ismail and Muldoon, Bounds for the small real and purely imaginary zeros of
+                // Bessel and related functions, Methods and Applications of Analysis 2 (1995) p. 1-21
+                // http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.140.288&rep=rep1&type=pdf
+                // They cite Watson p. 502, but I don't find them there.
+                //jMin = 2.0 * Math.Sqrt((nu + 1.0) * Math.Sqrt(nu + 2.0));
+                // Lee Lorch, "Some Inequalities for the First Positive Zeros of the Bessel Functions",
+                // SIAM J. Math. Anal. 24 (1993) 814
+                jMin = Math.Sqrt((nu + 1.0) * (nu + 5.0));
+                jMax = ApproximateBesselJZero(nu + 1, k);
+                double tt = Math.Sqrt(2.0 * (nu + 1.0) * (nu + 3.0));
+                if (tt < jMax) jMax = tt;
+            } else {
+                // Use the interlacing property j_{\nu + 1, k - 1} < j_{\nu, k} < j_{\nu + 1, k}
+                // and the approximation function to get a bound. The interlacing property is exact,
+                // but our approximation functions are not, so it is concievable this could go wrong.
+                jMin = ApproximateBesselJZero(nu + 1, k - 1);
+                jMax = ApproximateBesselJZero(nu + 1, k);
+            }
+            Debug.Assert(jMin < jMax);
+            // We should use internal method that takes best guess. Also, add derivative and use Newton's method.
+            double j = FunctionMath.FindZero(x => BesselJ(nu, x), Interval.FromEndpoints(jMin, jMax));
+            return (j);
+        }
+
+        private static double ApproximateBesselJZero (double nu, int k) {
+            if (nu <= 2 * k) {
+                // Since k >= 1, this covers all nu < 2.
+                return (ApproximateBesselJZero_LargeIndex(nu, k));
+            } else if (k == 1) {
+                // Although it is better for large nu, I have verified that this gives
+                // multi-digit accuracy for nu = 2, the lowest order for which it will be used.
+                double cbrt_nu = Math.Pow(nu, 1.0 / 3.0);
+                return (nu + 1.8557571 * cbrt_nu + 1.033150 / cbrt_nu);
+            } else {
+                // We use the complicated uniform asymptotic expansion only when we must.
+                return (ApproximateBesselJZero_LargeOrder(nu, k));
+            }
+        }
+
+        private static double ApproximateBesselJZero_LargeIndex (double nu, int k) {
+            // I verified emperically that, over 0 < \nu < 256, I get 4-digit accuracy
+            // for k ~ \nu and 2-digit accuracy for k ~ 1/2 \nu. 
+            double mu = MoreMath.Sqr(2.0 * nu);
+            double t = (k + 0.5 * nu - 0.25) * Math.PI;
+            double t8 = 8.0 * t;
+            double t82 = t8 * t8;
+            return (t - (mu - 1.0) / t8 * (1.0 + 4.0 / 3.0 * (7.0 * mu - 31.0) / t82));
+        }
+
+        private static double ApproximateBesselJZero_LargeOrder (double nu, int k) {
+            double a = AiryAiZero(k);
+            double zeta = a / Math.Pow(nu, 2.0 / 3.0);
+            double z = ZFromZeta(zeta, out double c1);
+            return (z * (nu + c1 / nu));
+        }
+
+        private static double ZetaFromZ (double z) {
+            Debug.Assert(z > 0.0);
+            if (z < 0.75) {
+                double s = Math.Sqrt((1.0 - z) * (1.0 + z));
+                return (Math.Pow(3.0 / 2.0 * (Math.Log((1.0 + s) / z) - s), 2.0 / 3.0));
+            } else if (z < 1.25) {
+                double y = 1.0 - z;
+                double c = Math.Pow(2.0, 1.0 / 3.0);
+                // Need more terms
+                return (c * y * (1.0 + 3.0 / 10.0 * y + 32.0 / 175.0 * y * y + 1037.0 / 7875 * y * y * y));
+            } else {
+                double s = Math.Sqrt((z - 1.0) * (z + 1.0));
+                return (-Math.Pow(3.0 / 2.0 * (s - Math.Acos(1.0 / z)), 2.0 / 3.0));
+            }
+        }
+        
+        // This is an inversion of the zeta-from-z function.
+        // Since it is used only in the approximate root expressions, we
+        // don't try to achieve full accuracy. We achieve 6-8 digit
+        // accuracy over most of the range.
+
+        private static double ZFromZeta (double zeta, out double c1) {
+            if (zeta < -0.375) {
+
+                // Make an approximation based on the 1st two terms
+                // of the small z (corresponding to large negative zeta)
+                // development.
+                double y = 2.0 / 3.0 * Math.Pow(-zeta, 3.0 / 2.0);
+                double g = y + Math.PI / 2.0;
+                double z = g - 1.0 / (2.0 * g);
+                Debug.Assert(z > 1.0);
+
+                // Do one or two Newton cycles to improve the value.
+                for (int k = 0; k < 1; k++) {
+                    double q = Math.Sqrt(z * z - 1.0);
+                    double f = q - Math.Acos(1.0 / z);
+                    double fPrime = (z - 1.0 / z) / q;
+                    double dz = (y - f) / fPrime;
+                    z += dz;
+                }
+                Debug.Assert(z > 1.0);
+
+                // Compute c1
+                double s = z * z - 1.0;
+                double h2 = Math.Sqrt(-4.0 * zeta / s);
+                double b0 = -5.0 / 48.0 / (zeta * zeta) + 1.0 / Math.Sqrt(-zeta) * (
+                    5.0 / 24.0 / Math.Pow(s, 3.0 / 2.0) + 1.0 / 8.0 / Math.Sqrt(s)
+                );
+                c1 = h2 * b0 / 2.0;
+                return (z);
+            } else if (zeta < 0.375) {
+                // This is an inversion of the series for \zeta(1+e).
+                double cbrt2 = Math.Pow(2.0, 1.0 / 3.0);
+                double s = zeta / cbrt2;
+                double z = 1.0 + s * (-1.0 + s * (3.0 / 10.0 + s * (1.0 / 350.0 + s * (-479.0 / 63000.0 + s * (-20231.0 / 8085000.0)))));
+                // Iteration to improve near z ~ 1 could actually reduce accuracy,
+                // because of cancellation in terms of f near z ~ 1.
+                c1 = 1.0 / 70.0 + s * (23.0 / 1575.0 + s * 838.0 / 121275.0);
+                return (z);
+            } else {
+                throw new NotImplementedException();
+            }
         }
 
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Matrices {
 
@@ -9,6 +10,8 @@ namespace Meta.Numerics.Matrices {
     /// <remarks>
     /// <para>An N-dimensional row vector is an 1 X N dimensional matrix.</para>
     /// </remarks>
+    [DebuggerDisplay("{RowCount} X {ColumnCount} RowVector")]
+    [DebuggerTypeProxy(typeof(AnyVectorDebuggerTypeProxy))]
     public sealed class RowVector : AnyVector {
 
         /// <summary>

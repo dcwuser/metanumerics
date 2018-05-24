@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Collections.ObjectModel;
-using System.Text;
+
+using TestClassAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
+using TestMethodAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
+using ExpectedExceptionAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.ExpectedExceptionAttribute;
+using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
@@ -196,63 +198,6 @@ namespace Test {
                 s1 += PoissonDeviateNR(lambda, rng);
             }
             t1.Stop();
-        }
-
-        [TestMethod]
-        public void AiryZeros () {
-
-            for (int k = 1; k < 4; k++) {
-
-                double t = 3.0 / 8.0 * Math.PI * (4 * k - 3);
-                double x0 = -AiryZeroT(t);
-                double x1 = FunctionMath.FindZero(AdvancedMath.AiryBi, x0);
-                Debug.WriteLine($"{k} {x0} {x1}");
-
-            }
-
-        }
-
-        public static double AiryAiZero (int k) {
-
-            if (k < 1) throw new ArgumentOutOfRangeException(nameof(k));
-
-            //double t = 3.0 / 8.0 * Math.PI * (4 * k - 1);
-            //double x0 = -AiryZeroT(t);
-            //double x1 = FunctionMath.FindZero(AdvancedMath.AiryAi, x0);
-
-            double a = AiryZeroT( 3.0 / 8.0 * Math.PI * (4 * k + 0) );
-            double b = AiryZeroT( 3.0 / 8.0 * Math.PI * (4 * k - 2) );
-            Interval ab = Interval.FromEndpoints(-a, -b);
-            double x = FunctionMath.FindZero(AdvancedMath.AiryAi, ab);
-
-            return (x);
-
-        }
-
-        public static double AiryBiZero (int k) {
-
-            if (k < 1) throw new ArgumentOutOfRangeException(nameof(k));
-
-            //double t = 3.0 / 8.0 * Math.PI * (4 * k - 3);
-            //double x0 = -AiryZeroT(t);
-            //double x1 = FunctionMath.FindZero(AdvancedMath.AiryBi, x0);
-
-            // Problem for k = 0, makes b NaN
-            double a = AiryZeroT( 3.0 / 8.0 * Math.PI * (4 * k - 2) );
-            double b = AiryZeroT( 3.0 / 8.0 * Math.PI * (4 * k - 4) );
-            Interval ab = Interval.FromEndpoints(-a, -b);
-            double x = FunctionMath.FindZero(AdvancedMath.AiryBi, ab);
-
-            return (x);
-
-        }
-
-        private static double AiryZeroT (double t) {
-
-            double t2 = 1.0 / (t * t);
-            double s = 1.0 + t2 * (5.0 / 48.0 + t2 *(-5.0 / 36.0 + t2 * 77125.0 / 82944.0));
-            return (Math.Pow(t, 2.0 / 3.0) * s);
-
         }
 
         [TestMethod]
@@ -755,9 +700,13 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void BesselUaeTest () {
+            //BesselUae.Evaluate(10000.0, 10000.0);
+        }
+
     }
 
-#if FUTURE
 
     // Uniform asymptotic exansion for Bessel functions of large order is summarized in A&S 9.3 and DLMF 
     
@@ -778,6 +727,12 @@ namespace Test {
     internal static class BesselUae {
 
         private static readonly double CbrtTwo = Math.Pow(2.0, 1.0 / 3.0);
+
+        // The coefficeints of the series
+        //   \zeta(z) = 2^{1/3} \sum_{k=1}^{\infty} c_k (z - 1)^k
+        // which is a series devlopment of
+        //   \zeta(z) = \sqrt{z^2 - 1} - \acos(1/z)
+        // around z = 1.
 
         private static readonly double[] c = new double[] {
             0.0,
@@ -800,14 +755,70 @@ namespace Test {
             -19355768761912897160895124453273481957.0 / 720842364087730428996179297149658203125.0
         };
 
+        // We can evaluate
+        //   \phi = \left( \frac{4 \zeta}{1-z^2} \right)^{1/4}
+        // at the same time. 
+
         // Zeta is given by A&S 9.3.38 and 9.3.39:
         
         //
 
+            /*
+        public static double ZetaFromZ (double z) {
+            if (z < 0.75) {
+                double t = Math.Sqrt(1.0 - z * z);
+                double zeta = Math.Pow(1.5 * Math.Log((1.0 + t) / z) - t, 2.0 / 3.0);
+            } else if (z < 1.25) {
+                double e = z - 1.0;
+                double zeta = Math.Pow(2.0, 1.0 / 3.0) * e * (-1.0 + e * (3.0 / 10.0 + e * (-32.0 / 175.0 + e * (1037.0 / 7875.0 + e * (-103727.0 / 1010625.0 + e * 33060241.0 / 394143750.0)))));
+            } else {
+                double t = Math.Sqrt(z * z - 1.0);
+                double zeta = -Math.Pow(1.5 * (t - Math.Acos(1.0 / t)), 2.0 / 3.0);
+            }
+        }
+        */
+
         public static void EvaluateZeta (double z, out double zeta, out double phi) {
 
+            if (z < 0.875) {
+                double v = (1.0 - z) * (1.0 + z);
+                double s = Math.Sqrt(v);
+                zeta = Math.Pow(3.0 / 2.0 * (Math.Log((1.0 + s) / z) - s), 2.0 / 3.0);
+                phi = Math.Pow(4.0 * zeta / v, 1.0 / 4.0);
+            } else if (z < 1.125) {
+                double e = z - 1.0;
+                zeta = c[1];
+                double ek = 1.0;
+                for (int k = 2; k < c.Length; k++) {
+                    double zeta_old = zeta;
+                    ek *= e;
+                    zeta += c[k] * ek;
+                    if (zeta == zeta_old) break;
+                }
+                phi = CbrtTwo * Math.Pow(-zeta / (1.0 + 0.5 * e), 0.25);
+                zeta = CbrtTwo * zeta * e;
+            } else {
+                double v = (z - 1.0) * (z + 1.0);
+                double s = Math.Sqrt(v);
+                zeta = Math.Pow(3.0 / 2.0 * (s - Math.Acos(1.0 / z)), 2.0 / 3.0);
+                phi = Math.Pow(4.0 * zeta / v, 1.0 / 4.0);
+                zeta = -zeta;
+            }
+            /*
             double e = z - 1.0;
             if (Math.Abs(e) < 0.125) {
+
+                zeta = c[1];
+                double ek = 1.0;
+                for (int k = 2; k < c.Length; k++) {
+                    double zeta_old = zeta;
+                    ek *= e;
+                    zeta += c[k] * ek;
+                    if (zeta == zeta_old) break;
+                }
+                phi = CbrtTwo * Math.Pow(-zeta / (1.0 + 0.5 * e), 0.25);
+                zeta = CbrtTwo * zeta * e;
+
                 double ek = e;
                 zeta = c[1] * e;
                 phi = c[1];
@@ -827,7 +838,7 @@ namespace Test {
                 }
                 phi = Math.Pow(4.0 * zeta / (1.0 - z * z), 1.0 / 4.0);
             }
-
+            */
         }
 
         // A & S give expressions for a_k(\zeta) and b_k(\zeta). They start out
@@ -1050,7 +1061,7 @@ namespace Test {
     }
 
 
-    
+#if FUTURE    
 
     [TestClass]
     public class FutureTest {

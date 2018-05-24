@@ -1,9 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-#if !SILVERLIGHT
-using System.Data;
-#endif
 using System.Diagnostics;
 using System.Linq;
 

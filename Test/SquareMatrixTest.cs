@@ -12,16 +12,6 @@ namespace Test {
     [TestClass]
     public class SquareMatrixTest {
 
-        public static void PrintMatrix (AnyRectangularMatrix M) {
-            for (int r = 0; r < M.RowCount; r++) {
-                for (int c = 0; c < M.ColumnCount; c++) {
-                    Console.Write("{0,12:g8} ", M[r, c]);
-                }
-                Console.WriteLine();
-            }
-            Console.WriteLine("--");
-        }
-
         private static SquareMatrix CreateSquareRandomMatrix (int n) {
             return (CreateSquareRandomMatrix(n, 1));
         }
@@ -158,10 +148,7 @@ namespace Test {
         public void SquareVandermondeMatrixInverse () {
             for (int d = 1; d < 8; d++) {
                 SquareMatrix H = CreateVandermondeMatrix(d);
-                DateTime start = DateTime.Now;
                 SquareMatrix HI = H.Inverse();
-                DateTime finish = DateTime.Now;
-                Console.WriteLine("d={0} t={1} ms", d, (finish - start).Milliseconds);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(H * HI, UnitMatrix.OfDimension(d)));
             }
         }

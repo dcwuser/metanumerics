@@ -40,11 +40,15 @@ namespace Meta.Numerics.Statistics.Distributions {
             if ((k < 0) || (k > n)) {
                 return (0.0);
             } else {
-                // for small enough integers, use the exact binomial coefficient,
-                // which can be evaluated quickly and exactly
-                return (AdvancedIntegerMath.BinomialCoefficient(n, k) * MoreMath.Pow(p, k) * MoreMath.Pow(q, n - k));
-                // this could fail if the binomial overflows; should we go do factorials or
-                // use an expansion around the normal approximation?
+                int nmk = n - k;
+                if ((k > 16) && (nmk > 16)) {
+                    // For large arguments, use cancellation-corrected Stirling series to
+                    // avoid overflow and preserve accuracy.
+                    return (Stirling.BinomialProbability(p, k, q, nmk));
+                } else {
+                    // Otherwise, fall back to direct evaluation.
+                    return (AdvancedIntegerMath.BinomialCoefficient(n, k) * MoreMath.Pow(p, k) * MoreMath.Pow(q, n - k));
+                }
             }
         }
 
@@ -182,7 +186,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (0.0);
             } else {
                 // use direct summation in tails
-                return (AdvancedMath.Beta(k + 1, n - k, p) / AdvancedMath.Beta(k + 1, n - k));
+                return (AdvancedMath.LeftRegularizedBeta(k + 1, n - k, p));
             }
         }
 

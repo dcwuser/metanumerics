@@ -11,9 +11,6 @@ namespace Meta.Numerics {
     /// <para>Use the static methods <see cref="FromEndpoints"/>, <see cref="FromMidpointAndWidth"/>,
     /// and <see cref="FromEndpointAndWidth"/> to instantiate intervals.</para>
     /// </remarks>
-#if !SILVERLIGHT
-    [Serializable]
-#endif
     public struct Interval {
 
         private double a, b, w;

@@ -1,9 +1,12 @@
-﻿
+﻿using System;
+
+using TestClassAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
+using TestMethodAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
+using ExpectedExceptionAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.ExpectedExceptionAttribute;
+using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+
 using Meta.Numerics;
 using Meta.Numerics.Statistics;
-
-using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Test {
     

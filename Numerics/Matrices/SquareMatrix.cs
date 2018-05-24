@@ -8,6 +8,8 @@ namespace Meta.Numerics.Matrices {
     /// <summary>
     /// Represents a square matrix.
     /// </summary>
+    [DebuggerDisplay("{RowCount} X {ColumnCount} SquareMatrix")]
+    [DebuggerTypeProxy(typeof(AnyRectangularMatrixDebuggerTypeProxy))]
     public sealed class SquareMatrix : AnySquareMatrix {
 
         private readonly int dimension;

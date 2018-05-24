@@ -20,13 +20,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentOutOfRangeException">The zeroth raw moment is not one.</exception>
         public static double[] RawToCentral (double[] M) {
 
-            if (M == null) throw new ArgumentNullException("M");
+            if (M == null) throw new ArgumentNullException(nameof(M));
 
             double[] C = new double[M.Length];
 
             if (C.Length == 0) return (C);
 
-            if (M[0] != 1.0) throw new ArgumentOutOfRangeException("M");
+            if (M[0] != 1.0) throw new ArgumentOutOfRangeException(nameof(M));
 
             C[0] = 1.0;
 
@@ -79,19 +79,19 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentOutOfRangeException">The zeroth central moment is not one, or the first central moment is not zero.</exception>
         public static double[] CentralToRaw (double mu, double[] C) {
 
-            if (C == null) throw new ArgumentNullException("C");
+            if (C == null) throw new ArgumentNullException(nameof(C));
 
             double[] M = new double[C.Length];
 
             if (M.Length == 0) return (M);
 
-            if (C[0] != 1.0) throw new ArgumentOutOfRangeException("C");
+            if (C[0] != 1.0) throw new ArgumentOutOfRangeException(nameof(C));
 
             M[0] = 1.0;
 
             if (M.Length == 1) return (M);
 
-            if (C[1] != 0.0) throw new ArgumentOutOfRangeException("C");
+            if (C[1] != 0.0) throw new ArgumentOutOfRangeException(nameof(C));
 
             M[1] = mu;
 
@@ -139,13 +139,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentOutOfRangeException">The zeroth cumulant is not zero.</exception>
         public static double[] CumulantToRaw (double[] K) {
 
-            if (K == null) throw new ArgumentNullException("K");
+            if (K == null) throw new ArgumentNullException(nameof(K));
 
             double[] M = new double[K.Length];
 
             if (M.Length == 0) return (M);
 
-            if (K[0] != 0.0) throw new ArgumentOutOfRangeException("K");
+            if (K[0] != 0.0) throw new ArgumentOutOfRangeException(nameof(K));
 
             M[0] = 1.0;
 
@@ -172,12 +172,12 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentOutOfRangeException">The zeroth cumulant is not zero.</exception>
         public static double[] CumulantToCentral (double[] K) {
 
-            if (K == null) throw new ArgumentNullException("K");
+            if (K == null) throw new ArgumentNullException(nameof(K));
 
             double[] C = new double[K.Length];
             if (C.Length == 0) return (C);
 
-            if (K[0] != 0.0) throw new ArgumentOutOfRangeException("K");
+            if (K[0] != 0.0) throw new ArgumentOutOfRangeException(nameof(K));
             C[0] = 1.0;
             if (C.Length == 1) return (C);
 
@@ -249,13 +249,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentOutOfRangeException">The zeroth raw moment is not one.</exception>
         public static double[] RawToCumulant (double[] M) {
 
-            if (M == null) throw new ArgumentNullException("M");
+            if (M == null) throw new ArgumentNullException(nameof(M));
 
             double[] K = new double[M.Length];
 
             if (K.Length == 0) return (K);
 
-            if (M[0] != 1.0) throw new ArgumentOutOfRangeException("M");
+            if (M[0] != 1.0) throw new ArgumentOutOfRangeException(nameof(M));
 
             K[0] = 0.0;
 
@@ -282,18 +282,18 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentOutOfRangeException">The zeroth central moment is not one, or the first central moment is not zero.</exception>
         public static double[] CentralToCumulant (double mu, double[] C) {
 
-            if (C == null) throw new ArgumentNullException("C");
+            if (C == null) throw new ArgumentNullException(nameof(C));
 
             double[] K = new double[C.Length];
             if (K.Length == 0) return (K);
 
             // C0 = 1 and K0 = 0
-            if (C[0] != 1.0) throw new ArgumentOutOfRangeException("C");
+            if (C[0] != 1.0) throw new ArgumentOutOfRangeException(nameof(C));
             K[0] = 0.0;
             if (K.Length == 1) return (K);
 
             // C1 = 0 and K1 = M1
-            if (C[1] != 0.0) throw new ArgumentOutOfRangeException("C");
+            if (C[1] != 0.0) throw new ArgumentOutOfRangeException(nameof(C));
             K[1] = mu;
             if (K.Length == 2) return (K);
 

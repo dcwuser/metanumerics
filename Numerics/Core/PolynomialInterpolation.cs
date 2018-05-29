@@ -23,7 +23,7 @@ namespace Meta.Numerics {
     internal class PolynomialInterpolator {
 
         public PolynomialInterpolator (int capacity) {
-            if (capacity < 1) throw new ArgumentOutOfRangeException("capacity");
+            if (capacity < 1) throw new ArgumentOutOfRangeException(nameof(capacity));
             this.n = 0;
             this.x = new double[capacity];
             this.y = new double[capacity][];
@@ -33,8 +33,8 @@ namespace Meta.Numerics {
         }
 
         internal PolynomialInterpolator (double[] x, double[] y) {
-            if (x == null) throw new ArgumentNullException("x");
-            if (y == null) throw new ArgumentNullException("y");
+            if (x == null) throw new ArgumentNullException(nameof(x));
+            if (y == null) throw new ArgumentNullException(nameof(y));
             if (x.Length != y.Length) throw new InvalidOperationException();
 
             n = x.Length;

@@ -44,10 +44,6 @@ namespace Meta.Numerics.Analysis {
         /// <exception cref="NonconvergenceException">The minimum was not found to the required precision within the budgeted number of function evaluations.</exception>
         internal static SpaceExtremum FindMinimum (Func<double[], double> f, double[] x, EvaluationSettings settings) {
 
-            if (f == null) throw new ArgumentNullException("f");
-            if (x == null) throw new ArgumentNullException("x");
-            if (settings == null) throw new ArgumentNullException("settings");
-
             int d = x.Length;
 
             // put the function into a Functor we will use for line searches

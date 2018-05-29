@@ -5,7 +5,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     internal class TransformedDistribution : ContinuousDistribution {
 
         public TransformedDistribution (ContinuousDistribution baseDistribution, double shift, double scale) {
-            if (baseDistribution == null) throw new ArgumentNullException("baseDistribution");
+            if (baseDistribution == null) throw new ArgumentNullException(nameof(baseDistribution));
             this.baseDistribution = baseDistribution;
             this.shift = shift;
             this.scale = scale;

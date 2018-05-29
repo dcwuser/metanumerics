@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
@@ -226,7 +224,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     internal class AhrensDieterLowAlphaGammaGenerator : IDeviateGenerator {
 
         public AhrensDieterLowAlphaGammaGenerator (double alpha) {
-            if (alpha > 1.0) throw new ArgumentOutOfRangeException("alpha");
+            Debug.Assert(alpha <= 1.0);
             a = alpha;
             b = (Math.E + a) / Math.E;
         }
@@ -258,7 +256,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     internal class MarsagliaTsangGammaGenerator : IDeviateGenerator {
 
         public MarsagliaTsangGammaGenerator (IDeviateGenerator normalGenerator, double alpha) {
-            if (alpha < 1.0) throw new ArgumentOutOfRangeException("alpha");
+            Debug.Assert(alpha >= 1.0);
             this.normalGenerator = normalGenerator;
             a = alpha;
             a1 = a - 1.0 / 3.0;
@@ -300,8 +298,8 @@ namespace Meta.Numerics.Statistics.Distributions {
     internal class BetaFromGammaGenerator : IDeviateGenerator {
 
         public BetaFromGammaGenerator (IDeviateGenerator alphaGenerator, IDeviateGenerator betaGenerator) {
-            if (alphaGenerator == null) throw new ArgumentNullException("alphaGenerator");
-            if (betaGenerator == null) throw new ArgumentNullException("betaGenerator");
+            Debug.Assert(alphaGenerator != null);
+            Debug.Assert(betaGenerator != null);
             this.alphaGenerator = alphaGenerator;
             this.betaGenerator = betaGenerator;
         }

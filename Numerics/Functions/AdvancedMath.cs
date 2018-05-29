@@ -9,16 +9,6 @@ namespace Meta.Numerics.Functions {
 
         // members are defined in other files
 
-        // internal utility trig functions that are accurate for large arguments
-
-        internal static double Sin (double x, double y) {
-            return (Math.Sin(Reduce(x,y)));
-        }
-
-        internal static double Cos (double x, double y) {
-            return (Math.Cos(Reduce(x,y)));
-        }
-
         // reduces an argument to its corresponding argument between -2 Pi < x < 2 Pi
 
         internal static double Reduce (double x, double y) {

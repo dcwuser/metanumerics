@@ -114,7 +114,7 @@ namespace Meta.Numerics.SignalProcessing {
         /// </remarks>
         public FourierTransformer (int size, FourierSign signConvention, FourierNormalization normalizationConvention) {
             
-            if (size < 1) throw new ArgumentOutOfRangeException("size");
+            if (size < 1) throw new ArgumentOutOfRangeException(nameof(size));
 
             this.size = size;
             this.signConvention = signConvention;
@@ -247,7 +247,7 @@ namespace Meta.Numerics.SignalProcessing {
         /// <param name="values">The series to transform.</param>
         /// <returns>The discrete Fourier transform of the series.</returns>
         public Complex[] Transform (IList<Complex> values) {
-            if (values == null) throw new ArgumentNullException("values");
+            if (values == null) throw new ArgumentNullException(nameof(values));
             if (values.Count != size) throw new DimensionMismatchException();
 
             // copy the original values into a new array
@@ -278,7 +278,7 @@ namespace Meta.Numerics.SignalProcessing {
         /// <param name="values">The series to invert.</param>
         /// <returns>The inverse discrete Fourier transform of the series.</returns>
         public Complex[] InverseTransform (IList<Complex> values) {
-            if (values == null) throw new ArgumentNullException("values");
+            if (values == null) throw new ArgumentNullException(nameof(values));
             if (values.Count != size) throw new DimensionMismatchException();
 
             // copy the original values into a new array

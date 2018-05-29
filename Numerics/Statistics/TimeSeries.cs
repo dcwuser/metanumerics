@@ -96,7 +96,7 @@ namespace Meta.Numerics.Statistics {
         }
 
         void IList<double>.RemoveAt(int index) {
-            if ((index < 0) || (index >= data.Count)) throw new ArgumentOutOfRangeException("index");
+            if ((index < 0) || (index >= data.Count)) throw new ArgumentOutOfRangeException(nameof(index));
             data.RemoveAt(index);
         }
 

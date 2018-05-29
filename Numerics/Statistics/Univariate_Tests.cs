@@ -755,7 +755,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         public static TestResult KruskalWallisTest (IReadOnlyList<IReadOnlyList<double>> samples) {
             if (samples == null) throw new ArgumentNullException(nameof(samples));
-            if (samples.Count < 2) throw new ArgumentException("There must be at least two samples in the sample list.", "samples");
+            if (samples.Count < 2) throw new ArgumentException("There must be at least two samples in the sample list.", nameof(samples));
 
             // sort each sample individually and compute count total from all samples
             int N = 0;

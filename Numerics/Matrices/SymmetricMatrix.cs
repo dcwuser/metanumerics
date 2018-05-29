@@ -20,7 +20,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="dimension">The dimension of the matrix, which must be positive.</param>
         public SymmetricMatrix (int dimension) {
-            if (dimension < 1) throw new ArgumentOutOfRangeException("dimension");
+            if (dimension < 1) throw new ArgumentOutOfRangeException(nameof(dimension));
             this.dimension = dimension;
             values = SymmetricMatrixAlgorithms.InitializeStorage(dimension);
         }
@@ -54,8 +54,8 @@ namespace Meta.Numerics.Matrices {
         /// </remarks>
         public override double this[int r, int c] {
             get {
-                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
+                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
                 if (c < r) {
                     return (values[r][c]);
                 } else {
@@ -63,8 +63,8 @@ namespace Meta.Numerics.Matrices {
                 }
             }
             set {
-                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
+                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
                 if (IsReadOnly) throw new InvalidOperationException();
                 if (c < r) {
                     values[r][c] = value;
@@ -76,7 +76,7 @@ namespace Meta.Numerics.Matrices {
 
         /// <inheritdoc />
         public override void Fill (Func<int, int, double> f) {
-            if (f == null) throw new ArgumentNullException("f");
+            if (f == null) throw new ArgumentNullException(nameof(f));
             for (int r = 0; r < dimension; r++) {
                 for (int c = 0; c <= r; c++) {
                     values[r][c] = f(r, c);
@@ -532,8 +532,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="B">The second matrix.</param>
         /// <returns>The sum <paramref name="A"/> + <paramref name="B"/>.</returns>
         public static SymmetricMatrix operator + (SymmetricMatrix A, SymmetricMatrix B) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.dimension != B.dimension) throw new DimensionMismatchException();
             double[][] sumStore = SymmetricMatrixAlgorithms.InitializeStorage(A.dimension);
             for (int r = 0; r < A.dimension; r++) {
@@ -551,8 +551,8 @@ namespace Meta.Numerics.Matrices {
         /// <param name="B">The second matrix.</param>
         /// <returns>The difference <paramref name="A"/> - <paramref name="B"/>.</returns>
         public static SymmetricMatrix operator - (SymmetricMatrix A, SymmetricMatrix B) {
-            if (A == null) throw new ArgumentNullException("A");
-            if (B == null) throw new ArgumentNullException("B");
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (B == null) throw new ArgumentNullException(nameof(B));
             if (A.dimension != B.dimension) throw new DimensionMismatchException();
             double[][] differenceStore = SymmetricMatrixAlgorithms.InitializeStorage(A.dimension);
             for (int r = 0; r < A.dimension; r++) {
@@ -570,7 +570,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The matrix.</param>
         /// <returns>The product of the matrix and the factor.</returns>
         public static SymmetricMatrix operator * (double alpha, SymmetricMatrix A) {
-            if (A == null) throw new ArgumentNullException("A");
+            if (A == null) throw new ArgumentNullException(nameof(A));
             double[][] productStore = SymmetricMatrixAlgorithms.InitializeStorage(A.dimension);
             for (int r = 0; r < A.Dimension; r++) {
                 for (int c = 0; c <= r; c++) {
@@ -586,7 +586,7 @@ namespace Meta.Numerics.Matrices {
         /// <param name="A">The matrix.</param>
         /// <returns>The matrix -A.</returns>
         public static SymmetricMatrix operator - (SymmetricMatrix A) {
-            if (A == null) throw new ArgumentNullException("A");
+            if (A == null) throw new ArgumentNullException(nameof(A));
             double[][] resultStore = SymmetricMatrixAlgorithms.InitializeStorage(A.dimension);
             for (int r = 0; r < A.Dimension; r++) {
                 for (int c = 0; c <= r; c++) {

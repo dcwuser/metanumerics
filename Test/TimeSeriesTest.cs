@@ -329,7 +329,7 @@ namespace Test {
 
             int n = 100;
             // Generate white noise
-            TimeSeries series = GenerateMA1TimeSeries(0.0, 0.1, 1.0, 100);
+            TimeSeries series = GenerateMA1TimeSeries(0.0, 0.1, 1.0, n);
 
             // Integrate it
             series.Integrate(0.0);

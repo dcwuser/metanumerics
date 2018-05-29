@@ -61,7 +61,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     internal sealed class SpearmanExactDistribution : DiscreteDistribution {
 
         public SpearmanExactDistribution (int n) {
-            if (n < 2) throw new ArgumentOutOfRangeException("n");
+            if (n < 2) throw new ArgumentOutOfRangeException(nameof(n));
             this.n = n;
 
             // n = 20 is maximum n for which n! fits in long

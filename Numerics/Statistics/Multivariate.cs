@@ -137,7 +137,7 @@ namespace Meta.Numerics.Statistics {
             xColumns = new List<IReadOnlyList<double>>();
             foreach (KeyValuePair<string, IReadOnlyList<double>> xEntry in xColumnDictionary) {
                 IReadOnlyList<double> xColumn = xEntry.Value;
-                if (xColumn == null) throw new ArgumentNullException("xColumn");
+                if (xColumn == null) throw new ArgumentNullException(nameof(xColumns));
                 if (xColumn.Count != expectedLength) throw new DimensionMismatchException();
                 xNames.Add(xEntry.Key);
                 xColumns.Add(xEntry.Value);

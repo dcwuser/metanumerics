@@ -30,7 +30,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="mu">The centroid of the distribution.</param>
         /// <param name="gamma">The width parameter of the distribution.</param>
         public CauchyDistribution (double mu, double gamma) {
-            if (gamma <= 0.0) throw new ArgumentNullException("gamma");
+            if (gamma <= 0.0) throw new ArgumentNullException(nameof(gamma));
             this.mu = mu;
             this.gamma = gamma;
             this.cauchyRng = DeviateGeneratorFactory.GetCauchyGenerator();
@@ -83,7 +83,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double RawMoment (int r) {
             if (r < 0) {
-                throw new ArgumentNullException("r");
+                throw new ArgumentNullException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else {
@@ -94,7 +94,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double CentralMoment (int r) {
             if (r < 0) {
-                throw new ArgumentNullException("r");
+                throw new ArgumentNullException(nameof(r));
             } else if (r == 0) {
                 return (1.0);
             } else {
@@ -105,7 +105,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Cumulant (int r) {
             if (r < 0) {
-                throw new ArgumentOutOfRangeException("r");
+                throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 return (0.0);
             } else {
@@ -137,13 +137,13 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
-            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException("P");
+            if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             return (InverseProbability(P, 1.0 - P));
         }
 
         /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
-            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException("Q");
+            if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
             return (InverseProbability(1.0 - Q, Q));
         }
 
@@ -161,7 +161,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException("rng");
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
             double z = cauchyRng.GetNext(rng);
             return (mu + z * gamma);
         }

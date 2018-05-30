@@ -472,7 +472,7 @@ namespace Meta.Numerics.Functions {
             if (x > nu) kmax += (int) Math.Ceiling(x - nu);
 
             // move to higher fractions
-            for (int k = 2; k < kmax; k++) {
+            for (int k = 2; k < 2 * kmax; k++) {
                 double a = -1.0;
                 double b = 2.0 * (nu + k) / x;
                 double A = b * Am1 + a * Am2;
@@ -857,23 +857,26 @@ namespace Meta.Numerics.Functions {
         }
 
         // Hankel's asymptotic expansions for Bessel function (A&S 9.2)
-        //   J = \sqrt{\frac{2}{\pi x}} \left[ P \cos\phi - Q \sin\phi \right]
-        //   Y = \sqrt{\frac{2}{\pi x}} \left[ P \sin\phi + Q \cos\phi \right]
-        // where \phi = x - \left( \nu / 2 + 1 / 4 \right) \pi and \mu = 4 \nu^2 and
+        //   J = \sqrt{\frac{2}{\pi x}} \left[ P \cos\omega - Q \sin\omega \right]
+        //   Y = \sqrt{\frac{2}{\pi x}} \left[ P \sin\omega + Q \cos\omega \right]
+        // where \omega = x - \left( \nu / 2 + 1 / 4 \right) \pi and \mu = 4 \nu^2 and
         //   P = 1 - \frac{(\mu-1)(\mu-9)}{2! (8x)^2} + \frac{(\mu-1)(\mu-9)(\mu-25)(\mu-49}{4! (8x)^4} + \cdots
         //   Q = \frac{(\mu-1)}{8x} - \frac{(\mu-1)(\mu-9)(\mu-25)}{3! (8x)^3} + \cdots
         // Derivatives have similiar expressions
-        //   J' = - \sqrt{\frac{2}{\pi x}} \left[ R \sin\phi + S \cos\phi \right]
-        //   Y' = \sqrt{\frac{2}{\pi x}} \left[ R \cos\phi - S \sin\phi \right]
+        //   J' = - \sqrt{\frac{2}{\pi x}} \left[ R \sin\omega + S \cos\omega \right]
+        //   Y' = \sqrt{\frac{2}{\pi x}} \left[ R \cos\omega - S \sin\omega \right]
         // where
         //   R = 1 - \frac{(\mu-1)(\mu+15)}{2! (8x)^2} + \cdots
         //   S = \frac{(\mu+3)}{8x} - \frac{(\mu-1)(\mu - 9)(\mu+35)}{3! (8x)^3} + \cdots
 
-        // For nu=0, this series converges to full precision in about 10 terms at x~100, and in about 25 terms even as low as x~25
-        // It fails to converge at all for lower x <~ 25
+        // For nu=0, this series converges to full precision in about 10 terms at x~100, and in about 25 terms even as low as x~25.
+        // It fails to converge to full precision for x <~ 25.
         // Since the first correction term is ~ (4 \nu^2)^2 / (8 x)^2 ~ (\nu^2 / 2 x)^2, the minimum x should grow like \nu^2 / 2
 
         private static SolutionPair Bessel_Asymptotic (double nu, double x) {
+
+            Debug.Assert(nu >= 0.0);
+            Debug.Assert(x > 0.0);
 
             // pre-compute factors of nu and x as they appear in the series
             double mu = 4.0 * nu * nu;
@@ -913,37 +916,27 @@ namespace Meta.Numerics.Functions {
 
             }
 
-            // We attempted to move to a single trig evaluation so as to avoid errors when the two terms nearly cancel,
-            // but this seemed to cause problems, perhaps because the arctan angle cannot be determined with sufficient
-            // resolution. Investigate further.
-            /*
-            double M = N * MoreMath.Hypot(Q, P);
-            double phi = Math.Atan2(Q, P);
-            SolutionPair result2 = new SolutionPair(
-                M * Cos(x + phi, -(nu + 0.5) / 4.0),
-                -N * (R * s + S * c),
-                M * Sin(x + phi, -(nu + 0.5) / 4.0),
-                N * (R * c - S * s)
-            );
-             */
+            // The computation of \sin\omega and \cos\omega is fairly delicate. Since x is large,
+            // it's important to use MoreMath.Sin and MoreMath.Cos to ensure correctness for
+            // large arguments. Furthermore, since the shift by 1/2 ( \nu + 1/2) \pi is a
+            // multiple of \pi and could be dwarfed by or have significant cancellation with x,
+            // it's better to use the trig addition formulas to handle it seperately using
+            // SinPi and CosPi functions.
 
-            // Compute sin and cosine of x - (\nu + 1/2)(\pi / 2)
-            // Then we compute sine and cosine of (x1 - u1) with shift appropriate to (x0 - u0).
+            // This works well, but it took a long time to get to this.
 
-            // For maximum accuracy, we first reduce x = (x_0 + x_1) (\pi / 2), where x_0 is an integer and -0.5 < x1 < 0.5
-            long x0; double x1;
-            RangeReduction.ReduceByPiHalves(x, out x0, out x1);
+            double a = 0.5 * (nu + 0.5);
+            double sa = MoreMath.SinPi(a);
+            double ca = MoreMath.CosPi(a);
 
-            // Then we reduce (\nu + 1/2) = u_0 + u_1 where u_0 is an integer and -0.5 < u1 < 0.5
-            double u = nu + 0.5;
-            double ur = Math.Round(u);
-            long u0 = (long) ur;
-            double u1 = u - ur;
+            double sx = MoreMath.Sin(x);
+            double cx = MoreMath.Cos(x);
 
-            // FInally, we compute sine and cosine, having reduced the evaluation interval to -0.5 < \theta < 0.5
-            double s1 = RangeReduction.Sin(x0 - u0, x1 - u1);
-            double c1 = RangeReduction.Cos(x0 - u0, x1 - u1);
+            // It would be great to have a SinAndCos function so as not to do the range reduction twice.
 
+            double s1 = sx * ca - cx * sa;
+            double c1 = cx * ca + sx * sa;
+            
             // Assemble the solution
             double N = Math.Sqrt(2.0 / Math.PI / x);
             SolutionPair result = new SolutionPair(

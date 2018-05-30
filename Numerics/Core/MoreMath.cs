@@ -356,17 +356,35 @@ namespace Meta.Numerics {
             }
         }
 
-        internal static double SinPi (double x) {
-            long y0;
-            double y1;
-            RangeReduction.ReduceByOnes(2.0 * x, out y0, out y1);
+        /// <summary>
+        /// Computes the sine of the given multiple of &#x3C0;.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of sin(<paramref name="x"/>&#x3C0;).</returns>
+        /// <remarks>
+        /// <para>This function allows the user to increase performance and avoid inaccuracies due to the finite
+        /// precision of the stored constant <see cref="Math.PI"/> in some cases. Suppose you need to compute
+        /// sin(x&#x3C0;) for a large value of x.
+        /// </para>
+        /// </remarks>
+        /// <seealso cref="CosPi(double)"/>
+        public static double SinPi (double x) {
+            RangeReduction.ReduceByOnes(2.0 * x, out long y0, out double y1);
             return (RangeReduction.Sin(y0, y1));
         }
 
-        internal static double CosPi (double x) {
-            long y0;
-            double y1;
-            RangeReduction.ReduceByOnes(2.0 * x, out y0, out y1);
+        /// <summary>
+        /// Computes the cosine of the given multiple of &#x3C0;.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of cos(<paramref name="x"/>&#x3C0;).</returns>
+        /// <remarks>
+        /// <para>For an explanation of why and when to use this function,
+        /// see <see cref="SinPi(double)"/>.</para>
+        /// </remarks>
+        /// <seealso cref="SinPi(double)"/>
+        public static double CosPi (double x) {
+            RangeReduction.ReduceByOnes(2.0 * x, out long y0, out double y1);
             return (RangeReduction.Cos(y0, y1));
         }
 
@@ -401,7 +419,7 @@ namespace Meta.Numerics {
             if (r < 0) r += m;
             return (r);
             // ((n % m) + m) % m would probably be faster (mod being faster than test-and-branch),
-            // but it would suffer overflow problems for m near integer limits
+            // but it would not only be less clear, but also suffer overflow problems for m near integer limits
         }
 
     }

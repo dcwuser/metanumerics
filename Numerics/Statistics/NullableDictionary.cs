@@ -58,7 +58,7 @@ namespace Meta.Numerics.Statistics {
         public void Add (K key, V value) {
             if (key == null) {
                 if (nullKey) {
-                    throw new ArgumentException();
+                    throw new InvalidOperationException();
                 } else {
                     nullKey = true;
                     nullValue = value;

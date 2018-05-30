@@ -20,7 +20,7 @@ namespace Meta.Numerics {
         /// to specify the polynomial 5 - 6 x + 7 x<sup>2</sup>, give the values 5, -6, 7.</para>
         /// </remarks>
         public static Polynomial FromCoefficients (params double[] coefficients) {
-            if (coefficients == null) throw new ArgumentNullException("coefficients");
+            if (coefficients == null) throw new ArgumentNullException(nameof(coefficients));
             if (coefficients.Length == 0) throw new InvalidOperationException();
             return (new Polynomial(coefficients));
         }
@@ -32,9 +32,9 @@ namespace Meta.Numerics {
         /// <param name="points">An N X 2 array whose first column contains the x values of points and whose second column contains the corresponding y values.</param>
         /// <returns>A polynomial of degree N-1 that passes through all the given points.</returns>
         public static Polynomial FromPoints (double[,] points) {
-            if (points == null) throw new ArgumentNullException("points");
-            if (points.GetLength(0) == 0) throw new ArgumentException("The first dimension of the points array must have length at least one.", "points");
-            if (points.GetLength(1) != 2) throw new ArgumentException("The second dimension of the points array must have length two.", "points");
+            if (points == null) throw new ArgumentNullException(nameof(points));
+            if (points.GetLength(0) == 0) throw new ArgumentException("The first dimension of the points array must have length at least one.", nameof(points));
+            if (points.GetLength(1) != 2) throw new ArgumentException("The second dimension of the points array must have length two.", nameof(points));
             double[] x = new double[points.GetLength(0)];
             double[] y = new double[points.GetLength(0)];
             for (int i = 0; i < points.GetLength(0); i++) {
@@ -51,8 +51,8 @@ namespace Meta.Numerics {
         /// <param name="points">A collection of points.</param>
         /// <returns>A polynomial that passes through all the given points.</returns>
         public static Polynomial FromPoints (ICollection<XY> points) {
-            if (points == null) throw new ArgumentNullException("points");
-            if (points.Count == 0) throw new ArgumentException("There must be at least one point in the points collection.", "points");
+            if (points == null) throw new ArgumentNullException(nameof(points));
+            if (points.Count == 0) throw new ArgumentException("There must be at least one point in the points collection.", nameof(points));
             double[] x = new double[points.Count];
             double[] y = new double[points.Count];
             int i = 0;
@@ -97,7 +97,7 @@ namespace Meta.Numerics {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         public virtual double Coefficient (int n) {
             if (n < 0) {
-                throw new ArgumentOutOfRangeException("n");
+                throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n >= coefficients.Length) {
                 return (0.0);
             } else {
@@ -175,7 +175,7 @@ namespace Meta.Numerics {
         /// <returns>The additive inverse of the polynomial.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="p"/> is null.</exception>
         public static Polynomial operator - (Polynomial p) {
-            if (p == null) throw new ArgumentNullException("p");
+            if (p == null) throw new ArgumentNullException(nameof(p));
             double[] coefficients = new double[p.Degree + 1];
             for (int i = 0; i < coefficients.Length; i++) {
                 coefficients[i] = -p.Coefficient(i);
@@ -191,8 +191,8 @@ namespace Meta.Numerics {
         /// <returns>The sum polynomial.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="p1"/> or <paramref name="p2"/> is null.</exception>
         public static Polynomial operator + (Polynomial p1, Polynomial p2) {
-            if (p1 == null) throw new ArgumentNullException("p1");
-            if (p2 == null) throw new ArgumentNullException("p2");
+            if (p1 == null) throw new ArgumentNullException(nameof(p1));
+            if (p2 == null) throw new ArgumentNullException(nameof(p2));
             double[] coefficients = new double[Math.Max(p1.Degree, p2.Degree) + 1];
             for (int i = 0; i < coefficients.Length; i++) coefficients[i] = p1.Coefficient(i) + p2.Coefficient(i);
             return (new Polynomial(coefficients));
@@ -206,8 +206,8 @@ namespace Meta.Numerics {
         /// <returns>The difference polynomial.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="p1"/> or <paramref name="p2"/> is null.</exception>
         public static Polynomial operator - (Polynomial p1, Polynomial p2) {
-            if (p1 == null) throw new ArgumentNullException("p1");
-            if (p2 == null) throw new ArgumentNullException("p2");
+            if (p1 == null) throw new ArgumentNullException(nameof(p1));
+            if (p2 == null) throw new ArgumentNullException(nameof(p2));
             double[] coefficients = new double[Math.Max(p1.Degree, p2.Degree) + 1];
             for (int i = 0; i < coefficients.Length; i++) coefficients[i] = p1.Coefficient(i) - p2.Coefficient(i);
             return (new Polynomial(coefficients));
@@ -221,8 +221,8 @@ namespace Meta.Numerics {
         /// <returns>The product polynomial.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="p1"/> or <paramref name="p2"/> is null.</exception>
         public static Polynomial operator * (Polynomial p1, Polynomial p2) {
-            if (p1 == null) throw new ArgumentNullException("p1");
-            if (p2 == null) throw new ArgumentNullException("p2");
+            if (p1 == null) throw new ArgumentNullException(nameof(p1));
+            if (p2 == null) throw new ArgumentNullException(nameof(p2));
             double[] coefficients = new double[p1.Degree + p2.Degree + 1];
             for (int i1 = 0; i1 <= p1.Degree; i1++) {
                 for (int i2 = 0; i2 <= p2.Degree; i2++) {
@@ -244,8 +244,8 @@ namespace Meta.Numerics {
         /// </remarks>
         public static Polynomial Divide (Polynomial p1, Polynomial p2, out Polynomial remainder) {
 
-            if (p1 == null) throw new ArgumentNullException("p1");
-            if (p2 == null) throw new ArgumentNullException("p2");
+            if (p1 == null) throw new ArgumentNullException(nameof(p1));
+            if (p2 == null) throw new ArgumentNullException(nameof(p2));
 
             if (p2.Degree >= p1.Degree) {
                 throw new InvalidOperationException();

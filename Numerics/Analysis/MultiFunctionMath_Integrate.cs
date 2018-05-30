@@ -116,14 +116,14 @@ namespace Meta.Numerics.Analysis {
             UncertainValue estimate;
 
             if (d < 1) {
-                throw new ArgumentException("The dimension of the integration volume must be at least 1.", "volume");
+                throw new ArgumentException("The dimension of the integration volume must be at least 1.", nameof(volume));
             } else if (d < 4) {
                 IntegrationRegion r = new IntegrationRegion(box);
                 estimate = Integrate_Adaptive(f, map, r, settings);
             } else if (d < 16) {
                 estimate = Integrate_MonteCarlo(f, map, box, settings);
             } else {
-                throw new ArgumentException("The dimension of the integrtion volume must be less than 16.", "volume");
+                throw new ArgumentException("The dimension of the integrtion volume must be less than 16.", nameof(volume));
             }
 
             // Sometimes the estimated uncertainty drops precipitiously. We will not report an uncertainty less than 3/4 of that demanded.

@@ -16,7 +16,7 @@ namespace Meta.Numerics.Analysis {
         /// <returns>An ordinate at which the function has a zero.</returns>
         public static double FindZero (Func<double, double> f, double x) {
 
-            if (f == null) throw new ArgumentNullException("f");
+            if (f == null) throw new ArgumentNullException(nameof(f));
 
             // take a step
             double fx = f(x);
@@ -58,7 +58,7 @@ namespace Meta.Numerics.Analysis {
         /// <exception cref="InvalidOperationException">The function does not change sign across the given interval.</exception>
         public static double FindZero (Func<double, double> f, Interval bracket) {
 
-            if (f == null) throw new ArgumentNullException("f");
+            if (f == null) throw new ArgumentNullException(nameof(f));
 
             double x1 = bracket.LeftEndpoint;
             double x2 = bracket.RightEndpoint;

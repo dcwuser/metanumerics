@@ -72,8 +72,8 @@ namespace Meta.Numerics.Matrices {
         /// <inheritdoc />
         public override double this[int r, int c] {
             get {
-                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
+                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
                 SparseMatrixElement element = GetElement(r, c);
                 if (element == null) {
                     return(0.0);
@@ -82,8 +82,8 @@ namespace Meta.Numerics.Matrices {
                 }
             }
             set {
-                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
-                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
+                if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+                if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
                 SetElement(r, c, value);
             }
         }
@@ -187,7 +187,7 @@ namespace Meta.Numerics.Matrices {
 
         /// <inheritdoc />
         public override RowVector Row (int r) {
-            if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException("r");
+            if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
             double[] store = new double[dimension];
             SparseMatrixElement element = rows[r];
             while (element != null) {
@@ -199,7 +199,7 @@ namespace Meta.Numerics.Matrices {
 
         /// <inheritdoc />
         public override ColumnVector Column (int c) {
-            if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException("c");
+            if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
             double[] store = new double[dimension];
             SparseMatrixElement element = columns[c];
             while (element != null) {

@@ -18,8 +18,8 @@ namespace Meta.Numerics.Analysis {
         /// dimension of <paramref name="x0"/>.</exception>
         public static ColumnVector FindZero (Func<IReadOnlyList<double>, IReadOnlyList<double>> f, IReadOnlyList<double> x0) {
 
-            if (f == null) throw new ArgumentNullException("f");
-            if (x0 == null) throw new ArgumentNullException("x0");
+            if (f == null) throw new ArgumentNullException(nameof(f));
+            if (x0 == null) throw new ArgumentNullException(nameof(x0));
 
             // we will use Broyden's method, which is a generalization of the secant method to the multi-dimensional problem
             // just as the secant method is essentially Newton's method with a crude, numerical value for the slope,

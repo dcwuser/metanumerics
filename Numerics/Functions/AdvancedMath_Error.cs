@@ -613,8 +613,8 @@ namespace Meta.Numerics.Functions {
             g = g / x2 / px;
 
             double xx = x * x / 4.0;
-            double sin = Sin(0.0, xx);
-            double cos = Cos(0.0, xx);
+            double sin = MoreMath.SinPi(2.0 * xx); // Sin(0.0, xx);
+            double cos = MoreMath.CosPi(2.0 * xx); // Cos(0.0, xx);
 
             double C = 0.5 + f * sin - g * cos;
             double S = 0.5 - f * cos - g * sin;
@@ -653,7 +653,7 @@ namespace Meta.Numerics.Functions {
             //Console.WriteLine(f);
             double xx = x * x / 4.0;
             Complex j = new Complex(1.0, -1.0);
-            Complex e = new Complex(Cos(0.0, xx), Sin(0.0, xx));
+            Complex e = new Complex(MoreMath.CosPi(2.0 * xx), MoreMath.SinPi(2.0 * xx));
             Complex erfc = j * e * f * x;
             Complex erf = 1.0 - erfc;
             return (erf * new Complex(1.0, 1.0) / 2);   

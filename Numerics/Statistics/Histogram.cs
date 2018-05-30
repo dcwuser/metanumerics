@@ -123,7 +123,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="binCount"/> is less than 1.</exception>
         public Histogram (int binCount) {
-            if (binCount < 1) throw new ArgumentOutOfRangeException("binCount");
+            if (binCount < 1) throw new ArgumentOutOfRangeException(nameof(binCount));
             double[] borders = new double[binCount + 1];
             for (int i = 0; i < borders.Length; i++) {
                 borders[i] = i;
@@ -139,9 +139,9 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="binBorders"/> is null.</exception>
         /// <exception cref="ArgumentException"><paramref name="binBorders"/> has less than two values, or the values are not ordered.</exception>
         public Histogram (IList<double> binBorders) {
-            if (binBorders == null) throw new ArgumentNullException("binBorders");
-            if (binBorders.Count < 2) throw new ArgumentException("The bin borders list must be at least two elements long.", "binBorders");
-            if (!ValidateBorderMononicity(binBorders)) throw new ArgumentException("The values in the bin borders list must increase strictly monotonically.", "binBorders");
+            if (binBorders == null) throw new ArgumentNullException(nameof(binBorders));
+            if (binBorders.Count < 2) throw new ArgumentException("The bin borders list must be at least two elements long.", nameof(binBorders));
+            if (!ValidateBorderMononicity(binBorders)) throw new ArgumentException("The values in the bin borders list must increase strictly monotonically.", nameof(binBorders));
             double[] borders = new double[binBorders.Count];
             binBorders.CopyTo(borders, 0);
             storage = new HistogramStorage(borders);
@@ -300,7 +300,7 @@ namespace Meta.Numerics.Statistics {
                 return (storage.GetCounts(index));
             }
             set {
-                if (value < 0) throw new ArgumentOutOfRangeException("value");
+                if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
                 storage.SetCounts(index, value);
             }
         }
@@ -350,7 +350,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The specified bin.</returns>
         public HistogramBin this[int index] {
             get {
-                if ((index < 0) || (index >= storage.Count)) throw new ArgumentOutOfRangeException("index");
+                if ((index < 0) || (index >= storage.Count)) throw new ArgumentOutOfRangeException(nameof(index));
                 return (new HistogramBin(storage, index + 1));
             }
         }

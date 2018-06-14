@@ -687,7 +687,7 @@ namespace Meta.Numerics.Functions {
         // will still work for reduction of Fourier transforms, which is how we are currently using it.
 
         internal static List<Element> Factor (int n) {
-            if (n < 1) throw new ArgumentOutOfRangeException("n");
+            if (n < 1) throw new ArgumentOutOfRangeException(nameof(n));
 
             List<Element> factors = new List<Element>();
 

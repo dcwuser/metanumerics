@@ -208,13 +208,22 @@ namespace Meta.Numerics {
             // from exp, we prevent having to evaluate exp twice inside seperate calls to sinh and cosh.
             double p = Math.Exp(z.Im);
             double q = 1.0 / p;
-            double sinh = (p - q) / 2.0;
-            double cosh = (p + q) / 2.0;
+            double sinh = 0.5 * (p - q);
+            double cosh = 0.5 * (p + q);
             return (new Complex(MoreMath.Sin(z.Re) * cosh, MoreMath.Cos(z.Re) * sinh));
             // For large z.Im, it's pretty easy for cosh and sinh to overflow. There is a very tiny space
             // of arguments for which z.Im causes cosh and sinh barely overflow, but the sin and cos of z.Re
             // are small enough to bring the result back into the representable range. We don't
             // handle this, so we return inf for those values.
+        }
+
+        internal static Complex SinPi (Complex z) {
+            double y = Math.PI * z.Im;
+            double p = Math.Exp(y);
+            double q = 1.0 / p;
+            double sinh = 0.5 * (p - q);
+            double cosh = 0.5 * (p + q);
+            return (new Complex(MoreMath.SinPi(z.Re) * cosh, MoreMath.CosPi(z.Re) * sinh));
         }
 
         /// <summary>
@@ -309,8 +318,7 @@ namespace Meta.Numerics {
         /// <returns>The value of arcsin(z).</returns>
         public static Complex Asin (Complex z) {
 
-            double b, bPrime, q;
-            Asin_Internal(Math.Abs(z.Re), Math.Abs(z.Im), out b, out bPrime, out q);
+            Asin_Internal(Math.Abs(z.Re), Math.Abs(z.Im), out double b, out double bPrime, out double q);
 
             double p;
             if (bPrime < 0.0) {
@@ -333,8 +341,7 @@ namespace Meta.Numerics {
         /// <returns>The value of arccos(z).</returns>
         public static Complex Acos (Complex z) {
 
-            double b, bPrime, q;
-            Asin_Internal(Math.Abs(z.Re), Math.Abs(z.Im), out b, out bPrime, out q);
+            Asin_Internal(Math.Abs(z.Re), Math.Abs(z.Im), out double b, out double bPrime, out double q);
 
             double p;
             if (bPrime < 0.0) {

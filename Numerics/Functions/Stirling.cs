@@ -23,34 +23,42 @@ namespace Meta.Numerics.Functions
         // The Sterling sum converges to full double precision within 12 terms for all x > 16.
 
         private static double Sum(double x) {
-
-            double xx = x * x; // x^2 
-            double xk = x; // tracks x^{2k - 1}
-            double f = AdvancedIntegerMath.Bernoulli[1] / (2.0 * xk); // k = 1 term
+            double rxPower = 1.0 / x;
+            double rxSquared = rxPower * rxPower;
+            double f = 0.5 * AdvancedIntegerMath.Bernoulli[1] * rxPower;
             for (int k = 2; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
                 double f_old = f;
-                xk *= xx;
-                f += AdvancedIntegerMath.Bernoulli[k] / ((2 * k) * (2 * k - 1)) / xk;
+                rxPower *= rxSquared;
+                f += AdvancedIntegerMath.Bernoulli[k] / ((2 * k) * (2 * k - 1)) * rxPower;
                 if (f == f_old) return (f);
             }
-
             throw new NonconvergenceException();
+        }
 
+        private static Complex Sum (Complex z) {
+            Complex rzPower = 1.0 / z;
+            Complex rzSquared = ComplexMath.Sqr(rzPower);
+            Complex f = 0.5 * AdvancedIntegerMath.Bernoulli[1] * rzPower;
+            for (int k = 2; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
+                Complex f_old = f;
+                rzPower *= rzSquared;
+                f += AdvancedIntegerMath.Bernoulli[k] / ((2 * k) * (2 * k - 1)) * rzPower;
+                if (f == f_old) return (f);
+            }
+            throw new NonconvergenceException();
         }
 
         private static double SumPrime(double x) {
-
-            double xx = x * x;
-            double xk = xx; // tracks x^{2k}
-            double f = -AdvancedIntegerMath.Bernoulli[1] / (2.0 * xk); // k=1 term
+            double rxSquared = MoreMath.Sqr(1.0 / x);
+            double rxPower = rxSquared;
+            double f = -0.5 * AdvancedIntegerMath.Bernoulli[1] * rxPower;
             for (int k = 2; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
                 double f_old = f;
-                xk *= xx;
-                f -= AdvancedIntegerMath.Bernoulli[k] / (2 * k) / xk;
+                rxPower *= rxSquared;
+                f -= AdvancedIntegerMath.Bernoulli[k] / (2 * k) * rxPower;
                 if (f == f_old) return (f);
             }
             throw new NonconvergenceException();
-
         }
 
         // Computes (S(x + y) - S(x)) / y, i.e. the rate at which S(x + y) - S(x) changes with y
@@ -73,7 +81,14 @@ namespace Meta.Numerics.Functions
         public static double LogGamma(double x) {
             // we-write to use (x-0.5) form to eliminate one one by storing log(2\pi)?
             return (x * Math.Log(x) - x - 0.5 * Math.Log(x / (2.0 * Math.PI)) + Sum(x));
+            //return ((x - 0.5) * Math.Log(x) - x + halfLogTwoPi + Sum(x));
         }
+
+        public static Complex LogGamma (Complex z) {
+            return((z - 0.5) * ComplexMath.Log(z) - z + halfLogTwoPi + Sum(z));
+        }
+
+        private static readonly double halfLogTwoPi = 0.5 * Math.Log(Global.TwoPI);
 
         public static double Gamma(double x) {
             // return (Math.Sqrt(2.0 * Math.PI / x) * Math.Pow(x / Math.E, x) * Math.Exp(Sum(x)));

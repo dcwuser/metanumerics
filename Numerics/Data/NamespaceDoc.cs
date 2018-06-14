@@ -40,7 +40,7 @@ namespace Meta.Numerics.Data {
     /// collections.</para>
     /// </remarks>
     [CompilerGenerated]
-    internal class NamespaceDoc {
+    internal static class NamespaceDoc {
     }
 
 }

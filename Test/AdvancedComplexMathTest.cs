@@ -88,62 +88,65 @@ namespace Test {
         [TestMethod]
         public void ComplexGammaConjugation () {
             // limited to 10^-2 to 10^2 to avoid overflow
-            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 10)) {
-                Console.WriteLine("z={0} G(z*)={1} G*(z)={2}", z, AdvancedComplexMath.Gamma(z.Conjugate), AdvancedComplexMath.Gamma(z).Conjugate);
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 8)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.Gamma(z.Conjugate), AdvancedComplexMath.Gamma(z).Conjugate));
             }
         }
 
         [TestMethod]
         public void ComplexGammaRecurrance () {
-            // G * z can loose digits from the cancelation of the two terms that contribute to its real and imaginary parts.
-            // This appears to be what happens when this fails. For now, just limit ourselves to few values that don't have this problem.
-            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-1, 1.0E1, 8)) {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 16)) {
                 Complex G = AdvancedComplexMath.Gamma(z);
                 Complex Gz = G * z;
                 Complex GP = AdvancedComplexMath.Gamma(z + 1.0);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(Gz,GP));
             }
         }
-
-        // we need to implement complex powers before we can do this test
-
-        /*
+        
         [TestMethod]
         public void ComplexGammaDuplicationTest () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(-2, 1.8, 10)) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.Gamma(2.0 * z), ComplexMath.Pow(2.0, 2.0 * z - 0.5) * AdvancedComplexMath.Gamma(z) * AdvancedComplexMath.Gamma(z + 0.5) / Math.Sqrt(2.0 * Math.PI)), String.Format("x={0}, Gamma(x)={1}, Gamma(2x) = {2}", z, AdvancedMath.Gamma(z), AdvancedMath.Gamma(2.0 * z)));
-            }
-        }
-        */
-
-        [TestMethod]
-        public void ComplexGammaInequality () {
-            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 10)) {
-                Console.WriteLine(z);
-                Assert.IsTrue(ComplexMath.Abs(AdvancedComplexMath.Gamma(z)) <= Math.Abs(AdvancedMath.Gamma(z.Re)));
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 16)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.Gamma(2.0 * z), ComplexMath.Pow(2.0, 2.0 * z - 0.5) * AdvancedComplexMath.Gamma(z) * AdvancedComplexMath.Gamma(z + 0.5) / Math.Sqrt(2.0 * Math.PI)));
             }
         }
 
         [TestMethod]
         public void ComplexGammaKnownLines () {
-            // to avoid problems with trig functions of large arguments, don't let x get too big
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E2, 16)) {
                 Console.WriteLine(x);
                 double px = Math.PI * x;
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.Gamma(new Complex(0.0, x)) * AdvancedComplexMath.Gamma(new Complex(0.0, -x)), Math.PI / x / Math.Sinh(px)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.Gamma(new Complex(0.5, x)) * AdvancedComplexMath.Gamma(new Complex(0.5, -x)), Math.PI / Math.Cosh(px)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.Gamma(new Complex(1.0, x)) * AdvancedComplexMath.Gamma(new Complex(1.0, -x)), px / Math.Sinh(px)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.Gamma(new Complex(0.25, x)) * AdvancedComplexMath.Gamma(new Complex(0.75, -x)), Math.Sqrt(2.0) * Math.PI / new Complex(Math.Cosh(px), Math.Sinh(px))));
+            }
+        }
+
+        [TestMethod]
+        public void ComplexGammaInequalities () {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 16)) {
+                Assert.IsTrue(ComplexMath.Abs(AdvancedComplexMath.Gamma(z)) <= Math.Abs(AdvancedMath.Gamma(z.Re)));
+                if (z.Re >= 0.5) {
+                    Assert.IsTrue(ComplexMath.Abs(AdvancedComplexMath.Gamma(z)) >= Math.Abs(AdvancedMath.Gamma(z.Re)) / Math.Sqrt(Math.Cosh(Math.PI * z.Im)));
+                }
             }
         }
 
         // Log Gamma
 
         [TestMethod]
+        public void ComplexLogGammaComplexGammaAgreement () {
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E2, 16)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    ComplexMath.Exp(AdvancedComplexMath.LogGamma(z)),
+                    AdvancedComplexMath.Gamma(z)
+                ));
+            }
+        }
+
+        [TestMethod]
         public void ComplexLogGammaConjugation () {
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-4, 1.0E4, 24)) {
-                if (z.Re <= 0.0) continue;
-                Console.WriteLine("z={0} lnG(z*)={1} lnG*(z)={2}", z, AdvancedComplexMath.LogGamma(z.Conjugate), AdvancedComplexMath.LogGamma(z).Conjugate);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedComplexMath.LogGamma(z.Conjugate),
                     AdvancedComplexMath.LogGamma(z).Conjugate
@@ -152,10 +155,20 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ComplexLogGammaAgreement () {
+        public void ComplexLogGammaRealLogGammaAgreement () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 24)) {
-                //Console.WriteLine("{0} {1}", AdvancedComplexMath.LogGamma(x), AdvancedMath.LogGamma(x));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.LogGamma(x), AdvancedMath.LogGamma(x)));
+            }
+        }
+
+        [TestMethod]
+        public void ComplexLogGammaRecurrance () {
+            // Don't try for z << 1, because z + 1 won't retain enough digits to satisfy
+            foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-2, 1.0E4, 24)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.LogGamma(z + 1.0),
+                    AdvancedComplexMath.LogGamma(z) + ComplexMath.Log(z)
+                ));
             }
         }
 

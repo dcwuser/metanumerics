@@ -17,10 +17,10 @@ namespace Meta.Numerics.Functions {
         /// work with its logarithm in order to avoid overflow. This function returns accurate
         /// values of ln(&#x393;(x)) even for values of x which would cause &#x393;(x) to overflow.</para>
         /// </remarks>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative or zero.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso cref="Gamma(double)" />
 		public static double LogGamma (double x) {
-            if (x <= 0.0) {
+            if (x < 0.0) {
                 throw new ArgumentOutOfRangeException(nameof(x));
             } else if (x < 16.0) {
                 // For small arguments, use the Lanczos approximation.
@@ -418,8 +418,7 @@ namespace Meta.Numerics.Functions {
 			if (a <= 0) throw new ArgumentOutOfRangeException(nameof(a));
 			if (x < 0) throw new ArgumentOutOfRangeException(nameof(x));
             if ((a > 128.0) && (Math.Abs(x - a) < 0.25 * a)) {
-                double P, Q;
-                Gamma_Temme(a, x, out P, out Q);
+                Gamma_Temme(a, x, out double P, out double Q);
                 return (P);
             } else if (x < (a + 1.0)) {
 				return( GammaP_Series(a, x) );
@@ -443,8 +442,7 @@ namespace Meta.Numerics.Functions {
 			if (a <= 0) throw new ArgumentOutOfRangeException(nameof(a));
 			if (x < 0) throw new ArgumentOutOfRangeException(nameof(x));
             if ((a > 128.0) && (Math.Abs(x - a) < 0.25 * a)) {
-                double P, Q;
-                Gamma_Temme(a, x, out P, out Q);
+                Gamma_Temme(a, x, out double P, out double Q);
                 return (Q);
             } else if (x < (a + 1.0)) {
 				return( 1.0 - GammaP_Series(a, x) );
@@ -741,47 +739,88 @@ namespace Meta.Numerics.Functions {
         public static Complex Gamma (Complex z) {
             if (z.Re < 0.5) {
                 // 1-z form
-                return (Math.PI / Gamma(1.0 - z) / ComplexMath.Sin(Math.PI * z));
+                return (Math.PI / Gamma(1.0 - z) / ComplexMath.SinPi(z));
+            } else if (ComplexMath.Abs(z) < 16.0) {
+                return (Lanczos.Gamma(z));
             } else {
-                return (ComplexMath.Exp(LogGamma(z)));
+                // Add flag to do z-reduction
+                return (ComplexMath.Exp(LogGamma_Stirling(z)));
             }
         }
 
         /// <summary>
         /// Compute the complex log Gamma function.
         /// </summary>
-        /// <param name="z">The complex argument, which must have a non-negative real part.</param>
-        /// <returns>The complex value ln(&#x393;(z)).</returns>
-        /// <exception cref="ArgumentOutOfRangeException">The real part of <paramref name="z"/> is negative.</exception>
+        /// <param name="z">The complex argument.</param>
+        /// <returns>The principal complex value y for which exp(y) = &#x393;(z).</returns>
         /// <seealso cref="AdvancedMath.LogGamma" />
+        /// <seealso href="http://mathworld.wolfram.com/LogGammaFunction.html"/>
         public static Complex LogGamma (Complex z) {
-            if (z.Re < 0.0) {
-                throw new ArgumentOutOfRangeException(nameof(z));
-            } else if (ComplexMath.Abs(z) < 16.0) {
+            if (z.Im == 0.0 && z.Re < 0.0) {
+                // Handle the pure negative case explicitly.
+                double re = Math.Log(Math.PI / Math.Abs(MoreMath.SinPi(z.Re))) - AdvancedMath.LogGamma(1.0 - z.Re);
+                double im = Math.PI * Math.Floor(z.Re);
+                return new Complex(re, im);
+            } else if (z.Re > 16.0 || Math.Abs(z.Im) > 16.0) {
+                // According to https://dlmf.nist.gov/5.11, the Stirling asymptoic series is valid everywhere
+                // except on the negative real axis. So at first I tried to use it for |z.Im| > 0, |z| > 16. But in practice,
+                // it exhibits false convergence close to the negative real axis, e.g. z = -16 + i. So I have
+                // moved to requiring |z| large and reasonably far from the negative real axis.
+                return (Stirling.LogGamma(z));
+            } else if (z.Re >= 0.125) {
                 return (Lanczos.LogGamma(z));
             } else {
-                return (LogGamma_Stirling(z));
+                // For the remaining z < 0, we need to use the reflection formula.
+                // For large z.Im, SinPi(z) \propto e^{\pi |z.Im|} overflows even though its log does not.
+                // It's possible to do some algebra to get around that problem, but it's not necessary
+                // because for z.Im that big we would have used the Stirling series.
+                Complex f = ComplexMath.Log(Math.PI / ComplexMath.SinPi(z));
+                Complex g = Lanczos.LogGamma(1.0 - z);
+                // The reflection formula doesn't stay on the principal branch, so we need to add a multiple of 2 \pi i
+                // to fix it up. See Hare, "Computing the Principal Branch of Log Gamma" for how to do this.
+                // https://pdfs.semanticscholar.org/1c9d/8865836a312836500126cb47c3cbbed3043e.pdf
+                Complex h = new Complex(0.0, 2.0 * Math.PI * Math.Floor(0.5 * (z.Re + 0.5)));
+                if (z.Im < 0.0) h = -h;
+                return (f - g + h);
             }
         }
 
+        private static Complex LogGammaReflectionTerm (Complex z) {
+
+            // s will overflow for large z.Im, but we are taking its log, so we should
+            // re-formulate this 
+            Complex s = new Complex(MoreMath.SinPi(z.Re) * Math.Cosh(Math.PI * z.Im), MoreMath.CosPi(z.Re) * Math.Sinh(Math.PI * z.Im));
+            Complex logs = ComplexMath.Log(s);
+
+            double m1 = Math.Log(MoreMath.Hypot(MoreMath.SinPi(z.Re), Math.Sinh(Math.PI * z.Im)));
+
+            double t = Math.Abs(Math.PI * z.Im);
+            double c1 = Math.Exp(-2.0 * t);
+            double c2 = MoreMath.SinPi(z.Re) / Math.Sinh(t);
+            double m2 = t + MoreMath.LogOnePlus(-c1) + 0.5 * MoreMath.LogOnePlus(c2 * c2) - Math.Log(2.0);
+
+            return (Math.Log(Math.PI) - logs);
+        }
 
         private static Complex LogGamma_Stirling (Complex z) {
 
             // work in the upper complex plane; i think this isn't actually necessary
-            if (z.Im < 0.0) return (LogGamma_Stirling(z.Conjugate).Conjugate);
+            //if (z.Im < 0.0) return (LogGamma_Stirling(z.Conjugate).Conjugate);
 
-            Complex f = (z - 0.5) * ComplexMath.Log(z) - z + Math.Log(Global.TwoPI) / 2.0;
+            Complex f = (z - 0.5) * ComplexMath.Log(z) - z + 0.5 * Math.Log(Global.TwoPI);
 
             // reduce f.Im modulo 2*PI
             // result is cyclic in f.Im modulo 2*PI, but if f.Im starts off too big, the corrections
             // applied below will be lost because they are being added to a big number
-            f = new Complex(f.Re, AdvancedMath.Reduce(f.Im, 0.0));
+            //f = new Complex(f.Re, AdvancedMath.Reduce(f.Im, 0.0));
+            // we should still do an optional reduction by 2 pi so that we get phase of Gamma right even
+            // for large z.
 
-            Complex zz = z * z;
+            Complex zz = ComplexMath.Sqr(z);
             Complex zp = z;
             for (int i = 1; i < AdvancedIntegerMath.Bernoulli.Length; i++) {
                 Complex f_old = f;
-                f += AdvancedIntegerMath.Bernoulli[i] / (2 * i) / (2 * i - 1) / zp;
+                f += AdvancedIntegerMath.Bernoulli[i] / ((2 * i) * (2 * i - 1)) / zp;
                 if (f == f_old) return (f);
                 zp *= zz;
             }

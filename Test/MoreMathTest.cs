@@ -118,6 +118,46 @@ namespace Test {
         // http://perso.ens-lyon.fr/nathalie.revol/publis/BDKMR05.pdf says
         // 6411027962775774 X 2^{-48} = n (\pi / 4) + 3.094903 X 10^{-19}
 
+
+        [TestMethod]
+        public void SinPiLargeIntegers () {
+            // For large integers, SinPi should be exactly zero
+            foreach(int x in TestUtilities.GenerateIntegerValues(100, Int32.MaxValue, 8)) {
+                Assert.IsTrue(MoreMath.SinPi((double) x) == 0.0);
+                Assert.IsTrue(MoreMath.SinPi((double) -x) == 0.0);
+            }
+        }
+
+        [TestMethod]
+        public void SinPiSmallArguments () {
+            // For small x, SinPi(x) and Sin(x * PI) should agree
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 4)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Sin(x * Math.PI), MoreMath.SinPi(x)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Sin(-x * Math.PI), MoreMath.SinPi(-x)));
+            }
+        }
+
+        [TestMethod]
+        public void CosPiLargeIntegers () {
+            // For large integers, CosPi should be exactly plus or minus one.
+            foreach (int x in TestUtilities.GenerateIntegerValues(100, Int32.MaxValue, 8)) {
+                Assert.IsTrue(MoreMath.CosPi((double) x) == (x % 2 == 0 ? 1 : -1));
+                Assert.IsTrue(MoreMath.CosPi((double) -x) == (x % 2 == 0 ? 1 : -1));
+                // In this range, the addition of 0.5 is exact, so CosPi at half integers should
+                // be exactly zero.
+                Assert.IsTrue(MoreMath.CosPi(((double) x) + 0.5) == 0.0);
+            }
+        }
+
+        [TestMethod]
+        public void CosPiSmallArguments () {
+            // For small x, CosPi(x) and Cos(x * PI) should agree
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 4)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Cos(x * Math.PI), MoreMath.CosPi(x)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Cos(-x * Math.PI), MoreMath.CosPi(-x)));
+            }
+        }
+
     }
 
 }

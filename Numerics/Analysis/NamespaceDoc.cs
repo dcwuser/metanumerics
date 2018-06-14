@@ -24,7 +24,7 @@ namespace Meta.Numerics.Analysis {
     /// for returning a result, and other evaluation settings.</para>
     /// </remarks>
     [CompilerGenerated]
-    internal class NamespaceDoc {
+    internal static class NamespaceDoc {
     }
 
 }

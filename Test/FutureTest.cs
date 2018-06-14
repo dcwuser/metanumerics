@@ -212,7 +212,7 @@ namespace Test {
             LinearRegressionResult linearFit = s.LinearRegression();
             NonlinearRegressionResult nonlinearFit = s.NonlinearRegression(
                 (IReadOnlyList<double> c, double x) => c[0] + c[1] * x,
-                new double[] { 1.0, 1.0 } 
+                new double[] { 1.0, 1.0 }
             );
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(linearFit.Parameters.ValuesVector, nonlinearFit.Parameters.ValuesVector, Math.Sqrt(TestUtilities.TargetPrecision)));
@@ -311,13 +311,13 @@ namespace Test {
                             sMin = "Chernov";
                         }
 
-                        
+
                         double kChernovUpper = 1.0 + mu + Math.Sqrt(-2.0 * mu * Math.Log(Q));
                         if (kChernovUpper < kMax) {
                             kMax = kChernovUpper;
                             sMax = "Chernov";
                         }
-                        
+
 
                         double kCantelli = mu + Math.Sqrt(n * p * (1.0 - p) * P / Q);
                         if (kCantelli < kMax) {
@@ -425,7 +425,7 @@ namespace Test {
 
             foreach (double mu in new double[] { 0.1, 2.0, 30.0 }) {
                 PoissonDistribution d = new PoissonDistribution(mu);
-                foreach (double P in new double[] { 0.01, 0.1, 0.3 , 0.5, 0.7, 0.9, 0.99 }) {
+                foreach (double P in new double[] { 0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99 }) {
 
                     double Q = 1.0 - P;
 
@@ -461,7 +461,7 @@ namespace Test {
                         sMin = "Chernov";
                     }
 
-                    double kCantelli = mu + Math.Sqrt(mu * P / Q); 
+                    double kCantelli = mu + Math.Sqrt(mu * P / Q);
                     if (kCantelli < kMax) {
                         kMax = kCantelli;
                         sMax = "Cantelli";
@@ -471,7 +471,7 @@ namespace Test {
                     Assert.IsTrue(kMin <= k);
                     Assert.IsTrue(k <= kMax);
 
-                    Console.WriteLine("mu={0} P={1} {2} ({3}) <= {4}<= {5} ({6})", 
+                    Console.WriteLine("mu={0} P={1} {2} ({3}) <= {4}<= {5} ({6})",
                         mu, P, kMin, sMin, k, kMax, sMax);
                 }
             }
@@ -529,7 +529,7 @@ namespace Test {
                 BivariateSample residuals = new BivariateSample();
 
                 double s2 = 0.0;
-                foreach(XY point in sample) {
+                foreach (XY point in sample) {
                     double rs = point.Y - (a + b * point.X);
                     residuals.Add(point.X, rs);
                     s2 += rs * rs;
@@ -558,7 +558,7 @@ namespace Test {
 
                 double u = s2 * (1.0 + 1.0 / n + MoreMath.Sqr(x0 - mx) / (cxx * n));
                 uSample.Add(u);
-               
+
             }
 
         }
@@ -664,15 +664,15 @@ namespace Test {
         [TestMethod]
         public void CoulombAsymptotic () {
 
-            
+
             double F1 = AdvancedMath.CoulombF(4, -30.0, 1.0);
             double G1 = AdvancedMath.CoulombG(4, -30.0, 1.0);
             Console.WriteLine("{0} {1}", F1, G1);
-            
+
 
             for (int L = 0; L < 8; L++) {
 
-                foreach(double eta in new double[] { -30.1, -5.1, -0.31, 0.0, 0.51, 3.1, 50.1}) {
+                foreach (double eta in new double[] { -30.1, -5.1, -0.31, 0.0, 0.51, 3.1, 50.1 }) {
 
                     foreach (double rho in new double[] { 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0 }) {
                         //double rho = 32.0 + (L * L + eta * eta) / 2.0;
@@ -688,7 +688,7 @@ namespace Test {
                         );
 
                         Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
-                            r.FirstSolutionDerivative * r.SecondSolutionValue, - r.FirstSolutionValue * r.SecondSolutionDerivative, 1.0,
+                            r.FirstSolutionDerivative * r.SecondSolutionValue, -r.FirstSolutionValue * r.SecondSolutionDerivative, 1.0,
                             TestUtilities.TargetPrecision * 8.0
                         ));
 
@@ -703,17 +703,88 @@ namespace Test {
         [TestMethod]
         public void BesselUaeTest () {
             //BesselUae.Evaluate(10000.0, 10000.0);
+            //BesselUae.EvaluateZeta(z, out zeta, out phi);
+        }
+
+        // We want to compute \ln\left(\frac{\pi}{\sin(\pi z)}\right). Define \sigma = \sin(\pi z), so
+        //   \ln\left(\frac{\pi}{\sin(\pi z)}\right) = \ln\pi - \ln\sigma
+        // For z = x + i y, 
+        //   \sigma = \sin(\pi x) \cosh(\pi y) + i \cos(\pi x) \sinh(\pi y)
+        
+        // For the magnitude
+        //   \sigma^2 = \sin^2(\pi x) \cosh^2(\pi y) + \cos^2(\pi x) \sinh^2(\pi y)
+        // Using standard formulas to express \cos^2 from \sin^2 and \cosh^2 from \sinh^2, this becomes
+        //   \sigma^2 = \sin^2(\pi x) + \sinh^2(\pi y)
+        // This form is useful, but it still has problems for large |y|. \sinh will overflow for
+        // |y| > ~200, but \ln \sigma is representable for pretty much the entire range of y.
+
+        private static Complex LogGammaReflectionTerm (Complex z) {
+
+            double y = Math.PI * z.Im;
+
+            Complex s = new Complex(MoreMath.SinPi(z.Re) * Math.Cosh(y), MoreMath.CosPi(z.Re) * Math.Sinh(y));
+            Complex logs = ComplexMath.Log(Math.PI / s);
+
+            double m;
+            if (Math.Abs(y) < 256.0) {
+                m = Math.Log(Math.PI / MoreMath.Hypot(MoreMath.SinPi(z.Re), Math.Sinh(y)));
+            } else {
+                // For large |y|, sinh(y) overflows, but it's log doesn't.
+                // This expression is not absolutely equal to the above, but the neglected e^{-|y|} 
+                // corrections are supressed by hundreds of orders of magnitude.
+                m = Math.Log(2.0 * Math.PI) - Math.Abs(y) - 0.5 * MoreMath.LogOnePlus(MoreMath.Sqr(MoreMath.SinPi(z.Re) / Math.Sinh(y)));
+            }
+            double a = -Math.Atan2(MoreMath.CosPi(z.Re) * Math.Tanh(y), MoreMath.SinPi(z.Re));
+
+            // I'm not super-pleased with this implementation, first because it requires multiple evaluations of different
+            // hyperbolic trig functions and second just because it looks a mess. 
+
+            return (logs);
+            //return (new Complex(m, a));
+        }
+
+        private static Complex NegativeLogGamma (Complex z) {
+            Debug.Assert(z.Re <= 0.0);
+
+            Complex p = LogGammaReflectionTerm(z);
+
+            Complex q = AdvancedComplexMath.LogGamma(1.0 - z);
+
+            // Hulle's formula disagrees with our at exact half-integer z.Re
+            // This could be a problem for large z.Re, for which a large cancelation is implied.
+            Complex r = new Complex(0.0, 2.0 * Math.PI * Math.Floor(0.5 * (z.Re + 0.5)));
+            if (z.Im < 0.0) r = -r;
+
+            return (p - q + r);
         }
 
     }
 
 
-    // Uniform asymptotic exansion for Bessel functions of large order is summarized in A&S 9.3 and DLMF 
+    // Uniform asymptotic exansion for Bessel functions of large order is summarized in A&S 9.3 and DLMF 10.20
     
-    // The basic form is:
-    //    J_{\nu}(\nu z) = \left(\frac{4 \zeta}{1 - z^2}\right)^{1/4}
+    // The basic expression 
+    //   J_{\nu}(\nu z) = \left(\frac{4 \zeta}{1 - z^2}\right)^{1/4} \left[
+    //     \frac{Ai(\nu^{2/3} \zeta)}{\nu^{1/3}} \sum_{k=0}{\infty} \frac{a_k(\zeta)}{\nu^{2k}} +
+    //     \frac{Ai'(\nu^{2/3} \zeta)}{\nu^{5/3}} \sum_{k=0}{\infty} \frac{b_k(\zeta)}{\nu^{2k}} \right]
 
     // Here \zeta is determined from z via a complicated expression that maps 0->\infinity, 1->0, and \infinity->-\infinity.
+
+    // There are several complications that make this development difficult. The first complication is determing \zeta. \zeta
+    // is related to z by
+    //    \zeta z^2 = (1 - z^2) \left( \frac{dz}{d\zeta} \right)^2
+    // which has the solution:
+    //    0 < z < 1: 2/3 \zeta^{3/2} = \ln(\frac{1 + \sqrt{1-z^2}}{z}) - \sqrt{1-z^2}
+    //    1 < z: 2/3 (-\zeta^{3/2}) = \sqrt{z^2 - 1} - \arccos(1/z)
+    // which maps z < 1 to increasing positive \zeta, z > 1 to increasingly negative \zeta, and z = 1 to \zeta = 0.
+    // These fromula are ugly, but also suffer from significant cancellation near z ~ 1, so to obtain accurate \zeta
+    // in this region, it is required to develop the RHS in a series in e = z - 1.
+
+    // The next complication is that the Airy functions must be evaluated with great precision, since they reproduce
+    // the oscilations in J and Y. 
+
+    // The next complication is that the a_k(\zeta) and b_k(\zeta) are even more complicated functions of \zeta. 
+    
     
     // What makes this difficult is that the expressions for \zeta and a_k(\zeta) and b_k(\zeta) have canceling singularities
     // at z = 1 (\zeta = 0). While the functions are ultimimately analytic, the singularities that must cancel are quite
@@ -725,6 +796,63 @@ namespace Test {
     // (available at http://oai.cwi.nl/oai/asset/2178/2178A.pdf)
 
     internal static class BesselUae {
+
+        private static readonly double OneOverSqrtTwoPi = 1.0 / Math.Sqrt(2.0 * Math.PI);
+
+        public static SolutionPair Airy_Negative_Asymptotic (double x) {
+            return (Airy_Negative_Asymptotic(x, 2.0 / 3.0 * Math.Pow(x, 3.0 / 2.0)));
+        }
+
+        public static SolutionPair Airy_Negative_Asymptotic (double x, double y) {
+
+            double s = MoreMath.Sin(y);
+            double c = MoreMath.Cos(y);
+
+            int k = 1;
+            double yInverse = 1.0 / y;
+            double u = 5.0 / 72.0  * yInverse;
+            double v = -7.0 / 72.0 * yInverse;
+            double u_even = 1.0 + u;
+            double u_odd = 1.0 - u;
+            double v_even = 1.0 + v;
+            double v_odd = 1.0 - v;
+            while (k < 128) {
+                double u_even_old = u_even;
+                double u_odd_old = u_odd;
+                double v_even_old = v_even;
+
+                k++;
+                u *= -(0.5 * (k - 1) + 5.0 / 72.0 / k) * yInverse;
+                v = -(1.0 + 2.0 / (6 * k - 1)) * u;
+                //u *= -(6 * k - 5) * (6 * k - 3) * (6 * k - 1) * z / ((2 * k - 1) * k);
+                u_even += u;
+                u_odd += u;
+                v_even += v;
+                v_odd += v;
+
+                k++;
+                u *= (0.5 * (k - 1) + 5.0 / 72.0 / k) * yInverse;
+                v = -(1.0 + 2.0 / (6 * k - 1)) * u;
+                //u *= (6 * k - 5) * (6 * k - 3) * (6 * k - 1) * z / ((2 * k - 1) * k);
+                u_even += u;
+                u_odd -= u;
+                v_even += v;
+                v_odd -= v;
+
+                if ((u_even == u_even_old) && (u_odd == u_odd_old) && (v_even == v_even_old)) {
+                    double xFourthRoot = Math.Pow(x, 1.0 / 4.0);
+                    double n = OneOverSqrtTwoPi / xFourthRoot;
+                    double m = OneOverSqrtTwoPi * xFourthRoot;
+                    return new SolutionPair(
+                        n * (s * u_even + c * u_odd), m * (s * v_odd - c * v_even),
+                        n * (c * u_even - s * u_odd), m * (s * v_even + c * v_odd)
+                    );
+                }
+
+            }
+            throw new NonconvergenceException();
+
+        }
 
         private static readonly double CbrtTwo = Math.Pow(2.0, 1.0 / 3.0);
 
@@ -752,8 +880,21 @@ namespace Test {
             43257635097401811452791703.0 / 1304648160286655999267578125.0,
             -1413145527493419079807132911728.0 / 45940812876930433457845458984375.0,
             8477921788590209817825424263485828.0 / 295629130863047339301235528564453125.0,
-            -19355768761912897160895124453273481957.0 / 720842364087730428996179297149658203125.0
+            -19355768761912897160895124453273481957.0 / 720842364087730428996179297149658203125.0,
+            20193853600897473400972883428162015393561.0 / 800135024137380776185759019836120605468750.0,
+            -8998783481498741573746874301320903998981648.0 / 378063798904912416747771136872566986083984375.0,
+            2355083733074596245284002631702400017597437.0 / 104592548954800331219019005477565765380859375.0,
+            -8194181457446397986704636409997877371597271963852981.0 / 383635977269427222007301930021869110935955047607421875.0,
+            46031971106083293475063974876599177738247302588282431.0 / 2266266583869589380969775880051968107073402404785156250.0,
+            -445064482301791066659237430863379294049292971924644077632.0 / 22989385937870426278787568156560506472837106227874755859375.0,
+            490476198188675169925160213749179549084836875610427400208.0 / 26526214543696645706293347872954430545581276416778564453125.0,
+            -401690154573285433897214071223109161316172771519168044767966792.0 / 22702593348295492710959693243807414154588463327682018280029296875.0,
+            2210868073858524888496964133636530234096101297055954328806560759492.0 / 130350723474796620648760238708194236270928760273107588291168212890625.0,
+            -497213753307719277844728583245863479552772114438371686749150807854784.0 / 30532150229288900759651917451265496111152159617816354334354400634765625.0,
+            193635801727377962771023777678202533839652872384146639842765327126560536.0 / 12365520842862004807659026567762525925016624645215623505413532257080078125.0
         };
+
+        // If we could get analytic expression for terms of arccos(1/z), we wouldn't have to store these values.
 
         // We can evaluate
         //   \phi = \left( \frac{4 \zeta}{1-z^2} \right)^{1/4}
@@ -778,67 +919,45 @@ namespace Test {
         }
         */
 
-        public static void EvaluateZeta (double z, out double zeta, out double phi) {
+        public static void ZetaFromZ (double z, out double zeta, out double phi, out double y, out double zeta_t) {
 
-            if (z < 0.875) {
+            if (z < 0.75) {
                 double v = (1.0 - z) * (1.0 + z);
                 double s = Math.Sqrt(v);
-                zeta = Math.Pow(3.0 / 2.0 * (Math.Log((1.0 + s) / z) - s), 2.0 / 3.0);
+                y = Math.Log((1.0 + s) / z) - s;
+                zeta = Math.Pow(3.0 / 2.0 * y, 2.0 / 3.0);
                 phi = Math.Pow(4.0 * zeta / v, 1.0 / 4.0);
-            } else if (z < 1.125) {
-                double e = z - 1.0;
-                zeta = c[1];
-                double ek = 1.0;
-                for (int k = 2; k < c.Length; k++) {
-                    double zeta_old = zeta;
-                    ek *= e;
-                    zeta += c[k] * ek;
-                    if (zeta == zeta_old) break;
-                }
-                phi = CbrtTwo * Math.Pow(-zeta / (1.0 + 0.5 * e), 0.25);
-                zeta = CbrtTwo * zeta * e;
+                zeta_t = zeta / v;
+            } else if (z <= 1.25) {
+                ZetaFromZSeries(z, out zeta, out phi, out zeta_t);
+                y = 2.0 / 3.0 * Math.Pow(Math.Abs(zeta), 3.0 / 2.0);
             } else {
                 double v = (z - 1.0) * (z + 1.0);
                 double s = Math.Sqrt(v);
-                zeta = Math.Pow(3.0 / 2.0 * (s - Math.Acos(1.0 / z)), 2.0 / 3.0);
+                y = s - Math.Acos(1.0 / z);
+                zeta = Math.Pow(3.0 / 2.0 * y, 2.0 / 3.0);
                 phi = Math.Pow(4.0 * zeta / v, 1.0 / 4.0);
+                zeta_t = zeta / v;
                 zeta = -zeta;
             }
-            /*
+        }
+
+        public static void ZetaFromZSeries(double z, out double zeta, out double phi, out double zeta_t) {
             double e = z - 1.0;
-            if (Math.Abs(e) < 0.125) {
-
-                zeta = c[1];
-                double ek = 1.0;
-                for (int k = 2; k < c.Length; k++) {
-                    double zeta_old = zeta;
-                    ek *= e;
-                    zeta += c[k] * ek;
-                    if (zeta == zeta_old) break;
+            zeta = c[1];
+            double ek = 1.0;
+            for (int k = 2; k < c.Length; k++) {
+                double zeta_old = zeta;
+                ek *= e;
+                zeta += c[k] * ek;
+                if (zeta == zeta_old) {
+                    phi = CbrtTwo * Math.Pow(-zeta / (1.0 + 0.5 * e), 0.25);
+                    zeta_t = CbrtTwo * (-zeta) / (1.0 + z);
+                    zeta = CbrtTwo * zeta * e;
+                    return;
                 }
-                phi = CbrtTwo * Math.Pow(-zeta / (1.0 + 0.5 * e), 0.25);
-                zeta = CbrtTwo * zeta * e;
-
-                double ek = e;
-                zeta = c[1] * e;
-                phi = c[1];
-                for (int k = 2; k < c.Length; k++) {
-                    phi += c[k] * ek;
-                    ek *= e;
-                    zeta += c[k] * ek;
-                }
-                zeta = CbrtTwo * zeta;
-                phi = CbrtTwo * Math.Pow(-phi / (1.0 + e / 2.0), 1.0 / 4.0);
-            } else {
-                if (z < 1.0) {
-                    double s = Math.Sqrt(1.0 - z * z);
-                    zeta = Math.Pow(3.0 / 2.0 * (Math.Log((1.0 + s) / z) - s), 2.0 / 3.0);
-                } else {
-                    zeta = -Math.Pow(3.0 / 2.0 * (Math.Sqrt(z * z - 1.0) - Math.Acos(1.0 / z)), 2.0 / 3.0);
-                }
-                phi = Math.Pow(4.0 * zeta / (1.0 - z * z), 1.0 / 4.0);
             }
-            */
+            throw new NonconvergenceException();
         }
 
         // A & S give expressions for a_k(\zeta) and b_k(\zeta). They start out
@@ -893,7 +1012,331 @@ namespace Test {
             40948053418677371831115518818104241381.0 / 14820745152267765143433288288000000000000000.0,
             -28685174387749486839072824921671801053073.0 / 22675740082969680669452931080640000000000000000.0,
             -27122073903808716897938907648268793696783.0 / 21978025003493690495008225508928000000000000000.0
+        }; // Last 3 are wrong!
+
+        private static readonly double[] b0Coefficients = {
+            1.0 / 70.0,
+            2.0 / 225.0,
+            138.0 / 67375.0,
+            -296.0 / 511875.0,
+            -38464.0 / 63669375.0,
+            -117472.0 / 797671875.0,
+            4835327648.0 / 90819588234375.0,
+            196235264.0 / 3768999609375.0,
+            1660313255231104.0 / 134643823706970703125.0,
+            -66399236608.0 / 13534477597265625.0,
+            -3601874963621281792.0 / 777568081907755810546875.0,
+            -31198440677844992.0 / 28963218121581884765625.0,
+            339118989445333019205632.0 / 757644590174265019544677734375.0,
+            1778526038024190427136.0 / 4282935879728921209716796875.0,
+            23549536309011999311770771456.0 / 246441833876147155212368990478515625.0,
+            -93310845265220285037936508928.0 / 2297957529817804948349940032958984375.0,
+            -2682064503630061540247431282688.0 / 71878868213876253603607622222900390625.0,
+            -48526252331737774888068779474944.0 / 5687111848975905246448949416351318359375.0,
+            4909761534958526661894859265996325658427392.0 / 1336710722193126209084675714361913278522491455078125.0,
+            288827066125442828982554677743714304.0 / 86063906145641111265659573584224700927734375.0,
+            395038580211589042747271815127586640142270464.0 / 516856005412127584113031674763288032342052459716796875.0,
+            -3020453127690291145437890663054459443085312.0 / 9105227772572515212600628454363334487438201904296875.0,
+            -415693811852901987488470406337119856435358859264.0 / 1376620400423164523223509095780671807415387630462646484375.0,
+            -135785596536652911125363778092812910678351066219675648.0 / 1979960863899090463260579307483773619973095773875713348388671875.0,
+            6752931067282482895206993683275844503156765416885321728.0 / 225597098936558707288627441254897451144546897822630405426025390625.0,
+            38752618496816645289812974945044692001524843332763648.0 / 1425897741491114531154738184401894582285151277482509613037109375.0,
+            1050643748528891762264542365939787384758785621457951663175397015552.0 / 170564061091910602507134320119758253348268386453085248322148621082305908203125.0,
+            -198443088909204369513525850160250059674156051864171949512982528.0 / 73507181622110718234434843090222511683194777688575632981956005096435546875.0,
+            -1594423240529392256942693018572814078726814644678067494840977850368.0 / 651728824538595214689523658919652300357741934836351014538295567035675048828125.0,
+            -287452277097585176472798598230521879323692918524142193979974221824.0 / 519207610990370811865589760536068859381573041144862004953138530254364013671875.0,
+            46158689539926545997946293538262538562766939122741043690093447245120111241429254144.0 / 189647829723697244011171944096524794232524042212212634869091488969100187900476157665252685546875.0,
+            81263889690714659724831233098245316337847009260409370512461788086272.0 / 368967882186524096878157583155933589107213264279007752461438067257404327392578125.0
         };
+
+        private static readonly double[][] aCoefficients;
+
+        private static readonly double[][] bCoefficients;
+
+        static BesselUae () {
+
+            const int count = 6;
+            aCoefficients = new double[count][];
+            bCoefficients = new double[count][];
+
+            aCoefficients[0] = new double[] { 1.0 };
+            bCoefficients[0] = b0Coefficients;
+
+            for (int n = 1; n < count; n++) {
+
+                double[] bCoefficientsPrevious = bCoefficients[n - 1];
+
+                double[] aCoefficientsNext = new double[bCoefficientsPrevious.Length - 1];
+
+                // Determine zeroth a coefficient.
+                double a0 = 0.0;
+                for (int m = 1; m < n; m++) {
+                    a0 += aCoefficients[m][0] * aCoefficients[n - m][0] - aCoefficients[m][1] * bCoefficients[n - 1 - m][0];
+                }
+                for (int m = 0; m < n; m++) {
+                    a0 += aCoefficients[m][0] * bCoefficients[n - 1 - m][1];
+                }
+                aCoefficientsNext[0] = -0.5 * a0;
+                
+                // Determine a coefficients.
+                for (int i = 1; i < aCoefficientsNext.Length; i++) {
+                    double s = 0.0;
+                    int jMax = i - 1;
+                    for (int j = 0; j <= jMax; j++) {
+                        s += (2 * j + 1) * b0Coefficients[j] * bCoefficientsPrevious[jMax - j];
+                    }
+                    aCoefficientsNext[i] = (2.0 * s - i * (i + 1) * bCoefficientsPrevious[i + 1]) / (2 * i);
+                }
+
+                // Determine b coefficients.
+                double[] bCoefficientsNext = new double[aCoefficientsNext.Length - 2];
+                for (int i = 0; i < bCoefficientsNext.Length; i++) {
+                    double s = 0.0;
+                    for (int j = 0; j <= i; j++) {
+                        s += (2 * j + 1) * b0Coefficients[j] * aCoefficientsNext[i - j];
+                    }
+                    bCoefficientsNext[i] = (2.0 * s - (i + 1) * (i + 2) * aCoefficientsNext[i + 2]) / (2 * (2 * i + 1));
+                }
+
+                aCoefficients[n] = aCoefficientsNext;
+                bCoefficients[n] = bCoefficientsNext;
+            }
+
+        }
+
+        public static double EvaluateSeries(double[] coefficients, double x) {
+            double s = coefficients[0] + coefficients[1] * x;
+            double xk = x;
+            for (int k = 2; k < coefficients.Length; k++) {
+                double s_old = s;
+                xk *= x;
+                s += coefficients[k] * xk;
+                if (s == s_old) return (s);
+            }
+            throw new NotImplementedException();
+        }
+
+        public static Tuple<double, double> Bessel_Uae_Series (double nu, double x) {
+
+            double z = x / nu;
+            ZetaFromZSeries(z, out double zeta, out double phi, out double zeta_t);
+            SolutionPair p = AdvancedMath.Airy(Math.Pow(nu, 2.0 / 3.0) * zeta);
+
+            double nu_oneThirdPower = Math.Pow(nu, 1.0 / 3.0);
+            double nu_fiveThirdPower = Math.Pow(nu, 5.0 / 3.0);
+            double ja = p.FirstSolutionValue / nu_oneThirdPower;
+            double jb = p.FirstSolutionDerivative / nu_fiveThirdPower;
+            double ya = p.SecondSolutionValue / nu_oneThirdPower;
+            double yb = p.SecondSolutionDerivative / nu_fiveThirdPower;
+
+            double a = 0.0;
+            double b = 0.0;
+            double J = 0.0;
+            double Y = 0.0;
+            double nu_power = 1.0;
+            double nu_minusTwoPower = 1.0 / (nu * nu);
+            double eta = zeta / CbrtTwo;
+            for (int k = 0; k < 4; k++) {
+
+                double j_old = J;
+                double y_old = Y;
+
+                double ak = k == 0 ? 1.0 : EvaluateSeries(aCoefficients[k], eta);
+                a += ak * nu_power;
+                double bk = CbrtTwo * EvaluateSeries(bCoefficients[k], eta);
+                b += bk * nu_power;
+
+                J = phi * (ja * a + jb * b);
+                Y = -phi * (ya * a + yb * b);
+
+                if ((J == j_old) && (Y == y_old)) {
+                    return Tuple.Create(J, Y);
+                }
+
+                nu_power *= nu_minusTwoPower;
+            }
+            throw new NonconvergenceException();
+        }
+
+        public static double BesselJ (double nu, double x) {
+
+            double z = x / nu;
+            ZetaFromZ(z, out double zeta, out double phi, out double y, out double zeta_t);
+            SolutionPair p = AdvancedMath.Airy(Math.Pow(nu, 2.0 / 3.0) * zeta);
+
+            double an = p.FirstSolutionValue / Math.Pow(nu, 1.0 / 3.0);
+            double bn = p.FirstSolutionDerivative / Math.Pow(nu, 5.0 / 3.0);
+
+            double nui = 1.0 / (nu * nu);
+            double cbrt2 = Math.Pow(2.0, 1.0 / 3.0);
+            double eta = zeta / cbrt2;
+
+            double a0 = 1.0;
+            double v0a = phi * an;
+
+            double b0 = cbrt2 * EvaluateSeries(bCoefficients[0], eta);
+            double v0b = phi * (an * a0 + bn * b0);
+
+            double a1 = EvaluateSeries(aCoefficients[1], eta);
+            double v1a = phi * (an * (a0 + nui * a1) + bn * b0);
+
+            double b1 = cbrt2 * EvaluateSeries(bCoefficients[1], eta);
+            double v1b = phi * (an * (a0 + nui * a1) + bn * (b0 + nui * b1));
+
+            double a2 = EvaluateSeries(aCoefficients[2], eta);
+            double v2a = phi * (an * (a0 + nui * a1 + nui * nui * a2) + bn * (b0 + nui * b1));
+
+            double b2 = cbrt2 * EvaluateSeries(bCoefficients[2], eta);
+            double v2b = phi * (an * (a0 + nui * a1 + nui * nui * a2) + bn * (b0 + nui * b1 + nui * nui * b2));
+
+            return (v2b);
+
+        }
+
+        private static Func<double, double>[] uFunctions = new Func<double, double>[] {
+            t => 1.0,
+            t => (3.0 - t * 5.0) / 24.0,
+            t => (81.0 - t * (462.0 - t * 385.0)) / 1152.0,
+            t => (30375.0 - t * (369603.0 - t * (765765.0 - t * 425425.0))) / 414720.0,
+            t => (4465125.0 - t * (94121676.0 - t * (349922430.0 - t * (446185740.0 - t *  185910725.0)))) / 39813120.0,
+            t => (1519035525.0 - t * (49286948607.0 - t * ( 284499769554.0 - t * (614135872350.0 - t * (566098157625.0 - t * 188699385875.0))))) / 6688604160.0,
+            t => (2757049477875.0 - t * (127577298354750.0 - t * (1050760774457901.0 - t * (3369032068261860.0 - t * (5104696716244125.0 - t * (3685299006138750.0 - t * 1023694168371875.0)))))) / 4815794995200.0,
+            t => (199689155040375.0 - t * (12493049053044375.0 - t * (138799253740521843.0 - t * (613221795981706275.0 - t * (1347119637570231525.0 - t * (1570320948552481125.0 - t * (931766432052080625.0 - t * 221849150488590625.0))))))) / 115579079884800.0
+        };
+
+        private static double[] mu;
+
+        private static double[] lambda;
+
+        private static void BesselUaePolynomialInit () {
+
+            int nMax = 4;
+
+            mu = new double[2 * nMax + 1];
+            lambda = new double[mu.Length];
+
+            mu[0] = 1.0;
+            lambda[0] = 1.0;
+
+            double q = 1.0;
+            for (int i = 1; i < lambda.Length; i++) {
+                double p = 1.0;
+                int jMax = 6 * i - 1;
+                for (int j = 2 * i + 1; j <= jMax; j += 2) {
+                    p *= j;
+                }
+                q *= 144.0 * i;
+                lambda[i] = p / q;
+                mu[i] = -(jMax + 2.0) / jMax * lambda[i];
+            }
+
+        }
+
+        public static double BesselJ_Uae_Polynomials (double nu, double x) {
+
+            BesselUaePolynomialInit();
+
+            double z = x / nu;
+            ZetaFromZ(z, out double zeta, out double phi, out double y, out double zeta_t);
+
+            SolutionPair p;
+            double arg = Math.Pow(nu, 2.0 / 3.0) * zeta;
+            if (arg < -32.0) {
+                p = Airy_Negative_Asymptotic(arg, nu * y);
+            } else {
+                p = AdvancedMath.Airy(arg);
+            }
+            //SolutionPair p = AdvancedMath.Airy(Math.Pow(nu, 2.0 / 3.0) * zeta);
+
+            double an = p.FirstSolutionValue / Math.Pow(nu, 1.0 / 3.0);
+            double bn = p.FirstSolutionDerivative / Math.Pow(nu, 5.0 / 3.0);
+
+            double t = 1.0 / ((1.0 - z) * (1.0 + z));
+            double r = 0.5 * phi * phi; // = (\zeta t)^(1/2)
+
+            double a0 = mu[0] * uFunctions[0](t);
+            double b0 = - lambda[0] * r * MoreMath.Pow(zeta, -1) * uFunctions[1](t) - lambda[1] * MoreMath.Pow(zeta, -2) * uFunctions[0](t);
+
+            double b0Book = -5.0 / 48.0 / (zeta * zeta) + 1.0 / Math.Sqrt(-zeta) * (5.0 / 24.0 / Math.Pow(z * z - 1.0, 1.5) + 1.0 / 8.0 / Math.Sqrt(z * z - 1.0));
+
+            double J0 = phi * (an * a0 + bn * b0);
+
+            double nui = 1.0 / (nu * nu);
+
+            double a1 = mu[0] * r * r * MoreMath.Pow(zeta, -1) * uFunctions[2](t) + mu[1] * r * MoreMath.Pow(zeta, -2) * uFunctions[1](t) + mu[2] * MoreMath.Pow(zeta, -3) * uFunctions[0](t);
+            double b1 = -lambda[0] * r * r * r * MoreMath.Pow(zeta, -2) * uFunctions[3](t) -
+                lambda[1] * r * r * MoreMath.Pow(zeta, -3) * uFunctions[2](t) -
+                lambda[2] * r * MoreMath.Pow(zeta, -4) * uFunctions[1](t) -
+                lambda[3] * MoreMath.Pow(zeta, -5) * uFunctions[0](t);
+
+            double J1 = phi * (an * (a0 + nui * a1) + bn * (b0 + nui * b1));
+
+            return (J1);
+        }
+
+        public static Tuple<double, double> Bessel_Uae_Polynomials (double nu, double x) {
+
+            BesselUaePolynomialInit();
+
+            double z = x / nu;
+            ZetaFromZ(z, out double zeta, out double phi, out double yy, out double zeta_t);
+
+            SolutionPair p;
+            double arg = Math.Pow(nu, 2.0 / 3.0) * zeta;
+            if (arg < -32.0) {
+                p = Airy_Negative_Asymptotic(-arg, nu * yy);
+            } else {
+                p = AdvancedMath.Airy(arg);
+            }
+            //SolutionPair p = AdvancedMath.Airy(Math.Pow(nu, 2.0 / 3.0) * zeta);
+
+            double nu_oneThirdPower = Math.Pow(nu, 1.0 / 3.0);
+            double nu_fiveThirdPower = Math.Pow(nu, 5.0 / 3.0);
+            double ja = p.FirstSolutionValue / nu_oneThirdPower;
+            double jb = p.FirstSolutionDerivative / nu_fiveThirdPower;
+            double ya = p.SecondSolutionValue / nu_oneThirdPower;
+            double yb = p.SecondSolutionDerivative / nu_fiveThirdPower;
+
+            double t = 1.0 / ((1.0 - z) * (1.0 + z));
+            double r = 0.5 * phi * phi;
+            double nu_minusTwoPower = 1.0 / (nu * nu);
+
+            double a = 0.0;
+            double b = 0.0;
+            double j = 0.0;
+            double y = 0.0;
+            double nu_power = 1.0;
+            for (int k = 0; k < 4; k++) {
+
+                double j_old = j;
+                double y_old = y;
+
+                double ak = 0.0;
+                int iMax = 2 * k;
+                for (int i = 0; i <= iMax; i++) {
+                    ak += mu[i] * uFunctions[iMax - i](t) * MoreMath.Pow(r, iMax - i) * MoreMath.Pow(zeta, -(k + i));
+                }
+                a += ak * nu_power;
+
+                double bk = 0.0;
+                iMax += 1;
+                for (int i = 0; i <= iMax; i++) {
+                    bk -= lambda[i] * uFunctions[iMax - i](t) * MoreMath.Pow(r, iMax - i) * MoreMath.Pow(zeta, -(k + 1 + i));
+                }
+                b += bk * nu_power;
+
+                j = phi * (ja * a + jb * b);
+                y = -phi * (ya * a + yb * b);
+
+                if ((j == j_old) && (y == y_old)) {
+                    return Tuple.Create(j, y);
+                }
+
+                nu_power *= nu_minusTwoPower;
+            }
+            throw new NonconvergenceException();
+
+        }
 
         private static readonly double[] b0 = ComputeBZeroCoefficients();
 
@@ -1030,7 +1473,7 @@ namespace Test {
 
             // Compute \zeta and \phi.
             double zeta, phi;
-            EvaluateZeta(z, out zeta, out phi);
+            ZetaFromZ(z, out zeta, out phi, out double y, out double zeta_t);
             Console.WriteLine("z'={0:R} zeta'={1:R} phi'={2:R}", z, zeta, phi);
 
             // Compute Airy functions.

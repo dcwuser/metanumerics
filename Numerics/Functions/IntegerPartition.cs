@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
+using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -186,10 +186,15 @@ namespace Meta.Numerics.Functions {
 
         /// <inheritdoc />
         public override string ToString () {
+            return (ToString(CultureInfo.CurrentCulture));
+
+        }
+
+        private string ToString (IFormatProvider provider) {
             StringBuilder text = new StringBuilder();
             text.Append(values[0]);
             for (int i = 1; i < values.Length; i++) {
-                text.AppendFormat("+{0}", values[i]);
+                text.AppendFormat(provider, "+{0}", values[i]);
             }
             return (text.ToString());
         }

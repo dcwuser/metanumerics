@@ -855,7 +855,7 @@ namespace Meta.Numerics.Statistics {
             for (int r = 0; r < rCount; r++) {
                 for (int c = 0; c < cCount; c++) {
                     IReadOnlyCollection<double> sample = samples[r, c];
-                    if (sample == null) throw new ArgumentNullException(String.Format("{0}[{1},{2}]", nameof(samples), r, c));
+                    if (sample == null) throw new ArgumentNullException(nameof(samples));
                     if (m < 0) {
                         m = sample.Count;
                     } else {

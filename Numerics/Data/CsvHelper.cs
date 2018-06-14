@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
+using System.Globalization;
 using System.Text;
 
 namespace Meta.Numerics.Data {
@@ -97,11 +97,11 @@ namespace Meta.Numerics.Data {
             if (cell == null) {
                 return (String.Empty);
             } else {
-                string text = cell.ToString();
+                string text = String.Format(CultureInfo.InvariantCulture, "{0}", cell);
                 int forbiddenIndex = text.IndexOfAny(delimiterOrEscape);
                 if (forbiddenIndex >= 0) {
                     text = text.Replace(Char.ToString(escape), $"{escape}{escape}");
-                    text = String.Format("\"{0}\"", text);
+                    text = String.Format(CultureInfo.InvariantCulture, "\"{0}\"", text);
                 }
                 return (text);
             }

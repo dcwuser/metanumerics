@@ -152,6 +152,15 @@ namespace Meta.Numerics.Functions
             );
         }
 
+        public static Complex Gamma (Complex z) {
+            Complex t = z + LanczosGP;
+            return (
+                Global.SqrtTwoPI *
+                ComplexMath.Pow(t / Math.E, z - 0.5) * LanczosExpG *
+                Sum(z)
+            );
+        }
+
         public static double LogGamma(double x) {
             double t = x + LanczosGP;
             return (

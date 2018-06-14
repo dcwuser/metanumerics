@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace Meta.Numerics.Data {
 
@@ -64,7 +65,7 @@ namespace Meta.Numerics.Data {
         }
 
         public override object Parse(string text) {
-            return (Double.Parse(text));
+            return (Double.Parse(text, NumberFormatInfo.InvariantInfo));
         }
 
     }
@@ -72,12 +73,12 @@ namespace Meta.Numerics.Data {
     internal class IntParser : TypeParser<int> {
         public override bool IsParsable(string text) {
             int value;
-            bool isParsable = Int32.TryParse(text, out value);
+            bool isParsable = Int32.TryParse(text, NumberStyles.Integer, NumberFormatInfo.InvariantInfo, out value);
             return (isParsable);
         }
 
         public override object Parse(string text) {
-            return (Int32.Parse(text));
+            return (Int32.Parse(text, NumberFormatInfo.InvariantInfo));
         }
 
     }
@@ -86,12 +87,12 @@ namespace Meta.Numerics.Data {
 
         public override bool IsParsable(string text) {
             DateTime value;
-            bool isParsable = DateTime.TryParse(text, out value);
+            bool isParsable = DateTime.TryParse(text, DateTimeFormatInfo.InvariantInfo, DateTimeStyles.None, out value);
             return (isParsable);
         }
 
         public override object Parse(string text) {
-            return (DateTime.Parse(text));
+            return (DateTime.Parse(text, DateTimeFormatInfo.InvariantInfo));
         }
 
     }

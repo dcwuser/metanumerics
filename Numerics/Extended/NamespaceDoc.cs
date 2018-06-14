@@ -15,7 +15,7 @@ namespace Meta.Numerics.Extended {
     /// on the details of numerical algorithms.</para>
     /// </remarks>
     [CompilerGenerated]
-    internal class NamespaceDoc {
+    internal static class NamespaceDoc {
     }
 
 }

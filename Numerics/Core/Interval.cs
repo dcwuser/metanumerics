@@ -11,7 +11,7 @@ namespace Meta.Numerics {
     /// <para>Use the static methods <see cref="FromEndpoints"/>, <see cref="FromMidpointAndWidth"/>,
     /// and <see cref="FromEndpointAndWidth"/> to instantiate intervals.</para>
     /// </remarks>
-    public struct Interval {
+    public struct Interval : IEquatable<Interval> {
 
         private double a, b, w;
 
@@ -120,6 +120,10 @@ namespace Meta.Numerics {
 
         // equality
 
+        public bool Equals (Interval other) {
+            return ((this.a == other.a) && (this.w == other.w));
+        }
+
         /// <summary>
         /// Determines whether two intervals are equal.
         /// </summary>
@@ -127,8 +131,7 @@ namespace Meta.Numerics {
         /// <param name="i2">The second interval.</param>
         /// <returns>True if <paramref name="i1"/> and <paramref name="i2"/> are equal, otherwise false.</returns>
         public static bool operator == (Interval i1, Interval i2) {
-            // struct, so no null testing
-            return ((i1.a == i2.a) && (i1.w == i2.w));
+            return (i1.Equals(i2));
         }
 
         /// <summary>
@@ -138,7 +141,7 @@ namespace Meta.Numerics {
         /// <param name="i2">The second interval.</param>
         /// <returns>True if <paramref name="i1"/> and <paramref name="i2"/> are not equal, otherwise false.</returns>
         public static bool operator != (Interval i1, Interval i2) {
-            return (!(i1 == i2));
+            return (!i1.Equals(i2));
         }
 
         /// <summary>
@@ -147,9 +150,8 @@ namespace Meta.Numerics {
         /// <param name="obj">An object.</param>
         /// <returns>True if <paramref name="obj"/> is an equal <see cref="Interval"/>, otherwise false.</returns>
         public override bool Equals (object obj) {
-            if (obj is Interval) {
-                Interval i = (Interval) obj;
-                return (i == this);
+            if (obj is Interval other) {
+                return(this.Equals(other));
             } else {
                 return (false);
             }

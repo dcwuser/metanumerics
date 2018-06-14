@@ -163,7 +163,7 @@ namespace Meta.Numerics.Analysis {
                 z = y + d;
                 fz = f.Evaluate(z);
 
-                Debug.WriteLine(String.Format("f({0})={1} f({2})={3} f({4})={5} d={6}", x, fx, y, fy, z, fz, d));
+                Debug.WriteLine($"f({x})={fx} f({y})={fy} f({z})={fz} d={d}");
 
                 if (fz > fy) break;
 
@@ -267,13 +267,13 @@ namespace Meta.Numerics.Analysis {
 
             double fu = f.Evaluate(u); double fv = f.Evaluate(v); double fw = f.Evaluate(w);
 
-            Debug.WriteLine(String.Format("f({0})={1}  f({2})={3}  f({4})={5}", u, fu, v, fv, w, fw));
+            Debug.WriteLine($"f({u})={fu}  f({v})={fv}  f({w})={fw}");
 
             // move in the bracket boundaries, if possible
             if (fv < fu) { a = u; if (fw < fv) a = v; }
             if (fv < fw) { b = w; if (fu < fv) b = v; }
 
-            Debug.WriteLine(String.Format("[{0} {1}]", a, b));
+            Debug.WriteLine($"[{a} {b}]");
 
             // sort u, v, w by fu, fv, fw values
             // these three comparisons are the most efficient three-item sort
@@ -307,8 +307,8 @@ namespace Meta.Numerics.Analysis {
 
             while (f.EvaluationCount < settings.EvaluationBudget) {
 
-                Debug.WriteLine(String.Format("n={0} tol={1}", f.EvaluationCount, tol));
-                Debug.WriteLine(String.Format("[{0}  f({1})={2}  f({3})={4}  f({5})={6}  {7}]", a, u, fu, v, fv, w, fw, b));
+                Debug.WriteLine($"n={f.EvaluationCount} tol={tol}");
+                Debug.WriteLine($"[{a}  f({u})={fu}  f({v})={fv}  f({w})={fw}  {b}]");
 
                 // While a <= u <= b is guaranteed, a < v, w < b is not guaranteed, since the bracket can sometimes be made tight enough to exclude v or w.
                 // For example, if u < v < w, then we can set b = v, placing w outside the bracket.
@@ -328,8 +328,8 @@ namespace Meta.Numerics.Analysis {
                     return (new Extremum(u, fu, fpp, a, b, f.EvaluationCount, settings));
                 }
 
-                double x; ParabolicFit(u, fu, v, fv, w, fw, out x, out fpp);
-                Debug.WriteLine(String.Format("parabolic x={0} f''={1}", x, fpp));
+                ParabolicFit(u, fu, v, fv, w, fw, out double x, out fpp);
+                Debug.WriteLine($"parabolic x={x} f''={fpp}");
 
                 if (Double.IsNaN(fpp) || (fpp <= 0.0) || (x < a) || (x > b)) {
 
@@ -349,19 +349,19 @@ namespace Meta.Numerics.Analysis {
                         x = u + ub / (AdvancedMath.GoldenRatio + 1.0);
                     }
 
-                    Debug.WriteLine(String.Format("golden section x={0}", x));
+                    Debug.WriteLine($"golden section x={x}");
 
                 }
 
                 // Ensure we don't evaluate within tolerance of an existing point.
-                if (Math.Abs(x - u) < tol) { Debug.WriteLine(String.Format("shift from u (x={0})", x)); x = (x > u) ? u + tol : u - tol; }
-                if ((x - a) < tol) { Debug.WriteLine(String.Format("shift from a (x={0})", x)); x = a + tol; }
-                if ((b - x) < tol) { Debug.WriteLine(String.Format("shift from b (x={0})", x)); x = b - tol; }
+                if (Math.Abs(x - u) < tol) { Debug.WriteLine($"shift from u (x={x})"); x = (x > u) ? u + tol : u - tol; }
+                if ((x - a) < tol) { Debug.WriteLine($"shift from a (x={x})"); x = a + tol; }
+                if ((b - x) < tol) { Debug.WriteLine($"shift from b (x={x})"); x = b - tol; }
 
                 // Evaluate the function at the new point x.
                 double fx = f.Evaluate(x);
-                Debug.WriteLine(String.Format("f({0}) = {1}", x, fx));
-                Debug.WriteLine(String.Format("delta={0}", fu - fx));
+                Debug.WriteLine($"f({x}) = {fx}");
+                Debug.WriteLine($"delta={fu-fx}");
 
                 // Update a, b and u, v, w based on new point x.
 

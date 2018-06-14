@@ -29,16 +29,16 @@ namespace Meta.Numerics.Functions {
             // 2M must be an integer
             double tm = 2.0 * m;
             double tmt = Math.Floor(tm);
-            if (tmt != tm) throw new ArgumentOutOfRangeException("m");
+            if (tmt != tm) throw new ArgumentOutOfRangeException(nameof(m));
 
             int tmti = (int)tmt;
 
             twoM = (int)tmt;
             // -J <= M <= J
-            if (Math.Abs(tmti) > s.TwoJ) throw new ArgumentOutOfRangeException("m");
+            if (Math.Abs(tmti) > s.TwoJ) throw new ArgumentOutOfRangeException(nameof(m));
 
             // half-integer J requires half-integer M; integer J requires integer M
-            if ((s.TwoJ % 2) != Math.Abs(twoM % 2)) throw new ArgumentOutOfRangeException("m");
+            if ((s.TwoJ % 2) != Math.Abs(twoM % 2)) throw new ArgumentOutOfRangeException(nameof(m));
 
         }
 

@@ -44,7 +44,7 @@ namespace Meta.Numerics.Matrices {
         /// </summary>
         /// <param name="f">The fill function.</param>
         public virtual void Fill (Func<int, int, T> f) {
-            if (f == null) throw new ArgumentNullException("f");
+            if (f == null) throw new ArgumentNullException(nameof(f));
             for (int r = 0; r < this.RowCount; r++) {
                 for (int c = 0; c < this.ColumnCount; c++) {
                     this[r, c] = f(r, c);

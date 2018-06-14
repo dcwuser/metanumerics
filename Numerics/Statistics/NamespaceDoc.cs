@@ -32,6 +32,6 @@ namespace Meta.Numerics.Statistics {
     /// in the new central, static classes that can be applied to any appropriate collection.</para>
     /// </remarks>
     [CompilerGenerated]
-    internal class NamespaceDoc {
+    internal static class NamespaceDoc {
     }
 }

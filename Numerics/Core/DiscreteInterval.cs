@@ -9,7 +9,7 @@ namespace Meta.Numerics {
     /// <summary>
     /// Represents an interval on the integers.
     /// </summary>
-    public struct DiscreteInterval {
+    public struct DiscreteInterval : IEquatable<DiscreteInterval> {
 
         internal DiscreteInterval (int min, int max) {
             this.min = min;
@@ -58,6 +58,34 @@ namespace Meta.Numerics {
                 int w = max - min + 1;
                 if (w < 0) w = Int32.MaxValue;
                 return (w);
+            }
+        }
+
+        // Equality
+
+        public bool Equals (DiscreteInterval other) {
+            return ((this.min == other.min) && (this.max == other.max));
+        }
+
+        public static bool operator == (DiscreteInterval a, DiscreteInterval b) {
+            return (a.Equals(b));
+        }
+
+        public static bool operator != (DiscreteInterval a, DiscreteInterval b) {
+            return (!a.Equals(b));
+        }
+
+        public override bool Equals (object obj) {
+            if (obj is DiscreteInterval other) {
+                return (this.Equals(other));
+            } else {
+                return (false);
+            }
+        }
+
+        public override int GetHashCode () {
+            unchecked {
+                return (min.GetHashCode() + 31 * max.GetHashCode());
             }
         }
 

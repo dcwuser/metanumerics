@@ -221,8 +221,7 @@ namespace Meta.Numerics.Functions {
         private static SolutionPair Coulomb_Steed (double L, double eta, double rho) {
 
             // compute CF1 (F'/F)
-            int sign;
-            double f = Coulomb_CF1(L, eta, rho, out sign);
+            double f = Coulomb_CF1(L, eta, rho, out int sign);
 
             // compute CF2 ((G' + iF')/(G + i F))
             Complex z = Coulomb_CF2(L, eta, rho);
@@ -232,11 +231,11 @@ namespace Meta.Numerics.Functions {
             // use CF1, CF2, and Wronskian (FG' - GF' = 1) to solve for F, F', G, G' 
             double g = (f - p) / q;
 
-            SolutionPair result = new SolutionPair();
-            result.FirstSolutionValue = sign / Math.Sqrt(g * g * q + q);
-            result.FirstSolutionDerivative = f * result.FirstSolutionValue;
-            result.SecondSolutionValue = g * result.FirstSolutionValue;
-            result.SecondSolutionDerivative = (p * g - q) * result.FirstSolutionValue;
+            double F = sign / Math.Sqrt(g * g * q + q);
+            double FP = f * F;
+            double G = g * F;
+            double GP = (p * g - q) * F;
+            SolutionPair result = new SolutionPair(F, FP, G, GP);
             return (result);
 
         }
@@ -350,14 +349,11 @@ namespace Meta.Numerics.Functions {
             // Abromowitz & Stegun 14.5 describes this asymptotic expansion
 
             
-            long t00; double t01;
-            RangeReduction.ReduceByPiHalves(rho, out t00, out t01);
+            RangeReduction.ReduceByPiHalves(rho, out long t00, out double t01);
 
-            long t10; double t11;
-            RangeReduction.ReduceByPiHalves(AdvancedComplexMath.LogGamma(new Complex(L + 1.0, eta)).Im - eta * Math.Log(2.0 * rho), out t10, out t11);
+            RangeReduction.ReduceByPiHalves(AdvancedComplexMath.LogGamma(new Complex(L + 1.0, eta)).Im - eta * Math.Log(2.0 * rho), out long t10, out double t11);
 
-            long t20; double t1;
-            RangeReduction.ReduceByOnes(t01 + t11, out t20, out t1);
+            RangeReduction.ReduceByOnes(t01 + t11, out long t20, out double t1);
 
             long t0 = t00 + t10 + t20 - (long) L;
 
@@ -479,8 +475,7 @@ namespace Meta.Numerics.Functions {
             } else if ((rho < 4.0) && Math.Abs(rho * eta) < 8.0) {
 
                 // Below the safe series radius for L=0, compute using the series
-                double F, FP, G, GP;
-                Coulomb_Zero_Series(eta, rho, out F, out FP, out G, out GP);
+                Coulomb_Zero_Series(eta, rho, out double F, out double FP, out double G, out double GP);
 
                 // For higher L, recurse G upward, but compute F via the direct series.
                 // G is safe to compute via recursion and F is not because G is increasing
@@ -593,8 +588,7 @@ namespace Meta.Numerics.Functions {
 
             if ((rho < 4.0 + 2.0 * Math.Sqrt(L)) && (Math.Abs(rho * eta) < 8.0  + 4.0 * L)) {
                 // if rho and rho * eta are small enough, use the series expansion at the origin
-                double F, FP;
-                CoulombF_Series(L, eta, rho, out F, out FP);
+                CoulombF_Series(L, eta, rho, out double F, out double FP);
                 return (F);
             } else if (rho > 32.0 + (L * L + eta * eta) / 2.0) {
                 // if rho is large enough, use the asymptotic expansion
@@ -639,8 +633,7 @@ namespace Meta.Numerics.Functions {
 
             if ((rho < 4.0) && Math.Abs(rho * eta) < 8.0) {
                 // For small enough rho, use the power series for L=0, then recurse upward to desired L.
-                double F, FP, G, GP;
-                Coulomb_Zero_Series(eta, rho, out F, out FP, out G, out GP);
+                Coulomb_Zero_Series(eta, rho, out double F, out double FP, out double G, out double GP);
                 Coulomb_Recurse_Upward(0, L, eta, rho, ref G, ref GP);
                 return (G);
             } else if (rho > 32.0 + (L * L + eta * eta) / 2.0) {
@@ -812,8 +805,7 @@ namespace Meta.Numerics.Functions {
                 (8.0 + 4.0 * L) / Math.Abs(eta)
             );
 
-            double F, FP;
-            CoulombF_Series(L, eta, rho1, out F, out FP);
+            CoulombF_Series(L, eta, rho1, out double F, out double FP);
 
             // TODO: switch so we integrate w/o the C factor, then apply it afterward
             if ((F == 0.0) && (FP == 0.0)) return (0.0);

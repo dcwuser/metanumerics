@@ -226,7 +226,7 @@ namespace Meta.Numerics.Functions {
                 if (m % 2 != 0) f = -f;
             }
 
-            if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException("x");
+            if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException(nameof(x));
 
             return (f * LegendrePe(l, m, x));
 
@@ -293,8 +293,8 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Chebyshev_polynomials"/>
         /// <seealso href="http://mathworld.wolfram.com/ChebyshevPolynomialoftheFirstKind.html"/>
         public static double ChebyshevT (int n, double x) {
-			if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException("x");
-			if (n<0) throw new ArgumentOutOfRangeException("n");
+			if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException(nameof(x));
+			if (n<0) throw new ArgumentOutOfRangeException(nameof(n));
 			if (n==0) return(1.0);
 
             // very close to the endpoints, the recurrence looses accuracy for high n
@@ -441,9 +441,9 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         public static double ZernikeR (int n, int m, double rho) {
 
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
-            if ((m < 0) || (m > n)) throw new ArgumentOutOfRangeException("m");
-            if ((rho < 0.0) || (rho > 1.0)) throw new ArgumentOutOfRangeException("rho");
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+            if ((m < 0) || (m > n)) throw new ArgumentOutOfRangeException(nameof(m));
+            if ((rho < 0.0) || (rho > 1.0)) throw new ArgumentOutOfRangeException(nameof(rho));
 
             // n and m have the same parity
             if ((n - m) % 2 != 0) return (0.0);

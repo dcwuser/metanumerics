@@ -212,7 +212,7 @@ namespace Test {
             LinearRegressionResult linearFit = s.LinearRegression();
             NonlinearRegressionResult nonlinearFit = s.NonlinearRegression(
                 (IReadOnlyList<double> c, double x) => c[0] + c[1] * x,
-                new double[] { 1.0, 1.0 } 
+                new double[] { 1.0, 1.0 }
             );
 
             Assert.IsTrue(TestUtilities.IsNearlyEqual(linearFit.Parameters.ValuesVector, nonlinearFit.Parameters.ValuesVector, Math.Sqrt(TestUtilities.TargetPrecision)));
@@ -311,13 +311,13 @@ namespace Test {
                             sMin = "Chernov";
                         }
 
-                        
+
                         double kChernovUpper = 1.0 + mu + Math.Sqrt(-2.0 * mu * Math.Log(Q));
                         if (kChernovUpper < kMax) {
                             kMax = kChernovUpper;
                             sMax = "Chernov";
                         }
-                        
+
 
                         double kCantelli = mu + Math.Sqrt(n * p * (1.0 - p) * P / Q);
                         if (kCantelli < kMax) {
@@ -425,7 +425,7 @@ namespace Test {
 
             foreach (double mu in new double[] { 0.1, 2.0, 30.0 }) {
                 PoissonDistribution d = new PoissonDistribution(mu);
-                foreach (double P in new double[] { 0.01, 0.1, 0.3 , 0.5, 0.7, 0.9, 0.99 }) {
+                foreach (double P in new double[] { 0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99 }) {
 
                     double Q = 1.0 - P;
 
@@ -461,7 +461,7 @@ namespace Test {
                         sMin = "Chernov";
                     }
 
-                    double kCantelli = mu + Math.Sqrt(mu * P / Q); 
+                    double kCantelli = mu + Math.Sqrt(mu * P / Q);
                     if (kCantelli < kMax) {
                         kMax = kCantelli;
                         sMax = "Cantelli";
@@ -471,7 +471,7 @@ namespace Test {
                     Assert.IsTrue(kMin <= k);
                     Assert.IsTrue(k <= kMax);
 
-                    Console.WriteLine("mu={0} P={1} {2} ({3}) <= {4}<= {5} ({6})", 
+                    Console.WriteLine("mu={0} P={1} {2} ({3}) <= {4}<= {5} ({6})",
                         mu, P, kMin, sMin, k, kMax, sMax);
                 }
             }
@@ -529,7 +529,7 @@ namespace Test {
                 BivariateSample residuals = new BivariateSample();
 
                 double s2 = 0.0;
-                foreach(XY point in sample) {
+                foreach (XY point in sample) {
                     double rs = point.Y - (a + b * point.X);
                     residuals.Add(point.X, rs);
                     s2 += rs * rs;
@@ -558,7 +558,7 @@ namespace Test {
 
                 double u = s2 * (1.0 + 1.0 / n + MoreMath.Sqr(x0 - mx) / (cxx * n));
                 uSample.Add(u);
-               
+
             }
 
         }
@@ -664,15 +664,15 @@ namespace Test {
         [TestMethod]
         public void CoulombAsymptotic () {
 
-            
+
             double F1 = AdvancedMath.CoulombF(4, -30.0, 1.0);
             double G1 = AdvancedMath.CoulombG(4, -30.0, 1.0);
             Console.WriteLine("{0} {1}", F1, G1);
-            
+
 
             for (int L = 0; L < 8; L++) {
 
-                foreach(double eta in new double[] { -30.1, -5.1, -0.31, 0.0, 0.51, 3.1, 50.1}) {
+                foreach (double eta in new double[] { -30.1, -5.1, -0.31, 0.0, 0.51, 3.1, 50.1 }) {
 
                     foreach (double rho in new double[] { 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0 }) {
                         //double rho = 32.0 + (L * L + eta * eta) / 2.0;
@@ -688,7 +688,7 @@ namespace Test {
                         );
 
                         Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
-                            r.FirstSolutionDerivative * r.SecondSolutionValue, - r.FirstSolutionValue * r.SecondSolutionDerivative, 1.0,
+                            r.FirstSolutionDerivative * r.SecondSolutionValue, -r.FirstSolutionValue * r.SecondSolutionDerivative, 1.0,
                             TestUtilities.TargetPrecision * 8.0
                         ));
 
@@ -703,9 +703,59 @@ namespace Test {
         [TestMethod]
         public void BesselUaeTest () {
             //BesselUae.Evaluate(10000.0, 10000.0);
-            double z = 1.24;
-            double zeta; double phi;
             //BesselUae.EvaluateZeta(z, out zeta, out phi);
+        }
+
+        // We want to compute \ln\left(\frac{\pi}{\sin(\pi z)}\right). Define \sigma = \sin(\pi z), so
+        //   \ln\left(\frac{\pi}{\sin(\pi z)}\right) = \ln\pi - \ln\sigma
+        // For z = x + i y, 
+        //   \sigma = \sin(\pi x) \cosh(\pi y) + i \cos(\pi x) \sinh(\pi y)
+        
+        // For the magnitude
+        //   \sigma^2 = \sin^2(\pi x) \cosh^2(\pi y) + \cos^2(\pi x) \sinh^2(\pi y)
+        // Using standard formulas to express \cos^2 from \sin^2 and \cosh^2 from \sinh^2, this becomes
+        //   \sigma^2 = \sin^2(\pi x) + \sinh^2(\pi y)
+        // This form is useful, but it still has problems for large |y|. \sinh will overflow for
+        // |y| > ~200, but \ln \sigma is representable for pretty much the entire range of y.
+
+        private static Complex LogGammaReflectionTerm (Complex z) {
+
+            double y = Math.PI * z.Im;
+
+            Complex s = new Complex(MoreMath.SinPi(z.Re) * Math.Cosh(y), MoreMath.CosPi(z.Re) * Math.Sinh(y));
+            Complex logs = ComplexMath.Log(Math.PI / s);
+
+            double m;
+            if (Math.Abs(y) < 256.0) {
+                m = Math.Log(Math.PI / MoreMath.Hypot(MoreMath.SinPi(z.Re), Math.Sinh(y)));
+            } else {
+                // For large |y|, sinh(y) overflows, but it's log doesn't.
+                // This expression is not absolutely equal to the above, but the neglected e^{-|y|} 
+                // corrections are supressed by hundreds of orders of magnitude.
+                m = Math.Log(2.0 * Math.PI) - Math.Abs(y) - 0.5 * MoreMath.LogOnePlus(MoreMath.Sqr(MoreMath.SinPi(z.Re) / Math.Sinh(y)));
+            }
+            double a = -Math.Atan2(MoreMath.CosPi(z.Re) * Math.Tanh(y), MoreMath.SinPi(z.Re));
+
+            // I'm not super-pleased with this implementation, first because it requires multiple evaluations of different
+            // hyperbolic trig functions and second just because it looks a mess. 
+
+            return (logs);
+            //return (new Complex(m, a));
+        }
+
+        private static Complex NegativeLogGamma (Complex z) {
+            Debug.Assert(z.Re <= 0.0);
+
+            Complex p = LogGammaReflectionTerm(z);
+
+            Complex q = AdvancedComplexMath.LogGamma(1.0 - z);
+
+            // Hulle's formula disagrees with our at exact half-integer z.Re
+            // This could be a problem for large z.Re, for which a large cancelation is implied.
+            Complex r = new Complex(0.0, 2.0 * Math.PI * Math.Floor(0.5 * (z.Re + 0.5)));
+            if (z.Im < 0.0) r = -r;
+
+            return (p - q + r);
         }
 
     }
@@ -746,6 +796,63 @@ namespace Test {
     // (available at http://oai.cwi.nl/oai/asset/2178/2178A.pdf)
 
     internal static class BesselUae {
+
+        private static readonly double OneOverSqrtTwoPi = 1.0 / Math.Sqrt(2.0 * Math.PI);
+
+        public static SolutionPair Airy_Negative_Asymptotic (double x) {
+            return (Airy_Negative_Asymptotic(x, 2.0 / 3.0 * Math.Pow(x, 3.0 / 2.0)));
+        }
+
+        public static SolutionPair Airy_Negative_Asymptotic (double x, double y) {
+
+            double s = MoreMath.Sin(y);
+            double c = MoreMath.Cos(y);
+
+            int k = 1;
+            double yInverse = 1.0 / y;
+            double u = 5.0 / 72.0  * yInverse;
+            double v = -7.0 / 72.0 * yInverse;
+            double u_even = 1.0 + u;
+            double u_odd = 1.0 - u;
+            double v_even = 1.0 + v;
+            double v_odd = 1.0 - v;
+            while (k < 128) {
+                double u_even_old = u_even;
+                double u_odd_old = u_odd;
+                double v_even_old = v_even;
+
+                k++;
+                u *= -(0.5 * (k - 1) + 5.0 / 72.0 / k) * yInverse;
+                v = -(1.0 + 2.0 / (6 * k - 1)) * u;
+                //u *= -(6 * k - 5) * (6 * k - 3) * (6 * k - 1) * z / ((2 * k - 1) * k);
+                u_even += u;
+                u_odd += u;
+                v_even += v;
+                v_odd += v;
+
+                k++;
+                u *= (0.5 * (k - 1) + 5.0 / 72.0 / k) * yInverse;
+                v = -(1.0 + 2.0 / (6 * k - 1)) * u;
+                //u *= (6 * k - 5) * (6 * k - 3) * (6 * k - 1) * z / ((2 * k - 1) * k);
+                u_even += u;
+                u_odd -= u;
+                v_even += v;
+                v_odd -= v;
+
+                if ((u_even == u_even_old) && (u_odd == u_odd_old) && (v_even == v_even_old)) {
+                    double xFourthRoot = Math.Pow(x, 1.0 / 4.0);
+                    double n = OneOverSqrtTwoPi / xFourthRoot;
+                    double m = OneOverSqrtTwoPi * xFourthRoot;
+                    return new SolutionPair(
+                        n * (s * u_even + c * u_odd), m * (s * v_odd - c * v_even),
+                        n * (c * u_even - s * u_odd), m * (s * v_even + c * v_odd)
+                    );
+                }
+
+            }
+            throw new NonconvergenceException();
+
+        }
 
         private static readonly double CbrtTwo = Math.Pow(2.0, 1.0 / 3.0);
 
@@ -1131,7 +1238,15 @@ namespace Test {
 
             double z = x / nu;
             ZetaFromZ(z, out double zeta, out double phi, out double y, out double zeta_t);
-            SolutionPair p = AdvancedMath.Airy(Math.Pow(nu, 2.0 / 3.0) * zeta);
+
+            SolutionPair p;
+            double arg = Math.Pow(nu, 2.0 / 3.0) * zeta;
+            if (arg < -32.0) {
+                p = Airy_Negative_Asymptotic(arg, nu * y);
+            } else {
+                p = AdvancedMath.Airy(arg);
+            }
+            //SolutionPair p = AdvancedMath.Airy(Math.Pow(nu, 2.0 / 3.0) * zeta);
 
             double an = p.FirstSolutionValue / Math.Pow(nu, 1.0 / 3.0);
             double bn = p.FirstSolutionDerivative / Math.Pow(nu, 5.0 / 3.0);
@@ -1165,7 +1280,15 @@ namespace Test {
 
             double z = x / nu;
             ZetaFromZ(z, out double zeta, out double phi, out double yy, out double zeta_t);
-            SolutionPair p = AdvancedMath.Airy(Math.Pow(nu, 2.0 / 3.0) * zeta);
+
+            SolutionPair p;
+            double arg = Math.Pow(nu, 2.0 / 3.0) * zeta;
+            if (arg < -32.0) {
+                p = Airy_Negative_Asymptotic(-arg, nu * yy);
+            } else {
+                p = AdvancedMath.Airy(arg);
+            }
+            //SolutionPair p = AdvancedMath.Airy(Math.Pow(nu, 2.0 / 3.0) * zeta);
 
             double nu_oneThirdPower = Math.Pow(nu, 1.0 / 3.0);
             double nu_fiveThirdPower = Math.Pow(nu, 5.0 / 3.0);

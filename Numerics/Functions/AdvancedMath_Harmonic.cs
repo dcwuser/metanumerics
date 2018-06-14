@@ -16,8 +16,8 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value of Y<sub>l,m</sub>(&#x3B8;,&#x3C6;).</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="l"/> is negative, or <paramref name="m"/> lies outside the range [-l, l].</exception>
         public static Complex SphericalHarmonic (int l, int m, double theta, double phi) {
-            if (l < 0) throw new ArgumentOutOfRangeException("l");
-            if ((m > l) || (m < -l)) throw new ArgumentOutOfRangeException("m");
+            if (l < 0) throw new ArgumentOutOfRangeException(nameof(l));
+            if ((m > l) || (m < -l)) throw new ArgumentOutOfRangeException(nameof(m));
 
             if (m < 0) {
                 Complex y = SphericalHarmonic(l, -m, theta, phi);

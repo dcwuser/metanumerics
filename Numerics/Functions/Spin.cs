@@ -27,11 +27,11 @@ namespace Meta.Numerics.Functions {
 
             // no negative (or too large) spins
             double tj = 2.0 * j;
-            if ((tj < 0.0) || (tj > Int32.MaxValue)) throw new ArgumentOutOfRangeException("j");
+            if ((tj < 0.0) || (tj > Int32.MaxValue)) throw new ArgumentOutOfRangeException(nameof(j));
 
             // spin must be integer or half-integer
             double tjt = Math.Floor(tj);
-            if (tjt != tj) throw new ArgumentOutOfRangeException("j");
+            if (tjt != tj) throw new ArgumentOutOfRangeException(nameof(j));
 
             // store 2*j
             twoJ = (int) tjt;

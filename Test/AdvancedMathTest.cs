@@ -935,10 +935,16 @@ namespace Test {
 
         [TestMethod]
         public void IntegralEiSpecialValues () {
-
             Assert.IsTrue(AdvancedMath.IntegralEi(0.0) == Double.NegativeInfinity);
-            //Assert.IsTrue(AdvancedMath.IntegralEi(Double.PositiveInfinity) == Double.PositiveInfinity);
+            Assert.IsTrue(AdvancedMath.IntegralEi(Double.PositiveInfinity) == Double.PositiveInfinity);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.IntegralEi(Double.NaN)));
+        }
 
+        [TestMethod]
+        public void IntegralEiZero () {
+            // Value of zero documented at https://dlmf.nist.gov/6.13
+            double x0 = FunctionMath.FindZero(AdvancedMath.IntegralEi, 1.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(x0, 0.37250741078136663446));
         }
 
         [TestMethod]
@@ -1087,12 +1093,19 @@ namespace Test {
         */
 
         [TestMethod]
-        public void DawsonSpecialCaseTest () {
+        public void DawsonSpecialCases () {
             Assert.IsTrue(AdvancedMath.Dawson(0.0) == 0.0);
         }
 
+        public void DawsonExtremeValues () {
+            Assert.IsTrue(AdvancedMath.Dawson(Double.NegativeInfinity) == 0.0);
+            Assert.IsTrue(AdvancedMath.Dawson(Double.MaxValue) == 0.0);
+            Assert.IsTrue(AdvancedMath.Dawson(Double.PositiveInfinity) == 0.0);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.Dawson(Double.NaN)));
+        }
+
         [TestMethod]
-        public void DawsonInequalityTest () {
+        public void DawsonInequality () {
             // this is a pretty lame inequality
             foreach (double x in arguments) {
                 double F = AdvancedMath.Dawson(x);
@@ -1101,16 +1114,12 @@ namespace Test {
         }
 
         [TestMethod]
-        public void DawsonIntegralTest () {
-            Func<double, double> f = delegate(double t) {
-                return( Math.Exp(t * t) );
-            };
+        public void DawsonIntegral () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 4)) {
-                Interval r = Interval.FromEndpoints(0.0, x);
-                double DF = AdvancedMath.Dawson(x);
-                double DI = Math.Exp(-x * x) * FunctionMath.Integrate(f, r);
-                Console.WriteLine("{0} {1} {2}", x, DF, DI);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(DF, DI));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    FunctionMath.Integrate(t => Math.Exp(t * t), 0.0, x).Value,
+                    Math.Exp(x * x) * AdvancedMath.Dawson(x)
+                ));
             }
         }
         // This caught an error in our Dawson function.
@@ -1118,20 +1127,27 @@ namespace Test {
         // Integral was right!
 
         [TestMethod]
-        public void FresnelReflectionTest () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 10)) {
-                Console.WriteLine("x={0}", x);
+        public void FresnelSpecialCases () {
+            Assert.IsTrue(AdvancedMath.FresnelS(0.0) == 0.0);
+            Assert.IsTrue(AdvancedMath.FresnelS(Double.PositiveInfinity) == 0.5);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.FresnelS(Double.NaN)));
+            Assert.IsTrue(AdvancedMath.FresnelC(0.0) == 0.0);
+            Assert.IsTrue(AdvancedMath.FresnelC(Double.PositiveInfinity) == 0.5);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.FresnelC(Double.NaN)));
+        }
+
+        [TestMethod]
+        public void FresnelReflection () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 8)) {
                 Assert.IsTrue(AdvancedMath.Fresnel(-x) == -AdvancedMath.Fresnel(x));
             }
         }
 
         [TestMethod]
         public void FresnelSIntegralTest () {
-            Func<double, double> f = delegate(double t) {
-                return ( Math.Sin(Math.PI / 2.0 * t * t) );
-            };
+            Func<double, double> f = t => MoreMath.SinPi(t * t / 2.0);
             // if x gets too high, the integral has too many oscilations to converge
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 3)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 4)) {
                 Interval r = Interval.FromEndpoints(0.0, x);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.FresnelS(x), FunctionMath.Integrate(f, r)));
             }
@@ -1139,26 +1155,43 @@ namespace Test {
 
         [TestMethod]
         public void FresnelCIntegralTest () {
-            Func<double, double> f = delegate(double t) {
-                return (Math.Cos(Math.PI / 2.0 * t * t));
-            };
+            Func<double, double> f = t => MoreMath.CosPi(t * t / 2.0);
             // if x gets too high, the integral has too many oscilations to converge
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 3)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 4)) {
                 Interval r = Interval.FromEndpoints(0.0, x);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.FresnelC(x), FunctionMath.Integrate(f, r)));
             }
         }
 
+
+        [TestMethod]
+        public void IntegralSiSpecialCases () {
+            Assert.IsTrue(AdvancedMath.IntegralSi(Double.NegativeInfinity) == -Math.PI / 2.0);
+            Assert.IsTrue(AdvancedMath.IntegralSi(0.0) == 0.0);
+            Assert.IsTrue(AdvancedMath.IntegralSi(Double.PositiveInfinity) == Math.PI / 2.0);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.IntegralSi(Double.NaN)));
+        }
+
+        [TestMethod]
+        public void IntegralSiReflection () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 8)) {
+                Assert.IsTrue(AdvancedMath.IntegralSi(-x) == -AdvancedMath.IntegralSi(x));
+            }
+        }
+
         [TestMethod]
         public void IntegralSiDefinition () {
-            Func<double, double> f = delegate(double t) {
-                return (Math.Sin(t) / t);
-            };
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
+            Func<double, double> f = t => Math.Sin(t) / t;
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
                 Interval r = Interval.FromEndpoints(0.0, x);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.IntegralSi(x), FunctionMath.Integrate(f, r)));
             }
-            // the corresponding defining integral of Ci does not converge numerically
+        }
+
+        [TestMethod]
+        public void IntegralCiSpecialCases () {
+            Assert.IsTrue(Double.IsNegativeInfinity(AdvancedMath.IntegralCi(0.0)));
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.IntegralCi(Double.NaN)));
         }
 
         [TestMethod]

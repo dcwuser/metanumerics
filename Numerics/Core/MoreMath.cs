@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 
 namespace Meta.Numerics {
 
@@ -389,9 +388,7 @@ namespace Meta.Numerics {
         }
 
         internal static double TanPi (double x) {
-            long y0;
-            double y1;
-            RangeReduction.ReduceByOnes(2.0 * x, out y0, out y1);
+            RangeReduction.ReduceByOnes(2.0 * x, out long y0, out double y1);
             if (y0 % 2L == 0L) {
                 return (Math.Tan(Math.PI / 2.0 * y1));
             } else {
@@ -444,8 +441,7 @@ namespace Meta.Numerics {
         }
 
         public static double[] Decompose (double x) {
-            double hi, lo;
-            Decompose(x, out hi, out lo);
+            Decompose(x, out double hi, out double lo);
             return (new double[] { hi, lo });
         }
 
@@ -596,13 +592,13 @@ namespace Meta.Numerics {
         public static double Sin (long z0, double z1) {
             switch (MoreMath.Mod(z0, 4L)) {
                 case 0L:
-                    return (Math.Sin(z1 * Math.PI / 2.0));
+                    return (Math.Sin(Math.PI / 2.0 * z1));
                 case 1L:
-                    return (Math.Cos(z1 * Math.PI / 2.0));
+                    return (Math.Cos(Math.PI / 2.0 * z1));
                 case 2L:
-                    return (-Math.Sin(z1 * Math.PI / 2.0));
+                    return (-Math.Sin(Math.PI / 2.0 * z1));
                 case 3L:
-                    return (-Math.Cos(z1 * Math.PI / 2.0));
+                    return (-Math.Cos(Math.PI / 2.0 * z1));
                 default:
                     throw new InvalidOperationException();
             }
@@ -612,38 +608,30 @@ namespace Meta.Numerics {
         public static double Cos (long z0, double z1) {
             switch (MoreMath.Mod(z0, 4L)) {
                 case 0L:
-                    return (Math.Cos(z1 * Math.PI / 2.0));
+                    return (Math.Cos(Math.PI / 2.0 * z1));
                 case 1L:
-                    return (-Math.Sin(z1 * Math.PI / 2.0));
+                    return (-Math.Sin(Math.PI / 2.0 * z1));
                 case 2L:
-                    return (-Math.Cos(z1 * Math.PI / 2.0));
+                    return (-Math.Cos(Math.PI / 2.0 * z1));
                 case 3L:
-                    return (Math.Sin(z1 * Math.PI / 2.0));
+                    return (Math.Sin(Math.PI / 2.0 * z1));
                 default:
                     throw new InvalidOperationException();
             }
         }
 
         public static double Sin (double x) {
-            long z0; double z1;
-            ReduceByPiHalves(x, out z0, out z1);
+            ReduceByPiHalves(x, out long z0, out double z1);
             return (Sin(z0, z1));
         }
 
         public static double Cos (double x) {
-            long z0; double z1;
-            ReduceByPiHalves(x, out z0, out z1);
+            ReduceByPiHalves(x, out long z0, out double z1);
             return (Cos(z0, z1));
         }
 
         public static void ReduceByPiHalves (double x, out long x0, out double x1) {
-
-            //PrintFrExp(x);
             double[] xParts = Decompose(x);
-
-            //for (int i = 0; i < xParts.Length; i++) PrintFrExp(xParts[i]);
-            //for (int i = 0; i < 4; i++) PrintFrExp(twoOverPiParts[i]);
-
             Multiply(xParts, twoOverPiParts, out x0, out x1);
         }
 

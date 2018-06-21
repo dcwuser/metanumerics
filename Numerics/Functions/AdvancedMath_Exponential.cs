@@ -60,8 +60,10 @@ namespace Meta.Numerics.Functions {
                 throw new ArgumentOutOfRangeException(nameof(x));
             } else if (x < 40.0) {
                 return (IntegralEi_Series(x));
-            } else if (x <= Double.PositiveInfinity) {
+            } else if (x < Double.PositiveInfinity) {
                 return (IntegralEi_Asymptotic(x));
+            } else if (Double.IsPositiveInfinity(x)) {
+                return (Double.PositiveInfinity);
             } else {
                 return (Double.NaN);
             }
@@ -181,11 +183,14 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         public static double IntegralCi (double x) {
-            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
-            if (x < 4.0) {
+            if (x < 0.0) {
+                throw new ArgumentOutOfRangeException(nameof(x));
+            } else if (x < 4.0) {
                 return (IntegralCi_Series(x));
-            } else {
+            } else if (x < Double.PositiveInfinity) {
                 return (-IntegralE1_Imaginary_ContinuedFraction(x).Re);
+            } else {
+                return (Double.NaN);
             }
         }
 
@@ -204,8 +209,12 @@ namespace Meta.Numerics.Functions {
                 return (-IntegralSi(-x));
             } else if (x < 4.0) {
                 return (IntegralSi_Series(x));
-            } else {
+            } else if (x < Double.PositiveInfinity) {
                 return (IntegralE1_Imaginary_ContinuedFraction(x).Im + Math.PI / 2.0);
+            } else if (Double.IsPositiveInfinity(x)) {
+                return (Math.PI / 2.0);
+            } else {
+                return (Double.NaN);
             }
         }
 
@@ -216,8 +225,8 @@ namespace Meta.Numerics.Functions {
             double y = dy;
             for (int k=3; k<Global.SeriesMax; k+= 2) {
                 double y_old = y;
-                dy = - dy * xx / k / (k - 1);
-                y = y_old + dy / k;
+                dy *= -xx / (k * (k - 1));
+                y += dy / k;
                 if (y == y_old) {
                     return (y);
                 }
@@ -232,8 +241,8 @@ namespace Meta.Numerics.Functions {
             double dy = 1.0;
             for (int k = 2; k < Global.SeriesMax; k += 2) {
                 double y_old = y;
-                dy = - dy * xx / k / (k - 1);
-                y = y_old + dy / k;
+                dy *= -xx / (k * (k - 1));
+                y += dy / k;
                 if (y == y_old) {
                     return (y);
                 }
@@ -256,7 +265,7 @@ namespace Meta.Numerics.Functions {
                 Df = (b * D - 1.0) * Df;
                 f += Df;
                 if (f == f_old) {
-                    return (new Complex(Math.Cos(x), -Math.Sin(x)) * f);
+                    return (new Complex(MoreMath.Cos(x), -MoreMath.Sin(x)) * f);
                 }
             }
             throw new NonconvergenceException();

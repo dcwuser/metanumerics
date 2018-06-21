@@ -28,7 +28,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/Erf.html" />
         public static double Erf (double x) {
             if (x < -1.5) {
-                return (-1.0 + Erfc_ContinuedFraction(-x));
+                return (Erfc_ContinuedFraction(-x) - 1.0);
             } else if (x < 1.5) {
                 // Use the series near the origin.
                 return (Erf_Series(x));
@@ -155,13 +155,15 @@ namespace Meta.Numerics.Functions {
         public static double InverseErf (double y) {
 
             if (y < 0.0) {
-                return(-InverseErf(-y));
+                return (-InverseErf(-y));
             } else if (y < 0.5) {
-                return(InverseErfSeries(y));
+                return (InverseErfSeries(y));
             } else if (y < 1.0) {
-                return(InverseErfcByRefinement(1.0 - y));
+                return (InverseErfcByRefinement(1.0 - y));
             } else if (y == 1.0) {
-                return(Double.PositiveInfinity);
+                return (Double.PositiveInfinity);
+            } else if (Double.IsNaN(y)) {
+                return (Double.NaN);
             } else {
                 throw new ArgumentOutOfRangeException(nameof(y));
             }
@@ -468,12 +470,12 @@ namespace Meta.Numerics.Functions {
                 return (-FresnelC(-x));
             } else if (x < 2.0) {
                 return (FresnelC_Series(x));
-            } if (x > 64.0) {
-                Complex f = Fresnel_Asymptotic(x);
-                return (f.Re);
+            } else if (x < fresnelLimit) {
+                return (Fresnel_ContinuedFraction(x).Re);
+            } else if (x <= Double.PositiveInfinity) {
+                return (0.5);
             } else {
-                Complex f = Fresnel_ContinuedFraction(x);
-                return (f.Re);
+                return (Double.NaN);
             }
         }
 
@@ -495,12 +497,12 @@ namespace Meta.Numerics.Functions {
                 return (-FresnelS(-x));
             } else if (x < 2.0) {
                 return (FresnelS_Series(x));
-            } if (x > 64.0) {
-                Complex f = Fresnel_Asymptotic(x);
-                return (f.Im);
+            } if (x < fresnelLimit) {
+                return (Fresnel_ContinuedFraction(x).Im);
+            } else if (x <= Double.PositiveInfinity) {
+                return (0.5);
             } else {
-                Complex f = Fresnel_ContinuedFraction(x);
-                return (f.Im);
+                return (Double.NaN);
             }
         }
 
@@ -510,6 +512,12 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value C(x) + i S(x).</returns>
         /// <remarks>
+        /// <para>If you need both C(x) and S(x), it is more efficient to call this function than
+        /// to call <see cref="FresnelC(double)"/> and <see cref="FresnelS(double)"/> seperately.</para>
+        /// <para>Our definition of C(x) and S(x) agrees with that of Abromowitz and Stegun, the NIST Library of
+        /// Mathematical Functions, Numerical Recipies, Mathematica, Matlab, SciPy, and any every other
+        /// reference book and numerical software library I can find. Wikipedia, however uses an
+        /// alternative definition.</para>
         /// <para>A plot of all values of this function in the complex plane as x ranges from
         /// negative infinity to positive infinity is called a Cornu spiral.</para>
         /// <para>The Fresnel function can be related to the complex error function along the line (1-&#x1D456;).</para>
@@ -524,148 +532,116 @@ namespace Meta.Numerics.Functions {
                 return (-Fresnel(-x));
             } else if (x < 2.0) {
                 return (new Complex(FresnelC_Series(x), FresnelS_Series(x)));
-            } else if (x > 64.0) {
-                return (Fresnel_Asymptotic(x));
-            } else {
+            } else if (x < fresnelLimit) {
                 return (Fresnel_ContinuedFraction(x));
+            } else if (x <= Double.PositiveInfinity) {
+                return (new Complex(0.5, 0.5));
+            } else {
+                return (Double.NaN);
             }
         }
-        
-        // the use of the asymptotic series doesn't appear to be strictly necessary; the
-        // continued fraction converges quickly to the right result in just a few terms
-        // for arbitrarily large x; ahha! this is because the continued fraction is just the
-        // asymptotic series in that limit, down to the evaluation of sin(pi x^2/2)
 
-        // series requires ~10 terms at x~1, ~20 terms at x~2
+        // For large x, C ~ \frac{1}{2} + \frac{1}{\pi x} \sin(\pi x^2 /2 ), S ~ frac{1}{2} - \frac{1}{\pi x} \cos(\pi x^2 / 2)
+        // so if x is large enough that \frac{1}{\pi x} is indistinguishable from \frac{1}{2}, we can just return 1/2.
+        
+        // Even if we didn't have this limit, say because we were trying to compute C - 1/2 and S - 1/2, we would
+        // have the problem that both the continued fraction and the direct asymptotic expansion require computing
+        // trig functions of \pi x^2 /2, and this overflows for x larger than about 1.0E154.
+
+        private const double fresnelLimit = 2.0 / Math.PI / 1.0E-16;
+
+        // At one point, we used a Fresnel asymptotic series for x > 40, but it proved unnecessary.
+        // It's neither faster nor more accurate than the continued fraction, and it can be used as
+        // close to the origin.
+
+        // C(z) = z \sum_{n=0}^{\infty} \frac{(-1)^n (\pi z^2 / 2)^{2n}}{(2n)! (4n + 1)}
+        // Series requires ~10 terms at x~1, ~20 terms at x~2.
 
         private static double FresnelC_Series (double x) {
-
-            // compute the zero-order value
-            double df = x;
-
-            // pre-compute the factor the series is in
-            double x4 = Global.HalfPI * x * x;
-            x4 = x4 * x4;
-
-            // add corrections as needed
+            double xx = Math.PI / 2.0 * x * x;
+            double x4 = -xx * xx;
+            double df = 1.0;
             double f = df;
-            for (int n = 1; n < Global.SeriesMax; n++) {
+            for (int two_k = 2; two_k < Global.SeriesMax; two_k += 2) {
                 double f_old = f;
-                df = - df * x4 / (2 * n) / (2 * n - 1);
-                f = f + df / (4 * n + 1);
-                if (f == f_old) return (f);
+                df *= x4 / (two_k * (two_k - 1));
+                f += df / (2 * two_k + 1);
+                if (f == f_old) return (x * f);
             }
-
             throw new NonconvergenceException();
         }
+
+        // S(z) = \frac{\pi z^3}{2} \sum_{n=0}^{\infty} \frac{(-1)^n (\pi z^2 / 2)^{2n}}{(2n + 1)! (4n + 3)}
 
         private static double FresnelS_Series (double x) {
-
-            // compute the zero-order value
-            double df = x * x * x * Math.PI / 2.0;
-
-            // pre-compute the factor the series is in
-            double x4 = Global.HalfPI * x * x;
-            x4 = x4 * x4;
-
-            // add corrections as needed
+            double xx = Math.PI / 2.0 * x * x;
+            double x4 = -xx * xx;
+            double df = 1.0;
             double f = df / 3.0;
-            for (int n = 1; n < Global.SeriesMax; n++) {
+            for (int two_k = 2; two_k < Global.SeriesMax; two_k += 2) {
                 double f_old = f;
-                df = -df * x4 / (2 * n + 1) / (2 * n);
-                f = f + df / (4 * n + 3);
-                if (f == f_old) return (f);
+                df *= x4 / ((two_k + 1) * two_k);
+                f += df / (2 * two_k + 3);
+                if (f == f_old) return (x * xx * f);
             }
-
             throw new NonconvergenceException();
         }
 
-        // ~3 terms at x~50, ~6 terms at x~10, ~10 terms at x~7,
-        // fails to converge to double precision much below that
 
-        private static Complex Fresnel_Asymptotic (double x) {
+        // Numerical Recipes quotes a continued fraction for C and S, derived frothe relation between C, S,
+        // and the complex error function:
+        //   C(x) + i S(x) = \frac{1 + i}{2} \erf(z) \quad z = \frac{\sqrt{\pi}}{2} (1 - i) x
+        // and the continued fraction for erfc(z):
+        //   \erfc(z) = \frac{2z}{\sqrt{\pi}} e^{-z^2} \left[
+        //     \frac{1}{2z^2 + 1 -} \frac{1 \cdot 2}{\frac{2z^2 + 5 -} \frac{3 \cdot 4}{2z^2 + 9 -} \cdots
+        //   \right]
 
-            double x2 = x * x * Math.PI;
-            double x4 = x2 * x2;
-
-            double f = 1.0;
-            double g = 1.0;
-
-            double d = 1.0;
-            int n = 1;
-            while (true) {
-
-                double f_old = f;
-                d = -d * (4 * n - 1) / x4;
-                f += d;
-                double g_old = g;
-                d = d * (4 * n + 1);
-                g += d;
-
-                if ((f == f_old) && (g == g_old)) break;
-
-                n++;
-                if (n > Global.SeriesMax) throw new NonconvergenceException();
-            }
-
-            double px = Math.PI * x;
-            f = f / px;
-            g = g / x2 / px;
-
-            double xx = x * x / 4.0;
-            double sin = MoreMath.SinPi(2.0 * xx); // Sin(0.0, xx);
-            double cos = MoreMath.CosPi(2.0 * xx); // Cos(0.0, xx);
-
-            double C = 0.5 + f * sin - g * cos;
-            double S = 0.5 - f * cos - g * sin;
-
-            return (new Complex(C, S));
-
-        }
+        // Given the particular form of z, we can simplify this significantly. First note
+        //   2z^2 = -i \pi x^2
+        // Next note
+        //   e^{-z^2} = e^{-i \pi x^2 / 2} = \cos(\pi x^2 / 2) - i \sin(\pi x^2 / 2)
+        // So when we determine the continued fraction, we have
+        //   \frac{1 + i}{2} \erf(z) = \frac{1 + i}{2} \left[1 - (1 - i) x (a + i b) \right]
+        //     = \left( \frac{1}{2} - a x \right) + i \left( \frac{1}{2} - b x \right)
 
         // ~35 terms at x~2, ~12 terms at x~4, ~6 terms at x~8, ~3 terms for x~12 and above
 
+
         private static Complex Fresnel_ContinuedFraction (double x) {
 
-            double px2 = Math.PI * x * x;
+            double xSquared = x * x;
 
-            //Complex z = Global.SqrtPI * x / 2.0 * (1.0 - ComplexMath.I);
+            // It appears that (1) imaginary part of f doesn't change and
+            // (2) real part of f merely increases at constant rate until "right" number is reached.
+            // This is probably an indication that we could simplify the complex arithmetic further.
 
-            // investigate this carefully: it appears that (1) imaginary part of f doesn't change and
-            // (2) real part of f merely increases at constant rate until "right" number is reached
-
-            Complex a = 1.0;			            // a_1
-            Complex b = new Complex(1.0, -px2);     // b_1
-            Complex D = 1.0 / b;                    // D_1 = b_0 / b_1
-            Complex Df = a / b;		                // Df_1 = f_1 - f_0
-            Complex f = 0.0 + Df;		            // f_1 = f_0 + Df_1 = b_0 + Df_1
-            for (int k = 1; true ; k++) {
-                //Console.WriteLine("f={0}", b);
+            // Use Lenz's method for the continued fraction.
+            Complex a = 1.0;
+            Complex b = new Complex(1.0, -Math.PI * xSquared);
+            Complex D = 1.0 / b;
+            Complex Df = a / b;
+            Complex f = Df;
+            for (int two_k = 2; two_k < Global.SeriesMax ; two_k += 2) {
                 Complex f_old = f;
-                a = -(2 * k - 1) * (2 * k);
-                b = b + 4.0;
+                a = -(two_k - 1) * two_k;
+                b += 4.0;
                 D = 1.0 / (b + a * D);
                 Df = (b * D - 1.0) * Df;
                 f += Df;
-                if (f == f_old) break;
-                if (k > Global.SeriesMax) throw new NonconvergenceException();
+                if (f == f_old) {
+                    double half_x_squared = 0.5 * xSquared;
+                    Complex e = new Complex(MoreMath.CosPi(half_x_squared), MoreMath.SinPi(half_x_squared));
+                    Complex g = e * f * x;
+                    return new Complex(0.5 - g.Re, 0.5 - g.Im);
+                }
             }
-            //Console.WriteLine(f);
-            double xx = x * x / 4.0;
-            Complex j = new Complex(1.0, -1.0);
-            Complex e = new Complex(MoreMath.CosPi(2.0 * xx), MoreMath.SinPi(2.0 * xx));
-            Complex erfc = j * e * f * x;
-            Complex erf = 1.0 - erfc;
-            return (erf * new Complex(1.0, 1.0) / 2);   
-            
+            throw new NonconvergenceException(); 
         }
 
     }
 
 
     public static partial class AdvancedComplexMath {
-
-
 
         /// <summary>
         /// Computes the complex Faddeeva function.

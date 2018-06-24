@@ -521,12 +521,8 @@ namespace Test {
                     if (n > 100) throw new NonconvergenceException();
 
                 }
-                Console.WriteLine("x={0} n={0}", x, n);
 
                 double x2 = 2 * x;
-                Console.WriteLine("{0} {1}", s1, AdvancedMath.IntegralSi(x2)/x2);
-                Console.WriteLine("{0} {1}", s2, 1.0);
-                Console.WriteLine("{0} {1}", s3, Math.Sin(x2)/x2);
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(s1, AdvancedMath.IntegralSi(x2)/x2));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(s2, 1.0));
@@ -891,15 +887,6 @@ namespace Test {
             }
         }
 
-        // Error function
-
-
-
-
-
-
-
-
 
         [TestMethod]
         public void InverseErfIntegralTest () {
@@ -947,67 +934,6 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(x0, 0.37250741078136663446));
         }
 
-        [TestMethod]
-        public void IntegralESpecialCaseTest () {
-            foreach (int n in orders) {
-                Assert.IsTrue(AdvancedMath.IntegralE(n, 0.0) == 1.0 / (n - 1.0));
-            }
-            foreach (double x in arguments) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.IntegralE(0, x), Math.Exp(-x) / x));
-            }
-        }
-
-        [TestMethod]
-        public void IntegralE1Inequality () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E3,16)) {
-                if (x >= Math.Log(Double.MaxValue / 10.0)) continue; // keep Exp(x) from overflowing
-                double lower = Math.Log(1.0 + 2.0 / x) / 2.0;
-                double upper = Math.Log(1.0 + 1.0 / x);
-                double value = Math.Exp(x) * AdvancedMath.IntegralE(1, x);
-                Console.WriteLine("{0}: {1} {2} {3}", x, lower, value, upper);
-                Assert.IsTrue((lower < value) && (value < upper));
-            }
-        }
-
-        [TestMethod]
-        public void IntegralEInequality () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1,100,8)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E3,16)) {
-                    if (x >= Math.Log(Double.MaxValue / 10.0)) continue; // keep Exp(x) from overflowing
-                    double lower = 1.0 / (x + n);
-                    double upper = 1.0 / (x + n - 1);
-                    double value = Math.Exp(x) * AdvancedMath.IntegralE(n, x);
-                    Console.WriteLine("n={0} x={1} {2} {3} {4}", n, x, lower, value, upper);
-                    Assert.IsTrue((lower < value) && (value <= upper));
-                }
-            }
-        }
-
-
-        [TestMethod]
-        public void IntegralERecurrence () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 8)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 24)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        n * AdvancedMath.IntegralE(n + 1, x) + x * AdvancedMath.IntegralE(n, x),
-                        Math.Exp(-x)
-                    ));
-                }
-            }
-        }
-
-        [TestMethod]
-        public void IntegralEIntegral () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 10.0, 8)) {
-                    Func<double, double> f = delegate(double t) {
-                        return (Math.Exp(-x * t) / MoreMath.Pow(t, n));
-                    };
-                    Interval r = Interval.FromEndpoints(1.0, Double.PositiveInfinity);
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.IntegralE(n, x), FunctionMath.Integrate(f, r)));
-                }
-            }
-        }
 
         [TestMethod]
         public void IntegralEIncompleteGamma () {
@@ -1163,61 +1089,6 @@ namespace Test {
             }
         }
 
-
-        [TestMethod]
-        public void IntegralSiSpecialCases () {
-            Assert.IsTrue(AdvancedMath.IntegralSi(Double.NegativeInfinity) == -Math.PI / 2.0);
-            Assert.IsTrue(AdvancedMath.IntegralSi(0.0) == 0.0);
-            Assert.IsTrue(AdvancedMath.IntegralSi(Double.PositiveInfinity) == Math.PI / 2.0);
-            Assert.IsTrue(Double.IsNaN(AdvancedMath.IntegralSi(Double.NaN)));
-        }
-
-        [TestMethod]
-        public void IntegralSiReflection () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 8)) {
-                Assert.IsTrue(AdvancedMath.IntegralSi(-x) == -AdvancedMath.IntegralSi(x));
-            }
-        }
-
-        [TestMethod]
-        public void IntegralSiDefinition () {
-            Func<double, double> f = t => Math.Sin(t) / t;
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
-                Interval r = Interval.FromEndpoints(0.0, x);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.IntegralSi(x), FunctionMath.Integrate(f, r)));
-            }
-        }
-
-        [TestMethod]
-        public void IntegralCiSpecialCases () {
-            Assert.IsTrue(Double.IsNegativeInfinity(AdvancedMath.IntegralCi(0.0)));
-            Assert.IsTrue(Double.IsNaN(AdvancedMath.IntegralCi(Double.NaN)));
-        }
-
-        [TestMethod]
-        public void IntegralCiSiIntegrals () {
-
-            // these integrals are from Oldham et al, An Atlas of Functions
-
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                FunctionMath.Integrate(t => AdvancedMath.IntegralCi(t) * Math.Exp(-t), Interval.FromEndpoints(0.0, Double.PositiveInfinity)),
-                -Math.Log(2.0) / 2.0
-            ));
-
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                FunctionMath.Integrate(t => AdvancedMath.IntegralSi(t) * Math.Exp(-t), Interval.FromEndpoints(0.0, Double.PositiveInfinity)),
-                Math.PI / 4.0
-            ));
-
-            // the integral of [Ci(t)]^2 does not converge numerically
-
-            /*
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                FunctionMath.Integrate(t => MoreMath.Pow(AdvancedMath.IntegralCi(t), 2), Interval.FromEndpoints(0.0, Double.PositiveInfinity)),
-                Math.PI / 2.0
-            ));
-            */
-        }
 
         [TestMethod]
         public void LambertTest () {

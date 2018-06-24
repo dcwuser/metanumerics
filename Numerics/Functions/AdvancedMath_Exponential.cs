@@ -6,12 +6,19 @@ namespace Meta.Numerics.Functions {
 
     public static partial class AdvancedMath {
 
+        // Our methods for Si, Ci, Ei, Shi, and Chi are all from Stegun & Zucker, "Automatic Computing Methods for Special Functions. Part III.
+        // The Sine, Cosine, Exponential Integrals, and Related Functions", Journal of Research of the National Bureau of Standard 80 B (1976) 291
+        // https://nvlpubs.nist.gov/nistpubs/jres/80B/jresv80Bn2p291_A1b.pdf
+
+        // It's remarkable that I can't find any better algorithms. I'm reasonably pleased with these, except for Ei, Shi, and Chi for x ~ 16-48,
+        // for which we are near the limits of numerical convergence for the series used.
+
         // This series is technically convergent everywhere, but it won't start converging until k ~ x, so it's best to use with small x
         // takes about 100 terms at x~40; it would be nice to move to the asymptotic expansion for lower x, but it fails to converge in that region.
 
         private static double IntegralEi_Series (double x) {
             double dy = x;
-            double y = EulerGamma + Math.Log(x) + dy;
+            double y = dy;
             for (int k = 2; k < Global.SeriesMax; k++) {
                 double y_old = y;
                 dy *= x / k;
@@ -55,11 +62,14 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso cref="IntegralE(int, double)"/>
+        /// <seealso hef="https://en.wikipedia.org/wiki/Exponential_integral"/>
+        /// <seealso href="http://mathworld.wolfram.com/ExponentialIntegral.html"/>
+        /// <seealso href="https://dlmf.nist.gov/6"/>
         public static double IntegralEi (double x) {
             if (x < 0) {
                 throw new ArgumentOutOfRangeException(nameof(x));
             } else if (x < 40.0) {
-                return (IntegralEi_Series(x));
+                return (EulerGamma + Math.Log(x) + IntegralEi_Series(x));
             } else if (x < Double.PositiveInfinity) {
                 return (IntegralEi_Asymptotic(x));
             } else if (Double.IsPositiveInfinity(x)) {
@@ -180,15 +190,43 @@ namespace Meta.Numerics.Functions {
         /// <para>The cosine integral is defined as:</para>
         /// <img src="../images/CiIntegral.png" />
         /// <para>The cosine integral diverges logarithmically to negative infinity at the origin and executes a damped oscillation around zero as its argument increases.</para>
+        /// <para>To obtain the non-divergent part of the consine integral near the origin, use <see cref="IntegralCin"/>.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Trigonometric_integral"/>
+        /// <seealso href="http://mathworld.wolfram.com/CosineIntegral.html"/>
+        /// <seealso cref="https://dlmf.nist.gov/6"/>
         public static double IntegralCi (double x) {
             if (x < 0.0) {
                 throw new ArgumentOutOfRangeException(nameof(x));
             } else if (x < 4.0) {
-                return (IntegralCi_Series(x));
+                return (EulerGamma + Math.Log(x) + IntegralCi_Series(-x * x));
             } else if (x < Double.PositiveInfinity) {
                 return (-IntegralE1_Imaginary_ContinuedFraction(x).Re);
+            } else {
+                return (Double.NaN);
+            }
+        }
+
+        /// <summary>
+        /// Computes the entire cosine intgral.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of Cin(x).</returns>
+        /// <remarks>
+        /// <para>The entine cosine integral Cin(x) is related to the conventional cosine integral Ci(x) by:</para>
+        /// <para>Unlike Ci(x), Cin(x) is regular at the origin, and may therefore be more useful in applications
+        /// that need the non-divergent part of a cosine integral. But, again unlike Ci(x), Cin(x) does diverge
+        /// (logarithmicaly) for large x.</para>
+        /// </remarks>
+        /// <seealso cref="IntegralCi"/>
+        public static double IntegralCin (double x) {
+            if (x < 0.0) {
+                return (IntegralCin(-x));
+            } else if (x < 4.0) {
+                return (-IntegralCi_Series(-x * x));
+            } else if (x < Double.PositiveInfinity) {
+                return (EulerGamma + Math.Log(x) + IntegralE1_Imaginary_ContinuedFraction(x).Re);
             } else {
                 return (Double.NaN);
             }
@@ -204,11 +242,14 @@ namespace Meta.Numerics.Functions {
         /// <img src="../images/SiIntegral.png" />
         /// <para>The sine integral is zero at the origin and executes a damped oscillation around &#x3C0;/2 as its argument increases.</para>
         /// </remarks>
+        /// <seealso href="https://en.wikipedia.org/wiki/Trigonometric_integral"/>
+        /// <seealso href="http://mathworld.wolfram.com/SineIntegral.html"/>
+        /// <seealso cref="https://dlmf.nist.gov/6"/>
         public static double IntegralSi (double x) {
             if (x < 0.0) {
                 return (-IntegralSi(-x));
             } else if (x < 4.0) {
-                return (IntegralSi_Series(x));
+                return (x * IntegralSi_Series(-x * x));
             } else if (x < Double.PositiveInfinity) {
                 return (IntegralE1_Imaginary_ContinuedFraction(x).Im + Math.PI / 2.0);
             } else if (Double.IsPositiveInfinity(x)) {
@@ -218,14 +259,38 @@ namespace Meta.Numerics.Functions {
             }
         }
 
-        // converges to full accuracy in about 30 terms for x~4, less for smaller x
-        private static double IntegralSi_Series (double x) {
-            double xx = x * x;
-            double dy = x;
+        /// <summary>
+        /// Computes the hyperbolic sine integral.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of Shi(x).</returns>
+        public static double IntegralShi (double x) {
+            if (x < 0.0) {
+                return (-IntegralShi(-x));
+            } else if (x < 40.0) {
+                return (x * IntegralSi_Series(x * x));
+            } else if (x <= Double.PositiveInfinity) {
+                // For x > 40, Shi(x) differs from Ei(x)/2 only at the ~ 1.0E-34
+                // level, far below double precision.
+                return (0.5 * IntegralEi_Asymptotic(x));
+            } else {
+                return (Double.NaN);
+            }
+            // I would really like a better solution in the x ~ 16-48 range.
+            // x ~ 40 is the very limit of convergence for asymptotic series,
+            // and power series needs more than 100 terms to converge at that
+            // point.
+        }
+
+        // This is written so as to be usable for both Si and Shi.
+        // Converges to full accuracy in about 30 terms for x~4, less for smaller x
+        private static double IntegralSi_Series (double xSquared) {
+            //double xx = x * x;
+            double dy = 1.0;
             double y = dy;
             for (int k=3; k<Global.SeriesMax; k+= 2) {
                 double y_old = y;
-                dy *= -xx / (k * (k - 1));
+                dy *= xSquared / (k * (k - 1));
                 y += dy / k;
                 if (y == y_old) {
                     return (y);
@@ -235,13 +300,12 @@ namespace Meta.Numerics.Functions {
         }
 
         // converges to full accuracy in about 30 terms for x~4, less for smaller x
-        private static double IntegralCi_Series (double x) {
-            double xx = x * x;
-            double y = EulerGamma + Math.Log(x);
+        private static double IntegralCi_Series (double xSquared) {
             double dy = 1.0;
+            double y = 0.0;
             for (int k = 2; k < Global.SeriesMax; k += 2) {
                 double y_old = y;
-                dy *= -xx / (k * (k - 1));
+                dy *= xSquared / (k * (k - 1));
                 y += dy / k;
                 if (y == y_old) {
                     return (y);

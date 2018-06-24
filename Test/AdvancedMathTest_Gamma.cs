@@ -123,6 +123,13 @@ namespace Test {
         }
 
         [TestMethod]
+        public void LogGammaExtremeValues () {
+            //Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.LogGamma(1.0 / Double.MaxValue), Math.Log(Double.MaxValue)));
+            //AdvancedMath.LogGamma(Double.MaxValue);
+            //Assert.IsTrue(AdvancedMath.LogGamma(Double.PositiveInfinity) == Double.PositiveInfinity);
+        }
+
+        [TestMethod]
         public void LogGammaDuplication () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 24)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(

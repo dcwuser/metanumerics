@@ -12,25 +12,8 @@ namespace Meta.Numerics.Functions {
         // It sets the order of magnitude of the function near the origin. Basically F ~ C, G ~ 1/C
 
         private static double CoulombFactorZero (double eta) {
-
-            double x = Global.TwoPI * eta;
-
-            if (Math.Abs(x) < 0.25) {
-                // For small arguments, use the Taylor expansion of x/(e^x - 1) = \sum_k B_k / k! x^k,
-                // which is the generating function of the Bernoulli numbers. Note B_1 = -1/2 is the only odd Bernoulli number.
-                double xx = 1.0;
-                double s = 1.0 - x / 2.0;
-                for (int k = 1; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
-                    double s_old = s;
-                    xx *= (x * x) / (2 * k) / (2 * k - 1);
-                    s += AdvancedIntegerMath.Bernoulli[k] * xx;
-                    if (s == s_old) return (Math.Sqrt(s));
-                }
-                throw new NonconvergenceException();
-            } else {
-                return (Math.Sqrt(x / (Math.Exp(x) - 1.0)));
-            }
-
+            // \sqrt{\frac{x}{e^x - 1}}
+            return (Math.Sqrt(1.0 / MoreMath.ReducedExpMinusOne(2.0 * Math.PI * eta)));
         }
 
         private static double CoulombFactor (int L, double eta) {
@@ -45,113 +28,70 @@ namespace Meta.Numerics.Functions {
             double C = CoulombFactorZero(eta);
 
             for (int k = 1; k <= L; k++) {
-                C *= MoreMath.Hypot(k, eta) / k / (2 * k + 1);
+                C *= MoreMath.Hypot(k, eta) / (k * (2 * k + 1));
             }
 
             return (C);
 
             // For small L, the few flops for each recursion steps probably
-            // add up to less than the cost of a Gamma function evaluation.
+            // add up to less than the cost of a complex Gamma function evaluation.
             // For large L, it might be better from a flop standpoint to evaluate
             // directly, but then we would need to consider that the two \Gamma functions
             // grow rapidly, so we would need some way to compute their ratio directly.
 
         }
 
-        /*
-        private static double CoulombPhaseShiftZero (double eta) {
+        // This is an implementation of NIST 33.6.1:
+        //    F_{\ell}(\eta, \rho) = C_{\ell}(\eta) \sum_{k = \ell + 1}^{\infty} A_{k} \rho^k
+        //    F'_{\ell}(\eta, rho) = C_{\ell}(\eta) \sum_{k = \ell + 1}^{\infty} k A_{k} \rho^{k-1}
+        // with the coefficients defined by the recurrence
+        //    A_{k + 1} = 1 \qquad A_{k + 2} = \frac{\eta \rho}{L + 1}
+        //    (k + \ell) (k - \ell - 1) A_k = 2 \eta A_{k-1} - A_{k-2}
+        // We have used a form in which we track A_{k+1} \rho^{k - (\ell + 1)} so that we are not tracking
+        // two quantities, A_k decreasing and \rho^k increasing, which might overflow before their product does.
 
-            if (eta < 0) return (CoulombPhaseShiftZero(-eta));
+        // Each term adds factors of order \rho^2 / (L + 1) and 2 \rho \rho / (L + 1). So for numerical
+        // convergence we need \rho < \sqrt{X(L + 1)} and 2 \eta \rho < X (L + 1); X ~ 16 gets convergence
+        // within ~ 30 terms.
 
-            if (eta < 0.125) {
-                double t = -AdvancedMath.EulerGamma * eta;
-                double meta2 = - eta * eta;
-                for (int k = 0; k < Zeta.Length; k++) {
-                    double t_old = t;
-                    eta *= meta2;
-                    double dt = Zeta[k] * eta / (2 * k + 3);
-                    t -= dt;
-                    if (t == t_old) return (t);
-                }
-                throw new NonconvergenceException();
-            } else if (eta < 8.0) {
-                return (AdvancedComplexMath.LogGamma(new Complex(1.0, eta)).Im);
-            } else {
-                double t = (Math.Log(eta) - 1.0) * eta;
-                t = AdvancedMath.Reduce(t, 0.0);
+        // There are circumstances where one term can be zero or negligible but the next term is not.
+        // For example L=1, \eta=-1 causes the third term to vanish, which caused a bug. So we demand
+        // that the series not change for two terms before returning.
 
-                double meta2 = -eta * eta;
-
-                for (int k = 1; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
-                    double t_old = t;
-                    double dt = AdvancedIntegerMath.Bernoulli[k] / (2 * k) / (2 * k - 1) / eta;
-                    t -= dt;
-                    if (t == t_old) {
-                        return (t + Math.PI / 4.0);
-                    }
-                    eta *= meta2;
-                }
-                throw new NonconvergenceException();
-            }
-
-        }
-
-        private static readonly double[] Zeta = new double [] {
-            1.20205690315959428540, // Zeta(3)
-            1.03692775514336992633, // Zeta(5)
-            1.00834927738192282684, // Zeta(7)
-            1.00200839282608221442, // Zeta(9)
-            1.00049418860411946456, // Zeta(11)
-            1.00012271334757848915, // Zeta(13)
-            1.00003058823630702049, // Zeta(15)
-            1.0000076371976378998,  // Zeta(17)
-            1.0000019082127165539   // Zeta(19)
-        };
-
-        private static double CoulombPhaseShift (int L, double eta) {
-
-            double s = CoulombPhaseShiftZero(eta);
-            for (int k = 1; k <= L; k++) {
-                s += Math.Atan(eta / k);
-            }
-            return (s);
-
-        }
-        */
-
-        // each new term introduces factors of rho^2 / (L+1) and 2 eta rho / (L+1), so for this to converge we need
-        // rho < sqrt(X) (1 + sqrt(L)) and 2 eta rho < X (1 + L); X ~ 16 gets convergence within 30 terms
+        // Demanding that the 2nd term not overwhelm the first requires \eta \rho < (L + 1).
+        // Demanding that the 3rd term not overwhelm the first when \eta = 0 requires \rho^2 < 2 (2L + 3).
 
         private static void CoulombF_Series (int L, double eta, double rho, out double F, out double FP) {
 
-            double eta_rho = eta * rho;
-            double rho_2 = rho * rho;
+            double termPrevious = 1.0;
+            double termCurrent = eta * rho / (L + 1);
+            double fPrevious = termPrevious;
+            double fCurrent = fPrevious + termCurrent;
+            double fPrimePrevious = (L + 1) * termPrevious;
+            double fPrimeCurrent = fPrimePrevious + (L + 2) * termCurrent;
 
-            double u0 = 1.0;
-            double u1 = eta_rho / (L + 1);
-            double u = u0 + u1;
-            double v = (L + 1) * u0 + (L + 2) * u1;
+            for (int j = 2; j < Global.SeriesMax; j++) {
 
-            for (int k = 2; k < Global.SeriesMax; k++) {
+                double termNext = rho * (2.0 * eta * termCurrent - rho * termPrevious) / (j * (2 * L + 1 + j));
+                double fNext = fCurrent + termNext;
+                double fPrimeNext = fPrimeCurrent + (L + 1 + j) * termNext;
 
-                double u2 = (2.0 * eta_rho * u1 - rho_2 * u0) / k / (2 * L + k + 1);
-                double v2 = (L + 1 + k) * u2;
-
-                double u_old = u;
-                u += u2;
-                v += v2;
-
-                if ((k % 2 == 0) && (u == u_old)) {
-                    double C = CoulombFactor(L, eta);
-                    F = C * Math.Pow(rho, L + 1) * u;
-                    FP = C * Math.Pow(rho, L) * v;
+                if (fNext == fPrevious && fPrimeNext == fPrimePrevious) {
+                    double C = 1.0; // CoulombFactor(L, eta);
+                    double rhoToPowerL = MoreMath.Pow(rho, L);
+                    F = C * rhoToPowerL * rho * fNext;
+                    FP = C * rhoToPowerL * fPrimeNext;
                     return;
                 }
 
-                u0 = u1; u1 = u2;
+                termPrevious = termCurrent;
+                fPrevious = fCurrent;
+                fPrimePrevious = fPrimeCurrent;
+                termCurrent = termNext;
+                fCurrent = fNext;
+                fPrimeCurrent = fPrimeNext;
 
             }
-
             throw new NonconvergenceException();
 
         }
@@ -184,11 +124,15 @@ namespace Meta.Numerics.Functions {
 
             for (int n = 2; n <= Global.SeriesMax; n++) {
 
-                double u2 = (2.0 * eta_rho * u1 - rho_2 * u0) / n / (n - 1);
-                double v2 = (2.0 * eta_rho * v1 - rho_2 * v0 - 2.0 * eta * (2 * n - 1) * u2) / n / (n - 1);
+                double u2 = (2.0 * eta_rho * u1 - rho_2 * u0) / (n * (n - 1));
+                double v2 = (2.0 * eta_rho * v1 - rho_2 * v0 - 2.0 * eta * (2 * n - 1) * u2) / (n * (n - 1));
 
-                double u_old = u; u += u2; up += n * u2;
-                double v_old = v; v += v2;
+                double u_old = u;
+                u += u2;
+                up += n * u2;
+
+                double v_old = v;
+                v += v2;
 
                 if ((u == u_old) && (v == v_old)) {
 
@@ -197,7 +141,7 @@ namespace Meta.Numerics.Functions {
 
                     FP = C * up / rho;
 
-                    double r = AdvancedComplexMath.Psi(new Complex(1.0, eta)).Re + 2.0 * AdvancedMath.EulerGamma - 1;
+                    double r = AdvancedComplexMath.Psi(new Complex(1.0, eta)).Re + 2.0 * AdvancedMath.EulerGamma - 1.0;
                     G = (v + 2.0 * eta * u * (Math.Log(2.0 * rho) + r)) / C;
 
                     GP = (FP * G - 1.0) / F;
@@ -217,6 +161,12 @@ namespace Meta.Numerics.Functions {
         // the method uses a real continued fraction (1 constraint), an imaginary continued fraction (2 constraints)
         // and the Wronskian (4 constraints) to compute the 4 quantities F, F', G, G'
         // it is reliable past the truning point, but becomes slow if used far past the turning point
+
+        // Solution (a la Barnett)
+        //   F = s \left[ (f - p)^2 / q + q \right]^{-1/2}
+        //   F' = f F
+        //   G = g F \qquad g = (f - p) / q
+        //   G' = (p g - q) F
 
         private static SolutionPair Coulomb_Steed (double L, double eta, double rho) {
 
@@ -246,7 +196,7 @@ namespace Meta.Numerics.Functions {
         private static double Coulomb_CF1 (double L, double eta, double rho, out int sign) {
 
             // maximum iterations
-            int nmax = Global.SeriesMax;
+            int nmax = 2 * Global.SeriesMax;
             double rho0 = CoulombTurningPoint(L, eta);
             if (rho > rho0) nmax += (int) Math.Floor(2.0 * (rho - rho0));
 
@@ -303,27 +253,56 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        // computes (G' + iF')/(G + i F)
-        // converges quickly for rho > turning point; does not converge at all below it
+        // Steed and Barnett derived the following continued fraction for
+        //   p + i q = \frac{G' + iF'}{G + i F}
+        //   p + i q = i ( 1 - \eta / \rho) + 
+        //     \frac{i}{\rho} \frac{i\eta - \ell)(i\eta + \ell + 1)}{2(\rho - \eta + i) +}
+        //       \frac{(i \eta - \ell + 1)(i \eta + \ell + 2)}{2(rho - \eta + 2 i) +} \cdots
+        // They derived it from the asymptotic series, but noted that this ratio
+        // has much better convergence properties than the asypmtotic series
+        // for the individual components from which it is derived.
+
+        // NR gives the impresses that this converges for \rho greater than the turning point,
+        // but it's actually more subtle. I don't know what the mathematical basin of convergence
+        // is, but (a) it clearly exhibits numerical convergence to the correct value even far
+        // inside the turning point and (b) it's easy to find arguments for which the number of
+        // iterations required for numerical convergence is quite high even inside the turning
+        // point and other arguments for which the required number of iterations is quite low
+        // even inside the turning point. Very approximately, it looks empirically like the number of
+        // iterations scales like ~20 (\eta / \rho)^{1/2}, with only a very weak dependence on \ell.
+        // I would love to understand this in terms of the continued fraction expression,
+        // but I haven't been able to.
+
+        // The turning point is still relevent, though, because inside the turning point,
+        // where G >> F, it becomes dominated by G'/G and the extraction of F and F'
+        // looses accuracy. 
 
         private static Complex Coulomb_CF2 (double L, double eta, double rho) {
 
             Complex a = new Complex(1.0 + L, eta);
             Complex c = new Complex(-L, eta);
 
-            Complex D = 1.0 / (new Complex(2.0 * (rho - eta), 2.0));
-            Complex Df = a * c * D;
+            double eta_squared = eta * eta;
+            double two_rho_minus_eta = 2.0 * (rho - eta);
+            Complex p0 = new Complex(-(eta_squared + L * (L + 1)), eta);
+            Complex q0 = new Complex(two_rho_minus_eta, 2.0);
+
+            Complex D = 1.0 / q0;
+            Complex Df = p0 * D;
             Complex f = Df;
 
-            int nmax = Global.SeriesMax;
-            if (eta < 0) nmax += (int) Math.Floor(-8.0 * eta);
+            // Predicting the iteration limit has proved difficult.
+            int nmax = 100000;
+            //int nmax = Global.SeriesMax;
+            //nmax += (int) Math.Min(Math.Round(40.0 * Math.Sqrt(Math.Abs(eta) / rho)), 10000.0);
+            //if (eta < 0) nmax += (int) Math.Floor(-9.0 * eta);
 
             for (int n = 1; n < nmax; n++) {
 
                 Complex f_old = f;
 
-                Complex p = (a + n) * (c + n);
-                Complex q = new Complex(2.0 * (rho - eta), 2.0 * (n + 1));
+                Complex p = new Complex((n + L + 1) * (n - L) - eta_squared, eta * (2 * n + 1));
+                Complex q = new Complex(two_rho_minus_eta, 2 * (n + 1));
 
                 D = 1.0 / (q + p * D);
                 Df = (q * D - 1.0) * Df;
@@ -417,18 +396,43 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        private static double Coulomb_Asymptotic_Limit (double L, double eta) {
+            return (32.0 + 0.5 * (L * L + eta * eta));
+        }
+
+        private static double Coulomb_Series_Limit (int L, double eta) {
+
+            // First correction term is \rho \eta / (L + 1). It should not overwhelm 1.
+            // If \eta < 0, it's negative, so avoid catastrophic cancelation.
+            // If \eta > 0, it can be larger without cancelation.
+            double a = (L + 1) / Math.Abs(eta);
+            if (eta < 0.0) {
+                // I would prefer to make this 0.5, but to keep series more useful accept 0.875 for now.
+                a *= 0.875;
+            } else {
+                // I would prefer to make this 1.5, but to keep series more useful accept 3.0 for now. 
+                a *= 3.0;
+            }
+
+            // Second correction term, which is first is \eta = 0, is \rho^2 / 2 (2 L + 3).
+            double b = Math.Sqrt(2 * (2 * L + 3));
+
+            return (Math.Min(a, b));
+
+        }
+
         // for rho < turning point, CWF are exponential; for rho > turning point, CWF are oscillatory
         // we use this in several branching calculations
 
         private static double CoulombTurningPoint (double L, double eta) {
 
             double p = L * (L + 1);
-            double q = Math.Sqrt(p + eta * eta);
+            double r = Math.Sqrt(p + eta * eta);
 
             if (eta >= 0.0) {
-                return (q + eta);
+                return (r + eta);
             } else {
-                return (p / (q - eta));
+                return (p / (r - eta));
             }
 
         }
@@ -472,96 +476,78 @@ namespace Meta.Numerics.Functions {
                 } else {
                     return (new SolutionPair(0.0, 0.0, Double.PositiveInfinity, Double.NegativeInfinity));
                 }
-            } else if ((rho < 4.0) && Math.Abs(rho * eta) < 8.0) {
-
-                // Below the safe series radius for L=0, compute using the series
+            } else if (rho <= Coulomb_Series_Limit(0, eta)) {
+                // Below the safe series radius for L=0, compute using the series.
                 Coulomb_Zero_Series(eta, rho, out double F, out double FP, out double G, out double GP);
 
                 // For higher L, recurse G upward, but compute F via the direct series.
                 // G is safe to compute via recursion and F is not because G is increasing
-                // rapidly and F is decreasing rapidly with increasing L.
+                // rapidly and F is decreasing rapidly with increasing L. Since the series
+                // for F was good for L = 0, it's certainly good for L > 0.
                 if (L > 0) {
                     CoulombF_Series(L, eta, rho, out F, out FP);
+                    double C = CoulombFactor(L, eta);
+                    F *= C;
+                    FP *= C;
                     Coulomb_Recurse_Upward(0, L, eta, rho, ref G, ref GP);
                 }
                 return (new SolutionPair(F, FP, G, GP));
-            } else if (rho > 32.0 + (L * L + eta * eta) / 2.0) {
+            } else if (rho >= Coulomb_Asymptotic_Limit(L, eta)) {
                 return (Coulomb_Asymptotic(L, eta, rho));
+            } else if (rho >= CoulombTurningPoint(L, eta)) {
+                return (Coulomb_Steed(L, eta, rho));
             } else {
-                double rho0 = CoulombTurningPoint(L, eta);
-                if (rho > rho0) {
-                    return (Coulomb_Steed(L, eta, rho));
+
+                // This code is copied from CoulombG; factor it into a seperate method.
+                double G, GP;
+                if (rho >= Coulomb_Asymptotic_Limit(0, eta)) {
+                    SolutionPair s = Coulomb_Asymptotic(0, eta, rho);
+                    G = s.SecondSolutionValue;
+                    GP = s.SecondSolutionDerivative;
                 } else {
-
-                    // First F
-                    double F, FP;
-
-                    double rho1 = Math.Min(
-                        4.0 + 2.0 * Math.Sqrt(L),
-                        (8.0 + 4.0 * L) / Math.Abs(eta)
-                    );
-
-                    if (rho < rho1) {
-                        CoulombF_Series(L, eta, rho, out F, out FP);
-                    } else {
-                        CoulombF_Series(L, eta, rho1, out F, out FP);
-
-                        OdeResult r = FunctionMath.IntegrateConservativeOde(
-                            (double x, double y) => ((L * (L + 1) / x + 2.0 * eta ) / x - 1.0) * y,
-                            rho1, F, FP, rho,
-                            new OdeSettings() {
-                                RelativePrecision = 2.5E-13,
-                                AbsolutePrecision = 0.0,
-                                EvaluationBudget = 8192 * 2
-                            }
-                        );
-
-                        F = r.Y;
-                        FP = r.YPrime;
-                    }
-                     
-                    // Then G
-                    double G, GP;
-
-                    // For L = 0 the transition region is smaller, so we will determine G 
-                    // at L = 0, where non-integration methods apply over a larger region,
-                    // and then recurse upward.
-
-                    double rho2 = CoulombTurningPoint(0, eta);
-
-                    if (rho > 32.0 + eta * eta / 2.0) {
-                        SolutionPair s = Coulomb_Asymptotic(0, eta, rho);
-                        G = s.SecondSolutionValue;
-                        GP = s.SecondSolutionDerivative;
-                    } else if (rho > rho2) {
+                    double rho1 = CoulombTurningPoint(0, eta);
+                    if (rho >= rho1) {
                         SolutionPair s = Coulomb_Steed(0, eta, rho);
                         G = s.SecondSolutionValue;
                         GP = s.SecondSolutionDerivative;
                     } else {
-                        SolutionPair s = Coulomb_Steed(0, eta, rho2);
+                        SolutionPair s = Coulomb_Steed(0, eta, rho1);
                         G = s.SecondSolutionValue;
                         GP = s.SecondSolutionDerivative;
-                        
-                        // Integrate inward from turning point.
-                        // G increases and F decreases in this direction, so this is stable.
+
                         OdeResult r = FunctionMath.IntegrateConservativeOde(
                             (double x, double y) => (2.0 * eta / x - 1.0) * y,
-                            rho2, G, GP, rho,
+                            rho1, G, GP, rho,
                             new OdeSettings() {
                                 RelativePrecision = 2.5E-13,
                                 AbsolutePrecision = 0.0,
-                                EvaluationBudget = 8192 * 2
+                                EvaluationBudget = 25000
                             }
                         );
 
                         G = r.Y;
                         GP = r.YPrime;
                     }
-
-                    Coulomb_Recurse_Upward(0, L, eta, rho, ref G, ref GP);
-
-                    return (new SolutionPair(F, FP, G, GP));
                 }
+
+                Coulomb_Recurse_Upward(0, L, eta, rho, ref G, ref GP);
+
+                // We can determine F and FP via CF1 and Wronskian, but if we are within
+                // series limit, it's likely a little faster and more accurate.
+                double F, FP;
+                if (rho < Coulomb_Series_Limit(L, eta)) {
+                    CoulombF_Series(L, eta, rho, out F, out FP);
+                    double C = CoulombFactor(L, eta);
+                    F *= C;
+                    FP *= C;
+                } else {
+                    double f = Coulomb_CF1(L, eta, rho, out int _);
+                    F = 1.0 / (f * G - GP);
+                    FP = f * F;
+                }
+             
+                return (new SolutionPair(F, FP, G, GP));
+
             }
 
         }
@@ -586,27 +572,123 @@ namespace Meta.Numerics.Functions {
             if (L < 0) throw new ArgumentOutOfRangeException(nameof(L));
             if (rho < 0) throw new ArgumentOutOfRangeException(nameof(rho));
 
-            if ((rho < 4.0 + 2.0 * Math.Sqrt(L)) && (Math.Abs(rho * eta) < 8.0  + 4.0 * L)) {
-                // if rho and rho * eta are small enough, use the series expansion at the origin
+            double rho0 = Coulomb_Series_Limit(L, eta);
+            if (rho <= rho0) {
+                //if ((rho < 4.0 + 2.0 * Math.Sqrt(L)) && (Math.Abs(rho * eta) < 8.0  + 4.0 * L)) {
+                // If rho and rho * eta are small enough, use the series expansion at the origin.
                 CoulombF_Series(L, eta, rho, out double F, out double FP);
-                return (F);
-            } else if (rho > 32.0 + (L * L + eta * eta) / 2.0) {
-                // if rho is large enough, use the asymptotic expansion
+                double C = CoulombFactor(L, eta);
+                return (C * F);
+            } else if (rho >= Coulomb_Asymptotic_Limit(L, eta)) {
+                // If rho is large enough, use the asymptotic expansion.
                 SolutionPair s = Coulomb_Asymptotic(L, eta, rho);
                 return (s.FirstSolutionValue);
-                //double F, G;
-                //Coulomb_Asymptotic(L, eta, rho, out F, out G);
-                //return (F);
+            } else if (rho >= CoulombTurningPoint(L, eta)) {
+                // Beyond the turning point, use the Barnett/Steed method.
+                SolutionPair result = Coulomb_Steed(L, eta, rho);
+                return (result.FirstSolutionValue);
             } else {
-                // transition region
-                if (rho >= CoulombTurningPoint(L, eta)) {
-                    // beyond the turning point, use Steed's method
-                    SolutionPair result = Coulomb_Steed(L, eta, rho);
-                    return (result.FirstSolutionValue);
+                // We are below the transition point but above the series limit.
+                // Choose the approach with the least cost.
+                ISolutionStrategy<double> above = new CoulombFFromSeriesAbove(L, eta, rho);
+                ISolutionStrategy<double> left = new CoulombFFromOutwardIntegration(L, eta, rho);
+
+                if (left.Cost < above.Cost) {
+                    return left.Evaluate();
                 } else {
-                    // inside the turning point, integrate out from the series limit
-                    return (CoulombF_Integrate(L , eta, rho));
+                    return above.Evaluate();
                 }
+
+            }
+
+        }
+
+        private struct CoulombFFromSeriesAbove : ISolutionStrategy<double> {
+
+            public CoulombFFromSeriesAbove (int L, double eta, double rho) {
+
+                double L_above_a = rho * Math.Abs(eta) / (eta < 0.0 ? 0.875 : 2.0);
+                double L_above_b = 0.5 * (0.5 * rho * rho - 3.0);
+                L0 = (int) Math.Ceiling(Math.Min(Math.Max(L_above_a, L_above_b), Int32.MaxValue));
+                Debug.Assert(L < L0);
+
+                this.L = L;
+                this.eta = eta;
+                this.rho = rho;
+
+                this.C0 = CoulombFactor(L0, eta);
+            }
+
+            private int L0, L;
+
+            private double eta, rho;
+
+            private double C0;
+
+            public double Cost {
+                get {
+                    if (C0 == 0.0) return (Double.MaxValue);
+                    // Assume series costs 100, each recursion step costs 10.
+                    return (L0 == Int32.MaxValue ? Double.MaxValue : 100.0 + 10.0 * (L0 - L));
+                }
+            }
+
+            public double Evaluate () {
+                CoulombF_Series(L0, eta, rho, out double F, out double FP);
+                double C = CoulombFactor(L0, eta);
+                F *= C;
+                FP *= C;
+                Coulomb_Recurse_Downward(L0, L, eta, rho, ref F, ref FP);
+                return (F);
+            }
+
+        }
+
+        private class CoulombFFromOutwardIntegration : ISolutionStrategy<double> {
+
+            public CoulombFFromOutwardIntegration (int L, double eta, double rho) {
+
+                rho0 = Coulomb_Series_Limit(L, eta);
+                Debug.Assert(rho0 < rho);
+
+                this.L = L;
+                this.eta = eta;
+                this.rho = rho;
+            }
+
+            private int L;
+
+            private double eta;
+
+            private double rho0, rho;
+
+            public double Cost {
+                get {
+                    // Assume series costs 100, each integration step costs 1000.
+                    return (100.0 + 1000.0 * (rho - rho0));
+                }
+            }
+
+            public double Evaluate () {
+
+                CoulombF_Series(L, eta, rho0, out double F, out double FP);
+
+                if ((F == 0.0) && (FP == 0.0)) return (0.0);
+
+                OdeResult r = FunctionMath.IntegrateConservativeOde(
+                    (double x, double y) => ((L * (L + 1) / x + 2.0 * eta) / x - 1.0) * y,
+                    rho0, F, FP, rho,
+                    new OdeSettings() {
+                        RelativePrecision = 2.5E-13,
+                        AbsolutePrecision = 0.0,
+                        EvaluationBudget = 25000
+                    }
+                );
+
+                double C = CoulombFactor(L, eta);
+
+                return (C * r.Y);
+
             }
 
         }
@@ -631,149 +713,61 @@ namespace Meta.Numerics.Functions {
             if (L < 0) throw new ArgumentOutOfRangeException(nameof(L));
             if (rho < 0) throw new ArgumentOutOfRangeException(nameof(rho));
 
-            if ((rho < 4.0) && Math.Abs(rho * eta) < 8.0) {
+            if (rho <= Coulomb_Series_Limit(0, eta)) {
                 // For small enough rho, use the power series for L=0, then recurse upward to desired L.
                 Coulomb_Zero_Series(eta, rho, out double F, out double FP, out double G, out double GP);
                 Coulomb_Recurse_Upward(0, L, eta, rho, ref G, ref GP);
                 return (G);
-            } else if (rho > 32.0 + (L * L + eta * eta) / 2.0) {
+            } else if (rho >= Coulomb_Asymptotic_Limit(L, eta)) {
                 // For large enough rho, use the asymptotic series.
                 SolutionPair s = Coulomb_Asymptotic(L, eta, rho);
                 return (s.SecondSolutionValue);
+            } else if (rho >= CoulombTurningPoint(L, eta)) {
+                // Beyond the turning point, use Steed's method.
+                SolutionPair result = Coulomb_Steed(L, eta, rho);
+                return (result.SecondSolutionValue);
             } else {
-                // Transition region
-                if (rho >= CoulombTurningPoint(L, eta)) {
-                    // Beyond the turning point, use Steed's method.
-                    SolutionPair result = Coulomb_Steed(L, eta, rho);
-                    return (result.SecondSolutionValue);
+                // We will start at L=0 (which has a smaller turning point radius) and recurse up to the desired L.
+                // This is okay because G increases with increasing L. We already know that we are beyond the L=0
+                // series limit; otherwise we would have taken the branch for it above. We might still be
+                // in the asymptotic region, in the Steed region, below the L=0 turning point (if \eta > 0).
+                double G, GP;
+                if (rho >= Coulomb_Asymptotic_Limit(0, eta)) {
+                    SolutionPair s = Coulomb_Asymptotic(0, eta, rho);
+                    G = s.SecondSolutionValue;
+                    GP = s.SecondSolutionDerivative;
                 } else {
-                    
-                    // we will start at L=0 (which has a smaller turning point radius) and recurse up to the desired L
-                    // this is okay because G increases with increasing L
-
-                    double G, GP;
-
-                    double rho0 = 2.0 * eta;
-                    if (rho < rho0) {
-
-                        // if inside the turning point even for L=0, start at the turning point and integrate in
-                        // this is okay because G increases with decreasing rho
-
-                        // use Steed's method at the turning point
-                        // for large enough eta, we could use the turning point expansion at L=0, but it contributes
-                        // a lot of code for little overall performance increase so we have chosen not to
-                        SolutionPair result = Coulomb_Steed(0, eta, 2.0 * eta);
-                        G = result.SecondSolutionValue;
-                        GP = result.SecondSolutionDerivative;
+                    double rho1 = CoulombTurningPoint(0, eta);
+                    if (rho >= rho1) {
+                        SolutionPair s = Coulomb_Steed(0, eta, rho);
+                        G = s.SecondSolutionValue;
+                        GP = s.SecondSolutionDerivative;
+                    } else {
+                        SolutionPair s = Coulomb_Steed(0, eta, rho1);
+                        G = s.SecondSolutionValue;
+                        GP = s.SecondSolutionDerivative;
 
                         OdeResult r = FunctionMath.IntegrateConservativeOde(
                             (double x, double y) => (2.0 * eta / x - 1.0) * y,
-                            rho0, G, GP, rho,
+                            rho1, G, GP, rho,
                             new OdeSettings() {
                                 RelativePrecision = 2.5E-13,
                                 AbsolutePrecision = 0.0,
-                                EvaluationBudget = 8192 * 2
+                                EvaluationBudget = 25000
                             }
                         );
 
                         G = r.Y;
                         GP = r.YPrime;
-
-                    } else {
-
-                        // if beyond the turning point for L=0, just use Steeds method
-
-                        SolutionPair result = Coulomb_Steed(0, eta, rho);
-                        G = result.SecondSolutionValue;
-                        GP = result.SecondSolutionDerivative;
-
                     }
-
-
-                    // Recurse up to the desired L.
-                    Coulomb_Recurse_Upward(0, L, eta, rho, ref G, ref GP);
-
-                    return (G);
-                    
                 }
+
+                Coulomb_Recurse_Upward(0, L, eta, rho, ref G, ref GP);
+
+                return (G);
             }
 
         }
-
-        // Abromowitz & Rabinowitz asymptotic expansion for L = 0 at rho = 2 eta; coefficients from Isacsson
-        // this is accurate at double precision down to about eta ~ 15
-
-        /*
-        private static BesselResult Coulomb_Zero_Turning_Expansion (double eta) {
-
-            double beta = Math.Pow(2.0 * eta / 3.0, 1.0 / 3.0);
-            double beta_squared = beta * beta;
-            double[] b = new double[12];
-            b[0] = 1.0;
-            for (int i = 1; i < b.Length; i++) {
-                b[i] = b[i - 1] * beta_squared;
-            }
-            double sqrtbeta = Math.Sqrt(beta);
-
-            double F = AbromowitzA[0] * sqrtbeta * ( 1.0 - AbromowitzA[1] / b[2] - AbromowitzA[2] / b[3]
-                - AbromowitzA[3] / b[5] - AbromowitzA[4] / b[6] - AbromowitzA[5] / b[8] - AbromowitzA[6] / b[9]
-                - AbromowitzA[7] / b[11] );
-
-            double G = AbromowitzA[0] * sqrtbeta * Math.Sqrt(3.0) * ( 1.0 + AbromowitzA[1] / b[2] - AbromowitzA[2] / b[3]
-                + AbromowitzA[3] / b[5] - AbromowitzA[4] / b[6] + AbromowitzA[5] / b[8] - AbromowitzA[6] /b[9]
-                + AbromowitzA[7] / b[11] );
-
-            double FP = AbromowitzB[0] / sqrtbeta * ( 1.0 + AbromowitzB[1] / b[1] + AbromowitzB[2] / b[3]
-                + AbromowitzB[3] / b[4] + AbromowitzB[4] / b[6] + AbromowitzB[5] / b[7] + AbromowitzB[6] / b[9]
-                + AbromowitzB[7] / b[10] );
-
-            double GP = AbromowitzB[0] / sqrtbeta * Math.Sqrt(3.0) * ( -1.0 + AbromowitzB[1] / b[1] - AbromowitzB[2] / b[3]
-                + AbromowitzB[3] / b[4] - AbromowitzB[4] / b[6] + AbromowitzB[5] / b[7] - AbromowitzB[6] / b[9]
-                + AbromowitzB[7] / b[10] );
-
-            BesselResult result = new BesselResult();
-            result.Regular = F;
-            result.RegularPrime = FP;
-            result.Irregular = G;
-            result.IrregularPrime = GP;
-            return (result);
-
-        }
-
-
-        // calculate and store the coefficients used in the Abromowitz expansion
-
-        private static double[] AbromowitzA, AbromowitzB;
-
-        static AdvancedMath () {
-
-            double g1 = AdvancedMath.Gamma(1.0 / 3.0);
-            double g2 = AdvancedMath.Gamma(2.0 / 3.0);
-            double r12 = g1 / g2;
-
-            AbromowitzA = new double[] {
-                g1 / 2.0 / Math.Sqrt(Math.PI),
-                2.0 / 35.0 / r12,
-                32.0 / 8100.0,
-                92672.0 / 73710000.0 / r12,
-                6363008.0 / 35363790000.0,
-                1176384772096.0 / 6114399291000000.0 / r12,
-                525441777664.0 / 14608781649000000.0,
-                181821895706607616.0 / 2525858347112100000000.0 / r12
-            };
-            AbromowitzB = new double[] {
-                g2 / 2.0 / Math.Sqrt(Math.PI),
-                1.0 / 15.0 * r12,
-                8.0 / 56700.0,
-                11488.0 / 18711000.0 * r12,
-                25739264 / 417935700000.0,
-                1246983424.0 / 18035532900000.0 * r12,
-                277651871485952.0 / 14857990277130000000.0,
-                1351563588999258112.0 / 64209977981849700000000.0 * r12
-            };
-
-        }
-        */
 
         private static void Coulomb_Recurse_Upward (int L1, int L2, double eta, double rho, ref double U, ref double UP) {
 
@@ -793,37 +787,42 @@ namespace Meta.Numerics.Functions {
                 U = U2;
                 UP = UP2;
 
+                // This is a hacky fix to deal with the fact that when U = Double.PositiveInfinity and
+                // U2 = Double.NegativeInfinity, UP2 = Double.PositiveInfinity - Double.PositiveInfinity = Double.NaN
+                if (Double.IsPositiveInfinity(U)) {
+                    UP = Double.NegativeInfinity;
+                    break;
+                }
+
             }
 
         }
 
-        private static double CoulombF_Integrate (int L, double eta, double rho) {
+        // The following recursion formula follow from A&S 14.2:
+        //   \sqrt{L^2 + \eta^2} u_{L-1} = L u_L' + (L^2 / \rho + \eta) u_L
+        //   L u_{L-1}' = (L^2  / \rho + \eta) u_{L-1} - \sqrt{L^2 + \eta^2} u_L
+        // We use them for downward recursion.
 
-            // start at the series limit
-            double rho1 = Math.Min(
-                4.0 + 2.0 * Math.Sqrt(L),
-                (8.0 + 4.0 * L) / Math.Abs(eta)
-            );
+        private static void Coulomb_Recurse_Downward (int L1, int L2, double eta, double rho, ref double U, ref double UP) {
+            Debug.Assert(L2 <= L1);
+            for (int K = L1; K > L2; K--) {
+                double S = MoreMath.Hypot(K, eta);
+                double T = K * K / rho + eta;
 
-            CoulombF_Series(L, eta, rho1, out double F, out double FP);
-
-            // TODO: switch so we integrate w/o the C factor, then apply it afterward
-            if ((F == 0.0) && (FP == 0.0)) return (0.0);
-
-            OdeResult r = FunctionMath.IntegrateConservativeOde(
-                (double x, double y) => ((L * (L + 1) / x + 2.0 * eta) / x - 1.0) * y,
-                rho1, F, FP, rho,
-                new OdeSettings() {
-                    RelativePrecision = 2.5E-13,
-                    AbsolutePrecision = 0.0,
-                    EvaluationBudget = 8192 * 2
-                }
-            );
-
-            // return the result
-            return (r.Y);
+                double V = (T * U + K * UP) / S;
+                UP = (T * V - S * U) / K;
+                U = V;
+            }
 
         }
+
+    }
+
+    internal interface ISolutionStrategy<T> {
+
+        double Cost { get; }
+
+        T Evaluate ();
 
     }
 

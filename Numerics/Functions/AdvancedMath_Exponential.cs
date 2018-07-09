@@ -75,7 +75,8 @@ namespace Meta.Numerics.Functions {
             } else if (Double.IsPositiveInfinity(x)) {
                 return (Double.PositiveInfinity);
             } else {
-                return (Double.NaN);
+                Debug.Assert(Double.IsNaN(x));
+                return (x);
             }
         }
 
@@ -106,7 +107,7 @@ namespace Meta.Numerics.Functions {
 
             if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
 
-            // special case x = 0
+            // Special case x = 0.
             if (x == 0.0) {
                 if (n <= 1) {
                     return (Double.PositiveInfinity);
@@ -115,20 +116,32 @@ namespace Meta.Numerics.Functions {
                 }
             }
 
+            // Special case n negative and zero.
             if (n < 0) {
                 // negative n is expressible using incomplete Gamma
                 return (AdvancedMath.Gamma(1 - n, x) / MoreMath.Pow(x, 1 - n));
             } else if (n == 0) {
                 // special case n=0
                 return (Math.Exp(-x) / x);
-            } else if (x < 2.0) {
-                // use series for x < 1
+            }
+
+            // Other x > 0 and n > 0.
+            if (x < 2.0) {
                 return (IntegralE_Series(n, x));
-            } else {
-                // use continued fraction for x > 1
+            } else if (x < expLimit) {
+                // Since E_n(x) < e^{-x}, we can short-cut to zero if x is big enough.
+                // This nicely avoids our continued fraction's bad behavior for infinite x.
                 return (IntegralE_ContinuedFraction(n, x));
+            } else if (x <= Double.PositiveInfinity) {
+                return (0.0);
+            } else {
+                Debug.Assert(Double.IsNaN(x));
+                return (x);
             }
         }
+
+        // The value of x at which e^{-x} drops below the smallest representable double.
+        private static readonly double expLimit = -Math.Log(Double.Epsilon);
 
         // a series for E_{n}(x) from NR
         // the series is a little weird because, when n > 1, there is a finite sum of terms before the infinite series begins
@@ -255,7 +268,8 @@ namespace Meta.Numerics.Functions {
             } else if (Double.IsPositiveInfinity(x)) {
                 return (Math.PI / 2.0);
             } else {
-                return (Double.NaN);
+                Debug.Assert(Double.IsNaN(x));
+                return (x);
             }
         }
 
@@ -274,7 +288,8 @@ namespace Meta.Numerics.Functions {
                 // level, far below double precision.
                 return (0.5 * IntegralEi_Asymptotic(x));
             } else {
-                return (Double.NaN);
+                Debug.Assert(Double.IsNaN(x));
+                return (x);
             }
             // I would really like a better solution in the x ~ 16-48 range.
             // x ~ 40 is the very limit of convergence for asymptotic series,

@@ -547,6 +547,13 @@ namespace Test {
         }
 
         [TestMethod]
+        public void PsiExtremeValues () {
+            Assert.IsTrue(Double.IsInfinity(AdvancedMath.Psi(0.0)));
+            Assert.IsTrue(AdvancedMath.Psi(Double.PositiveInfinity) == Double.PositiveInfinity);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.Psi(Double.NaN)));
+        }
+
+        [TestMethod]
         public void PsiRecurrence () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,24)) {
                 Assert.IsTrue(TestUtilities.IsSumNearlyEqual(AdvancedMath.Psi(x), 1.0 / x, AdvancedMath.Psi(x + 1.0)));
@@ -827,6 +834,33 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void LogBetaSpecialCases () {
+            // Would be nice to have this exactly zero
+            Assert.IsTrue(Math.Abs(AdvancedMath.LogBeta(1.0, 1.0)) < TestUtilities.TargetPrecision);
+        }
+
+        [TestMethod]
+        public void LogBetaExtremeValues () {
+            Assert.IsTrue(AdvancedMath.LogBeta(0.0, 0.0) == Double.PositiveInfinity);
+            Assert.IsTrue(AdvancedMath.LogBeta(1.0E-2, 0.0) == Double.PositiveInfinity);
+            Assert.IsTrue(AdvancedMath.LogBeta(0.0, 1.0E2) == Double.PositiveInfinity);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.Beta(1.0E2, Double.NaN)));
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.Beta(Double.NaN, 1.0E-2)));
+        }
+
+        [TestMethod]
+        public void LogBetaAgreement () {
+            foreach (double a in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 4)) {
+                foreach (double b in TestUtilities.GenerateRealValues(1.0E-3, 1.0E1, 4)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        AdvancedMath.LogBeta(a, b),
+                        Math.Log(AdvancedMath.Beta(a, b))
+                    ));
+                }
+            }
+        }
+
         // Incomplete beta function
 
         [TestMethod]
@@ -920,19 +954,7 @@ namespace Test {
             }
         }
 
-        [TestMethod]
-        public void IntegralEiSpecialValues () {
-            Assert.IsTrue(AdvancedMath.IntegralEi(0.0) == Double.NegativeInfinity);
-            Assert.IsTrue(AdvancedMath.IntegralEi(Double.PositiveInfinity) == Double.PositiveInfinity);
-            Assert.IsTrue(Double.IsNaN(AdvancedMath.IntegralEi(Double.NaN)));
-        }
 
-        [TestMethod]
-        public void IntegralEiZero () {
-            // Value of zero documented at https://dlmf.nist.gov/6.13
-            double x0 = FunctionMath.FindZero(AdvancedMath.IntegralEi, 1.0);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(x0, 0.37250741078136663446));
-        }
 
 
         [TestMethod]
@@ -1195,47 +1217,7 @@ namespace Test {
 
         }
 
-        [TestMethod]
-        public void CoulombRecursionTest () {
-            
-            foreach (int L in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
-                foreach (double eta in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 10)) {
-                    foreach (double rho in TestUtilities.GenerateRealValues(1.0E-3, 1.0E3, 20)) {
 
-                        Console.WriteLine("L={0} eta={1} rho={2}", L, eta, rho);
-
-                        CoulombRecursionTestHelper(L, eta, rho,
-                            AdvancedMath.CoulombF(L - 1, eta, rho), AdvancedMath.CoulombF(L, eta, rho), AdvancedMath.CoulombF(L + 1, eta, rho)
-                        );
-
-                        CoulombRecursionTestHelper(L, -eta, rho,
-                            AdvancedMath.CoulombF(L - 1, -eta, rho), AdvancedMath.CoulombF(L, -eta, rho), AdvancedMath.CoulombF(L + 1, -eta, rho)
-                        );
-
-                        CoulombRecursionTestHelper(L, eta, rho,
-                            AdvancedMath.CoulombG(L - 1, eta, rho), AdvancedMath.CoulombG(L, eta, rho), AdvancedMath.CoulombG(L + 1, eta, rho)
-                        );
-
-                        CoulombRecursionTestHelper(L, -eta, rho,
-                            AdvancedMath.CoulombG(L - 1, -eta, rho), AdvancedMath.CoulombG(L, -eta, rho), AdvancedMath.CoulombG(L + 1, -eta, rho)
-                        );
-
-                    }
-                }
-            }
-            
-
-        }
-
-        private static void CoulombRecursionTestHelper (double L, double eta, double rho, double UM, double U, double UP) {
-
-            double am = (L + 1) * Math.Sqrt(L * L + eta * eta);
-            double a = (2 * L + 1) * (eta + L * (L + 1) / rho);
-            double ap = L * Math.Sqrt((L + 1) * (L + 1) + eta * eta);
-
-            Assert.IsTrue(TestUtilities.IsSumNearlyEqual(am * UM, ap * UP, a * U, 4.0 * TestUtilities.TargetPrecision));
-
-        }
 
         [TestMethod]
         public void ModifiedBesselWronskianTest () {
@@ -1530,6 +1512,15 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.DiLog(1.0 / AdvancedMath.GoldenRatio), Math.PI * Math.PI / 10.0 - Math.Log(AdvancedMath.GoldenRatio) * Math.Log(AdvancedMath.GoldenRatio)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.DiLog(1.0), Math.PI * Math.PI / 6.0));
 
+        }
+
+        [TestMethod]
+        public void DiLogExtremeValues () {
+            double tiny = 1.0 / Double.MaxValue;
+            Assert.IsTrue(AdvancedMath.DiLog(Double.NegativeInfinity) == Double.NegativeInfinity);
+            Assert.IsTrue(AdvancedMath.DiLog(-tiny) == -tiny);
+            Assert.IsTrue(AdvancedMath.DiLog(tiny) == tiny);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.DiLog(Double.NaN)));
         }
 
         [TestMethod]

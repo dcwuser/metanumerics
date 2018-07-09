@@ -661,44 +661,6 @@ namespace Test {
 
         }
 
-        [TestMethod]
-        public void CoulombAsymptotic () {
-
-
-            double F1 = AdvancedMath.CoulombF(4, -30.0, 1.0);
-            double G1 = AdvancedMath.CoulombG(4, -30.0, 1.0);
-            Console.WriteLine("{0} {1}", F1, G1);
-
-
-            for (int L = 0; L < 8; L++) {
-
-                foreach (double eta in new double[] { -30.1, -5.1, -0.31, 0.0, 0.51, 3.1, 50.1 }) {
-
-                    foreach (double rho in new double[] { 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0 }) {
-                        //double rho = 32.0 + (L * L + eta * eta) / 2.0;
-                        //for (int i = 0; i < 8; i++) {
-
-                        SolutionPair r = AdvancedMath.Coulomb(L, eta, rho);
-                        //SolutionPair r = AdvancedMath.Coulomb_Asymptotic(L, eta, rho);
-                        Console.WriteLine("{0} {1} {2} : {3} {4} {5} {6} : {7}",
-                            L, eta, rho,
-                            r.FirstSolutionValue, r.FirstSolutionDerivative,
-                            r.SecondSolutionValue, r.SecondSolutionDerivative,
-                            r.FirstSolutionDerivative * r.SecondSolutionValue - r.FirstSolutionValue * r.SecondSolutionDerivative
-                        );
-
-                        Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
-                            r.FirstSolutionDerivative * r.SecondSolutionValue, -r.FirstSolutionValue * r.SecondSolutionDerivative, 1.0,
-                            TestUtilities.TargetPrecision * 8.0
-                        ));
-
-                        //rho = 1.25 * rho;
-                    }
-                }
-
-            }
-
-        }
 
         [TestMethod]
         public void BesselUaeTest () {

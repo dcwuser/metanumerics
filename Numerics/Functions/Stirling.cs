@@ -87,7 +87,7 @@ namespace Meta.Numerics.Functions
             return((z - 0.5) * ComplexMath.Log(z) - z + halfLogTwoPi + Sum(z));
         }
 
-        private static readonly double halfLogTwoPi = 0.5 * Math.Log(Global.TwoPI);
+        private static readonly double halfLogTwoPi = 0.5 * Math.Log(2.0 * Math.PI);
 
         public static double Gamma(double x) {
             return (Math.Sqrt(2.0 * Math.PI / x) * Math.Pow(x / Math.E, x) * Math.Exp(Sum(x)));

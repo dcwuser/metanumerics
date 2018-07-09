@@ -31,7 +31,7 @@ namespace Meta.Numerics.Functions {
                     // Special case x = 1 exactly to avoid computing log(0).
                     return (Math.PI * Math.PI / 6.0);
                 } else {
-                    return (Math.PI * Math.PI / 6.0 - DiLog_Series(1.0 - x) - Math.Log(x) * Math.Log(1.0 - x));
+                    return (Math.PI * Math.PI / 6.0 - DiLog_Series(1.0 - x) - Math.Log(x) * MoreMath.LogOnePlus(-x));
                 }
                 // use series near 1
                 //return (DiLog_Series_1(1.0 - x));
@@ -41,11 +41,12 @@ namespace Meta.Numerics.Functions {
             } else if (x >= -1.0) {
                 // Use Li(x) + Li(-x) = \frac{1}{2} Li(x^2)
                 // to map negative x to positive x
-                return (DiLog(x * x) / 2.0 - DiLog(-x));
-            } else {
+                return (0.5 * DiLog(x * x) - DiLog(-x));
+            } else if (x >= Double.NegativeInfinity) {
                 // use formula for Li(1/x) to map to [-1,0]
-                double ln = Math.Log(-x);
-                return (-Math.PI * Math.PI / 6.0 - ln * ln / 2.0 - DiLog(1.0 / x));
+                return (-Math.PI * Math.PI / 6.0 - 0.5 * MoreMath.Sqr(Math.Log(-x)) - DiLog(1.0 / x));
+            } else {
+                return (Double.NaN);
             }
         }
 

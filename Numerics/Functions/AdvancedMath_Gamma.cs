@@ -25,9 +25,14 @@ namespace Meta.Numerics.Functions {
             } else if (x < 16.0) {
                 // For small arguments, use the Lanczos approximation.
                 return (Lanczos.LogGamma(x));
-            } else {
+            } else if (x < Double.PositiveInfinity) {
                 // For large arguments, the asymptotic series is even faster than the Lanczos approximation.
                 return (Stirling.LogGamma(x));
+            } else if (x == Double.PositiveInfinity) {
+                // Precisely at infinity x * Math.Log(x) - x => NaN, so special-case it.
+                return (Double.PositiveInfinity);
+            } else {
+                return (Double.NaN);
             }
 		}
 
@@ -62,8 +67,13 @@ namespace Meta.Numerics.Functions {
                 return (Math.PI / MoreMath.SinPi(x) / Gamma(1.0 - x));
             } else if (x < 16.0) {
                 return (Lanczos.Gamma(x));
-            } else {
+            } else if (x < 172.0) {
                 return (Stirling.Gamma(x));
+            } else if (x <= Double.PositiveInfinity) {
+                // For x >~ 172, Gamma(x) overflows.
+                return (Double.PositiveInfinity);
+            } else {
+                return (Double.NaN);
             }
 		}
 
@@ -88,9 +98,11 @@ namespace Meta.Numerics.Functions {
                 return (Psi(1.0 - x) - Math.PI / MoreMath.TanPi(x));
             } else if (x < 16.0) {
                 return (Lanczos.Psi(x));
-            } else {
+            } else if (x <= Double.PositiveInfinity) {
                 // For large arguments, the Stirling asymptotic expansion is faster than the Lanzcos approximation
                 return (Stirling.Psi(x));
+            } else {
+                return (Double.NaN);
             }
 		}
 
@@ -390,10 +402,16 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is negative or zero.</exception>
         /// <seealso cref="Beta(System.Double,System.Double)"/>
         public static double LogBeta (double a, double b) {
-            if (a <= 0.0) throw new ArgumentOutOfRangeException(nameof(a));
-            if (b <= 0.0) throw new ArgumentOutOfRangeException(nameof(b));
             if ((a > 16.0) && (b > 16.0)) {
                 return (Stirling.LogBeta(a, b));
+            } else if (a < 0.0) {
+                throw new ArgumentOutOfRangeException(nameof(a));
+            } else if (b < 0.0) {
+                throw new ArgumentOutOfRangeException(nameof(b));
+            } else if (Double.IsNaN(a) || Double.IsNaN(b)) {
+                return (Double.NaN);
+            } else if (a == 0.0 || b == 0.0) {
+                return (Double.PositiveInfinity);
             } else {
                 return (Lanczos.LogBeta(a, b));
             }

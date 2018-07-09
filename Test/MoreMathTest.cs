@@ -158,6 +158,30 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void ExpMinusOneSpecialCases () {
+            Assert.IsTrue(MoreMath.ExpMinusOne(0.0) == 0.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.ExpMinusOne(1.0), Math.E - 1.0));
+        }
+
+        [TestMethod]
+        public void ExpMinusOneExtremeValues () {
+            Assert.IsTrue(MoreMath.ExpMinusOne(Double.NegativeInfinity) == -1.0);
+            Assert.IsTrue(MoreMath.ExpMinusOne(Double.MinValue) == -1.0);
+            Assert.IsTrue(MoreMath.ExpMinusOne(-Double.Epsilon) == -Double.Epsilon);
+            Assert.IsTrue(MoreMath.ExpMinusOne(Double.Epsilon) == Double.Epsilon);
+            Assert.IsTrue(MoreMath.ExpMinusOne(Double.PositiveInfinity) == Double.PositiveInfinity);
+            Assert.IsTrue(MoreMath.ExpMinusOne(Double.MaxValue) == Double.PositiveInfinity);
+            Assert.IsTrue(Double.IsNaN(MoreMath.ExpMinusOne(Double.NaN)));
+        }
+
+        [TestMethod]
+        public void ExpMinusOneExpAgreement () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E2, 8)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.ExpMinusOne(x) + 1.0, Math.Exp(x)));
+            }
+        }
+
     }
 
 }

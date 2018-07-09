@@ -16,6 +16,20 @@ namespace Test {
     public class AdvancedMathTest_Exponential {
 
         [TestMethod]
+        public void IntegralEiSpecialValues () {
+            Assert.IsTrue(AdvancedMath.IntegralEi(0.0) == Double.NegativeInfinity);
+            Assert.IsTrue(AdvancedMath.IntegralEi(Double.PositiveInfinity) == Double.PositiveInfinity);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.IntegralEi(Double.NaN)));
+        }
+
+        [TestMethod]
+        public void IntegralEiZero () {
+            // Value of zero documented at https://dlmf.nist.gov/6.13
+            double x0 = FunctionMath.FindZero(AdvancedMath.IntegralEi, 1.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(x0, 0.37250741078136663446));
+        }
+
+        [TestMethod]
         public void IntegralEAtZero () {
             // A & S 5.1.23
             foreach (int n in TestUtilities.GenerateIntegerValues(2, 100, 8)) {
@@ -41,6 +55,16 @@ namespace Test {
                         FunctionMath.Integrate(t => Math.Exp(-x * t) / MoreMath.Pow(t, n), 1.0, Double.PositiveInfinity)
                     ));
                 }
+            }
+        }
+
+        [TestMethod]
+        public void IntegralESpecialCases () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.IntegralE(n, 0.0), 1.0 / (n - 1)));
+                Assert.IsTrue(AdvancedMath.IntegralE(n, Double.MaxValue) == 0.0);
+                Assert.IsTrue(AdvancedMath.IntegralE(n, Double.PositiveInfinity) == 0.0);
+                Assert.IsTrue(Double.IsNaN(AdvancedMath.IntegralE(n, Double.NaN)));
             }
         }
 
@@ -89,6 +113,16 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(
                 FunctionMath.Integrate(t => MoreMath.Sqr(AdvancedMath.IntegralE(1, t)), 0.0, Double.PositiveInfinity),
                 2.0 * Math.Log(2.0)
+            ));
+        }
+
+        [TestMethod]
+        public void IntegralEiE1Integrals () {
+            // Here are a couple unusual integrals involving both Ei and E1
+            // https://nvlpubs.nist.gov/nistpubs/jres/73B/jresv73Bn3p191_A1b.pdf
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                FunctionMath.Integrate(x => Math.Exp(-x) * AdvancedMath.IntegralE(1, x) * AdvancedMath.IntegralEi(x), 0.0, Double.PositiveInfinity),
+                -Math.PI * Math.PI / 12.0
             ));
         }
 

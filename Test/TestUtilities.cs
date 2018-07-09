@@ -86,6 +86,10 @@ namespace Test {
 
         public static bool IsSumNearlyEqual (double x1, double x2, double y, double e) {
             double x = x1 + x2;
+
+            // This deals with infinities, because x-y = NaN for both infinite.
+            if (x == y) return (true);
+
             double u1 = Math.Abs(x1) * e;
             double u2 = Math.Abs(x2) * e;
             double u = u1 + u2;

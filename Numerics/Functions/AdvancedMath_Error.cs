@@ -35,7 +35,8 @@ namespace Meta.Numerics.Functions {
             } else if (x <= Double.PositiveInfinity) {
                 return (1.0 - Erfc_ContinuedFraction(x));
             } else {
-                return (Double.NaN);
+                Debug.Assert(Double.IsNaN(x));
+                return (x);
             }
         }
 
@@ -65,7 +66,8 @@ namespace Meta.Numerics.Functions {
             } else if (x <= Double.PositiveInfinity) {
                 return (Erfc_ContinuedFraction(x));
             } else {
-                return (Double.NaN);
+                Debug.Assert(Double.IsNaN(x));
+                return (x);
             }
         }
 
@@ -130,17 +132,19 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="Erfc" />
         /// <seealso cref="InverseErf" />
         public static double InverseErfc (double y) {
-
-            if ((y < 0.0) || (y > 1.0)) throw new ArgumentOutOfRangeException(nameof(y));
-
-            if (y == 0.0) {
+            if (y < 0.0) {
+                throw new ArgumentOutOfRangeException(nameof(y));
+            } else if (y == 0.0) {
                 return (Double.PositiveInfinity);
             } else if (y < 0.5) {
                 return (InverseErfcByRefinement(y));
-            } else {
+            } else if (y <= 1.0) {
                 return (InverseErfSeries(1.0 - y));
+            } else if (Double.IsNaN(y)) {
+                return (y);
+            } else {
+                throw new ArgumentOutOfRangeException(nameof(y));
             }
-            
         }
 
         /// <summary>
@@ -163,7 +167,7 @@ namespace Meta.Numerics.Functions {
             } else if (y == 1.0) {
                 return (Double.PositiveInfinity);
             } else if (Double.IsNaN(y)) {
-                return (Double.NaN);
+                return (y);
             } else {
                 throw new ArgumentOutOfRangeException(nameof(y));
             }
@@ -362,7 +366,8 @@ namespace Meta.Numerics.Functions {
                 // use the asymptotic expansion for large values
                 return (Dawson_Asymptotic(x));
             } else {
-                return (Double.NaN);
+                Debug.Assert(Double.IsNaN(x));
+                return (x);
             }
         }
 
@@ -475,7 +480,8 @@ namespace Meta.Numerics.Functions {
             } else if (x <= Double.PositiveInfinity) {
                 return (0.5);
             } else {
-                return (Double.NaN);
+                Debug.Assert(Double.IsNaN(x));
+                return (x);
             }
         }
 
@@ -502,7 +508,8 @@ namespace Meta.Numerics.Functions {
             } else if (x <= Double.PositiveInfinity) {
                 return (0.5);
             } else {
-                return (Double.NaN);
+                Debug.Assert(Double.IsNaN(x));
+                return (x);
             }
         }
 
@@ -537,7 +544,8 @@ namespace Meta.Numerics.Functions {
             } else if (x <= Double.PositiveInfinity) {
                 return (new Complex(0.5, 0.5));
             } else {
-                return (Double.NaN);
+                Debug.Assert(Double.IsNaN(x));
+                return (x);
             }
         }
 

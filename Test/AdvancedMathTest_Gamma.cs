@@ -20,6 +20,14 @@ namespace Test {
         }
 
         [TestMethod]
+        public void GammaAtNegativeIntegers () {
+            Assert.IsTrue(Double.IsInfinity(AdvancedMath.Gamma(0.0)));
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
+                Assert.IsTrue(Double.IsInfinity(AdvancedMath.Gamma(-n)));
+            }
+        }
+
+        [TestMethod]
         public void GammaSpecialCases () {
             // It would be nice to be able to make more of these comparisons exact.
             Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.Gamma(0.0)));
@@ -29,6 +37,13 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(2.0), 1.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(3.0), 2.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(4.0), 6.0));
+            Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.Gamma(Double.PositiveInfinity)));
+        }
+
+        [TestMethod]
+        public void GammaExtremeValues () {
+            Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.Gamma(Double.MaxValue)));
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.Gamma(Double.NaN)));
         }
 
         [TestMethod]
@@ -120,13 +135,13 @@ namespace Test {
             Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.LogGamma(0.0)));
             Assert.IsTrue(AdvancedMath.LogGamma(1.0) == 0.0);
             Assert.IsTrue(AdvancedMath.LogGamma(2.0) == 0.0);
+            Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.LogGamma(Double.PositiveInfinity)));
         }
 
         [TestMethod]
         public void LogGammaExtremeValues () {
             //Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.LogGamma(1.0 / Double.MaxValue), Math.Log(Double.MaxValue)));
-            //AdvancedMath.LogGamma(Double.MaxValue);
-            //Assert.IsTrue(AdvancedMath.LogGamma(Double.PositiveInfinity) == Double.PositiveInfinity);
+            Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.LogGamma(Double.MaxValue)));
         }
 
         [TestMethod]

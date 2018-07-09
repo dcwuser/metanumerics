@@ -79,26 +79,29 @@ namespace Meta.Numerics.Functions
         }
 
         public static double LogGamma(double x) {
-            // we-write to use (x-0.5) form to eliminate one one by storing log(2\pi)?
-            return (x * Math.Log(x) - x - 0.5 * Math.Log(x / (2.0 * Math.PI)) + Sum(x));
-            //return ((x - 0.5) * Math.Log(x) - x + halfLogTwoPi + Sum(x));
+            // Sum from smallest to largest terms to minimize error.
+            return (Sum(x) + halfLogTwoPi - x + (x - 0.5) * Math.Log(x));
         }
 
         public static Complex LogGamma (Complex z) {
             return((z - 0.5) * ComplexMath.Log(z) - z + halfLogTwoPi + Sum(z));
         }
 
-        private static readonly double halfLogTwoPi = 0.5 * Math.Log(Global.TwoPI);
+        private static readonly double halfLogTwoPi = 0.5 * Math.Log(2.0 * Math.PI);
 
         public static double Gamma(double x) {
-            // return (Math.Sqrt(2.0 * Math.PI / x) * Math.Pow(x / Math.E, x) * Math.Exp(Sum(x)));
-            return (Math.Exp(LogGamma(x)));
+            return (Math.Sqrt(2.0 * Math.PI / x) * Math.Pow(x / Math.E, x) * Math.Exp(Sum(x)));
+            //return (Math.Exp(LogGamma(x)));
         }
 
         public static double ReducedLogPochhammer(double x, double y) {
             double L = MoreMath.ReducedLogOnePlus(1.0 / x, y);
             return ((x - 0.5) * L + Math.Log(x + y) - 1.0 + ReducedPochhammerSum(x, y));
         }
+
+
+        // For \ln\Beta, perform analytic cancelations of \ln\Gamma(x) - \ln\Gamma(y) - \ln\Gamma(x+y)
+        // so that they don't cancel numerically.
 
         public static double Beta(double x, double y) {
             double xy = x + y;
@@ -110,8 +113,13 @@ namespace Meta.Numerics.Functions
         }
 
         public static double LogBeta(double x, double y) {
+            // Note that all three leading terms in this expression have the same sign (negative), so cancellation
+            // isn't an issue.
+            // Note that Sum(x) + Sum(y) - Sum(x+y) doesn't suffer any significant calcelation. The inidividual sums
+            // are also supressed relative to the leading terms.
             double xy = x + y;
-            return (x * Math.Log(x / xy) + y * Math.Log(y / xy) - Math.Log(x / xy * y / (2.0 * Math.PI)) / 2.0 + Sum(x) + Sum(y) - Sum(xy));
+            double s = Sum(x) + Sum(y) - Sum(xy);
+            return ((x - 0.5) * Math.Log(x / xy) + (y - 0.5) * Math.Log(y / xy) + 0.5 * Math.Log(2.0 * Math.PI / xy) + s);
         }
 
         public static double Psi(double x) {

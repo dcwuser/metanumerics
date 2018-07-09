@@ -26,7 +26,6 @@ namespace Test {
             Assert.IsTrue(AdvancedMath.Erfc(Double.PositiveInfinity) == 0.0);
 
             Assert.IsTrue(AdvancedMath.Erf(-Double.MaxValue) == -1.0);
-
             Assert.IsTrue(AdvancedMath.Erf(Double.NegativeInfinity) == -1.0);
 
             Assert.IsTrue(Double.IsNaN(AdvancedMath.Erf(Double.NaN)));
@@ -62,19 +61,28 @@ namespace Test {
 
         [TestMethod]
         public void InverseErfSpecialValues () {
-
             Assert.IsTrue(AdvancedMath.InverseErf(-1.0) == Double.NegativeInfinity);
             Assert.IsTrue(AdvancedMath.InverseErf(0.0) == 0.0);
             Assert.IsTrue(AdvancedMath.InverseErf(1.0) == Double.PositiveInfinity);
 
-            //Assert.IsTrue(Double.IsNaN(AdvancedMath.InverseErf(Double.NaN)));
+        }
 
+        [TestMethod]
+        public void InverseErfExtremeValues () {
+            double tiny = 1.0 / Double.MaxValue;
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.InverseErf(tiny), Math.Sqrt(Math.PI) / 2.0 * tiny));
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.InverseErf(Double.NaN)));
         }
 
         [TestMethod]
         public void InverseErfcSpecialCases () {
             Assert.IsTrue(AdvancedMath.InverseErfc(0.0) == Double.PositiveInfinity);
             Assert.IsTrue(AdvancedMath.InverseErfc(1.0) == 0.0);
+        }
+
+        [TestMethod]
+        public void InverseErfcExtremeValues () {
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.InverseErfc(Double.NaN)));
         }
 
         [TestMethod]

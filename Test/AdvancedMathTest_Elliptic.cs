@@ -57,7 +57,6 @@ namespace Test {
 
             System.Diagnostics.Stopwatch timer = System.Diagnostics.Stopwatch.StartNew();
 
-
             Interval i = Interval.FromEndpoints(0.0, 1.0);
 
             // http://mathworld.wolfram.com/CatalansConstant.html equation 37
@@ -83,8 +82,32 @@ namespace Test {
 
         [TestMethod]
         public void EllipticFSpecialCases () {
-            foreach (double phi in TestUtilities.GenerateUniformRealValues(0.0, Math.PI / 2.0, 4)) {
+            foreach (double phi in TestUtilities.GenerateUniformRealValues(-10.0, 10.0, 8)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticF(phi, 0.0), phi));
+            }
+        }
+
+        [TestMethod]
+        public void EllipticFCompleteAgreement () {
+            foreach (double k in TestUtilities.GenerateRealValues(0.01, 1.0, 8)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.EllipticF(Math.PI / 2.0, k),
+                    AdvancedMath.EllipticK(k)
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void EllipticFDisplacement () {
+            foreach (int m in TestUtilities.GenerateUniformIntegerValues(-100, 100, 4)) {
+                foreach (double phi in TestUtilities.GenerateUniformRealValues(-Math.PI / 2.0, +Math.PI / 2.0, 4)) {
+                    foreach (double k in TestUtilities.GenerateRealValues(1.0E-4, 1.0, 4)) {
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                            AdvancedMath.EllipticF(m * Math.PI + phi, k),
+                            2 * m * AdvancedMath.EllipticK(k) + AdvancedMath.EllipticF(phi, k)
+                        ));
+                    }
+                }
             }
         }
 
@@ -114,19 +137,16 @@ namespace Test {
 
         [TestMethod]
         public void EllipticFBetaRelationship () {
-
             foreach (double phi in TestUtilities.GenerateUniformRealValues(0.0, Math.PI / 2.0, 8)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedMath.EllipticF(phi, 1.0 / Math.Sqrt(2.0)),
                     AdvancedMath.Beta(1.0 / 2.0, 1.0 / 4.0, 1.0 - MoreMath.Pow(Math.Cos(phi), 4)) / Math.Sqrt(8.0)
                 ));
             }
-
         }
 
         [TestMethod]
         public void EllipticFIntegral () {
-
             foreach (double k in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 8)) {
                 foreach (double phi in TestUtilities.GenerateUniformRealValues(0.0, Math.PI / 2.0, 4)) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
@@ -135,11 +155,10 @@ namespace Test {
                     ));
                 }
             }
-
         }
 
         [TestMethod]
-        public void EllipticESPecialCases () {
+        public void EllipticESpecialCases () {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticE(0.0), Math.PI / 2.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticE(1.0), 1.0));
 
@@ -148,7 +167,6 @@ namespace Test {
                 AdvancedMath.EllipticE(1.0 / Math.Sqrt(2.0)),
                 Math.Pow(Math.PI, 3.0 / 2.0) / g2 + g2 / 8.0 / Math.Sqrt(Math.PI)
             ));
-
         }
 
         [TestMethod]
@@ -160,6 +178,30 @@ namespace Test {
                 double K = AdvancedMath.EllipticK(k);
                 double KP = AdvancedMath.EllipticK(kp);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(K * EP + KP * E, Math.PI / 2.0 + K * KP));
+            }
+        }
+
+        [TestMethod]
+        public void EllipticECompleteAgreement () {
+            foreach (double k in TestUtilities.GenerateRealValues(0.01, 1.0, 8)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.EllipticE(Math.PI / 2.0, k),
+                    AdvancedMath.EllipticE(k)
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void EllipticEDisplacement () {
+            foreach (int m in TestUtilities.GenerateUniformIntegerValues(-100, 100, 4)) {
+                foreach (double phi in TestUtilities.GenerateUniformRealValues(-Math.PI / 2.0, +Math.PI / 2.0, 4)) {
+                    foreach (double k in TestUtilities.GenerateRealValues(1.0E-4, 1.0, 4)) {
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                            AdvancedMath.EllipticE(m * Math.PI + phi, k),
+                            2 * m * AdvancedMath.EllipticE(k) + AdvancedMath.EllipticE(phi, k)
+                        ));
+                    }
+                }
             }
         }
 

@@ -332,22 +332,38 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ComplexEinAgreement () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 16)) {
-                Console.WriteLine("Ei {0} {1} {2}", x, AdvancedMath.IntegralEi(x), AdvancedMath.EulerGamma + Math.Log(x) - AdvancedComplexMath.Ein(-x));
-                if (x < Math.Log(Double.MaxValue / 10.0)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        AdvancedMath.IntegralEi(x),
-                        AdvancedMath.EulerGamma + Math.Log(x) - AdvancedComplexMath.Ein(-x)
-                    ));
-                }
-                Console.WriteLine("E1 {0} {1} {2}", x, AdvancedMath.IntegralE(1, x) + AdvancedMath.EulerGamma + Math.Log(x), AdvancedComplexMath.Ein(x));
+        public void ComplexEinEiAgreement () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0E2, 8)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedMath.IntegralE(1, x) + AdvancedMath.EulerGamma + Math.Log(x),
-                    AdvancedComplexMath.Ein(x)
+                    AdvancedMath.IntegralEi(x),
+                    AdvancedMath.EulerGamma + Math.Log(x) - AdvancedComplexMath.Ein(-x)
                 ));
             }
 
+        }
+
+        [TestMethod]
+        public void ComplexEinE1Agreement () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0E3, 8)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.Ein(x),
+                    AdvancedMath.IntegralE(1, x) + AdvancedMath.EulerGamma + Math.Log(x)
+                ));
+            }
+        }
+
+        [TestMethod]
+        public void ComplexEinCinSiAgreement () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.Ein(Complex.I * x).Im,
+                    AdvancedMath.IntegralSi(x)
+                ));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedComplexMath.Ein(Complex.I * x).Re,
+                    AdvancedMath.IntegralCin(x)
+                ));
+            }
         }
 
         [TestMethod]

@@ -521,12 +521,8 @@ namespace Test {
                     if (n > 100) throw new NonconvergenceException();
 
                 }
-                Console.WriteLine("x={0} n={0}", x, n);
 
                 double x2 = 2 * x;
-                Console.WriteLine("{0} {1}", s1, AdvancedMath.IntegralSi(x2)/x2);
-                Console.WriteLine("{0} {1}", s2, 1.0);
-                Console.WriteLine("{0} {1}", s3, Math.Sin(x2)/x2);
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(s1, AdvancedMath.IntegralSi(x2)/x2));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(s2, 1.0));
@@ -539,110 +535,6 @@ namespace Test {
         // Gamma functions
 
         [TestMethod]
-        public void GammaRecurrsion () {
-            // limit x to avoid overflow
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E2, 16)) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(x + 1.0), x * AdvancedMath.Gamma(x)));
-            }
-        }
-
-        [TestMethod]
-        public void GammaSpecialCases () {
-            // it would be nice to be able to make some of these comparisons exact
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(0.5), Math.Sqrt(Math.PI)));
-            Assert.IsTrue(AdvancedMath.Gamma(1.0) == 1.0);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(1.5), Math.Sqrt(Math.PI) / 2.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(2.0), 1.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(3.0), 2.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(4.0), 6.0));
-        }
-
-        [TestMethod]
-        public void GammaReflection () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E2, 16)) {
-                // don't try a large near-integer, because trig functions of large numbers aren't accurate enough 
-                if ((x > 20) && (Math.Abs(x - Math.Round(x)) < 0.05)) continue;
-                double GP = AdvancedMath.Gamma(x);
-                double GN = AdvancedMath.Gamma(-x);
-                Console.WriteLine("x={0}, G(x)={1}, G(-x)={2}", x, GP, GN);
-                Console.WriteLine("{0} ?= {1}", -x * GN * GP, Math.PI / Math.Sin(Math.PI * x));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(-x * GN * GP, Math.PI / Math.Sin(Math.PI * x)));
-            }
-        }
-
-        [TestMethod]
-        public void GammaInequality () {
-            foreach (double x in TestUtilities.GenerateRealValues(2.0, 1.0E2, 16)) {
-                // for x >= 2
-                double lower = Math.Pow(x / Math.E, x - 1.0);
-                double upper = Math.Pow(x / 2.0, x - 1.0);
-                double value = AdvancedMath.Gamma(x);
-                Assert.IsTrue((lower <= value) && (value <= upper));
-            }
-        }
-
-        [TestMethod]
-        public void GammaIntegral () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0, 1.0E2, 4)) {
-                Func<double,double> f = delegate (double t) {
-                    return( Math.Pow(t, x - 1.0) * Math.Exp(-t) );
-                };
-                Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(x), FunctionMath.Integrate(f, r)));
-            }
-        }
-
-        [TestMethod]
-        public void GammaTrottIdentity () {
-
-            // http://mathworld.wolfram.com/GammaFunction.html
-
-            double G1 = AdvancedMath.Gamma(1.0 / 24.0);
-            double G5 = AdvancedMath.Gamma(5.0 / 24.0);
-            double G7 = AdvancedMath.Gamma(7.0 / 24.0);
-            double G11 = AdvancedMath.Gamma(11.0 / 24.0);
-
-            Assert.IsTrue(TestUtilities.IsNearlyEqual((G1 * G11) / (G5 * G7), Math.Sqrt(3.0) * Math.Sqrt(2.0 + Math.Sqrt(3.0)))); 
-        }
-
-        private double GammaProduct (int r) {
-            double p = 1.0;
-            for (int i = 1; i < r; i++) {
-                p *= AdvancedMath.Gamma(((double) i) / r);
-            }
-            return (p);
-        }
-
-        [TestMethod]
-        public void GammaProducts () {
-            // https://en.wikipedia.org/wiki/Particular_values_of_the_Gamma_function#Products
-            // http://mathworld.wolfram.com/GammaFunction.html
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(GammaProduct(3), 2.0 * Math.PI / Math.Sqrt(3.0)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(GammaProduct(4), Math.Sqrt(2.0 * Math.PI * Math.PI * Math.PI)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(GammaProduct(5), 4.0 * Math.PI * Math.PI / Math.Sqrt(5.0)));
-        }
-
-        [TestMethod]
-        public void GammaMultiplication () {
-
-            foreach(int k in new int[] { 2, 3, 4 }) {
-                foreach (double z in TestUtilities.GenerateRealValues(1.0E-2, 10.0, 4)) {
-
-                    double p = AdvancedMath.Gamma(z);
-                    for (int i = 1; i < k; i++) {
-                        p *= AdvancedMath.Gamma(z + ((double) i )/ k);
-                    }
-
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        p, Math.Pow(2.0 * Math.PI, (k - 1) / 2.0) * Math.Pow(k, 0.5 - k * z) * AdvancedMath.Gamma(k * z)
-                    ));
-
-                }
-            }
-
-        }
-
-        [TestMethod]
         public void PsiSpecialCases () {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0), -AdvancedMath.EulerGamma));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(2.0), -AdvancedMath.EulerGamma + 1.0));
@@ -652,6 +544,13 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 4.0), -AdvancedMath.EulerGamma - 3.0 * Math.Log(2.0) - Math.PI / 2.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 6.0), -AdvancedMath.EulerGamma - 3.0 * Math.Log(3.0) / 2.0 - 2.0 * Math.Log(2.0) - Math.PI / 2.0 * Math.Sqrt(3.0)));
 
+        }
+
+        [TestMethod]
+        public void PsiExtremeValues () {
+            Assert.IsTrue(Double.IsInfinity(AdvancedMath.Psi(0.0)));
+            Assert.IsTrue(AdvancedMath.Psi(Double.PositiveInfinity) == Double.PositiveInfinity);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.Psi(Double.NaN)));
         }
 
         [TestMethod]
@@ -935,6 +834,33 @@ namespace Test {
 
         }
 
+        [TestMethod]
+        public void LogBetaSpecialCases () {
+            // Would be nice to have this exactly zero
+            Assert.IsTrue(Math.Abs(AdvancedMath.LogBeta(1.0, 1.0)) < TestUtilities.TargetPrecision);
+        }
+
+        [TestMethod]
+        public void LogBetaExtremeValues () {
+            Assert.IsTrue(AdvancedMath.LogBeta(0.0, 0.0) == Double.PositiveInfinity);
+            Assert.IsTrue(AdvancedMath.LogBeta(1.0E-2, 0.0) == Double.PositiveInfinity);
+            Assert.IsTrue(AdvancedMath.LogBeta(0.0, 1.0E2) == Double.PositiveInfinity);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.Beta(1.0E2, Double.NaN)));
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.Beta(Double.NaN, 1.0E-2)));
+        }
+
+        [TestMethod]
+        public void LogBetaAgreement () {
+            foreach (double a in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 4)) {
+                foreach (double b in TestUtilities.GenerateRealValues(1.0E-3, 1.0E1, 4)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        AdvancedMath.LogBeta(a, b),
+                        Math.Log(AdvancedMath.Beta(a, b))
+                    ));
+                }
+            }
+        }
+
         // Incomplete beta function
 
         [TestMethod]
@@ -995,15 +921,6 @@ namespace Test {
             }
         }
 
-        // Error function
-
-
-
-
-
-
-
-
 
         [TestMethod]
         public void InverseErfIntegralTest () {
@@ -1037,75 +954,8 @@ namespace Test {
             }
         }
 
-        [TestMethod]
-        public void IntegralEiSpecialValues () {
-
-            Assert.IsTrue(AdvancedMath.IntegralEi(0.0) == Double.NegativeInfinity);
-            //Assert.IsTrue(AdvancedMath.IntegralEi(Double.PositiveInfinity) == Double.PositiveInfinity);
-
-        }
-
-        [TestMethod]
-        public void IntegralESpecialCaseTest () {
-            foreach (int n in orders) {
-                Assert.IsTrue(AdvancedMath.IntegralE(n, 0.0) == 1.0 / (n - 1.0));
-            }
-            foreach (double x in arguments) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.IntegralE(0, x), Math.Exp(-x) / x));
-            }
-        }
-
-        [TestMethod]
-        public void IntegralE1Inequality () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E3,16)) {
-                if (x >= Math.Log(Double.MaxValue / 10.0)) continue; // keep Exp(x) from overflowing
-                double lower = Math.Log(1.0 + 2.0 / x) / 2.0;
-                double upper = Math.Log(1.0 + 1.0 / x);
-                double value = Math.Exp(x) * AdvancedMath.IntegralE(1, x);
-                Console.WriteLine("{0}: {1} {2} {3}", x, lower, value, upper);
-                Assert.IsTrue((lower < value) && (value < upper));
-            }
-        }
-
-        [TestMethod]
-        public void IntegralEInequality () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1,100,8)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E3,16)) {
-                    if (x >= Math.Log(Double.MaxValue / 10.0)) continue; // keep Exp(x) from overflowing
-                    double lower = 1.0 / (x + n);
-                    double upper = 1.0 / (x + n - 1);
-                    double value = Math.Exp(x) * AdvancedMath.IntegralE(n, x);
-                    Console.WriteLine("n={0} x={1} {2} {3} {4}", n, x, lower, value, upper);
-                    Assert.IsTrue((lower < value) && (value <= upper));
-                }
-            }
-        }
 
 
-        [TestMethod]
-        public void IntegralERecurrence () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 8)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 24)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        n * AdvancedMath.IntegralE(n + 1, x) + x * AdvancedMath.IntegralE(n, x),
-                        Math.Exp(-x)
-                    ));
-                }
-            }
-        }
-
-        [TestMethod]
-        public void IntegralEIntegral () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 10.0, 8)) {
-                    Func<double, double> f = delegate(double t) {
-                        return (Math.Exp(-x * t) / MoreMath.Pow(t, n));
-                    };
-                    Interval r = Interval.FromEndpoints(1.0, Double.PositiveInfinity);
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.IntegralE(n, x), FunctionMath.Integrate(f, r)));
-                }
-            }
-        }
 
         [TestMethod]
         public void IntegralEIncompleteGamma () {
@@ -1191,12 +1041,19 @@ namespace Test {
         */
 
         [TestMethod]
-        public void DawsonSpecialCaseTest () {
+        public void DawsonSpecialCases () {
             Assert.IsTrue(AdvancedMath.Dawson(0.0) == 0.0);
         }
 
+        public void DawsonExtremeValues () {
+            Assert.IsTrue(AdvancedMath.Dawson(Double.NegativeInfinity) == 0.0);
+            Assert.IsTrue(AdvancedMath.Dawson(Double.MaxValue) == 0.0);
+            Assert.IsTrue(AdvancedMath.Dawson(Double.PositiveInfinity) == 0.0);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.Dawson(Double.NaN)));
+        }
+
         [TestMethod]
-        public void DawsonInequalityTest () {
+        public void DawsonInequality () {
             // this is a pretty lame inequality
             foreach (double x in arguments) {
                 double F = AdvancedMath.Dawson(x);
@@ -1205,16 +1062,12 @@ namespace Test {
         }
 
         [TestMethod]
-        public void DawsonIntegralTest () {
-            Func<double, double> f = delegate(double t) {
-                return( Math.Exp(t * t) );
-            };
+        public void DawsonIntegral () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 4)) {
-                Interval r = Interval.FromEndpoints(0.0, x);
-                double DF = AdvancedMath.Dawson(x);
-                double DI = Math.Exp(-x * x) * FunctionMath.Integrate(f, r);
-                Console.WriteLine("{0} {1} {2}", x, DF, DI);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(DF, DI));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    FunctionMath.Integrate(t => Math.Exp(t * t), 0.0, x).Value,
+                    Math.Exp(x * x) * AdvancedMath.Dawson(x)
+                ));
             }
         }
         // This caught an error in our Dawson function.
@@ -1222,20 +1075,27 @@ namespace Test {
         // Integral was right!
 
         [TestMethod]
-        public void FresnelReflectionTest () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 10)) {
-                Console.WriteLine("x={0}", x);
+        public void FresnelSpecialCases () {
+            Assert.IsTrue(AdvancedMath.FresnelS(0.0) == 0.0);
+            Assert.IsTrue(AdvancedMath.FresnelS(Double.PositiveInfinity) == 0.5);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.FresnelS(Double.NaN)));
+            Assert.IsTrue(AdvancedMath.FresnelC(0.0) == 0.0);
+            Assert.IsTrue(AdvancedMath.FresnelC(Double.PositiveInfinity) == 0.5);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.FresnelC(Double.NaN)));
+        }
+
+        [TestMethod]
+        public void FresnelReflection () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 8)) {
                 Assert.IsTrue(AdvancedMath.Fresnel(-x) == -AdvancedMath.Fresnel(x));
             }
         }
 
         [TestMethod]
         public void FresnelSIntegralTest () {
-            Func<double, double> f = delegate(double t) {
-                return ( Math.Sin(Math.PI / 2.0 * t * t) );
-            };
+            Func<double, double> f = t => MoreMath.SinPi(t * t / 2.0);
             // if x gets too high, the integral has too many oscilations to converge
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 3)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 4)) {
                 Interval r = Interval.FromEndpoints(0.0, x);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.FresnelS(x), FunctionMath.Integrate(f, r)));
             }
@@ -1243,52 +1103,14 @@ namespace Test {
 
         [TestMethod]
         public void FresnelCIntegralTest () {
-            Func<double, double> f = delegate(double t) {
-                return (Math.Cos(Math.PI / 2.0 * t * t));
-            };
+            Func<double, double> f = t => MoreMath.CosPi(t * t / 2.0);
             // if x gets too high, the integral has too many oscilations to converge
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 3)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 4)) {
                 Interval r = Interval.FromEndpoints(0.0, x);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.FresnelC(x), FunctionMath.Integrate(f, r)));
             }
         }
 
-        [TestMethod]
-        public void IntegralSiDefinition () {
-            Func<double, double> f = delegate(double t) {
-                return (Math.Sin(t) / t);
-            };
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
-                Interval r = Interval.FromEndpoints(0.0, x);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.IntegralSi(x), FunctionMath.Integrate(f, r)));
-            }
-            // the corresponding defining integral of Ci does not converge numerically
-        }
-
-        [TestMethod]
-        public void IntegralCiSiIntegrals () {
-
-            // these integrals are from Oldham et al, An Atlas of Functions
-
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                FunctionMath.Integrate(t => AdvancedMath.IntegralCi(t) * Math.Exp(-t), Interval.FromEndpoints(0.0, Double.PositiveInfinity)),
-                -Math.Log(2.0) / 2.0
-            ));
-
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                FunctionMath.Integrate(t => AdvancedMath.IntegralSi(t) * Math.Exp(-t), Interval.FromEndpoints(0.0, Double.PositiveInfinity)),
-                Math.PI / 4.0
-            ));
-
-            // the integral of [Ci(t)]^2 does not converge numerically
-
-            /*
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                FunctionMath.Integrate(t => MoreMath.Pow(AdvancedMath.IntegralCi(t), 2), Interval.FromEndpoints(0.0, Double.PositiveInfinity)),
-                Math.PI / 2.0
-            ));
-            */
-        }
 
         [TestMethod]
         public void LambertTest () {
@@ -1395,47 +1217,7 @@ namespace Test {
 
         }
 
-        [TestMethod]
-        public void CoulombRecursionTest () {
-            
-            foreach (int L in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
-                foreach (double eta in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 10)) {
-                    foreach (double rho in TestUtilities.GenerateRealValues(1.0E-3, 1.0E3, 20)) {
 
-                        Console.WriteLine("L={0} eta={1} rho={2}", L, eta, rho);
-
-                        CoulombRecursionTestHelper(L, eta, rho,
-                            AdvancedMath.CoulombF(L - 1, eta, rho), AdvancedMath.CoulombF(L, eta, rho), AdvancedMath.CoulombF(L + 1, eta, rho)
-                        );
-
-                        CoulombRecursionTestHelper(L, -eta, rho,
-                            AdvancedMath.CoulombF(L - 1, -eta, rho), AdvancedMath.CoulombF(L, -eta, rho), AdvancedMath.CoulombF(L + 1, -eta, rho)
-                        );
-
-                        CoulombRecursionTestHelper(L, eta, rho,
-                            AdvancedMath.CoulombG(L - 1, eta, rho), AdvancedMath.CoulombG(L, eta, rho), AdvancedMath.CoulombG(L + 1, eta, rho)
-                        );
-
-                        CoulombRecursionTestHelper(L, -eta, rho,
-                            AdvancedMath.CoulombG(L - 1, -eta, rho), AdvancedMath.CoulombG(L, -eta, rho), AdvancedMath.CoulombG(L + 1, -eta, rho)
-                        );
-
-                    }
-                }
-            }
-            
-
-        }
-
-        private static void CoulombRecursionTestHelper (double L, double eta, double rho, double UM, double U, double UP) {
-
-            double am = (L + 1) * Math.Sqrt(L * L + eta * eta);
-            double a = (2 * L + 1) * (eta + L * (L + 1) / rho);
-            double ap = L * Math.Sqrt((L + 1) * (L + 1) + eta * eta);
-
-            Assert.IsTrue(TestUtilities.IsSumNearlyEqual(am * UM, ap * UP, a * U, 4.0 * TestUtilities.TargetPrecision));
-
-        }
 
         [TestMethod]
         public void ModifiedBesselWronskianTest () {
@@ -1730,6 +1512,15 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.DiLog(1.0 / AdvancedMath.GoldenRatio), Math.PI * Math.PI / 10.0 - Math.Log(AdvancedMath.GoldenRatio) * Math.Log(AdvancedMath.GoldenRatio)));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.DiLog(1.0), Math.PI * Math.PI / 6.0));
 
+        }
+
+        [TestMethod]
+        public void DiLogExtremeValues () {
+            double tiny = 1.0 / Double.MaxValue;
+            Assert.IsTrue(AdvancedMath.DiLog(Double.NegativeInfinity) == Double.NegativeInfinity);
+            Assert.IsTrue(AdvancedMath.DiLog(-tiny) == -tiny);
+            Assert.IsTrue(AdvancedMath.DiLog(tiny) == tiny);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.DiLog(Double.NaN)));
         }
 
         [TestMethod]

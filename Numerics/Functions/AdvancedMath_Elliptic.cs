@@ -336,9 +336,13 @@ namespace Meta.Numerics.Functions {
         /// <para>Be aware that some authors use the the parameter m = k<sup>2</sup> instead of the modulus k.</para>
         /// </remarks>
         /// <seealso cref="EllipticK"/>
+        /// <seealso href="http://mathworld.wolfram.com/EllipticIntegraloftheFirstKind.html"/>
         public static double EllipticF (double phi, double k) {
-            if (Math.Abs(phi) > Global.HalfPI) throw new ArgumentOutOfRangeException(nameof(phi));
             if ((k < 0) || (k > 1.0)) throw new ArgumentOutOfRangeException(nameof(k));
+            if (Math.Abs(phi) > Math.PI / 2.0) {
+                RangeReduction.ReduceByPiHalves(0.5 * phi, out long m, out double m1);
+                return (2 * m * EllipticK(k) + EllipticF(Math.PI * m1, k));
+            }
             double s = MoreMath.Sin(phi);
             double c = MoreMath.Cos(phi);
             double z = s * k;
@@ -399,6 +403,7 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <seealso cref="EllipticE(double,double)"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Elliptic_integral"/>
+        /// <seealso href="http://mathworld.wolfram.com/CompleteEllipticIntegraloftheSecondKind.html"/>
         public static double EllipticE (double k) {
             if ((k < 0.0) || (k > 1.0)) throw new ArgumentOutOfRangeException(nameof(k));
             // these expansions are accurate in the intermediate region, but require many terms
@@ -427,10 +432,15 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <seealso cref="EllipticE(double)"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Elliptic_integral"/>
+        /// <seealso href="http://mathworld.wolfram.com/EllipticIntegraloftheSecondKind.html"/>
         public static double EllipticE (double phi, double k) {
 
-            if (Math.Abs(phi) > Global.HalfPI) throw new ArgumentOutOfRangeException(nameof(phi));
             if ((k < 0.0) || (k > 1.0)) throw new ArgumentOutOfRangeException(nameof(k));
+
+            if (Math.Abs(phi) > Math.PI / 2.0) {
+                RangeReduction.ReduceByPiHalves(0.5 * phi, out long m, out double m1);
+                return (2 * m * EllipticE(k) + EllipticE(Math.PI * m1, k));
+            }
 
             //  Arguments in Carlson F and D functions are x = \cos^2 \phi, y = 1 - k^2 \sin^2 \phi, z = 1, z = 1
             double s = MoreMath.Sin(phi);

@@ -627,7 +627,7 @@ namespace Meta.Numerics.Extended {
             return (new DoubleDouble(hi, lo));
         }
 
-        private static readonly double eps = 1.0 / (1L << 54);
+        private const double eps = 1.0 / (1L << 54);
 
     }
 

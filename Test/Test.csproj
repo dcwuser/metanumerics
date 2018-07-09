@@ -59,6 +59,7 @@
     <Compile Include="AdvancedMathTest_Coulomb.cs" />
     <Compile Include="AdvancedMathTest_Elliptic.cs" />
     <Compile Include="AdvancedMathTest_Error.cs" />
+    <Compile Include="AdvancedMathTest_Exponential.cs" />
     <Compile Include="AdvancedMathTest_Gamma.cs" />
     <Compile Include="AdvancedMathTest_Hypergeometric.cs" />
     <Compile Include="AdvancedMathTest_Jacobi.cs" />

@@ -93,7 +93,12 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (ga > 0.0) {
                     return (Math.Pow(z, a - 1.0) * Math.Exp(-z) / ga / s);
                 } else {
-                    return (Math.Exp((a - 1.0) * Math.Log(z) - z + ga) / s);
+                    // The standard Gamma distribution p(\alpha, x) is the same as the
+                    // Poisson distribution P(\lambda, k) with k \leftarrow \alpha - 1
+                    // and \lambda \leftarrow x. Use this fact plus our Poisson
+                    // machinery to accurately compute probabilities for large \alpha.
+                    return (Stirling.PoissonProbability(z, a - 1.0) / s);
+                    //return (Math.Exp((a - 1.0) * Math.Log(z) - z + ga) / s);
                 }
             }
 
@@ -261,14 +266,16 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         private double InverseLeftStandardGamma (double P) {
 
-            // start with an approximation
+            // Start with an approximation.
             double x = ApproximateInverseStandardGamma(P, 1.0 - P);
 
-            // zero x or infinite x will cause problems with the iterative method below
-            // near zero (and at infinity) the approximation becomes good to double precision anyway
+            // Zero x or infinite x will cause problems with the iterative method below.
+            // Near zero and at infinity the approximation becomes good to double precision anyway,
+            // so just return it immediately.
             if ((x < Global.Accuracy) || Double.IsPositiveInfinity(x)) return (x);
 
-            // refine with Halley's method, i.e. second order Newton method
+            // Refine with Halley's method, i.e. second order Newton method.
+            // Here y = P(x) - P0, y' = p(x), y'' = p'(x) = p(x) * (a - 1 - x) / x.
             double y = AdvancedMath.LeftRegularizedGamma(a, x) - P;
             for (int i = 0; i < 16; i++) {
                 
@@ -278,7 +285,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 } else {
                     r = y * Math.Exp(x - ga - a * Math.Log(x));
                 }
-                double dx = -r * x / (1.0 - r * (a - 1.0 - x) / 2.0);
+                double dx = -r * x / (1.0 - 0.5 * r * (a - 1.0 - x));
                 x += dx;
 
                 if (Math.Abs(dx) <= Global.Accuracy * Math.Abs(x)) return (x);

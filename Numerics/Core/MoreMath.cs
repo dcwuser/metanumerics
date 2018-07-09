@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 
 namespace Meta.Numerics {
 
@@ -133,6 +132,39 @@ namespace Meta.Numerics {
 
         }
 
+        // Beebe, "Computation of expm1(x) = exp(x)  - 1", 2002 (http://www.math.utah.edu/~beebe/reports/expm1.pdf)
+        // makes some good points about e^x - 1.
+        //   * He shows that the point e^x = 1/2 and e^x = 3/2 are the relevent limits where Math.Exp(x) - 1.0
+        //     looses a one bit of accuracy.
+        //   * He measures that the maximum number of terms in the Taylor series required in this region is 17.
+        //   * He measures that the RMS error of the Taylor series in this region is ~0.8 ulp and it's maximum
+        //     relative error is ~ 2.7 ulp.
+        //   * He points out that the doubling formula expm1(x) = expm1(x/2) * (expm1(x/2) + 2) allows one
+        //     to reduce this by 2 terms and save 3 flops. But this is hardly worth the complication
+        //     and actually looses a smidgeon of accuracy.
+        //   * He reviews several much more complicated schemes, e.g. minimax rational approximations,
+        //     which allow more significant efficiency gains and error reduction.
+        // For now, I use the Taylor series with his limits.
+
+        private const double expm1SeriesLowerLimit = -0.693147180;
+        private const double expm1SeriesUpperLimit = 0.4054651081;
+
+        // expm1(x) - 1 = 1 + x + x^2 / 2 + x^3 / 3! + \cdots - 1
+        //              = x + x^2 / 2 + x^3 / 3! + \cdots
+        //              = x (1 + x / 2 + x^2 / 3! + \cdots)
+
+        private static double ReducedExpm1Series (double x) {
+            double df = 0.5 * x;
+            double f = 1.0 + df;
+            for (int k = 3; k < 20; k++) {
+                double f_old = f;
+                df *= x / k;
+                f += df;
+                if (f == f_old) return (f);
+            }
+            throw new NonconvergenceException();
+        }
+
         /// <summary>
         /// Computes e<sup>x</sup>-1.
         /// </summary>
@@ -145,19 +177,18 @@ namespace Meta.Numerics {
         /// x near zero.</para>
         /// </remarks>
         public static double ExpMinusOne (double x) {
-            if (Math.Abs(x) < 0.125) {
-                // For small x, use the series e^{x} = \sum_{k=0}^{\infty} \frac{x^k}{k!} = 1 + x + x^2 / 2! + x^3 / 3! + \cdots
-                double dr = x;
-                double r = dr;
-                for (int k = 2; k < Global.SeriesMax; k++) {
-                    double r_old = r;
-                    dr *= x / k;
-                    r += dr;
-                    if (r == r_old) return (r);
-                }
-                throw new NonconvergenceException();
+            if ((expm1SeriesLowerLimit < x) && (x < expm1SeriesUpperLimit)) {
+                return (x * ReducedExpm1Series(x));
             } else {
                 return (Math.Exp(x) - 1.0);
+            }
+        }
+
+        internal static double ReducedExpMinusOne (double x) {
+            if ((expm1SeriesLowerLimit < x) && (x < expm1SeriesUpperLimit)) {
+                return (ReducedExpm1Series(x));
+            } else {
+                return ((Math.Exp(x) - 1.0) / x);
             }
         }
 
@@ -389,9 +420,7 @@ namespace Meta.Numerics {
         }
 
         internal static double TanPi (double x) {
-            long y0;
-            double y1;
-            RangeReduction.ReduceByOnes(2.0 * x, out y0, out y1);
+            RangeReduction.ReduceByOnes(2.0 * x, out long y0, out double y1);
             if (y0 % 2L == 0L) {
                 return (Math.Tan(Math.PI / 2.0 * y1));
             } else {
@@ -444,8 +473,7 @@ namespace Meta.Numerics {
         }
 
         public static double[] Decompose (double x) {
-            double hi, lo;
-            Decompose(x, out hi, out lo);
+            Decompose(x, out double hi, out double lo);
             return (new double[] { hi, lo });
         }
 
@@ -596,13 +624,13 @@ namespace Meta.Numerics {
         public static double Sin (long z0, double z1) {
             switch (MoreMath.Mod(z0, 4L)) {
                 case 0L:
-                    return (Math.Sin(z1 * Math.PI / 2.0));
+                    return (Math.Sin(Math.PI / 2.0 * z1));
                 case 1L:
-                    return (Math.Cos(z1 * Math.PI / 2.0));
+                    return (Math.Cos(Math.PI / 2.0 * z1));
                 case 2L:
-                    return (-Math.Sin(z1 * Math.PI / 2.0));
+                    return (-Math.Sin(Math.PI / 2.0 * z1));
                 case 3L:
-                    return (-Math.Cos(z1 * Math.PI / 2.0));
+                    return (-Math.Cos(Math.PI / 2.0 * z1));
                 default:
                     throw new InvalidOperationException();
             }
@@ -612,38 +640,30 @@ namespace Meta.Numerics {
         public static double Cos (long z0, double z1) {
             switch (MoreMath.Mod(z0, 4L)) {
                 case 0L:
-                    return (Math.Cos(z1 * Math.PI / 2.0));
+                    return (Math.Cos(Math.PI / 2.0 * z1));
                 case 1L:
-                    return (-Math.Sin(z1 * Math.PI / 2.0));
+                    return (-Math.Sin(Math.PI / 2.0 * z1));
                 case 2L:
-                    return (-Math.Cos(z1 * Math.PI / 2.0));
+                    return (-Math.Cos(Math.PI / 2.0 * z1));
                 case 3L:
-                    return (Math.Sin(z1 * Math.PI / 2.0));
+                    return (Math.Sin(Math.PI / 2.0 * z1));
                 default:
                     throw new InvalidOperationException();
             }
         }
 
         public static double Sin (double x) {
-            long z0; double z1;
-            ReduceByPiHalves(x, out z0, out z1);
+            ReduceByPiHalves(x, out long z0, out double z1);
             return (Sin(z0, z1));
         }
 
         public static double Cos (double x) {
-            long z0; double z1;
-            ReduceByPiHalves(x, out z0, out z1);
+            ReduceByPiHalves(x, out long z0, out double z1);
             return (Cos(z0, z1));
         }
 
         public static void ReduceByPiHalves (double x, out long x0, out double x1) {
-
-            //PrintFrExp(x);
             double[] xParts = Decompose(x);
-
-            //for (int i = 0; i < xParts.Length; i++) PrintFrExp(xParts[i]);
-            //for (int i = 0; i < 4; i++) PrintFrExp(twoOverPiParts[i]);
-
             Multiply(xParts, twoOverPiParts, out x0, out x1);
         }
 

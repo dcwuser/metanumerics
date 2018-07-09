@@ -214,9 +214,12 @@ namespace Meta.Numerics.Functions
             double tx = x + LanczosGP;
             double ty = y + LanczosGP;
             double txy = x + y + LanczosGP;
+            // For very small x, Sum(x) explodes as 1/x. So for x or y < ~1.0E-150, Sum(x) * Sum(y) / Sum(x + y)
+            // would suffer intermediate overflow, but / Sum(x + y) * Sum(x) * Sum(y) does not. There is no
+            // corresponding problem for very large x, for sum Sum(x) -> ~1.0.
             return (
-                Math.Log(2.0 * Math.PI / txy) / 2.0 + (x - 0.5) * Math.Log(tx / txy) + (y - 0.5) * Math.Log(ty / txy) +
-                Math.Log(LanczosExpGP * Sum(x) * Sum(y) / Sum(x + y))
+                0.5 * Math.Log(2.0 * Math.PI / txy) + (x - 0.5) * Math.Log(tx / txy) + (y - 0.5) * Math.Log(ty / txy) +
+                Math.Log(LanczosExpGP / Sum(x + y) * Sum(x) * Sum(y))
             );
         }
 

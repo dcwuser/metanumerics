@@ -126,11 +126,24 @@ namespace Meta.Numerics.Functions
             return (Math.Log(x) - 0.5 / x + SumPrime(x));
         }
 
-        // Compute \frac{x^{\nu}}{\Gamma(\nu + 1)}
+        // The factor x^n / n! appears in multiple places, e.g. factors in front of Bessel function series.
+        // Naive evaluation can go wrong because x^n or n! can overflow even when ratio is representable.
+        // For example, x = 15, n = 200, which is below Bessel series limit: 16^256 ~ 1.0E308 and 256! ~ 8.5E506,
+        // but ratio 2.1E-199 is representable.
 
-        public static double PowOverGammaPlusOne(double x, double nu) {
-            // This should probably be routed to PoissonProbability, but need to deal with e^{-x} factor.
-            return (Math.Pow(x * Math.E / nu, nu) / Math.Sqrt(Global.TwoPI * nu) / Math.Exp(Sum(nu)));
+        // x^n / n! is just e^x * PoissonProbability(x, n), but we can't re-use the logic there naively.
+        // In that case, maximum was 1 and if we underflowed that was fine. Here, maximum may overflow
+        // but we still want representable values on the sides, which may occur for underflows of PoissonProbability.
+        // So we take a different approach.
+        //   P = \frac{x^n}{n!}
+        //   \ln P = n \ln x - \ln n!
+        //   \ln P = n \ln x - n \ln n + n - \frac{1}{2} \ln(2 \pi n) - S(n)
+        //   \ln P = n \ln (e x / n) - \frac{1}{2} \ln(2 \pi n) - S(n)
+        //   P = \left( \frac{e x}{n} \right)^n e^{-S(n)}{\sqrt{2 \pi n}
+        // It's easy to show that maximum is at n ~ x.
+
+        public static double PowerFactor(double x, double nu) {
+            return (Math.Exp(-Sum(nu)) / Math.Sqrt(2.0 * Math.PI * nu) * Math.Pow(Math.E * x / nu, nu));
         }
 
         // Compute \frac{x^a (1-x)^b}{B(a,b)}

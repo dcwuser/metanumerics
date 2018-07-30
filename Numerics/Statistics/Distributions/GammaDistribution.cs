@@ -56,7 +56,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         // a gamma deviate generator
         // note this generator has the appropriate shape parameter, but is not scaled
-        private readonly IDeviateGenerator gammaRng;
+        private readonly IDeviateGenerator<double> gammaRng;
 
         /// <summary>
         /// Gets the shape parameter for the distribution.

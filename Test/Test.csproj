@@ -54,6 +54,7 @@
     <Compile Include="AdvancedIntegerMathTest.cs" />
     <Compile Include="AdvancedIntegerMathTest_Partitions.cs" />
     <Compile Include="AdvancedMathTest.cs" />
+    <Compile Include="AdvancedMathTest_Airy.cs" />
     <Compile Include="AdvancedMathTest_Bessel.cs" />
     <Compile Include="AdvancedMathTest_Carlson.cs" />
     <Compile Include="AdvancedMathTest_Coulomb.cs" />

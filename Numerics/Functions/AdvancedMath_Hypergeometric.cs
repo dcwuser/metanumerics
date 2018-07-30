@@ -15,12 +15,12 @@ namespace Meta.Numerics.Functions {
         /// <param name="b">The second upper parameter.</param>
         /// <param name="c">The lower parameter.</param>
         /// <param name="x">The argument, which must be less than or equal to one.</param>
-        /// <returns>The value of <sub>2</sub>F<sub>2</sub>(a, b; c; x).</returns>
+        /// <returns>The value of <sub>2</sub>F<sub>1</sub>(a, b; c; x).</returns>
         /// <remarks>
         /// <para>The Gauss Hypergeometric function is defined by the hypergeometric series:</para>
         /// <img src="Hypergeometric2F1.png" />
         /// <para>For generic values of a, b, and c, the Gauss hypergeometric function becomes complex for x > 1.
-        /// There are specific cases, most commonly for negative integer values of a and b, for which the
+        /// However, there are specific cases, most commonly for negative integer values of a and b, for which the
         /// function remains real in this range.</para>
         /// <para>For some arguments, the value of the function depends on the order in which the arguments are
         /// regarded as approaching their values. For example, in general, if x = 0, F = 1. On the other hand,
@@ -359,7 +359,7 @@ namespace Meta.Numerics.Functions {
         // which is, as promised, proportional to e. For some a, b, m, and e, some of these \Gamma functions will blow up, but they are
         // all in the denoninator, so that will just zero some terms. The G_e(z) that appear in the numerator are finite for all z.
 
-        // So now we have the k=0 term. What about higer k terms? We could repeat this analysis, carrying along the k's,
+        // So now we have the k=0 term. What about higher k terms? We could repeat this analysis, carrying along the k's,
         // and get an expression involving G_e(z) and E_e(z) for each k. Michel & Stoistov's last trick is to realize
         // we don't have to do this, but can instead use our original expressions for each term as a ratio of \Gamma
         // functions to derive a recurrence. Let u_k be the first term, v_k be the second term, so t_k = u_k + v_k.

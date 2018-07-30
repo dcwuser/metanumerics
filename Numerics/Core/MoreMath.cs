@@ -137,8 +137,8 @@ namespace Meta.Numerics {
         //   * He shows that the point e^x = 1/2 and e^x = 3/2 are the relevent limits where Math.Exp(x) - 1.0
         //     looses a one bit of accuracy.
         //   * He measures that the maximum number of terms in the Taylor series required in this region is 17.
-        //   * He measures that the RMS error of the Taylor series in this region is ~0.8 ulp and it's maximum
-        //     relative error is ~ 2.7 ulp.
+        //   * He measures that the RMS error of the Taylor series in this region is ~0.8 bits and it's maximum
+        //     relative error is ~ 2.7 bits.
         //   * He points out that the doubling formula expm1(x) = expm1(x/2) * (expm1(x/2) + 2) allows one
         //     to reduce this by 2 terms and save 3 flops. But this is hardly worth the complication
         //     and actually looses a smidgeon of accuracy.
@@ -215,6 +215,18 @@ namespace Meta.Numerics {
 
         }
 
+        // Theorem 4 of Goldberg's classic "What Every Computer Scientist Should Know About Floating-Point Arithmetic"
+        // shows that, if log is 1/2-ulp accurate and arithmetic is performed with a guard digit and the compiler
+        // respects parenthesis even when optimizing, then
+        //   log1p(x) = x log(1 + x) / ((1 + x) - 1)
+        // is accurate to 5 ulp.
+
+        // It looks like the GO implementatio of log1p uses a more complex algorithm involving polynomial fits
+        // that they claim is accurate to 1 ulp, so that might be good to look into.
+
+        // Previously, I used the series development, but not over a wide enough range of arguments. So this trick
+        // is likely better and faster than my previous implementation.
+
         /// <summary>
         /// Computes log(1+x).
         /// </summary>
@@ -227,6 +239,14 @@ namespace Meta.Numerics {
         /// for values of x near zero.</para>
         /// </remarks>
         public static double LogOnePlus (double x) {
+
+            double z = 1.0 + x;
+            if (z == 1.0) {
+                return (x);
+            } else {
+                return (Math.Log(z) / (z - 1.0) * x);
+            }
+            /*
             if (Math.Abs(x) < 0.125) {
                 // For small x, use the series \log(1-x) = - \sum_{k=1}^{\infty} \frac{x^k}{k}. 
                 double xk = x;
@@ -241,6 +261,7 @@ namespace Meta.Numerics {
             } else {
                 return (Math.Log(1.0 + x));
             }
+            */
         }
 
         // Computes \log (1 + e * x) / e, i.e. the rate at which LogOnePlus changes with e
@@ -428,6 +449,49 @@ namespace Meta.Numerics {
             }
             // Should be possible to do even better, by reducing wrt pi / 4, but this is good enough for now.
         }
+
+        /// <summary>
+        /// Computes the sinc function.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of sinc(x) = sin(x) / x.</returns>
+        /// <remarks>
+        /// <para>The ratio sin(x) / x, understood to take its limiting value of 1 at x = 0, appears in many applications.
+        /// This method allows you to compute it straightforwardly without having to implement the limit.</para>
+        /// <para>Note that in signal processing applications, the function sin(&#x3C0;x)/(&#x3C0;x) is usually
+        /// used instead, and is also called the sinc function. Meta.Numerics implements it as <see cref="SincPi(double)"/>.</para>
+        /// <para>This function is also sometimes called the cardinal since function or the sampling function.</para>
+        /// </remarks>
+        /// <seealso href="http://mathworld.wolfram.com/SincFunction.html"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Sinc_function"/>
+        public static double Sinc (double x) {
+            // Perhaps counter-intuitively, naive evaluation of sin(x) / x looses no accuracy,
+            // even very close to zero, so long as x \ne 0. So we only branch on that one value.
+            if (x == 0.0) {
+                return (1.0);
+            } else {
+                return (Sin(x) / x);
+            }
+        }
+
+        /// <summary>
+        /// Computes the sinc of the given multiple of &#x3C0;.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of sin(&#x3C0;x)/(&#x3C0;x).</returns>
+        /// <remarks>
+        /// <para>This definition of the sinc function is commonly used in signal processing applications.
+        /// For the more common definition without the factor &#x3C0;, see <see cref="Sinc(double)"/>.
+        /// </para>
+        /// </remarks>
+        public static double SincPi (double x) {
+            if (x == 0.0) {
+                return (1.0);
+            } else {
+                return (SinPi(x) / (Math.PI * x));
+            }
+        }
+
 
         /// <summary>
         /// Returns the value of n mod m.

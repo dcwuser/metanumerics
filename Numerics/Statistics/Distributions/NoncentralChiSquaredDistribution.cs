@@ -25,7 +25,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         private readonly int nu;
         private readonly double lambda;
-        private readonly IDeviateGenerator zRng = new BoxMullerRejectionNormalDeviateGenerator();
+        private readonly IDeviateGenerator<double> zRng = new BoxMullerRejectionNormalDeviateGenerator();
 
         /// <summary>
         /// Gets the number of degrees of freedom of the distribution.
@@ -143,7 +143,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double t = 1.0;
                 double q = AdvancedMath.RightRegularizedGamma(nu2, x2);
                 double s = q;
-                double dq = AdvancedMath.PowOverGammaPlusOne(x2, nu2) * Math.Exp(-x2);
+                double dq = AdvancedMath.PowerOverFactorial(x2, nu2) * Math.Exp(-x2);
                 for (int k = 1; k < Global.SeriesMax; k++) {
                     double s_old = s;
                     t *= lambda2 / k;

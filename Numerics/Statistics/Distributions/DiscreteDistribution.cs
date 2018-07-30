@@ -86,7 +86,10 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// Computes the value corresponding to the given percentile.
         /// </summary>
         /// <param name="P">The percentile.</param>
-        /// <returns>The value.</returns>
+        /// <returns>The smallest k such that P<sub>0</sub> + P<sub>1</sub> + &#x22EF; + P<sub>k</sub> > P</returns>
+        /// <remarks>
+        /// <para>The smallest k such that LeftInclusiveProbability of k is greater than the given P.</para>
+        /// </remarks>
         public virtual int InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             return (InverseLeftProbability(Support.LeftEndpoint, Support.RightEndpoint, P));

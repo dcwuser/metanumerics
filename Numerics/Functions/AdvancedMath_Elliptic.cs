@@ -223,7 +223,7 @@ namespace Meta.Numerics.Functions {
                 double f_old = f;
                 z = z * (2 * n - 1) / (2 * n) * k;
                 f += z * z;
-                if (f == f_old) return (Global.HalfPI * f);
+                if (f == f_old) return (Math.PI / 2.0 * f);
             }
             throw new NonconvergenceException();
         }
@@ -236,12 +236,12 @@ namespace Meta.Numerics.Functions {
 
         private static double EllipticK_Asymptotic (double k1) {
             double p = 1.0;
-            double q = Math.Log(1.0 / k1) + 2.0 * Global.LogTwo;
+            double q = 2.0 * Global.LogTwo - Math.Log(k1);
             double f = q;
-            for (int m = 1; m < Global.SeriesMax; m++) {
+            for (int n = 1; n < Global.SeriesMax; n++) {
                 double f_old = f;
-                p *= k1 / m * (m - 0.5);
-                q -= 1.0 / m / (2 * m - 1);
+                p *= k1 * (n - 0.5) / n;
+                q -= 1.0 / (n * (2 * n - 1));
                 double df = p * p * q;
                 f += df;
                 if (f == f_old) return (f);
@@ -257,7 +257,7 @@ namespace Meta.Numerics.Functions {
         private static double EllipticK_AGM (double k) {
 
             double a = 1.0;
-            double b = Math.Sqrt(1.0 - k * k);
+            double b = Math.Sqrt((1.0 - k) * (1.0 + k));
 
             // Starting from 1-k, 1+k, the first iteration will always take us to 1, k',
             // so although it looks prettier (more symmetric) to start with 1-k, 1-k,
@@ -272,7 +272,7 @@ namespace Meta.Numerics.Functions {
                 // in fact, we must not use (a == b) as a termination criterion, because we can get into a loop
                 // where a and b dance around and never become precisely equal
                 if (Math.Abs(a-b) < SqrtAccuracy) {
-                    return (Global.HalfPI / am);
+                    return (Math.PI / 2.0 / am);
                 }
 
                 double gm = Math.Sqrt(a * b);
@@ -303,22 +303,29 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="EllipticF"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Elliptic_integral"/>
         public static double EllipticK (double k) {
-            if ((k < 0) || (k > 1.0)) throw new ArgumentOutOfRangeException(nameof(k));
-            if (k < 0.25) {
+            if (k < 0.0) {
+                throw new ArgumentOutOfRangeException(nameof(k));
+            } else if (k < 0.25) {
                 // For small k, use the series near k~0.
                 return (EllipticK_Series(k));
             } else if (k < 0.875) {
                 // For intermediate k, use the AGM method.
                 return (EllipticK_AGM(k));
-            } else {
+            } else if (k < 1.0) {
                 // For large k, use the asymptotic expansion. (k' = 0.484 at k=0.875)
-                double k1 = Math.Sqrt(1.0 - k * k);
-                if (k1 == 0.0) {
-                    return (Double.PositiveInfinity);
-                } else {
-                    return (EllipticK_Asymptotic(k1));
-                }
-
+                // Note Math.Sqrt((1.0-k)*(1.0+k)) is significantly more accurate for small 1-k
+                // than Math.Sqrt(1.0-k*k), at the cost of one extra flop.
+                // My testing indicates a rms error of 1E-17 vs 3E-14, max error of 1E-16 vs 2E-13.
+                double k1 = Math.Sqrt((1.0 - k) * (1.0 + k));
+                Debug.Assert(k1 > 0.0);
+                return (EllipticK_Asymptotic(k1));
+            } else if (k == 1.0) {
+                return (Double.PositiveInfinity);
+            } else if (k <= Double.PositiveInfinity) {
+                throw new ArgumentOutOfRangeException(nameof(k));
+            } else {
+                Debug.Assert(Double.IsNaN(k));
+                return (k);
             }
         }
 
@@ -346,7 +353,7 @@ namespace Meta.Numerics.Functions {
             double s = MoreMath.Sin(phi);
             double c = MoreMath.Cos(phi);
             double z = s * k;
-            return (s * CarlsonF(c * c, 1.0 - z * z, 1.0));
+            return (s * CarlsonF(c * c, (1.0 - z) * (1.0 + z), 1.0));
         }
 
         // Series for complete elliptic integral of the second kind
@@ -360,9 +367,9 @@ namespace Meta.Numerics.Functions {
             double f = 1.0;
             for (int n = 1; n < Global.SeriesMax; n++) {
                 double f_old = f;
-                z = z * (n - 0.5) / n * k;
+                z *= k * (n - 0.5) / n;
                 f -= z * z / ( 2 * n - 1);
-                if (f == f_old) return (Global.HalfPI * f);
+                if (f == f_old) return (Math.PI / 2.0 * f);
             }
 
             throw new NonconvergenceException();
@@ -375,7 +382,7 @@ namespace Meta.Numerics.Functions {
 
             double k12 = k1 * k1;
             double p = k12 / 2.0;
-            double q = Math.Log(1.0 / k1) + 2.0 * Global.LogTwo - 0.5;
+            double q = 2.0 * Global.LogTwo - 0.5 - Math.Log(k1);
             double f = 1.0 + p * q;
             for (int m = 1; m < Global.SeriesMax; m++) {
                 double f_old = f;
@@ -405,15 +412,23 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Elliptic_integral"/>
         /// <seealso href="http://mathworld.wolfram.com/CompleteEllipticIntegraloftheSecondKind.html"/>
         public static double EllipticE (double k) {
-            if ((k < 0.0) || (k > 1.0)) throw new ArgumentOutOfRangeException(nameof(k));
-            // these expansions are accurate in the intermediate region, but require many terms
-            // it would be good to use a faster approach there, like we do for K
-            if (k < 0.71) {
+            // These expansions are accurate in the intermediate region, but require many terms.
+            // It would be good to use a faster approach there, like we do for K.
+            if (k < 0.0) {
+                throw new ArgumentOutOfRangeException(nameof(k));
+            } else if (k < 0.71) {
                 return (EllipticE_Series(k));
-            } else {
-                double k1 = Math.Sqrt(1.0 - k * k);
-                if (k1 == 0.0) return (1.0);
+            } else if (k < 1.0) {
+                double k1 = Math.Sqrt((1.0 - k) * (1.0 + k));
+                Debug.Assert(k1 > 0.0);
                 return (EllipticE_Asymptotic(k1));
+            } else if (k == 1.0) {
+                return (1.0);
+            } else if (k <= Double.PositiveInfinity) {
+                throw new ArgumentOutOfRangeException(nameof(k));
+            } else {
+                Debug.Assert(Double.IsNaN(k));
+                return (k);
             }
         }
 

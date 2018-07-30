@@ -96,7 +96,7 @@ namespace Test {
             double v = Math.Abs(y) * e;
 
             //Console.WriteLine("  {0:g16} ?= {1:g16} ({2:g16})", x, y, u + v);
-            if (Math.Abs(x - y) <=(u + v)) {
+            if (Math.Abs(x - y) <=(u + v + 1.0 / Double.MaxValue)) {
                 return (true);
             } else {
                 return (false);

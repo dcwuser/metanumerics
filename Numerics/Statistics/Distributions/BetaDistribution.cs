@@ -48,19 +48,25 @@ namespace Meta.Numerics.Statistics.Distributions {
         public BetaDistribution (double alpha, double beta) {
             if (alpha <= 0.0) throw new ArgumentOutOfRangeException(nameof(alpha));
             if (beta <= 0.0) throw new ArgumentOutOfRangeException(nameof(beta));
-            this.alpha = alpha;
-            this.beta = beta;
+            this.a = alpha;
+            this.b = beta;
             // cache value of B(alpha, beta) to avoid having to re-calculate it whenever needed
             this.bigB = AdvancedMath.Beta(alpha, beta);
             // get a beta generator
-            this.betaRng = DeviateGeneratorFactory.GetBetaGenerator(alpha, beta);
+            if (alpha < 0.75 && beta < 0.75) {
+                this.betaRng = new JoehnkBetaGenerator(alpha, beta);
+            } else if (alpha > 1.0 && beta > 1.0) {
+                this.betaRng = new ChengBetaGenerator(alpha, beta);
+            } else {
+                this.betaRng = DeviateGeneratorFactory.GetBetaGenerator(alpha, beta);
+            }
             // get a beta inverter
             this.betaInverter = new BetaInverter(alpha, beta);
         }
 
-        private readonly double alpha, beta;
+        private readonly double a, b;
         private readonly double bigB;
-        private readonly IDeviateGenerator betaRng;
+        private readonly IDeviateGenerator<double> betaRng;
         private readonly BetaInverter betaInverter;
 
         /// <summary>
@@ -68,7 +74,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double Alpha {
             get {
-                return (alpha);
+                return (a);
             }
         }
 
@@ -77,7 +83,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double Beta {
             get {
-                return (beta);
+                return (b);
             }
         }
 
@@ -93,7 +99,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if ((x < 0.0) || (x > 1.0)) {
                 return (0.0);
             } else {
-                return (Math.Pow(x, alpha - 1.0) * Math.Pow(1.0 - x, beta - 1.0) / bigB);
+                return (Math.Pow(x, a - 1.0) * Math.Pow(1.0 - x, b - 1.0) / bigB);
             }
         }
 
@@ -107,7 +113,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 // the value is I_x(a,b), which is LeftRegularizedBeta
                 // since we have precomputed bigB, use it here instead of calling
                 // that method, which would re-compute it
-                return (AdvancedMath.LeftRegularizedBeta(alpha, beta, x));
+                return (AdvancedMath.LeftRegularizedBeta(a, b, x));
             }
         }
 
@@ -120,30 +126,30 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else {
                 // use 1.0 - I_x(a, b) = I_{1-x}(b, a), which is essentially the symmetry of
                 // the beta distribution definition, to avoid calculating 1 - small number
-                return (AdvancedMath.LeftRegularizedBeta(beta, alpha, 1.0 - x));
+                return (AdvancedMath.LeftRegularizedBeta(b, a, 1.0 - x));
             }
         }
 
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (alpha / (alpha + beta));
+                return (a / (a + b));
             }
         }
 
         /// <inheritdoc />
         public override double Variance {
             get {
-                double alphaPlusBeta = alpha + beta;
-                return (alpha * beta / (alphaPlusBeta + 1.0) / (alphaPlusBeta * alphaPlusBeta));
+                double ab = a + b;
+                return (a * b / (ab + 1.0) / (ab * ab));
             }
         }
 
         /// <inheritdoc />
         public override double Skewness {
             get {
-                double ab = alpha + beta;
-                return (2.0 * (beta - alpha) / (ab + 2.0) * Math.Sqrt((ab + 1.0) / (alpha * beta)));
+                double ab = a + b;
+                return (2.0 * (b - a) / (ab + 2.0) * Math.Sqrt((ab + 1.0) / (a * b)));
             }
         }
 
@@ -153,10 +159,10 @@ namespace Meta.Numerics.Statistics.Distributions {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else {
                 // this is just a recursive development of \Beta(\alpha + r, \beta) / \Beta(\alpha, \beta)
-                double alphaPlusBeta = alpha + beta;
+                double ab = a + b;
                 double M = 1.0;
                 for (int i = 0; i < r; i++) {
-                    M = (alpha + i) / (alphaPlusBeta + i) * M;
+                    M = (a + i) / (ab + i) * M;
                 }
                 return (M);
             }
@@ -182,14 +188,14 @@ namespace Meta.Numerics.Statistics.Distributions {
 
                 // use recursion
 
-                double alphaPlusBeta = alpha + beta;
-                double betaMinusAlpha = beta - alpha;
-                double u = alpha * beta / alphaPlusBeta;
+                double ab = a + b;
+                double ba = b - a;
+                double u = a * b / ab;
 
                 double CM = 1.0;
                 double C0 = 0.0;
                 for (int k = 1; k < r; k++) {
-                    double CP = k / (alphaPlusBeta + k) / alphaPlusBeta * (betaMinusAlpha * C0 + u * CM);
+                    double CP = k / (ab + k) / ab * (ba * C0 + u * CM);
                     CM = C0;
                     C0 = CP;
                 }
@@ -213,14 +219,14 @@ namespace Meta.Numerics.Statistics.Distributions {
             yield return (1.0);
             yield return (0.0);
 
-            double alphaPlusBeta = alpha + beta;
-            double betaMinusAlpha = beta - alpha;
-            double u = alpha * beta / alphaPlusBeta;
+            double ab = a + b;
+            double ba = b - a;
+            double u = a * b / ab;
 
             double CM = 1.0;
             double C0 = 0.0;
             for (int i = 1; true; i++) {
-                double CP = i / (alphaPlusBeta + i) / alphaPlusBeta * (betaMinusAlpha * C0 + u * CM);
+                double CP = i / (ab + i) / ab * (ba * C0 + u * CM);
                 CM = C0;
                 C0 = CP;
                 yield return (C0);
@@ -516,6 +522,69 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
 
+    }
+
+    // http://math.ubbcluj.ro/~tradu/Randvargen.pdf
+
+    // R. C. H. Cheng, Generating Beta Variates with Nonintegral Shape Parameters,
+    // Communications of the ACM 21 (1978) 317
+
+    public class ChengBetaGenerator : IDeviateGenerator<double> {
+
+        public ChengBetaGenerator (double a, double b) {
+            Debug.Assert(a > 1.0);
+            Debug.Assert(b > 1.0);
+            this.a = a;
+            this.b = b;
+            this.alpha = a + b;
+            this.beta = Math.Sqrt((alpha - 2.0) / (2.0 * a * b - alpha));
+            this.gamma = a + 1.0 / beta;
+        }
+
+        // Cheng uses the names alpha and beta for some values he calculates. They are
+        // not the shape parametes of the distribution, which he calls a and b.
+        private readonly double a, b;
+        private readonly double alpha, beta, gamma;
+
+        private static readonly double log4 = Math.Log(4.0);
+
+        public double GetNext (Random rng) {
+            while (true) {
+                double u = rng.NextDouble();
+                double v = beta * Math.Log(u / (1.0 - u));
+                double w = a * Math.Exp(v);
+                double z = u * u * rng.NextDouble();
+                if (gamma * v - log4 + alpha * Math.Log(alpha / (b + w)) > Math.Log(z)) {
+                    return (w / (b + w));
+                }
+            }
+        }
+    }
+
+    // Johnk M.D., Erzeugung von Betaverteilten und Gammaverteilten Zufallszahlen; Metrika 8 (1964) 5-15
+
+    internal class JoehnkBetaGenerator : IDeviateGenerator<double> {
+
+        public JoehnkBetaGenerator (double a, double b) {
+            Debug.Assert(a < 1.0);
+            Debug.Assert(b < 1.0);
+            this.ai = 1.0 / a;
+            this.bi = 1.0 / b;
+        }
+
+        private readonly double ai, bi;
+
+        public double GetNext (Random rng) {
+            while (true) {
+                double u = rng.NextDouble();
+                double v = rng.NextDouble();
+                double x = Math.Pow(u, ai);
+                double y = Math.Pow(v, bi);
+                double z = x + y;
+                if (z < 1.0) return (x / z);
+            }
+
+        }
     }
 
 

@@ -129,10 +129,10 @@ namespace Meta.Numerics.Functions {
                 } else {
                     return (0.0);
                 }
-            } else if (x < 4.0 + 2.0 * Math.Sqrt(nu)) {
+            } else if (x <= 2.0 * Math.Sqrt(nu + 1.0)) {
                 // Close to the origin, use the power series.
                 return (ModifiedBesselI_Series(nu, x));
-            } else if (x > 32.0 + nu * nu / 2.0) {
+            } else if (x >= 32.0 + 0.5 * nu * nu) {
                 // Far from the origin, use the asymptotic expansion.
                 double sI, sIP, sK, sKP;
                 ModifiedBessel_Asymptotic(nu, x, out sI, out sIP, out sK, out sKP);
@@ -226,18 +226,17 @@ namespace Meta.Numerics.Functions {
 
             Debug.Assert(x > 0.0);
 
-            double x2 = x / 2.0;
+            double x2 = 0.5 * x;
             double xx = x2 * x2;
-            double dI = Math.Pow(x2, nu) / AdvancedMath.Gamma(nu + 1.0);
-            //double dI = AdvancedMath.PowOverGammaPlusOne(x2, nu);
+            double dI = AdvancedMath.PowerOverFactorial(x2, nu);
             I = dI;
             IP = nu * dI;
             for (int k = 1; k < Global.SeriesMax; k++) {
                 double I_old = I;
                 double IP_old = IP;
-                dI *= xx / k / (nu + k);
+                dI *= xx / (k * (nu + k));
                 I += dI;
-                IP += (nu + 2 * k) * dI;
+                IP += (2 * k + nu) * dI;
                 if ((I == I_old) && (IP == IP_old)) {
                     IP = IP / x;
                     return;
@@ -489,12 +488,10 @@ namespace Meta.Numerics.Functions {
 
         }
 
-#if FUTURE
-
         /// <summary>
         /// Computes the modified Bessel function of the first kind.
         /// </summary>
-        /// <param name="n">The order parameter.</param>
+        /// <param name="n">The order.</param>
         /// <param name="x">The argument.</param>
         /// <returns>The value of I<sub>n</sub>(x).</returns>
         /// <remarks>
@@ -502,20 +499,20 @@ namespace Meta.Numerics.Functions {
         /// In particular, I<sub>n</sub>(x) = (-1)<sup>n</sup> J<sub>n</sub>(i x).</para>
         /// </remarks>
         /// <seealso cref="BesselJ(int,double)"/>
-        public static double BesselI (int n, double x) {
+        public static double ScaledBesselI (int n, double x) {
 
             if (n < 0) {
-                return (BesselI(-n, x));
+                return (ScaledBesselI(-n, x));
             }
 
             if (x < 0) {
-                double I = BesselI(n, -x);
+                double I = ScaledBesselI(n, -x);
                 if (n % 2 != 0) I = -I;
                 return (I);
             }
 
-            if (x < 4.0 + 2.0 * Math.Sqrt(n)) {
-                return (BesselI_Series(n, x));
+            if (x <= 2.0 * Math.Sqrt(n + 1)) {
+                return (Math.Exp(-x) * BesselI_Series(n, x));
             } else if (x > 20.0 + n * n / 4.0) {
                 return (Math.Exp(x) * BesselI_Reduced_Asymptotic(n, x));
             } else {
@@ -532,15 +529,16 @@ namespace Meta.Numerics.Functions {
                     return (0.0);
                 }
             } else {
-                double dI = Math.Pow(x / 2.0, nu) / AdvancedMath.Gamma(nu + 1.0);
+                double xh = 0.5 * x;
+                double dI = 1.0;
                 double I = dI;
-                double xx = x * x / 4.0;
+                double xx = xh * xh;
                 for (int k = 1; k < Global.SeriesMax; k++) {
                     double I_old = I;
-                    dI = dI * xx / (nu + k) / k;
+                    dI = dI * xx / (k * (nu + k));
                     I += dI;
                     if (I == I_old) {
-                        return (I);
+                        return (PowerOverFactorial(xh, nu) * I);
                     }
                 }
                 throw new NonconvergenceException();
@@ -554,6 +552,8 @@ namespace Meta.Numerics.Functions {
 
             // this should be stable for all x, since I_k increases as k decreases
 
+            int m = Bessel_Miller_Limit(n, x);
+
             // assume zero values at a high order
             double IP = 0.0;
             double I = 1.0;
@@ -561,21 +561,12 @@ namespace Meta.Numerics.Functions {
             // do the renormalization sum as we go
             double sum = 0.0;
 
-            // how much higher in order we start depends on how many significant figures we need
-            // 30 is emperically enough for double precision
-            // iterate down to I_n
-            for (int k = n + 40; k > n; k--) {
-                sum += I;
-                double IM = (2 * k / x) * I + IP;
-                IP = I;
-                I = IM;
-            }
-
-            // remember I_n; we will renormalize it to get the answer
-            double In = I;
-
-            // iterate down to I_0
-            for (int k = n; k > 0; k--) {
+            // iterate down to 0
+            double In = Double.NaN;
+            for (int k = m; k > 0; k--) {
+                if (k == n) {
+                    In = I;
+                }
                 sum += I;
                 double IM = (2 * k / x) * I + IP;
                 IP = I;
@@ -618,229 +609,6 @@ namespace Meta.Numerics.Functions {
 
         // Neuman series no good for computing K0; it relies on a near-perfect cancelation between the I0 term
         // and the higher terms to achieve an exponentially supressed small value
-
-#endif
-
-        private static readonly double Ai0 = 1.0 / (Math.Pow(3.0, 2.0 / 3.0) * AdvancedMath.Gamma(2.0 / 3.0));
-
-        private static readonly double AiPrime0 = -1.0 / (Math.Pow(3.0, 1.0 / 3.0) * AdvancedMath.Gamma(1.0 / 3.0));
-
-        private static readonly double Bi0 = 1.0 / (Math.Pow(3.0, 1.0 / 6.0) * AdvancedMath.Gamma(2.0 / 3.0));
-
-        private static readonly double BiPrime0 = Math.Pow(3.0, 1.0 / 6.0) / AdvancedMath.Gamma(1.0 / 3.0);
-
-        /// <summary>
-        /// Computes the Airy function of the first kind.
-        /// </summary>
-        /// <param name="x">The argument.</param>
-        /// <returns>The value Ai(x).</returns>
-        /// <remarks>
-        /// <para>For information on the Airy functions, see <see cref="AdvancedMath.Airy"/>.</para>
-        /// </remarks>
-        /// <seealso cref="AiryBi"/>
-        /// <seealso href="http://en.wikipedia.org/wiki/Airy_functions" />
-        public static double AiryAi (double x) {
-            if (x < -3.0) {
-                double y = 2.0 / 3.0 * Math.Pow(-x, 3.0 / 2.0);
-                SolutionPair s = Bessel(1.0 / 3.0, y);
-                return (Math.Sqrt(-x) / 2.0 * (s.FirstSolutionValue - s.SecondSolutionValue / Global.SqrtThree));
-            } else if (x < 2.0) {
-                // Close to the origin, use a power series.
-                // Convergence is slightly better for negative x than for positive, so we use it further out to the left of the origin.
-                return (AiryAi_Series(x));
-                // The definitions in terms of bessel functions become 0 X infinity at x=0, so we can't use them directly here anyway.
-            } else {
-                double y = 2.0 / 3.0 * Math.Pow(x, 3.0 / 2.0);
-                return (Math.Sqrt(x / 3.0) / Math.PI * ModifiedBesselK(1.0 / 3.0, y));
-            }
-        }
-
-        // The Maclaurin series for Ai (DLMF 9.4.1) is:
-        //   Ai(x) = Ai(0) [ 1 + 1/3! x^3 + 1 * 4 / 6! x^6 + 1 * 4 * 7 / 9! x^9 + \cdots] +
-        //           x Ai'(0) [ 1 + 2 / 4! x^3 + 2 * 5 / 7! x^6 + 2 * 5 * 8 / 10! x^9 + \cdots ]
-
-        private static double AiryAi_Series (double x) {
-
-            // problematic for positive x once exponential decay sets in; don't use for x > 2
-            Debug.Assert(x <= 2.0);
-
-            double p = Ai0;
-            double q = AiPrime0 * x;
-            double f = p + q;
-
-            double x3 = x * x * x;
-            for (int k = 0; k < Global.SeriesMax; k+=3) {
-                double f_old = f;
-                p *= x3 / ((k + 2) * (k + 3));
-                q *= x3 / ((k + 3) * (k + 4));
-                f += p + q;
-                if (f == f_old) {
-                    return (f);
-                }
-            }
-            throw new NonconvergenceException();
-
-        }
-
-        /// <summary>
-        /// Computes the Airy function of the second kind.
-        /// </summary>
-        /// <param name="x">The argument.</param>
-        /// <returns>The value Bi(x).</returns>
-        /// <remarks>
-        /// <para>For information on the Airy functions, see <see cref="AdvancedMath.Airy"/>.</para>
-        /// <para>While the notation Bi(x) was chosen simply as a natural complement to Ai(x), it has influenced the common
-        /// nomenclature for this function, which is now often called the "Bairy function".</para>
-        /// </remarks>        
-        /// <seealso cref="AiryAi"/>
-        /// <seealso href="http://en.wikipedia.org/wiki/Airy_functions" />
-        public static double AiryBi (double x) {
-            if (x < -3.0) {
-                // Get from Bessel functions.
-                double y = 2.0 / 3.0 * Math.Pow(-x, 3.0 / 2.0);
-                SolutionPair s = Bessel(1.0 / 3.0, y);
-                return (-Math.Sqrt(-x) / 2.0 * (s.FirstSolutionValue / Global.SqrtThree + s.SecondSolutionValue));
-            } else if (x < 5.0) {
-                // The Bi series is better than the Ai series for positive values, because it blows up rather than cancelling down.
-                // It's also slightly better for negative values, because a given number of oscillations occur further out.  
-                return (AiryBi_Series(x));
-            } else {
-                // Get from modified Bessel functions.
-                double y = 2.0 / 3.0 * Math.Pow(x, 3.0 / 2.0);
-                SolutionPair s = ModifiedBessel(1.0 / 3.0, y);
-                return (Math.Sqrt(x) * (2.0 / Global.SqrtThree * s.FirstSolutionValue + s.SecondSolutionValue / Math.PI));
-            }
-        }
-
-        private static double AiryBi_Series (double x) {
-
-            double p = Bi0;
-            double q = x * BiPrime0;
-            double f = p + q;
-
-            double x3 = x * x * x;
-            for (int k = 0; k < Global.SeriesMax; k += 3) {
-                double f_old = f;
-                p *= x3 / ((k + 2) * (k + 3));
-                q *= x3 / ((k + 3) * (k + 4));
-                f += p + q;
-                if (f == f_old) return (f);
-            }
-            throw new NonconvergenceException();
-
-        }
-
-
-        /// <summary>
-        /// Computes both Airy functions and their derivatives.
-        /// </summary>
-        /// <param name="x">The argument.</param>
-        /// <returns>The values of Ai(x), Ai'(x), Bi(x), and Bi'(x).</returns>
-        /// <remarks>
-        /// <para>Airy functions are solutions to the Airy differential equation:</para>
-        /// <img src="../images/AiryODE.png" />
-        /// <para>The Airy functions appear in quantum mechanics in the semi-classical WKB solution to the wave functions in a potential.</para>
-        /// <para>For negative arguments, Ai(x) and Bi(x) are oscillatory. For positive arguments, Ai(x) decreases exponentially and Bi(x) increases
-        /// exponentially with increasing x.</para>
-        /// <para>This method simultaneously computes both Airy functions and their derivatives. If you need both Ai and Bi, it is faster to call
-        /// this method once than to call <see cref="AiryAi(double)"/> and <see cref="AiryBi(double)"/> separately. If on, the other hand, you need
-        /// only Ai or only Bi, and no derivative values, it is faster to call the appropriate method to compute the one you need.</para>
-        /// </remarks>
-        /// <seealso cref="AiryAi"/>
-        /// <seealso cref="AiryBi"/>
-        /// <seealso href="http://en.wikipedia.org/wiki/Airy_functions" />
-        public static SolutionPair Airy (double x) {
-            if (x < -2.0) {
-                // Map to Bessel functions for negative values
-                double z = 2.0 / 3.0 * Math.Pow(-x, 3.0 / 2.0);
-                SolutionPair p = Bessel(1.0 / 3.0, z);
-                double a = (p.FirstSolutionValue - p.SecondSolutionValue / Global.SqrtThree) / 2.0;
-                double b = (p.FirstSolutionValue / Global.SqrtThree + p.SecondSolutionValue) / 2.0;
-                double sx = Math.Sqrt(-x);
-                return (new SolutionPair(
-                    sx * a, (x * (p.FirstSolutionDerivative - p.SecondSolutionDerivative / Global.SqrtThree) - a / sx) / 2.0,
-                    -sx * b, (b / sx - x * (p.FirstSolutionDerivative / Global.SqrtThree + p.SecondSolutionDerivative)) / 2.0
-                ));
-            } else if (x < 2.0) {
-                // Use series near origin
-                return (Airy_Series(x));
-            } else {
-                // Map to modified Bessel functions for positive values
-                double z = 2.0 / 3.0 * Math.Pow(x, 3.0 / 2.0);
-                SolutionPair p = ModifiedBessel(1.0 / 3.0, z);
-                double a = 1.0 / (Global.SqrtThree * Math.PI);
-                double b = 2.0 / Global.SqrtThree * p.FirstSolutionValue + p.SecondSolutionValue / Math.PI;
-                double sx = Math.Sqrt(x);
-                return (new SolutionPair(
-                    a * sx * p.SecondSolutionValue, a * (x * p.SecondSolutionDerivative + p.SecondSolutionValue / sx / 2.0),
-                    sx * b, x * (2.0 / Global.SqrtThree * p.FirstSolutionDerivative + p.SecondSolutionDerivative / Math.PI) + b / sx / 2.0
-                ));
-            }
-
-            // NR recommends against using the Ai' and Bi' expressions obtained from simply differentiating the Ai and Bi expressions
-            // They give instead expressions involving Bessel functions of different orders. But their reason is to avoid the cancellations
-            // among terms ~1/x that get large near x ~ 0, and their method would require two Bessel evaluations.
-            // Since we use the power series near x ~ 0, we avoid their cancelation problem and can get away with a single Bessel evaluation.
-
-            // It might appear that we can optimize by not computing both \sqrt{x} and x^{3/2} explicitly, but instead computing \sqrt{x} and
-            // then (\sqrt{x})^3. But the latter method looses accuracy, presumably because \sqrt{x} compresses range and cubing then expands
-            // it, skipping over the double that is actually closest to x^{3/2}. So we compute both explicitly.
-
-        }
-
-
-        private static SolutionPair Airy_Series (double x) {
-
-            // compute k = 0 terms in f' and g' series, and in f and g series
-            // compute terms to get k = 0 terms in a' and b' and a and b series
-
-            double g = 1.0 / Math.Pow(3.0, 1.0 / 3.0) / AdvancedMath.Gamma(1.0 / 3.0);
-            double ap = -g;
-            double bp = g;
-
-            double f = 1.0 / Math.Pow(3.0, 2.0 / 3.0) / AdvancedMath.Gamma(2.0 / 3.0);
-            g *= x;
-            double a = f - g;
-            double b = f + g;
-
-            // we will need to multiply by x^2 to produce higher terms, so remember it
-            double x2 = x * x;
-
-            for (int k = 1; k < Global.SeriesMax; k++) {
-
-                // remember old values
-                double a_old = a;
-                double b_old = b;
-                double ap_old = ap;
-                double bp_old = bp;
-
-                // compute 3k
-                double tk = 3 * k;
-
-                // kth term in f' and g' series, and corresponding a' and b' series
-                f *= x2 / (tk - 1);
-                g *= x2 / tk;
-                ap += (f - g);
-                bp += (f + g);
-
-                // kth term in f and g series, and corresponding a and b series
-                f *= x / tk;
-                g *= x / (tk + 1);
-                a += (f - g);
-                b += (f + g);
-
-                // check for convergence
-                if ((a == a_old) && (b == b_old) && (ap == ap_old) && (bp == bp_old)) {
-                    return (new SolutionPair(
-                        a, ap,
-                        Global.SqrtThree * b, Global.SqrtThree * bp
-                    ));
-                }
-            }
-
-            throw new NonconvergenceException();
-
-        }
 
     }
 

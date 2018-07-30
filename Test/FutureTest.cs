@@ -9,7 +9,7 @@ using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 using Meta.Numerics;
 using Meta.Numerics.Functions;
-using Meta.Numerics.Analysis;
+using Meta.Numerics.Data;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.SignalProcessing;
 using Meta.Numerics.Statistics;
@@ -17,10 +17,251 @@ using Meta.Numerics.Statistics.Distributions;
 
 namespace Test {
 
+    internal interface IDeviateGenerator<T> {
+
+        T GetNext (Random rng);
+
+    }
+
+    public class PoissonGeneratorMultiplicative : IDeviateGenerator<int> {
+
+        public PoissonGeneratorMultiplicative (double lambda) {
+            expMinusLambda = Math.Exp(-lambda);
+        }
+
+        private readonly double expMinusLambda;
+
+        public int GetNext (Random rng) {
+            int k = 0;
+            double t = rng.NextDouble();
+            while (t > expMinusLambda) {
+                k++;
+                t *= rng.NextDouble();
+            }
+            return (k);
+        }
+
+    }
+
+    public class PoissonGeneratorAdditive : IDeviateGenerator<int> {
+
+        public PoissonGeneratorAdditive (double lambda) {
+            this.lambda = lambda;
+        }
+
+        private readonly double lambda;
+
+        public int GetNext (Random rng) {
+            int k = 0;
+            double t = rng.NextDouble();
+            while (t < lambda) {
+                k++;
+                t += rng.NextDouble();
+            }
+            return (k);
+        }
+    }
+
+    public class PoissonGeneratorTabulated : IDeviateGenerator<int> {
+
+        public PoissonGeneratorTabulated (double lambda) {
+            cdf = new double[(int) Math.Ceiling(4.0 * lambda)];
+
+            double P = Math.Exp(-lambda);
+            cdf[0] = P;
+            for (int k = 1; k < cdf.Length; k++) {
+                P *= lambda / k;
+                cdf[k] = cdf[k - 1] + P;
+            }
+        }
+
+        private readonly double[] cdf;
+
+        public int GetNext (Random rng) {
+
+            double u = rng.NextDouble();
+
+            int k = Array.BinarySearch<double>(cdf, u);
+            if (k < 0) k = ~k;
+
+            return (k);
+        }
+
+    }
+
+    public class PoissonGeneratorNR : IDeviateGenerator<int> {
+
+        public PoissonGeneratorNR (double lambda) {
+            this.lambda = lambda;
+            this.sqlam = Math.Sqrt(lambda);
+            this.loglam = Math.Log(lambda);
+        }
+
+        private readonly double lambda, sqlam, loglam;
+
+        public int GetNext (Random rng) {
+            while (true) {
+                double u = 0.64 * rng.NextDouble();
+                double v = -0.68 + 1.28 * rng.NextDouble();
+                int k = (int) Math.Floor(sqlam * (v / u) + lambda + 0.5);
+                if (k < 0) continue;
+                double u2 = u * u;
+                double lfac = AdvancedIntegerMath.LogFactorial(k);
+                double p = sqlam * Math.Exp(-lambda + k * loglam - lfac);
+                if (u2 < p) return (k);
+            }
+        }
+    }
+
+    public class PoissonGeneratorPTRS : IDeviateGenerator<int> {
+
+        public PoissonGeneratorPTRS (double lambda) {
+            this.lambda = lambda;
+            this.lnmu = Math.Log(lambda);
+            this.b = 0.931 + 2.53 * Math.Sqrt(lambda);
+            this.a = -0.059 + 0.02483 * b;
+            this.vr = 0.9277 - 3.6224 / (b - 2.0);
+        }
+
+        private readonly double lambda, lnmu, b, a, vr;
+
+        public int GetNext (Random rng) {
+
+            while (true) {
+                double u = rng.NextDouble() - 0.5;
+                double v = rng.NextDouble();
+
+                double us = 0.5 - Math.Abs(u);
+                int k = (int) Math.Floor((2.0 * a / us + b) * u + lambda + 0.43);
+                if (us > 0.07 && v < vr) return (k);
+                if (k < 0) continue;
+                if (us < 0.013 && v > us) continue;
+                double ai = 1.1239 + 1.1328 / (b - 3.4);
+                if (Math.Log(v * ai / (a / (us * us) + b)) <= -lambda + k * lnmu - AdvancedIntegerMath.LogFactorial(k)) {
+                    return (k);
+                }
+            }
+
+        }
+    }
 
 
     [TestClass]
     public class FutureTest {
+
+        [TestMethod]
+        public void ChengBeta () {
+
+            Random rng = new Random(271828);
+
+            ChengBetaGenerator g = new ChengBetaGenerator(3.0, 1.1);
+            List<double> sample = new List<double>();
+            for (int i = 0; i < 1000000; i++) sample.Add(g.GetNext(rng));
+
+            BetaDistribution b = new BetaDistribution(3.0, 1.1);
+            TestResult r = sample.KolmogorovSmirnovTest(b);
+
+        }
+
+        [TestMethod]
+        public void PoissonBenchmark () {
+
+            int n = 1000000;
+            double lambda = 10.0;
+            int m = 100;
+
+            PoissonDistribution d = new PoissonDistribution(lambda);
+            Random rng;
+            
+            // Inversion
+            Histogram h0 = new Histogram(m);
+            rng = new Random(1);
+            Stopwatch s0 = Stopwatch.StartNew();
+            for (int i = 0; i < n; i++) {
+                int k = d.GetRandomValue(rng);
+                h0.Add(k);
+            }
+            s0.Stop();
+            TestResult r0 = h0.ChiSquaredTest(d);
+            
+            
+            // Multiplication
+            IDeviateGenerator<int> g1 = new PoissonGeneratorMultiplicative(lambda);
+            Histogram h1 = new Histogram(m);
+            rng = new Random(1);
+            Stopwatch s1 = Stopwatch.StartNew();
+            for (int i = 0; i < n; i++) {
+                int k = g1.GetNext(rng);
+                h1.Add(k);
+            }
+            s1.Stop();
+            TestResult r1 = h1.ChiSquaredTest(d);
+            
+            // Addition
+            IDeviateGenerator<int> g2 = new PoissonGeneratorAdditive(lambda);
+            Histogram h2 = new Histogram(m);
+            rng = new Random(1);
+            Stopwatch s2 = Stopwatch.StartNew();
+            for (int i = 0; i < n; i++) {
+                int k = g2.GetNext(rng);
+                h2.Add(k);
+            }
+            s2.Stop();
+            TestResult r2 = h2.ChiSquaredTest(d);
+
+            // Tabulation
+            IDeviateGenerator<int> gt = new PoissonGeneratorTabulated(lambda);
+            Histogram ht = new Histogram(m);
+            rng = new Random(1);
+            Stopwatch st = Stopwatch.StartNew();
+            for (int i = 0; i < n; i++) {
+                int k = gt.GetNext(rng);
+                ht.Add(k);
+            }
+            st.Stop();
+            TestResult rt = ht.ChiSquaredTest(d);
+
+
+            // NR
+            IDeviateGenerator<int> g3 = new PoissonGeneratorNR(lambda);
+            Histogram h3 = new Histogram(m);
+            rng = new Random(1);
+            Stopwatch s3 = Stopwatch.StartNew();
+            for (int i = 0; i < n; i++) {
+                int k = g3.GetNext(rng);
+                h3.Add(k);
+            }
+            s3.Stop();
+            TestResult r3 = h3.ChiSquaredTest(d);
+
+            // PTRS
+            IDeviateGenerator<int> g4 = new PoissonGeneratorPTRS(lambda);
+            Histogram h4 = new Histogram(m);
+            rng = new Random(1);
+            Stopwatch s4 = Stopwatch.StartNew();
+            for (int i = 0; i < n; i++) {
+                int k = g4.GetNext(rng);
+                h4.Add(k);
+            }
+            s4.Stop();
+            TestResult r4 = h4.ChiSquaredTest(d);
+
+        }
+
+        [TestMethod]
+        public void EigenExample () {
+
+            SquareMatrix A = new SquareMatrix(new double[,] {
+                { 1, 2 },
+                { 3, 4 }
+            });
+
+            ComplexEigendecomposition E = A.Eigendecomposition();
+            for (int i = 0; i < E.Dimension; i++) {
+                Console.WriteLine(E.Eigenpairs[i].Eigenvalue);
+            }
+
+        }
 
         //[TestMethod]
         public void FranciaShapiro () {
@@ -124,13 +365,43 @@ namespace Test {
 
         }
 
-        private int PoissonDeviate (double lambda, Random rng) {
-            double t0 = Math.Exp(-lambda);
+        [TestMethod]
+        public void PoissonLargeMeanDeviates () {
+
+            int n = 100000;
+            List<int> sample = new List<int>(n);
+
+            PoissonDistribution d = new PoissonDistribution(100);
+            Random rng = new Random(314159265);
+            for (int i = 0; i < n; i++) {
+                sample.Add(d.GetRandomValue(rng));
+            }
+
+            Histogram h = new Histogram(200);
+            foreach (int k in sample) h.Add(k);
+            TestResult ht = h.ChiSquaredTest(d);
+
+            TestResult ct = sample.ChiSquaredTest(d);
+
+        }
+
+        private int PoissonDeviateMultiplication (double expMinusLambda, Random rng) {
+            double t0 = expMinusLambda;
             int k = 0;
             double t = rng.NextDouble();
             while (t > t0) {
                 k++;
                 t *= rng.NextDouble();
+            }
+            return (k);
+        }
+
+        private int PoissonDeviateAddition (double lambda, Random rng) {
+            int k = 0;
+            double t = rng.NextDouble();
+            while (t < lambda) {
+                k++;
+                t += rng.NextDouble();
             }
             return (k);
         }
@@ -149,6 +420,30 @@ namespace Test {
                 double lfac = AdvancedIntegerMath.LogFactorial(k);
                 double p = sqlam * Math.Exp(-lambda + k * loglam - lfac);
                 if (u2 < p) return (k);
+            }
+
+        }
+
+        private int PoissonDeviatePTRS (double lambda, Random rng) {
+
+            double lnmu = Math.Log(lambda);
+            double b = 0.931 + 2.53 * Math.Sqrt(lambda);
+            double a = -0.059 + 0.02483 * b;
+            double vr = 0.9277 - 3.6224 / (b - 2.0);
+
+            while (true) {
+                double u = rng.NextDouble() - 0.5;
+                double v = rng.NextDouble();
+
+                double us = 0.5 - Math.Abs(u);
+                int k = (int) Math.Floor((2.0 * a / us + b) * u + lambda + 0.43);
+                if (us > 0.07 && v < vr) return (k);
+                if (k < 0) continue;
+                if (us < 0.013 && v > us) continue;
+                double ai = 1.1239 + 1.1328 / (b - 3.4);
+                if (Math.Log(v * ai / (a / (us * us) + b)) <= -lambda + k * lnmu - AdvancedIntegerMath.LogFactorial(k)) {
+                    return (k);
+                }
             }
 
         }

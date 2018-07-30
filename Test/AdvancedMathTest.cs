@@ -31,151 +31,13 @@ namespace Test {
         }
 
         [TestMethod]
-        public void IntegerBesselSpecialCase () {
-            Assert.IsTrue(AdvancedMath.BesselJ(0, 0.0) == 1.0);
-            Assert.IsTrue(AdvancedMath.BesselJ(1, 0.0) == 0.0);
-            Assert.IsTrue(AdvancedMath.BesselY(0, 0.0) == Double.NegativeInfinity);
-            Assert.IsTrue(AdvancedMath.BesselY(1, 0.0) == Double.NegativeInfinity);
-        }
-
-        [TestMethod]
-        public void IntegerBesselNegativeOrder () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 16)) {
-                    int s = 1 - 2*(n % 2);
-                    Assert.IsTrue(AdvancedMath.BesselJ(-n, x) == s * AdvancedMath.BesselJ(n, x));
-                    Assert.IsTrue(AdvancedMath.BesselY(-n, x) == s * AdvancedMath.BesselY(n, x));
-                }
-            }
-        }
-
-        [TestMethod]
-        public void IntegerBesselNegativeArgument () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 16)) {
-                    int s = (n % 2 == 0) ? 1 : -1;
-                    Assert.IsTrue(AdvancedMath.BesselJ(n, -x) == s * AdvancedMath.BesselJ(n, x));
-                }
-            }
-        }
-
-        [TestMethod]
-        public void IntegerBesselRecurrence () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1 , 100, 4)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 16)) {
-                    Console.WriteLine("n={0}, x={1:R} Jm={2} J0={3} Jp={4}", n, x, AdvancedMath.BesselJ(n - 1, x), AdvancedMath.BesselJ(n, x), AdvancedMath.BesselJ(n+1,x));
-                    Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
-                        AdvancedMath.BesselJ(n - 1, x), AdvancedMath.BesselJ(n + 1, x), 2 * n / x * AdvancedMath.BesselJ(n, x)
-                    ));
-                    if (!BesselYInRange(n, x)) continue;
-                    Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
-                        AdvancedMath.BesselY(n - 1, x), AdvancedMath.BesselY(n + 1, x), 2 * n / x * AdvancedMath.BesselY(n, x)
-                    ));
-                }
-            }
-        }
-
-        [TestMethod]
-        public void IntegerBesselWronskian () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 16)) {
-                    if (BesselYInRange(n, x)) {
-                        if ((x > n) || (Math.Exp(AdvancedMath.LogGamma(n) - n * Math.Log(x)) < Math.Sqrt(Double.MaxValue))) {
-                            Assert.IsTrue(TestUtilities.IsNearlyEqual(2 / Math.PI / x, AdvancedMath.BesselJ(n + 1, x) * AdvancedMath.BesselY(n, x) - AdvancedMath.BesselJ(n, x) * AdvancedMath.BesselY(n + 1, x)), String.Format("n={0}, x={1}, J(n,x)={2}, J(n+1,x) = {3}, Y(n,x)={4}, Y(n+1,x)={5}", n, x, AdvancedMath.BesselJ(n, x), AdvancedMath.BesselJ(n + 1, x), AdvancedMath.BesselY(n, x), AdvancedMath.BesselY(n + 1, x)));
-                        }
-                    }
-                }
-            }
-        }
-
-        [TestMethod]
-        public void BesselJ0Integral () {
-            // Abromowitz & Stegun 9.1.18
-            // J_0(x) = \int_{0}^{\pi} \cos( x \sin(t) ) \, dt
-            // don't let x get too big, or the integral becomes too oscillatory to do accurately
-            Interval r = Interval.FromEndpoints(0.0, Math.PI);
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
-                Func<double, double> f = delegate(double t) {
-                    return (Math.Cos(x * Math.Sin(t)));
-                };
-                double J0 = FunctionMath.Integrate(f, r).Estimate.Value / Math.PI;
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselJ(0, x), J0));
-            }
-        }
-
-        [TestMethod]
-        public void BesselY0Integral () {
-            // Abromowitz & Stegen 9.1.19
-            Interval r = Interval.FromEndpoints(0.0, Math.PI / 2.0);
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
-                Func<double, double> f = delegate(double t) {
-                    double s = Math.Sin(t);
-                    return (Math.Cos(x * Math.Cos(t)) * (AdvancedMath.EulerGamma + Math.Log(2.0 * x * s * s)));
-                };
-                double Y0 = 4.0 / (Math.PI * Math.PI) * FunctionMath.Integrate(f, r).Estimate.Value;
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.BesselY(0, x), Y0));
-            }
-        }
-
-        [TestMethod]
-        public void IntegerBesselJIntegral () {
-            // Abromowitz & Stegun 9.1.21
-            IntegrationSettings settings = new IntegrationSettings() { AbsolutePrecision = 2.5E-15, RelativePrecision = 0.0 };
-            foreach (double x in TestUtilities.GenerateRealValues(0.1, 10.0, 8)) {
-                foreach (int n in TestUtilities.GenerateIntegerValues(1, 10, 4)) {
-                    double J = FunctionMath.Integrate(
-                        t => MoreMath.Cos(x * MoreMath.Sin(t) - n * t),
-                        0.0, Math.PI, settings
-                    ).Estimate.Value / Math.PI;
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        AdvancedMath.BesselJ(n, x), J, settings
-                    ), $"n={n}, x={x}, J={J}");
-                    // The integral can produce significant cancelation, so use an absolute criterion.
-                }
-            }
-        }
-
-        [TestMethod]
-        public void BesselKapteynIntegral () {
-            // don't pick x too big, so as not to have a problem with the inaccuracy of trig functions for large arguments
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
-                Func<double, double> f = delegate(double t) {
-                    return (Math.Cos(x - t) * AdvancedMath.BesselJ(0, t));
-                };
-                Interval r = Interval.FromEndpoints(0.0, x);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(x * AdvancedMath.BesselJ(0, x), FunctionMath.Integrate(f, r).Estimate.Value));
-            }
-        }
-
-        [TestMethod]
-        public void BesselLipshitzIntegral () {
-            // \int_{0}^{\infty} J_0(x) \, dx = \frac{1}{\sqrt{2}}
-            Func<double, double> f = delegate(double t) {
-                return (Math.Exp(-t) * AdvancedMath.BesselJ(0, t));
-            };
-            Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(FunctionMath.Integrate(f, r).Estimate.Value, 1.0 / Math.Sqrt(2.0)));
-        }
-
-        [TestMethod]
-        public void BesselWeberIntegral () {
-            Func<double, double> f = delegate(double t) {
-                return (Math.Exp(-t*t) * AdvancedMath.BesselJ(0, t) * t);
-            };
-            Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(FunctionMath.Integrate(f, r).Estimate.Value, Math.Exp(-1.0/4.0) / 2.0));
-        }
-
-        [TestMethod]
         public void IntegerBesselRealBesselAgreement () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1,100,8)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,16)) {
-                    //Console.WriteLine("n={0},x={1}", n, x);
+            foreach (int n in TestUtilities.GenerateIntegerValues(1,1000,8)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E6,16)) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         AdvancedMath.BesselJ(n, x),
                         AdvancedMath.BesselJ((double) n, x
                     )));
-                    if (!BesselYInRange(n, x)) continue; // don't try to evaluate Y if it's too big
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         AdvancedMath.BesselY(n, x),
                         AdvancedMath.BesselY((double) n, x)
@@ -186,9 +48,8 @@ namespace Test {
 
         [TestMethod]
         public void FullBesselRealBesselAgreement () {
-            foreach (double nu in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 8)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0E4, 16)) {
-                    if (!BesselYInRange(nu, x)) continue;
+            foreach (double nu in TestUtilities.GenerateRealValues(1.0E-1, 1.0E3, 8)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E6, 16)) {
                     SolutionPair s = AdvancedMath.Bessel(nu, x);
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         s.FirstSolutionValue, AdvancedMath.BesselJ(nu, x)
@@ -202,10 +63,10 @@ namespace Test {
 
         [TestMethod]
         public void FullBesselWronskian () {
-            foreach (double nu in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 8)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0E4, 16)) {
-                    if (!BesselYInRange(nu, x)) continue;
+            foreach (double nu in TestUtilities.GenerateRealValues(1.0E-2, 1.0E3, 8)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E6, 16)) {
                     SolutionPair s = AdvancedMath.Bessel(nu, x);
+                    if (Double.IsInfinity(s.SecondSolutionValue)) continue;
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         s.FirstSolutionValue * s.SecondSolutionDerivative - s.SecondSolutionValue * s.FirstSolutionDerivative,
                         2.0 / Math.PI / x
@@ -220,10 +81,9 @@ namespace Test {
             foreach (double nu in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 8)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0E4, 16)) {
                     if (!BesselYInRange(nu, x)) continue;
+
                     SolutionPair s0 = AdvancedMath.Bessel(nu, x);
                     SolutionPair s1 = AdvancedMath.Bessel(nu + 1.0, x);
-                    Console.WriteLine("nu={0} x={1} J={2} Jp1={3} J'={4}", nu, x, s0.FirstSolutionValue, s1.FirstSolutionValue, s0.FirstSolutionDerivative);
-                    Console.WriteLine("                           J'={0}", nu / x * s0.FirstSolutionValue - s1.FirstSolutionValue);
                     
                     Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
                         nu / x * s0.FirstSolutionValue, -s1.FirstSolutionValue, s0.FirstSolutionDerivative
@@ -293,8 +153,8 @@ namespace Test {
 
         [TestMethod]
         public void RealBesselRecurrence () {
-            foreach (double nu in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 16)) {
+            foreach (double nu in TestUtilities.GenerateRealValues(1.0E-2, 1.0E3, 8)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E5, 16)) {
                     Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
                         AdvancedMath.BesselJ(nu - 1.0, x), AdvancedMath.BesselJ(nu + 1.0, x),
                         2.0 * nu / x * AdvancedMath.BesselJ(nu, x)
@@ -310,7 +170,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void RealBesselInequality () {
+        public void RealBesselModulusInequality () {
             foreach (double nu in TestUtilities.GenerateRealValues(0.5, 50.0, 4)) {
                 foreach (double x in TestUtilities.GenerateRealValues(nu, 1000.0, 8)) {
                     if (!BesselYInRange(nu, x)) continue;
@@ -324,9 +184,23 @@ namespace Test {
         }
 
         [TestMethod]
+        public void BesselJBounds () {
+            // A&S 9.1.60
+            foreach (double nu in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E3, 8)) {
+                    double J = Math.Abs(AdvancedMath.BesselJ(nu, x));
+                    if (nu >= 1.0) {
+                        Assert.IsTrue(J <= 1.0 / Math.Sqrt(2.0));
+                    } else {
+                        Assert.IsTrue(J <= 1.0);
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
         public void RealBesselFresnel () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2,1.0E2,8)) {
-                Console.WriteLine("x={0}", x);
                 double csum = 0.0;
                 double ssum = 0.0;
                 int k = 0;
@@ -341,8 +215,6 @@ namespace Test {
                 }
                 double C = AdvancedMath.FresnelC(Math.Sqrt(2.0 * x / Math.PI));
                 double S = AdvancedMath.FresnelS(Math.Sqrt(2.0 * x / Math.PI));
-                Console.WriteLine("k={0}, csum={1}, C={2}", k, csum, C);
-                Console.WriteLine("k={0}, ssum={1}, S={2}", k, ssum, S);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(csum, C));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(ssum, S));
             }
@@ -388,17 +260,11 @@ namespace Test {
                     if (n > 100) throw new NonconvergenceException();
 
                 }
-                Console.WriteLine("x={0}, n={1}", x, n);
-
-                Console.WriteLine("{0} {1}", s0, 1.0);
-                Console.WriteLine("{0} {1}", s1, 1.0);
-                Console.WriteLine("{0} {1}", s2, Math.Cos(x));
-                Console.WriteLine("{0} {1}", s3, Math.Sin(x));
 
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(s0, 1.0));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(s1, 1.0));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(s2, Math.Cos(x)));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(s3, Math.Sin(x)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(s2, MoreMath.Cos(x)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(s3, MoreMath.Sin(x)));
 
             }
 
@@ -419,118 +285,6 @@ namespace Test {
             }
         }
 
-        [TestMethod]
-        public void SphericalBesselSpecialCase () {
-            Assert.IsTrue(AdvancedMath.SphericalBesselJ(0, 0.0) == 1.0);
-            Assert.IsTrue(AdvancedMath.SphericalBesselJ(1, 0.0) == 0.0);
-            Assert.IsTrue(AdvancedMath.SphericalBesselY(0, 0.0) == Double.NegativeInfinity);
-            Assert.IsTrue(AdvancedMath.SphericalBesselY(1, 0.0) == Double.NegativeInfinity);
-        }
-
-        [TestMethod]
-        public void SphericalBesselRecurrence () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1,100,5)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,15)) {
-                    Console.WriteLine("n={0} x={1}", n, x);
-                    double jm1 = AdvancedMath.SphericalBesselJ(n - 1, x);
-                    double jp1 = AdvancedMath.SphericalBesselJ(n + 1, x);
-                    double j = AdvancedMath.SphericalBesselJ(n, x);
-                    //Console.WriteLine("  {0:g16} + {1:g16} = {2:g16} ?= {3:g16}", jm1, jp1, jm1 + jp1, (2 * n + 1) * j / x);
-                    Assert.IsTrue(TestUtilities.IsSumNearlyEqual(jm1, jp1, (2*n+1)*j/x));
-                    if (BesselYInRange(n, x)) {
-                        //double ym1 = AdvancedMath.SphericalBesselY(n - 1, x);
-                        //double yp1 = AdvancedMath.SphericalBesselY(n + 1, x);
-                        //double y = AdvancedMath.SphericalBesselY(n, x);
-                        //Console.WriteLine("  {0} + {1} = {2} ?= {3}", ym1, yp1, ym1 + yp1, (2 * n + 1) * y / x);
-                        Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
-                            AdvancedMath.SphericalBesselY(n - 1, x),
-                            AdvancedMath.SphericalBesselY(n + 1, x), (2 * n + 1) / x * AdvancedMath.SphericalBesselY(n, x)
-                        ));
-                    }
-
-                }
-            }
-        }
-
-        [TestMethod]
-        public void SphericalBesselNegativeOrder () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 15)) {
-                    int s = 2 * (n % 2) - 1;
-                    Assert.IsTrue(AdvancedMath.SphericalBesselY(n, x) == s * AdvancedMath.SphericalBesselJ(-n - 1, x));
-                    Assert.IsTrue(AdvancedMath.SphericalBesselY(-n, x) == s * AdvancedMath.SphericalBesselJ(n - 1, x));
-                }
-            }
-        }
-
-        [TestMethod]
-        public void SphericalBesselWronskian () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 15)) {
-                    if (BesselYInRange(n, x)) {
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.SphericalBesselJ(n, x) * AdvancedMath.SphericalBesselY(n - 1, x) - AdvancedMath.SphericalBesselJ(n - 1, x) * AdvancedMath.SphericalBesselY(n, x), 1.0 / (x * x)));
-                    }
-                }
-            }
-        }
-
-        [TestMethod]
-        public void SphericalBesselRealBesselAgreement () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 8)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 16)) {
-                    Console.WriteLine("n={0} x={1}", n, x);
-                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        AdvancedMath.SphericalBesselJ(n, x),
-                        Math.Sqrt(Math.PI / 2.0 / x) * AdvancedMath.BesselJ(n + 0.5, x)
-                    ));
-                    if (BesselYInRange(n, x)) {
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                            AdvancedMath.SphericalBesselY(n, x),
-                            Math.Sqrt(Math.PI / 2.0 / x) * AdvancedMath.BesselY(n + 0.5, x)
-                         ));
-                    }
-                }
-            }
-        }
-
-        [TestMethod]
-        public void SphericalBesselTower () {
-
-            // x shouldn't be too big or we will need too many terms before the series converges
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
-
-                double s1 = 0.0;
-                double s2 = 0.0;
-                double s3 = 0.0;
-
-                int n = 0;
-                while (true) {
-
-                    double j = AdvancedMath.SphericalBesselJ(n, x);
-                    double ds1 = j * j;
-                    double ds2 = (2 * n + 1) * ds1;
-                    double ds3 = (1 - 2 * (n%2)) * ds2;
-
-                    s1 += ds1;
-                    s2 += ds2;
-                    s3 += ds3;
-
-                    if ((s1 + ds1 == s1) && (s2 + ds2 == s2) && (s3 + ds3 == s3)) break;
-
-                    n++;
-                    if (n > 100) throw new NonconvergenceException();
-
-                }
-
-                double x2 = 2 * x;
-
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(s1, AdvancedMath.IntegralSi(x2)/x2));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(s2, 1.0));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(s3, Math.Sin(x2)/x2));
-
-            }
-
-        }
 
         // Gamma functions
 
@@ -1395,87 +1149,7 @@ namespace Test {
 
         }
 
-        [TestMethod]
-        public void AiryIntegral () {
-
-            Func<double, double> f = delegate(double t) {
-                return (AdvancedMath.AiryAi(t));
-            };
-            Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
-            double I = FunctionMath.Integrate(f, r);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(I, 1.0 / 3.0));
-
-        }
-
-        [TestMethod]
-        public void AiryZeroArgument () {
-
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                AdvancedMath.AiryAi(0.0), 1.0 / Math.Pow(3.0, 2.0 / 3.0) / AdvancedMath.Gamma(2.0 / 3.0)
-            ));
-
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                AdvancedMath.AiryBi(0.0), 1.0 / Math.Pow(3.0, 1.0 / 6.0) / AdvancedMath.Gamma(2.0 / 3.0)
-            ));
-        }
-
-        [TestMethod]
-        public void AiryIntegrals () {
-            
-            //double I3 = FunctionMath.Integrate(t => MoreMath.Pow(AdvancedMath.AiryAi(t), 3), Interval.FromEndpoints(Double.NegativeInfinity, Double.PositiveInfinity));
-            //Assert.IsTrue(TestUtilities.IsNearlyEqual(I3, MoreMath.Pow(AdvancedMath.Gamma(1.0 / 3.0) / Math.PI, 2) / 4.0));
-
-            double I4 = FunctionMath.Integrate(t => MoreMath.Pow(AdvancedMath.AiryAi(t), 4), Interval.FromEndpoints(0.0, Double.PositiveInfinity));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(I4, Math.Log(3.0) / (24.0 * Math.PI * Math.PI)));
-            
-        }
-
-        [TestMethod]
-        public void AiryBairyIntegral () {
-
-            // for small x: the integral will not converse for x <~ 5 because of the 1/sqrt(t) divergence near 0
-            // for large x: Bi explodes exponentially
-            // but in between, it is a decent test of Ai and Bi together
-            foreach (double x in TestUtilities.GenerateRealValues(5.0, 50.0, 8)) {
-
-                double I = FunctionMath.Integrate(
-                    t => { return (Math.Exp(x * t - t * t * t / 12.0) / Math.Sqrt(t)); },
-                    Interval.FromEndpoints(0.0, Double.PositiveInfinity)
-                );
-
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    MoreMath.Pow(AdvancedMath.AiryAi(x), 2) + MoreMath.Pow(AdvancedMath.AiryBi(x), 2), I / Math.Pow(Math.PI, 3.0 / 2.0)
-                ));
-
-            }
-
-        }
-
-        [TestMethod]
-        public void AiryWronskian () {
-
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
-
-                SolutionPair p = AdvancedMath.Airy(x);
-                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(p.FirstSolutionValue * p.SecondSolutionDerivative,  - p.SecondSolutionValue * p.FirstSolutionDerivative, 1.0 / Math.PI));
-
-                SolutionPair q = AdvancedMath.Airy(-x);
-                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(q.FirstSolutionValue * q.SecondSolutionDerivative, - q.SecondSolutionValue * q.FirstSolutionDerivative, 1.0 / Math.PI));
-
-            }
-
-        }
-
-        [TestMethod]
-        public void AiryAgreement () {
-
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 4)) {
-                SolutionPair s = AdvancedMath.Airy(-x);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(s.FirstSolutionValue, AdvancedMath.AiryAi(-x)));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(s.SecondSolutionValue, AdvancedMath.AiryBi(-x)));
-            }
-
-        }
+ 
 
         [TestMethod]
         public void GoldenRatioTest () {

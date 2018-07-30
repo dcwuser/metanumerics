@@ -39,7 +39,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         private readonly double mu;
         private readonly double gamma;
 
-        private readonly IDeviateGenerator cauchyRng;
+        private readonly IDeviateGenerator<double> cauchyRng;
 
         /// <summary>
         /// Gets the full width at half maximum (FWHM) of the Cauchy distribution.

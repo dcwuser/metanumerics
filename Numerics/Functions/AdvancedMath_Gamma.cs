@@ -247,16 +247,38 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        // This function computes x^{\nu} / \Gamma(\nu + 1), which can easily become Infinity/Infinity=NaN for large \nu if computed naively.
+        // This function computes x^n / n! or x^{\nu} / \Gamma(\nu + 1), which can easily become
+        // Infinity/Infinity=NaN for large n if computed naively.
 
-        internal static double PowOverGammaPlusOne (double x, double nu) {
-            if (nu < 16.0) {
-                return (Math.Pow(x, nu) / AdvancedMath.Gamma(nu + 1.0));
+        internal static double PowerOverFactorial (double x, int n) {
+            if (n <= 16) {
+                // For maximum range, we should evaluate this using Lanczos, but
+                // since we know we don't call it for x large enough for x^n to overflow,
+                // this is safer and faster.
+                return (MoreMath.Pow(x, n) / AdvancedIntegerMath.Factorial(n));
             } else {
-                return(Stirling.PowOverGammaPlusOne(x, nu));
+                return (Stirling.PowerFactor(x, n));
             }
         }
 
+        internal static double PowerOverFactorial (double x, double nu) {
+            if (nu < 16.0) {
+                return (Math.Pow(x, nu) / AdvancedMath.Gamma(nu + 1.0));
+            } else {
+                return(Stirling.PowerFactor(x, nu));
+            }
+        }
+
+        // x^n / (2n + 1)!!
+
+        internal static double PowerOverDoubleFactorial (double x, int n) {
+            if (n <= 16) {
+                return(MoreMath.Pow(x, n) / AdvancedIntegerMath.DoubleFactorial(2 * n + 1));
+            } else {
+                // Would be good to create a dedicated method for this to avoid \sqrt{\pi} cancelation
+                return(Math.Sqrt(Math.PI / 2.0 / x) * PowerOverFactorial(0.5 * x, n + 0.5));
+            }
+        }
 
         /// <summary>
         /// Computes the Pochammer symbol (x)<sub>y</sub>.

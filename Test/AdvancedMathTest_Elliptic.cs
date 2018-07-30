@@ -7,10 +7,38 @@ using Meta.Numerics;
 using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
 
+using Meta.Numerics.Extended;
+using Meta.Numerics.Statistics;
+
 namespace Test {
 
     [TestClass]
     public class AdvancedMathTest_Elliptic {
+
+        [TestMethod]
+        public void AccuracyTest () {
+
+            SummaryStatistics s1 = new SummaryStatistics();
+            SummaryStatistics s2 = new SummaryStatistics();
+
+            foreach (double omx in TestUtilities.GenerateRealValues(1.0E-24, 1.0, 1000000)) {
+                double x = 1.0 - omx;
+
+                double f1 = Math.Sqrt((1.0 - x) * (1.0 + x));
+                double f2 = Math.Sqrt(1.0 - x * x);
+
+                DoubleDouble xe = (DoubleDouble) x;
+                DoubleDouble fc = DoubleDouble.Sqrt(DoubleDouble.One - xe * xe);
+
+                double e1 = Math.Abs((double) (f1 - fc));
+                double e2 = Math.Abs((double) (f2 - fc));
+
+                s1.Add(e1);
+                s2.Add(e2);
+
+            }
+
+        }
 
         [TestMethod]
         public void EllipticKSpecialCases () {
@@ -19,6 +47,13 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticK(1.0 / Math.Sqrt(2.0)), Math.Pow(AdvancedMath.Gamma(1.0 / 4.0), 2.0) / Math.Sqrt(Math.PI) / 4.0));
             Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.EllipticK(1.0)));
 
+        }
+
+        [TestMethod]
+        public void EllipticKExtremeValues () {
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticK(Double.Epsilon), Math.PI / 2.0));
+            Assert.IsTrue(AdvancedMath.EllipticK(1.0 - 2.0E-16) < Double.PositiveInfinity);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.EllipticK(Double.NaN)));
         }
 
         [TestMethod]
@@ -170,8 +205,14 @@ namespace Test {
         }
 
         [TestMethod]
+        public void EllipticEExtremeValues () {
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticE(Double.Epsilon), Math.PI / 2.0));
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.EllipticE(Double.NaN)));
+        }
+
+        [TestMethod]
         public void EllipticLegendreRelation () {
-            foreach (double k in TestUtilities.GenerateRealValues(0.01, 1.0, 8)) {
+            foreach (double k in TestUtilities.GenerateRealValues(1.0E-4, 1.0, 8)) {
                 double kp = Math.Sqrt(1.0 - k * k);
                 double E = AdvancedMath.EllipticE(k);
                 double EP = AdvancedMath.EllipticE(kp);

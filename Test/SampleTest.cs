@@ -116,32 +116,19 @@ namespace Test {
         public void SampleMoments () {
             foreach (ContinuousDistribution distribution in distributions) {
 
-                Console.WriteLine(distribution.GetType().Name);
-                
-                Sample sample = CreateSample(distribution, 128);
+                int n = 256;
+                Random rng = new Random(1);
+                List<double> sample = new List<double>(distribution.GetRandomValues(rng, n));
 
-                Assert.IsTrue(sample.Count == 128);
+                Assert.IsTrue(sample.Count == n);
 
-                UncertainValue m = sample.PopulationMean;
-                Interval mi = m.ConfidenceInterval(0.95);
-                Console.WriteLine("mean {0} {1}", mi, distribution.Mean);
-                Assert.IsTrue(mi.ClosedContains(distribution.Mean));
+                Assert.IsTrue(sample.PopulationMean().ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
 
-                UncertainValue s = sample.PopulationStandardDeviation;
-                Interval si = s.ConfidenceInterval(0.95);
-                Console.WriteLine("stddev {0} {1}", si, distribution.StandardDeviation);
-                Assert.IsTrue(si.ClosedContains(distribution.StandardDeviation));
+                Assert.IsTrue(sample.PopulationStandardDeviation().ConfidenceInterval(0.95).ClosedContains(distribution.StandardDeviation));
 
-                for (int n = 0; n < 8; n++) {
-                    UncertainValue c = sample.PopulationCentralMoment(n);
-                    Interval ci = c.ConfidenceInterval(0.95);
-                    Console.WriteLine("C{0} {1} {2}", n, ci, distribution.CentralMoment(n));
-                    Assert.IsTrue(ci.ClosedContains(distribution.CentralMoment(n)));
-
-                    UncertainValue r = sample.PopulationRawMoment(n);
-                    Interval ri = r.ConfidenceInterval(0.95);
-                    Console.WriteLine("M{0} {1} {2}", n, ri, distribution.RawMoment(n));
-                    Assert.IsTrue(ri.ClosedContains(distribution.RawMoment(n)));
+                for (int r = 0; r < 8; r++) {
+                    Assert.IsTrue(sample.PopulationCentralMoment(r).ConfidenceInterval(0.95).ClosedContains(distribution.CentralMoment(r)));
+                    Assert.IsTrue(sample.PopulationRawMoment(r).ConfidenceInterval(0.95).ClosedContains(distribution.RawMoment(r)));
                 }
             }
 

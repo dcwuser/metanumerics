@@ -57,6 +57,24 @@ namespace Meta.Numerics {
         }
 
         /// <summary>
+        /// Determines whether the argument lies in the interval closed to the left.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>True if <paramref name="x"/> lies in [a,b), otherwise False.</returns>
+        public bool LeftClosedContains (double x) {
+            return ((x >= a) && (x < b));
+        }        
+
+        /// <summary>
+        /// Determines whether the argument lies in the interval closed to the right.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>True if <paramref name="x"/> lies in (a,b], otherwise False.</returns>
+        public bool RightClosedContains (double x) {
+            return ((x > a) && (x <= b));
+        }
+        
+        /// <summary>
         /// Gets the width of the interval.
         /// </summary>
         public double Width {

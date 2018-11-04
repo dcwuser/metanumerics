@@ -225,7 +225,7 @@ namespace Meta.Numerics.Statistics {
     /// of descriptive statistics of the underlying population distribution, and statistical
     /// tests to compare the sample distribution to other sample distributions or theoretical models.</para>
     /// </remarks>
-    public class Sample : ICollection<double>, IReadOnlyCollection<double>, IEnumerable<double>, IEnumerable,
+    public sealed class Sample : ICollection<double>, IReadOnlyCollection<double>, IEnumerable<double>, IEnumerable,
         INamed {
 
         internal SampleStorage data;
@@ -1068,7 +1068,7 @@ namespace Meta.Numerics.Statistics {
         public TestResult ShapiroFranciaTest () {
             return (Univariate.ShapiroFranciaTest(data));
         }
-
+        
     }
 
 }

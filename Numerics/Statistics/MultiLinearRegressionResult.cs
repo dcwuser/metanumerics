@@ -65,6 +65,7 @@ namespace Meta.Numerics.Statistics {
                 SSF += MoreMath.Sqr(yHat[i] - ym);
             }
             sigma2 = SSR / (n - m);
+            sigma = Math.Sqrt(sigma2);
 
             // Scale up C by \sigma^2
             // (It sure would be great to be able to overload *=.)
@@ -84,7 +85,6 @@ namespace Meta.Numerics.Statistics {
         private readonly SymmetricMatrix C;
         private readonly double SST, SSF, SSR;
         private readonly double sigma2;
-        private readonly List<double> residuals;
         private readonly int interceptIndex;
 
         /// <inheritdoc/>
@@ -152,16 +152,6 @@ namespace Meta.Numerics.Statistics {
 
             return (new UncertainValue(y, dy));
 
-        }
-
-        /// <summary>
-        /// Gets the residuals 
-        /// </summary>
-        /// <value>A list of the differences between each measured and predicted value.</value>
-        public IReadOnlyList<double> Residuals {
-            get {
-                return (residuals);
-            }
         }
 
         internal override OneWayAnovaResult CreateAnova () {

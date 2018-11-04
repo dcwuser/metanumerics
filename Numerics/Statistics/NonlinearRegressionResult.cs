@@ -11,7 +11,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Describes the result of a fit to a non-linear function.
     /// </summary>
-    public sealed class NonlinearRegressionResult : FitResult {
+    public sealed class NonlinearRegressionResult : RegressionResult {
 
         internal NonlinearRegressionResult(
             IReadOnlyList<double> x, IReadOnlyList<double> y,
@@ -61,16 +61,6 @@ namespace Meta.Numerics.Statistics {
         private readonly ColumnVector b;
         private readonly SymmetricMatrix C;
         private readonly Func<IReadOnlyList<double>, double, double> function;
-        private readonly List<double> residuals;
-
-        /// <summary>
-        /// Gets the residuals from the fit.
-        /// </summary>
-        public IReadOnlyList<double> Residuals {
-            get {
-                return (residuals);
-            }
-        }
 
         /// <summary>
         /// Predicts the value for a new x based on the fitted model.

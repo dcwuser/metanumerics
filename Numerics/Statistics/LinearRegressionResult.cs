@@ -33,8 +33,9 @@ namespace Meta.Numerics.Statistics {
             SST = yySum;
 
             xVariance = xxSum / n;
-            sigmaSquared = SSR / (n - 2);
-            cbb = sigmaSquared / xVariance / n;
+            sigma2 = SSR / (n - 2);
+            sigma = Math.Sqrt(sigma2);
+            cbb = sigma2 / xVariance / n;
             cab = -xMean * cbb;
             caa = (xVariance + xMean * xMean) * cbb;
 
@@ -47,17 +48,10 @@ namespace Meta.Numerics.Statistics {
         }
 
         private readonly int n;
-
         private readonly double a, b;
-
         private readonly double cbb, cab, caa;
-
         private readonly double SST, SSF, SSR;
-
-        private readonly double xMean, xVariance, sigmaSquared;
-
-        private readonly List<double> residuals;
-
+        private readonly double xMean, xVariance, sigma2;
         private readonly Lazy<TestResult> rTest;
 
         /// <summary>
@@ -85,18 +79,8 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The predicted value of Y and its associated uncertainty.</returns>
         public UncertainValue Predict (double x) {
             double y = a + b * x;
-            double yVariance = sigmaSquared * (1.0 + (MoreMath.Sqr(x - xMean) / xVariance + 1.0) / n);
+            double yVariance = sigma2 * (1.0 + (MoreMath.Sqr(x - xMean) / xVariance + 1.0) / n);
             return (new UncertainValue(y, Math.Sqrt(yVariance)));
-        }
-
-        /// <summary>
-        /// Gets the residuals.
-        /// </summary>
-        /// <value>A list of the difference between the actual and predicted value for each point.</value>
-        public IReadOnlyList<double> Residuals {
-            get {
-                return (residuals);
-            }
         }
 
         /// <summary>

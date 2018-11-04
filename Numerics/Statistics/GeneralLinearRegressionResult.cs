@@ -21,7 +21,7 @@ namespace Meta.Numerics.Statistics {
         public abstract UncertainValue Intercept { get; }
 
         /// <summary>
-        /// Gets r<sup>2</sup> for the regression. 
+        /// Gets r<sup>2</sup> for the regression.
         /// </summary>
         public virtual double RSquared {
             get {

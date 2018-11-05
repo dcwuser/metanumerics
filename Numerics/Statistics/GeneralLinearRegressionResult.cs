@@ -7,7 +7,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Describes the result of any generalized linear regression.
     /// </summary>
-    public abstract class GeneralLinearRegressionResult : FitResult {
+    public abstract class GeneralLinearRegressionResult : RegressionResult {
 
         internal GeneralLinearRegressionResult () : base() {
             this.anova = new Lazy<OneWayAnovaResult>(CreateAnova);

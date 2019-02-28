@@ -58,7 +58,7 @@ namespace Meta.Numerics.Statistics {
                 return (Interval.FromEndpoints(borders[borders.Length - 1], Double.PositiveInfinity));
             }
         }
-
+        
         public Interval Range {
             get {
                 return (Interval.FromEndpoints(borders[0], borders[borders.Length - 1]));
@@ -68,6 +68,16 @@ namespace Meta.Numerics.Statistics {
         public void Increment (int index) {
             counts[index]++;
             total++;
+        }
+
+        /// <summary>
+        /// Increments a bin of a histogram by the specified amount.
+        /// </summary>
+        /// <param name="index">The index of a bin.</param>
+        /// <param name="weight">Amount to increase a bin to.</param>
+        public void Increment(int index, int weight) {
+            counts[index] += weight;
+            total += weight;
         }
 
         public void Decriment (int index) {
@@ -172,6 +182,15 @@ namespace Meta.Numerics.Statistics {
         /// <param name="value">The value to add.</param>
         public void Add (double value) {
             storage.Increment(storage.FindIndex(value));
+        }
+
+        /// <summary>
+        /// Increments a histogram bin corredponding to value by the specified amount.
+        /// </summary>
+        /// <param name="value">Value to determine a bin to increment</param>
+        /// <param name="weight">Amount to increase a bin to.</param>
+        public void Add(double value, int weight) {
+            storage.Increment(storage.FindIndex(value), weight);
         }
 
         /// <summary>

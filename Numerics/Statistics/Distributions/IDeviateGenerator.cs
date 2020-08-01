@@ -3,23 +3,23 @@ using System.Diagnostics;
 
 namespace Meta.Numerics.Statistics.Distributions {
 
-    internal interface IDeviateGenerator {
+    internal interface IDeviateGenerator<T> {
 
-        double GetNext (Random rng);
+        T GetNext (Random rng);
 
     }
 
     internal static class DeviateGeneratorFactory {
 
-        public static IDeviateGenerator GetNormalGenerator () {
+        public static IDeviateGenerator<double> GetNormalGenerator () {
             return(new BoxMullerRejectionNormalDeviateGenerator());
         }
 
-        public static IDeviateGenerator GetCauchyGenerator () {
+        public static IDeviateGenerator<double> GetCauchyGenerator () {
             return(new CauchyGenerator());
         }
 
-        public static IDeviateGenerator GetGammaGenerator (double alpha) {
+        public static IDeviateGenerator<double> GetGammaGenerator (double alpha) {
             // choose a gamma generator depending on whether the shape parameter is less than one or greater than one
             if (alpha <= 1.0) {
                 return(new AhrensDieterLowAlphaGammaGenerator(alpha));
@@ -28,7 +28,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
-        public static IDeviateGenerator GetBetaGenerator (double alpha, double beta) {
+        public static IDeviateGenerator<double> GetBetaGenerator (double alpha, double beta) {
             return (new BetaFromGammaGenerator(GetGammaGenerator(alpha), GetGammaGenerator(beta)));
         }
 
@@ -48,9 +48,9 @@ namespace Meta.Numerics.Statistics.Distributions {
     // the Zigurraut algorithm.
 
     // One problem with Box-Muller is that the saving of the next value makes it stateful and therefore not thread-safe (at least not without adding
-    // locking logic that would slow it down considerable). On the other hand the Random class itself isn't thread-safe, so this seems pretty minor.
+    // locking logic that would slow it down considerably). On the other hand the Random class itself isn't thread-safe, so this seems pretty minor.
 
-    internal class BoxMullerRejectionNormalDeviateGenerator : IDeviateGenerator {
+    internal class BoxMullerRejectionNormalDeviateGenerator : IDeviateGenerator<double> {
 
         private bool haveNextDeviate = false;
         private double nextDeviate;
@@ -198,7 +198,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     // This Cauchy generator uses the same basic idea as Box-Muller with rejection. It is suggested in Numerical Recipies.
     // Our timing indicates that it is about 25% faster than simply evaluating the inverse tangent function of the inverse CDF.
 
-    internal class CauchyGenerator : IDeviateGenerator {
+    internal class CauchyGenerator : IDeviateGenerator<double> {
 
         public double GetNext (Random rng) {
 
@@ -221,7 +221,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     // The Ahrens-Dieter generator for \alpha < 1 is very well described by Best
     // Best also describes two improvements
 
-    internal class AhrensDieterLowAlphaGammaGenerator : IDeviateGenerator {
+    internal class AhrensDieterLowAlphaGammaGenerator : IDeviateGenerator<double> {
 
         public AhrensDieterLowAlphaGammaGenerator (double alpha) {
             Debug.Assert(alpha <= 1.0);
@@ -253,9 +253,9 @@ namespace Meta.Numerics.Statistics.Distributions {
 
     }
 
-    internal class MarsagliaTsangGammaGenerator : IDeviateGenerator {
+    internal class MarsagliaTsangGammaGenerator : IDeviateGenerator<double> {
 
-        public MarsagliaTsangGammaGenerator (IDeviateGenerator normalGenerator, double alpha) {
+        public MarsagliaTsangGammaGenerator (IDeviateGenerator<double> normalGenerator, double alpha) {
             Debug.Assert(alpha >= 1.0);
             this.normalGenerator = normalGenerator;
             a = alpha;
@@ -263,9 +263,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             a2 = 1.0 / Math.Sqrt(9.0 * a1);
         }
 
-        IDeviateGenerator normalGenerator;
+        private readonly IDeviateGenerator<double> normalGenerator;
 
-        double a, a1, a2;
+        private readonly double a, a1, a2;
 
         public double GetNext (Random rng) {
 
@@ -282,7 +282,8 @@ namespace Meta.Numerics.Statistics.Distributions {
 
                 // check whether the point is outside the acceptance region
                 // first via a simple interrior squeeze
-                double z2 = z * z; double z4 = z2 * z2;
+                double z2 = z * z;
+                double z4 = z2 * z2;
                 if (u > 1.0 - 0.331 * z4) {
                     // then, if necessary, via the exact rejection boundary
                     if (Math.Log(u) > z2 / 2.0 + a1 * (1.0 - v + Math.Log(v))) continue;
@@ -295,16 +296,16 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
     }
 
-    internal class BetaFromGammaGenerator : IDeviateGenerator {
+    internal class BetaFromGammaGenerator : IDeviateGenerator<double> {
 
-        public BetaFromGammaGenerator (IDeviateGenerator alphaGenerator, IDeviateGenerator betaGenerator) {
+        public BetaFromGammaGenerator (IDeviateGenerator<double> alphaGenerator, IDeviateGenerator<double> betaGenerator) {
             Debug.Assert(alphaGenerator != null);
             Debug.Assert(betaGenerator != null);
             this.alphaGenerator = alphaGenerator;
             this.betaGenerator = betaGenerator;
         }
 
-        private readonly IDeviateGenerator alphaGenerator, betaGenerator;
+        private readonly IDeviateGenerator<double> alphaGenerator, betaGenerator;
 
         public double GetNext (Random rng) {
             double x = alphaGenerator.GetNext(rng);

@@ -155,12 +155,35 @@ namespace Meta.Numerics.Matrices {
         /// <param name="alpha">The complex constant.</param>
         /// <param name="v">The complex column vector.</param>
         /// <returns>The product &#x3B1;v.</returns>
-        public static ComplexColumnVector operator * (Complex alpha, ComplexColumnVector v)
-        {
+        /// <exception cref="ArgumentNullException"><paramref name="v"/> is null.</exception>
+        public static ComplexColumnVector operator * (Complex alpha, ComplexColumnVector v) {
             if (v == null) throw new ArgumentNullException(nameof(v));
             Complex[] product = new Complex[v.dimension];
             Blas1.zAxpy(alpha, v.store, v.offset, 1, product, 0, 1, v.dimension);
             return (new ComplexColumnVector(product, 0, v.dimension, false));
+        }
+
+        /// <summary>
+        /// Multiplies a real matrix by a complex column vector.
+        /// </summary>
+        /// <param name="A">The real matrix.</param>
+        /// <param name="v">The complex column vector.</param>
+        /// <returns>The product Av.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="A"/> or <paramref name="v"/> is null.</exception>
+        /// <exception cref="DimensionMismatchException">The column count of <paramref name="A"/> does not equal the dimension of <paramref name="v"/>.</exception>
+        public static ComplexColumnVector operator * (AnyRectangularMatrix A, ComplexColumnVector v) {
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            if (v == null) throw new ArgumentNullException(nameof(v));
+            if (A.ColumnCount != v.Dimension) throw new DimensionMismatchException();
+            Complex[] product = new Complex[A.RowCount];
+            for (int i = 0; i < A.RowCount; i++) {
+                Complex s = 0.0;
+                for (int j = 0; j < A.ColumnCount; j++) {
+                    s += A[i, j] * v.store[j];
+                }
+                product[i] = s;
+            }
+            return (new ComplexColumnVector(product, 0, product.Length, false));
         }
 
     }

@@ -202,25 +202,6 @@ namespace Meta.Numerics.Matrices {
 
         }
 
-        public static void SolveUpperRightTriangular (double[] tStore, int tRows, int tCols, double[] xStore, int xOffset) {
-            Debug.Assert(tRows >= tCols);
-            // pre-calculate some useful quantities
-            int trp1 = tRows + 1;
-            int tcm1 = tCols - 1;
-            // initialize the x index (to its highest value) the the diagonal t index (to its highest value)
-            int xIndex = xOffset + tcm1;
-            int tIndex = trp1 * tcm1;
-            // do the first, trivial back-substitution
-            xStore[xIndex] /= tStore[tIndex];
-            // do the remaining back-substitutions, each of which requires subtracting n previously computed x-values
-            for (int n = 1; n <= tcm1; n++) {
-                xIndex -= 1;
-                tIndex -= trp1;
-                double t = Blas1.dDot(tStore, tIndex + tRows, tRows, xStore, xIndex + 1, 1, n);
-                xStore[xIndex] = (xStore[xIndex] - t) / tStore[tIndex];
-            }
-        }
-
         // more complicated operations: also O(N^3)
 
         // QR decomposition write A = Q R, where Q is orthogonal (Q^T = Q^{-1}) and R is upper-right triangular.
@@ -263,9 +244,7 @@ namespace Meta.Numerics.Matrices {
 
                 // we are done with the Householder vector now, so we can zero the first column
                 store[offset] = a;
-                for (int i = 1; i < length; i++) {
-                    store[offset + i] = 0.0;
-                }
+                VectorAlgorithms.Zero(store, offset + 1, 1, length - 1);
 
             }
 

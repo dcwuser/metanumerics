@@ -10,6 +10,7 @@ namespace Meta.Numerics.Functions {
     /// </summary>
 	public static partial class AdvancedIntegerMath {
 
+        // 20! is the largest factorial that fits in a long.
 		private static readonly long[]  factorialTable = CreateFactorialTable(20);
 
 		private static long[] CreateFactorialTable (int n) {
@@ -308,7 +309,7 @@ namespace Meta.Numerics.Functions {
 
             // Otherwise, use the relationship with the Riemann zeta function to get the Bernoulli number.
             // Since this is only done for large n, it would probably be faster to just sum the zeta series explicitly here.
-            double B = 2.0 * AdvancedMath.RiemannZeta(n) / AdvancedMath.PowOverGammaPlusOne(Global.TwoPI, n);
+            double B = 2.0 * AdvancedMath.RiemannZeta(n) / AdvancedMath.PowerOverFactorial(Global.TwoPI, n);
             if (m % 2 == 0) B = -B;
             return (B);
 

@@ -20,9 +20,12 @@ namespace Meta.Numerics.Statistics.Distributions {
             if ((p <= 0.0) || (p >= 1.0)) throw new ArgumentOutOfRangeException(nameof(p));
             this.p = p;
             this.q = 1.0 - p;
+            this.lnq = MoreMath.LogOnePlus(-p);
         }
 
         private readonly double p, q;
+
+        private readonly double lnq;
 
 
         /// <inheritdoc />
@@ -62,21 +65,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override int InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
-            if (P < p) {
-                return (0);
-            } else {
-                double Q = 1.0 - P;
-                if (Q == 0.0) {
-                    return (Int32.MaxValue);
-                } else {
-                    double kd = Math.Log(Q) / Math.Log(q) - 1.0;
-                    if (kd > Int32.MaxValue) {
-                        return (Int32.MaxValue);
-                    } else {
-                        return ((int)Math.Ceiling(kd));
-                    }
-                }
-            }
+            return ((int) Math.Min(Math.Floor(MoreMath.LogOnePlus(-P) / lnq), Int32.MaxValue));
         }
 
         /// <inheritdoc />
@@ -179,6 +168,14 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         }
 
+        /// <summary>
+        /// <inheritdoc />
+        /// </summary>
+        public override int GetRandomValue (Random rng) {
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
+            double u = rng.NextDouble();
+            return ((int) Math.Min(Math.Floor(Math.Log(u) / lnq), Int32.MaxValue));
+        }
 
     }
 

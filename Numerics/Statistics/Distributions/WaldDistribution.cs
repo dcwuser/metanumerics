@@ -37,7 +37,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         private readonly double mu;
         private readonly double lambda;
-        private readonly IDeviateGenerator rngGenerator = new BoxMullerRejectionNormalDeviateGenerator();
+        private readonly IDeviateGenerator<double> rngGenerator = new BoxMullerRejectionNormalDeviateGenerator();
 
         /// <summary>
         /// Gets the shape parameter of the distribution.

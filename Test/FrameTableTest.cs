@@ -3,10 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 
-using TestClassAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
-using TestMethodAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
-using ExpectedExceptionAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.ExpectedExceptionAttribute;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
@@ -141,12 +138,12 @@ namespace Test {
             SummaryStatistics maleSummary = new SummaryStatistics(males["Height"].As<double>());
             SummaryStatistics femaleSummary = new SummaryStatistics(females["Height"].As<double>());
 
-            TestResult allNormal = view["Height"].As<double>().ShapiroFranciaTest();
-            TestResult maleNormal = males["Height"].As<double>().ShapiroFranciaTest();
-            TestResult femaleNormal = females["Height"].As<double>().ShapiroFranciaTest();
+            Meta.Numerics.Statistics.TestResult allNormal = view["Height"].As<double>().ShapiroFranciaTest();
+            Meta.Numerics.Statistics.TestResult maleNormal = males["Height"].As<double>().ShapiroFranciaTest();
+            Meta.Numerics.Statistics.TestResult femaleNormal = females["Height"].As<double>().ShapiroFranciaTest();
 
-            TestResult tTest = Univariate.StudentTTest(males["Height"].As<double>(), females["Height"].As<double>());
-            TestResult mwTest = Univariate.MannWhitneyTest(males["Height"].As<double>(), females["Height"].As<double>());
+            Meta.Numerics.Statistics.TestResult tTest = Univariate.StudentTTest(males["Height"].As<double>(), females["Height"].As<double>());
+            Meta.Numerics.Statistics.TestResult mwTest = Univariate.MannWhitneyTest(males["Height"].As<double>(), females["Height"].As<double>());
 
             LinearRegressionResult result0 = males["Weight"].As<double>().LinearRegression(males["Height"].As<double>());
             PolynomialRegressionResult result1 = males["Height"].As<double>().PolynomialRegression(males["Weight"].As<double>(), 1);
@@ -157,6 +154,7 @@ namespace Test {
 
         }
 
+        [Ignore]
         [TestMethod]
         public void InternetTimeSeriesDownload () {
 
@@ -164,7 +162,7 @@ namespace Test {
 
             double[] powerSpectrum = table["Arctic"].As<double>().PowerSpectrum();
             double v12 = table["Arctic"].As<double>().Autocovariance(12);
-            TestResult lbTest = table["Arctic"].As<double>().LjungBoxTest();
+            Meta.Numerics.Statistics.TestResult lbTest = table["Arctic"].As<double>().LjungBoxTest();
         }
 
         public FrameTable DownloadFrameTable (Uri url) {

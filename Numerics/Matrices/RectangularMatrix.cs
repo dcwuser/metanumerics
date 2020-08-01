@@ -273,7 +273,8 @@ namespace Meta.Numerics.Matrices {
         /// <para>Only matrices with a number of rows greater than or equal to the number of columns can be QR decomposed. If your
         /// matrix has more columns than rows, you can QR decompose its transpose.</para>
         /// </remarks>
-        /// <seealso cref="QRDecomposition"/>
+        /// <exception cref="InvalidOperationException">The matrix has fewer columns that rows.</exception>
+        /// <seealso cref="Matrices.QRDecomposition"/>
         public QRDecomposition QRDecomposition () {
 
             if (rows < cols) throw new InvalidOperationException();

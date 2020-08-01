@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 using Meta.Numerics.Functions;
 
@@ -17,9 +18,19 @@ namespace Meta.Numerics.Statistics.Distributions {
         public PoissonDistribution (double mu) {
             if (mu <= 0.0) throw new ArgumentOutOfRangeException(nameof(mu));
             this.mu = mu;
+
+            if (mu < 4.0) {
+                poissonGenerator = new PoissonGeneratorAdditive(mu);
+            } else if (mu < 16.0) {
+                poissonGenerator = new PoissonGeneratorTabulated(mu);
+            } else {
+                poissonGenerator = new PoissonGeneratorPTRS(mu);
+            }
         }
 
         private readonly double mu;
+
+        private readonly IDeviateGenerator<int> poissonGenerator;
 
         /// <inheritdoc />
         public override double ProbabilityMass (int k) {
@@ -285,6 +296,113 @@ namespace Meta.Numerics.Statistics.Distributions {
             }
         }
 
+        // There is a long and rich history of algorithms for Poisson deviate generation.
+        // See Hoermann https://pdfs.semanticscholar.org/00f1/8468dd53e4e3f0c28a5d504f8cd10376a673.pdf for a summary.
+
+        // The simplest generation method besides inversion is to make use the definition of a poisson process and
+        // count the number of random numbers needed before their product is less than e^{-\lambda} (or their sum
+        // exceeds \lambda). This is fast for very low \lambda (less than ~3), but time (and number of uniform
+        // deviates consumed) clearly scales linearly with \lambda, so it rapidly becomes untentable for larger \lambda.
+
+        // Ahrens and Dieter, "Computer generation of Poisson deviates from modified normal distributions",
+        // ACM Transactions on Mathematical Software 8 (1982) 163-179 presented the first O(1) generator, PD.
+        // The code is complicated and requires normal deviates as inputs.
+
+        // We use Hermann's PTRS generator.
+
+        // NR contains a ratio-of-uniforms variant with no citation and a squeeze I don't recognize. It isn't
+        // as fast as PTRS, though.
+
+        // For intermediate value of \lambda (say ~3 to ~30), the fastest method is actually an optimized
+        // form of simple inversion: binary search, starting from the median, using a pre-computed table
+        // of CDF values that covers most of the space.
+
+        public override int GetRandomValue (Random rng) {
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
+            return (poissonGenerator.GetNext(rng));
+        }
+
+    }
+
+     internal class PoissonGeneratorAdditive : IDeviateGenerator<int> {
+
+        public PoissonGeneratorAdditive (double lambda) {
+            this.lambda = lambda;
+        }
+
+        private readonly double lambda;
+
+        public int GetNext (Random rng) {
+            int k = 0;
+            double t = rng.NextDouble();
+            while (t < lambda) {
+                k++;
+                t += rng.NextDouble();
+            }
+            return (k);
+        }
+    }
+
+    internal class PoissonGeneratorTabulated : IDeviateGenerator<int> {
+
+        public PoissonGeneratorTabulated (double lambda) {
+            Debug.Assert(lambda > 0.0);
+
+            cdf = new double[(int) Math.Ceiling(4.0 * lambda)];
+
+            double P = Math.Exp(-lambda);
+            cdf[0] = P;
+            for (int k = 1; k < cdf.Length; k++) {
+                P *= lambda / k;
+                cdf[k] = cdf[k - 1] + P;
+            }
+        }
+
+        private readonly double[] cdf;
+
+        public int GetNext (Random rng) {
+
+            double u = rng.NextDouble();
+
+            int k = Array.BinarySearch<double>(cdf, u);
+            if (k < 0) k = ~k;
+
+            return (k);
+        }
+
+    }
+
+    internal class PoissonGeneratorPTRS : IDeviateGenerator<int> {
+
+        public PoissonGeneratorPTRS (double lambda) {
+            Debug.Assert(lambda > 0.0);
+            this.lambda = lambda;
+            this.lnmu = Math.Log(lambda);
+            this.b = 0.931 + 2.53 * Math.Sqrt(lambda);
+            this.a = -0.059 + 0.02483 * b;
+            this.vr = 0.9277 - 3.6224 / (b - 2.0);
+        }
+
+        private readonly double lambda, lnmu, b, a, vr;
+
+        public int GetNext (Random rng) {
+
+            while (true) {
+                double u = rng.NextDouble() - 0.5;
+                double v = rng.NextDouble();
+
+                double us = 0.5 - Math.Abs(u);
+                int k = (int) Math.Floor((2.0 * a / us + b) * u + lambda + 0.43);
+                if (us > 0.07 && v < vr) return (k);
+                if (k < 0) continue;
+                if (us < 0.013 && v > us) continue;
+                double ai = 1.1239 + 1.1328 / (b - 3.4);
+                if (Math.Log(v * ai / (a / (us * us) + b)) <= -lambda + k * lnmu - AdvancedIntegerMath.LogFactorial(k)) {
+                    return (k);
+                }
+            }
+
+        }
     }
 
 }

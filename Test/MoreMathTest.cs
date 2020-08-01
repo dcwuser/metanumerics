@@ -182,6 +182,28 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void LogOnePlusSpecialCases () {
+            Assert.IsTrue(MoreMath.LogOnePlus(0.0) == 0.0);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.LogOnePlus(1.0), Math.Log(2.0)));
+
+        }
+
+        [TestMethod]
+        public void LogOnePlusExtremeValues () {
+            Assert.IsTrue(MoreMath.LogOnePlus(-1.0) == Double.NegativeInfinity);
+            Assert.IsTrue(MoreMath.LogOnePlus(-Double.Epsilon) == -Double.Epsilon);
+            Assert.IsTrue(MoreMath.LogOnePlus(Double.Epsilon) == Double.Epsilon);
+            Assert.IsTrue(Double.IsNaN(MoreMath.LogOnePlus(Double.NaN)));
+        }
+
+        [TestMethod]
+        public void LogOnePlusAgreement () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0, 1.0E2, 4)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.LogOnePlus(x), Math.Log(1.0 + x)));
+            }
+        }
+
     }
 
 }

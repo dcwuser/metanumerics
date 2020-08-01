@@ -30,7 +30,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         private readonly double mu, sigma;
 
         // a standard normal generator to be used by GetRandomValue()
-        private readonly IDeviateGenerator normalRng;
+        private readonly IDeviateGenerator<double> normalRng;
 
         /// <summary>
         /// Initializes a new normal distribution with the given mean and standard deviation.

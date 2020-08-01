@@ -96,7 +96,7 @@ namespace Test {
             double v = Math.Abs(y) * e;
 
             //Console.WriteLine("  {0:g16} ?= {1:g16} ({2:g16})", x, y, u + v);
-            if (Math.Abs(x - y) <=(u + v)) {
+            if (Math.Abs(x - y) <=(u + v + 1.0 / Double.MaxValue)) {
                 return (true);
             } else {
                 return (false);
@@ -250,6 +250,7 @@ namespace Test {
             int d = A.Dimension;
 
             // compute products
+            /*
             Complex[] Av = new Complex[d];
             for (int i=0; i<d; i++) {
                 Av[i] = 0.0;
@@ -257,6 +258,8 @@ namespace Test {
                     Av[i] += A[i,j]*v[j];
                 }
             }
+            */
+            ComplexColumnVector Av = A * v;
             ComplexColumnVector av = a * v;
 
             // compute tolerance

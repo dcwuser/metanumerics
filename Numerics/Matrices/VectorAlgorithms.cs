@@ -96,6 +96,22 @@ namespace Meta.Numerics.Matrices {
             Blas1.dAxpy(-s, uStore, uOffset, uStride, yStore, yOffset, yStride, count);
         }
 
+        public static void Zero (double[] store, int offset, int stride, int count) {
+            if (stride == 1 && count > 64) {
+                // Information on internet indicates that Array.Clear is faster than setting
+                // individual elements to zero for size larger than ~75
+                Array.Clear(store, offset, count);
+            } else {
+                int n = 0;
+                int i = offset;
+                while (n < count) {
+                    store[i] = 0.0;
+                    n++;
+                    i += stride;
+                }
+            }
+        }
+
     }
 
 }

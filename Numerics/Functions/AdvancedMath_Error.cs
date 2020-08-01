@@ -78,11 +78,14 @@ namespace Meta.Numerics.Functions {
         // This is just the incomplete gamma series specialized for a -> 1/2, x -> x^2, but the specialization
         // speeds it up considerably, so we do it explicitly.
 
+        // Comparison of this to DoubleDouble results indicates that maximum error is ~9.0E-16 at x~1.40.
+        // Maximum relative error occurs at the same point.
+
         private static double Erf_Series (double x) {
             double mx2 = -x * x;
-            double t = 1.0;
-            double s = t;
-            for (int k = 1; k < Global.SeriesMax; k++) {
+            double t = mx2;
+            double s = 1.0 + mx2 / 3.0;
+            for (int k = 2; k < Global.SeriesMax; k++) {
                 double s_old = s;
                 t *= mx2 / k;
                 s += t / (2 * k + 1);

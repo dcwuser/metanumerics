@@ -3,20 +3,19 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics.Extended;
-using Meta.Numerics.Functions;
 
 namespace Test {
 
     [TestClass]
     public class DoubleDoubleTest {
 
-        public bool IsNearlyEqual (DoubleDouble a, DoubleDouble b) {
+        public static bool IsNearlyEqual (DoubleDouble a, DoubleDouble b) {
             DoubleDouble magnitude = DoubleDouble.Abs(a) + DoubleDouble.Abs(b);
             DoubleDouble difference = a - b;
             return (DoubleDouble.Abs(difference) <= magnitude * 1.0E-30);
         }
 
-        IEnumerable<DoubleDouble> GetRandomPositiveDoubleDoubles (double minimum, double maximum, int n, Random rng = null) {
+        public static IEnumerable<DoubleDouble> GetRandomDoubleDoubles (double minimum, double maximum, int n, bool negative = false, Random rng = null) {
             if (rng == null) rng = new Random(1);
             double logMinimum = Math.Log(minimum);
             double logMaximum = Math.Log(maximum);
@@ -24,6 +23,7 @@ namespace Test {
                 DoubleDouble x = DoubleDouble.GetRandomValue(rng);
                 DoubleDouble logValue = logMinimum * (1.0 - x) + logMaximum * x;
                 DoubleDouble value = DoubleDouble.Exp(logValue);
+                if (negative && rng.NextDouble() < 0.5) value = -value;
                 yield return (value);
             }
         }
@@ -32,7 +32,7 @@ namespace Test {
         public void DoubleDoubleArithmeticAxioms () {
 
             Random rng = new Random(2);
-            foreach (DoubleDouble a in GetRandomPositiveDoubleDoubles(1.0E-4, 1.0E4, 8, rng)) {
+            foreach (DoubleDouble a in GetRandomDoubleDoubles(1.0E-4, 1.0E4, 8, true, rng)) {
 
                 Assert.IsTrue(a + DoubleDouble.Zero == a);
                 Assert.IsTrue(DoubleDouble.Zero + a == a);
@@ -50,7 +50,7 @@ namespace Test {
 
                 Assert.IsTrue(a + a == 2.0 * a);
 
-                foreach (DoubleDouble b in GetRandomPositiveDoubleDoubles(1.0E-4, 1.0E4, 4, rng)) {
+                foreach (DoubleDouble b in GetRandomDoubleDoubles(1.0E-4, 1.0E4, 4, true, rng)) {
 
                     Assert.IsTrue(a + b == b + a);
                     Assert.IsTrue(a * b == b * a);
@@ -70,53 +70,119 @@ namespace Test {
 
         [TestMethod]
         public void DoubleDoubleEquality () {
-
-            DoubleDouble x = DoubleDouble.E;
-            DoubleDouble y = DoubleDouble.Pi;
-
-            Assert.IsTrue(x == DoubleDouble.E);
-            Assert.IsTrue(DoubleDouble.Equals(x, x));
-            Assert.IsTrue(x.Equals(x));
-
-            Assert.IsTrue(x != y);
-            Assert.IsFalse(DoubleDouble.Equals(x, y));
-            Assert.IsFalse(x.Equals(y));
-            Assert.IsFalse(x.Equals(null));
-
-            Assert.IsTrue(x.GetHashCode() != y.GetHashCode());
+            DoubleDouble[] values = new DoubleDouble[] { DoubleDouble.NegativeInfinity, Double.MinValue, -DoubleDouble.One, DoubleDouble.Zero, DoubleDouble.E, DoubleDouble.Pi, Double.MaxValue, DoubleDouble.PositiveInfinity};
+            for (int i = 0; i < values.Length; i++) {
+                Assert.IsFalse(values[i].Equals(null));
+                for (int j = 0; j < values.Length; j++) {
+                    if (i == j) {
+                        Assert.IsTrue(values[i] == values[j]);
+                        Assert.IsFalse(values[i] != values[j]);
+                        Assert.IsTrue(DoubleDouble.Equals(values[i], values[j]));
+                        Assert.IsTrue(values[i].Equals(values[j]));
+                        Assert.IsTrue(values[i].Equals(values[j] as object));
+                        Assert.IsTrue(values[i].GetHashCode() == values[j].GetHashCode());
+                    } else {
+                        Assert.IsFalse(values[i] == values[j]);
+                        Assert.IsTrue(values[i] != values[j]);
+                        Assert.IsFalse(DoubleDouble.Equals(values[i], values[j]));
+                        Assert.IsFalse(values[i].Equals(values[j]));
+                        Assert.IsFalse(values[i].Equals(values[j] as object));
+                        // Hash code inequality isn't strictly forbidden, but it should be so unlikely as to almost certainly not occur within our small set.
+                        Assert.IsTrue(values[i].GetHashCode() != values[j].GetHashCode());
+                    }
+                }
+            }
         }
 
         [TestMethod]
         public void DoubleDoubleComparison () {
 
-            DoubleDouble x = DoubleDouble.E;
-            DoubleDouble y = DoubleDouble.Pi;
+            DoubleDouble[] orderedValues = new DoubleDouble[] { DoubleDouble.NegativeInfinity, -DoubleDouble.One, DoubleDouble.Zero, DoubleDouble.E, DoubleDouble.Pi, Double.MaxValue, DoubleDouble.PositiveInfinity };
+            for (int i = 0; i < orderedValues.Length; i++) {
+                for (int j = 0; j < orderedValues.Length; j++) {
+                    if (i < j) {
+                        Assert.IsTrue(DoubleDouble.Compare(orderedValues[i], orderedValues[j]) == -1);
+                        Assert.IsTrue(orderedValues[i].CompareTo(orderedValues[j]) == -1);
+                        Assert.IsTrue(orderedValues[i] < orderedValues[j]);
+                        Assert.IsFalse(orderedValues[i] >= orderedValues[j]);
+                    } else if (i == j) {
+                        Assert.IsTrue(DoubleDouble.Compare(orderedValues[i], orderedValues[j]) == 0);
+                        Assert.IsTrue(orderedValues[i].CompareTo(orderedValues[j]) == 0);
+                        Assert.IsFalse(orderedValues[i] < orderedValues[j]);
+                        Assert.IsFalse(orderedValues[i] > orderedValues[j]);
+                        Assert.IsTrue(orderedValues[i] <= orderedValues[j]);
+                    } else {
+                        Assert.IsTrue(DoubleDouble.Compare(orderedValues[i], orderedValues[j]) == +1);
+                        Assert.IsTrue(orderedValues[i].CompareTo(orderedValues[j]) == +1);
+                        Assert.IsTrue(orderedValues[i] > orderedValues[j]);
+                        Assert.IsFalse(orderedValues[i] <= orderedValues[j]);
+                    }
+                }
+            }
 
-            Assert.IsTrue(x <= DoubleDouble.E);
-            Assert.IsTrue(x >= DoubleDouble.E);
-            Assert.IsFalse(x < DoubleDouble.E);
-            Assert.IsFalse(x > DoubleDouble.E);
-            Assert.IsTrue(x.CompareTo(x) == 0);
-
-            Assert.IsTrue(x < y);
-            Assert.IsTrue(x <= y);
-            Assert.IsFalse(x > y);
-            Assert.IsFalse(x >= y);
-            Assert.IsTrue(x.CompareTo(y) == -1);
         }
 
         [TestMethod]
-        public void DoubleDoubleSerialization () {
+        public void DoubleDoubleNaN () {
 
-            foreach (DoubleDouble x in GetRandomPositiveDoubleDoubles(1.0E-12, 1.0E12, 24)) {
+            // Equality
+            Assert.IsFalse(DoubleDouble.NaN == DoubleDouble.NaN);
+            Assert.IsTrue(DoubleDouble.NaN != DoubleDouble.NaN);
+            Assert.IsTrue(DoubleDouble.IsNaN(DoubleDouble.NaN));
 
+            // Comparison
+            Assert.IsFalse(DoubleDouble.NaN < DoubleDouble.Zero);
+            Assert.IsFalse(DoubleDouble.NaN <= DoubleDouble.Zero);
+            Assert.IsFalse(DoubleDouble.NaN >= DoubleDouble.Zero);
+            Assert.IsFalse(DoubleDouble.NaN > DoubleDouble.Zero);
+
+        }
+
+        [TestMethod]
+        public void DoubleDoubleInfinity () {
+
+            // Addition
+            Assert.IsTrue(DoubleDouble.PositiveInfinity + DoubleDouble.One == DoubleDouble.PositiveInfinity);
+            Assert.IsTrue(DoubleDouble.One + DoubleDouble.NegativeInfinity == DoubleDouble.NegativeInfinity);
+            Assert.IsTrue(DoubleDouble.IsNaN(DoubleDouble.NegativeInfinity + DoubleDouble.PositiveInfinity));
+
+            // Subtraction
+            Assert.IsTrue(DoubleDouble.One - DoubleDouble.PositiveInfinity == DoubleDouble.NegativeInfinity);
+            Assert.IsTrue(DoubleDouble.IsNaN(DoubleDouble.PositiveInfinity - DoubleDouble.PositiveInfinity));
+
+            // Multiplication
+            Assert.IsTrue(DoubleDouble.One * DoubleDouble.PositiveInfinity == DoubleDouble.PositiveInfinity);
+            Assert.IsTrue(DoubleDouble.One * DoubleDouble.NegativeInfinity == DoubleDouble.NegativeInfinity);
+            Assert.IsTrue(DoubleDouble.IsNaN(DoubleDouble.Zero * DoubleDouble.PositiveInfinity));
+
+            // Division
+            Assert.IsTrue(DoubleDouble.One / DoubleDouble.Zero == DoubleDouble.PositiveInfinity);
+            Assert.IsTrue((-DoubleDouble.One) / DoubleDouble.Zero == DoubleDouble.NegativeInfinity);
+            Assert.IsTrue(DoubleDouble.One / DoubleDouble.PositiveInfinity == DoubleDouble.Zero);
+            Assert.IsTrue(DoubleDouble.One / DoubleDouble.NegativeInfinity == DoubleDouble.Zero);
+            Assert.IsTrue(DoubleDouble.IsNaN(DoubleDouble.Zero / DoubleDouble.Zero));
+            Assert.IsTrue(DoubleDouble.IsNaN(DoubleDouble.PositiveInfinity / DoubleDouble.PositiveInfinity));
+
+        }
+
+        [TestMethod]
+        public void DoubleDoubleUnderflow () {
+            DoubleDouble z = DoubleDouble.One;
+            while (z != DoubleDouble.Zero) {
+                z = z / 10.0;
+            }
+        }
+
+        [TestMethod]
+        public void DoubleDoubleSerializationRoundtrip () {
+            Random rng = new Random(3);
+            foreach (DoubleDouble x in GetRandomDoubleDoubles(1.0E-12, 1.0E12, 24, true, rng)) {
                 string s = x.ToString();
-                Console.WriteLine(s);
-
                 DoubleDouble y = DoubleDouble.Parse(s);
-
                 Assert.IsTrue(IsNearlyEqual(x, y));
-
+                bool r = DoubleDouble.TryParse(s, out DoubleDouble z);
+                Assert.IsTrue(r);
+                Assert.IsTrue(y == z);
             }
 
         }
@@ -126,93 +192,21 @@ namespace Test {
             Assert.IsTrue(DoubleDouble.Parse("0.0") == DoubleDouble.Zero);
             Assert.IsTrue(DoubleDouble.Parse("1.0") == DoubleDouble.One);
             Assert.IsTrue(DoubleDouble.Parse("-1.0") == -DoubleDouble.One);
+            Assert.IsTrue(DoubleDouble.IsNaN(DoubleDouble.Parse("NaN")));
         }
 
         [TestMethod]
-        public void DoubleDoubleSqrtSpecialValues () {
-            Assert.IsTrue(DoubleDouble.Sqrt(DoubleDouble.Zero) == DoubleDouble.Zero);
-            Assert.IsTrue(DoubleDouble.Sqrt(DoubleDouble.One) == DoubleDouble.One);
-        }
+        public void DoubleDoubleParseInvalid () {
+            Assert.ThrowsException<ArgumentNullException>(() => DoubleDouble.Parse(null));
+            Assert.ThrowsException<FormatException>(() => DoubleDouble.Parse(""));
+            Assert.ThrowsException<FormatException>(() => DoubleDouble.Parse("-"));
+            Assert.ThrowsException<FormatException>(() => DoubleDouble.Parse("."));
+            Assert.ThrowsException<FormatException>(() => DoubleDouble.Parse("0.0.0"));
+            Assert.ThrowsException<FormatException>(() => DoubleDouble.Parse("E0"));
+            Assert.ThrowsException<FormatException>(() => DoubleDouble.Parse("1.0Eq"));
 
-        [TestMethod]
-        public void DoubleDoubleSqrt () {
-            foreach (DoubleDouble x in GetRandomPositiveDoubleDoubles(1.0E-4, 1.0E4, 16)) {
-                DoubleDouble y = DoubleDouble.Sqrt(x);
-                Assert.IsTrue(IsNearlyEqual(y * y, x));
-            }
-        }
-
-        [TestMethod]
-        public void DoubleDoubleSqrtAgreement () {
-            foreach (DoubleDouble x in GetRandomPositiveDoubleDoubles(1.0E-4, 1.0E4, 16)) {
-                DoubleDouble xSqrt = DoubleDouble.Sqrt(x);
-                double xSqrtAsDouble = (double) xSqrt;
-
-                double xAsDouble = (double) x;
-                double xAsDoubleSqrt = Math.Sqrt(xAsDouble);
-
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(xSqrtAsDouble, xAsDoubleSqrt));
-            }
-        }
-
-        [TestMethod]
-        public void DoubleDoubleLogExpSpecialValues () {
-            Assert.IsTrue(DoubleDouble.Log(DoubleDouble.One) == DoubleDouble.Zero);
-            Assert.IsTrue(DoubleDouble.Exp(DoubleDouble.Zero) == DoubleDouble.One);
-
-            Assert.IsTrue(IsNearlyEqual(DoubleDouble.Exp(DoubleDouble.One), DoubleDouble.E));
-
-            Assert.IsTrue(IsNearlyEqual(DoubleDouble.Exp(-DoubleDouble.One), DoubleDouble.One / DoubleDouble.E));
-        }
-
-        [TestMethod]
-        public void DoubleDoubleLogExp () {
-            foreach (DoubleDouble x in GetRandomPositiveDoubleDoubles(1.0E-2, 1.0E6, 16)) {
-                DoubleDouble xLog = DoubleDouble.Log(x);
-                DoubleDouble xLogExp = DoubleDouble.Exp(xLog);
-                Assert.IsTrue(IsNearlyEqual(xLogExp, x));
-            }
-        }
-
-        [TestMethod]
-        public void DoubleDoubleErrorFunctionSpecialCases () {
-            Assert.IsTrue(AdvancedDoubleDoubleMath.Erf(DoubleDouble.Zero) == DoubleDouble.Zero);
-            Assert.IsTrue(AdvancedDoubleDoubleMath.Erfc(DoubleDouble.Zero) == DoubleDouble.One);
-        }
-
-        [TestMethod]
-        public void DoubleDoubleErrorFunctionReflection () {
-            foreach (DoubleDouble x in GetRandomPositiveDoubleDoubles(1.0E-4, 1.0E4, 8)) {
-                DoubleDouble xErf = AdvancedDoubleDoubleMath.Erf(x);
-                Assert.IsTrue(-AdvancedDoubleDoubleMath.Erf(-x) == AdvancedDoubleDoubleMath.Erf(x));
-            }
-        }
-
-        [TestMethod]
-        public void DoubleDoubleErrorFunctionComplementiarity () {
-            foreach (DoubleDouble x in GetRandomPositiveDoubleDoubles(1.0E-2, 1.0E2, 8)) {
-                DoubleDouble xErf = AdvancedDoubleDoubleMath.Erf(x);
-                DoubleDouble xErfc = AdvancedDoubleDoubleMath.Erfc(x);
-                Assert.IsTrue(IsNearlyEqual(xErf + xErfc, DoubleDouble.One));
-            }
-        }
-
-        [TestMethod]
-        public void DoubleDoubleErrorFunctionAgreement () {
-            foreach (DoubleDouble x in GetRandomPositiveDoubleDoubles(1.0E-2, 1.0E2, 8)) {
-
-                DoubleDouble xErf = AdvancedDoubleDoubleMath.Erf(x);
-                double xErfAsDouble = (double) xErf;
-
-                double xAsDouble = (double) x;
-                double xAsDoubleErf = AdvancedMath.Erf(xAsDouble);
-
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(xErfAsDouble, xAsDoubleErf));
-
-                DoubleDouble xErfc = AdvancedDoubleDoubleMath.Erfc(x);
-                Assert.IsTrue(IsNearlyEqual(xErf + xErfc, DoubleDouble.One));
-
-            }
+            Assert.IsFalse(DoubleDouble.TryParse(null, out _));
+            Assert.IsFalse(DoubleDouble.TryParse("", out _));
         }
 
     }

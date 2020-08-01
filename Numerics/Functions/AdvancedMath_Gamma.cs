@@ -22,8 +22,17 @@ namespace Meta.Numerics.Functions {
 		public static double LogGamma (double x) {
             if (x < 0.0) {
                 throw new ArgumentOutOfRangeException(nameof(x));
-            } else if (x < 16.0) {
+            } else if (x < 0.5) {
                 // For small arguments, use the Lanczos approximation.
+                return (Lanczos.LogGamma(x));
+            } else if (x < 1.5) {
+                // Use the series expansion near 1.
+                return (GammaSeries.LogGammaOnePlus(x - 1.0));
+            } else if (x < 2.5) {
+                // The series expansion can be adapted near 2, too.
+                return (GammaSeries.LogGammaTwoPlus(x - 2.0));
+            } else if (x < 16.0) {
+                // In between, we still use Lanczos.
                 return (Lanczos.LogGamma(x));
             } else if (x < Double.PositiveInfinity) {
                 // For large arguments, the asymptotic series is even faster than the Lanczos approximation.
@@ -62,9 +71,13 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/GammaFunction.html" />
         /// <seealso href="http://dlmf.nist.gov/5">DLMF on the Gamma Function</seealso>
         public static double Gamma (double x) {
-            if (x < 0.25) {
+            if (x < 0.5) {
                 // Use \Gamma(x) \Gamma(1-x) = \frac{\pi}{\sin(\pi x)} to move values close to and left of origin to x > 0
                 return (Math.PI / MoreMath.SinPi(x) / Gamma(1.0 - x));
+            } else if (x < 1.5) {
+                return (GammaSeries.GammaOnePlus(x - 1.0));
+            } else if (x < 2.5) {
+                return (GammaSeries.GammaTwoPlus(x - 2.0));
             } else if (x < 16.0) {
                 return (Lanczos.Gamma(x));
             } else if (x < 172.0) {
@@ -94,8 +107,12 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Digamma_function" />
         /// <seealso href="http://mathworld.wolfram.com/DigammaFunction.html" />
 		public static double Psi (double x) {
-            if (x < 0.25) {
+            if (x < 0.5) {
                 return (Psi(1.0 - x) - Math.PI / MoreMath.TanPi(x));
+            } else if (x < 1.5) {
+                return (GammaSeries.PsiOnePlus(x - 1.0));
+            } else if (x < 2.5) {
+                return (GammaSeries.PsiTwoPlus(x - 2.0));
             } else if (x < 16.0) {
                 return (Lanczos.Psi(x));
             } else if (x <= Double.PositiveInfinity) {
@@ -247,16 +264,38 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        // This function computes x^{\nu} / \Gamma(\nu + 1), which can easily become Infinity/Infinity=NaN for large \nu if computed naively.
+        // This function computes x^n / n! or x^{\nu} / \Gamma(\nu + 1), which can easily become
+        // Infinity/Infinity=NaN for large n if computed naively.
 
-        internal static double PowOverGammaPlusOne (double x, double nu) {
-            if (nu < 16.0) {
-                return (Math.Pow(x, nu) / AdvancedMath.Gamma(nu + 1.0));
+        internal static double PowerOverFactorial (double x, int n) {
+            if (n <= 16) {
+                // For maximum range, we should evaluate this using Lanczos, but
+                // since we know we don't call it for x large enough for x^n to overflow,
+                // this is safer and faster.
+                return (MoreMath.Pow(x, n) / AdvancedIntegerMath.Factorial(n));
             } else {
-                return(Stirling.PowOverGammaPlusOne(x, nu));
+                return (Stirling.PowerFactor(x, n));
             }
         }
 
+        internal static double PowerOverFactorial (double x, double nu) {
+            if (nu < 16.0) {
+                return (Math.Pow(x, nu) / AdvancedMath.Gamma(nu + 1.0));
+            } else {
+                return(Stirling.PowerFactor(x, nu));
+            }
+        }
+
+        // x^n / (2n + 1)!!
+
+        internal static double PowerOverDoubleFactorial (double x, int n) {
+            if (n <= 16) {
+                return(MoreMath.Pow(x, n) / AdvancedIntegerMath.DoubleFactorial(2 * n + 1));
+            } else {
+                // Would be good to create a dedicated method for this to avoid \sqrt{\pi} cancelation
+                return(Math.Sqrt(Math.PI / 2.0 / x) * PowerOverFactorial(0.5 * x, n + 0.5));
+            }
+        }
 
         /// <summary>
         /// Computes the Pochammer symbol (x)<sub>y</sub>.
@@ -289,7 +328,7 @@ namespace Meta.Numerics.Functions {
 
             // The key case of x and y positive is pretty simple. Both the Lanczos and Stirling forms of \Gamma
             // admit forms that preserve accuracy in \Gamma(x+y) / \Gamma(x) - 1 as y -> 0. It turns
-            // out, however, to be ridiculous complicated to handle all the corner cases that appear in
+            // out, however, to be ridiculously complicated to handle all the corner cases that appear in
             // other regions of the x-y plane.
 
             double z = x + y;

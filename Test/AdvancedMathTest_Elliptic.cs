@@ -7,10 +7,38 @@ using Meta.Numerics;
 using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
 
+using Meta.Numerics.Extended;
+using Meta.Numerics.Statistics;
+
 namespace Test {
 
     [TestClass]
     public class AdvancedMathTest_Elliptic {
+
+        [TestMethod]
+        public void AccuracyTest () {
+
+            SummaryStatistics s1 = new SummaryStatistics();
+            SummaryStatistics s2 = new SummaryStatistics();
+
+            foreach (double omx in TestUtilities.GenerateRealValues(1.0E-24, 1.0, 1000000)) {
+                double x = 1.0 - omx;
+
+                double f1 = Math.Sqrt((1.0 - x) * (1.0 + x));
+                double f2 = Math.Sqrt(1.0 - x * x);
+
+                DoubleDouble xe = (DoubleDouble) x;
+                DoubleDouble fc = DoubleDouble.Sqrt(DoubleDouble.One - xe * xe);
+
+                double e1 = Math.Abs((double) (f1 - fc));
+                double e2 = Math.Abs((double) (f2 - fc));
+
+                s1.Add(e1);
+                s2.Add(e2);
+
+            }
+
+        }
 
         [TestMethod]
         public void EllipticKSpecialCases () {
@@ -19,6 +47,13 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticK(1.0 / Math.Sqrt(2.0)), Math.Pow(AdvancedMath.Gamma(1.0 / 4.0), 2.0) / Math.Sqrt(Math.PI) / 4.0));
             Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.EllipticK(1.0)));
 
+        }
+
+        [TestMethod]
+        public void EllipticKExtremeValues () {
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticK(Double.Epsilon), Math.PI / 2.0));
+            Assert.IsTrue(AdvancedMath.EllipticK(1.0 - 2.0E-16) < Double.PositiveInfinity);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.EllipticK(Double.NaN)));
         }
 
         [TestMethod]
@@ -53,30 +88,48 @@ namespace Test {
         }
 
         [TestMethod]
-        public void EllipticKCatalanIntegral () {
-
-            System.Diagnostics.Stopwatch timer = System.Diagnostics.Stopwatch.StartNew();
+        public void EllipticKIntegrals () {
 
             Interval i = Interval.FromEndpoints(0.0, 1.0);
 
             // http://mathworld.wolfram.com/CatalansConstant.html equation 37
-
-            Func<double, double> f1 = delegate (double k) {
-                return (AdvancedMath.EllipticK(k));
-            };
             Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                FunctionMath.Integrate(f1, i), 2.0 * AdvancedMath.Catalan
+                FunctionMath.Integrate(
+                    k => AdvancedMath.EllipticK(k),
+                    Interval.FromEndpoints(0.0, 1.0)),
+                2.0 * AdvancedMath.Catalan
             ));
 
-            Func<double, double> f2 = delegate (double k) {
-                return (AdvancedMath.EllipticK(k) * k);
-            };
             Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                FunctionMath.Integrate(f2, i), 1.0
+                FunctionMath.Integrate(
+                    k => AdvancedMath.EllipticK(k) * k,
+                    Interval.FromEndpoints(0.0, 1.0)),
+                1.0
             ));
 
-            timer.Stop();
-            Console.WriteLine(timer.ElapsedTicks);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                FunctionMath.Integrate(
+                    k => AdvancedMath.EllipticK(k) / (1.0 + k),
+                    Interval.FromEndpoints(0.0, 1.0)),
+                Math.PI * Math.PI / 8.0
+            ));
+
+        }
+
+        [TestMethod]
+        public void CompleteEllipticHypergeometricAgreement () {
+
+            foreach (double k in TestUtilities.GenerateRealValues(1.0E-4, 1.0, 4)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.EllipticK(k),
+                    Math.PI / 2.0 * AdvancedMath.Hypergeometric2F1(0.5, 0.5, 1.0, k * k)
+                ));
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.EllipticE(k),
+                    Math.PI / 2.0 * AdvancedMath.Hypergeometric2F1(0.5, -0.5, 1.0, k * k)
+                ));
+            }
 
         }
 
@@ -170,8 +223,14 @@ namespace Test {
         }
 
         [TestMethod]
+        public void EllipticEExtremeValues () {
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticE(Double.Epsilon), Math.PI / 2.0));
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.EllipticE(Double.NaN)));
+        }
+
+        [TestMethod]
         public void EllipticLegendreRelation () {
-            foreach (double k in TestUtilities.GenerateRealValues(0.01, 1.0, 8)) {
+            foreach (double k in TestUtilities.GenerateRealValues(1.0E-4, 1.0, 8)) {
                 double kp = Math.Sqrt(1.0 - k * k);
                 double E = AdvancedMath.EllipticE(k);
                 double EP = AdvancedMath.EllipticE(kp);
@@ -262,6 +321,82 @@ namespace Test {
                 }
 
                 */
+            }
+
+        }
+
+        [TestMethod]
+        public void EllipticPiSpecialCases () {
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticPi(0.0, 0.0), Math.PI / 2.0));
+        }
+
+        [TestMethod]
+        public void EllipticPiZeroModulus () {
+            // DLMF 19.6.3
+            foreach (double n in TestUtilities.GenerateUniformRealValues(-4.0, 1.0, 8)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticPi(n, 0.0), Math.PI / 2.0 / Math.Sqrt(1.0 - n)));
+            }
+        }
+
+        [TestMethod]
+        public void EllipticPiSpecialCharacteristic () {
+            foreach (double k in TestUtilities.GenerateRealValues(1.0E-4, 1.0, 4)) {
+                // DLMF 19.6.1
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticPi(k * k, k), AdvancedMath.EllipticE(k) / (1.0 - k * k)));
+                // DLMF 19.6.2
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticPi(-k, k), Math.PI / 4.0 / (1.0 + k) + AdvancedMath.EllipticK(k) / 2.0));
+                // DLMF 19.6.3
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.EllipticPi(0.0, k), AdvancedMath.EllipticK(k)));
+                Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.EllipticPi(1.0, k)));
+            }
+        }
+
+        // Defining integtral for Pi(n, k)
+        [TestMethod]
+        public void EllipticPiIntegration () {
+
+            Interval i = Interval.FromEndpoints(0.0, Math.PI / 2.0);
+            foreach (double k in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 4)) {
+                double m = k * k;
+                foreach (double n in TestUtilities.GenerateUniformRealValues(-2.0, 1.0, 4)) {
+                    Func<double, double> f = delegate (double t) {
+                        double s2 = MoreMath.Sqr(Math.Sin(t));
+                        return (1.0 / (1.0 - n * s2) / Math.Sqrt(1.0 - m * s2));
+                    };
+
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        FunctionMath.Integrate(f, i), AdvancedMath.EllipticPi(n, k)
+                    ));
+                }
+
+            }
+
+        }
+
+        [TestMethod]
+        public void EllipticNomeAgreement () {
+
+            foreach (double k in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 4)) {
+
+                double K = AdvancedMath.EllipticK(k);
+
+                double k1 = Math.Sqrt((1.0 - k) * (1.0 + k));
+                double K1 = AdvancedMath.EllipticK(k1);
+
+                double q = AdvancedMath.EllipticNome(k);
+
+                // For k << 1, this test fails if formulated as q = e^{\pi K' / K}.
+                // Problem is that computation of k' looses some digits to cancellation,
+                // then K' is near singularity so error is amplified, then
+                // exp function amplifies error some more. Investigation indicates
+                // that q agrees with Mathematica to nearly all digits, so problem
+                // isn't in nome function. Run test in log space and don't let k get
+                // extremely small.
+
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    Math.Log(q),
+                    -Math.PI * K1 / K
+                ));
             }
 
         }

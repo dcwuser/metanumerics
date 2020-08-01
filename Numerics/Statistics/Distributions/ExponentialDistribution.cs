@@ -173,8 +173,9 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double GetRandomValue (Random rng) {
-            //if (rng == null) throw new ArgumentNullException("rng");
+            //if (rng == null) throw new ArgumentNullException(nameof(rng));
             //return (-mu * Math.Log(rng.NextDouble()));
+            //return (-mu * MoreMath.LogOnePlus(-rng.NextDouble()));
             return (base.GetRandomValue(rng));
         }
 

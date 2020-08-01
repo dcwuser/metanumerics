@@ -38,7 +38,7 @@ namespace Test {
                 new KuiperDistribution(),
                 new KolmogorovDistribution(),
                 new TriangularDistribution(1.0,2.0,4.0),
-                new BetaDistribution(0.5, 2.0),
+                new BetaDistribution(0.5, 0.5), new BetaDistribution(0.5, 2.0), new BetaDistribution(2.0, 2.0),
                 new ParetoDistribution(1.0, 3.0),
                 new WaldDistribution(3.0, 1.0),
                 new PearsonRDistribution(7),
@@ -165,10 +165,9 @@ namespace Test {
         public void DistributionUnitarityIntegral () {
             foreach (ContinuousDistribution distribution in distributions) {
                 // Gamma distribution has a power law divergence at zero, which our integrator is documented not to handle (look for lower precision)
-                if ((distribution is GammaDistribution) && (((GammaDistribution) distribution).Shape < 1.0)) continue;
-                Console.WriteLine(distribution.GetType().Name);
+                if ((distribution is GammaDistribution g) && (g.Shape < 1.0)) continue;
+                if (distribution is BetaDistribution b && ((b.Alpha < 1.0) || (b.Beta < 1.0))) continue;
                 double M0 = FunctionMath.Integrate(distribution.ProbabilityDensity, distribution.Support);
-                Console.WriteLine("  1 {0}", M0);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(M0, 1.0));
             }
         }
@@ -178,11 +177,11 @@ namespace Test {
             foreach (ContinuousDistribution distribution in distributions) {
                 double mean = distribution.Mean;
                 if (Double.IsNaN(mean) || Double.IsInfinity(mean)) continue;
+                if (distribution is BetaDistribution b && ((b.Alpha < 1.0) || (b.Beta < 1.0))) continue;
                 Func<double, double> f = delegate(double x) {
                     return (distribution.ProbabilityDensity(x) * x);
                 };
                 double M1 = FunctionMath.Integrate(f, distribution.Support);
-                Console.WriteLine("{0} {1} {2}", distribution.GetType().Name, mean, M1);
                 if (mean == 0.0) {
                     Assert.IsTrue(Math.Abs(M1) <= TestUtilities.TargetPrecision);
                 } else {
@@ -198,6 +197,8 @@ namespace Test {
                 double v = distribution.Variance;
                 // Skip distributions with infinite variance
                 if (Double.IsNaN(v) || Double.IsInfinity(v)) continue;
+                // Skip beta distribution with enpoint singularities that cannot be numerically integrated
+                if (distribution is BetaDistribution b && ((b.Alpha < 1.0) || (b.Beta < 1.0))) continue;
                 // Determine target precision, which must be reduced for some cases where an integral singularity means that cannot achieve full precision
                 double e = TestUtilities.TargetPrecision;
                 GammaDistribution gammaDistribution = distribution as GammaDistribution;
@@ -304,6 +305,8 @@ namespace Test {
             IntegrationSettings settings = new IntegrationSettings() { AbsolutePrecision = 0.0 };
 
             foreach (ContinuousDistribution distribution in distributions) {
+
+                if (distribution is BetaDistribution b && ((b.Alpha < 1.0) || (b.Beta < 1.0))) continue;
 
                 for (int i = 0; i < 4; i++) {
                     double x;

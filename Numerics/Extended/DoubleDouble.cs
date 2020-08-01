@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 
 namespace Meta.Numerics.Extended {
@@ -12,12 +13,18 @@ namespace Meta.Numerics.Extended {
     /// double the precision with which a number can be stored and manipulated as compared to
     /// to the <see cref="Double"/> structure, i.e. to approximately 31 decimal digits of accuracy.</para>
     /// <para>Of all the extended precision floating point systems, double double is the
-    /// fastest when implemented in software. A typical floating point operation on
-    /// double doubles is just 3-4 times slower than on <see cref="Double"/>s.</para>
+    /// fastest when implemented in software. A typical floating point operation using
+    /// <see cref="DoubleDouble"/>s is just 3-4 times slower than on <see cref="Double"/>s.</para>
+    /// <para>To instantiate a <see cref="DoubleDouble"/>, you can use <see cref="DoubleDouble.TryParse(string, out DoubleDouble)"/>,
+    /// or <see cref="DoubleDouble.Parse(string)"/>, or the constructor <see cref="DoubleDouble.DoubleDouble(string)"/>
+    /// to parse the text representation of the decimal value you want. If the value you want can be represented as a <see cref="Double"/>
+    /// or <see cref="Int32"/> or other built in type, you can cast that value to a <see cref="DoubleDouble"/>.</para>
     /// </remarks>
     public struct DoubleDouble : IEquatable<DoubleDouble>, IComparable<DoubleDouble> {
+
         internal DoubleDouble (double hi, double lo) {
-            Debug.Assert(Math.Abs(lo) <= (1.0E-10) * Math.Abs(hi));
+            // Unless number is zero or NaN, lo parts should be lower than hi part by 2^52
+            Debug.Assert((hi == 0.0 && lo == 0.0) || Math.Abs(lo) < (1.0E-14) * Math.Abs(hi) || Double.IsNaN(hi));
             this.hi = hi;
             this.lo = lo;
         }
@@ -27,7 +34,6 @@ namespace Meta.Numerics.Extended {
         /// </summary>
         /// <param name="s">The base-10 representation of the number.</param>
         public DoubleDouble (string s) {
-            if (s == null) throw new ArgumentNullException(nameof(s));
             DoubleDouble r = DoubleDouble.Parse(s);
             this.hi = r.hi;
             this.lo = r.lo;
@@ -48,6 +54,21 @@ namespace Meta.Numerics.Extended {
         /// </summary>
         public static readonly DoubleDouble One = new DoubleDouble(1.0, 0.0);
 
+        /// <summary>
+        /// The double double negative infinite value.
+        /// </summary>
+        public static readonly DoubleDouble NegativeInfinity = new DoubleDouble(Double.NegativeInfinity, 0.0);
+
+        /// <summary>
+        /// The double double positive infinite value.
+        /// </summary>
+        public static readonly DoubleDouble PositiveInfinity = new DoubleDouble(Double.PositiveInfinity, 0.0);
+
+        /// <summary>
+        /// The double double not-a-number value.
+        /// </summary>
+        public static readonly DoubleDouble NaN = new DoubleDouble(Double.NaN, 0.0);
+
         private static readonly DoubleDouble ten = new DoubleDouble(10.0, 0.0);
 
         private static readonly DoubleDouble log2 = new DoubleDouble("0.693147180559945309417232121458176568");
@@ -55,48 +76,43 @@ namespace Meta.Numerics.Extended {
         /// <summary>
         /// The double double value of pi.
         /// </summary>
+        /// <seealso href="https://en.wikipedia.org/wiki/Pi"/>
         public static readonly DoubleDouble Pi = DoubleDouble.Parse("3.141592653589793238462643383279502884");
 
         /// <summary>
-        /// The double double vale of the base of natural logarithms.
+        /// The double double value of the base of natural logarithms.
         /// </summary>
+        /// <seealso href="https://en.wikipedia.org/wiki/E_(mathematical_constant)"/>
         public static readonly DoubleDouble E = DoubleDouble.Parse("2.71828182845904523536028747135266249");
-
-        private static readonly DoubleDouble Euler = DoubleDouble.Parse("0.57721566490153286060651209008240243");
-
-
 
         // Arithmetic
 
         /// <summary>
         /// Negates a double double number. 
         /// </summary>
-        /// <param name="a">The number to negate.</param>
-        /// <returns>The additive inverse of <paramref name="a"/>.</returns>
-        public static DoubleDouble operator - (DoubleDouble a) {
-            return new DoubleDouble(-a.hi, -a.lo);
+        /// <param name="x">The number to negate.</param>
+        /// <returns>The additive inverse of <paramref name="x"/>.</returns>
+        public static DoubleDouble operator - (DoubleDouble x) {
+            return new DoubleDouble(-x.hi, -x.lo);
         }
 
         /// <summary>
         /// Computes the sum of two double double numbers.
         /// </summary>
-        /// <param name="a">The first number.</param>
-        /// <param name="b">The second number.</param>
-        /// <returns>The value of <paramref name="a"/> + <paramref name="b"/>.</returns>
-        public static DoubleDouble operator + (DoubleDouble a, DoubleDouble b) {
+        /// <param name="x">The first number.</param>
+        /// <param name="y">The second number.</param>
+        /// <returns>The value of <paramref name="x"/> + <paramref name="y"/>.</returns>
+        public static DoubleDouble operator + (DoubleDouble x, DoubleDouble y) {
+
             // Add high components
-            double sHi, sLo;
-            ExtendedMath.TwoSum(a.hi, b.hi, out sHi, out sLo);
+            ExtendedMath.TwoSum(x.hi, y.hi, out double sHi, out double sLo);
+
+            if (ExtendedMath.IsNotFinite(sHi)) return (DoubleDouble) sHi;
 
             // Add low components
-            double tHi, tLo;
-            ExtendedMath.TwoSum(a.lo, b.lo, out tHi, out tLo);
-
-            double vHi, vLo;
-            ExtendedMath.TwoSum(sHi, sLo + tHi, out vHi, out vLo);
-
-            double zHi, zLo;
-            ExtendedMath.FastTwoSum(vHi, tLo + vLo, out zHi, out zLo);
+            ExtendedMath.TwoSum(x.lo, y.lo, out double tHi, out double tLo);
+            ExtendedMath.TwoSum(sHi, sLo + tHi, out double vHi, out double vLo);
+            ExtendedMath.FastTwoSum(vHi, tLo + vLo, out double zHi, out double zLo);
 
             return new DoubleDouble(zHi, zLo);
         }
@@ -104,38 +120,36 @@ namespace Meta.Numerics.Extended {
         /// <summary>
         /// Computes the difference of two double double numbers.
         /// </summary>
-        /// <param name="a">The first number.</param>
-        /// <param name="b">The second number.</param>
-        /// <returns>The value of <paramref name="a"/> - <paramref name="b"/>.</returns>
-        public static DoubleDouble operator - (DoubleDouble a, DoubleDouble b) {
-            return (a + (-b));
+        /// <param name="x">The first number.</param>
+        /// <param name="y">The second number.</param>
+        /// <returns>The value of <paramref name="x"/> - <paramref name="y"/>.</returns>
+        public static DoubleDouble operator - (DoubleDouble x, DoubleDouble y) {
+            return (x + (-y));
         }
 
         /// <summary>
         /// Computes the product of two double double numbers.
         /// </summary>
-        /// <param name="a">The first number.</param>
-        /// <param name="b">The second number.</param>
-        /// <returns>The product of <paramref name="a"/> and <paramref name="b"/>.</returns>
-        public static DoubleDouble operator * (DoubleDouble a, DoubleDouble b) {
-            double p0, p1;
-            ExtendedMath.TwoProduct(a.hi, b.hi, out p0, out p1);
+        /// <param name="x">The first number.</param>
+        /// <param name="y">The second number.</param>
+        /// <returns>The product of <paramref name="x"/> and <paramref name="y"/>.</returns>
+        public static DoubleDouble operator * (DoubleDouble x, DoubleDouble y) {
 
-            double p2, p4;
-            ExtendedMath.TwoProduct(a.hi, b.lo, out p2, out p4);
+            ExtendedMath.TwoProduct(x.hi, y.hi, out double p0, out double p1);
 
-            double p3, p5;
-            ExtendedMath.TwoProduct(a.lo, b.hi, out p3, out p5);
+            if (p0 == 0.0 || ExtendedMath.IsNotFinite(p0)) return (DoubleDouble) p0;
 
-            double p6 = a.lo * b.lo;
+            ExtendedMath.TwoProduct(x.hi, y.lo, out double p2, out double p4);
 
-            double t1, t2;
-            ExtendedMath.ThreeSum(p1, p2, p3, out t1, out t2);
+            ExtendedMath.TwoProduct(x.lo, y.hi, out double p3, out double p5);
+
+            double p6 = x.lo * y.lo;
+
+            ExtendedMath.ThreeSum(p1, p2, p3, out double t1, out double t2);
 
             t2 += p4 + p5 + p6;
 
-            double pHi, pLo;
-            ExtendedMath.ThreeSum(p0, t1, t2, out pHi, out pLo);
+            ExtendedMath.ThreeSum(p0, t1, t2, out double pHi, out double pLo);
 
             return new DoubleDouble(pHi, pLo);
             /*
@@ -151,15 +165,21 @@ namespace Meta.Numerics.Extended {
         /// <summary>
         /// Computes the quotient of two double double numbers.
         /// </summary>
-        /// <param name="a">The dividend.</param>
-        /// <param name="b">The divisor.</param>
-        /// <returns>The value of <paramref name="a"/> / <paramref name="b"/>.</returns>
-        public static DoubleDouble operator / (DoubleDouble a, DoubleDouble b) {
-            double q1 = a.hi / b.hi;
-            DoubleDouble r = a - q1 * b;
-            double q2 = r.hi / b.hi;
-            r = r - q2 * b;
-            double q3 = r.hi / b.hi;
+        /// <param name="x">The dividend.</param>
+        /// <param name="y">The divisor.</param>
+        /// <returns>The value of <paramref name="x"/> / <paramref name="y"/>.</returns>
+        public static DoubleDouble operator / (DoubleDouble x, DoubleDouble y) {
+
+            double q1 = x.hi / y.hi;
+
+            // If leading order result is NaN or infinity or zero, we are done.
+            // To continue would introduce NaNs even if result is infinite, so this early return is necessary.
+            if (q1 == 0.0 || ExtendedMath.IsNotFinite(q1)) return (DoubleDouble) q1;
+
+            DoubleDouble r = x - q1 * y;
+            double q2 = r.hi / y.hi;
+            r = r - q2 * y;
+            double q3 = r.hi / y.hi;
 
             double qHi, qLo;
 
@@ -191,12 +211,12 @@ namespace Meta.Numerics.Extended {
         /// <summary>
         /// Converts a double double value to a double value.
         /// </summary>
-        /// <param name="a">The value to be converted.</param>
+        /// <param name="x">The value to be converted.</param>
         /// <returns>The <see cref="Double"/> value closest to the original double double value.</returns>
         /// <remarks><para>Note that this is a narrowing operator; the extra precision of the double double type
         /// is lost in the conversion.</para></remarks>
-        public static explicit operator double (DoubleDouble a) {
-            return (a.hi + a.lo);
+        public static explicit operator double (DoubleDouble x) {
+            return (x.hi + x.lo);
         }
 
         /// <summary>
@@ -204,6 +224,9 @@ namespace Meta.Numerics.Extended {
         /// </summary>
         /// <param name="x">The value to be converted.</param>
         /// <returns>The double double value equal to the original <see cref="Double" /> value.</returns>
+        /// <remarks><para>This cast preserves the value of the <see cref="Double"/> (as can be verified
+        /// by round-tripping), but keep in mind that that value may only be an approximation of less
+        /// than the desired precision.</para></remarks>
         public static implicit operator DoubleDouble (double x) {
             return new DoubleDouble(x, 0.0);
         }
@@ -276,7 +299,7 @@ namespace Meta.Numerics.Extended {
             DoubleDouble y = DoubleDouble.One;
             while (n > 1) {
                 if (n % 2 != 0) y = x * y;
-                x = Sqr(x); /* Replace with optimized square function */
+                x = Sqr(x);
                 n /= 2; /* Integer division effectively deals with odd n case by dropping the remainder */
             }
             return x * y;
@@ -292,30 +315,29 @@ namespace Meta.Numerics.Extended {
         /// <param name="x">The value of which the square root will be computed.</param>
         /// <returns>The value of the square root of x.</returns>
         public static DoubleDouble Sqrt (DoubleDouble x) {
-            if (Double.IsNaN(x.hi)) return (x);
-
-            if (x.hi < 0.0) return (Double.NaN);
 
             if (x.hi == 0.0) return (0.0);
 
             double yHi = Math.Sqrt(x.hi);
 
-            double uHi, uLo;
-            ExtendedMath.TwoProduct(yHi, yHi, out uHi, out uLo);
+            if (ExtendedMath.IsNotFinite(yHi)) return (DoubleDouble) yHi;
+
+            ExtendedMath.TwoProduct(yHi, yHi, out double uHi, out double uLo);
 
             double yLo = (((x.hi - uHi) - uLo) + x.lo) / (2.0 * yHi);
 
             return new DoubleDouble(yHi, yLo);
+
         }
 
-        private static DoubleDouble Log1P (DoubleDouble x) {
+        internal static DoubleDouble Log1P (DoubleDouble x) {
             if (DoubleDouble.One + x == DoubleDouble.One) {
                 return (x);
             } else {
                 DoubleDouble mx = -x;
                 DoubleDouble t = x;
                 DoubleDouble f = t;
-                for (int k = 2; k < 100; k++) {
+                for (int k = 2; k < Global.SeriesMax; k++) {
                     DoubleDouble f_old = f;
                     t *= mx;
                     f += t / k;
@@ -323,7 +345,7 @@ namespace Meta.Numerics.Extended {
                         return (f);
                     }
                 }
-                throw new InvalidOperationException();
+                throw new NonconvergenceException();
             }
         }
 
@@ -333,31 +355,31 @@ namespace Meta.Numerics.Extended {
         /// <param name="x">The argument of the logarithm.</param>
         /// <returns>The value of ln(x).</returns>
         public static DoubleDouble Log (DoubleDouble x) {
-            if (Double.IsNaN(x.hi)) return (x);
-            if (x.hi < 0.0) return (Double.NaN);
-            if (x.hi == 0.0) return (Double.NegativeInfinity);
 
-            DoubleDouble r = x;
-            int e = (int) Math.Round(Math.Log(x.hi) / Math.Log(2.0));
+            double logHi = Math.Log(x.hi);
+
+            if (ExtendedMath.IsNotFinite(logHi)) return (DoubleDouble) logHi;
+
+            int e = (int) Math.Round(logHi / Global.LogTwo);
             if (e < 0) {
-                r *= DoubleDouble.Pow(2.0, -e);
+                x *= DoubleDouble.Pow(2.0, -e);
             } else if (e > 0) {
-                r /= DoubleDouble.Pow(2.0, e);
+                x /= DoubleDouble.Pow(2.0, e);
             }
             // At this point 1/\sqrt{2} <= r <= \sqrt{2},
             // i.e.  0.707 <= r <= 1.414
-            r -= DoubleDouble.One;
+            x -= DoubleDouble.One;
             // Now -0.293 <= r - 1 <= 0.414.
             // We have lost some accuracy if r ~ 1, i.e. x was very close
             // to an exact power of 2.
 
-            return e * log2 + Log1P(r);
+            return e * log2 + Log1P(x);
         }
 
         private static DoubleDouble Exp_Series (DoubleDouble x) {
             DoubleDouble t = x;
             DoubleDouble f = DoubleDouble.One + t;
-            for (int k = 2; k < 100; k++) {
+            for (int k = 2; k < Global.SeriesMax; k++) {
                 DoubleDouble f_old = f;
                 t *= x / k;
                 f += t;
@@ -365,7 +387,7 @@ namespace Meta.Numerics.Extended {
                     return (f);
                 }
             }
-            throw new InvalidOperationException();
+            throw new NonconvergenceException();
         }
 
         /// <summary>
@@ -384,6 +406,30 @@ namespace Meta.Numerics.Extended {
 
         }
 
+        /// <summary>
+        /// Computes the sine of a double double value.
+        /// </summary>
+        /// <param name="x">The argument of the sine.</param>
+        /// <returns>The value of sin(x).</returns>
+        /// <remarks><para>Unlike <see cref="MoreMath.Sin(double)"/>, this function does not currenly do range reduction with a value
+        /// of pi even more accurate than <see cref="DoubleDouble.Pi"/>. Therefore, beyond the first few periods, results can slowly
+        /// loose accuracy, particularly near zeros, at the rate of about one digit per order of magnitude of the argument.</para></remarks>
+        public static DoubleDouble Sin (DoubleDouble x) {
+            return DoubleDoubleMath.Sin(x);
+        }
+
+        /// <summary>
+        /// Computes the cosine of a double double value.
+        /// </summary>
+        /// <param name="x">The argument of the cosine.</param>
+        /// <returns>The value of cos(x).</returns>
+        /// <remarks><para>Unlike <see cref="MoreMath.Cos(double)"/>, this function does not currenly do range reduction with a value
+        /// of pi even more accurate than <see cref="DoubleDouble.Pi"/>. Therefore, beyond the first few periods, results can slowly
+        /// loose accuracy, particularly near zeros, at the rate of about one digit per order of magnitude of the argument.</para></remarks>
+        public static DoubleDouble Cos (DoubleDouble x) {
+            return DoubleDoubleMath.Cos(x);
+        }
+
         // Printing and Parsing
 
         /// <summary>
@@ -396,14 +442,48 @@ namespace Meta.Numerics.Extended {
         /// <see cref="Double"/>.</para>
         /// </remarks>
         public static DoubleDouble Parse (string s) {
-            if (s == null) throw new ArgumentNullException(nameof(s));
+            ParseResult result = TryParseInternal(s, out DoubleDouble x);
+            if (result == ParseResult.Null) throw new ArgumentNullException(nameof(s));
+            if (result != ParseResult.Success) throw new FormatException();
+            return x;
+        }
+
+        /// <summary>
+        /// Attempts to parse a string representation of a double double value.
+        /// </summary>
+        /// <param name="s">The string representation of the value.</param>
+        /// <param name="x">The value, if the parse was successful.</param>
+        /// <returns>True if the string was successfully parsed, false otherwise.</returns>
+        /// <remarks>
+        /// <para>Double double supports the same string representations as
+        /// <see cref="Double"/>.</para>
+        /// </remarks>
+        public static bool TryParse (string s, out DoubleDouble x) {
+            ParseResult result = TryParseInternal(s, out x);
+            return (result == ParseResult.Success);
+        }
+
+        private static ParseResult TryParseInternal (string s, out DoubleDouble x) {
+
+            x = DoubleDouble.Zero;
+
+            if (s is null) return ParseResult.Null;
 
             s = s.Trim();
 
-            // Parse negative sign.
-            bool isNegative = false;
+            if (s.Length == 0) return ParseResult.Empty;
+
+            if (s == "NaN") {
+                x = DoubleDouble.NaN;
+                return ParseResult.Success;
+            }
+
+            // Parse sign.
+            bool negative = false;
             if (s[0] == '-') {
-                isNegative = true;
+                negative = true;
+                s = s.Substring(1);
+            } else if (s[0] == '+') {
                 s = s.Substring(1);
             }
 
@@ -411,89 +491,127 @@ namespace Meta.Numerics.Extended {
             int exponent = 0;
             int eIndex = s.IndexOfAny(new char[] { 'e', 'E' });
             if (eIndex >= 0) {
-                exponent = Int32.Parse(s.Substring(eIndex + 1));
+                bool exponentResult = Int32.TryParse(s.Substring(eIndex + 1), out exponent);
+                if (!exponentResult) return ParseResult.Format;
                 s = s.Substring(0, eIndex);
             }
 
-            // Remove trailing and leading 0s. Otherwise we do unnecessary multiplications
-            // (and later divisions) by 10, which also introduces floating point wobble.
-            s = s.Trim('0');
+            // Convert decimal value into a straight-up integer with an adjusted exponent
+            int dIndex = s.IndexOf('.');
+            if (dIndex >= 0) {
+                string s0 = s.Substring(0, dIndex);
+                string s1 = s.Substring(dIndex + 1);
+                exponent -= s1.Length;
+                s = s0 + s1;
+            }
 
-            // Parse the mantissa.
-            int digitCount = 0;
-            int decimalPoint = -1;
-            DoubleDouble result = 0.0;
+            // We have done a lot of trimming. If nothing remains, that was not a valid format.
+            if (s.Length == 0) return ParseResult.Format;
+
+            // Drop leading zeros
+            s = s.TrimStart('0');
+
+            // Absorb trailing zeros into the exponent
+            int l0 = s.Length;
+            s = s.TrimEnd('0');
+            int l1 = s.Length;
+            exponent += (l0 - l1);
+
+            // Compute the integer
             foreach (char c in s) {
-                if (c == '.') {
-                    if (decimalPoint > 0) throw new FormatException();
-                    decimalPoint = digitCount;
-                } else {
-                    double value = Char.GetNumericValue(c);
-                    result *= ten;
-                    result += value;
-                    digitCount++;
-                }
+                double d = Char.GetNumericValue(c);
+                if (d < 0.0) return ParseResult.Format;
+                x *= ten;
+                x += d;
             }
 
-            if (decimalPoint >= 0) {
-                exponent += decimalPoint - digitCount;
-            }
-
+            // Apply the exponent
             if (exponent != 0) {
-                result *= DoubleDouble.Pow(ten, exponent);
+                x *= DoubleDouble.Pow(ten, exponent);
             }
 
-            if (isNegative) {
-                result = -result;
-            }
+            if (negative) x = -x;
 
-            return (result);
-        }
+            return ParseResult.Success;
 
-        private string Write () {
-            if (Double.IsNaN(hi) || Double.IsInfinity(hi)) {
-                return (hi.ToString());
-            } else if (hi == 0.0) {
-                return ((0.0).ToString());
-            } else {
-                // Multiply by a power of 10 to put leading digit in the ones place
-                int e = (int) Math.Floor(Math.Log10(Math.Abs(hi)));
-                DoubleDouble r = Abs(this);
-                if (e > 0) {
-                    r /= Pow(ten, e);
-                } else if (e < 0) {
-                    r *= Pow(ten, -e);
-                }
-
-                StringBuilder s = new StringBuilder();
-                if (hi < 0.0) s.Append('-');
-
-                // This passes unit tests, but it needs to be cleaned up.
-                //   1. Don't print unnecessary trailing 0s.
-                //   2. For -2 <= e <= 2, don't use E notation.
-                //   3. Be more careful with rounding.
-                for (int i = 0; i < 32; i++) {
-                    double t = Math.Floor(r.hi);
-                    if (t < 0) t = 0.0; /* if we subtract to zero, sometimes the result can be a very tiny negative number that floors to -1 */
-                    int d = (int) t;
-                    Debug.Assert((0 <= d) && (d < 10));
-                    s.Append(d);
-                    if (i == 0) s.Append(".");
-                    r -= t;
-                    r *= ten;
-                }
-
-                if (e != 0) s.Append(String.Format("E{0}", e));
-                return (s.ToString());
-            }
         }
 
         /// <summary>
-        /// Writes a string representation of the value.
+        /// Produces a string representation of the double double value.
         /// </summary>
         /// <returns>A string representation of the value.</returns>
         public override string ToString () {
-            return (Write());
+            return ToString(CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Produces a text representation of the double double value using the given format provider.
+        /// </summary>
+        /// <param name="format">The format provider.</param>
+        /// <returns>A text representation of the value.</returns>
+        private string ToString (IFormatProvider format) {
+
+            // This algorithm doesn't handle infinities, NaNs, and zeros, but writing them is trivial. 
+            if (ExtendedMath.IsNotFinite(hi) || hi == 0.0) {
+                return hi.ToString(format);
+            }
+
+            // Multiply by a power of 10 to put leading digit in the ones place
+            Debug.Assert(hi != 0.0);
+            int e = (int) Math.Floor(Math.Log10(Math.Abs(hi)));
+            DoubleDouble r = Abs(this);
+            if (e > 0) {
+                r /= Pow(ten, e);
+            } else if (e < 0) {
+                r *= Pow(ten, -e);
+            }
+
+            // If scaling has screwed us up because of overflow, exit. Fix this.
+            if (Double.IsNaN(r.hi) || Double.IsNaN(r.lo)) {
+                return "X";
+            }
+
+            // Spit out up to 32 digits
+            StringBuilder s = new StringBuilder();
+            int z = 0;
+            for (int i = 0; i < 32; i++) {
+                if (r.hi == 0.0) break;
+                double t = Math.Floor(r.hi); /* If nothing left, we can stop early */
+                if (t < 0) t = 0.0; /* if we subtract to zero, sometimes the result can be a very tiny negative number that floors to -1 */
+                int d = (int) t;
+                Debug.Assert((0 <= d) && (d < 10));
+                s.Append(d);
+                if (d == 0) { z++; } else { z = 0; } /* Keep track of number of trailing zeros for later truncation */
+                r -= t;
+                r *= ten;
+            }
+
+            // Remove trailing zeros (which are all after the decimal point)
+            if (z > 0) s.Remove(s.Length - z, z);
+
+            // Express in scientific notation for large exponents,
+            // or by filling in zeros for small exponents.
+            if (e >= 6) {
+                if (s.Length > 1) s.Insert(1, '.');
+                s.Append($"E{e}");
+            } else if (e >= 0) {
+                if (s.Length > e + 1) {
+                    s.Insert(e + 1, '.');
+                } else {
+                    s.Append("000000", 0, e - s.Length + 1);
+                }
+            } else if (e >= -4) {
+                s.Insert(0, "0.00000".Substring(0, 1 - e)); /* StringBuilder.Append has a substring overload, but StringBuilder.Insert doesn't */
+            } else {
+                if (s.Length > 1) s.Insert(1, '.');
+                s.Append($"E{e}");
+            }
+
+            // Add a negative sign if necessary
+            if (hi < 0.0) s.Insert(0, '-');
+
+            return s.ToString();
+
         }
 
         // Equality
@@ -501,31 +619,32 @@ namespace Meta.Numerics.Extended {
         /// <summary>
         /// Determines whether two double double values are equal.
         /// </summary>
-        /// <param name="a">The first value.</param>
-        /// <param name="b">The second value.</param>
-        /// <returns><see langword="true"/> if <paramref name="a"/> and <paramref name="b"/> are equal, otherwise <see langword="false"/>.</returns>
-        private static bool Equals (DoubleDouble a, DoubleDouble b) {
-            return ((a.hi == b.hi) && (a.lo == b.lo));
+        /// <param name="x">The first value.</param>
+        /// <param name="y">The second value.</param>
+        /// <returns><see langword="true"/> if <paramref name="x"/> and <paramref name="y"/> are equal, otherwise <see langword="false"/>.</returns>
+        public static bool Equals (DoubleDouble x, DoubleDouble y) {
+            // Is this really enough? I see no bugs in our tests, but isn't it possible for (hi+1, -lo) to represent same value as (hi,lo)?
+            return ((x.hi == y.hi) && (x.lo == y.lo));
         }
 
         /// <summary>
         /// Determines whether two double double values are equal.
         /// </summary>
-        /// <param name="a">The first value.</param>
-        /// <param name="b">The second value.</param>
-        /// <returns><see langword="true"/> if <paramref name="a"/> and <paramref name="b"/> are equal, otherwise <see langword="false"/>.</returns>
-        public static bool operator == (DoubleDouble a, DoubleDouble b) {
-            return (Equals(a, b));
+        /// <param name="x">The first value.</param>
+        /// <param name="y">The second value.</param>
+        /// <returns><see langword="true"/> if <paramref name="x"/> and <paramref name="y"/> are equal, otherwise <see langword="false"/>.</returns>
+        public static bool operator == (DoubleDouble x, DoubleDouble y) {
+            return (Equals(x, y));
         }
 
         /// <summary>
         /// Determines whether two double double values are unequal.
         /// </summary>
-        /// <param name="a">The first value.</param>
-        /// <param name="b">The second value.</param>
-        /// <returns><see langword="false"/> if <paramref name="a"/> and <paramref name="b"/> are equal, otherwise <see langword="true"/>.</returns>
-        public static bool operator != (DoubleDouble a, DoubleDouble b) {
-            return (!Equals(a, b));
+        /// <param name="x">The first value.</param>
+        /// <param name="y">The second value.</param>
+        /// <returns><see langword="false"/> if <paramref name="x"/> and <paramref name="y"/> are equal, otherwise <see langword="true"/>.</returns>
+        public static bool operator != (DoubleDouble x, DoubleDouble y) {
+            return (!Equals(x, y));
         }
 
         /// <summary>
@@ -561,41 +680,58 @@ namespace Meta.Numerics.Extended {
         /// <summary>
         /// Determines whether the first value is less than the second value.
         /// </summary>
-        /// <param name="a">The first value.</param>
-        /// <param name="b">The second value.</param>
-        /// <returns><see langword="true"/> if <paramref name="a"/> is less than <paramref name="b"/>, otherwise <see langword="false"/>.</returns>
-        public static bool operator < (DoubleDouble a, DoubleDouble b) {
-            return ((a.hi < b.hi) || ((a.hi == b.hi) && (a.lo < b.lo)));
+        /// <param name="x">The first value.</param>
+        /// <param name="y">The second value.</param>
+        /// <returns><see langword="true"/> if <paramref name="x"/> is less than <paramref name="y"/>, otherwise <see langword="false"/>.</returns>
+        public static bool operator < (DoubleDouble x, DoubleDouble y) {
+            return ((x.hi < y.hi) || ((x.hi == y.hi) && (x.lo < y.lo)));
         }
 
         /// <summary>
         /// Determines whether the first value is greater than the second value.
         /// </summary>
-        /// <param name="a">The first value.</param>
-        /// <param name="b">The second value.</param>
-        /// <returns><see langword="true"/> if <paramref name="a"/> is greater than <paramref name="b"/>, otherwise <see langword="false"/>.</returns>
-        public static bool operator > (DoubleDouble a, DoubleDouble b) {
-            return ((a.hi > b.hi) || ((a.hi == b.hi) && (a.lo > b.lo)));
+        /// <param name="x">The first value.</param>
+        /// <param name="y">The second value.</param>
+        /// <returns><see langword="true"/> if <paramref name="x"/> is greater than <paramref name="y"/>, otherwise <see langword="false"/>.</returns>
+        public static bool operator > (DoubleDouble x, DoubleDouble y) {
+            return ((x.hi > y.hi) || ((x.hi == y.hi) && (x.lo > y.lo)));
         }
 
         /// <summary>
         /// Determines whether the first value is less than or equal to the second value.
         /// </summary>
-        /// <param name="a">The first value.</param>
-        /// <param name="b">The second value.</param>
-        /// <returns><see langword="true"/> if <paramref name="a"/> is less than or equal to <paramref name="b"/>, otherwise <see langword="false"/>.</returns>
-        public static bool operator <= (DoubleDouble a, DoubleDouble b) {
-            return ((a.hi < b.hi) || ((a.hi == b.hi) && (a.lo <= b.lo)));
+        /// <param name="x">The first value.</param>
+        /// <param name="y">The second value.</param>
+        /// <returns><see langword="true"/> if <paramref name="x"/> is less than or equal to <paramref name="y"/>, otherwise <see langword="false"/>.</returns>
+        public static bool operator <= (DoubleDouble x, DoubleDouble y) {
+            return ((x.hi < y.hi) || ((x.hi == y.hi) && (x.lo <= y.lo)));
         }
 
         /// <summary>
         /// Determines whether the first value is greater than or equal to the second value.
         /// </summary>
-        /// <param name="a">The first value.</param>
-        /// <param name="b">The second value.</param>
-        /// <returns><see langword="true"/> if <paramref name="a"/> is greater than or equal to <paramref name="b"/>, otherwise <see langword="false"/>.</returns>
-        public static bool operator >= (DoubleDouble a, DoubleDouble b) {
-            return ((a.hi > b.hi) || ((a.hi == b.hi) && (a.lo >= b.lo)));
+        /// <param name="x">The first value.</param>
+        /// <param name="y">The second value.</param>
+        /// <returns><see langword="true"/> if <paramref name="x"/> is greater than or equal to <paramref name="y"/>, otherwise <see langword="false"/>.</returns>
+        public static bool operator >= (DoubleDouble x, DoubleDouble y) {
+            return ((x.hi > y.hi) || ((x.hi == y.hi) && (x.lo >= y.lo)));
+        }
+
+        /// <summary>
+        /// Compares two values.
+        /// </summary>
+        /// <param name="x">The first value.</param>
+        /// <param name="y">The second value.</param>
+        /// <returns>-1 if <paramref name="x"/> is less than <paramref name="y"/>, +1 if <paramref name="x"/> is greater than
+        /// <paramref name="y"/>, 0 if <paramref name="x"/> and <paramref name="y"/> are equal.</returns>
+        public static int Compare (DoubleDouble x, DoubleDouble y) {
+            if (x < y) {
+                return -1;
+            } else if (x > y) {
+                return +1;
+            } else {
+                return 0;
+            }
         }
 
         /// <summary>
@@ -604,13 +740,7 @@ namespace Meta.Numerics.Extended {
         /// <param name="other">The other value to compare.</param>
         /// <returns>-1 if this value is less than the other value, +1 if it is greater than the other value, 0 if they are equal.</returns>
         public int CompareTo (DoubleDouble other) {
-            if (this < other) {
-                return (-1);
-            } else if (this > other) {
-                return (+1);
-            } else {
-                return (0);
-            }
+            return Compare(this, other);
         }
 
         // random
@@ -628,6 +758,19 @@ namespace Meta.Numerics.Extended {
         }
 
         private const double eps = 1.0 / (1L << 54);
+
+        /// <summary>
+        /// Determines whether a double double value is not-a-number.
+        /// </summary>
+        /// <param name="x">The value.</param>
+        /// <returns>True is <paramref name="x"/> is not-a-number, otherwise false.</returns>
+        /// <remarks><para>By the floating point standard respect by <see cref="Double"/> and floating point types in
+        /// essentially all languages and frameworks, equality testing NaN always returns false. Therefore it is
+        /// necessary to have a specific method to test for not-a-number. <see cref="Double.IsNaN(double)"/> is that
+        /// method for <see cref="Double"/>, and this is that method for <see cref="DoubleDouble"/>.</para></remarks>
+        public static bool IsNaN (DoubleDouble x) {
+            return Double.IsNaN(x.hi);
+        }
 
     }
 

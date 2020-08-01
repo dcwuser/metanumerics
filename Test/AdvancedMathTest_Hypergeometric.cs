@@ -398,6 +398,7 @@ namespace Test {
 
         }
 
+        [Ignore]
         [TestMethod]
         public void HypergeometricCubicTransforms () {
 

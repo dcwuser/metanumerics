@@ -51,6 +51,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AdvancedComplexMathTest.cs" />
+    <Compile Include="AdvancedDoubleDoubleMathTest.cs" />
     <Compile Include="AdvancedIntegerMathTest.cs" />
     <Compile Include="AdvancedIntegerMathTest_Partitions.cs" />
     <Compile Include="AdvancedMathTest.cs" />
@@ -64,6 +65,8 @@
     <Compile Include="AdvancedMathTest_Gamma.cs" />
     <Compile Include="AdvancedMathTest_Hypergeometric.cs" />
     <Compile Include="AdvancedMathTest_Jacobi.cs" />
+    <Compile Include="AdvancedMathTest_ModifiedBessel.cs" />
+    <Compile Include="AdvancedMathTest_SphericalBessel.cs" />
     <Compile Include="AnovaTest.cs" />
     <Compile Include="BesselZeroTest.cs" />
     <Compile Include="BinaryContingencyTableTest.cs" />
@@ -75,8 +78,10 @@
     <Compile Include="ComplexVectorTests.cs" />
     <Compile Include="ContingencyTableTest.cs" />
     <Compile Include="DiagonalMatrixTests.cs" />
+    <Compile Include="DoubleDoubleMathTest.cs" />
     <Compile Include="FrameTableTests.cs" />
     <Compile Include="DataListTests.cs" />
+    <Compile Include="Int128Test.cs" />
     <Compile Include="UInt128Test.cs" />
     <Compile Include="UncertainMeasurementSampleTests.cs" />
     <Compile Include="FrameViewTests.cs" />

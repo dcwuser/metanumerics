@@ -10,6 +10,7 @@ using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 using Meta.Numerics;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Data;
+using Meta.Numerics.Extended;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.SignalProcessing;
 using Meta.Numerics.Statistics;
@@ -145,9 +146,197 @@ namespace Test {
         }
     }
 
+    public static class DoubleDoubleGamma {
+
+        public static readonly DoubleDouble[] Bernoulli = new DoubleDouble[] {
+            DoubleDouble.One, DoubleDouble.One / 6, -DoubleDouble.One / 30, DoubleDouble.One / 42, -DoubleDouble.One / 30,
+            ((DoubleDouble) 5) / 66, -((DoubleDouble) 691)  / 2730, ((DoubleDouble) 7) / 6, -((DoubleDouble) 3617) / 510, ((DoubleDouble) 43867) / 798,
+            -((DoubleDouble) 74611) / 330, ((DoubleDouble) 854513) / 138, -((DoubleDouble) 236364091) / 2730, ((DoubleDouble) 8553103) / 6, -((DoubleDouble) 23749461029) / 870
+        };
+
+        public static DoubleDouble Sum (DoubleDouble x) {
+            DoubleDouble rxPower = 1.0 / x;
+            DoubleDouble rxSquared = rxPower * rxPower;
+            DoubleDouble f = 0.5 * Bernoulli[1] * rxPower;
+            for (int k = 2; k < Bernoulli.Length; k++) {
+                DoubleDouble f_old = f;
+                rxPower *= rxSquared;
+                f += Bernoulli[k] / ((2 * k) * (2 * k - 1)) * rxPower;
+                if (f == f_old) {
+                    return (f);
+                }
+            }
+            throw new NonconvergenceException();
+        }
+
+        public static DoubleDouble LogGamma_Asymptotic (DoubleDouble x) {
+            // Sum from smallest to largest terms to minimize error.
+            return (Sum(x) + halfLogTwoPi - x + (x - 0.5) * DoubleDouble.Log(x));
+        }
+
+        public static DoubleDouble LogGammaFromAsymptotic (DoubleDouble x) {
+
+            Debug.Assert(x > 0.0);
+
+            DoubleDouble s = DoubleDouble.Zero;
+            while (x < 34.0) {
+                s += DoubleDouble.Log(x);
+                x += DoubleDouble.One;
+            }
+
+            return (LogGamma_Asymptotic(x) - s);
+
+        }
+
+        public static DoubleDouble LogGammaFromSeries (DoubleDouble x) {
+
+            Debug.Assert(x >= 1.5);
+
+            DoubleDouble s = DoubleDouble.Zero;
+            while (x > 2.5) {
+                x -= DoubleDouble.One;
+                s += DoubleDouble.Log(x);
+            }
+
+            DoubleDouble y = x - 2.0;
+            Debug.Assert(DoubleDouble.Abs(y) <= 0.5);
+            return (LogGammaTwoPlus(y) + s);
+        }
+
+        public static DoubleDouble ZetaMinusOne (int n) {
+            // For n < 16, needs more than 255 terms. Look into using
+            // Euler-Maclauren to accelerate.
+            DoubleDouble s = DoubleDouble.Zero;
+            for (int k = 2; k < 255; k++) {
+                DoubleDouble s_old = s;
+                s += DoubleDouble.Pow(k, -n);
+                if (s == s_old) {
+                    return s;
+                }
+            }
+            throw new NonconvergenceException();
+        }
+
+        public static DoubleDouble LambdaMinusOne (int n) {
+            DoubleDouble s = DoubleDouble.Zero;
+            for (int k = 3; k < 512; k += 2) {
+                DoubleDouble s_old = s;
+                s += DoubleDouble.Pow(k, -n);
+                if (s == s_old) {
+                    return s;
+                }
+            }
+            throw new NonconvergenceException();
+        }
+
+        private static DoubleDouble[] InitializeZetaMinusOne () {
+            DoubleDouble[] zetaMinusOne = new DoubleDouble[64];
+            zetaMinusOne[0] = -1.5;
+            zetaMinusOne[1] = Double.PositiveInfinity;
+            zetaMinusOne[2] = new DoubleDouble("0.64493406684822643647241516664602519");
+            zetaMinusOne[3] = new DoubleDouble("0.20205690315959428539973816151144999");
+            zetaMinusOne[4] = new DoubleDouble("0.082323233711138191516003696541167903");
+            zetaMinusOne[5] = new DoubleDouble("0.036927755143369926331365486457034168");
+            zetaMinusOne[6] = new DoubleDouble("0.017343061984449139714517929790920528");
+            zetaMinusOne[7] = new DoubleDouble("8.3492773819228268397975498497967596E-3");
+            zetaMinusOne[8] = new DoubleDouble("4.0773561979443393786852385086524653E-3");
+            zetaMinusOne[9] = new DoubleDouble("2.0083928260822144178527692324120605E-3");
+            zetaMinusOne[10] = new DoubleDouble("9.9457512781808533714595890031901701E-4");
+            zetaMinusOne[11] = new DoubleDouble("4.9418860411946455870228252646993647E-4");
+            zetaMinusOne[12] = new DoubleDouble("2.4608655330804829863799804773967096E-4");
+            zetaMinusOne[13] = new DoubleDouble("1.2271334757848914675183652635739571E-4");
+            zetaMinusOne[14] = new DoubleDouble("6.1248135058704829258545105135333747E-5");
+            zetaMinusOne[15] = new DoubleDouble("3.0588236307020493551728510645062588E-5");
+            return zetaMinusOne;
+        }
+
+        private static readonly DoubleDouble[] zetaMinusOne = InitializeZetaMinusOne();
+
+        private static DoubleDouble ZetaSeries (DoubleDouble x) {
+            DoubleDouble s = 0.0;
+            DoubleDouble xMinus = -x;
+            DoubleDouble xPower = xMinus;
+            for (int k = 2; k < zetaMinusOne.Length; k++) {
+                DoubleDouble s_old = s;
+                xPower *= xMinus;
+                // If not yet computed, compute next \zeta - 1 value.
+                if (zetaMinusOne[k] == DoubleDouble.Zero) {
+                    // Technically this is not thread-safe, because assignment is not atomic for non-native structs.
+                    // But at worst we are filling in the same value from two different threads, so this would only
+                    // be a problem if intermediate values are neither start nor end values in some circumstances.
+                    zetaMinusOne[k] = ZetaMinusOne(k);
+                }
+                s += zetaMinusOne[k] * xPower / k;
+                if (s == s_old) {
+                    return (s);
+                }
+            }
+            throw new NonconvergenceException();
+        }
+
+        public static DoubleDouble LogGammaTwoPlus (DoubleDouble x) {
+            return (DoubleDouble.One - AdvancedDoubleDoubleMath.EulerGamma) * x + ZetaSeries(x);
+        }
+
+        private static readonly DoubleDouble halfLogTwoPi = 0.5 * DoubleDouble.Log(2.0 * DoubleDouble.Pi);
+
+        
+
+    }
+
 
     [TestClass]
     public class FutureTest {
+
+        [TestMethod]
+        public void PowBenchmark () {
+
+            Random rng = new Random(1);
+
+            Stopwatch s1 = Stopwatch.StartNew();
+            for (int i = 0; i < 10000000; i++) {
+                double x = 2.0 * rng.NextDouble();
+                double y = Math.Pow(x, 17);
+            }
+            s1.Stop();
+
+            Stopwatch s2 = Stopwatch.StartNew();
+            for (int i = 0; i < 10000000; i++) {
+                double x = 2.0 * rng.NextDouble();
+                double y = MoreMath.Pow(x, 17);
+            }
+            s2.Stop();
+        }
+
+        //[TestMethod]
+        public void ErfMaxError () {
+
+            Random rng = new Random(1);
+            Double absMax = 0.0;
+            Double relMax = 0.0;
+            Double xAbsMax = Double.NaN;
+            Double xRelMax = Double.NaN;
+            for (int i = 0; i < 1000000; i++) {
+
+                Double x0 = rng.NextDouble() * 100.0;
+                Double y0 = AdvancedMath.Erf(x0);
+
+                DoubleDouble x1 = (DoubleDouble) x0;
+                DoubleDouble y1 = AdvancedDoubleDoubleMath.Erf(x1);
+
+                Double abs = (Double) DoubleDouble.Abs(y0 - y1);
+                if (abs > absMax) {
+                    absMax = abs;
+                    xAbsMax = x0;
+                }
+                Double rel = abs / y0;
+                if (rel > relMax) {
+                    relMax = rel;
+                    xRelMax = x0;
+                }
+            }
+
+        }
 
         [TestMethod]
         public void ChengBeta () {

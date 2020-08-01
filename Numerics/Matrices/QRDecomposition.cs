@@ -14,6 +14,9 @@ namespace Meta.Numerics.Matrices {
     /// <img src="../images/QRDecomposition.png" />
     /// <para>The method <see cref="RectangularMatrix.QRDecomposition"/> of the <see cref="RectangularMatrix"/> class can be used to QR decompose a
     /// rectangular matrix.</para>
+    /// <para>Note that this method produces the full QR decomposition, i.e. <see cref="QMatrix"/> is a square, orthogonal M X M matrix and <see cref="RMatrix"/>
+    /// is a rectangular M X N matrix.
+    /// In the reduced QR decomposition, which can also be used to solve linear systems, Q is a rectangular M X N matrix and R is a square N X N matrix.</para>
     /// </remarks>
     /// <seealso href="https://en.wikipedia.org/wiki/QR_decomposition"/>
     public sealed class QRDecomposition {
@@ -81,7 +84,9 @@ namespace Meta.Numerics.Matrices {
             // so truncate Q^T to cols X rows, so that Q^T x is only of length cols
             double[] y = new double[cols];
             Blas2.dGemv(qtStore, 0, 1, rows, x, 0, 1, y, 0, 1, cols, rows);
-            MatrixAlgorithms.SolveUpperRightTriangular(rStore, rows, cols, y, 0);
+            Blas2.dTrsv(true, false, rStore, 0, 1, rows, y, 0, 1, cols);
+
+            //MatrixAlgorithms.SolveUpperRightTriangular(rStore, rows, cols, y, 0);
 
             return (new ColumnVector(y, cols));
         }

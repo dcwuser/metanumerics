@@ -91,7 +91,7 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
-        private static readonly double largeLimit = MoreMath.Pow(2.0, 508);
+        private static readonly double largeLimit = Math.Sqrt(Double.MaxValue);
 
         private static readonly double smallLimit = 1.0 / largeLimit;
 

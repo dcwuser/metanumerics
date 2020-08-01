@@ -507,8 +507,16 @@ namespace Test {
 
         }
 
-
         // http://www.cs.columbia.edu/~cs4205/files/CM5.pdf
         // contains many lesser-known relationships among Stirling numbers
+
+        [TestMethod]
+        public void BernoulliNumbers () {
+            Assert.IsTrue(AdvancedIntegerMath.BernoulliNumber(0) == 1.0);
+            Assert.IsTrue(AdvancedIntegerMath.BernoulliNumber(1) == -1.0 / 2.0);
+            Assert.IsTrue(AdvancedIntegerMath.BernoulliNumber(2) == 1.0 / 6.0);
+            Assert.IsTrue(AdvancedIntegerMath.BernoulliNumber(3) == 0.0);
+        }
     }
+
 }

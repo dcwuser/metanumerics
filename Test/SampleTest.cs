@@ -122,13 +122,13 @@ namespace Test {
 
                 Assert.IsTrue(sample.Count == n);
 
-                Assert.IsTrue(sample.PopulationMean().ConfidenceInterval(0.95).ClosedContains(distribution.Mean));
+                Assert.IsTrue(sample.PopulationMean().ConfidenceInterval(0.99).ClosedContains(distribution.Mean));
 
-                Assert.IsTrue(sample.PopulationStandardDeviation().ConfidenceInterval(0.95).ClosedContains(distribution.StandardDeviation));
+                Assert.IsTrue(sample.PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(distribution.StandardDeviation));
 
                 for (int r = 0; r < 8; r++) {
-                    Assert.IsTrue(sample.PopulationCentralMoment(r).ConfidenceInterval(0.95).ClosedContains(distribution.CentralMoment(r)));
-                    Assert.IsTrue(sample.PopulationRawMoment(r).ConfidenceInterval(0.95).ClosedContains(distribution.RawMoment(r)));
+                    Assert.IsTrue(sample.PopulationCentralMoment(r).ConfidenceInterval(0.99).ClosedContains(distribution.CentralMoment(r)));
+                    Assert.IsTrue(sample.PopulationRawMoment(r).ConfidenceInterval(0.99).ClosedContains(distribution.RawMoment(r)));
                 }
             }
 

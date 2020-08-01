@@ -383,6 +383,10 @@ namespace Meta.Numerics.Analysis {
 
                 } else {
 
+                    if (fx == fu) {
+                        Debug.WriteLine($"f({x}) = f({u}) = {fx}");
+                    }
+
                     // x now becomes a bracket point
                     if (x < u) {
                         a = x;

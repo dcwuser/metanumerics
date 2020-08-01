@@ -260,25 +260,48 @@ namespace Meta.Numerics.Functions {
             double b = Math.Sqrt((1.0 - k) * (1.0 + k));
 
             // Starting from 1-k, 1+k, the first iteration will always take us to 1, k',
-            // so although it looks prettier (more symmetric) to start with 1-k, 1-k,
+            // so although it looks prettier (more symmetric) to start with 1+k, 1-k,
             // it's computationally faster to start with 1, k'.
 
-            for (int n=0; n < Global.SeriesMax; n++) {
+            return 0.5 * Math.PI / AGM(a, b);
+           
+        }
 
-                double am = (a + b) / 2.0;
+        private static double AGM (double x, double y) {
 
-                // if a and b are seperated by a small distance e, the update only changes a and b by e^2
-                // therefore we can stop as soon as a and b are within the square root of machine precision
-                // in fact, we must not use (a == b) as a termination criterion, because we can get into a loop
-                // where a and b dance around and never become precisely equal
-                if (Math.Abs(a-b) < SqrtAccuracy) {
-                    return (Math.PI / 2.0 / am);
+            // The basic technique of AGM is to compute
+            //   x_{n+1} = (x_{n} + y_{n}) / 2
+            //   y_{n+1} = \sqrt{ x_{n} y_{n} }
+            // until the both coverge to same value.
+
+            // A naively implemented convergence test (x == y) can cause endless
+            // looping because x and y dance around final value, changing the last
+            // few bits each time in a cycle. So we have to terminate when "close enough".
+
+            // You can do a series development to show that
+            //   agm(c-d, c+d) = c [ 1 - 1/4 r^2 - 5/64 r^4 - O(r^6) \right]
+            // where r = d/c, and the coefficient of r^6 is << 1.
+            // So we can stop when (d/c)^6 ~ \epsilon, or
+            // d ~ c \epsilon^(1/6), and then use this series to avoid
+            // taking last few roots. By simple algebra,
+            //   c = (x+y)/2  d = (x-y)/2
+            // and we would need to form the sum to take the next iteration anyway.
+
+            for (int n = 1; n < Global.SeriesMax; n++) {
+
+                double s = x + y;
+                double t = x - y;
+
+                if (Math.Abs(t) < Math.Abs(s) * agmEpsilon) {
+                    double rSquared = MoreMath.Sqr(t / s);
+                    return 0.5 * s * (1.0 - rSquared * (1.0 / 4.0 + 5.0 / 64.0 * rSquared));
                 }
 
-                double gm = Math.Sqrt(a * b);
-
-                a = am;
-                b = gm;
+                // This can go wrong when x * y underflows or overflows. This won't
+                // happen when called for EllipticE since we start with x=1. But
+                // don't make this method public until we can handle whole domain.
+                y = Math.Sqrt(x * y);
+                x = 0.5 * s;
 
             }
 
@@ -286,7 +309,7 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        private static readonly double SqrtAccuracy = Math.Sqrt(Global.Accuracy);
+        private static readonly double agmEpsilon = Math.Pow(1.0E-16, 1.0 / 6.0);
 
         /// <summary>
         /// Computes the complete elliptic integral of the first kind.
@@ -466,6 +489,116 @@ namespace Meta.Numerics.Functions {
 
             // I am a little worried that there could be cases where the cancelation between these two terms is significant
             return (s * (CarlsonF(x, y, 1.0) - sk2 / 3.0 * CarlsonD(x, y, 1.0)));
+
+        }
+
+        /// <summary>
+        /// Computes the complete elliptic integral of the third kind.
+        /// </summary>
+        /// <param name="n">The characteristic, which must be less than or equal to one.</param>
+        /// <param name="k">The elliptic modulus, which must lie between zero and one.</param>
+        /// <returns>The value of &#x3A0;(n, k)</returns>
+        /// <remarks>
+        /// <para>Be aware that some authors use the the parameter m = k<sup>2</sup> instead of the modulus k.</para>
+        /// </remarks>
+        /// <seealso href="http://en.wikipedia.org/wiki/Elliptic_integral"/>
+        /// <seealso href="https://mathworld.wolfram.com/EllipticIntegraloftheThirdKind.html"/>
+        public static double EllipticPi (double n, double k) {
+
+            if (n > 1.0) throw new ArgumentOutOfRangeException(nameof(n));
+            if (k < 0.0 || k > 1.0) throw new ArgumentOutOfRangeException(nameof(k));
+
+            if (n == 1.0 || k == 1.0) return Double.PositiveInfinity;
+
+            // DLMF 19.8 describes how to compute \Pi(n, k) via AGM plus some auxiluary
+            // calculations. Here a and g, along with p,  converge to AGM(1,k') in the
+            // usual way; the sum of auxiluary variables q computed along the way gives \Pi(n, k).
+            // This method appears to have been derived by Carlson in "Three Improvements in
+            // Reduction and Computation of Elliptic Integrals", Journal of Research of the
+            // National Institute of Standards and Technology, 2002 Sep-Oct 107(5): 413-418
+            // (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4861378/)
+            // as a specialization of his method to calcuate R_J.
+
+            double a = 1.0;
+            double g = Math.Sqrt((1.0 - k) * (1.0 + k));
+            double n1 = 1.0 - n;
+            double pSquared = n1;
+            double p = Math.Sqrt(pSquared);
+            double q = 1.0;
+            double s = q;
+
+            for (int i = 1; i < Global.SeriesMax; i++) {
+
+                double s_old = s;
+                double ag = a * g;
+                double e = (pSquared - ag) / (pSquared + ag);
+                q = 0.5 * q * e;
+                s += q;
+
+                double p_old = p;
+                p = (pSquared + ag) / (2.0 * p);
+
+                if (p == p_old && s == s_old) {
+                    return Math.PI / 4.0 / p * (2.0 + n / n1 * s);
+                }
+
+                pSquared = p * p;
+                a = 0.5 * (a + g);
+                g = Math.Sqrt(ag);
+
+            }
+
+            throw new NonconvergenceException();
+
+        }
+
+
+        /// <summary>
+        /// Compute the Jacobi nome of the given elliptic modulus.
+        /// </summary>
+        /// <param name="k">The elliptic modulus.</param>
+        /// <returns>The corresponding Jacobi nome q.</returns>
+        public static double EllipticNome (double k) {
+
+            if (k < 0.0 || k > 1.0) throw new ArgumentOutOfRangeException(nameof(k));
+
+            double kPrime = Math.Sqrt((1.0 - k) * (1.0 + k));
+
+            if (kPrime < 0.5) {
+                // k > ~7/8
+                // Use (\ln q) (\ln q') = \pi^2
+                double qPrime = EllipticNome_Internal(kPrime, k);
+                return Math.Exp(Math.PI * Math.PI / Math.Log(qPrime));
+            } else {
+                // k < ~7/8
+                return EllipticNome_Internal(k, kPrime);
+            }
+
+        }
+
+        private static double EllipticNome_Internal (double k, double kPrime) {
+
+            // Fukushima, "Fast Computation of complete elliptic integrals and Jacobian elliptic functions",
+            // Celestial Mechanism and Dynamical Astronomy, April 2012 describes a prodcedure from
+            // Innes 1902 (!) to transform k to a variable lambda that gives q via a very quickly
+            // convergent series. 
+
+            // \lambda = \frac{1}{2} \frac{1 - \sqrt{k'}}{1 + \sqrt{k'}}
+            // But to avoid cancellation error in numerator, use
+            // \lambda = \frac{1}{2} \frac{k^2}{(1 + k') (1 + \sqrt{k'})^2}
+
+            double x = 0.5 * MoreMath.Sqr(k / (1.0 + Math.Sqrt(kPrime))) / (1.0 + kPrime);
+
+            // q = \lambda + 2 \lambda^5 + 15 \lambda^9 + 150 \lambda^13 + 1707 \lambda^15 + \cdots
+            // Even for k = 0.9, \lambda is small enough that four terms converge to full
+            // precision. For simplicity, just hard-code to use all terms.
+
+            double y = MoreMath.Sqr(MoreMath.Sqr(x));
+            double q = x * (1.0 + y * (2.0 + y * (15.0 + y * (150.0 + y * 1707.0))));
+
+            // For even larger k, compute q for k' instead.
+
+            return (q);
 
         }
 

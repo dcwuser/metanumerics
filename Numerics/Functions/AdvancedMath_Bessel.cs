@@ -143,108 +143,6 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        private static double BesselJ_Miller (int n, double x) {
-            Debug.Assert(n >= 0);
-
-            // Start at a high enough order that values are neglible relative to the order sought.
-            int m = Bessel_Miller_Limit(n, x);
-            Debug.Assert(m > n);
-
-            // Recurr down to 0, keeping track of a sum we will use for re-scaling.
-            // Starting values are arbitrary, but should be small since they will grow,
-            // and we choose consistent with J_{m+1} = 0 to reflect assumption of rapid decrease.
-            double J = 1.0E-150;
-            double JP = m / x * J;
-            double s = 0.0;
-            while (m > n) {
-                if (m % 2 == 0) {
-                    s += J;
-                    int mh = m / 2;
-                    double dy = J / mh;
-                    if (mh % 2 == 0) dy = -dy;
-                }
-                double t = J;
-                J = m / x * J + JP;
-                m--;
-                JP = m / x * J - t;
-            }
-            // Pause and remember the values we want, which we will later re-scale.
-            double Jn = J;
-            double JPn = JP;
-            // Keep going down to zero to get sum.
-            while (m > 0) {
-                if (m % 2 == 0) {
-                    s += J;
-                    int mh = m / 2;
-                    double dy = J / mh;
-                    if (mh % 2 == 0) dy = -dy;
-                }
-                double t = J;
-                J = m / x * J + JP;
-                m--;
-                JP = m / x * J - t;
-            }
-
-            // Use 1 = J_0 + 2 J_2 + 2 J_4 + 2 J_6 + 2 J_8 + \cdots to re-scale J_n (and J_n').
-            s = J + 2.0 * s;
-            Jn /= s;
-            JPn /= s;
-
-            return (Jn);
-        }
-
-        private static double BesselY_Miller (int n, double x) {
-            Debug.Assert(n >= 0);
-
-            // Start at a high order.
-            int m = Bessel_Miller_Limit(1, x);
-
-            // Recurr J down to 0, keeping track of some sums we will use for re-scaling.
-            // Starting values are arbitrary, but should be small since they will grow,
-            // and we choose consistent with J_{m+1} = 0 to reflect assumption of rapid decrease.
-            double J = 1.0E-150;
-            double JP = m / x * J;
-            double s = 0.0;
-            double Y = 0.0;
-            while (m > 0) {
-                if (m % 2 == 0) {
-                    s += J;
-                    int mh = m / 2;
-                    double dy = J / mh;
-                    if (mh % 2 == 0) dy = -dy;
-                    Y += dy;
-                }
-                double t = J;
-                J = m / x * J + JP;
-                m--;
-                JP = m / x * J - t;
-            }
-
-            // Use 1 = J_0 + 2 J_2 + 2 J_4 + 2 J_6 + 2 J_8 + \cdots to re-scale J_0 (and J_0').
-            s = J + 2.0 * s;
-            J /= s;
-            JP /= s;
-
-            // Use Y_0 = (2 / \pi) \left[ ( \ln(x/2) + \gamma ) J_0 + J_2 - 1/2 J_4 + 1/3 J_6 - 1/4 J_8 + \cdots \right]
-            // to find Y_0.
-            Y /= s;
-            Y = 2.0 / Math.PI * ((Math.Log(0.5 * x) + AdvancedMath.EulerGamma) * J + 2.0 * Y);
-
-            // Use Wronskian J_0 Y_0 - Y_0 J_0' = \frac{2}{\pi x} to find Y_0'.
-            double YP = (2.0 / Math.PI / x + Y * JP ) / J;
-
-            // Recurr up to desired n based on 
-            while (m < n) {
-                double t = Y;
-                Y = m / x * Y - YP;
-                m++;
-                YP = t - m / x * Y;
-            }
-
-            return (Y);
-
-        }
-
         // This implementation of the Miller algorithm starts from a high enough order to accurately
         // determine J_{nJ}, iterates down to J_0, and uses a sum rule to normalize correctly.
         // It then uses another sum rule to determine Y_0 and iterates up to Y_{nY}.
@@ -832,7 +730,7 @@ namespace Meta.Numerics.Functions {
             if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
 
             if (x == 0.0) {
-                return (Bessel_Zero(nu));
+                return Bessel_Zero(nu, +1);
             } else if (x < 4.0) {
 
                 // Close to the origin, use the series for Y and J.
@@ -1059,10 +957,11 @@ namespace Meta.Numerics.Functions {
 
         }
 
-        // Behavior at zero is slightly complicated, depending on \nu.
-        // Interestingly, the limits are the same for J, Y as for I, K.
+        // Behavior at zero argument is slightly complicated, depending on \nu.
+        // The limits for J and I are the same. The limits for Y and K differ
+        // only in sign. Therefore we use the same method for both.
 
-        private static SolutionPair Bessel_Zero (double nu) {
+        private static SolutionPair Bessel_Zero (double nu, int s) {
 
             Debug.Assert(nu >= 0.0);
 
@@ -1081,8 +980,8 @@ namespace Meta.Numerics.Functions {
                 }
             }
 
-            double Y = Double.NegativeInfinity;
-            double YP = Double.PositiveInfinity;
+            double Y = s * Double.NegativeInfinity;
+            double YP = s * Double.PositiveInfinity;
 
             return (new SolutionPair(J, JP, Y, YP));
 
@@ -1090,203 +989,7 @@ namespace Meta.Numerics.Functions {
 
         // **** Spherical Bessel functions ****
 
-        /// <summary>
-        /// Computes the regular spherical Bessel function of integer order.
-        /// </summary>
-        /// <param name="n">The order parameter.</param>
-        /// <param name="x">The argument.</param>
-        /// <returns> The value of j<sub>n</sub>(x).</returns>
-        /// <remarks>
-        /// <para>The spherical Bessel functions occur in solutions to the wave equations with spherical symmetry. The
-        /// regular sperhical Bessel functions are finite at the origin, and thus occur in situations where the wave equation is satisfied
-        /// at the origin.</para>
-        /// <para>The regular spherical Bessel functions are related to the regular Bessel functions of half-integer order by
-        /// j<sub>n</sub>(x) = Sqrt(&#x3C0;/2x) J<sub>n+1/2</sub>(x).</para></remarks>
-        /// <seealso cref="SphericalBesselY" />
-        /// <seealso cref="BesselJ(double,double)"/>
-        /// <seealso href="http://mathworld.wolfram.com/SphericalBesselFunctionoftheFirstKind.html" />
-        public static double SphericalBesselJ (int n, double x) {
-
-            if (x < 0.0) {
-                if (n % 2 == 0) {
-                    return (SphericalBesselJ(n, -x));
-                } else {
-                    return (-SphericalBesselJ(n, -x));
-                }
-            }
-
-            if (n < 0) {
-                if ((n % 2) == 0) {
-                    return (SphericalBesselY(-n - 1, x));
-                } else {
-                    return (-SphericalBesselY(-n - 1, x));
-                }
-            } else if (n == 0) {
-                return (SphericalBesselJ_Zero(x));
-            } else if (n == 1) {
-                return (SphericalBesselJ_One(x));
-            } else {
-                if (x <= Math.Sqrt(2 * n + 3)) {
-                    // close enough to the origin, use the power series
-                    return (SphericalBesselJ_Series(n, x));
-                } else if (x >= (32.0 + 0.5 * n * n)) {
-                    // far enough from the origin, use the asymptotic expansion
-                    return (Math.Sqrt(Math.PI / 2.0 / x) * Bessel_Asymptotic(n + 0.5, x).FirstSolutionValue);
-                } else {
-                    // in the transition region, use Miller's algorithm
-                    return (SphericalBesselJ_Miller(n, x));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Computes the irregular spherical Bessel function of integer order.
-        /// </summary>
-        /// <param name="n">The order parameter.</param>
-        /// <param name="x">The argument.</param>
-        /// <returns>The value of y<sub>n</sub>(x).</returns>
-        /// <seealso cref="SphericalBesselJ"/>
-        /// <seealso href="http://mathworld.wolfram.com/SphericalBesselFunctionoftheSecondKind.html" />
-        public static double SphericalBesselY (int n, double x) {
-
-            if (x < 0.0) {
-                if (n % 2 == 0) {
-                    return (-SphericalBesselY(n, -x));
-                } else {
-                    return (SphericalBesselY(n, -x));
-                }
-            }
-
-            if (n < 0) {
-                if ((n % 2) == 0) {
-                    return (-SphericalBesselJ(-n - 1, x));
-                } else {
-                    return (SphericalBesselJ(-n - 1, x));
-                }
-            } else if (n == 0) {
-                return (SphericalBesselY_Zero(x));
-            } else if (n == 1) {
-                SphericalBesselY_ZeroAndOne(x, out double _, out double y1);
-                return (y1);
-            } else {
-                if (x < (2.0 + Math.Sqrt(n))) {
-                    return (SphericalBesselY_Series(n, x));
-                } else if (x > (30.0 + 0.5 * n * n)) {
-                    // if x is large enough, use asymptotic expansion
-                    return (Math.Sqrt(Global.HalfPI / x) * Bessel_Asymptotic(n + 0.5, x).SecondSolutionValue);
-                } else {
-                    // Recurse upward from y0 and y1
-                    SphericalBesselY_ZeroAndOne(x, out double ym1, out double y);
-                    for (int k = 1; k < n; k++) {
-                        double yp1 = (2 * k + 1) / x * y - ym1;
-                        ym1 = y;
-                        y = yp1;
-                        if (Double.IsInfinity(y)) break;
-                    }
-                    return (y);
-                }
-            }
-
-        }
-
-        private static double SphericalBesselJ_Zero (double x) {
-            return (MoreMath.Sinc(x));
-        }
-
-        private static double SphericalBesselJ_SeriesOne (double x) {
-            double xx = x * x / 2.0;
-            double dj = x / 3.0;
-            double j = dj;
-            for (int i = 1; i < Global.SeriesMax; i++) {
-                double j_old = j;
-                dj = -dj * xx / i / (2 * i + 3);
-                j = j_old + dj;
-                if (j == j_old) return (j);
-            }
-            throw new NonconvergenceException();
-        }
-
-        private static double SphericalBesselJ_One (double x) {
-            if (Math.Abs(x) < 0.5) {
-                return (SphericalBesselJ_SeriesOne(x));
-            } else if (Math.Abs(x) > 100.0) {
-                return (Math.Sqrt(Global.HalfPI / x) * Bessel_Asymptotic(1.5, x).FirstSolutionValue);
-            } else {
-                return ((MoreMath.Sin(x) / x - MoreMath.Cos(x)) / x);
-            }
-        }
-
-        private static double SphericalBesselJ_Series (int n, double x) {
-            double xx = -0.5 * x * x ;
-            double df = PowerOverDoubleFactorial(x, n);
-            //double df = MoreMath.Pow(x, n) / AdvancedIntegerMath.DoubleFactorial(2 * n + 1);
-            //double df = Math.Exp(n * Math.Log(x) - AdvancedIntegerMath.LogDoubleFactorial(2 * n + 1));
-            double f = df;
-            for (int k = 1; k < Global.SeriesMax; k++) {
-                double f_old = f;
-                df *= xx / (k * (2 * (n + k) + 1));
-                f += df;
-                if (f == f_old) {
-                    return (f);
-                }
-            }
-            throw new NonconvergenceException();
-        }
-
-        private static double SphericalBesselY_Series (int n, double x) {
-            double xx = -0.5 * x * x;
-            double df = -1.0 / PowerOverDoubleFactorial(x, n - 1) / (x * x);
-            double f = df;
-            for (int k = 1; k < Global.SeriesMax; k++) {
-                double f_old = f;
-                df *= xx / (k * (2 * (k - n) - 1));
-                f += df;
-                if (f == f_old) {
-                    return (f);
-                }
-            }
-            throw new NonconvergenceException();
-        }
-
-        private static double SphericalBesselY_Zero (double x) {
-            return (-MoreMath.Cos(x) / x);
-        }
-
-        private static void SphericalBesselY_ZeroAndOne (double x, out double y0, out double y1) {
-            y0 = -MoreMath.Cos(x) / x;
-            y1 = (y0 - MoreMath.Sin(x)) / x;
-        }
-
-        // Miller's method assumes a value at some high N and recurrs downward
-        // the result is then normalized using a sum relation or a known value
-
-        private static double SphericalBesselJ_Miller (int n, double x) {
-
-            int m = Bessel_Miller_Limit(n, x);
-            Debug.Assert(m > n);
-
-            double jp1 = 0.0;
-            double j = 1.0E-150;
-
-            // recur downward to order zero
-            // the recurrence j_{k-1} = (2k+1)/x * j_k - j_{k+1} is stable in this direction
-            for (int k = m; k > n; k--) {
-                double jm1 = (2 * k + 1) / x * j - jp1;
-                jp1 = j;
-                j = jm1;
-            }
-            double jn = j;
-            for (int k = n; k > 0; k--) {
-                double jm1 = (2 * k + 1) / x * j - jp1;
-                jp1 = j;
-                j = jm1;
-            }
-
-            // compute the value we should have got and use it to normalize our result
-            double j0 = SphericalBesselJ_Zero(x);
-            return ((j0 / j) * jn);
-
-        }
+        
 
         // Functions needed for uniform asymptotic expansions
 

@@ -29,7 +29,7 @@ namespace Meta.Numerics {
 
             switch (n) {
                 case 0:
-                    // we follow convention that 0^0 = 1
+                    // We follow convention that 0^0 = 1.
                     return (1.0);
                 case 1:
                     return (x);
@@ -89,11 +89,16 @@ namespace Meta.Numerics {
                         double x8 = x4 * x4;
                         return (x8 * x8);
                     }
-                // that's all the cases do-able in 4 or fewer multiplies
+                // Those are all the cases do-able in 4 or fewer multiplies.
                 default:
                     return (Math.Pow(x, n));
             }
 
+            // I verified that this routine is measurably faster than Math.Pow for the
+            // cases that require 4 or fewer hand-coded multiplies.
+
+            // I also tried doing higher powers via exponentiation-by-squaring, but found
+            // that was actually slightly slower than Math.Pow.
 
         }
 
@@ -141,7 +146,7 @@ namespace Meta.Numerics {
         //     relative error is ~ 2.7 bits.
         //   * He points out that the doubling formula expm1(x) = expm1(x/2) * (expm1(x/2) + 2) allows one
         //     to reduce this by 2 terms and save 3 flops. But this is hardly worth the complication
-        //     and actually looses a smidgeon of accuracy.
+        //     and he finds that it actually looses a smidgeon of accuracy.
         //   * He reviews several much more complicated schemes, e.g. minimax rational approximations,
         //     which allow more significant efficiency gains and error reduction.
         // For now, I use the Taylor series with his limits.
@@ -221,7 +226,7 @@ namespace Meta.Numerics {
         //   log1p(x) = x log(1 + x) / ((1 + x) - 1)
         // is accurate to 5 ulp.
 
-        // It looks like the GO implementatio of log1p uses a more complex algorithm involving polynomial fits
+        // It looks like the GO implementation of log1p uses a more complex algorithm involving polynomial fits
         // that they claim is accurate to 1 ulp, so that might be good to look into.
 
         // Previously, I used the series development, but not over a wide enough range of arguments. So this trick
@@ -246,22 +251,6 @@ namespace Meta.Numerics {
             } else {
                 return (Math.Log(z) / (z - 1.0) * x);
             }
-            /*
-            if (Math.Abs(x) < 0.125) {
-                // For small x, use the series \log(1-x) = - \sum_{k=1}^{\infty} \frac{x^k}{k}. 
-                double xk = x;
-                double f = xk;
-                for (int k = 2; k < Global.SeriesMax; k++) {
-                    double f_old = f;
-                    xk *= -x;
-                    f += xk / k;
-                    if (f == f_old) return (f);
-                }
-                throw new NonconvergenceException();
-            } else {
-                return (Math.Log(1.0 + x));
-            }
-            */
         }
 
         // Computes \log (1 + e * x) / e, i.e. the rate at which LogOnePlus changes with e

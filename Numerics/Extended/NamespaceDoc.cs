@@ -13,6 +13,10 @@ namespace Meta.Numerics.Extended {
     /// <para>The <see cref="DoubleInfo"/> structure exposes information on the internal
     /// representation of a <see cref="Double"/>. It is mostly useful for developers working
     /// on the details of numerical algorithms.</para>
+    /// <para>The <see cref="Int128"/> structure is a 128-bit wide integer register. It
+    /// functions analogously to <see cref="Int64"/> and <see cref="Int32"/>, but supports
+    /// values up to ~10<sup>38</sup>. The <see cref="UInt128"/> structure is its
+    /// unsigned counterpart.</para>
     /// </remarks>
     [CompilerGenerated]
     internal static class NamespaceDoc {

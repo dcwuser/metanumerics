@@ -3,12 +3,14 @@ using System.Diagnostics;
 
 namespace Meta.Numerics.Extended {
 
-    internal static class ExtendedMath {
-        public static bool IsFinite (double x) {
-            long u = BitConverter.DoubleToInt64Bits(x);
-            return ((u & 0x7FF0000000000000) != 0x7FF0000000000000);
-        }
+    // http://web.mit.edu/tabbott/Public/quaddouble-debian/qd-2.3.4-old/docs/qd.pdf
 
+    internal static class ExtendedMath {
+
+        public static bool IsNotFinite (double x) {
+            ulong storage = (ulong) BitConverter.DoubleToInt64Bits(x);
+            return ((storage & 0x7ff0000000000000) == 0x7ff0000000000000);
+        }
 
         public static void FastTwoSum (double a, double b, out double sum, out double err) {
             // The following diagram illustrates how this algorithm recovers the digits of b that are lost
@@ -19,7 +21,7 @@ namespace Meta.Numerics.Extended {
             // u = s - a =   bb00
             // e = b - u =     bb
 
-            Debug.Assert(Math.Abs(a) >= Math.Abs(b));
+            Debug.Assert(Math.Abs(a) >= Math.Abs(b) || Double.IsNaN(a) || Double.IsNaN(b));
 
             sum = a + b;
             double u = sum - a;

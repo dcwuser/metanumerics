@@ -395,6 +395,7 @@ namespace Meta.Numerics.Functions
 
     }
 
+#if FUTURE
     public static partial class AdvancedComplexMath {
 
         public static Complex AiryAi_Series (Complex z) {
@@ -477,4 +478,6 @@ namespace Meta.Numerics.Functions
         }
 
     }
+#endif
+
 }

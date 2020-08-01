@@ -381,6 +381,7 @@ namespace Meta.Numerics.Matrices {
         /// Computes a QR decomposition of the matrix.
         /// </summary>
         /// <returns>A QR decomposition of the matrix.</returns>
+        /// <seealso cref="Matrices.QRDecomposition"/>
         public SquareQRDecomposition QRDecomposition () {
             double[] rStore = MatrixAlgorithms.Copy(store, offset, rowStride, colStride, dimension, dimension);
             double[] qtStore = SquareMatrixAlgorithms.CreateUnitMatrix(dimension);

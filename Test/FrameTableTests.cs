@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
 
-namespace DataTest
+namespace Test
 {
     [TestClass]
     public class FrameTableTests
@@ -191,7 +191,7 @@ namespace DataTest
         public void Smoketest () {
 
             FrameTable frame;
-            string url = "https://raw.github.com/pandas-dev/pandas/master/pandas/tests/data/tips.csv";
+            string url = "https://raw.githubusercontent.com/pandas-dev/pandas/master/doc/data/tips.csv";
             WebRequest request = WebRequest.Create(url);
             using (WebResponse response = request.GetResponse()) {
                 using (Stream responseStream = response.GetResponseStream()) {

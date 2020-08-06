@@ -8,7 +8,7 @@ namespace Meta.Numerics.Functions {
     /// <summary>
     /// Represents the state of a spinor.
     /// </summary>
-    public struct SpinState {
+    public struct SpinState : IEquatable<SpinState> {
 
         /// <summary>
         /// Instantiates a new SpinState with the given spin and magnetic quantum numbers.
@@ -105,7 +105,16 @@ namespace Meta.Numerics.Functions {
         // equality
 
         private static bool Equals (SpinState s1, SpinState s2) {
-            return ((s1.spin == s2.spin) && (s1.twoM == s2.twoM));
+            return (s1.spin == s2.spin) && (s1.twoM == s2.twoM);
+        }
+
+        /// <summary>
+        /// Tests whether another instance equals the current instance.
+        /// </summary>
+        /// <param name="other">The other <see cref="SpinState"/> instance.</param>
+        /// <returns><see langword="true"/> if the current instance is equal to  <paramref name="other"/>, otherwise <see langword="false"/>.</returns>
+        public bool Equals (SpinState other) {
+            return Equals(this, other);
         }
 
         /// <summary>
@@ -113,9 +122,9 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="s1">The first spin state.</param>
         /// <param name="s2">The second spin state.</param>
-        /// <returns>True if <paramref name="s1"/> and <paramref name="s2"/> are equal, otherwise false.</returns>
+        /// <returns><see langword="true"/> if <paramref name="s1"/> and <paramref name="s2"/> are equal, otherwise <see langword="true"/>.</returns>
         public static bool operator == (SpinState s1, SpinState s2) {
-            return (Equals(s1, s2));
+            return Equals(s1, s2);
         }
 
         /// <summary>
@@ -123,18 +132,18 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="s1">The first spin state.</param>
         /// <param name="s2">The second spin state.</param>
-        /// <returns>False if <paramref name="s1"/> and <paramref name="s2"/> are equal, otherwise true.</returns>
+        /// <returns><see langword="false"/> if <paramref name="s1"/> and <paramref name="s2"/> are equal, otherwise <see langword="true"/>.</returns>
         public static bool operator != (SpinState s1, SpinState s2) {
-            return (!Equals(s1, s2));
+            return !Equals(s1, s2);
         }
 
         /// <summary>
         /// Determines whether the given object represents the same spin state.
         /// </summary>
         /// <param name="obj">The object to compare.</param>
-        /// <returns>True if <paramref name="obj"/> is an equal spin state, otherwise false.</returns>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> is an equal spin state, otherwise <see langword="false"/>.</returns>
         public override bool Equals (object obj) {
-            return ((obj is SpinState) && Equals(this, (SpinState)obj));
+            return (obj is SpinState) && Equals(this, (SpinState) obj);
         }
 
         /// <summary>
@@ -142,8 +151,8 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <returns>An integer which is guaranteed equal for equal spin states, an unlikely to be equal for unequal spin states.</returns>
         public override int GetHashCode () {
-            // left-shift 2j by about half the with of an int (which is 32 bits) so 2j and 2m values are unlikely to interfere
-            return ((TwoJ << 14) ^ (TwoM));
+            // left-shift 2j by about half the width of an int (which is 32 bits) so 2j and 2m values are unlikely to interfere
+            return (TwoJ << 14) ^ (TwoM);
         }
 
         /// <summary>
@@ -151,15 +160,20 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <returns>A string representation of the spin state.</returns>
         public override string ToString () {
+            return ToString(CultureInfo.CurrentCulture);
+        }
+
+        private string ToString (IFormatProvider provider) {
+            NumberFormatInfo numberFormat = (NumberFormatInfo) provider.GetFormat(typeof(NumberFormatInfo));
             StringBuilder text = new StringBuilder(spin.ToString());
-            text.AppendFormat(CultureInfo.CurrentCulture, ",");
+            text.Append(",");
             if (twoM > 0) {
-                text.Append(CultureInfo.CurrentCulture.NumberFormat.PositiveSign);
+                text.Append(numberFormat.PositiveSign);
             } else if (twoM < 0) {
-                text.Append(CultureInfo.CurrentCulture.NumberFormat.NegativeSign);
+                text.Append(numberFormat.NegativeSign);
             }
             text.Append(SpinString(Math.Abs(twoM)));
-            return (text.ToString());
+            return text.ToString();
         }
 
         private static string SpinString (int twoJ) {

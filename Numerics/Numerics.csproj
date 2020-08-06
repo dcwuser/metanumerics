@@ -1,28 +1,33 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard1.1</TargetFramework>
     <AssemblyName>Meta.Numerics</AssemblyName>
     <RootNamespace>Meta.Numerics</RootNamespace>
-    <Version>4.0.8</Version>
-    <Copyright>Copyright © David Wright 2008-2018</Copyright>
+    <Version>4.1.0-alpha</Version>
+    <Copyright>Copyright © David Wright 2008-2020</Copyright>
     <Authors>David Wright</Authors>
     <Company>Meta Numerics</Company>
     <Description>A library for numeric computing with support for data manipulation, statistics, matrix algebra, and advanced functions.</Description>
     <PackageProjectUrl>http://www.meta-numerics.net</PackageProjectUrl>
-    <PackageTags>numeric scientific technical math statistics matrix fft</PackageTags>
+    <PackageTags>numeric scientific technical math statistics matrix fft data optimization</PackageTags>
     <PackageIconUrl>http://www.meta-numerics.net/Images/ComplexPsiPlot.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/dcwuser/metanumerics</RepositoryUrl>
-    <DebugType>Full</DebugType>
+    <DebugType>portable</DebugType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageLicenseUrl>https://opensource.org/licenses/MS-PL</PackageLicenseUrl>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DefineConstants>TRACE;RELEASE;NETSTANDARD1_1</DefineConstants>
     <CodeAnalysisRuleSet>Numerics1.ruleset</CodeAnalysisRuleSet>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <CodeAnalysisRuleSet>Numerics1.ruleset</CodeAnalysisRuleSet>
+    <DocumentationFile></DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

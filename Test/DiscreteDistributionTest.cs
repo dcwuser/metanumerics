@@ -22,11 +22,12 @@ namespace Test {
             return (new DiscreteDistribution[] {
                 new BernoulliDistribution(0.1),
                 new BinomialDistribution(0.2, 30), new BinomialDistribution(0.4, 5),
-                new PoissonDistribution(4.5), new PoissonDistribution(400.0),
+                new PoissonDistribution(0.54), new PoissonDistribution(5.4), new PoissonDistribution(540.0),
                 new DiscreteUniformDistribution(5, 11),
                 new GeometricDistribution(0.6),
                 new NegativeBinomialDistribution(7.8, 0.4),
-                new HypergeometricDistribution(9, 3, 5)
+                new HypergeometricDistribution(9, 3, 5),
+                new DiscreteTestDistribution()
             });
         }
 
@@ -59,6 +60,42 @@ namespace Test {
         }
 
         [TestMethod]
+        public void DiscreteDistributionSupport () {
+
+            foreach (DiscreteDistribution distribution in distributions) {
+
+                // To left of support
+                if (distribution.Support.LeftEndpoint > Int32.MinValue) {
+                    int k0 = distribution.Support.LeftEndpoint - 1;
+                    Assert.IsTrue(distribution.LeftInclusiveProbability(k0) == 0.0);
+                    Assert.IsTrue(distribution.LeftExclusiveProbability(k0) == 0.0);
+                    Assert.IsTrue(distribution.RightExclusiveProbability(k0) == 1.0);
+                    Assert.IsTrue(distribution.ProbabilityMass(k0) == 0.0);
+                }
+
+                // At left end of support
+                int k1 = distribution.Support.LeftEndpoint;
+                Assert.IsTrue(distribution.LeftInclusiveProbability(k1) == distribution.ProbabilityMass(k1));
+                Assert.IsTrue(distribution.LeftExclusiveProbability(k1) == 0.0);
+                Assert.IsTrue(distribution.InverseLeftProbability(0.0) == k1);
+
+                // At right end of support
+                int k2 = distribution.Support.RightEndpoint;
+                Assert.IsTrue(distribution.LeftInclusiveProbability(k2) == 1.0);
+                //Assert.IsTrue(distribution.RightExclusiveProbability(k2) == 0.0);
+
+                // To right of support
+                if (distribution.Support.RightEndpoint < Int32.MaxValue) {
+                    int k3 = distribution.Support.RightEndpoint + 1;
+                    Assert.IsTrue(distribution.LeftInclusiveProbability(k3) == 1.0);
+                    Assert.IsTrue(distribution.LeftExclusiveProbability(k3) == 1.0);
+                    Assert.IsTrue(distribution.RightExclusiveProbability(k3) == 0.0);
+                }
+
+            }
+        }
+
+        [TestMethod]
         public void DiscreteDistributionProbabilityAxioms () {
 
             foreach (DiscreteDistribution distribution in distributions) {
@@ -66,19 +103,16 @@ namespace Test {
                 // some of these values will be outside the support, but that's fine, our results should still be consistent with probability axioms
                 foreach (int k in TestUtilities.GenerateUniformIntegerValues(-10, +100, 8)) {
 
-                    Console.WriteLine("{0} {1}", distribution.GetType().Name, k);
-
                     double DP = distribution.ProbabilityMass(k);
-                    Assert.IsTrue(DP >= 0.0); Assert.IsTrue(DP <= 1.0);
+                    Assert.IsTrue(0.0 <= DP && DP <= 1.0);
 
                     double P = distribution.LeftInclusiveProbability(k);
+                    Assert.IsTrue(0.0 <= P && P <= 1.0);
+
                     double Q = distribution.RightExclusiveProbability(k);
-                    Console.WriteLine("{0} {1} {2}", P, Q, P + Q);
+                    Assert.IsTrue(0.0 <= Q && Q <= 1.0);
 
-                    Assert.IsTrue(P >= 0.0); Assert.IsTrue(P <= 1.0);
-                    Assert.IsTrue(Q >= 0.0); Assert.IsTrue(Q <= 1.0);
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(P + Q, 1.0));
-
                 }
 
             }
@@ -95,8 +129,6 @@ namespace Test {
 
                 foreach (DiscreteDistribution distribution in distributions) {
                     int k = distribution.InverseLeftProbability(P);
-                    Console.WriteLine("{0} P={1} K={2} P(k<K)={3} P(k<=K)={4}", distribution.GetType().Name, P, k, distribution.LeftExclusiveProbability(k), distribution.LeftInclusiveProbability(k));
-                    Console.WriteLine("    {0} {1}", distribution.LeftExclusiveProbability(k) < P, P <= distribution.LeftInclusiveProbability(k));
                     Assert.IsTrue(distribution.LeftExclusiveProbability(k) < P);
                     Assert.IsTrue(P <= distribution.LeftInclusiveProbability(k));
                 }
@@ -208,7 +240,8 @@ namespace Test {
             Random rng = new Random(271828);
             foreach (DiscreteDistribution distribution in distributions) {
 
-                // see bug about problematic Poisson for high means
+                // High mean Poisson has at most ~2 counts in all bins
+                // Make chi square test re-bin before trying it here
                 if (distribution is PoissonDistribution) continue;
 
                 List<int> sample = new List<int>();
@@ -260,6 +293,9 @@ namespace Test {
             BernoulliFitResult fit = BernoulliDistribution.FitToSample(n0, n1);
             Assert.IsTrue(fit.P.ConfidenceInterval(0.95).ClosedContains(p));
             Assert.IsTrue(fit.GoodnessOfFit.Probability > 0.05);
+
+            Assert.IsTrue(fit.Parameters.Count == 1);
+            Assert.IsTrue(fit.Parameters[0].Estimate == fit.P);
         }
 
         [TestMethod]

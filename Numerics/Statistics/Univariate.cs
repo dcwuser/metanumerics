@@ -58,9 +58,7 @@ namespace Meta.Numerics.Statistics {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 1) return (Double.NaN);
 
-            int n;
-            double mean;
-            ComputeMomentsUpToFirst(sample, out n, out mean);
+            ComputeMomentsUpToFirst(sample, out int n, out double mean);
 
             return (mean);
         }
@@ -82,9 +80,7 @@ namespace Meta.Numerics.Statistics {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 1) return (Double.NaN);
 
-            int n;
-            double mean, sumOfSquares;
-            ComputeMomentsUpToSecond(sample, out n, out mean, out sumOfSquares);
+            ComputeMomentsUpToSecond(sample, out int n, out double mean, out double sumOfSquares);
             Debug.Assert(sample.Count == n);
 
             return (sumOfSquares / n);
@@ -101,9 +97,7 @@ namespace Meta.Numerics.Statistics {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 1) return (Double.NaN);
 
-            int n;
-            double m1, c2, c3;
-            ComputeMomentsUpToThird(sample, out n, out m1, out c2, out c3);
+            ComputeMomentsUpToThird(sample, out int n, out double m1, out double c2, out double c3);
             Debug.Assert(sample.Count == n);
             Debug.Assert(c2 >= 0.0);
 
@@ -231,9 +225,12 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The standard deviation of the sample data.</returns>
         /// <remarks>
         /// <para>Note that a few authors use the term "sample standard deviation" to mean "the square root of the population variance as estimated by the sample".
-        /// We do not adopt this aberrant convention, which is contrary to all other conventional meanings of sample moments. In other words, what is returned
-        /// by this methods is the square root of the sum of squared deviations divided by n, not divided by (n-1). If you want an estimate of the population
-        /// standard deviation, use the <see cref="PopulationStandardDeviation"/> method.</para>
+        /// We do not adopt this aberrant convention, which is contrary to the conventional meaning of "sample moment" for all other moments.
+        /// In other words, what is returned by this methods is the square root of the sum of the squared deviations divided by n, not divided by (n-1).
+        /// If you want the square root of the sum of the squared deviations divided by n, which is also called the Bessel-corrected standard deviation,
+        /// use the <see cref="CorrectedStandardDeviation(IReadOnlyCollection{double})"/> method. Note, however, that, unlike the variance, the standard deviation
+        /// corrected in this way is not unbiased.
+        /// If you want a bias-corrected estimate of the standard deviation of the populace that was sampled, use the <see cref="PopulationStandardDeviation"/> method.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         public static double StandardDeviation (this IReadOnlyCollection<double> sample) {
@@ -247,8 +244,8 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The Bessel-corrected standard deviation.</returns>
         /// <remarks>
         /// <para>This probably isn't the quantity you want, even though it's what many software
-        /// packages refer to as the "standard deviation". It is the square root of the sum of
-        /// squared deviations from the mean, divided by n-1 instead of n.</para>
+        /// packages refer to as the "standard deviation", and some authors even misleadingly call the "sample standard deviation".
+        /// It is the square root of the sum of the squared deviations from the mean, divided by n-1 instead of n.</para>
         /// <para>Using n-1 instead of n in the formula for <em>variance</em> produces an
         /// unbiased estimator of the <see cref="PopulationVariance"/>. But using n-1 instead of n
         /// in the formula for standard deviation, which is how this property is
@@ -268,9 +265,7 @@ namespace Meta.Numerics.Statistics {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) return (Double.NaN);
 
-            int n;
-            double mean, sumOfSquares;
-            ComputeMomentsUpToSecond(sample, out n, out mean, out sumOfSquares);
+            ComputeMomentsUpToSecond(sample, out int n, out double mean, out double sumOfSquares);
             Debug.Assert(sample.Count == n);
 
             return (Math.Sqrt(sumOfSquares / (n-1)));

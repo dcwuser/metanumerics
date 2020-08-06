@@ -16,6 +16,45 @@ namespace Test {
     public class BugTests {
 
         [TestMethod]
+        public void Bug56 () {
+
+            RectangularMatrix M = new RectangularMatrix(new double[,] {
+                { 44.6667,  -392.0000, -66.0000 },
+                { -392.0000, 3488.0000, 504.0001 },
+                { -66.0000, 504.0001, 216.0001 }
+            });
+            //M = M.Transpose;
+            SingularValueDecomposition S = M.SingularValueDecomposition();
+
+        }
+
+        //[TestMethod]
+        [DeploymentItem("Bug53.txt")]
+        public void Bug53 () {
+            // User sent data for which non-linear fit failed with Nonconvergence exception.
+            List<double> x = new List<double>();
+            List<double> y = new List<double>();
+            using (System.IO.StreamReader reader = System.IO.File.OpenText(@"Bug53.txt")) {
+                reader.ReadLine();
+                while (!reader.EndOfStream) {
+                    string line = reader.ReadLine();
+                    string[] values = line.Split(';');
+                    y.Add(Double.Parse(values[0]));
+                    x.Add(Double.Parse(values[1]));
+                }
+            }
+            NonlinearRegressionResult r = y.NonlinearRegression(
+                x,
+                (IReadOnlyDictionary<string, double> p, double u) => {
+                    return p["0"] * (1.0 - Math.Exp(-p["1"] * (u - p["2"])));
+                },
+                //new Dictionary<string, double>() { { "0", 100.0 }, { "1", 1.0 }, { "2", 1.0 } }
+                new Dictionary<string, double>() { {"0", 1.0 }, {"1", 1.0}, {"2", 0.0} }
+            );
+
+        }
+
+        [TestMethod]
         [DeploymentItem("Bug8021.csv")]
         public void Bug8021 () {
 

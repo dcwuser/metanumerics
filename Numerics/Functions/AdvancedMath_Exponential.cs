@@ -62,11 +62,11 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso cref="IntegralE(int, double)"/>
-        /// <seealso hef="https://en.wikipedia.org/wiki/Exponential_integral"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Exponential_integral"/>
         /// <seealso href="http://mathworld.wolfram.com/ExponentialIntegral.html"/>
         /// <seealso href="https://dlmf.nist.gov/6"/>
         public static double IntegralEi (double x) {
-            if (x < 0) {
+            if (x < 0.0) {
                 throw new ArgumentOutOfRangeException(nameof(x));
             } else if (x < 40.0) {
                 return (EulerGamma + Math.Log(x) + IntegralEi_Series(x));
@@ -125,7 +125,7 @@ namespace Meta.Numerics.Functions {
                 return (Math.Exp(-x) / x);
             }
 
-            // Other x > 0 and n > 0.
+            // Now we are sure x > 0 and n > 0.
             if (x < 2.0) {
                 return (IntegralE_Series(n, x));
             } else if (x < expLimit) {
@@ -208,7 +208,7 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Trigonometric_integral"/>
         /// <seealso href="http://mathworld.wolfram.com/CosineIntegral.html"/>
-        /// <seealso cref="https://dlmf.nist.gov/6"/>
+        /// <seealso href="https://dlmf.nist.gov/6"/>
         public static double IntegralCi (double x) {
             if (x < 0.0) {
                 throw new ArgumentOutOfRangeException(nameof(x));
@@ -257,7 +257,7 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <seealso href="https://en.wikipedia.org/wiki/Trigonometric_integral"/>
         /// <seealso href="http://mathworld.wolfram.com/SineIntegral.html"/>
-        /// <seealso cref="https://dlmf.nist.gov/6"/>
+        /// <seealso href="https://dlmf.nist.gov/6"/>
         public static double IntegralSi (double x) {
             if (x < 0.0) {
                 return (-IntegralSi(-x));

@@ -77,19 +77,19 @@ namespace Meta.Numerics.Extended
         // Implicit (widening) casts
 
         /// <summary>
-        /// Creates an unsigned 128-bit integer from an unsigned 64-bit integer.
+        /// Converts an unsigned 64-bit integer to an unsigned 128-bit integer.
         /// </summary>
-        /// <param name="c">The unsigned 64-bit integer.</param>
-        /// <remarks><para>This is x widening cast, which preserves the value and is thus safe to perform without an explicit cast.</para></remarks>
+        /// <param name="u">The unsigned 64-bit integer.</param>
+        /// <returns>The equivilent 128-bit unsigned integer.</returns>
         public static implicit operator UInt128 (ulong u) {
             return (new UInt128(0UL, u));
         }
 
         /// <summary>
-        /// Creates a BigInteger from an unsigned 128-bit integer.
+        /// Converts an unsigned 128-bit integer into an arbitrary-size big integer.
         /// </summary>
-        /// <param name="u">The unishged 128-bit integer.</param>
-        /// <remarks><para>This is x widening cast, which preserves the value and is thus safe to perform without an explicit cast.</para></remarks>
+        /// <param name="u">The unisgned 128-bit integer.</param>
+        /// <returns>The equivilent <see cref="BigInteger"/>.</returns>
         public static implicit operator BigInteger (UInt128 u) {
             byte[] bytes = u.GetBytesForBigInteger(false);
             return new BigInteger(bytes);
@@ -113,9 +113,10 @@ namespace Meta.Numerics.Extended
         }
 
         /// <summary>
-        /// Creates an double from an unsigned 128-bit integer.
+        /// Converts an unsigned 128-bit integer into a floating point value.
         /// </summary>
         /// <param name="u">The unsigned 128-bit integer.</param>
+        /// <returns>The nearest <see cref="Double"/> floating point value.</returns>
         /// <remarks><para>This cast will never fail, but it will loose precision
         /// for values larger than about 10<sup>16</sup>, because <see cref="System.Double"/>
         /// maintains only about 52 bits of precision.</para></remarks>
@@ -127,9 +128,10 @@ namespace Meta.Numerics.Extended
         // Explicit (narrowing) casts
 
         /// <summary>
-        /// Creates an unsigned 64-bit integer from an unsigned 128-bit integer.
+        /// Converts an unsigned 128-bit integer into an unsigned 64-bit integer.
         /// </summary>
-        /// <param name="x">The unsigned 128-bit integer.</param>
+        /// <param name="u">The unsigned 128-bit integer.</param>
+        /// <returns>The unsigned 64-bit integer with the same lower 64 bits.</returns>
         /// <remarks><para>This is x narrowing cast, which discards high-order bits if
         /// the 128-bit integer is greater than <see cref="UInt64.MaxValue"/>.</para></remarks>
         public static explicit operator ulong (UInt128 u) {
@@ -137,11 +139,10 @@ namespace Meta.Numerics.Extended
         }
 
         /// <summary>
-        /// Creates an unsigned 128-bit integer from a BigInteger.
+        /// Converts an arbitrary-size big integer into an unsigned 128-bit integer.
         /// </summary>
-        /// <param name="b">The BigInteger</param>
-        /// <remarks><para>This is a narrowing cast, because the range of <see cref="BigInteger"/> is larger than
-        /// the range of <see cref="UInt128"/>.</para></remarks>
+        /// <param name="b">A <see cref="BigInteger"/> value.</param>
+        /// <returns>The unsigned 128-bit integer with the same lower 128 bits.</returns>
         public static explicit operator UInt128 (BigInteger b) {
             byte[] bytes = b.ToByteArray();
             // BigInteger produces the minimum length byte array to represent the number.
@@ -162,6 +163,12 @@ namespace Meta.Numerics.Extended
             return new UInt128(s1, s0);
         }
 
+        /// <summary>
+        /// Converts a floating-point value into an unsigned 128-bit integer.
+        /// </summary>
+        /// <param name="x">A floating-point number.</param>
+        /// <returns>The lower 128 bits of the integer part of the floating-point number.</returns>
+        /// <exception cref="InvalidCastException"><paramref name="x"/> is negative, or NaN, or infinite.</exception>
         public static explicit operator UInt128 (double x) {
             DoubleInfo s = new DoubleInfo(Math.Floor(x));
             if (s.IsNegative || !s.IsFinite) throw new InvalidCastException();
@@ -179,7 +186,7 @@ namespace Meta.Numerics.Extended
         /// </summary>
         /// <param name="x">The first integer.</param>
         /// <param name="y">The second integer.</param>
-        /// <returns>True if <paramref name="x"/> equals <paramref name="y"/>, otherwise false.</returns>
+        /// <returns><see langword="true"/> if <paramref name="x"/> equals <paramref name="y"/>, otherwise <see langword="false"/>.</returns>
         public static bool Equals (UInt128 x, UInt128 y) {
             return (x.s0 == y.s0) && (x.s1 == y.s1);
         }
@@ -189,7 +196,7 @@ namespace Meta.Numerics.Extended
         /// </summary>
         /// <param name="x">The first integer.</param>
         /// <param name="y">The second integer.</param>
-        /// <returns>True if <paramref name="x"/> equals <paramref name="y"/>, otherwise false.</returns>
+        /// <returns><see langword="true"/> if <paramref name="x"/> equals <paramref name="y"/>, otherwise <see langword="false"/>.</returns>
         public static bool operator == (UInt128 x, UInt128 y) {
             return Equals(x, y);
         }
@@ -199,7 +206,7 @@ namespace Meta.Numerics.Extended
         /// </summary>
         /// <param name="x">The first integer.</param>
         /// <param name="y">The second integer.</param>
-        /// <returns>True if <paramref name="x"/> does not equal <paramref name="y"/>, otherwise false.</returns>
+        /// <returns><see langword="false"/> if <paramref name="x"/> equals <paramref name="y"/>, otherwise <see langword="true"/>.</returns>
         public static bool operator != (UInt128 x, UInt128 y) {
             return !Equals(x, y);
         }
@@ -208,7 +215,7 @@ namespace Meta.Numerics.Extended
         /// Tests whether the current instance is equal to another unsigned 128-bit integer.
         /// </summary>
         /// <param name="x">The other integer.</param>
-        /// <returns>True if this equals <paramref name="x"/>, otherwise false.</returns>
+        /// <returns><see langword="true"/> if the current instance equals <paramref name="x"/>, otherwise <see langword="false"/>.</returns>
         public bool Equals (UInt128 x) {
             return Equals(this, x);
         }
@@ -217,7 +224,7 @@ namespace Meta.Numerics.Extended
         /// Tests whether the current instance is equal to another object.
         /// </summary>
         /// <param name="obj">The other object.</param>
-        /// <returns>True if the other object is an equal <see cref="UInt128"/>, otherwise false.</returns>
+        /// <returns><see langword="true"/> if the other object is an equal <see cref="UInt128"/>, otherwise <see langword="false"/>.</returns>
         public override bool Equals (object obj) {
             if (obj is UInt128) {
                 return (Equals(this, (UInt128) obj));
@@ -226,6 +233,10 @@ namespace Meta.Numerics.Extended
             }
         }
 
+        /// <summary>
+        /// Gets a hash code for the current instance.
+        /// </summary>
+        /// <returns>A hash code for the current instance.</returns>
         public override int GetHashCode () {
             unchecked {
                 return (s0.GetHashCode() + 13 * s1.GetHashCode());
@@ -366,7 +377,7 @@ namespace Meta.Numerics.Extended
         /// </summary>
         /// <param name="x">The dividend.</param>
         /// <param name="y">The divisor.</param>
-        /// <returns>The integer quotient <paramref name="a"/> / <paramref name="y"/>.</returns>
+        /// <returns>The integer quotient <paramref name="x"/> / <paramref name="y"/>.</returns>
         public static UInt128 operator / (UInt128 x, UInt128 y) {
             Int128Calculator.Divide128By128(x.s1, x.s0, y.s1, y.s0, out ulong s1, out ulong s0, out _, out _);
             return new UInt128(s1, s0);
@@ -650,6 +661,14 @@ namespace Meta.Numerics.Extended
 
         // Serialization and deserialization
 
+        /// <summary>
+        /// Creates an unsigned 128-bit integer from its string representation.
+        /// </summary>
+        /// <param name="text">The base-10 string representation of an unsigned 128-bit integer.</param>
+        /// <returns>The integer value it represents.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="text"/> is <see langword="null"/>.</exception>
+        /// <exception cref="FormatException"><paramref name="text"/> is not a valid base-10 representation of an unsigned integer.</exception>
+        /// <exception cref="OverflowException"><paramref name="text"/> represents an unsigned integer outside the range of <see cref="UInt128"/>.</exception>
         public static UInt128 Parse (string text) {
             ParseResult result = TryParse(text, false, out UInt128 value);
             if (result == ParseResult.Null) throw new ArgumentNullException(nameof(text));
@@ -663,8 +682,8 @@ namespace Meta.Numerics.Extended
         /// </summary>
         /// <param name="text">The string to parse.</param>
         /// <param name="value">The integer value it represents.</param>
-        /// <returns>True if <paramref name="text"/> is x valid representation of x
-        /// x non-negative integer, otherwise false.</returns>
+        /// <returns><see langword="true"/> if <paramref name="text"/> was successfully
+        /// parsed as an unsigned 128-bit integer, otherwise <see langword="false"/>.</returns>
         public static bool TryParse (string text, out UInt128 value) {
             ParseResult result = TryParse(text, false, out value);
             return (result == ParseResult.Success);
@@ -711,6 +730,10 @@ namespace Meta.Numerics.Extended
 
         }
 
+        /// <summary>
+        /// Produces a string representation of the unsigned 128-bit integer.
+        /// </summary>
+        /// <returns>A string containing the base-10 representation of the integer value.</returns>
         public override string ToString () {
             if (this == UInt128.Zero) return "0";
 

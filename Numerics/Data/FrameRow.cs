@@ -52,9 +52,10 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="c">The index of the column.</param>
         /// <returns>The value of the <paramref name="c"/>th column.</returns>
+        /// <exception cref="IndexOutOfRangeException"><paramref name="c"/> is less than zero or greater than or equal to the number of columns <see cref="Count"/>.</exception>
         public object this[int c] {
             get {
-                if ((c < 0) || (c >= Count)) throw new ArgumentOutOfRangeException(nameof(c));
+                if ((c < 0) || (c >= Count)) throw new IndexOutOfRangeException();
                 return (frame.columns[c].GetItem(frame.map[r]));
             }
         }
@@ -64,6 +65,7 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="name">The name of the column.</param>
         /// <returns>The value.</returns>
+        /// <exception cref="IndexOutOfRangeException">There is no column in the row with the given <paramref name="name"/>.</exception>
         public object this[string name] {
             get {
                 int c = frame.GetColumnIndex(name);

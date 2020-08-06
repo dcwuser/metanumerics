@@ -19,7 +19,7 @@ namespace Meta.Numerics.Functions {
     /// a matter of convention. When one solution is regular (finite) at the origin and the other is not, we take the regular solution
     /// to be the first.</para>
     /// </remarks>
-    public struct SolutionPair : IEquatable<SolutionPair> {
+    public struct SolutionPair {
 
         private readonly double j, jPrime, y, yPrime;
 
@@ -90,7 +90,8 @@ namespace Meta.Numerics.Functions {
         }
 
         // Equality
-
+        // These are not yet public and of very questionable necessity, so commenting them out for now.
+        /*
         public override bool Equals (object obj) {
             if (obj is SolutionPair other) {
                 return (Equals(this, other));
@@ -120,6 +121,7 @@ namespace Meta.Numerics.Functions {
                 return (j.GetHashCode() + 5 * jPrime.GetHashCode() + 7 * y.GetHashCode() + 13 * yPrime.GetHashCode()); 
             }
         }
+        */
 
         // Fitting
         /*

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 
+using Meta.Numerics.Extended;
+
 namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
@@ -29,28 +31,26 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         }
 
-        private int m, n;
-        private double total;
-        private decimal[] counts;
+        private readonly int m, n;
+        private readonly Int128[] counts;
+        private readonly double total;
 
-        // this routine is based on the recursion
-        // [ m n ] = ( 1 - q^m ) / ( 1 - q^(m-n) ) [ m-1 n ]
-        // and the starting point [ n n ] = 1
+        // This routine is based on the recursion
+        //   [ m n ] = ( 1 - q^m ) / ( 1 - q^(m-n) ) [ m-1 n ]
+        // and the starting point [ n n ] = 1.
 
-        // the coefficients are integers and get large quickly as m and n increase
-        // we use decimal because it handles larger integers than long
-        // we can't use double because the calculation requires delicate cancelations
-        // among large intermediate values, thus necessitating exact integer arithmetic
-        // look into using an arbitrary-sized integer structure in the future
+        // The coefficients are integers and get large quickly as m and n increase.
+        // First we used decimal because it was the has the largest precise integer
+        // values of any built-in, but now that we have Int128, we use that instead.
 
-        private static decimal[] GaussianBinomialCoefficients (int m, int n) {
+        private static Int128[] GaussianBinomialCoefficients (int m, int n) {
 
             Debug.Assert(m >= 0);
             Debug.Assert(n >= 0);
             Debug.Assert(m >= n);
 
             // create  an array to hold our coefficients
-            decimal[] c = new decimal[(m - n) * n + 1];
+            Int128[] c = new Int128[(m - n) * n + 1];
 
             // start with [n n] = 1 * q^0
             c[0] = 1;
@@ -60,7 +60,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             // create a scratch array for intermediate use
             // it needs to be larger than the previous array by (m-n) to hold intermediate polynomials
-            decimal[] b = new decimal[c.Length + (m - n)];
+            Int128[] b = new Int128[c.Length + (m - n)];
 
             // iterate from [n n] up to [m n]
             for (int k = n + 1; k <= m; k++) {

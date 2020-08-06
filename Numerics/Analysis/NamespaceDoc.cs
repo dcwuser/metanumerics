@@ -3,7 +3,7 @@
 namespace Meta.Numerics.Analysis {
 
     /// <summary>
-    /// Contains types used to analyze user-supplied functions.
+    /// Contains types used to solve, maximize, integrate, and otherwise perform analysis on user-supplied functions.
     /// </summary>
     /// <remarks>
     /// <para>This namespace contains types for the numerical analysis of user-supplied functions. Examples

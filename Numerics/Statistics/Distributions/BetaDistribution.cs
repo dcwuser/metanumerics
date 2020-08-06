@@ -240,8 +240,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
 
-            double x, y;
-            betaInverter.InverseRegularizedBeta(P, 1.0 - P, out x, out y);
+            betaInverter.InverseRegularizedBeta(P, 1.0 - P, out double x, out double y);
             return (x);
         }
 
@@ -249,8 +248,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double InverseRightProbability (double Q) {
             if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
 
-            double x, y;
-            betaInverter.InverseRegularizedBeta(1.0 - Q, Q, out x, out y);
+            betaInverter.InverseRegularizedBeta(1.0 - Q, Q, out double x, out double y);
             return (x);
         }
 
@@ -462,8 +460,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 //double y_old = y;
 
                 // Evaluate I and I' at the coordinates
-                double P, Q, D;
-                IncompleteBetaAndDerivative(x, y, out P, out Q, out D);
+                IncompleteBetaAndDerivative(x, y, out double P, out double Q, out double D);
                 Debug.Assert(P + Q == 1.0);
 
                 // Compute the deficit from the smaller of P and Q, to reduce inaccuracies when P or Q is near 1
@@ -529,7 +526,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     // R. C. H. Cheng, Generating Beta Variates with Nonintegral Shape Parameters,
     // Communications of the ACM 21 (1978) 317
 
-    public class ChengBetaGenerator : IDeviateGenerator<double> {
+    internal class ChengBetaGenerator : IDeviateGenerator<double> {
 
         public ChengBetaGenerator (double a, double b) {
             Debug.Assert(a > 1.0);

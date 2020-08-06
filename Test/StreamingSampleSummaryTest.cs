@@ -26,6 +26,7 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.Variance(), summary.Variance));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.PopulationMean(), summary.PopulationMean));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.PopulationVariance(), summary.PopulationVariance));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.PopulationStandardDeviation(), summary.PopulationStandardDeviation));
 
             Assert.IsTrue(sample.Minimum() == summary.Minimum);
             Assert.IsTrue(sample.Maximum() == summary.Maximum);

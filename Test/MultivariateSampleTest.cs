@@ -226,14 +226,18 @@ namespace Test {
             Assert.IsTrue(newResult.Intercept.ConfidenceInterval(0.99).ClosedContains(a));
 
             // The residuals should be compatible with the model predictions
+            double ssr = 0.0;
             for (int i = 0; i < table.Rows.Count; i++) {
                 FrameRow row = table.Rows[i];
                 double x0 = (double) row["x0"];
                 double x1 = (double) row["x1"];
                 double yp = newResult.Predict(x0, x1).Value;
                 double y = (double) row["y"];
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(newResult.Residuals[i], y - yp));
+                double z = y - yp;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(newResult.Residuals[i], z));
+                ssr += z * z;
             }
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(newResult.SumOfSquaredResiduals, ssr));
 
         }
 
@@ -618,20 +622,29 @@ namespace Test {
             Assert.IsTrue(pca.Count == sample.Count);
 
             // check that the PCs behave as expected
+            Assert.IsTrue(pca.Components.Count == pca.Dimension);
             for (int i = 0; i < pca.Dimension; i++) {
                 PrincipalComponent pc = pca.Components[i];
                 Assert.IsTrue(pc.Index == i);
                 Assert.IsTrue(pc.Analysis == pca);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(pc.Weight * pc.NormalizedVector, pc.ScaledVector()));
-                Assert.IsTrue((0.0 <= pc.VarianceFraction) && (pc.VarianceFraction <= 1.0));
-                if (i == 0) {
-                    Assert.IsTrue(pc.VarianceFraction == pc.CumulativeVarianceFraction);
-                } else {
-                    PrincipalComponent ppc = pca.Components[i - 1];
-                    Assert.IsTrue(pc.VarianceFraction <= ppc.VarianceFraction);
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(ppc.CumulativeVarianceFraction + pc.VarianceFraction, pc.CumulativeVarianceFraction));
-                }
+                Assert.IsTrue(pca.MinimumDimension(pc.CumulativeVarianceFraction) == i + 1);
             }
+
+            // Check enumerator, and verify that variance fractions behave as expected.
+            int count = 0;
+            double cumulative = 0.0;
+            double previous = Double.PositiveInfinity;
+            foreach (PrincipalComponent pc in pca.Components) {
+                Assert.IsTrue(pc.Index == count);
+                count++;
+                Assert.IsTrue((0.0 <= pc.VarianceFraction) && (pc.VarianceFraction <= 1.0));
+                Assert.IsTrue(pc.VarianceFraction <= previous);
+                previous = pc.VarianceFraction;
+                cumulative += pc.VarianceFraction;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(cumulative, pc.CumulativeVarianceFraction));
+            }
+            Assert.IsTrue(count == pca.Components.Count);
 
             // express the sample in terms of principal components
             MultivariateSample csample = pca.TransformedSample();

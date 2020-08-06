@@ -68,10 +68,19 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double LeftInclusiveProbability (int k) {
-            if (k < 0) {
-                return (0.0);
+            if (k == Int32.MaxValue) {
+                return 1.0;
             } else {
-                return (AdvancedMath.LeftRegularizedBeta(r, k + 1, q));
+                return LeftExclusiveProbability(k + 1);
+            }
+        }
+
+        /// <inheritdoc />
+        public override double LeftExclusiveProbability (int k) {
+            if (k < 1) {
+                return 0.0;
+            } else {
+                return AdvancedMath.LeftRegularizedBeta(r, k, q);
             }
         }
 
@@ -106,6 +115,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         /// <inheritdoc />
+        /// <param name="k">The order of moment to compute.</param>
         public override double RawMoment (int k) {
 
             if (k < 0) {

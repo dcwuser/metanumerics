@@ -34,8 +34,7 @@ namespace Meta.Numerics.Functions {
             if (k == 1.0) return (Math.Tanh(u));
 
             // Decompose u = u_0 K + u_1, where -K/2 < u_1 < K/2, and compute sn(u_1)
-            long u0; double u1;
-            double sn = JacobiSn_ViaRangeReduction(u, k, out u0, out u1);
+            double sn = JacobiSn_ViaRangeReduction(u, k, out long u0, out double u1);
 
             // Transform to the appropriate quadrant
             switch (MoreMath.Mod(u0, 4)) {
@@ -74,9 +73,7 @@ namespace Meta.Numerics.Functions {
             if (k == 1.0) return (1.0 / Math.Cosh(u));
 
             // Decompose u = u_0 K + u_1, where -K/2 < u_1 < K/2, and compute sn(u_1)
-            long u0;
-            double u1;
-            double sn = JacobiSn_ViaRangeReduction(u, k, out u0, out u1);
+            double sn = JacobiSn_ViaRangeReduction(u, k, out long u0, out double u1);
 
             switch (MoreMath.Mod(u0, 4)) {
                 case 0:
@@ -114,8 +111,7 @@ namespace Meta.Numerics.Functions {
             if (k == 1.0) return (1.0 / Math.Cosh(u));
 
             // Decompose u = u_0 (K / 2) + u_1, where -K/4 < u_1 < K/4, and compute sn(u_1)
-            long u0; double u1;
-            double sn = JacobiSn_ViaRangeReduction(u, k, out u0, out u1);
+            double sn = JacobiSn_ViaRangeReduction(u, k, out long u0, out double u1);
 
             double t = k * sn;
             /*

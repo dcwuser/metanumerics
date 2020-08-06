@@ -141,6 +141,12 @@ namespace Test {
         [TestMethod]
         public void LogGammaExtremeValues () {
             //Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.LogGamma(1.0 / Double.MaxValue), Math.Log(Double.MaxValue)));
+            double z = AdvancedMath.LogGamma(Double.MaxValue);
+            //double z = double.PositiveInfinity;
+            //Console.WriteLine(z);
+            Console.WriteLine(Double.IsPositiveInfinity(z));
+            Console.WriteLine(AdvancedMath.LogGamma(Double.MaxValue));
+            Console.WriteLine(Double.IsPositiveInfinity(AdvancedMath.LogGamma(Double.MaxValue)));
             Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.LogGamma(Double.MaxValue)));
         }
 

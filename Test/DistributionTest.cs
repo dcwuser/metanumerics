@@ -13,7 +13,7 @@ using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 
 namespace Test {
-    
+
     [TestClass]
     public class DistributionTest {
 
@@ -23,7 +23,7 @@ namespace Test {
 
         private static List<ContinuousDistribution> CreateDistributions () {
 
-            List<ContinuousDistribution> distributions = new List<ContinuousDistribution>( new ContinuousDistribution[] {
+            List<ContinuousDistribution> distributions = new List<ContinuousDistribution>(new ContinuousDistribution[] {
                 new NoncentralChiSquaredDistribution(2, 3.0),
                 new CauchyDistribution(1.0, 2.0),
                 new UniformDistribution(Interval.FromEndpoints(-2.0,1.0)), new UniformDistribution(Interval.FromEndpoints(7.0, 9.0)),
@@ -131,7 +131,7 @@ namespace Test {
         public void DistributionMonotonicity () {
             foreach (ContinuousDistribution distribution in distributions) {
                 for (int i = 0; i < (probabilities.Length - 1); i++) {
-                    Assert.IsTrue(distribution.InverseLeftProbability(probabilities[i]) < distribution.InverseLeftProbability(probabilities[i+1]));
+                    Assert.IsTrue(distribution.InverseLeftProbability(probabilities[i]) < distribution.InverseLeftProbability(probabilities[i + 1]));
                     Assert.IsTrue(distribution.InverseRightProbability(probabilities[i]) > distribution.InverseRightProbability(probabilities[i + 1]));
                 }
             }
@@ -178,7 +178,7 @@ namespace Test {
                 double mean = distribution.Mean;
                 if (Double.IsNaN(mean) || Double.IsInfinity(mean)) continue;
                 if (distribution is BetaDistribution b && ((b.Alpha < 1.0) || (b.Beta < 1.0))) continue;
-                Func<double, double> f = delegate(double x) {
+                Func<double, double> f = delegate (double x) {
                     return (distribution.ProbabilityDensity(x) * x);
                 };
                 double M1 = FunctionMath.Integrate(f, distribution.Support);
@@ -203,7 +203,7 @@ namespace Test {
                 double e = TestUtilities.TargetPrecision;
                 GammaDistribution gammaDistribution = distribution as GammaDistribution;
                 if ((gammaDistribution != null) && (gammaDistribution.Shape < 1.0)) e = Math.Sqrt(e);
-                Func<double, double> f = delegate(double x) {
+                Func<double, double> f = delegate (double x) {
                     double z = x - distribution.Mean;
                     return (distribution.ProbabilityDensity(x) * z * z);
                 };
@@ -220,7 +220,7 @@ namespace Test {
                 foreach (int r in TestUtilities.GenerateIntegerValues(2, 32, 8)) {
                     double M = distribution.RawMoment(r);
                     if (Double.IsInfinity(M) || Double.IsNaN(M)) continue; // don't try to do a non-convergent integral
-                    Func<double, double> f = delegate(double x) {
+                    Func<double, double> f = delegate (double x) {
                         return (distribution.ProbabilityDensity(x) * Math.Pow(x, r));
                     };
                     try {
@@ -268,7 +268,7 @@ namespace Test {
 
                     // do the integral
                     double m = distribution.Mean;
-                    Func<double, double> f = delegate(double x) {
+                    Func<double, double> f = delegate (double x) {
                         return (distribution.ProbabilityDensity(x) * MoreMath.Pow(x - m, n));
                     };
                     try {
@@ -313,7 +313,7 @@ namespace Test {
                     if (Double.IsNegativeInfinity(distribution.Support.LeftEndpoint) && Double.IsPositiveInfinity(distribution.Support.RightEndpoint)) {
                         // pick an exponentially distributed random point with a random sign
                         double y = rng.NextDouble();
-                        x = - Math.Log(y);
+                        x = -Math.Log(y);
                         if (rng.NextDouble() < 0.5) x = -x;
                     } else if (Double.IsPositiveInfinity(distribution.Support.RightEndpoint)) {
                         // pick an exponentially distributed random point
@@ -418,7 +418,7 @@ namespace Test {
             for (int i = 0; i < 250; i++) {
                 double x1 = d1.GetRandomValue(rng);
                 double x2 = d2.GetRandomValue(rng);
-                double x = (x1/n1) / (x2/n2);
+                double x = (x1 / n1) / (x2 / n2);
                 s.Add(x);
             }
 
@@ -525,7 +525,7 @@ namespace Test {
         public void InverseGaussianSummation () {
 
             // X_i ~ IG(\mu,\lambda) \rightarrow \sum_{i=0}^{n} X_i ~ IG(n \mu, n^2 \lambda)
-            
+
             Random rng = new Random(1);
             WaldDistribution d0 = new WaldDistribution(1.0, 2.0);
             List<double> s = new List<double>();
@@ -552,7 +552,7 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(xS, xC));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(S.ProbabilityDensity(xS), C.ProbabilityDensity(xC)));
             }
-            
+
         }
 
         [TestMethod]
@@ -562,6 +562,20 @@ namespace Test {
             double p = D.ProbabilityDensity(D.Median);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(D.ProbabilityDensity(D.Median - D.FullWithAtHalfMaximum / 2.0), p / 2.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(D.ProbabilityDensity(D.Median + D.FullWithAtHalfMaximum / 2.0), p / 2.0));
+        }
+
+        [TestMethod]
+        public void ChiAndChiSquared () {
+
+            ChiDistribution chi = new ChiDistribution(3);
+            ChiSquaredDistribution chi2 = new ChiSquaredDistribution(3.0);
+
+            Assert.IsTrue(chi.DegreesOfFreedom == chi2.DegreesOfFreedom);
+
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 4)) {
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(chi.LeftProbability(x), chi2.LeftProbability(x * x)));
+            }
+
         }
 
         [TestMethod]

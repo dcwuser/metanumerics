@@ -52,10 +52,19 @@ namespace Meta.Numerics.Extended
         /// </summary>
         public static readonly Int128 Zero = new Int128(0L, 0UL);
 
+        /// <summary>
+        /// The unit value of the signed 128-bit integer.
+        /// </summary>
         public static readonly Int128 One = new Int128(0L, 1UL);
 
+        /// <summary>
+        /// The maximum value of the signed 128-bit integer.
+        /// </summary>
         public static readonly Int128 MaxValue = new Int128(ulong.MaxValue >> 1, ulong.MaxValue);
 
+        /// <summary>
+        /// The minimum value of the signed 128-bit integer.
+        /// </summary>
         public static readonly Int128 MinValue = new Int128(1UL << 63, 0UL);
 
         // Equality
@@ -103,7 +112,7 @@ namespace Meta.Numerics.Extended
         /// Tests whether the current instance equals another object.
         /// </summary>
         /// <param name="obj">The other object.</param>
-        /// <returns><see langword="true"/> if the current instance equals <paramref name="other"/>, <see langword="false"/> otherwise.</returns>
+        /// <returns><see langword="true"/> if the current instance equals <paramref name="obj"/>, <see langword="false"/> otherwise.</returns>
         public override bool Equals (object obj) {
             if (obj is Int128) {
                 return Equals(this, (Int128) obj);
@@ -112,6 +121,10 @@ namespace Meta.Numerics.Extended
             }
         }
 
+        /// <summary>
+        /// Return a hash code for the 128-bit integer.
+        /// </summary>
+        /// <returns>A hash code for the value.</returns>
         public override int GetHashCode () {
             return u.GetHashCode() + 31;
         }
@@ -178,15 +191,20 @@ namespace Meta.Numerics.Extended
         /// <summary>
         /// Compares the current instance to another 128-bit integer.
         /// </summary>
-        /// <param name="u">The other integer.</param>
-        /// <returns>1 if the current instance is greater, -1 if <paramref name="u"/> is greater,
-        /// and 0 if the current instance is equal to <paramref name="u"/>.</returns>
+        /// <param name="x">The other integer.</param>
+        /// <returns>1 if the current instance is greater, -1 if <paramref name="x"/> is greater,
+        /// and 0 if the current instance is equal to <paramref name="x"/>.</returns>
         public int CompareTo (Int128 x) {
             return Compare(this, x);
         }
 
         // Implicit conversions
 
+        /// <summary>
+        /// Converts a 64-bit integer into a 128-bit integer.
+        /// </summary>
+        /// <param name="s">The 64-bit integer to convert.</param>
+        /// <returns>THe corresponding 128-bit integer.</returns>
         public static implicit operator Int128 (long s) {
             if (s < 0L) {
                 return -(new Int128(0UL, (ulong) (-s)));
@@ -196,6 +214,11 @@ namespace Meta.Numerics.Extended
 
         }
 
+        /// <summary>
+        /// Converts a 128-bit integer into a floating point value.
+        /// </summary>
+        /// <param name="s">The 128-bit integer to convert.</param>
+        /// <returns>The correspoding floating point value.</returns>
         public static implicit operator double (Int128 s) {
             if (s.u.IsNegative) {
                 return -((double) s.u.Negate());
@@ -204,6 +227,11 @@ namespace Meta.Numerics.Extended
             }
         }
 
+        /// <summary>
+        /// Converts a 128-bit integer into an arbitrary-size big integer.
+        /// </summary>
+        /// <param name="s">The 128-bit integer to convert.</param>
+        /// <returns>The corresponding big integer.</returns>
         public static implicit operator BigInteger (Int128 s) {
             byte[] bytes = s.u.GetBytesForBigInteger(true);
             return new BigInteger(bytes);
@@ -211,10 +239,20 @@ namespace Meta.Numerics.Extended
 
         // Explicit conversions
 
+        /// <summary>
+        /// Converts a 128-bit integer into a 64-bit integer.
+        /// </summary>
+        /// <param name="s">The 128-bit integer to convert.</param>
+        /// <returns>The 64-bit integer with the same lower 64 bits.</returns>
         public static explicit operator long (Int128 s) {
             return unchecked((long) (ulong) s.u);
         }
 
+        /// <summary>
+        /// Converts an aribitrary-sized big integer into a 128-bit integer.
+        /// </summary>
+        /// <param name="b">Te big integer to be converted.</param>
+        /// <returns>The 128-bit integer with the same lower 128 bits.</returns>
         public static explicit operator Int128 (BigInteger b) {
             UInt128 u = (UInt128) b;
             return new Int128(u);
@@ -222,6 +260,10 @@ namespace Meta.Numerics.Extended
 
         // Serialization and deserialization
 
+        /// <summary>
+        /// Produces a string representation of the 128-bit integer.
+        /// </summary>
+        /// <returns>A string containing the base-10 representation of the 128-bit integer value.</returns>
         public override string ToString () {
             if (u.IsNegative) {
                 UInt128 t = u.Negate();
@@ -231,6 +273,14 @@ namespace Meta.Numerics.Extended
             }
         }
 
+        /// <summary>
+        /// Produces a 128-bit integer from its string representation.
+        /// </summary>
+        /// <param name="text">A string containing the base-10 representation of a 128-bit integer value.</param>
+        /// <returns>The 128-bit integer represented by <paramref name="text"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="text"/> was <see langword="null"/>.</exception>
+        /// <exception cref="FormatException"><paramref name="text"/> did not contain a valid representation of an integer.</exception>
+        /// <exception cref="OverflowException"><paramref name="text"/> represented an integer outside the range of <see cref="Int128"/>.</exception>
         public static Int128 Parse (string text) {
             ParseResult result = UInt128.TryParse(text, true, out UInt128 u);
             if (result == ParseResult.Null) throw new ArgumentNullException(nameof(text));
@@ -239,6 +289,12 @@ namespace Meta.Numerics.Extended
             return new Int128(u);
         }
 
+        /// <summary>
+        /// Attempts to produce a 128-bit integer from a string representation.
+        /// </summary>
+        /// <param name="text">A string containing the base-10 representation of a 128-bit integer value.</param>
+        /// <param name="value">If the parse was successful, the 128-bit integer represented by <paramref name="text"/>.</param>
+        /// <returns><see langword="true"/> if the parse was successful, otherwise <see langword="false"/>.</returns>
         public static bool TryParse (string text, out Int128 value) {
             ParseResult result = UInt128.TryParse(text, true, out UInt128 u);
             if (result == ParseResult.Success) {
@@ -368,8 +424,9 @@ namespace Meta.Numerics.Extended
         /// <param name="x">The argument.</param>
         /// <returns>The absolute value of the argument.</returns>
         /// <remarks><para>Because <see cref="Int128.MinValue"/> is one unit smaller in absolute value than <see cref="Int128.MaxValue"/>, this
-        /// method throws a <see cref="OverflowException"/> when passed <see cref="Int128.MinValue"/>. Built in types such as <see cref="Int32"/>
+        /// method throws an <see cref="OverflowException"/> when passed <see cref="Int128.MinValue"/>. Built in types such as <see cref="Int32"/>
         /// have analogous behavior. All other values are supported.</para></remarks>
+        /// <exception cref="OverflowException"><paramref name="x"/> was <see cref="Int128.MinValue"/>.</exception>
         public static Int128 Abs (Int128 x) {
             UInt128 xu = x.u;
             if (xu.IsNegative) {

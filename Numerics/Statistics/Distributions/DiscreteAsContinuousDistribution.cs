@@ -10,8 +10,8 @@ namespace Meta.Numerics.Statistics.Distributions {
 
     // Here is a way that we can get everything we want and have P(x) increase continuously rather than in jumps. Define
     //   z = (x - x_min) / (x_max - x_min)
-    // to be the fraction of the way through the continuos interval and define
-    //   k = k_min + z (k_max - k_min + 1)
+    // to be the fraction of the way through the continuous interval and define
+    //   k = (1 - z) * k_min + z * (k_max + 1)
     // to be the corresponding "effective k". Overall this means
     //   k = k_min + m (x - x_min)    m = (k_max - k_min + 1)/(x_max - x_min)
     // Split k = [k] + {k} into into integer [k] and fractional {k} parts. Then let
@@ -19,8 +19,8 @@ namespace Meta.Numerics.Statistics.Distributions {
     // where P_L([k]) is the exclusive left probability for bin [k] and P([k]) is the probability for bin [k].
 
     // Then
-    //    x = a + e => z = 0 + e => k = k_min + e => P = P_L(k_min) + e P(k_min) = 0 + e
-    //    x = b - e => z = 1 - e => k = k_max + 1 - e => P = P_L(k_max) + (1 - e) P(k_max) = 1 - e
+    //    x = a + e => z = 0 + e => k = k_min + e => P = P_L(k_min) + e P(k_min) = e P(k_min)
+    //    x = b - e => z = 1 - e => k = (k_max + 1) - e => P = P_L(k_max) + (1 - e) P(k_max) = P_R(k_max) - e P(k_max)
     //    x = (a+b)/2 => z = 1/2 => k = (k_max + k_min + 1) / 2 => P = P_L((k_max + k_min)/2) + 1/2 P((k_max + k_min)/2) = half of mid-bin
     // which is what we wanted.
 
@@ -55,11 +55,12 @@ namespace Meta.Numerics.Statistics.Distributions {
         private DiscreteDistribution d;
         private Interval xSupport;
 
-        private void ComputeEffectiveBin (double x, out int ki, out double kf) {
+        private void ComputeEffectiveBin (double x, out int k0, out double k1) {
             double z = (x - xSupport.LeftEndpoint) / xSupport.Width;
-            double k = d.Support.LeftEndpoint + z * d.Support.Width;
-            ki = (int) Math.Floor(k);
-            kf = k - ki;
+            double k = (1.0 - z) * d.Support.LeftEndpoint + z * (d.Support.RightEndpoint + 1);
+            k0 = (int) Math.Floor(k);
+            k1 = k - k0;
+            Debug.Assert(0.0 <= k1 && k1 < 1.0);
         }
 
         private double ComputeEffectivePoint (double k) {
@@ -77,9 +78,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (x > xSupport.RightEndpoint) {
                 return (1.0);
             } else {
-                int ki; double kf;
-                ComputeEffectiveBin(x, out ki, out kf);
-                return (d.LeftExclusiveProbability(ki) + kf * d.ProbabilityMass(ki));
+                ComputeEffectiveBin(x, out int k0, out double k1);
+                return (d.LeftExclusiveProbability(k0) + k1 * d.ProbabilityMass(k0));
             }
         }
 
@@ -90,9 +90,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             } else if (x > xSupport.RightEndpoint) {
                 return (0.0);
             } else {
-                int ki; double kf;
-                ComputeEffectiveBin(x, out ki, out kf);
-                return ((1.0 - kf) * d.ProbabilityMass(ki) + d.RightExclusiveProbability(ki));
+                ComputeEffectiveBin(x, out int k0, out double k1);
+                return ((1.0 - k1) * d.ProbabilityMass(k0) + d.RightExclusiveProbability(k0));
             }
         }
 

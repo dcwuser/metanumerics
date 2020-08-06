@@ -7,7 +7,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Describes the result of any generalized linear regression.
     /// </summary>
-    public abstract class GeneralLinearRegressionResult : FitResult {
+    public abstract class GeneralLinearRegressionResult : ResidualsResult {
 
         internal GeneralLinearRegressionResult () : base() {
             this.anova = new Lazy<OneWayAnovaResult>(CreateAnova);
@@ -25,7 +25,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public virtual double RSquared {
             get {
-                return (this.Anova.Factor.SumOfSquares / this.Anova.Total.SumOfSquares);
+                return anova.Value.Factor.SumOfSquares / anova.Value.Total.SumOfSquares;
             }
         }
 
@@ -35,7 +35,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public virtual TestResult F {
             get {
-                return (this.Anova.Factor.Result);
+                return anova.Value.Factor.Result;
             }
         }
 
@@ -44,7 +44,14 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public virtual OneWayAnovaResult Anova {
             get {
-                return (anova.Value);
+                return anova.Value;
+            }
+        }
+
+        /// <inheritdoc />
+        public override double SumOfSquaredResiduals {
+            get {
+                return anova.Value.Residual.SumOfSquares;
             }
         }
 

@@ -17,6 +17,8 @@ namespace Meta.Numerics.Data
     public sealed class FrameColumn : IEnumerable {
 
         internal FrameColumn(FrameView frame, int c) {
+            Debug.Assert(frame != null);
+            Debug.Assert(c >= 0 && c < frame.Columns.Count);
             this.column = frame.columns[c];
             this.map = frame.map;
         }
@@ -77,8 +79,7 @@ namespace Meta.Numerics.Data
         /// </remarks>
         public IReadOnlyList<T> As<T> () {
             // If the requested column is of the requested type, expose it directly.
-            IReadOnlyList<T> typedColumn = column as IReadOnlyList<T>;
-            if (typedColumn != null) {
+            if (column is IReadOnlyList<T> typedColumn) {
                 return (new TypedFrameColumn<T>(column.Name, typedColumn, map));
             } else {
                 // If the requested column is cast-able to the requested type, cast it.

@@ -29,7 +29,7 @@ namespace Meta.Numerics.Statistics {
         /// mean of the underlying population from which the series was drawn.</value>
         public UncertainValue Mu {
             get {
-                return (mu);
+                return mu;
             }
         }
 
@@ -40,7 +40,7 @@ namespace Meta.Numerics.Statistics {
         /// lag-1 auto-correlation of the underlying population from which the series was drawn.</value>
         public UncertainValue Alpha {
             get {
-                return (alpha);
+                return alpha;
             }
         }
 
@@ -51,16 +51,17 @@ namespace Meta.Numerics.Statistics {
         /// per-step Gaussian noise in the underlying population from which the series was drawn.</value>
         public UncertainValue Sigma {
             get {
-                return (sigma);
+                return sigma;
             }
         }
 
         /// <summary>
-        /// Gets the residuals of the time series fit.
+        /// Gets a list of the residuals of the fit.
         /// </summary>
+        /// <value>A read-only list, in the same order as the original data, of the difference between each measured and predicted value.</value>
         public IReadOnlyList<double> Residuals {
             get {
-                return (residuals);
+                return residuals;
             }
         }
 

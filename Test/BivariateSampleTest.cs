@@ -208,7 +208,7 @@ namespace Test {
                 // record estimated covariances
                 caa += r.Parameters.CovarianceMatrix[0, 0];
                 cbb += r.Parameters.CovarianceMatrix[1, 1];
-                cab += r.Parameters.CovarianceMatrix[0, 1]; 
+                cab += r.Parameters.CovarianceMatrix[0, 1];
 
             }
 
@@ -277,6 +277,7 @@ namespace Test {
             double SSR = 0.0;
             foreach (double z in result.Residuals) SSR += z * z;
             Assert.IsTrue(TestUtilities.IsNearlyEqual(SSR, result.Anova.Residual.SumOfSquares));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(SSR, result.SumOfSquaredResiduals));
 
             // R is same as correlation coefficient
             Assert.IsTrue(TestUtilities.IsNearlyEqual(x.CorrelationCoefficient(y), result.R.Statistic.Value));
@@ -592,8 +593,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void BivariateAssociationDiscreteNullDistribution ()
-        {
+        public void BivariateAssociationDiscreteNullDistribution () {
             Random rng = new Random(1);
 
             // Pick very non-normal distributions for our non-parameteric tests
@@ -601,8 +601,7 @@ namespace Test {
             ContinuousDistribution yd = new CauchyDistribution();
 
             // Pick small sample sizes to get exact distributions
-            foreach (int n in TestUtilities.GenerateIntegerValues(4, 24, 4))
-            {
+            foreach (int n in TestUtilities.GenerateIntegerValues(4, 24, 4)) {
 
                 // Do a bunch of test runs, recording reported statistic for each.
                 List<int> spearmanStatistics = new List<int>();
@@ -610,43 +609,49 @@ namespace Test {
                 DiscreteDistribution spearmanDistribution = null;
                 DiscreteDistribution kendallDistribution = null;
 
-                for (int i = 0; i < 512; i++)
-                {
+                for (int i = 0; i < 512; i++) {
                     List<double> x = new List<double>();
                     List<double> y = new List<double>();
-                    for (int j = 0; j < n; j++)
-                    {
+                    for (int j = 0; j < n; j++) {
                         x.Add(xd.GetRandomValue(rng));
                         y.Add(yd.GetRandomValue(rng));
                     }
 
                     DiscreteTestStatistic spearman = Bivariate.SpearmanRhoTest(x, y).UnderlyingStatistic;
-                    if (spearman != null)
-                    {
+                    if (spearman != null) {
                         spearmanStatistics.Add(spearman.Value);
                         spearmanDistribution = spearman.Distribution;
                     }
                     DiscreteTestStatistic kendall = Bivariate.KendallTauTest(x, y).UnderlyingStatistic;
-                    if (kendall != null)
-                    {
+                    if (kendall != null) {
                         kendallStatistics.Add(kendall.Value);
                         kendallDistribution = kendall.Distribution;
                     }
                 }
 
                 // Test whether statistics are actually distributed as claimed
-                if (spearmanDistribution != null)
-                {
+                if (spearmanDistribution != null) {
                     TestResult spearmanChiSquared = spearmanStatistics.ChiSquaredTest(spearmanDistribution);
                     Assert.IsTrue(spearmanChiSquared.Probability > 0.01);
                 }
-                if (kendallDistribution != null)
-                {
+                if (kendallDistribution != null) {
                     TestResult kendallChiSquared = kendallStatistics.ChiSquaredTest(kendallDistribution);
                     Assert.IsTrue(kendallChiSquared.Probability > 0.01);
                 }
 
             }
+        }
+
+        [TestMethod]
+        public void BivariateDimensionMismatch () {
+
+            double[] x = new double[3];
+            double[] y = new double[4];
+
+            Assert.ThrowsException<DimensionMismatchException>(() => x.CorrelationCoefficient(y));
+            Assert.ThrowsException<DimensionMismatchException>(() => x.Covariance(y));
+            Assert.ThrowsException<DimensionMismatchException>(() => y.LinearRegression(x));
+
         }
 
     }

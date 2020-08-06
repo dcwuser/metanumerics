@@ -168,11 +168,9 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         }
 
-        /// <summary>
         /// <inheritdoc />
-        /// </summary>
         public override int GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException(nameof(rng));
+            if (rng is null) throw new ArgumentNullException(nameof(rng));
             double u = rng.NextDouble();
             return ((int) Math.Min(Math.Floor(Math.Log(u) / lnq), Int32.MaxValue));
         }

@@ -20,7 +20,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             this.mu = mu;
 
             if (mu < 4.0) {
-                poissonGenerator = new PoissonGeneratorAdditive(mu);
+                poissonGenerator = new PoissonGeneratorMultiplicative(mu);
             } else if (mu < 16.0) {
                 poissonGenerator = new PoissonGeneratorTabulated(mu);
             } else {
@@ -84,27 +84,30 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double LeftInclusiveProbability (int k) {
-            if (k < 0) {
-                return (0.0);
+            if (k == Int32.MaxValue) {
+                return 1.0;
             } else {
-                // these are equivalent expressions, but the explicit sum is faster for if the number of terms is small
-                if (k < 16) {
-                    double ds = 1.0;
-                    double s = ds;
-                    for (int i = 1; i <= k; i++) {
-                        ds *= mu / i;
-                        s += ds;
-                    }
-                    return (Math.Exp(-mu) * s);
-                } else {
-                    return(AdvancedMath.RightRegularizedGamma(k + 1, mu));
-                }
+                return LeftExclusiveProbability(k + 1);
             }
         }
 
         /// <inheritdoc />
         public override double LeftExclusiveProbability (int k) {
-            return(LeftInclusiveProbability(k-1));
+            if (k < 1) {
+                return 0.0;
+            } else if (k < 16) {
+                // For small k, it's fastest to sum probabilities directly.
+                double ds = 1.0;
+                double s = ds;
+                for (int i = 1; i < k; i++) {
+                    ds *= mu / i;
+                    s += ds;
+                }
+                return Math.Exp(-mu) * s;
+            } else {
+                // Otherwise, fall back to regularized incomplete Gamma.
+                return AdvancedMath.RightRegularizedGamma(k, mu);
+            }
         }
 
         /// <inheritdoc />
@@ -317,30 +320,32 @@ namespace Meta.Numerics.Statistics.Distributions {
         // form of simple inversion: binary search, starting from the median, using a pre-computed table
         // of CDF values that covers most of the space.
 
+        /// <inheritdoc />
         public override int GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException(nameof(rng));
+            if (rng is null) throw new ArgumentNullException(nameof(rng));
             return (poissonGenerator.GetNext(rng));
         }
 
     }
 
-     internal class PoissonGeneratorAdditive : IDeviateGenerator<int> {
+    internal class PoissonGeneratorMultiplicative : IDeviateGenerator<int> {
 
-        public PoissonGeneratorAdditive (double lambda) {
-            this.lambda = lambda;
+        public PoissonGeneratorMultiplicative (double lambda) {
+            expMinusLambda = Math.Exp(-lambda);
         }
 
-        private readonly double lambda;
+        private readonly double expMinusLambda;
 
         public int GetNext (Random rng) {
             int k = 0;
             double t = rng.NextDouble();
-            while (t < lambda) {
+            while (t > expMinusLambda) {
                 k++;
-                t += rng.NextDouble();
+                t *= rng.NextDouble();
             }
             return (k);
         }
+
     }
 
     internal class PoissonGeneratorTabulated : IDeviateGenerator<int> {

@@ -112,7 +112,8 @@ namespace Meta.Numerics.Functions {
         /// regeime, you can still obtain the value of the scaled modified e<sup>-x</sup> I<sub>&#x3BD;</sub>(x) 
         /// by calling <see cref="ScaledModifiedBesselI(double, double)"/>.</para>
         /// </remarks>
-        /// <seealso cref="ModifiedBesselK"/>
+        /// <seealso cref="ModifiedBesselK(double, double)"/>
+        /// <seealso cref="ScaledModifiedBesselI(double, double)"/>
         public static double ModifiedBesselI (double nu, double x) {
             return ModifiedBesselI(nu, x, false);
         }
@@ -123,6 +124,8 @@ namespace Meta.Numerics.Functions {
         /// <param name="nu">The order parameter.</param>
         /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The value of e<sup>-x</sup> I<sub>&#x3BD;</sub>(x).</returns>
+        /// <seealso cref="ScaledModifiedBesselK(double, double)"/>
+        /// <seealso cref="ModifiedBesselI(double, double)"/>
         public static double ScaledModifiedBesselI (double nu, double x) {
             return ModifiedBesselI(nu, x, true);
         }

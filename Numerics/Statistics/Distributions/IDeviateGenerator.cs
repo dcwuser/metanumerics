@@ -202,14 +202,14 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         public double GetNext (Random rng) {
 
-            // pick a random point within the unit semicircle using rejection
+            // Pick a random point within the unit semicircle using rejection.
             double x, y;
             do {
                 x = 2.0 * rng.NextDouble() - 1.0;
                 y = rng.NextDouble();
             } while ((x * x + y * y > 1.0) || (y == 0.0));
 
-            // its tangent is the tangent of a random angle and is thus Cauchy distributed
+            // Its tangent is the tangent of a random angle and is thus Cauchy distributed.
             return (x / y);
 
         }
@@ -229,7 +229,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             b = (Math.E + a) / Math.E;
         }
 
-        double a, b;
+        private readonly double a, b;
 
         public double GetNext (Random rng) {
 

@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 namespace Meta.Numerics.Extended {
 
     /// <summary>
-    /// Contains types that enable extended-precision floating point calculations.
+    /// Contains types that enable extended-precision integer and floating point calculations.
     /// </summary>
     /// <remarks>
     /// <para>The <see cref="DoubleDouble"/> structure supports floating-point arithmetic with

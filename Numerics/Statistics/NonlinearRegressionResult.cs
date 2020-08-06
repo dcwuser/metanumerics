@@ -11,7 +11,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Describes the result of a fit to a non-linear function.
     /// </summary>
-    public sealed class NonlinearRegressionResult : FitResult {
+    public sealed class NonlinearRegressionResult : ResidualsResult {
 
         internal NonlinearRegressionResult(
             IReadOnlyList<double> x, IReadOnlyList<double> y,
@@ -47,10 +47,12 @@ namespace Meta.Numerics.Statistics {
             C = cholesky.Inverse();
             C = (2.0 * min.Value / (n - d)) * C;
 
+            sumOfSquaredResiduals = 0.0;
             residuals = new List<double>(n);
             for (int i = 0; i < n; i++) {
-                double r = y[i] - function(b, x[i]);
-                residuals.Add(r);
+                double z = y[i] - function(b, x[i]);
+                sumOfSquaredResiduals += z * z;
+                residuals.Add(z);
             }
 
             this.names = names;
@@ -62,13 +64,19 @@ namespace Meta.Numerics.Statistics {
         private readonly SymmetricMatrix C;
         private readonly Func<IReadOnlyList<double>, double, double> function;
         private readonly List<double> residuals;
+        private readonly double sumOfSquaredResiduals;
 
-        /// <summary>
-        /// Gets the residuals from the fit.
-        /// </summary>
-        public IReadOnlyList<double> Residuals {
+        /// <inheritdoc />
+        public override IReadOnlyList<double> Residuals {
             get {
-                return (residuals);
+                return residuals;
+            }
+        }
+
+        /// <inheritdoc />
+        public override double SumOfSquaredResiduals {
+            get {
+                return sumOfSquaredResiduals;
             }
         }
 
@@ -78,11 +86,11 @@ namespace Meta.Numerics.Statistics {
         /// <param name="x">The value of the independent variable.</param>
         /// <returns>The predicted value of the dependent variable.</returns>
         public double Predict (double x) {
-            return (function(b, x));
+            return function(b, x);
         }
 
         internal override ParameterCollection CreateParameters () {
-            return (new ParameterCollection(names, b, C));
+            return new ParameterCollection(names, b, C);
         }
 
     }

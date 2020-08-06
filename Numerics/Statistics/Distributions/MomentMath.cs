@@ -34,8 +34,6 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             C[1] = 0.0;
 
-            if (C.Length == 2) return (C);
-
             for (int r = 2; r < C.Length; r++) {
                 C[r] = RawToCentral(M, r);
             }
@@ -47,6 +45,10 @@ namespace Meta.Numerics.Statistics.Distributions {
         //   C_r = \sum_{k=0}^{n} {n \choose k} (-\mu)^k M_{r-k}
 
         internal static double RawToCentral (double[] M, int r) {
+
+            Debug.Assert(M.Length > 1);
+            Debug.Assert(0 <= r && r < M.Length);
+            Debug.Assert(M[0] == 1.0);
 
             double mmu = -M[1];
             IEnumerator<double> B = AdvancedIntegerMath.BinomialCoefficients(r).GetEnumerator();
@@ -95,8 +97,6 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             M[1] = mu;
 
-            if (M.Length == 2) return (M);
-
             for (int r = 2; r < M.Length; r++) {
                 M[r] = CentralToRaw(mu, C, r);
             }
@@ -108,6 +108,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         // M_r = \sum_{k=0}^{r} {r \choose k} \mu^k C_{r-k}
 
         internal static double CentralToRaw (double mu, double[] C, int r) {
+
+            Debug.Assert(C.Length > 0);
+            Debug.Assert(0 <= r && r < C.Length);
+            Debug.Assert(C[0] == 1.0);
+            //Debug.Assert(C[1] == 0.0);
 
             IEnumerator<double> B = AdvancedIntegerMath.BinomialCoefficients(r).GetEnumerator();
 
@@ -149,8 +154,6 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             M[0] = 1.0;
 
-            if (M.Length == 1) return (M);
-
             for (int r = 1; r < M.Length; r++) {
                 M[r] = CumulantToRaw(K, r);
             }
@@ -175,14 +178,16 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (K == null) throw new ArgumentNullException(nameof(K));
 
             double[] C = new double[K.Length];
+
             if (C.Length == 0) return (C);
 
             if (K[0] != 0.0) throw new ArgumentOutOfRangeException(nameof(K));
+
             C[0] = 1.0;
+
             if (C.Length == 1) return (C);
 
             C[1] = 0.0;
-            if (C.Length == 2) return (C);
 
             for (int r = 2; r < C.Length; r++) {
                 C[r] = CumulantToCentral(K, r);

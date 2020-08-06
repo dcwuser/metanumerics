@@ -65,7 +65,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public override UncertainValue Intercept {
             get {
-                return (new UncertainValue(a, Math.Sqrt(caa)));
+                return new UncertainValue(a, Math.Sqrt(caa));
             }
         }
 
@@ -74,7 +74,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public UncertainValue Slope {
             get {
-                return (new UncertainValue(b, Math.Sqrt(cbb)));
+                return new UncertainValue(b, Math.Sqrt(cbb));
             }
         }
 
@@ -86,16 +86,20 @@ namespace Meta.Numerics.Statistics {
         public UncertainValue Predict (double x) {
             double y = a + b * x;
             double yVariance = sigmaSquared * (1.0 + (MoreMath.Sqr(x - xMean) / xVariance + 1.0) / n);
-            return (new UncertainValue(y, Math.Sqrt(yVariance)));
+            return new UncertainValue(y, Math.Sqrt(yVariance));
         }
 
-        /// <summary>
-        /// Gets the residuals.
-        /// </summary>
-        /// <value>A list of the difference between the actual and predicted value for each point.</value>
-        public IReadOnlyList<double> Residuals {
+        /// <inheritdoc />
+        public override IReadOnlyList<double> Residuals {
             get {
-                return (residuals);
+                return residuals;
+            }
+        }
+
+        /// <inheritdoc />
+        public override double SumOfSquaredResiduals {
+            get {
+                return SSR;
             }
         }
 
@@ -104,7 +108,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public TestResult R {
             get {
-                return (rTest.Value);
+                return rTest.Value;
             }
         }
 
@@ -112,7 +116,7 @@ namespace Meta.Numerics.Statistics {
             ParameterCollection parameters = new ParameterCollection(
                 nameof(Intercept), a, caa, nameof(Slope), b, cbb, cab
             );
-            return (parameters);
+            return parameters;
         }
 
         internal override OneWayAnovaResult CreateAnova () {
@@ -120,7 +124,7 @@ namespace Meta.Numerics.Statistics {
             AnovaRow residual = new AnovaRow(SSR, n - 2);
             AnovaRow total = new AnovaRow(SST, n - 1);
             OneWayAnovaResult anova = new OneWayAnovaResult(fit, residual, total);
-            return (anova);
+            return anova;
         }
 
     }

@@ -132,7 +132,7 @@ namespace Meta.Numerics.Extended {
             -((DoubleDouble) 74611) / 330, ((DoubleDouble) 854513) / 138, -((DoubleDouble) 236364091) / 2730, ((DoubleDouble) 8553103) / 6, -((DoubleDouble) 23749461029) / 870
         };
 
-        public static DoubleDouble BernoulliSum (DoubleDouble x) {
+        private static DoubleDouble BernoulliSum (DoubleDouble x) {
             DoubleDouble rxPower = 1.0 / x;
             DoubleDouble rxSquared = rxPower * rxPower;
             DoubleDouble f = 0.5 * Bernoulli[1] * rxPower;

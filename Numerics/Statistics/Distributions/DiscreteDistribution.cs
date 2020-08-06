@@ -13,8 +13,6 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </remarks>
     public abstract class DiscreteDistribution : UnivariateDistribution {
 
-        // replace ProbabilityDensity with ProbabilityMass
-
         /// <summary>
         /// Returns the probability of the obtaining the given value.
         /// </summary>

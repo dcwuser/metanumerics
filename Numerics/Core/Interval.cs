@@ -13,7 +13,7 @@ namespace Meta.Numerics {
     /// </remarks>
     public struct Interval : IEquatable<Interval> {
 
-        private double a, b, w;
+        private readonly double a, b, w;
 
         private Interval (double a, double b, double w) {
             this.a = a;
@@ -120,55 +120,67 @@ namespace Meta.Numerics {
 
         // equality
 
+        private static bool Equals (Interval u, Interval v) {
+            return ((u.a == v.a) && (u.w == v.w));
+        }
+
+        /// <summary>
+        /// Tests wither the current instance is equal to another interval.
+        /// </summary>
+        /// <param name="other">Another iteterval.</param>
+        /// <returns><see langword="true"/> if the current instance equals <paramref name="other"/>, otherwise <see langword="false"/>.</returns>
         public bool Equals (Interval other) {
-            return ((this.a == other.a) && (this.w == other.w));
+            return Equals(this, other);
         }
 
         /// <summary>
-        /// Determines whether two intervals are equal.
+        /// Tests whether two intervals are equal.
         /// </summary>
-        /// <param name="i1">The first interval.</param>
-        /// <param name="i2">The second interval.</param>
-        /// <returns>True if <paramref name="i1"/> and <paramref name="i2"/> are equal, otherwise false.</returns>
-        public static bool operator == (Interval i1, Interval i2) {
-            return (i1.Equals(i2));
+        /// <param name="u">The first interval.</param>
+        /// <param name="v">The second interval.</param>
+        /// <returns><see langword="true"/> if <paramref name="u"/> and <paramref name="v"/> are equal, otherwise <see langword="false"/>.</returns>
+        public static bool operator == (Interval u, Interval v) {
+            return Equals(u, v);
         }
 
         /// <summary>
-        /// Determines whether two intervals are not equal.
+        /// Tests whether two intervals are not equal.
         /// </summary>
-        /// <param name="i1">The first interval.</param>
-        /// <param name="i2">The second interval.</param>
-        /// <returns>True if <paramref name="i1"/> and <paramref name="i2"/> are not equal, otherwise false.</returns>
-        public static bool operator != (Interval i1, Interval i2) {
-            return (!i1.Equals(i2));
+        /// <param name="u">The first interval.</param>
+        /// <param name="v">The second interval.</param>
+        /// <returns><see langword="false"/> if <paramref name="u"/> and <paramref name="v"/> are equal, otherwise <see langword="true"/>.</returns>
+        public static bool operator != (Interval u, Interval v) {
+            return !Equals(u, v);
         }
 
         /// <summary>
-        /// Determines whether a given object is an equal interval.
+        /// Tests whether a given object is equal to the current interval.
         /// </summary>
         /// <param name="obj">An object.</param>
-        /// <returns>True if <paramref name="obj"/> is an equal <see cref="Interval"/>, otherwise false.</returns>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> is an equal <see cref="Interval"/>, otherwise <see langword="false"/>.</returns>
         public override bool Equals (object obj) {
             if (obj is Interval other) {
-                return(this.Equals(other));
+                return Equals(this, other);
             } else {
-                return (false);
+                return false;
             }
         }
 
         /// <inheritdoc />
         public override int GetHashCode () {
-            return (a.GetHashCode() ^ w.GetHashCode());
+            return a.GetHashCode() ^ w.GetHashCode();
         }
 
-        // text representation
         /// <summary>
         /// Produces a string representation of the interval.
         /// </summary>
         /// <returns>A string representation of the interval.</returns>
         public override string ToString () {
-            return (String.Format(CultureInfo.CurrentCulture, "[{0},{1}]", a, b));
+            return ToString(CultureInfo.CurrentCulture);
+        }
+
+        private string ToString (IFormatProvider format) {
+            return String.Format(CultureInfo.CurrentCulture, "[{0},{1}]", a, b);
         }
 
 #if SHO

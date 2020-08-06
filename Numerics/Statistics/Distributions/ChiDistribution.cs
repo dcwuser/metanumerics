@@ -28,7 +28,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         public ChiDistribution (int nu) {
             if (nu < 1) throw new ArgumentOutOfRangeException(nameof(nu));
             this.nu = nu;
-            this.gamma = new GammaDistribution(nu / 2.0);
+            this.gamma = new GammaDistribution(0.5 * nu);
         }
 
         private readonly int nu;
@@ -55,7 +55,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (x < 0.0) {
                 return (0.0);
             } else {
-                return (x * gamma.ProbabilityDensity(x * x / 2.0));
+                return (x * gamma.ProbabilityDensity(0.5 * x * x));
             }
         }
 
@@ -64,7 +64,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (x < 0.0) {
                 return (0.0);
             } else {
-                return (gamma.LeftProbability(x * x / 2.0));
+                return (gamma.LeftProbability(0.5 * x * x));
             }
         }
 
@@ -73,7 +73,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (x <= 0.0) {
                 return (1.0);
             } else {
-                return (gamma.RightProbability(x * x / 2.0));
+                return (gamma.RightProbability(0.5 * x * x));
             }
         }
 
@@ -94,7 +94,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else {
-                return (Math.Pow(2.0, r / 2.0) * AdvancedMath.Pochhammer(nu / 2.0, r / 2.0));
+                return (Math.Pow(2.0, 0.5 * r) * AdvancedMath.Pochhammer(0.5 * nu, 0.5 * r));
             }
         }
 
@@ -108,7 +108,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 //    C_2 = \frac{1}{2} - \frac{1}{8\nu} - \frac{1}{16\nu^2} + \frac{5}{128\nu^3} + \cdots
                 // which we use for large \nu. 
                 if (nu < 32) {
-                    return (nu - 2.0 * MoreMath.Sqr(AdvancedMath.Pochhammer(nu / 2.0, 1.0 / 2.0)));
+                    return (nu - 2.0 * MoreMath.Sqr(AdvancedMath.Pochhammer(0.5 * nu, 0.5)));
                 } else {
                     double C = varianceCoefficients[0];
                     double nuk = 1.0;

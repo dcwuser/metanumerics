@@ -242,6 +242,19 @@ namespace Test {
         }
 
         [TestMethod]
+        public void SampleVarianceRelationships () {
+            double[] sample = new double[] { 1.0, 2.0, 4.0 };
+
+            double m = sample.Mean();
+            double sumOfSqareDeviations = 0.0;
+            for (int i = 0; i < sample.Length; i++) sumOfSqareDeviations += MoreMath.Sqr(sample[i] - m);
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.Variance(), sumOfSqareDeviations / sample.Length));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.StandardDeviation(), Math.Sqrt(sumOfSqareDeviations / sample.Length)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(sample.CorrectedStandardDeviation(), Math.Sqrt(sumOfSqareDeviations / (sample.Length - 1))));
+        }
+
+        [TestMethod]
         public void LognormalFit () {
 
             LognormalDistribution distribution = new LognormalDistribution(1.0, 2.0);

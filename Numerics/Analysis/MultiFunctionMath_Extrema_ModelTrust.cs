@@ -141,20 +141,22 @@ namespace Meta.Numerics.Analysis {
                 double value = f.Evaluate(point);
 
                 double delta = model.MinimumValue - value;
-                double tol = settings.ComputePrecision(value);
+                double tol = settings.ComputePrecision(Math.Min(model.MinimumValue, value));
+                // Note value can be way off, so use better of old best and new value to compute tol.
+                // When we didn't do this before, we got value = infinity, so tol = infinity, and thus terminated!
 
-                if (delta > 0 && settings.Listener != null) {
+                if (delta > 0.0 && settings.Listener != null) {
                     MultiExtremum report = new MultiExtremum(f.EvaluationCount, settings, point, value, Math.Max(Math.Abs(delta), 0.75 * tol), model.GetHessian());
                     settings.Listener(report);
                 }
 
                 // To terminate, we demand: a reduction, that the reduction be small, that the reduction be in line with
-                // its expected value, that we have not run up against trust boundary, and that the gradient is small.
+                // its expected value, that we have not run up against the trust boundary, and that the gradient is small.
                 // I had wanted to demand delta > 0, but we run into some cases where delta keeps being very slightly
                 // negative, typically orders of magnitude less than tol, causing the trust radius to shrink in an
                 // endless cycle that causes our approximation to ultimately go sour, even though terminating on the original
                 // very slightly negative delta would have produced an accurate estimate. So we tolerate this case for now.
-                if ((-tol / 4.0 <= delta) && (delta <= tol)) {
+                if ((delta <= tol) && (-0.25 * tol <= delta)) {
                     // We demand that the model be decent, i.e. that the expected delta was within tol of the measured delta.
                     if (Math.Abs(delta - deltaExpected) <= tol) {
                         // We demand that the step not just be small because it ran up against the trust radius.
@@ -181,7 +183,7 @@ namespace Meta.Numerics.Analysis {
                 // If the actual change was very far from the expected change, reduce the trust radius.
                 // If the expected change did a good job of predicting the actual change, increase the trust radius.
                 if ((delta < 0.25 * deltaExpected) /*|| (8.0 * deltaExpected < delta)*/) {
-                    trustRadius = trustRadius / 2.0;
+                    trustRadius = 0.5 * trustRadius;
                 } else if ((0.75 * deltaExpected <= delta) /*&& (delta <= 2.0 * deltaExpected)*/) {
                     trustRadius = 2.0 * trustRadius;
                 }
@@ -195,8 +197,9 @@ namespace Meta.Numerics.Analysis {
                     double bad = model.ComputeBadness(i, z, point, value);
                     if (bad > fBad) { iBad = i; fBad = bad; }
                 }
+                // Use the new point as long as it is better than our worst existing point.
                 if (value < fMax) {
-                    //Debug.WriteLine("iMax={0}, iBad={1}", iMax, iBad);
+                    Debug.Assert(!Double.IsPositiveInfinity(value) && !Double.IsNaN(value));
                     model.ReplacePoint(iBad, point, z, value);
                 }
                 // There is some question about how best to choose which point to replace.
@@ -710,21 +713,28 @@ namespace Meta.Numerics.Analysis {
             return (x);
         }
 
+        // Badness is used as a criteria for which point to throw out of collection.
+        // Basic idea is to compute a number which (i) increases with value above
+        // minimum and also (ii) increases with distance from minimum.
+
         public double ComputeBadness (int index, double[] z, double[] point, double value) {
             double s = 0.0;
             if (value < MinimumValue) {
+                // If new candidate is best, compute badness relative to it.
                 for (int i = 0; i < point.Length; i++) {
                     s += MoreMath.Sqr(points[index][i] - point[i]);
                 }
                 s = Math.Pow(s, 3.0 / 2.0) * (values[index] - value);
             } else {
+                // Otherwise compute badness relative to best existing point.
                 if (index == minValueIndex) return (0.0);
                 for (int i = 0; i < point.Length; i++) {
                     s += MoreMath.Sqr(points[index][i] - origin[i]);
                 }
                 s = Math.Pow(s, 3.0 / 2.0) * (values[index] - values[minValueIndex]);
             }
-            return (s);
+            Debug.Assert(s >= 0.0);
+            return s;
         }
 
         public double FindMinimumSeperation () {

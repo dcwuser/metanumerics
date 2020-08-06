@@ -33,10 +33,11 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="index">The index of the column.</param>
         /// <returns>The column with index <paramref name="index"/>.</returns>
+        /// <exception cref="IndexOutOfRangeException"><paramref name="index"/> is less than zero or greater than or equal to the number of rows <see cref="Count"/>.</exception>
         public FrameColumn this [int index] {
             get {
-                if ((index < 0) || (index >= frame.columns.Count)) throw new ArgumentOutOfRangeException(nameof(index));
-                return (new FrameColumn(frame, index));
+                if ((index < 0) || (index >= frame.columns.Count)) throw new IndexOutOfRangeException();
+                return new FrameColumn(frame, index);
             }
         }
 
@@ -45,10 +46,12 @@ namespace Meta.Numerics.Data
         /// </summary>
         /// <param name="name">The name of the column.</param>
         /// <returns>The column with the given name.</returns>
+        /// <exception cref="IndexOutOfRangeException">There is no column with the name <paramref name="name"/> in the collection.</exception>
         public FrameColumn this [string name] {
             get {
                 int index = frame.GetColumnIndex(name);
-                return (new FrameColumn(frame, index));
+                if (index < 0) throw new IndexOutOfRangeException();
+                return new FrameColumn(frame, index);
             }
         }
 

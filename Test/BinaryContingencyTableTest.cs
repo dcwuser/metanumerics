@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 using TestClassAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
 using TestMethodAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
@@ -95,12 +97,23 @@ namespace Test {
             UncertainValue r = e1.Binary.OddsRatio;
             Assert.IsTrue(!r.ConfidenceInterval(0.95).ClosedContains(1.0));
 
+            // Chi square should detect association
             TestResult p = e1.PearsonChiSquaredTest();
             Assert.IsTrue(p.Probability < 0.05);
 
+            // Fisher exact should detect association
             TestResult f = e1.Binary.FisherExactTest();
             Assert.IsTrue(f.Probability < 0.05);
 
+            // Phi should be the same as Pearson correlation coefficient
+            List<double> x = new List<double>();
+            List<double> y = new List<double>();
+            for (int i = 0; i < e1[0, 0]; i++) { x.Add(0); y.Add(0); }
+            for (int i = 0; i < e1[0, 1]; i++) { x.Add(0); y.Add(1); }
+            for (int i = 0; i < e1[1, 0]; i++) { x.Add(1); y.Add(0); }
+            for (int i = 0; i < e1[1, 1]; i++) { x.Add(1); y.Add(1); }
+            double s = x.CorrelationCoefficient(y);
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s, e1.Binary.Phi));
         }
 
     }

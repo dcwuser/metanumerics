@@ -47,7 +47,8 @@ namespace Test {
                 new LaplaceDistribution(4.5, 6.0),
                 new ChiDistribution(1), new ChiDistribution(4),
                 new RayleighDistribution(3.0),
-                new FrechetDistribution(2.9, 4.0)
+                new FrechetDistribution(2.9, 4.0),
+                new TestDistribution()
             });
 
             // Add some distributions that come from tests.
@@ -763,10 +764,10 @@ namespace Test {
         public override double ProbabilityDensity (double x) {
             if (x < 0.0) {
                 return (0.0);
-            } else if (x > 1.0) {
-                return (1.0);
+            } else if (x <= 1.0) {
+                return (2.0 * x);          
             } else {
-                return (2.0 * x);
+                return (0.0);
             }
         }
 

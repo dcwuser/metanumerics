@@ -248,11 +248,7 @@ namespace Meta.Numerics.Extended
         internal bool IsNegative => ((s1 >> 63) != 0UL);
 
         internal UInt128 Negate () {
-            //ulong y1 = ~s1;
-            //ulong y0 = ~s0;
-            //Int128Calculator.Increment128(ref y1, ref y0);
-            //return new UInt128(y1, y0);
-            Int128Calculator.Add128To128(~s1, ~s0, 0UL, 1UL, out ulong y1, out ulong y0);
+            Int128Calculator.TwosComplement(s1, s0, out ulong y1, out ulong y0);
             return new UInt128(y1, y0);
         }
 
@@ -344,6 +340,16 @@ namespace Meta.Numerics.Extended
         }
 
         /// <summary>
+        /// Increments a 128-bit unsigned integer.
+        /// </summary>
+        /// <param name="x">The integer.</param>
+        /// <returns>One more than <paramref name="x"/> (or <see cref="UInt128.Zero"/>, if <paramref name="x"/> is <see cref="UInt128.MaxValue"/>).</returns>
+        public static UInt128 operator ++ (UInt128 x) {
+            Int128Calculator.Increment128(x.s1, x.s0, out ulong s1, out ulong s0);
+            return new UInt128(s1, s0);
+        }
+
+        /// <summary>
         /// Subtracts one 128 bit unsigned integer from another.
         /// </summary>
         /// <param name="x">The first value.</param>
@@ -351,6 +357,16 @@ namespace Meta.Numerics.Extended
         /// <returns>The difference <paramref name="x"/> - <paramref name="y"/>.</returns>
         public static UInt128 operator - (UInt128 x, UInt128 y) {
             Int128Calculator.Subtract128From128(x.s1, x.s0, y.s1, y.s0, out ulong s1, out ulong s0);
+            return new UInt128(s1, s0);
+        }
+
+        /// <summary>
+        /// Decrements a 128-bit unsigned integer.
+        /// </summary>
+        /// <param name="x">The integer.</param>
+        /// <returns>One less than <paramref name="x"/> (or <see cref="UInt128.MaxValue"/>, if <paramref name="x"/> is <see cref="UInt128.Zero"/>).</returns>
+        public static UInt128 operator-- (UInt128 x) {
+            Int128Calculator.Subtract128From128(x.s1, x.s0, 0UL, 1UL, out ulong s1, out ulong s0);
             return new UInt128(s1, s0);
         }
 

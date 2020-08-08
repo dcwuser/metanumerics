@@ -196,6 +196,26 @@ namespace Test {
         }
 
         [TestMethod]
+        public void Int128Increment () {
+            foreach (Int128 u in GetRandomInt128(4)) {
+                Int128 v = u;
+                Int128 p = v++;
+                Assert.IsTrue(v == u + 1);
+                Assert.IsTrue(p == u);
+
+                v = u;
+                p = v--;
+                Assert.IsTrue(v == u - 1);
+                Assert.IsTrue(p == u);
+
+                v = u;
+                p = ++v;
+                Assert.IsTrue(v == u + 1);
+                Assert.IsTrue(p == v);
+            }
+        }
+
+        [TestMethod]
         public void DivisionByZero () {
 
             Assert.ThrowsException<DivideByZeroException>(() => Int128.MaxValue / Int128.Zero);

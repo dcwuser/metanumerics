@@ -842,23 +842,6 @@ namespace Meta.Numerics.Functions {
             }
         }
 
-        private static Complex LogGammaReflectionTerm (Complex z) {
-
-            // s will overflow for large z.Im, but we are taking its log, so we should
-            // re-formulate this 
-            Complex s = new Complex(MoreMath.SinPi(z.Re) * Math.Cosh(Math.PI * z.Im), MoreMath.CosPi(z.Re) * Math.Sinh(Math.PI * z.Im));
-            Complex logs = ComplexMath.Log(s);
-
-            double m1 = Math.Log(MoreMath.Hypot(MoreMath.SinPi(z.Re), Math.Sinh(Math.PI * z.Im)));
-
-            double t = Math.Abs(Math.PI * z.Im);
-            double c1 = Math.Exp(-2.0 * t);
-            double c2 = MoreMath.SinPi(z.Re) / Math.Sinh(t);
-            double m2 = t + MoreMath.LogOnePlus(-c1) + 0.5 * MoreMath.LogOnePlus(c2 * c2) - Math.Log(2.0);
-
-            return (Math.Log(Math.PI) - logs);
-        }
-
         private static Complex LogGamma_Stirling (Complex z) {
 
             // work in the upper complex plane; i think this isn't actually necessary

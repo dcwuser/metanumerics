@@ -34,7 +34,7 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(0.5), Math.Sqrt(Math.PI)));
             Assert.IsTrue(AdvancedMath.Gamma(1.0) == 1.0);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(1.5), Math.Sqrt(Math.PI) / 2.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(2.0), 1.0));
+            Assert.IsTrue(AdvancedMath.Gamma(2.0) == 1.0);
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(3.0), 2.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(4.0), 6.0));
             Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.Gamma(Double.PositiveInfinity)));
@@ -185,6 +185,53 @@ namespace Test {
                 Assert.IsTrue(LB <= R);
                 Assert.IsTrue(R <= UB);
             }
+        }
+
+
+        [TestMethod]
+        public void PochammerSpecialIntegerArguments () {
+            Assert.IsTrue(AdvancedMath.Pochhammer(0.0, 0) == 1.0);
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 6)) {
+                Assert.IsTrue(AdvancedMath.Pochhammer(0.0, n) == 0.0);
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.Pochhammer(0.0, -n),
+                    (n % 2 == 0 ? 1.0 : -1.0) / AdvancedIntegerMath.Factorial(n)
+                ));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Pochhammer(1.0, n), AdvancedIntegerMath.Factorial(n)));
+            }
+        }
+
+        // DLMF 5.2.4-5.2.8
+        [TestMethod]
+        public void PochammerIntegerArguments () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
+                Assert.IsTrue(AdvancedMath.Pochhammer(x, 0) == 1.0);
+                foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
+                    double P = 1.0;
+                    for (int k = 0; k < n; k++) {
+                        P *= (x + k);
+                    }
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Pochhammer(x, n), P));
+                    if (Math.Abs(x - Math.Round(x)) > 0.01) {
+                        double Q = 1.0;
+                        for (int k = 1; k <= n; k++) {
+                            Q /= (x - k);
+                        }
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Pochhammer(x, -n), Q));
+                    }
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        AdvancedMath.Pochhammer(-x, n),
+                        (n % 2 == 0 ? 1 : -1) * AdvancedMath.Pochhammer(x - n + 1, n)
+                    ));
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        AdvancedMath.Pochhammer(x, 2 * n),
+                        MoreMath.Pow(2.0, 2 * n) * AdvancedMath.Pochhammer(x / 2.0, n) * AdvancedMath.Pochhammer((x + 1.0) / 2.0, n)
+                    ));
+                }
+
+            }
+
+
         }
 
     }

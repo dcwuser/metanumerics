@@ -1062,22 +1062,6 @@ namespace Meta.Numerics.Functions {
             double z = ZFromZeta(zeta, out double c1);
             return (z * (nu + c1 / nu));
         }
-
-        private static double ZetaFromZ (double z) {
-            Debug.Assert(z > 0.0);
-            if (z < 0.75) {
-                double s = Math.Sqrt((1.0 - z) * (1.0 + z));
-                return (Math.Pow(3.0 / 2.0 * (Math.Log((1.0 + s) / z) - s), 2.0 / 3.0));
-            } else if (z < 1.25) {
-                double y = 1.0 - z;
-                double c = Math.Pow(2.0, 1.0 / 3.0);
-                // Need more terms
-                return (c * y * (1.0 + 3.0 / 10.0 * y + 32.0 / 175.0 * y * y + 1037.0 / 7875 * y * y * y));
-            } else {
-                double s = Math.Sqrt((z - 1.0) * (z + 1.0));
-                return (-Math.Pow(3.0 / 2.0 * (s - Math.Acos(1.0 / z)), 2.0 / 3.0));
-            }
-        }
         
         // This is an inversion of the zeta-from-z function.
         // Since it is used only in the approximate root expressions, we

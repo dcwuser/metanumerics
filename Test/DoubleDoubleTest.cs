@@ -188,6 +188,11 @@ namespace Test {
         }
 
         [TestMethod]
+        public void DoubleDoubleToStringSpecial () {
+            Assert.IsTrue(DoubleDouble.NaN.ToString() == Double.NaN.ToString());
+        }
+
+        [TestMethod]
         public void DoubleDoubleParseSpecialCases () {
             Assert.IsTrue(DoubleDouble.Parse("0.0") == DoubleDouble.Zero);
             Assert.IsTrue(DoubleDouble.Parse("1.0") == DoubleDouble.One);

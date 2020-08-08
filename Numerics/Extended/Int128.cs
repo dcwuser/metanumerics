@@ -339,6 +339,28 @@ namespace Meta.Numerics.Extended
             return new Int128(x.u - y.u);
         }
 
+        /// <summary>
+        /// Increments a 128-bit integer.
+        /// </summary>
+        /// <param name="x">The integer.</param>
+        /// <returns>One more than <paramref name="x"/>.</returns>
+        public static Int128 operator ++ (Int128 x) {
+            UInt128 v = x.u;
+            v++;
+            return new Int128(v);
+        }
+
+        /// <summary>
+        /// Decrements a 128-bit unsigned integer.
+        /// </summary>
+        /// <param name="x">The integer.</param>
+        /// <returns>One less than <paramref name="x"/>.</returns>
+        public static Int128 operator -- (Int128 x) {
+            UInt128 v = x.u;
+            v--;
+            return new Int128(v);
+        }
+
         // Multiplication
 
         /// <summary>

@@ -740,29 +740,28 @@ namespace Test {
         [TestMethod]
         public void RiemannZetaSpecialCaseTest () {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.RiemannZeta(-3.0), 1.0 / 120.0));
-            //Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.RiemannZeta(-2.0), 0.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.RiemannZeta(-2.0), 0.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.RiemannZeta(-1.0), -1.0 / 12.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.RiemannZeta(0.0), -0.5));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.RiemannZeta(2.0), Math.PI * Math.PI / 6.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.RiemannZeta(4.0), Math.Pow(Math.PI, 4) / 90.0));
         }
 
+        // DLMF 25.4.1	
         [TestMethod]
         public void RiemannZetaReflectionTest () {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2 ,1.0E2, 16)) {
-                Console.WriteLine("x={0}", x);
                 double zx = AdvancedMath.RiemannZeta(x);
                 double gx = AdvancedMath.Gamma(x);
                 double zr = AdvancedMath.RiemannZeta(1.0 - x);
-                Console.WriteLine("  {0} vs. {1}", zr, 2.0 * Math.Pow(2.0 * Math.PI, -x) * Math.Cos(Math.PI * x / 2.0) * gx * zx);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(zr, 2.0 * Math.Pow(2.0 * Math.PI, -x) * Math.Cos(Math.PI * x / 2.0) * gx * zx));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(zr, 2.0 * Math.Pow(2.0 * Math.PI, -x) * MoreMath.CosPi(x / 2.0) * gx * zx));
             }
         }
 
-
+        // A&S 23.2.2, DLMF 25.2.11	
         [TestMethod]
         public void ReimannZetaPrimesTest () {
-            // pick high enough values so that p^-x == 1 within double precision before we reach the end of our list of primes
+            // pick high enough values so that 1 - p^-x == 1 within double precision, i.e. i.e. p^x > ~10^16, before we reach the end of our list of primes
             foreach (double x in TestUtilities.GenerateRealValues(10.0, 1.0E3, 8)) {
                 double f = 1.0;
                 foreach (int p in primes) {
@@ -774,7 +773,43 @@ namespace Test {
             }
         }
 
-        private int[] primes = new int[] { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 };
+        private readonly int[] primes = new int[] { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 };
+
+        // A&S 23.2.15, 23.2.16
+        [TestMethod]
+        public void ReimannZetaBernoulliRelationship () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(2, 32, 8)) {
+                int m = 2 * n;
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.RiemannZeta(m),
+                    MoreMath.Pow(2.0 * Math.PI, m) / AdvancedIntegerMath.Factorial(m) / 2.0 * Math.Abs(AdvancedIntegerMath.BernoulliNumber(m))
+                ));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                    AdvancedMath.RiemannZeta(1.0 - m),
+                    -AdvancedIntegerMath.BernoulliNumber(m) / m
+                ));
+            }
+        }
+
+
+        // DLMF 25.8.3	
+        [TestMethod]
+        public void ReimannZetaPochammerSum () {
+            // For s >~ 10, converges to nearly 1, and takes a long time to do so.
+            foreach (double s in TestUtilities.GenerateRealValues(0.1, 10.0, 4)) {
+                if (Math.Abs(s - 1.0) < 1.0E-2) continue;
+                double S = 0.0;
+                for (int k = 0; true; k++) {
+                    if (k > 100) throw new NonconvergenceException();
+                    double S_old = S;
+                    double dS = AdvancedMath.Pochhammer(s, k) * AdvancedMath.RiemannZeta(s + k) / AdvancedIntegerMath.Factorial(k) / Math.Pow(2.0, s + k);
+                    S += dS;
+                    if (S == S_old) break;
+                }
+                // RHS is just lambda function (Riemann sum over odd integers only), but we don't have a seperate function for that
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(S, AdvancedMath.RiemannZeta(s) * (1.0 - Math.Pow(2.0, -s))));
+            }
+        }
 
         [TestMethod]
         public void DirichletEtaSpecialCaseTest () {
@@ -1166,6 +1201,31 @@ namespace Test {
 
         }
 
+        // DLMF 19.20.1	
+        [TestMethod]
+        public void CarlsonFSpecialCases () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 4)) { 
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.CarlsonF(x, x, x), 1.0 / Math.Sqrt(x)));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.CarlsonF(x, x, 0.0), Math.PI / 2.0 / Math.Sqrt(x)));
+                Assert.IsTrue(AdvancedMath.CarlsonF(x, 0.0, 0.0) == Double.PositiveInfinity);
+            }
+        }
+
+        [TestMethod]
+        public void CarlsonFScaling () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 3, 1)) {
+                foreach (double y in TestUtilities.GenerateRealValues(1.0E-3, 1.0E1, 3, 2)) {
+                    foreach (double z in TestUtilities.GenerateRealValues(1.0E-1, 1.0E3, 3, 3)) {
+                        foreach (double lambda in TestUtilities.GenerateRealValues(1.0E-1, 1.0E1, 3, 4)) {
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                                AdvancedMath.CarlsonF(lambda * x, lambda * y, lambda * z),
+                                AdvancedMath.CarlsonF(x, y, z) / Math.Sqrt(lambda)
+                            ));
+                        }
+                    }
+                }
+            }
+        }
 
         [TestMethod]
         public void CarlsonFDuplication () {

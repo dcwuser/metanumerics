@@ -516,6 +516,22 @@ namespace Test {
             Assert.IsTrue(AdvancedIntegerMath.BernoulliNumber(1) == -1.0 / 2.0);
             Assert.IsTrue(AdvancedIntegerMath.BernoulliNumber(2) == 1.0 / 6.0);
             Assert.IsTrue(AdvancedIntegerMath.BernoulliNumber(3) == 0.0);
+            Assert.IsTrue(AdvancedIntegerMath.BernoulliNumber(4) == -1.0 / 30.0);
+        }
+
+        //[TestMethod]
+        // Cancellation too bad to be useful
+        public void BernoulliStirlingRelationship () {
+            // This involves significant cancellation, so don't pick n too high
+            foreach (int n in TestUtilities.GenerateIntegerValues(2, 16, 4)) {
+                double S = 0.0;
+                for (int k = 0; k <= n; k++) {
+                    double dS = AdvancedIntegerMath.Factorial(k) / (k + 1) * AdvancedIntegerMath.StirlingNumber2(n, k);
+                    if (k % 2 != 0) dS = -dS;
+                    S += dS;
+                }
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(S, AdvancedIntegerMath.BernoulliNumber(n)));
+            }
         }
     }
 

@@ -20,15 +20,15 @@ namespace Meta.Numerics.Functions {
             if (x < 0.0) {
                 // for negative numbers, use the reflection formula
                 double t = 1.0 - x;
-                return (2.0 * Math.Pow(Global.TwoPI, -t) * MoreMath.Cos(Global.HalfPI * t) * AdvancedMath.Gamma(t) * RiemannZeta(t));
+                return 2.0 * Math.Pow(2.0 * Math.PI, -t) * MoreMath.CosPi(0.5 * t) * AdvancedMath.Gamma(t) * RiemannZeta(t);
             } else {
                 double xm1 = x - 1.0;
                 if (Math.Abs(xm1) < 0.25) {
                     // near the singularity, use the Stjielts expansion
-                    return (RiemannZeta_LaurentSeries(xm1));
+                    return RiemannZeta_LaurentSeries(xm1);
                 } else {
                     // call Dirichlet function, which converges faster
-                    return (DirichletEta(x) / (1.0 - Math.Pow(2.0, 1.0 - x)));
+                    return DirichletEta(x) / (1.0 - Math.Pow(2.0, 1.0 - x));
                 }
             }
         }
@@ -51,7 +51,7 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Dirichlet_eta_function"/>
         public static double DirichletEta (double x) {
             if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
-            return (DirichletEta_Borwein(x));
+            return DirichletEta_Borwein(x);
         }
 
         // Borwein's amazing method for computing eta is detailed at http://numbers.computation.free.fr/Constants/Miscellaneous/zetaevaluations.html.

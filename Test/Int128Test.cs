@@ -186,12 +186,35 @@ namespace Test {
                     // Subtraction and addition are inverses
                     Assert.IsTrue(y + (x - y) == x);
 
-                    // Division and multiplication are inverses
+                    // Division methods agree
                     Int128 q = Int128.DivRem(x, y, out Int128 r);
                     Assert.IsTrue(q == x / y);
+                    Assert.IsTrue(r == x % y);
+
+                    // Division and multiplication are inverses
                     Assert.IsTrue(q * y + r == x);
 
                 }
+            }
+        }
+
+        [TestMethod]
+        public void Int128Increment () {
+            foreach (Int128 u in GetRandomInt128(4)) {
+                Int128 v = u;
+                Int128 p = v++;
+                Assert.IsTrue(v == u + 1);
+                Assert.IsTrue(p == u);
+
+                v = u;
+                p = v--;
+                Assert.IsTrue(v == u - 1);
+                Assert.IsTrue(p == u);
+
+                v = u;
+                p = ++v;
+                Assert.IsTrue(v == u + 1);
+                Assert.IsTrue(p == v);
             }
         }
 
@@ -212,6 +235,19 @@ namespace Test {
             Assert.IsTrue(Int128.MinValue - 1 == Int128.MaxValue);
             Assert.IsTrue(Int128.MaxValue + 1 == Int128.MinValue);
 
+        }
+
+        [TestMethod]
+        public void Int128DoubleRoundtrip () {
+            // For integers exactly representable by doubles (52 or fewer binary digits),
+            // roundtrip through double should preserve value
+            Random rng = new Random(8);
+            foreach (Int128 s in GetRandomInt64(8, rng)) {
+                if (Int128.Abs(s) > (1UL << 51)) continue;
+                double d = (double) s;
+                Int128 s1 = (Int128) d;
+                Assert.IsTrue(s1 == s);
+            }
         }
 
         [TestMethod]
@@ -335,17 +371,6 @@ namespace Test {
                 }
             }
 
-        }
-
-        [TestMethod]
-        public void Int128DoubleRoundtrip () {
-            // If value is less than 2^52, we should be able to roundtrip to double.
-            foreach (long x in GetRandomInt64(8)) {
-                if (Math.Abs(x) < ((long) (1UL << 52))) {
-                    Int128 y = (Int128) x;
-                    Assert.IsTrue(((Int128) ((double) y)) == y);
-                }
-            }
         }
 
         [TestMethod]

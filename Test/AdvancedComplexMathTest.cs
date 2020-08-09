@@ -172,6 +172,13 @@ namespace Test {
             }
         }
 
+        [TestMethod]
+        public void ComplexLogGammaSpecialValues () {
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.LogGamma(-0.5), new Complex(Math.Log(2.0 * Math.Sqrt(Math.PI)), -Math.PI)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.LogGamma(-1.5), new Complex(Math.Log(4.0 * Math.Sqrt(Math.PI) / 3.0), -2.0 * Math.PI)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedComplexMath.LogGamma(-2.5), new Complex(Math.Log(8.0 * Math.Sqrt(Math.PI) / 15.0), -3.0 * Math.PI)));
+        }
+
         // periodicity in imaginary part of ln z means that LogGamma recurrence and LogGamma duplication tests fail
 
         [TestMethod]

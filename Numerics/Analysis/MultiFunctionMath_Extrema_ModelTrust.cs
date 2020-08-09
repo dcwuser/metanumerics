@@ -737,21 +737,6 @@ namespace Meta.Numerics.Analysis {
             return s;
         }
 
-        public double FindMinimumSeperation () {
-            double min = Double.MaxValue;
-            for (int i = 0; i < points.Length; i++) {
-                for (int j = 0; j < i; j++) {
-                    double s = 0.0;
-                    for (int k = 0; k < d; k++) {
-                        s += MoreMath.Sqr(points[i][k] - points[j][k]);
-                    }
-                    s = Math.Sqrt(s);
-                    if (s < min) min = s;
-                }
-            }
-            return (min);
-        }
-
     }
 
 }

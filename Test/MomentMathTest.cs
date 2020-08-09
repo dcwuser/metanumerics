@@ -10,6 +10,32 @@ namespace Test {
     public class MomentMathTest {
 
         [TestMethod]
+        public void MomentMathOrderOne () {
+
+            double mu = 2.0;
+            double[] M = new double[] { 1.0, mu };
+            double[] C = MomentMath.RawToCentral(M);
+            Assert.IsTrue(C[0] == 1.0);
+            Assert.IsTrue(C[1] == 0.0);
+            double[] K = MomentMath.RawToCumulant(M);
+            Assert.IsTrue(K[1] == mu);
+
+            M = MomentMath.CentralToRaw(mu, C);
+            Assert.IsTrue(M[0] == 1.0);
+            Assert.IsTrue(M[1] == mu);
+            K = MomentMath.CentralToCumulant(mu, C);
+            Assert.IsTrue(K[1] == mu);
+
+            M = MomentMath.CumulantToRaw(K);
+            Assert.IsTrue(M[0] == 1.0);
+            Assert.IsTrue(M[1] == mu);
+            C = MomentMath.CumulantToCentral(K);
+            Assert.IsTrue(C[0] == 1.0);
+            Assert.IsTrue(C[1] == 0.0);
+
+        }
+
+        [TestMethod]
         public void MomentMathConsistency () {
 
             // We can't be too demanding here, since there can be strong cancelations.

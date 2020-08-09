@@ -5,7 +5,6 @@ namespace Meta.Numerics.Extended {
 
 
     // These routines are adapted from
-
     // Warren, Henry, "Hacker's Delight", 2nd edition
 
 
@@ -35,15 +34,15 @@ namespace Meta.Numerics.Extended {
             z1 = x1 - y1 - b;
         }
 
-        public static void Increment128 (ref ulong x1, ref ulong x0) {
-            x0++;
-            if (x0 == 0UL) x1++; 
+        public static void Increment128 (ulong x1, ulong x0, out ulong y1, out ulong y0) {
+            y0 = x0 + 1UL;
+            // This is a specialization of the trick above to avoid branching on (y0 == 0UL).
+            ulong c = (x0 & ~y0) >> 63;
+            y1 = x1 + c;
         }
 
         public static void TwosComplement (ulong x1, ulong x0, out ulong y1, out ulong y0) {
-            y1 = ~x1;
-            y0 = ~x0;
-            Increment128(ref y1, ref y0);
+            Increment128(~x1, ~x0, out y1, out y0);
         }
 
         public static void Decompose (ulong u, out ulong u1, out ulong u0) {

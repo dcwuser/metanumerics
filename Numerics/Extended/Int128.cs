@@ -258,6 +258,23 @@ namespace Meta.Numerics.Extended
             return new Int128(u);
         }
 
+        /// <summary>
+        /// Converts a floating-point value into a 128-bit integer.
+        /// </summary>
+        /// <param name="x">A floating-point number.</param>
+        /// <returns>The lower 128 bits of the integer part of the floating-point number.</returns>
+        /// <exception cref="InvalidCastException"><paramref name="x"/> is NaN, or infinite.</exception>
+        public static explicit operator Int128 (double x) {
+            DoubleInfo s = new DoubleInfo(Math.Truncate(x));
+            if (!s.IsFinite) throw new InvalidCastException();
+            int e = s.Exponent;
+            if (e < 0) return Int128.Zero;
+            UInt128 u = (ulong) s.Mantissa;
+            u = u << e;
+            if (s.IsNegative) u = u.Negate();
+            return new Int128(u);
+        }
+
         // Serialization and deserialization
 
         /// <summary>
@@ -339,6 +356,28 @@ namespace Meta.Numerics.Extended
             return new Int128(x.u - y.u);
         }
 
+        /// <summary>
+        /// Increments a 128-bit integer.
+        /// </summary>
+        /// <param name="x">The integer.</param>
+        /// <returns>One more than <paramref name="x"/>.</returns>
+        public static Int128 operator ++ (Int128 x) {
+            UInt128 v = x.u;
+            v++;
+            return new Int128(v);
+        }
+
+        /// <summary>
+        /// Decrements a 128-bit unsigned integer.
+        /// </summary>
+        /// <param name="x">The integer.</param>
+        /// <returns>One less than <paramref name="x"/>.</returns>
+        public static Int128 operator -- (Int128 x) {
+            UInt128 v = x.u;
+            v--;
+            return new Int128(v);
+        }
+
         // Multiplication
 
         /// <summary>
@@ -414,6 +453,17 @@ namespace Meta.Numerics.Extended
 
             return new Int128(qu);
 
+        }
+
+        /// <summary>
+        /// Computes the remainder of two 128 bit integers.
+        /// </summary>
+        /// <param name="x">The dividend.</param>
+        /// <param name="y">The divisor.</param>
+        /// <returns>The remainder of <paramref name="x"/> divided by <paramref name="y"/>.</returns>
+        public static Int128 operator % (Int128 x, Int128 y) {
+            Int128.DivRem(x, y, out Int128 r);
+            return r;
         }
 
         // Absolute Value

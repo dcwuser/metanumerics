@@ -143,16 +143,41 @@ namespace Test {
         }
 
         [TestMethod]
-        public void UInt128Overflow () {
+        public void UInt128Increment () {
+            foreach (UInt128 u in GetRandomUInt128(new Random(1), 4)) {
+                UInt128 v = u;
+                UInt128 p = v++;
+                Assert.IsTrue(v == u + 1);
+                Assert.IsTrue(p == u);
 
-            UInt128 two = 2;
+                v = u;
+                p = v--;
+                Assert.IsTrue(v == u - 1);
+                Assert.IsTrue(p == u);
+
+                v = u;
+                p = ++v;
+                Assert.IsTrue(v == u + 1);
+                Assert.IsTrue(p == v);
+            }
+        }
+
+
+        [TestMethod]
+        public void UInt128Overflow () {
             unchecked {
                 Assert.IsTrue(UInt128.MaxValue + UInt128.One == UInt128.Zero); // 99 + 1 = [1]00
                 Assert.IsTrue(UInt128.MaxValue + UInt128.MaxValue == UInt128.MaxValue - UInt128.One); // 99 + 99 = [1]98
                 Assert.IsTrue(UInt128.Zero - UInt128.One == UInt128.MaxValue); // [1]00 - 1 = 99
                 Assert.IsTrue(UInt128.Zero - UInt128.MaxValue == UInt128.One); // [1]00 - 99 = 1
-                Assert.IsTrue(UInt128.MaxValue * two == UInt128.MaxValue - UInt128.One); // 99 * 2 = [1]98
+                Assert.IsTrue(UInt128.MaxValue * 2 == UInt128.MaxValue - UInt128.One); // 99 * 2 = [1]98
                 Assert.IsTrue(UInt128.MaxValue * UInt128.MaxValue == UInt128.One); // 99 * 99 = [98]01
+
+                UInt128 m = UInt128.MaxValue;
+                m++;
+                Assert.IsTrue(m == UInt128.Zero);
+                m--;
+                Assert.IsTrue(m == UInt128.MaxValue);
             }
         }
 

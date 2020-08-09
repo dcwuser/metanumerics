@@ -170,7 +170,7 @@ namespace Meta.Numerics.Extended
         /// <returns>The lower 128 bits of the integer part of the floating-point number.</returns>
         /// <exception cref="InvalidCastException"><paramref name="x"/> is negative, or NaN, or infinite.</exception>
         public static explicit operator UInt128 (double x) {
-            DoubleInfo s = new DoubleInfo(Math.Floor(x));
+            DoubleInfo s = new DoubleInfo(Math.Truncate(x));
             if (s.IsNegative || !s.IsFinite) throw new InvalidCastException();
             int e = s.Exponent;
             if (e < 0) return UInt128.Zero;

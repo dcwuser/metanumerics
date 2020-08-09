@@ -100,6 +100,9 @@ namespace Meta.Numerics.Functions {
         /// series. For n = 1 it reduces to -log(1-x). For n = 2 it reduces to the <see cref="AdvancedMath.DiLog"/> function.</para>
         /// <para>The polylogarithm function becomes complex for arguments larger than one.</para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative or <paramref name="x"/> is greater than one.</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Polylogarithm"/>
+        /// <seealso href="https://mathworld.wolfram.com/Polylogarithm.html"/>
         public static double PolyLog (int n, double x) {
 
             if (x > 1.0) throw new ArgumentOutOfRangeException(nameof(x));

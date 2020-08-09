@@ -19,6 +19,7 @@ namespace Meta.Numerics.Functions {
         /// <para>The modified Bessel functions fulfill a differential equation similar to the Bessel differential equation.</para>
         /// <img src="../images/ModifiedBesselODE.png" />
         /// </remarks>
+        /// <seealso href="https://dlmf.nist.gov/10"/>
         public static SolutionPair ModifiedBessel (double nu, double x) {
             if (nu < 0.0) throw new ArgumentOutOfRangeException(nameof(nu));
             if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
@@ -112,6 +113,8 @@ namespace Meta.Numerics.Functions {
         /// regeime, you can still obtain the value of the scaled modified e<sup>-x</sup> I<sub>&#x3BD;</sub>(x) 
         /// by calling <see cref="ScaledModifiedBesselI(double, double)"/>.</para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
+        /// <seealso href="https://mathworld.wolfram.com/ModifiedBesselFunctionoftheFirstKind.html"/>
         /// <seealso cref="ModifiedBesselK(double, double)"/>
         /// <seealso cref="ScaledModifiedBesselI(double, double)"/>
         public static double ModifiedBesselI (double nu, double x) {
@@ -195,6 +198,8 @@ namespace Meta.Numerics.Functions {
         /// <para>The modified Bessel functions are related to the Bessel functions with pure imaginary arguments.</para>
         /// <para>The irregular modified Bessel function decreases monotonically and exponentially from the origin.</para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
+        /// <seealso href="https://mathworld.wolfram.com/ModifiedBesselFunctionoftheSecondKind.html"/>
         public static double ModifiedBesselK (double nu, double x) {
             return ModifiedBesselK(nu, x, false);
         }

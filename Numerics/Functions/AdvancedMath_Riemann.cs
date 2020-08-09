@@ -16,6 +16,8 @@ namespace Meta.Numerics.Functions {
         /// <img src="../images/ZetaSeries.png" />
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Riemann_zeta_function"/>
+        /// <seealso href="https://mathworld.wolfram.com/RiemannZetaFunction.html"/>
+        /// <seealso href="https://dlmf.nist.gov/25"/>
         public static double RiemannZeta (double x) {
             if (x < 0.0) {
                 // for negative numbers, use the reflection formula

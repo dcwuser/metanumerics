@@ -15,6 +15,7 @@ namespace Meta.Numerics.Functions {
         /// <param name="phi">The cylindrical angle &#x3C6;. This angle is usually expressed as between 0 and 2&#x3C0;, measured counter-clockwise (as seen from above) from the positive x-axis. It is also possible to use negative values to represent clockwise movement. </param>
         /// <returns>The value of Y<sub>l,m</sub>(&#x3B8;,&#x3C6;).</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="l"/> is negative, or <paramref name="m"/> lies outside the range [-l, l].</exception>
+        /// <seealso href="https://mathworld.wolfram.com/SphericalHarmonic.html"/>
         public static Complex SphericalHarmonic (int l, int m, double theta, double phi) {
             if (l < 0) throw new ArgumentOutOfRangeException(nameof(l));
             if ((m > l) || (m < -l)) throw new ArgumentOutOfRangeException(nameof(m));

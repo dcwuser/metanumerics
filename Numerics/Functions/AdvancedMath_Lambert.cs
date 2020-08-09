@@ -15,8 +15,10 @@ namespace Meta.Numerics.Functions {
         /// The function appears in a number of contexts, including the solution of differential
         /// equations and the enumeration of trees.</para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is less than -1/e.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Lambert_W_function" />
-        /// <seealso href="http://www.apmaths.uwo.ca/~djeffrey/Offprints/W-adv-cm.pdf"/>
+        /// <seealso href="https://mathworld.wolfram.com/LambertW-Function.html"/>
+        /// <seealso href="https://dlmf.nist.gov/4.13"/>
         public static double LambertW (double x) {
 
             if (x < -EI) throw new ArgumentOutOfRangeException(nameof(x));

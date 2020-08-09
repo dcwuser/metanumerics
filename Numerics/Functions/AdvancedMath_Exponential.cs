@@ -227,11 +227,14 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value of Cin(x).</returns>
         /// <remarks>
-        /// <para>The entine cosine integral Cin(x) is related to the conventional cosine integral Ci(x) by:</para>
+        /// <para>The entire cosine integral Cin(x) is related to the conventional cosine integral Ci(x) by:</para>
+        /// <img src="../images/IntegralCin.png"/>
         /// <para>Unlike Ci(x), Cin(x) is regular at the origin, and may therefore be more useful in applications
-        /// that need the non-divergent part of a cosine integral. But, again unlike Ci(x), Cin(x) does diverge
-        /// (logarithmicaly) for large x.</para>
+        /// that need the non-divergent part of a cosine integral. In fact, Cin(x) is entire, meaning it has no poles
+        /// or cuts anywhere in the complex plane. But, unlike Ci(x), Cin(x) does diverge (logarithmicaly) for large x.</para>
         /// </remarks>
+        /// <seealso href="https://en.wikipedia.org/wiki/Trigonometric_integral"/>
+        /// <seealso href="https://dlmf.nist.gov/6"/>
         /// <seealso cref="IntegralCi"/>
         public static double IntegralCin (double x) {
             if (x < 0.0) {
@@ -278,6 +281,8 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="x">The argument.</param>
         /// <returns>The value of Shi(x).</returns>
+        /// <seealso href="https://en.wikipedia.org/wiki/Trigonometric_integral#Hyperbolic_sine_integral"/>
+        /// <seealso href="https://mathworld.wolfram.com/Shi.html"/>
         public static double IntegralShi (double x) {
             if (x < 0.0) {
                 return (-IntegralShi(-x));
@@ -300,7 +305,6 @@ namespace Meta.Numerics.Functions {
         // This is written so as to be usable for both Si and Shi.
         // Converges to full accuracy in about 30 terms for x~4, less for smaller x
         private static double IntegralSi_Series (double xSquared) {
-            //double xx = x * x;
             double dy = 1.0;
             double y = dy;
             for (int k=3; k<Global.SeriesMax; k+= 2) {

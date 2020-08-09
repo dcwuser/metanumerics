@@ -379,6 +379,7 @@ namespace Meta.Numerics.Functions
         /// <param name="k">The index of the zero.</param>
         /// <returns>The <paramref name="k"/>th value of x for which Ai(x) = 0.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="k"/> is less than 1.</exception>
+        /// <seealso cref="AiryAi(double)"/>
         public static double AiryAiZero (int k) {
             return (BesselMath.AiryAiZero(k));
         }
@@ -389,6 +390,7 @@ namespace Meta.Numerics.Functions
         /// <param name="k">The index of the zero.</param>
         /// <returns>The <paramref name="k"/>th value of x for which Bi(x) = 0.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="k"/> is less than 1.</exception>
+        /// <seealso cref="AiryBi(double)"/>
         public static double AiryBiZero (int k) {
             return (BesselMath.AiryBiZero(k));
         }

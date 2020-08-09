@@ -18,7 +18,7 @@ namespace Meta.Numerics.Functions {
         /// <returns>The value of <sub>2</sub>F<sub>1</sub>(a, b; c; x).</returns>
         /// <remarks>
         /// <para>The Gauss Hypergeometric function is defined by the hypergeometric series:</para>
-        /// <img src="Hypergeometric2F1.png" />
+        /// <img src="../images/Hypergeometric2F1.png" />
         /// <para>For generic values of a, b, and c, the Gauss hypergeometric function becomes complex for x > 1.
         /// However, there are specific cases, most commonly for negative integer values of a and b, for which the
         /// function remains real in this range.</para>

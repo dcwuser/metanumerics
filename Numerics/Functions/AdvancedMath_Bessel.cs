@@ -19,6 +19,7 @@ namespace Meta.Numerics.Functions {
         /// <para>For information on the cylindrical Bessel functions, see <see cref="AdvancedMath.Bessel"/>.</para>
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
+        /// <seealso href="https://mathworld.wolfram.com/BesselFunctionoftheFirstKind.html"/>
         public static double BesselJ (int n, double x) {
 
             // Relate negative n to positive n.
@@ -82,6 +83,7 @@ namespace Meta.Numerics.Functions {
         /// <para>For information on the cylindrical Bessel functions, see <see cref="AdvancedMath.Bessel"/>.</para>
         /// </remarks>
         /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
+        /// <seealso href="https://mathworld.wolfram.com/BesselFunctionoftheSecondKind.html"/>
         public static double BesselY (int n, double x) {
 
             // Relate negative n to positive n.
@@ -563,6 +565,7 @@ namespace Meta.Numerics.Functions {
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
+        /// <seealso href="https://mathworld.wolfram.com/BesselFunctionoftheFirstKind.html"/>
         public static double BesselJ (double nu, double x) {
 
             if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
@@ -631,6 +634,7 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso cref="Bessel"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Bessel_function"/>
+        /// <seealso href="https://mathworld.wolfram.com/BesselFunctionoftheSecondKind.html"/>
         public static double BesselY (double nu, double x) {
 
             if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
@@ -989,7 +993,7 @@ namespace Meta.Numerics.Functions {
 
         // **** Spherical Bessel functions ****
 
-        
+
 
         // Functions needed for uniform asymptotic expansions
 
@@ -998,7 +1002,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="nu">The order, which must be non-negative.</param>
         /// <param name="k">The index of the zero, which must be positive.</param>
-        /// <returns>The <paramref name="k"/>th value of x for which J<sub>nu</sub>(x) = 0.</returns>
+        /// <returns>The <paramref name="k"/>th value of x for which J<sub>&#x3BD;</sub>(x) = 0.</returns>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="nu"/> is negative or <paramref name="k"/> is non-positive.</exception>
         public static double BesselJZero (double nu, int k) {
             if (nu < 0.0) throw new ArgumentOutOfRangeException(nameof(nu));

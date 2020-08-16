@@ -15,18 +15,23 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <remarks>
     /// <para>The beta distribution is defined on the interval [0,1]. Depending on its two shape parameters, it can take on a
     /// variety of forms on this interval.</para>
-    /// <para>If the two shape parameters are equal, the distribution is symmetric. If the first shape parameter is less than one,
-    /// the distribution has a singularity at its left endpoint. If the first shape parameter is greater than one, the distribution
-    /// goes to zero at its left endpoint. The second shape parameter similarly governs the distribution's behavior at its right
-    /// endpoint.</para>
+    /// <para>The left shape parameter &#x3b1; controls the shape of the distribution near the left endpoint x = 0.
+    /// The right shapre paramater &#x3b2; controls the shape of the distribution near the right endpoint x = 1.
+    /// If a shape parameter is less than one, the distribution is singular on that side. If a shape parameter is greater
+    /// than one, the distribution does to zero on that side. If a shape parameter is equal to one, the distribution
+    /// goes to a constant on that side.</para>
+    /// <para>If the two shape parameters are equal, the distribution is symmetric.</para>
     /// <para>When both shape parameters are one, the beta distribution reduces to a standard uniform distribution.</para>
-    /// <img src="../images/UniformFromBeta.png" />
+    /// <para><img src="../images/UniformFromBeta.png" /></para>
     /// <para>Beta distributions describe the maximum and minimum values obtained from multiple, independent draws from a standard
     /// uniform distribution. For n draws, the maximum value is distributed as B(n,1).</para>
-    /// <img src="../images/BetaFromUniform.png" />
+    /// <para><img src="../images/MaxUniformBetaRelation.png" /></para>
     /// <para>Similarly, the minimum value is distributed as B(1,n).</para>
+    /// <para><img src="../images/MinUniformBetaRelation.png" /></para>
+    /// <para>In fact, the <i>i</i>th order statistic (<i>i</i>th smallest value) in n draws from a uniform distribution
+    /// is distributed as B(i, n - i + 1).</para>
     /// <para>Because of the wide variety of shapes it can take, the beta distribution is sometimes
-    /// used as an ad hoc model to describe any distribution observed on a finite interval.</para>
+    /// used as an ad hoc model to fit distributions observed on a finite interval.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Beta_distribution"/>
     /// <seealso href="http://mathworld.wolfram.com/BetaDistribution.html"/>

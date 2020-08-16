@@ -10,20 +10,21 @@ namespace Meta.Numerics.Extended {
     /// <see cref="Double"/>-based functions, you must ensure that the arguments you provide are also more
     /// accurate than <see cref="Double"/>. Because decimal numbers expressed in code are automatically
     /// intrepreted by the compiler as <see cref="Double"/>, it's easier than you might think do this wrong.
-    /// For example, invoking Gamma(0.2) will <i>not</i> compute &#x393;(1/5) to <see cref="DoubleDouble"/>
+    /// For example, invoking <c>Gamma(0.2)</c> will <i>not</i> compute &#x393;(1/5) to <see cref="DoubleDouble"/>
     /// precision. The reason is that 0.2 is intrepreted by the compiler as a <see cref="Double"/>, and there
     /// is no <see cref="Double"/> value that is precisely 1/5. Instead, 0.2 parsed as a <see cref="Double"/>,
     /// is stored as 3602879701896397 X 2<sup>-54</sup> = 0.20000000000000001110223024625157... This equals
-    /// 0.2 within the 16 decimal-place accuracy of <see cref="Double"/>, but clearly not within the 32
+    /// 0.2 to within the 16 decimal-place accuracy of <see cref="Double"/>, but clearly not to within the 32
     /// decimal-place accuracy of <see cref="DoubleDouble"/>.</para>
     /// <para>There are a number of ways to ensure that you are providing an argument to <see cref="DoubleDouble"/> accuracy.
-    /// One possibility is to use the <see cref="DoubleDouble"/> text parser, for example by invoking new DoubleDouble("0.2").
-    /// Another is to produce tha argument as the result of calculation from exact integers, e.g. DoubleDouble.One / 5 or
-    /// ((DoubleDouble) 1) / 5. 
+    /// One possibility is to use the <see cref="DoubleDouble"/> text parser, for example by invoking <c>new DoubleDouble("0.2")</c>.
+    /// Another is to produce tha argument as the result of calculation from exact integers, <c>(DoubleDouble) 1 / 5</c>, which works
+    /// because 1 and 5 (like all integers within range) are represented exactly and the because of the cast the division operation
+    /// is <see cref="DoubleDouble.op_Division"/>.
     /// (The stored value in these cases is again not precisely 1/5, but is equal within the accuracy of <see cref="DoubleDouble"/>.)
     /// Finally, if you know that the argument you want is precisely represetable as a <see cref="Double"/>, you can safely
     /// use the compiler's parser. For example, invoking Gamma(0.25) does compute &#x393;(1/4) to <see cref="DoubleDouble"/>
-    /// to <see cref="DoubleDouble"/> accuracy, because 1/4 is exactly representable via <see cref="Double"/>.</para>
+    /// precision, because 1/4 is exactly representable by <see cref="Double"/>.</para>
     /// </remarks>
     public static partial class AdvancedDoubleDoubleMath {
 

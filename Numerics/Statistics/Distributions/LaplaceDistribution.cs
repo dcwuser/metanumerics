@@ -8,11 +8,12 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents a Laplace distribution.
     /// </summary>
     /// <remarks>
-    /// <para>A Laplace distribution is a symmetric variant of the <see cref="ExponentialDistribution"/>.
+    /// <para>A Laplace distribution, also called the double exponential distribution, is a symmetric variant of the <see cref="ExponentialDistribution"/>.
     /// Instead of putting all events to the right of the origin, it puts events on both sides of
     /// its central location with equally, with a probability density falling off exponentially on each side.</para>
     /// </remarks>
     /// <seealso href="https://en.wikipedia.org/wiki/Laplace_distribution"/>
+    /// <seealso href="https://mathworld.wolfram.com/LaplaceDistribution.html"/>
     public sealed class LaplaceDistribution : ContinuousDistribution {
 
         /// <summary>

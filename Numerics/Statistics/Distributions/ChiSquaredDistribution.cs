@@ -11,19 +11,21 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </summary>
     /// <remarks>
     /// <para>A chi squared distribution is an asymmetrical distribution ranging from zero to infinity with a peak near its
-    /// number of degrees of freedom &#x3BD;. It is a one-parameter distribution determined entirely by the parameter nu.</para>
+    /// number of degrees of freedom &#x3BD;. It is a one-parameter distribution determined entirely by the parameter &#x3BD;.</para>
     /// <img src="../images/ChiSquaredPlot.png" />
     /// <para>The figure above shows the &#x3C7;<sup>2</sup> distribution for &#x3BD; = 6, as well as the normal distribution
     /// with equal mean and variance for reference.</para>
     /// <para>The sum of the squares of &#x3BD; independent standard-normal distributed variables is distributed as &#x3C7;<sup>2</sup>
     /// with &#x3BD; degrees of freedom.</para>
-    /// <img src="../images/ChiSquaredFromNormal.png" />
+    /// <img src="../images/NormalChiSquaredRelation.png" />
     /// <para>The &#x3C7;<sup>2</sup> distribution appears in least-squares fitting as the distribution of the sum-of-squared-deviations
     /// under the null hypothesis that the model explains the data. For example, the goodness-of-fit statistic returned by the
     /// model our model fitting methods (<see cref="UncertainMeasurementSample{T}.FitToFunction"/>, <see cref="UncertainMeasurementSample{T}.FitToLinearFunction"/>,
     /// <see cref="UncertainMeasurementSample.FitToLine"/>, and others) follows a &#x3C7;<sup>2</sup> distribution.</para>
     /// </remarks>
+    /// <see cref="ChiDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Chi-square_distribution" />
+    /// <seealso href="https://mathworld.wolfram.com/Chi-SquaredDistribution.html"/>
     public sealed class ChiSquaredDistribution : ContinuousDistribution {
 
         // internally, we use our Gamma distribution machinery to do our heavy lifting

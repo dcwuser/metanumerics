@@ -38,13 +38,7 @@ namespace Test {
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 4)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E6, 8)) {
                     int s = (n % 2 == 0) ? +1 : -1;
-                    Console.WriteLine($"{n} {x} {s}");
-                    double f1 = AdvancedMath.BesselJ(n, -x);
-                    double f2 = AdvancedMath.BesselJ(n, x);
-                    Console.WriteLine($" {f1} {f2}");
-                    Console.WriteLine($" {new DoubleInfo(AdvancedMath.BesselJ(n, -x))} {new DoubleInfo(s * AdvancedMath.BesselJ(n, x))}");
-                    Console.WriteLine($" {AdvancedMath.BesselJ(n, -x) == s * AdvancedMath.BesselJ(n, -x)}");
-                    Assert.IsTrue(AdvancedMath.BesselJ(n, -x) == s * AdvancedMath.BesselJ(n, -x));
+                    Assert.IsTrue(AdvancedMath.BesselJ(n, -x) == s * AdvancedMath.BesselJ(n, x));
                 }
             }
         }

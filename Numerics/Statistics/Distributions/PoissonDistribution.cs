@@ -9,6 +9,19 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represented a Poisson distribution.
     /// </summary>
+    /// <remarks>
+    /// <para>If events occur independely at uniformly distributed random times,
+    /// the Poisson distribution gives the probabability distribution of the number of
+    /// events than occur in a given time interval. If on average &#x3BC; events occur
+    /// in the time interval the number of actual events that occur is Poisson distributed
+    /// with parameter &#x3BC;.</para>
+    /// <para>The Poisson distribution has the unusual property that the distribution
+    /// of a sum of Poisson distributed values itself has a poisson distribution,
+    /// with a mean equal to the sum of the means of the contributing addends.</para>
+    /// <para><img src="../images/SumOfPoisson.png" /></para>
+    /// </remarks>
+    /// <seealso href="https://en.wikipedia.org/wiki/Poisson_distribution"/>
+    /// <seealso href="https://mathworld.wolfram.com/PoissonDistribution.html"/>
     public sealed class PoissonDistribution : DiscreteDistribution {
 
         /// <summary>

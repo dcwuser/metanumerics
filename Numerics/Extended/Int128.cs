@@ -6,24 +6,62 @@ namespace Meta.Numerics.Extended
 {
 
     /// <summary>
-    /// Represents a signed integer with a 128 big register width.
+    /// Represents a signed integer with a 128 bit register width.
     /// </summary>
     /// <remarks>
-    /// <para>To instantiate a 128-bit signed integer, you can use the <see cref="Int128.Parse(string)"/> or <see cref="Int128.TryParse(string, out Int128)"/>
-    /// methods to parse a decimal string representation. If the value you want is representable by a built-in integer type (e.g. <see cref="Int64"/>), you can
-    /// simply assign a <see cref="Int128"/>-typed variable from a built-in integer type.</para>
-    /// <para>If you know that the numbers you need fit in a 128 bit register, arithmetic with <see cref="Int128"/> is typically faster than with <see cref="BigInteger"/>.
-    /// Addition and subtraction are about four times faster, multiplication is about twice as fast, and division is about equally fast.</para>
+    /// <para>The built-in integer types short, int, and long are fixed-width registers with the characteristics shown below. <see cref="Int128"/> is
+    /// a 128-bit signed integer register with analogous behavior and greatly extended range.</para>
+    /// <table>
+    ///     <tr>
+    ///         <th>Type</th>
+    ///         <th>C# Name</th>
+    ///         <th>Width</th>
+    ///         <th>MaxValue</th>
+    ///     </tr>
+    ///     <tr>
+    ///         <td><see cref="Int16"/></td>
+    ///         <td>short</td>
+    ///         <td>16b (2B)</td>
+    ///         <td>~32 X 10<sup>3</sup></td>
+    ///     </tr>
+    ///     <tr>
+    ///         <td><see cref="Int32"/></td>
+    ///         <td>int</td>
+    ///         <td>32b (4B)</td>
+    ///         <td>~2.1 X 10<sup>9</sup></td>
+    ///     </tr>
+    ///     <tr>
+    ///         <td><see cref="Int64"/></td>
+    ///         <td>long</td>
+    ///         <td>64b (8B)</td>
+    ///         <td><see cref="Int64.MaxValue">~9.2 X 10<sup>18</sup></see></td>
+    ///     </tr>
+    ///     <tr>
+    ///         <td><see cref="Int128"/></td>
+    ///         <td><see cref="Int128"/></td>
+    ///         <td>128b (16B)</td>
+    ///         <td><see cref="Int128.MaxValue">~1.7 X 10<sup>38</sup></see></td>
+    ///     </tr>
+    /// </table>
+    /// <para>To instantiate a 128-bit signed integer, you can use the constructor <see cref="Int128.Int128(string)"/>, or the parsing methods <see cref="Int128.Parse(string)"/>
+    /// or <see cref="Int128.TryParse(string, out Int128)"/> to parse a decimal representation provided as a string. The parsing then occurs at run-time.
+    /// If the value you want is representable by a built-in integer type (e.g. <see cref="Int64"/>), you can
+    /// simply assign a <see cref="Int128"/> variable from a built-in integer type. This is particularly useful in source code, since the compiler will parse fixed
+    /// values of these types at compile-time.</para>
+    /// <para>If you know that the numbers you need to work with all fit in a 128 bit register, arithmetic with <see cref="Int128"/> is typically significantly faster than with <see cref="BigInteger"/>.
+    /// Addition and subtraction are about six times faster, multiplication is about twice as fast, and division is about 50% faster. (Meta.Numerics itself uses <see cref="Int128"/>
+    /// internally in the implementation of some discrete distributions that require very large integers.)</para>
+    /// <para>Operations that overflow and underflow <see cref="Int128"/> behave like they do for the native unsigned integer types, with results equal to the lower 128 bits of the
+    /// full result, or wrapping around from <see cref="Int128.MaxValue"/> to <see cref="Int128.MinValue"/>.</para>
     /// <para>Explicit casts between <see cref="Int128"/> and the built-in integer types behave like unchecked explicit casts between the built-in integer types:
     /// the low-order bits of the binary representation are preserved and the high-order bits are, if necessary, discarded. This preserves values that are representable
     /// by the target type, but values that are not representable by the target type may be transformed in ways that, while correct in terms of the bit-level rules,
-    /// are unexpected in terms of numerical values. This is different than the behavior of <see cref="BigInteger"/>, which performs casts as if checked, throwing
-    /// an exception if the value is not representable in the target type. If you want checked behavior, your code must explicitly check whether the value is in
-    /// the range of the target before casting.</para>
-    /// <para>The signed 128-bit integer type does not support bit-wise logical and shift operations, but the unsigned 128-bit integer type <see cref="UInt128"/>
+    /// are unexpected in terms of numerical values. While this is like the behavior of the built-in integer types, it is different than the behavior of <see cref="BigInteger"/>,
+    /// which performs casts as if checked, throwing an exception if the value is not representable in the target type. If you want checked behavior, your code must explicitly
+    /// check whether the value is in the range of the target before casting.</para>
+    /// <para><see cref="Int128"/> does not support bit-wise logical and shift operations, but the unsigned 128-bit integer type <see cref="UInt128"/>
     /// does. If you want to perform bit-wise operations on 128-bit registers, use <see cref="UInt128"/>.</para>
     /// </remarks>
-    [CLSCompliant(false)]
     public struct Int128 : IEquatable<Int128>, IComparable<Int128> {
 
         /// <summary>
@@ -60,11 +98,16 @@ namespace Meta.Numerics.Extended
         /// <summary>
         /// The maximum value of the signed 128-bit integer.
         /// </summary>
+        /// <remarks>This has the value 170,141,183,460,469,231,731,687,303,715,884,105,728, or about 1.7 X 10<sup>38</sup>.</remarks>
         public static readonly Int128 MaxValue = new Int128(ulong.MaxValue >> 1, ulong.MaxValue);
 
         /// <summary>
         /// The minimum value of the signed 128-bit integer.
         /// </summary>
+        /// <remarks><para>This has the value -170,141,183,460,469,231,731,687,303,715,884,105,729, or about -1.7 X 10<sup>38</sup>.</para>
+        /// <para>As is true for the native signed integer registers and any signed integer register that uses two's complement representation
+        /// of negative numbers, this is one larger in absolute value than <see cref="Int128.MaxValue"/>, so the corresponding
+        /// positive value is not within the representable range of the type.</para></remarks>
         public static readonly Int128 MinValue = new Int128(1UL << 63, 0UL);
 
         // Equality
@@ -249,9 +292,9 @@ namespace Meta.Numerics.Extended
         }
 
         /// <summary>
-        /// Converts an aribitrary-sized big integer into a 128-bit integer.
+        /// Converts an arbitrary-size big integer into a 128-bit integer.
         /// </summary>
-        /// <param name="b">Te big integer to be converted.</param>
+        /// <param name="b">The big integer to convert.</param>
         /// <returns>The 128-bit integer with the same lower 128 bits.</returns>
         public static explicit operator Int128 (BigInteger b) {
             UInt128 u = (UInt128) b;
@@ -261,7 +304,7 @@ namespace Meta.Numerics.Extended
         /// <summary>
         /// Converts a floating-point value into a 128-bit integer.
         /// </summary>
-        /// <param name="x">A floating-point number.</param>
+        /// <param name="x">The floating-point number to convert.</param>
         /// <returns>The lower 128 bits of the integer part of the floating-point number.</returns>
         /// <exception cref="InvalidCastException"><paramref name="x"/> is NaN, or infinite.</exception>
         public static explicit operator Int128 (double x) {
@@ -476,7 +519,8 @@ namespace Meta.Numerics.Extended
         /// <remarks><para>Because <see cref="Int128.MinValue"/> is one unit smaller in absolute value than <see cref="Int128.MaxValue"/>, this
         /// method throws an <see cref="OverflowException"/> when passed <see cref="Int128.MinValue"/>. Built in types such as <see cref="Int32"/>
         /// have analogous behavior. All other values are supported.</para></remarks>
-        /// <exception cref="OverflowException"><paramref name="x"/> was <see cref="Int128.MinValue"/>.</exception>
+        /// <exception cref="OverflowException"><paramref name="x"/> was <see cref="Int128.MinValue"/>, which has no corresponding positive
+        /// value in the range of the type.</exception>
         public static Int128 Abs (Int128 x) {
             UInt128 xu = x.u;
             if (xu.IsNegative) {

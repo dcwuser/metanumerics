@@ -7,6 +7,10 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents a Fréchet distribution.
     /// </summary>
+    /// <remarks>
+    /// <para>The Fréchet distribution is also called the inverse Weibull distribution.</para>
+    /// </remarks>
+    /// <seealso href="https://en.wikipedia.org/wiki/Fr%C3%A9chet_distribution"/>
     public sealed class FrechetDistribution : ContinuousDistribution {
 
         /// <summary>

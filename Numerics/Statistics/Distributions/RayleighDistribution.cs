@@ -14,6 +14,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>A standard Rayleigh distribution is equivalent to a <see cref="ChiDistribution"/> with &#x3BD; = 2.</para>
     /// </remarks>
     /// <seealso href="https://en.wikipedia.org/wiki/Rayleigh_distribution"/>
+    /// <seealso href="https://mathworld.wolfram.com/RayleighDistribution.html"/>
     public sealed class RayleighDistribution : ContinuousDistribution {
 
         /// <summary>

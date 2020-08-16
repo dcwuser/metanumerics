@@ -12,8 +12,9 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <remarks>
     /// <para>The binomial distribution gives the probability of obtaining k successes
     /// in n independent Bernoulli trials in which the probability of success in each trial is p.</para>
-    /// <para>For a single trial, the binomial distribution reduces to a Bernoulli distribution (<see cref="BernoulliDistribution"/>).</para>
-    /// <para>The test statistic for a sign test (<see cref="Sample.SignTest"/>) is distributed according to the Bernoulli distribution.</para>
+    /// <img src="../images/BernoulliBinomialRelation.png" />
+    /// <para>Therefore, for a single trial, the binomial distribution reduces to a Bernoulli distribution (<see cref="BernoulliDistribution"/>).</para>
+    /// <para>The test statistic for a sign test (<see cref="Sample.SignTest"/>) is distributed according to the Binomial distribution.</para>
     /// </remarks>
     /// <seealso href="http://mathworld.wolfram.com/BinomialDistribution.html"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Binomial_distribution"/>

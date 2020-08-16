@@ -15,6 +15,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// does not vanish.</para>
     /// <para>When multiple, independent Bernoulli trials are conducted, the binomial distribution (<see cref="BinomialDistribution"/>)
     /// describes the probability of obtaining any particular number of successes.</para>
+    /// <img src="../images/BernoulliBinomialRelation.png" />
     /// </remarks>
     /// <seealso cref="BinomialDistribution"/>
     /// <seealso href="http://mathworld.wolfram.com/BinomialDistribution.html"/>

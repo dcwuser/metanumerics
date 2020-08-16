@@ -7,14 +7,22 @@ using Meta.Numerics.Functions;
 namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
-    /// Represents the distribution of Student't t statistic.
+    /// Represents the distribution of Student's t statistic.
     /// </summary>
     /// <remarks><para>The mean of n independent standard-normal distributed variables, divided by their root mean square,
     /// is distributed according a Student distribution with n degrees of freedom. Since this is the form of the expression
     /// for the mean of a sample divided by its standard deviation, the Student distribution expresses the distribution of
-    /// sample means arround the population mean, for a normally distributed population.</para></remarks>
+    /// sample means arround the population mean, for a normally distributed population.</para>
+    /// <para>The origin of the name Student distribution is a nice bit of statistical trivia. William Gosset published a
+    /// paper describing the distribution and its statistical applications in 1908. His employer, the Guiness Brewery,
+    /// did not want other brewers to be tipped off to its application to comparing small samples of beer, so they asked
+    /// him to publish under a pseudonym. He published the paper under the name "Student" and the distribution has been
+    /// known by that name since.
+    /// </para>
+    /// </remarks>
     /// <seealso cref="Sample.StudentTTest(Double)"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Student_t_distribution" />
+    /// <seealso href="https://mathworld.wolfram.com/Studentst-Distribution.html"/>
     public sealed class StudentDistribution : ContinuousDistribution {
 
         private double nu;

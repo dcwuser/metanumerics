@@ -17,12 +17,14 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>An exponential distribution with mean one is called a standard exponential distribution. Any exponential distribution
     /// can be converted to a standard exponential by re-parameterizing the data into "fractions of the mean,"
     /// i.e. z = x / &#x3BC;.</para>
+    /// <para><img src="../images/ExponentialStandardization.png" /></para>
     /// <para>Processes resulting in events that are exponentially distributed in time are said to be "ageless" because the hazard function
     /// of the exponential distribution is constant. The Weibull distribution (<see cref="WeibullDistribution"/>) is a generalization
-    /// of the exponential distribution which the hazard function changes (typically by increasing) with time.</para>
+    /// of the exponential distribution for which the hazard function changes (usually by increasing) with time.</para>
     /// </remarks>
     /// <seealso href="WeibullDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Exponential_distribution"/>
+    /// <seealso href="https://mathworld.wolfram.com/ExponentialDistribution.html"/>
     public sealed class ExponentialDistribution : ContinuousDistribution {
 
         private readonly double mu;

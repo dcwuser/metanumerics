@@ -48,6 +48,7 @@ namespace Test {
                 new ChiDistribution(1), new ChiDistribution(4),
                 new RayleighDistribution(3.0),
                 new FrechetDistribution(2.9, 4.0),
+                new NoncentralChiSquaredDistribution(2, 1.5),
                 new TestDistribution()
             });
 

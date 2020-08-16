@@ -15,10 +15,11 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>The logarithm of a log-normal distributed variable is distributed normally.</para>
     /// <img src="../images/LogNormalFromNormal.png" />
     /// <para>The log-normal distribution is commonly used in financial engineering as a model of stock prices.
-    /// If the rate of return on an asset is distributed normally, then its price will be distributed log-normally.</para>
+    /// If the rate of return on an asset is distributed normally, then its price at a given time will be distributed log-normally.</para>
     /// </remarks>
     /// <seealso cref="NormalDistribution"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Log-normal_distribution" />
+    /// <seealso href="https://mathworld.wolfram.com/LogNormalDistribution.html"/>
     public sealed class LognormalDistribution : ContinuousDistribution {
 
         /// <summary>

@@ -10,6 +10,8 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>The probability of obtaining each integer value in a geometric distribution is lower than the probability of obtaining
     /// the previous value by a constant factor. The probability thus decreases geometricly with the value, giving the distribution its name.</para>
     /// </remarks>
+    /// <seealso href="https://en.wikipedia.org/wiki/Geometric_distribution"/>
+    /// <seealso href="https://mathworld.wolfram.com/GeometricDistribution.html"/>
     public sealed class GeometricDistribution : DiscreteDistribution {
 
         /// <summary>

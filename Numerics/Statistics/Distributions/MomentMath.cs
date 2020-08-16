@@ -9,6 +9,15 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Contains methods for converting between different kinds of moments.
     /// </summary>
+    /// <remarks>
+    /// Distributions can be described by by sets of various moments. Raw moments
+    /// and central moments are encountered most commonly, but cumulants (also
+    /// called semi-invariants) and factorial moments are also seen. Given any
+    /// set of one kind of moment for a distribution up to a given order
+    /// (e.g. the 1st, 2nd, and 3rd central moments), the methods of this
+    /// class return the values of other kinds of moments, up to the same order
+    /// (e.g. the 1st, 2nd, and 3rd raw moments). 
+    /// </remarks>
     public static class MomentMath {
 
         /// <summary>
@@ -16,6 +25,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="M">A set of raw moments.</param>
         /// <returns>The corresponding set of central moments.</returns>
+        /// <remarks>The computation of central moments from raw moments is often subject
+        /// to significant cancellation errors, so you should be wary of the higher
+        /// digits of central moments returned by this method.</remarks>
         /// <exception cref="ArgumentNullException"><paramref name="M"/> is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The zeroth raw moment is not one.</exception>
         public static double[] RawToCentral (double[] M) {
@@ -250,6 +262,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="M">A set of raw moments.</param>
         /// <returns>The corresponding set of cumulants.</returns>
+        /// <remarks>The computation of cumulants from raw moments is often subject
+        /// to significant cancellation errors, so you should be wary of the higher
+        /// digits of cumulants returned by this method.</remarks>
         /// <exception cref="ArgumentNullException"><paramref name="M"/> is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The zeroth raw moment is not one.</exception>
         public static double[] RawToCumulant (double[] M) {

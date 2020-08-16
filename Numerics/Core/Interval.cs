@@ -40,6 +40,46 @@ namespace Meta.Numerics {
         }
 
         /// <summary>
+        /// Determines whether a given point is contained in the closed interval.
+        /// </summary>
+        /// <param name="x">The point.</param>
+        /// <returns><see langword="true"/> if <paramref name="x"/> is contained in the closed interval [a,b],
+        /// otherwise <see langword="false"/>.</returns>
+        public bool Contains (double x) {
+            return (x >= a) && (x <= b);
+        }
+
+        /// <summary>
+        /// Determines whether a given point is contained in the closed or open interval.
+        /// </summary>
+        /// <param name="x">The point.</param>
+        /// <param name="type">Specifier of whether the interval should be considered closed or open.</param>
+        /// <returns><see langword="true"/> if <paramref name="x"/> is contained in the interval as specified,
+        /// otherwise <see langword="false"/></returns>
+        public bool Contains (double x, IntervalType type) {
+            if (type == IntervalType.Closed) {
+                return (x >= a) && (x <= b);
+            } else {
+                return (x > a) && (x < b);
+            }
+        }
+
+        /// <summary>
+        /// Determines whether a given point is contained in the interval, with the left and right endpoints
+        /// separately specififed as closed or open.
+        /// </summary>
+        /// <param name="x">The point.</param>
+        /// <param name="leftEndpointType">Specifier of whether the interval should be considered as including its left endpoint.</param>
+        /// <param name="rightEndpointType">Specifier of whether the interval should be considered as including its right endpoint.</param>
+        /// <returns><see langword="true"/> if <paramref name="x"/> is contained in the interval as specified,
+        /// otherwise <see langword="false"/></returns>
+        public bool Contains (double x, IntervalType leftEndpointType, IntervalType rightEndpointType) {
+            bool leftSatisfied = leftEndpointType == IntervalType.Closed ? x >= a : x > a;
+            bool rightSatisfied = rightEndpointType == IntervalType.Closed ? x <= b : x < b;
+            return leftSatisfied && rightSatisfied;
+        }
+
+        /// <summary>
         /// Determines whether the argument lies in the open interval.
         /// </summary>
         /// <param name="x">The argument.</param>
@@ -70,7 +110,7 @@ namespace Meta.Numerics {
         /// </summary>
         public double Midpoint {
             get {
-                return ((a + b) / 2.0);
+                return 0.5 * (a + b);
             }
         }
 
@@ -212,6 +252,22 @@ namespace Meta.Numerics {
         }
 #endif
 
+    }
+
+    /// <summary>
+    /// Indicates whether an interval should be considered closed or open.
+    /// </summary>
+    public enum IntervalType {
+
+        /// <summary>
+        /// Endpoints should be considered within the interval.
+        /// </summary>
+        Closed,
+
+        /// <summary>
+        /// Endpoints should be considered outside the interval.
+        /// </summary>
+        Open
     }
 
 }

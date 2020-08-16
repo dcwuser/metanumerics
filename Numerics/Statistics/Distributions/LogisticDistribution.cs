@@ -10,12 +10,13 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents a logistic distribution.
     /// </summary>
     /// <remarks>
-    /// <para>Like the normal distribution, the logistic distribution is a symmetric, unimodal distribution
+    /// <para>Like the normal distribution, the logistic distribution is a bell-shaped (symmetric, unimodal) distribution
     /// distribution with exponentially supressed tails.</para>
     /// <para>A logistic distribution with mean zero and standard deviation one is called a standard logistic distribution. Any logistic distribution
     /// can be converted to a standard logistic distribution by reparameterzing into z = (x-m)/s.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Logistic_distribution" />
+    /// <seealso href="https://mathworld.wolfram.com/LogisticDistribution.html"/>
     public sealed class LogisticDistribution : ContinuousDistribution {
 
         /// <summary>

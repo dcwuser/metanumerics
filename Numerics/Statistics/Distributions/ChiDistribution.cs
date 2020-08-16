@@ -13,12 +13,16 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </summary>
     /// <remarks>
     /// <para>The &#x3C7; distribution is the distribution of the magnitude of a &#x3BD;-dimensional vector whose individual components are
-    /// normally distribution.</para>
-    /// <para>Since the distribution of the same sum of squares without taking the square root is called the &#x3BD;<sup>2</sup> distribution,
-    /// (<see cref="ChiSquaredDistribution"/>), this distribution is called the &#x3BD; distribution.</para>
+    /// normally distributed.</para>
+    /// <para><img src="../images/NormalChiRelation.png" /></para>
+    /// <para>Since the distribution of the same sum of squares without taking the square root is called the &#x3C7;<sup>2</sup> distribution,
+    /// (<see cref="ChiSquaredDistribution"/>), this distribution is called the &#x3C7; distribution.</para>
+    /// <para>The particular case with &#x3BD; = 2 is the <see cref="RayleighDistribution"/>.</para>
     /// </remarks>
     /// <seealso cref="ChiSquaredDistribution"/>
+    /// <seealso cref="RayleighDistribution"/>
     /// <seealso href="https://en.wikipedia.org/wiki/Chi_distribution"/>
+    /// <seealso href="https://mathworld.wolfram.com/ChiDistribution.html"/>
     public sealed class ChiDistribution : ContinuousDistribution {
 
         /// <summary>

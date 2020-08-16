@@ -9,6 +9,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents a Pareto or power law distribution.
     /// </summary>
     /// <seealso href="http://en.wikipedia.org/wiki/Pareto_distribution"/>
+    /// <seealso href="https://mathworld.wolfram.com/ParetoDistribution.html"/>
     public sealed class ParetoDistribution : ContinuousDistribution {
 
         /// <summary>

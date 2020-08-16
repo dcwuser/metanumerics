@@ -12,13 +12,56 @@ namespace Meta.Numerics.Extended
     /// Represents a 128-bit unsigned integer.
     /// </summary>
     /// <remarks>
-    /// <para>The range of this structure is integer values from 0 to approximately 3.4 X 10<sup>38</sup>.</para>
-    /// <para>If you know that the integers you need to work with fit within this range, operations using
-    /// this structure will be faster than using <see cref="System.Numerics.BigInteger"/>.
-    /// (Addition and subtraction are about 4x faster. Multiplication is about 2x faster.
-    /// Division, unfortunately, isn't any faster.)</para>
-    /// <para>This structure behaves like a 128-bit fixed-width register analogous to
-    /// the native 64-bit (<see cref="Int64"/>) and 32-bit (<see cref="Int32"/>) registers.</para>
+    /// <para>The built-in unsigned integer types ushort, uint, and ulong are fixed-width registers with the characteristics shown below. <see cref="UInt128"/> is
+    /// a 128-bit unsigned integer register with analogous behavior and greatly extended range.</para>
+    /// <table>
+    ///     <tr>
+    ///         <th>Type</th>
+    ///         <th>C# Name</th>
+    ///         <th>Width</th>
+    ///         <th>MaxValue</th>
+    ///     </tr>
+    ///     <tr>
+    ///         <td><see cref="UInt16"/></td>
+    ///         <td>ushort</td>
+    ///         <td>16b (2B)</td>
+    ///         <td>~65 X 10<sup>3</sup></td>
+    ///     </tr>
+    ///     <tr>
+    ///         <td><see cref="UInt32"/></td>
+    ///         <td>uint</td>
+    ///         <td>32b (4B)</td>
+    ///         <td>~4.2 X 10<sup>9</sup></td>
+    ///     </tr>
+    ///     <tr>
+    ///         <td><see cref="UInt64"/></td>
+    ///         <td>ulong</td>
+    ///         <td>64b (8B)</td>
+    ///         <td>~18 X 10<sup>18</sup></td>
+    ///     </tr>
+    ///     <tr>
+    ///         <td><see cref="UInt128"/></td>
+    ///         <td><see cref="UInt128"/></td>
+    ///         <td>128b (16B)</td>
+    ///         <td>~3.4 X 10<sup>38</sup></td>
+    ///     </tr>
+    /// </table>
+    /// <para>To instantiate a 128-bit unsigned integer, you can use the constructor <see cref="UInt128.UInt128(string)"/>, or the parsing methods <see cref="UInt128.Parse(string)"/>
+    /// or <see cref="UInt128.TryParse(string, out UInt128)"/> to parse a decimal representation provided as a string. The parsing then occurs at run-time.
+    /// If the value you want is representable by a built-in unsigned integer type (e.g. <see cref="UInt64"/>), you can
+    /// simply assign a <see cref="UInt128"/> variable from a built-in integer type. This is particularly useful in source code, since the compiler will parse fixed
+    /// values of these types at compile-time.</para>
+    /// <para>Operations that overflow and underflow <see cref="UInt128"/> behave like they do for the native unsigned integer types, with results modulo 2<sup>128</sup>, or wrapping around
+    /// from <see cref="UInt128.MaxValue"/> to <see cref="UInt128.Zero"/>.</para>
+    /// <para>Explicit casts between <see cref="UInt128"/> and the built-in integer types behave like unchecked explicit casts between the built-in integer types:
+    /// the low-order bits of the binary representation are preserved and the high-order bits are, if necessary, discarded. This preserves values that are representable
+    /// by the target type, but values that are not representable by the target type may be transformed in ways that, while correct in terms of the bit-level rules,
+    /// are unexpected in terms of numerical values. While this is like the behavior of the built-in integer types, it is different than the behavior of <see cref="BigInteger"/>,
+    /// which performs casts as if checked, throwing an exception if the value is not representable in the target type. If you want checked behavior, your code must explicitly
+    /// check whether the value is in the range of the target before casting.</para>
+    /// <para>If you know that the numbers you need to work with all fit in a 128 bit unsigned register, arithmetic with <see cref="UInt128"/> is typically significantly faster than with <see cref="BigInteger"/>.
+    /// Addition and subtraction are about six times faster, multiplication is about twice as fast, and division is about 50% faster.</para>
+    /// <para><see cref="UInt128"/> also supports bitwise logical and shift operations.</para>
     /// </remarks>
     [CLSCompliant(false)]
     public struct UInt128 : IEquatable<UInt128>, IComparable<UInt128> {

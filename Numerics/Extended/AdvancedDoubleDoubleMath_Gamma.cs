@@ -17,10 +17,12 @@ namespace Meta.Numerics.Extended {
     public static partial class AdvancedDoubleDoubleMath {
 
         /// <summary>
-        /// Computes the logarithm of the Gamma function double double precision.
+        /// Computes the logarithm of the Gamma function with double double precision.
         /// </summary>
         /// <param name="x">The argument, which must be non-negative.</param>
-        /// <returns>The value of Gamma(x).</returns>
+        /// <returns>The value of ln(&#x393;(x)).</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is less than zero.</exception>
+        /// <seealso cref="Meta.Numerics.Functions.AdvancedMath.LogGamma(double)"/>
         public static DoubleDouble LogGamma (DoubleDouble x) {
 
             if (x < DoubleDouble.Zero) {

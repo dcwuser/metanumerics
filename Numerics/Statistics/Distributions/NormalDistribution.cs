@@ -17,14 +17,16 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>A normal distribution with mean zero and standard deviation one is called a standard normal distribution. Any normal distribution
     /// can be converted to a standard normal distribution by re-parameterizing the data in terms of "standard deviations from the mean",
     /// i.e. z = (x - &#x3BC;) / &#x3C3;.</para>
+    /// <para><img src="../images/NormalStandardization.png" /></para>
     /// <para>Normal distribution appear in many contexts. In practical work, the normal distribution is often used as a crude
     /// model for the distribution of any continuous parameter that tends to cluster near its average, for example human height
     /// and weight. In more refined theoretical work, the normal distribution often emerges as a limiting distribution. For example,
     /// it can be shown that, if a large number of errors affect a measurement, then for nearly any underlying distribution
-    /// of error terms, the distribution of total error tends to a normal distribution.</para>
-    /// <para>The normal distribution is sometimes called a Gaussian, after the mathematician Friedrich Gauss.</para>
+    /// of error terms, the distribution of total error tends toward a normal distribution.</para>
+    /// <para>The normal distribution is often called a Gaussian, after the mathematician Friedrich Gauss.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Normal_distribution"/>
+    /// <seealso href="https://mathworld.wolfram.com/NormalDistribution.html"/>
     public sealed class NormalDistribution : ContinuousDistribution {
 
         private readonly double mu, sigma;

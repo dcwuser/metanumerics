@@ -272,6 +272,17 @@ namespace Meta.Numerics.Functions {
     /// <summary>
     /// Represents a permutation.
     /// </summary>
+    /// <remarks>
+    /// <para>A permutation of dimension D is a re-ordering a set of D distinguishable objects. The most obvious
+    /// application of permutations in programming is to re-order the elements of an ordered set, but the applications
+    /// in applied and theoretical mathematics are vast.</para>
+    /// <para>You can instantiate a new permutation from its map or cycle notation using the <see cref="Parse(string)"/> or <see cref="TryParse(string, out Permutation)"/>
+    /// methods. You can enumerate all permutations of a given dimension using the <see cref="GetPermutations(int)"/> method, or get a random one of a given dimension
+    /// using <see cref="GetRandomPermutation(int, Random)"/>.</para>
+    /// <para>Once you have a permutation instance in hand, you can examine its properties (e.g. <see cref="Order"/> and <see cref="IsDerangement"/>),
+    /// obtain its inverse (using <see cref="Inverse"/>), or combine it with another perumtation using group multiplication (<see cref="operator *(Permutation, Permutation)"/>).
+    /// You can also apply it (in-place!) to any <see cref="IList{T}"/> using <see cref="Apply{T}(IList{T})"/>.</para>
+    /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Permutation"/>
     public sealed class Permutation : IEquatable<Permutation>, IFormattable {
 
@@ -381,18 +392,20 @@ namespace Meta.Numerics.Functions {
         /// <returns>The corresponding permutation.</returns>
         /// <remarks>
         /// <para>This method is able to parse both map representations and cycle representations of permutations.</para>
-        /// <para>A map representation of an n-dimensional permutation is a space-separated list of all integers between 0 and n-1,
-        /// enclosed in square brackets. Each number indicates the index of the location to which the object that appears at
-        /// that location is mapped by the permutation. For example, [2 1 0] denotes the permutation that moves the object
-        /// at index 0 to index 2, does not move the object at index 1, and moves the object at index 2 to index 0. Note
-        /// that the numbers in the map representation are the same as the numbers on the second line of Cauchy's two-line
-        /// notation.</para>
-        /// <para>A cycle representation of an n-dimensional representation is a space-separated list of all integers between 0 and n-1,
-        /// grouped into cycles by parenthesis. Each cycle indicates that the element at the location with the first index in the cycle is moved to
+        /// <para>A map representation of an n-dimensional permutation is a space-separated list of all integers between 0 and n-1 (inclusive),
+        /// enclosed in square brackets. The number at (zero-based) position <i>k</i> indicates the index of the position <i>to</i> which the object
+        /// which was originally at position <i>k</i> is mapped by the permutation.
+        /// For example, <c>[2 1 0]</c> denotes the permutation that moves the object
+        /// at index 0 to index 2, leaves the object at index 1 at index 1, and moves the object at index 2 to index 0.
+        /// Therefore the numbers in the map representation are the same as the numbers on the second line of
+        /// <see href="https://en.wikipedia.org/wiki/Permutation#Two-line_notation">Cauchy's two-line notation</see>.</para>
+        /// <para>A cycle representation of an n-dimensional representation is a space-separated list of all integers between 0 and n-1 (inclusive),
+        /// grouped into cycles by non-nested parenthesis. Each cycle indicates that the element at the location with the first index in the cycle is moved to
         /// the location with the second index in the cycle, the element at the location with the second index in the cycle is moved
         /// to the location with the third index in the cycle, and so on, until the element at the location with the last index
-        /// is moved to the location with the first index. Thus (0 2)(1) indicates that the elements at locations 0 and 2 change
-        /// places and the element at location 1 is left there. So (0 2)(1) and [2 1 0] represent the same permutation.</para>
+        /// is moved to the location with the first index. Thus <c>(0 2)(1)</c> indicates that the elements at locations 0 and 2 change
+        /// places and the element at location 1 is left alone. So <c>(0 2)(1)</c> and <c>[2 1 0]</c> represent the same permutation.</para>
+        /// <para>Both map and cycle notation are in common use and each makes manifest different aspects of a permutation.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="text"/> is null.</exception>
         /// <exception cref="FormatException"><paramref name="text"/> is not a valid text representation of a permutation.</exception>
@@ -487,6 +500,10 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <typeparam name="T">The type of the list.</typeparam>
         /// <param name="x">The list.</param>
+        /// <remarks>
+        /// <para>Usefully for large arrays, the appliation is in-place, i.e. rather than allocate a second array and copy the elements to their target locations in the new array,
+        /// the elements are moved within the single array provided, using an algorithm which ensures that no element is lost via uncontrolled overwriting.</para>
+        /// </remarks>
         public void Apply<T> (IList<T> x) {
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (x.Count != this.Dimension) throw new DimensionMismatchException();
@@ -534,6 +551,8 @@ namespace Meta.Numerics.Functions {
         /// the returned value will overflow.</para>
         /// <para>Note that the word order is also used to refer to the number of distinct permutations of a given dimension. That "order" is a property
         /// of the permutation group. This "order" is a property of each permutation.</para>
+        /// <para>In no circumstances does "order" refer to the number of elements on which a permutation operates; that is the <see cref="Dimension"/>
+        /// of the permutation.</para>
         /// </remarks>
         public long Order {
             get {

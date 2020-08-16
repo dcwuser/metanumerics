@@ -12,10 +12,14 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <remarks>
     /// <para>In physical applications, the Cauchy distribution is usually called a Lorentz distribution. It models
     /// the shape of a spectral line.</para>
+    /// <para>The ratio of two normally distributed quantities has a Cauchy distribution.</para>
+    /// <para><img src="../images/CauchyNormalRelation.png" /></para>
     /// <para>The Cauchy distribution has "fat tails". In fact, it falls off at the minimum possible rate consistent
-    /// with having a convergent integral. For this same reason, none of its moments (above the zeroth) are defined.</para>
+    /// with having a convergent probability integral. For this same reason, none of its moments (above the zeroth)
+    /// are defined.</para>
     /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Cauchy_distribution"/>
+    /// <seealso href="https://mathworld.wolfram.com/CauchyDistribution.html"/>
     public sealed class CauchyDistribution : ContinuousDistribution {
 
         /// <summary>

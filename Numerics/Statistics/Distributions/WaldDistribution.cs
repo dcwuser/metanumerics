@@ -8,19 +8,20 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <summary>
     /// Represents a Wald (Inverse Gaussian) distribution.
     /// </summary>
-    /// <remakrs>
+    /// <remarks>
     /// <para>The Wald distribution, also called the inverse Gaussian distribution, is the distribution of first
-    /// passage times for a random walk.</para>
-    /// <para>The Wald distribution is often called the inverse Gaussian distribution, but it is not the
-    /// distribution of 1/x when x is Gaussian-distributed.</para>
-    /// <para>If a system exhibits one-dimensional Brownian motion with mean displacement mu t and variance
-    /// sigma t-squared.</para>
-    /// <para>This can be phrased in terms of the Gambler's ruin problem: given an initial endowment x, a gambler
-    /// repeatedly plays a game in which he wins 1 dollar with probability p and looses one dollar with probability
-    /// q = 1 - p. If q > p, he will eventually loose all his endowment. What is the probability distribution that
-    /// he will do so after exactly t games?</para>
-    /// </remakrs>
+    /// passage times for Brownian motion.</para>
+    /// <para>In Brownian motion, a particle moves randomly so that its position at any given time is distributed
+    /// normally with a mean that increases linearly and a standard deviation that increases
+    /// with the square root of time. The first passage time is the earliest time that its position reaches
+    /// a given level. This first passage time is Wald distributed with mean and shape parameters related to
+    /// the drift, noise, and threshold.</para>
+    /// <para><img src="../images/NormalWaldRelation.png"/></para>
+    /// <para>This may appear a very obscure an technical relationship, but it turns out to have myriad
+    /// applications: to stock prices, ballot counting, neurological response times, and earthquake prediction.</para>
+    /// </remarks>
     /// <seealso href="http://en.wikipedia.org/wiki/Inverse_Gaussian_distribution"/>
+    /// <seealso href="https://mathworld.wolfram.com/InverseGaussianDistribution.html"/>
     public sealed class WaldDistribution : ContinuousDistribution {
 
         /// <summary>

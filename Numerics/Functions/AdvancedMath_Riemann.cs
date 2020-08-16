@@ -154,11 +154,13 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>As the imaginary part of the argument increases, the computation of the zeta function becomes slower and more difficult.
         /// The computation time is approximately proportional to the imaginary part of z. The result also slowly looses accuracy for arguments with
-        /// very large imaginary parts; for arguments with z.Im of order 10^d, approximately the last d digits of the result are suspect.</para>
-        /// <para>The image below shows the complex &#x393; function near the origin using domain coloring. You can see the first non-trivial
+        /// very large imaginary parts; for arguments with z.Im of order 10^D, approximately the last D digits of the result are suspect.</para>
+        /// <para>The image below shows the complex &#x3B6; function near the origin using domain coloring. You can see the first non-trivial
         /// zeros at (1/2, &#177;14.13...) as well as the trivial zeros along the negative real axis.</para>
         /// <img src="../images/ComplexRiemannZetaPlot.png" />
         /// </remarks>
+        /// <seealso cref="AdvancedMath.RiemannZeta(double)"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Riemann_zeta_function"/>
         public static Complex RiemannZeta (Complex z) {
 
             // Use conjugation and reflection symmetry to move to the first quadrant.

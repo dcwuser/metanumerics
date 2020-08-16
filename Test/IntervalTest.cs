@@ -9,55 +9,8 @@ namespace Test {
     ///This is a test class for IntervalTest and is intended
     ///to contain all IntervalTest Unit Tests
     ///</summary>
-    [TestClass()]
+    [TestClass]
     public class IntervalTest {
-
-
-        private TestContext testContextInstance;
-
-        /// <summary>
-        ///Gets or sets the test context which provides
-        ///information about and functionality for the current test run.
-        ///</summary>
-        public TestContext TestContext {
-            get {
-                return testContextInstance;
-            }
-            set {
-                testContextInstance = value;
-            }
-        }
-
-        #region Additional test attributes
-        // 
-        //You can use the following additional attributes as you write your tests:
-        //
-        //Use ClassInitialize to run code before running the first test in the class
-        //[ClassInitialize()]
-        //public static void MyClassInitialize(TestContext testContext)
-        //{
-        //}
-        //
-        //Use ClassCleanup to run code after all tests in a class have run
-        //[ClassCleanup()]
-        //public static void MyClassCleanup()
-        //{
-        //}
-        //
-        //Use TestInitialize to run code before running each test
-        //[TestInitialize()]
-        //public void MyTestInitialize()
-        //{
-        //}
-        //
-        //Use TestCleanup to run code after each test has run
-        //[TestCleanup()]
-        //public void MyTestCleanup()
-        //{
-        //}
-        //
-        #endregion
-
 
         private double a = -3.1;
         private double b = -2.0;
@@ -72,7 +25,7 @@ namespace Test {
             Assert.IsTrue(aa.Midpoint == a);
         }
 
-        [TestMethod()]
+        [TestMethod]
         public void IntervalWidth () {
             Interval ab = Interval.FromEndpoints(a, b);
             Assert.IsTrue(ab.Width == Math.Abs(a - b));
@@ -85,25 +38,11 @@ namespace Test {
             Assert.IsTrue(ab.RightEndpoint == b);
         }
 
-        [TestMethod()]
-        public void ToTest () {
-            Interval ab = Interval.FromEndpoints(a, b);
-            Assert.AreEqual<double>(ab.RightEndpoint, b);
-        }
-
         [TestMethod]
         public void IntervalMidpoint () {
             Interval ab = Interval.FromEndpoints(a, b);
             Assert.IsTrue(ab.Midpoint == (a + b) / 2.0);
-        }
-
-        /// <summary>
-        ///A test for From
-        ///</summary>
-        [TestMethod()]
-        public void FromTest () {
-            Interval ab = Interval.FromEndpoints(a, b);
-            Assert.AreEqual<double>(ab.LeftEndpoint, a);
+            Assert.IsTrue(ab.Contains(ab.Midpoint));
         }
 
         [TestMethod]
@@ -113,6 +52,17 @@ namespace Test {
             Assert.IsFalse(ac.OpenContains(c));
             Assert.IsTrue(ac.OpenContains(b));
             Assert.IsFalse(ac.OpenContains(d));
+        }
+
+        [TestMethod]
+        public void IntervalContainsEndpoints () {
+            Interval ab = Interval.FromEndpoints(a, b);
+            Assert.IsTrue(ab.Contains(a, IntervalType.Closed));
+            Assert.IsFalse(ab.Contains(a, IntervalType.Open));
+            Assert.IsTrue(ab.Contains(a, IntervalType.Closed, IntervalType.Open));
+            Assert.IsTrue(ab.Contains(b, IntervalType.Closed));
+            Assert.IsFalse(ab.Contains(b, IntervalType.Open));
+            Assert.IsFalse(ab.Contains(b, IntervalType.Closed, IntervalType.Open));
         }
 
         [TestMethod]
@@ -145,6 +95,16 @@ namespace Test {
             Assert.IsTrue(ac.ClosedContains(c));
             Assert.IsTrue(ac.ClosedContains(b));
             Assert.IsFalse(ac.ClosedContains(d));
+        }
+
+        [TestMethod]
+        public void IntervalEquality () {
+            Interval ab = Interval.FromEndpoints(a, b);
+            Interval ac = Interval.FromEndpoints(a, c);
+            Assert.IsTrue(ab.Equals(ab));
+            Assert.IsTrue(ab.Equals((object) ab));
+            Assert.IsFalse(ab.Equals(ac));
+            Assert.IsFalse(ab.Equals((object) ac));
         }
 
     }

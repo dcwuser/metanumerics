@@ -10,6 +10,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents a uniform distribution over an interval.
     /// </summary>
     /// <seealso href="http://en.wikipedia.org/wiki/Uniform_distribution_(continuous)"/>
+    /// <seealso href="https://mathworld.wolfram.com/UniformDistribution.html"/>
     public sealed class UniformDistribution : ContinuousDistribution {
 
         private readonly Interval range;

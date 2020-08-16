@@ -9,16 +9,38 @@ namespace Meta.Numerics.Extended {
     /// Represents a floating point number with quadruple precision.
     /// </summary>
     /// <remarks>
-    /// <para>The double double format uses two <see cref="Double"/> values to effectively
-    /// double the precision with which a number can be stored and manipulated as compared to
-    /// to the <see cref="Double"/> structure, i.e. to approximately 31 decimal digits of accuracy.</para>
+    /// <para>The <see cref="DoubleDouble"/> structure uses two <see cref="Double"/> values to achieve
+    /// twice the precision with which a floating point number can be stored and manipulated as compared to
+    /// to the <see cref="Double"/> structure, approximately 31 decimal digits.</para>
     /// <para>Of all the extended precision floating point systems, double double is the
     /// fastest when implemented in software. A typical floating point operation using
-    /// <see cref="DoubleDouble"/>s is just 3-4 times slower than on <see cref="Double"/>s.</para>
+    /// <see cref="DoubleDouble"/>s is just 3-4 times slower than using <see cref="Double"/>s.</para>
     /// <para>To instantiate a <see cref="DoubleDouble"/>, you can use <see cref="DoubleDouble.TryParse(string, out DoubleDouble)"/>,
     /// or <see cref="DoubleDouble.Parse(string)"/>, or the constructor <see cref="DoubleDouble.DoubleDouble(string)"/>
     /// to parse the text representation of the decimal value you want. If the value you want can be represented as a <see cref="Double"/>
-    /// or <see cref="Int32"/> or other built in type, you can cast that value to a <see cref="DoubleDouble"/>.</para>
+    /// or <see cref="Int32"/> or other built in numeric type, you can cast that value to a <see cref="DoubleDouble"/>.</para>
+    /// <para>When casting a <see cref="Double"/> to a <see cref="DoubleDouble"/>, there is a gotcha that you must be careful
+    /// to avoid. Suppose you write <c>DoubleDouble x = 0.2</c> or <c>DoubleDouble x = 1.0 / 5.0</c>. You might think that this produces the 
+    /// <see cref="DoubleDouble"/> representation of 1/5, but you would be wrong. The problem is that the compiler intreprets 0.2 or 1.0/5.0
+    /// as <see cref="Double"/>s, and 1/5th is not exactly representable as a double, since it is not a rational number with a power-of-two denominator.
+    /// Double's best attempt at 1/5th is 3602879701896397 X 2^<sup>-54</sup> = 0.20000000000000001110223024625157..., which
+    /// is accurate to 16 decimal digits, but not to 32. Therefore when it is cast to a <see cref="DoubleDouble"/> it is much
+    /// farther away from 1/5th than <see cref="DoubleDouble"/> can achieve. To obtain 1/5th to the accuracy of a <see cref="DoubleDouble"/>,
+    /// you must write <c>DoubleDouble x = new DoubleDouble("0.2")</c> or <c>DoubleDouble x = (DoubleDouble) 1 / 5</c>. (The latter works
+    /// because 1 and 5 are exactly representable and the division is performed as <see cref="DoubleDouble"/> division. All integers in range,
+    /// indeed all rational numbers with in-range numerators and power-of-two denominators, are exactly representable. So, for example,
+    /// <c>DoubleDouble x = 0.25</c> <i>does</i> work as expected, because 1/4 is exactly representable. But to avoid the gotcha
+    /// it's best to simply train yourself to avoid assigning <see cref="DoubleDouble"/> variables from factional <see cref="Double"/> values.)</para>
+    /// <para>Many of the mathematical functions which are implemented for <see cref="Double"/> arguments by static methods of the <see cref="Math"/> class
+    /// are implemented for <see cref="DoubleDouble"/> arguments by static methods of the <see cref="DoubleDouble"/> type itself,
+    /// for example <see cref="DoubleDouble.Sqrt(DoubleDouble)"/> and <see cref="DoubleDouble.Log(DoubleDouble)"/>.
+    /// Some of the advanced functions which are implemented for <see cref="Double"/> arguments by static methods of the <see cref="Meta.Numerics.Functions.AdvancedMath"/> class
+    /// are implemented for <see cref="DoubleDouble"/> arguments by static methods of the <see cref="AdvancedDoubleDoubleMath"/> class.
+    /// </para>
+    /// <para>You may wonder why <see cref="DoubleDouble"/> is not simply named "Quad". The reason is that "Quad" would propertly refer to an
+    /// implementation of the <see href="https://en.wikipedia.org/wiki/Quadruple-precision_floating-point_format">IEEE 754 quadruple-precision binary floating
+    /// point format</see>, which would have not only the extended presion of <see cref="DoubleDouble"/>, but also an extended range (up to 10<sup>4932</sup>).
+    /// </para>
     /// </remarks>
     public struct DoubleDouble : IEquatable<DoubleDouble>, IComparable<DoubleDouble> {
 

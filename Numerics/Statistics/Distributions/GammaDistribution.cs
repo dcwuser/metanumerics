@@ -17,6 +17,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// the shape parameter is one, the Gamma distribution reduces to the exponential distribution.</para>
     /// </remarks>
     /// <seealso cref="ExponentialDistribution"/>
+    /// <seealso href="https://en.wikipedia.org/wiki/Gamma_distribution"/>
     public sealed class GammaDistribution : ContinuousDistribution {
 
         /// <summary>

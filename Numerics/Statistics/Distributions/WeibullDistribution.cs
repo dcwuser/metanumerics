@@ -13,9 +13,12 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// </summary>
     /// <remarks>
     /// <para>The Weibull distribution is a generalized form of the exponential distribution,
-    /// for which the decay probability is not constant, but instead increases or decreases
-    /// with time. When the shape parameter is one, the Weibull distribution reduces to the
-    /// exponential distribution.</para>
+    /// for which the hazard function is not constant, but instead increases (for shape parameter k &gt; 1)
+    /// or decreases (for shape parameter k &lt; 1) with x. When the shape parameter is one, the Weibull
+    /// distribution reduces to the exponential distribution.</para>
+    /// <para>In fact, any Weibull distribution can be transformed into a standard exponential distribtuion
+    /// by a change of variables.</para>
+    /// <para><img src="../images/WeibullExponentialRelation.png" /></para>
     /// <para>The Weibull distribution is commonly used in engineering applications to
     /// model the time-to-failure of industrial components.</para>
     /// </remarks>

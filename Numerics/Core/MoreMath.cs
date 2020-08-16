@@ -140,7 +140,7 @@ namespace Meta.Numerics {
         // Beebe, "Computation of expm1(x) = exp(x)  - 1", 2002 (http://www.math.utah.edu/~beebe/reports/expm1.pdf)
         // makes some good points about e^x - 1.
         //   * He shows that the point e^x = 1/2 and e^x = 3/2 are the relevent limits where Math.Exp(x) - 1.0
-        //     looses a one bit of accuracy.
+        //     looses one bit of accuracy.
         //   * He measures that the maximum number of terms in the Taylor series required in this region is 17.
         //   * He measures that the RMS error of the Taylor series in this region is ~0.8 bits and it's maximum
         //     relative error is ~ 2.7 bits.
@@ -177,9 +177,9 @@ namespace Meta.Numerics {
         /// <returns>The value of e<sup>x</sup>-1.</returns>
         /// <remarks>
         /// <para>If x is close to 0, then e<sup>x</sup> is close to 1, and computing e<sup>x</sup>-1 by
-        /// <tt>Math.Exp(x) - 1.0</tt> will be subject to severe loss of significance due to cancelation.
-        /// This method maintains full precision for all values of x by switching to a series expansion for values of
-        /// x near zero.</para>
+        /// <c>Math.Exp(x) - 1.0</c> will be subject to severe loss of significance due to cancelation.
+        /// This method maintains full precision for all values of x by switching to a series expansion
+        /// when x is near zero.</para>
         /// </remarks>
         public static double ExpMinusOne (double x) {
             if ((expm1SeriesLowerLimit < x) && (x < expm1SeriesUpperLimit)) {

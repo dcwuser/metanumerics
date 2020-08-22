@@ -4,13 +4,13 @@
     <TargetFramework>netstandard1.1</TargetFramework>
     <AssemblyName>Meta.Numerics</AssemblyName>
     <RootNamespace>Meta.Numerics</RootNamespace>
-    <Version>4.1.3-alpha</Version>
+    <Version>4.1.4</Version>
     <Copyright>Copyright © David Wright 2008-2020</Copyright>
     <Authors>David Wright</Authors>
     <Company>Meta Numerics</Company>
     <Description>A library for numeric computing with support for data manipulation, statistics, matrix algebra, and advanced functions.</Description>
     <PackageProjectUrl>http://www.meta-numerics.net</PackageProjectUrl>
-    <PackageTags>numeric scientific technical math statistics matrix fft data optimization</PackageTags>
+    <PackageTags>numeric scientific technical math data statistics matrix fft integration optimization solver int128</PackageTags>
     <PackageIconUrl>http://www.meta-numerics.net/Images/ComplexPsiPlot.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/dcwuser/metanumerics</RepositoryUrl>
     <DebugType>portable</DebugType>

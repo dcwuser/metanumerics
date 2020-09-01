@@ -28,6 +28,113 @@ namespace Test {
     [TestClass]
     public class FutureTest {
 
+        public double InverseErfcDlmf (double x) {
+
+            double u = -2.0 / Math.Log(Math.PI * x * x * Math.Log(1 / x));
+            double v = Math.Log(Math.Log(1 / x)) - 2.0 + Math.Log(Math.PI);
+
+            double a2 = v / 8.0;
+            double a3 = -(v * v + 6.0 * v - 6.0) / 32.0;
+            double a4 = (4.0 * v * v * v + 27.0 * v * v + 108.0 * v - 300.0) / 384.0;
+
+            Console.WriteLine($"    t2={a2 * u * u} t3={a3 * u * u * u}");
+
+            return (1.0 + a2 * u * u + a3 * u * u * u + a4 * u * u * u * u) / Math.Sqrt(u);
+
+        }
+
+        public double InverseErfcBlair2(double x) {
+
+            double t = -Math.Log(Math.Sqrt(Math.PI) * x);
+            double u = 0.5 * Math.Log(t);
+
+            return Math.Sqrt(t - u +
+                1.0 / (2.0 * t) * (u - 1.0 +
+                1.0 / (4.0 * t) * ((2.0 * u - 6.0) * u + 7.0 ) )
+            /*   1.0 / (6.0 * t) * (((8.0 * u - 42.0) * u + 102.0) * u - 107.0 ) ) ) */
+            /* 1.0 / (4.0 * t) * ( 24.0 * u * u * u * u - 184.0 * u * u * u + 696.0 * u * u - 1488.0 * u + 1489.0 ) ) ) ) */
+            );
+
+        }
+
+        public double InverseErfcBlair3 (double x) {
+
+            double t = -Math.Log(Math.Sqrt(Math.PI) * x);
+            double u = 0.5 * Math.Log(t);
+
+            return Math.Sqrt(t - u +
+                1.0 / (2.0 * t) * (u - 1.0 +
+                1.0 / (4.0 * t) * ((2.0 * u - 6.0) * u + 7.0 +
+                1.0 / (6.0 * t) * (((8.0 * u - 42.0 ) * u + 102.0 ) * u - 107.0 ) ) )
+                /* 1.0 / (4.0 * t) * ( 24.0 * u * u * u * u - 184.0 * u * u * u + 696.0 * u * u - 1488.0 * u + 1489.0 ) ) ) ) */
+            );
+
+        }
+
+        public double InverseErfcBlair4(double x) {
+
+            double t = -Math.Log(Math.Sqrt(Math.PI) * x);
+            double u = 0.5 * Math.Log(t);
+
+            return Math.Sqrt(t - u +
+                1.0 / (2.0 * t) * (u - 1.0 +
+                1.0 / (4.0 * t) * ((2.0 * u - 6.0) * u + 7.0 +
+                1.0 / (6.0 * t) * (((8.0 * u - 42.0) * u + 102.0) * u - 107.0 +
+                1.0 / (4.0 * t) * (24.0 * u * u * u * u - 184.0 * u * u * u + 696.0 * u * u - 1488.0 * u + 1489.0))))
+            );
+
+        }
+
+        private static double InverseErfcAsymptoticExpansion(double x) {
+
+            double t = -Math.Log(Math.Sqrt(Math.PI) * x);
+            double u = Math.Log(t);
+
+            // Leading order
+            double s = t - 0.5 * u;
+
+            // 1st correction
+            double tPower = t;
+            s += (1.0 / 4.0 * u - 1.0 / 2.0) / tPower;
+
+            // 2nd correction
+            tPower *= t;
+            s += ((1.0 / 16.0 * u - 3.0 / 8.0) * u + 7.0 / 8.0) / tPower;
+            
+            // 3rd correction
+            tPower *= t;
+            s += (((1.0 / 48.0 * u - 7.0 / 32.0) * u + 17.0 / 16.0) * u - 107.0 / 48.0) / tPower;
+
+            // 4th correction
+            tPower *= t;
+            s += ((((1.0 / 128.0 * u - 23.0 / 192.0) * u + 29.0 / 32.0) * u - 31.0 / 8.0 ) * u + 1489.0 / 192.0) / tPower;
+
+            return (Math.Sqrt(s));
+
+        }
+
+
+        [TestMethod]
+        public void TestInverseErfcExpansion () {
+
+            for (double y = 32.0; y < 1.0E8; y *= 32.0) {
+
+                double x = 1.0 / y;
+
+                double v = AdvancedMath.InverseErfc(x);
+                double ed = InverseErfcDlmf(x) - v;
+                double e2 = InverseErfcBlair2(x) - v;
+                double e3 = InverseErfcBlair3(x) - v;
+                double e4 = InverseErfcBlair4(x) - v;
+                double ee = InverseErfcAsymptoticExpansion(x) - v;
+
+                Console.WriteLine($"{y} d={ed} b2={e2} b3={e3} b4={e4} {ee}");
+
+            }
+
+        }
+
+
         [TestMethod]
         public void PowBenchmark () {
 
@@ -199,15 +306,12 @@ namespace Test {
         [TestMethod]
         public void NonlinearRegressionLinearRegressionAgreementTest () {
 
-            BivariateSample s = new BivariateSample();
-            s.Add(1.0, 2.0);
-            s.Add(3.0, 2.0);
-            s.Add(3.0, 4.0);
-            s.Add(5.0, 4.0);
+            double[] x = new double[] { 1.0, 3.0, 3.0, 5.0 };
+            double[] y = new double[] { 2.0, 2.0, 4.0, 4.0 };
 
-            LinearRegressionResult linearFit = s.LinearRegression();
-            NonlinearRegressionResult nonlinearFit = s.NonlinearRegression(
-                (IReadOnlyList<double> c, double x) => c[0] + c[1] * x,
+            LinearRegressionResult linearFit = y.LinearRegression(x);
+            NonlinearRegressionResult nonlinearFit = y.NonlinearRegression(x,
+                (IReadOnlyList<double> p, double t) => p[0] + p[1] * t,
                 new double[] { 1.0, 1.0 }
             );
 
@@ -218,20 +322,13 @@ namespace Test {
         [TestMethod]
         public void TwoWayAnova () {
 
-            Sample[,] samples = new Sample[,] {
-                { new Sample(54, 49, 59, 39, 55), new Sample(25, 29, 47, 26, 28) },
-                { new Sample(53, 72, 43, 56, 52), new Sample(46, 51, 33, 47, 41) },
-                { new Sample(33, 30, 26, 25, 29), new Sample(18, 21, 34, 40, 24) }
+            List<double>[,] samples = new List<double>[,] {
+                { new List<double> {54, 49, 59, 39, 55 }, new List<double> {25, 29, 47, 26, 28 } },
+                { new List<double> {53, 72, 43, 56, 52 }, new List<double> {46, 51, 33, 47, 41 } },
+                { new List<double> {33, 30, 26, 25, 29 }, new List<double> {18, 21, 34, 40, 24 } }
             };
 
-            /*
-            Sample[,] samples = new Sample[,] {
-                { new Sample(4, 5, 6, 5), new Sample(7, 9, 8, 12), new Sample(10, 12, 11, 7) },
-                { new Sample(6, 6, 4, 4), new Sample(13, 15, 12, 12), new Sample(12, 13, 10, 13) }
-            };
-            */
-
-            Sample.TwoWayAnovaTest(samples);
+            Univariate.TwoWayAnovaTest(samples);
 
         }
 
@@ -446,92 +543,6 @@ namespace Test {
             }
 
         }
-
-        [TestMethod]
-        public void PredictionVariance () {
-
-            double a0 = -2.0;
-            double b0 = 3.0;
-
-            double[] xValues = TestUtilities.GenerateUniformRealValues(1.0, 10.0, 8);
-
-            ContinuousDistribution eDistribuiton = new NormalDistribution();
-
-            Sample zSample = new Sample();
-            Sample vSample = new Sample();
-            Sample uSample = new Sample();
-
-            BivariateSample pSample = new BivariateSample();
-            Sample sSample = new Sample();
-
-            Sample cbbSample = new Sample();
-            Sample cabSample = new Sample();
-            Sample caaSample = new Sample();
-
-            for (int i = 0; i < 10000; i++) {
-                Random rng = new Random(i);
-                BivariateSample sample = new BivariateSample();
-                foreach (double x in xValues) {
-                    double y = a0 + b0 * x + eDistribuiton.GetRandomValue(rng);
-                    sample.Add(x, y);
-                }
-
-                int n = sample.Count;
-                double mx = sample.X.Mean;
-                double my = sample.Y.Mean;
-                double cxx = sample.X.Variance;
-                double cyy = sample.Y.Variance;
-                double cxy = sample.Covariance;
-
-                double b = cxy / cxx;
-                double a = my - b * mx;
-                pSample.Add(a, b);
-
-                double r = cxy / Math.Sqrt(cxx * cyy);
-                ContinuousDistribution rDistribution = new PearsonRDistribution(n);
-                double pr = rDistribution.RightProbability(r) * 2.0;
-
-                double F = r * r / (1.0 - r * r) * (n - 2);
-                ContinuousDistribution fDistribution = new FisherDistribution(1, n - 2);
-                double pF = fDistribution.RightProbability(F);
-
-                BivariateSample residuals = new BivariateSample();
-
-                double s2 = 0.0;
-                foreach (XY point in sample) {
-                    double rs = point.Y - (a + b * point.X);
-                    residuals.Add(point.X, rs);
-                    s2 += rs * rs;
-                }
-                s2 = s2 / (n - 2);
-                sSample.Add(s2);
-
-                double cbb = s2 / cxx / n;
-                double cab = -mx * cbb;
-                double caa = (cxx + mx * mx) * cbb;
-
-                cbbSample.Add(cbb);
-                cabSample.Add(cab);
-                caaSample.Add(caa);
-
-                LinearRegressionResult fit = sample.LinearRegression();
-
-                double x0 = 0.0;
-                double yp = fit.Intercept.Value + x0 * fit.Slope.Value;
-                double y0 = a0 + b0 * x0 + eDistribuiton.GetRandomValue(rng);
-                zSample.Add(yp - y0);
-
-                ColumnVector c = new ColumnVector(1.0, x0);
-                double v = c.Transpose * (fit.Parameters.CovarianceMatrix) * c;
-                vSample.Add(v);
-
-                double u = s2 * (1.0 + 1.0 / n + MoreMath.Sqr(x0 - mx) / (cxx * n));
-                uSample.Add(u);
-
-            }
-
-        }
-
 
         [TestMethod]
         public void Seperate () {

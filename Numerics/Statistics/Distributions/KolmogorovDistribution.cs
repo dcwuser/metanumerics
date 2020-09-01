@@ -9,11 +9,11 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents the distribution of the Kolmogorov-Smirnov D statistic.
     /// </summary>
     /// <remarks>
-    /// <para>In the limit of large sample size, the D statistic of the Kolmogorov-Smirnov test (<see cref="Sample.KolmogorovSmirnovTest(ContinuousDistribution)"/>)
+    /// <para>In the limit of large sample size, the D statistic of the Kolmogorov-Smirnov test (<see cref="Univariate.KolmogorovSmirnovTest(System.Collections.Generic.IReadOnlyList{double}, ContinuousDistribution)"/>)
     /// follows this distribution.</para>
     /// </remarks>
     /// <seealso href="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test"/>
-    /// <seealse cref="Sample.KolmogorovSmirnovTest(Meta.Numerics.Statistics.Distributions.ContinuousDistribution)" />
+    /// <seealse cref="Univariate.KolmogorovSmirnovTest(System.Collections.Generic.IReadOnlyList{double}, ContinuousDistribution)" />
     public sealed class KolmogorovDistribution : ContinuousDistribution {
 
         /// <summary>
@@ -24,11 +24,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             if (x <= 0.0) {
-                return (0.0);
+                return 0.0;
             } else if (x < 1.2) {
-                return (AsymptoticPPrime(x));
+                return AsymptoticPPrime(x);
             } else {
-                return (AsymptoticQPrime(x));
+                return AsymptoticQPrime(x);
             }
 
         }
@@ -72,11 +72,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double LeftProbability (double x) {
             if (x <= 0.0) {
-                return (0.0);
+                return 0.0;
             } else if (x < 1.2) {
-                return (AsymptoticP(x));
+                return AsymptoticP(x);
             } else {
-                return (1.0 - AsymptoticQ(x));
+                return 1.0 - AsymptoticQ(x);
             }
 
         }
@@ -84,11 +84,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double RightProbability (double x) {
             if (x <= 0.0) {
-                return (1.0);
+                return 1.0;
             } else if (x < 1.2) {
-                return (1.0 - AsymptoticP(x));
+                return 1.0 - AsymptoticP(x);
             } else {
-                return (AsymptoticQ(x));
+                return AsymptoticQ(x);
             }
 
         }
@@ -144,7 +144,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Variance {
             get {
-                return (Global.HalfPI * (Math.PI / 6.0 - Global.LogTwo * Global.LogTwo));
+                return Math.PI / 2.0 * (Math.PI / 6.0 - Global.LogTwo * Global.LogTwo);
 
             }
         }
@@ -162,11 +162,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else if (r == 1) {
-                return (Mean);
+                return Mean;
             } else {
-                return (AdvancedMath.Gamma(r / 2.0 + 1.0) * AdvancedMath.DirichletEta(r) / Math.Pow(2.0, r / 2.0 - 1.0));
+                return AdvancedMath.Gamma(r / 2.0 + 1.0) * AdvancedMath.DirichletEta(r) / Math.Pow(2.0, r / 2.0 - 1.0);
             }
         }
 
@@ -175,19 +175,19 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else if (r == 1) {
-                return (0.0);
+                return 0.0;
             } else {
                 // Use integration; computation from raw moments suffers from cancelation.
-                return (base.CentralMoment(r));
+                return base.CentralMoment(r);
             }
         }
 
         /// <inheritdoc />
         public override Interval Support {
             get {
-                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+                return Interval.Semiinfinite;
             }
         }
 

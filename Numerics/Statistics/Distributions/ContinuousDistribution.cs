@@ -10,7 +10,7 @@ using Meta.Numerics.Matrices;
 namespace Meta.Numerics.Statistics.Distributions {
 
     /// <summary>
-    /// Represents all continuous, univariate probability distribution.
+    /// Represents all continuous, univariate probability distributions.
     /// </summary>
     public abstract class ContinuousDistribution : UnivariateDistribution {
 
@@ -38,11 +38,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <seealso href="https://en.wikipedia.org/wiki/Cumulative_distribution_function"/>
         public virtual double LeftProbability (double x) {
             if (x <= Support.LeftEndpoint) {
-                return (0.0);
+                return 0.0;
             } else if (x >= Support.RightEndpoint) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (FunctionMath.Integrate(ProbabilityDensity, Support.LeftEndpoint, x).Estimate.Value);
+                return FunctionMath.Integrate(ProbabilityDensity, Support.LeftEndpoint, x).Estimate.Value;
             }
         }
 
@@ -64,11 +64,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <seealso href="https://en.wikipedia.org/wiki/Survival_function"/>
         public virtual double RightProbability (double x) {
             if (x <= Support.LeftEndpoint) {
-                return (1.0);
+                return 1.0;
             } else if (x >= Support.RightEndpoint) {
-                return (0.0);
+                return 0.0;
             } else {
-                return (FunctionMath.Integrate(ProbabilityDensity, x, Support.RightEndpoint).Estimate.Value);
+                return FunctionMath.Integrate(ProbabilityDensity, x, Support.RightEndpoint).Estimate.Value;
             }
         }
 
@@ -86,9 +86,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         public virtual double InverseLeftProbability (double P) {
             // find x where LeftProbability(x) = P 
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
-            Func<double, double> f = delegate(double x) {
-                return (LeftProbability(x) - P);
-            };
+            Func<double, double> f = (double x) => (LeftProbability(x) - P);
             double y = FunctionMath.FindZero(f, Mean);
             return (y);
             // since we have the PDF = CDF', change to a method using Newton's method
@@ -101,9 +99,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The value x for which <see cref="RightProbability"/> equals Q.</returns>
         public virtual double InverseRightProbability (double Q) {
             if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
-            Func<double, double> f = delegate(double x) {
-                return (RightProbability(x) - Q);
-            };
+            Func<double, double> f = (double x) => (RightProbability(x) - Q);
             double y = FunctionMath.FindZero(f, Mean);
             return (y);
         }
@@ -138,12 +134,12 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double CentralMoment (int r) {
             if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else if (r == 1) {
-                return (0.0);
+                return 0.0;
             } else {
                 double mu = Mean;
-                return (ExpectationValue(x => MoreMath.Pow(x - mu, r)));
+                return ExpectationValue(x => MoreMath.Pow(x - mu, r));
             }
         }
 
@@ -153,7 +149,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <remarks>The median is the point with equal integrated probability above and below, i.e. with P(x1) = 0.5.</remarks>
         public virtual double Median {
             get {
-                return (InverseLeftProbability(0.5));
+                return InverseLeftProbability(0.5);
             }
         }
 
@@ -162,7 +158,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public virtual Interval Support {
             get {
-                return (Interval.FromEndpoints(Double.NegativeInfinity, Double.PositiveInfinity));
+                return Interval.Infinite;
             }
         }
 
@@ -173,8 +169,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The expectation value of the function.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="f"/> is <see langword="null"/>.</exception>
         public virtual double ExpectationValue (Func<double, double> f) {
-            if (f == null) throw new ArgumentNullException(nameof(f));
-            return (FunctionMath.Integrate(x => f(x) * ProbabilityDensity(x), Support).Estimate.Value);
+            if (f is null) throw new ArgumentNullException(nameof(f));
+            return FunctionMath.Integrate(x => f(x) * ProbabilityDensity(x), Support).Estimate.Value;
         }
 
         /// <summary>
@@ -188,8 +184,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="rng"/> is <see langword="null"/>.</exception>
         public virtual double GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException(nameof(rng));
-            return (InverseLeftProbability(rng.NextDouble()));
+            if (rng is null) throw new ArgumentNullException(nameof(rng));
+            return InverseLeftProbability(rng.NextDouble());
         }
 
         /// <summary>
@@ -206,7 +202,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
             for (int i = 0; i < n; i++)
             {
-                yield return (GetRandomValue(rng));
+                yield return GetRandomValue(rng);
             }
 
         }

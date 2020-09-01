@@ -11,6 +11,8 @@ using Meta.Numerics;
 using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Test {
     
@@ -18,74 +20,28 @@ namespace Test {
     public class SampleTest {
 
         [TestMethod]
-        public void SampleManipulations () {
-            
-            // create a sample
-            double[] data = new double[] { -1.1, 2.2, -3.3, 4.4 };
-            Sample sample = new Sample(data);
-
-            // check the length
-            Assert.IsTrue(sample.Count == data.Length);
-
-            // add a datum and check the length
-            sample.Add(5.5);
-            Assert.IsTrue(sample.Count == data.Length + 1);
-
-            // check wether an elements exists, remove it, check the length, check that it doesn't exist
-            Assert.IsTrue(sample.Contains(2.2));
-            Assert.IsTrue(sample.Remove(2.2));
-            Assert.IsTrue(sample.Count == data.Length);
-            Assert.IsFalse(sample.Contains(2.2));
-            Assert.IsFalse(sample.Remove(2.2));
-
-            // clear the sample and check the length
-            sample.Clear();
-            Assert.IsTrue(sample.Count == 0);
-
-        }
-
-        [TestMethod]
-        public void SampleCopy () {
-
-            // test independency of copy
-
-            Sample sample1 = new Sample();
-            sample1.Add(1.0, 2.0);
-
-            Sample sample2 = sample1.Copy();
-            sample2.Add(3.0, 4.0);
-
-            Assert.IsTrue(sample1.Count == 2);
-            Assert.IsTrue(sample2.Count == 4);
-
-        }
-
-        [TestMethod]
         public void LowSampleMoments () {
 
             // this is designed to test that means and standard deviations change properly when values
             // are added and removed
 
-            Sample s = new Sample();
-            s.Add(2.0);
-            s.Add(4.0);
-            s.Add(6.0);
+            List<double> s = new List<double> { 2.0, 4.0, 6.0 }; 
 
             // set is 2, 4, 6: M = 4, V = (2^2 + 2^2) / 3
             Assert.IsTrue(s.Count == 3);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Mean, 4.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Variance, 8.0 / 3.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.StandardDeviation, Math.Sqrt(8.0 / 3.0)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.CorrectedStandardDeviation, Math.Sqrt(8.0 / 2.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Mean(), 4.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Variance(), 8.0 / 3.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.StandardDeviation(), Math.Sqrt(8.0 / 3.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.CorrectedStandardDeviation(), Math.Sqrt(8.0 / 2.0)));
 
             s.Remove(2.0);
 
             // set is 4, 6: M = 5, V = (1^2 + 1^2) / 2
             Assert.IsTrue(s.Count == 2);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Mean, 5.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Variance, 2.0 / 2.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.StandardDeviation, Math.Sqrt(2.0 / 2.0)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.CorrectedStandardDeviation, Math.Sqrt(2.0 / 1.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Mean(), 5.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.Variance(), 2.0 / 2.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.StandardDeviation(), Math.Sqrt(2.0 / 2.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(s.CorrectedStandardDeviation(), Math.Sqrt(2.0 / 1.0)));
 
         }
 
@@ -113,29 +69,6 @@ namespace Test {
         };
 
         [TestMethod]
-        public void SampleMoments () {
-            foreach (ContinuousDistribution distribution in distributions) {
-
-                int n = 256;
-                Random rng = new Random(1);
-                List<double> sample = new List<double>(distribution.GetRandomValues(rng, n));
-
-                Assert.IsTrue(sample.Count == n);
-
-                Assert.IsTrue(sample.PopulationMean().ConfidenceInterval(0.99).ClosedContains(distribution.Mean));
-
-                Assert.IsTrue(sample.PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(distribution.StandardDeviation));
-
-                for (int r = 0; r < 8; r++) {
-                    Assert.IsTrue(sample.PopulationCentralMoment(r).ConfidenceInterval(0.99).ClosedContains(distribution.CentralMoment(r)));
-                    Assert.IsTrue(sample.PopulationRawMoment(r).ConfidenceInterval(0.99).ClosedContains(distribution.RawMoment(r)));
-                }
-            }
-
-        }
-
-
-        [TestMethod]
         public void SamplePopulationMomentEstimateVariances () {
 
             ContinuousDistribution d = new LognormalDistribution();
@@ -143,11 +76,11 @@ namespace Test {
             // for various sample sizes...
             foreach (int n in TestUtilities.GenerateIntegerValues(4, 32, 8)) {
 
-                Console.WriteLine("n={0}", n);
-
                 // we are going to store values for a bunch of estimators and their uncertainties
-                MultivariateSample estimates = new MultivariateSample("M1", "C2", "C3", "C4");
-                MultivariateSample variances = new MultivariateSample("M1", "C2", "C3", "C4");
+                FrameTable estimates = new FrameTable();
+                estimates.AddColumns<double>("M1", "C2", "C3", "C4");
+                FrameTable variances = new FrameTable();
+                variances.AddColumns<double>("M1", "C2", "C3", "C4");
 
                 // create a bunch of samples
                 for (int i = 0; i < 4096; i++) {
@@ -158,15 +91,14 @@ namespace Test {
                     UncertainValue C2 = s.PopulationVariance;
                     UncertainValue C3 = s.PopulationCentralMoment(3);
                     UncertainValue C4 = s.PopulationCentralMoment(4);
-                    estimates.Add(M1.Value, C2.Value, C3.Value, C4.Value);
-                    variances.Add(MoreMath.Sqr(M1.Uncertainty), MoreMath.Sqr(C2.Uncertainty), MoreMath.Sqr(C3.Uncertainty), MoreMath.Sqr(C4.Uncertainty));
+                    estimates.AddRow(M1.Value, C2.Value, C3.Value, C4.Value);
+                    variances.AddRow(MoreMath.Sqr(M1.Uncertainty), MoreMath.Sqr(C2.Uncertainty), MoreMath.Sqr(C3.Uncertainty), MoreMath.Sqr(C4.Uncertainty));
 
                 }
 
                 // the claimed variance should agree with the measured variance of the estimators
-                for (int c = 0; c < estimates.Dimension; c++) {
-                    Console.WriteLine("{0} {1} {2}", estimates.Column(c).Name, estimates.Column(c).PopulationVariance, variances.Column(c).Mean);
-                    Assert.IsTrue(estimates.Column(c).PopulationVariance.ConfidenceInterval(0.95).ClosedContains(variances.Column(c).Mean));
+                for (int c = 0; c < estimates.Columns.Count; c++) {
+                    Assert.IsTrue(estimates.Columns[c].As<double>().PopulationVariance().ConfidenceInterval(0.99).Contains(variances.Columns[c].As<double>().Mean()));
                 }
 
             }
@@ -175,18 +107,17 @@ namespace Test {
 
         [TestMethod]
         public void SampleMedian () {
-            Sample sample = new Sample();
+            List<double> sample = new List<double> { 2.0, 1.0 };
 
-
-            sample.Add(2.0, 1.0);
-            Assert.IsTrue(sample.Minimum == 1.0);
-            Assert.IsTrue(sample.Median == 1.5);
-            Assert.IsTrue(sample.Maximum == 2.0);
+            Assert.IsTrue(sample.Minimum() == 1.0);
+            Assert.IsTrue(sample.Median() == 1.5);
+            Assert.IsTrue(sample.Maximum() == 2.0);
 
             sample.Add(3.0);
-            Assert.IsTrue(sample.Minimum == 1.0);
-            Assert.IsTrue(sample.Median == 2.0);
-            Assert.IsTrue(sample.Maximum == 3.0);
+
+            Assert.IsTrue(sample.Minimum() == 1.0);
+            Assert.IsTrue(sample.Median() == 2.0);
+            Assert.IsTrue(sample.Maximum() == 3.0);
         }
 
         [TestMethod]
@@ -261,7 +192,7 @@ namespace Test {
             Sample sample = CreateSample(distribution, 100);
 
             // fit to normal should be bad
-            NormalFitResult nfit = NormalDistribution.FitToSample(sample);
+            NormalFitResult nfit = NormalDistribution.FitToSample(sample.ToList());
             Assert.IsTrue(nfit.GoodnessOfFit.Probability < 0.05);
             ValidateParameterCollection(nfit.Parameters);
 
@@ -291,7 +222,7 @@ namespace Test {
             ValidateParameterCollection(RB.Parameters);
 
             // Fit to a normal distribution should be bad
-            NormalFitResult RN = NormalDistribution.FitToSample(S);
+            NormalFitResult RN = NormalDistribution.FitToSample(S.ToList());
             Assert.IsTrue(RN.GoodnessOfFit.Probability < 0.05);
             ValidateParameterCollection(RN.Parameters);
         }
@@ -303,24 +234,27 @@ namespace Test {
             // it should be the standard deviation of fit parameter values in a sample of many fits
 
             // define a population distribution 
-            ContinuousDistribution distribution = new BetaDistribution(1.0 / 3.0, 2.0);
+            BetaDistribution distribution = new BetaDistribution(1.0 / 3.0, 2.0);
 
             // draw a lot of samples from it; fit each sample and
             // record the reported parameter value and error of each
-            BivariateSample values = new BivariateSample();
-            BivariateSample uncertainties = new BivariateSample();
+            FrameTable t = new FrameTable();
+            t.AddColumns<double>("a", "ua", "b", "ub");
             for (int i = 0; i < 50; i++) {
-                Sample sample = CreateSample(distribution, 10, i);
+                Sample sample = CreateSample(distribution, 10, i + 2);
                 BetaFitResult fit = BetaDistribution.FitToSample(sample);
                 UncertainValue a = fit.Alpha;
                 UncertainValue b = fit.Beta;
-                values.Add(a.Value, b.Value);
-                uncertainties.Add(a.Uncertainty, b.Uncertainty);
+                t.AddRow(a.Value, a.Uncertainty, b.Value, b.Uncertainty);
             }
 
-            // the reported errors should agree with the standard deviation of the reported parameters
-            Assert.IsTrue(values.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.X.Mean));
-            Assert.IsTrue(values.Y.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.Y.Mean));
+            // The reported parameters should center on the real parameters
+            //Assert.IsTrue(t["a"].As<double>().PopulationMean().ConfidenceInterval(0.95).Contains(distribution.Alpha));
+            //Assert.IsTrue(t["b"].As<double>().PopulationMean().ConfidenceInterval(0.95).Contains(distribution.Beta));
+
+            // The reported errors should agree with the standard deviation of the reported parameters
+            Assert.IsTrue(t["a"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.95).Contains(t["ua"].As<double>().Mean()));
+            Assert.IsTrue(t["b"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.95).Contains(t["ub"].As<double>().Mean()));
 
         }
 
@@ -350,24 +284,27 @@ namespace Test {
             // it should be the standard deviation of fit parameter values in a sample of many fits
 
             // define a population distribution 
-            ContinuousDistribution distribution = new GammaDistribution(1.5, 2.0);
+            GammaDistribution distribution = new GammaDistribution(1.5, 2.0);
 
             // draw a lot of samples from it; fit each sample and
             // record the reported parameter value and error of each
-            BivariateSample values = new BivariateSample();
-            BivariateSample uncertainties = new BivariateSample();
-            for (int i = 0; i < 100; i++) {
-                Sample sample = CreateSample(distribution, 50, i);
+            FrameTable t = new FrameTable();
+            t.AddColumns<double>("a", "ua", "b", "ub");
+            for (int i = 0; i < 50; i++) {
+                Sample sample = CreateSample(distribution, 50, i + 1);
                 GammaFitResult fit = GammaDistribution.FitToSample(sample);
                 UncertainValue a = fit.Parameters["Shape"].Estimate;
                 UncertainValue b = fit.Parameters["Scale"].Estimate;
-                values.Add(a.Value, b.Value);
-                uncertainties.Add(a.Uncertainty, b.Uncertainty);
+                t.AddRow(a.Value, a.Uncertainty, b.Value, b.Uncertainty);
             }
 
-            // the reported errors should agree with the standard deviation of the reported parameters
-            Assert.IsTrue(values.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.X.Mean));
-            Assert.IsTrue(values.Y.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.Y.Mean));
+            // The reported parameters should center on the real parameters
+            Assert.IsTrue(t["a"].As<double>().PopulationMean().ConfidenceInterval(0.99).Contains(distribution.Shape));
+            Assert.IsTrue(t["b"].As<double>().PopulationMean().ConfidenceInterval(0.99).Contains(distribution.Scale));
+
+            // The reported errors should agree with the standard deviation of the reported parameters
+            Assert.IsTrue(t["a"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).Contains(t["ua"].As<double>().Mean()));
+            Assert.IsTrue(t["b"].As<double>().PopulationStandardDeviation().ConfidenceInterval(0.99).Contains(t["ub"].As<double>().Mean()));
 
         }
 
@@ -380,12 +317,12 @@ namespace Test {
 
             // fit to normal should be bad
             // this is harder than others, because a chi^2 isn't so very different from a normal; to help, increase N or decrease nu
-            NormalFitResult nfit = NormalDistribution.FitToSample(sample);
+            NormalFitResult nfit = NormalDistribution.FitToSample(sample.ToList());
             Assert.IsTrue(nfit.GoodnessOfFit.Probability < 0.05);
             ValidateParameterCollection(nfit.Parameters);
 
             // fit to exponential should also be bad
-            ExponentialFitResult efit = ExponentialDistribution.FitToSample(sample);
+            ExponentialFitResult efit = ExponentialDistribution.FitToSample(sample.ToList());
             Assert.IsTrue(efit.GoodnessOfFit.Probability < 0.05);
             ValidateParameterCollection(efit.Parameters);
         }
@@ -432,8 +369,6 @@ namespace Test {
 
             // draw a lot of samples from it; fit each sample and
             // record the reported parameter value and error of each
-            BivariateSample values = new BivariateSample();
-            MultivariateSample uncertainties = new MultivariateSample(3);
             FrameTable table = new FrameTable();
             table.AddColumn<int>("Id");
             table.AddColumns<double>("Scale", "Shape", "ScaleVariance", "ShapeVariance", "ScaleShapeCovariance");
@@ -443,8 +378,6 @@ namespace Test {
                 WeibullFitResult fit = WeibullDistribution.FitToSample(sample);
                 UncertainValue a = fit.Scale;
                 UncertainValue b = fit.Shape;
-                values.Add(a.Value, b.Value);
-                uncertainties.Add(a.Uncertainty, b.Uncertainty, fit.Parameters.CovarianceMatrix[0,1]);
                 table.AddRow(i, fit.Scale.Value, fit.Shape.Value,
                     fit.Parameters.CovarianceOf("Scale", "Scale"),
                     fit.Parameters.CovarianceOf("Shape", "Shape"),
@@ -458,12 +391,6 @@ namespace Test {
             Assert.IsTrue(table["Scale"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(table["ScaleVariance"].As<double>().Median()));
             Assert.IsTrue(table["Shape"].As<double>().PopulationVariance().ConfidenceInterval(0.99).ClosedContains(table["ShapeVariance"].As<double>().Median()));
             Assert.IsTrue(table["Scale"].As<double>().PopulationCovariance(table["Shape"].As<double>()).ConfidenceInterval(0.99).ClosedContains(table["ScaleShapeCovariance"].As<double>().Median()));
-
-            // the reported errors should agree with the standard deviation of the reported parameters
-            Assert.IsTrue(values.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.Column(0).Mean));
-            Assert.IsTrue(values.Y.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.Column(1).Mean));
-            //Console.WriteLine("{0} {1}", values.PopulationCovariance, uncertainties.Column(2).Mean);
-            //Assert.IsTrue(values.PopulationCovariance.ConfidenceInterval(0.95).ClosedContains(uncertainties.Column(2).Mean));
 
         }
 
@@ -711,7 +638,7 @@ namespace Test {
             Sample sample = CreateSample(new ExponentialDistribution(3.0), 256);
 
             // Do an explicit exponential fit
-            ExponentialFitResult fit1 = ExponentialDistribution.FitToSample(sample);
+            ExponentialFitResult fit1 = ExponentialDistribution.FitToSample(sample.ToList());
 
             // Do a maximum likelihood fit
             Func<IReadOnlyList<double>, ContinuousDistribution> factory = p => new ExponentialDistribution(p[0]);
@@ -1032,76 +959,31 @@ namespace Test {
         }
 
         [TestMethod]
-        public void BivariateLogisticRegression () {
-
-            double[] c = new double[] { -0.1, 1.0 };
-
-            Random rng = new Random(1);
-            UniformDistribution pointDistribution = new UniformDistribution(Interval.FromEndpoints(-4.0, 4.0));
-
-            BivariateSample sample1 = new BivariateSample();
-            MultivariateSample sample2 = new MultivariateSample(2);
-            for (int k = 0; k < 1000; k++) {
-                double x = pointDistribution.GetRandomValue(rng);
-                double z = c[0] * x + c[1];
-                double ez = Math.Exp(z);
-                double p = ez / (1.0 + ez);
-                double y = (rng.NextDouble() < p) ? 1.0 : 0.0;
-                sample1.Add(x, y);
-                sample2.Add(x, y);
-            }
-
-            Console.WriteLine(sample1.Covariance / sample1.X.Variance / sample1.Y.Mean / (1.0 - sample1.Y.Mean));
-            Console.WriteLine(sample1.Covariance / sample1.X.Variance / sample1.Y.Variance);
-
-            LinearLogisticRegressionResult result1 = sample1.LinearLogisticRegression();
-            LinearLogisticRegressionResult result2 = sample2.TwoColumns(0, 1).LinearLogisticRegression();
-            MultiLinearLogisticRegressionResult result3 = sample2.LogisticLinearRegression(1);
-
-            //LinearLogisticRegressionResult result4 = Bivariate.LinearLogisticRegression(sample1.X.ToList(), sample1.Y.Select(x => (x == 1.0)).ToList());
-            //MultiLinearLogisticRegressionResult result5 = sample1.Y.Select(x => (x == 1.0)).ToList().MultiLinearLogisticRegression(new IReadOnlyList<double>[] { sample1.X });
- 
-            // Fits should give same result
-            /*
-            for (int i = 0; i < result1.Dimension; i++) {
-                Console.WriteLine("{0} {1} {2}", i, result1.Parameter(i), result3.Parameter(i) );
-            }
-            */
-        }
-
-        [TestMethod]
-        public void MultivariateLinearRegression () {
-
-            int outputIndex = 2;
+        public void MultivariateLogisticRegression () {
 
             double[] c = new double[] { -1.0, 2.0, -3.0, 4.0 };
 
             Random rng = new Random(1001110000);
             UniformDistribution pointDistribution = new UniformDistribution(Interval.FromEndpoints(-4.0, 4.0));
 
-            MultivariateSample sample = new MultivariateSample(c.Length);
-
-            for (int k = 0; k < 1000; k++) {
-                double[] row = new double[sample.Dimension];
-                double z = 0.0;
-                for (int i = 0; i < row.Length; i++) {
-                    if (i == outputIndex) {
-                        z += c[i];
-                    } else {
-                        row[i] = pointDistribution.GetRandomValue(rng);
-                        z += row[i] * c[i];
-                    }
-                }
+            int n = 500;
+            double[] u = new double[n];
+            double[] v = new double[n];
+            double[] w = new double[n];
+            bool[] b = new bool[n];
+            for (int k = 0; k < n; k++) {
+                u[k] = pointDistribution.GetRandomValue(rng);
+                v[k] = pointDistribution.GetRandomValue(rng);
+                w[k] = pointDistribution.GetRandomValue(rng);
+                double z = c[0] * u[k] + c[1] * v[k] + c[2] * w[k] + c[3];
                 double ez = Math.Exp(z);
                 double p = ez / (1.0 + ez);
-                row[outputIndex] = (rng.NextDouble() < p) ? 1.0 : 0.0;
-                sample.Add(row);
+                b[k] = (rng.NextDouble() < p);
             }
 
-            MultiLinearLogisticRegressionResult result = sample.LogisticLinearRegression(outputIndex);
+            MultiLinearLogisticRegressionResult result = b.MultiLinearLogisticRegression(u, v, w);
 
             for (int i = 0; i < result.Parameters.Count; i++) {
-                Console.WriteLine(result.Parameters[i].Estimate);
                 Assert.IsTrue(result.Parameters[i].Estimate.ConfidenceInterval(0.99).ClosedContains(c[i]));
             }
         }

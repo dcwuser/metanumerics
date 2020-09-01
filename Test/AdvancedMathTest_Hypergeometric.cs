@@ -429,15 +429,26 @@ namespace Test {
             foreach (int n in TestUtilities.GenerateUniformIntegerValues(0, 10, 4)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 4)) {
 
+                    // A&S 22.5.47
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         AdvancedMath.Hypergeometric2F1(-n, n, 0.5, x),
                         OrthogonalPolynomials.ChebyshevT(n, 1.0 - 2.0 * x)
                     ));
 
+                    // A&S 22.5.49
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         AdvancedMath.Hypergeometric2F1(-n, n + 1, 1.0, x),
                         OrthogonalPolynomials.LegendreP(n, 1.0 - 2.0 * x)
                     ));
+
+                    // A&S 22.5.46
+                    foreach (double alpha in TestUtilities.GenerateRealValues(1.0E-2, 10.0, 4)) {
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                            AdvancedMath.Hypergeometric2F1(-n, n + 2.0 * alpha, alpha + 0.5, x) * AdvancedMath.Pochhammer(2.0 * alpha, n) / AdvancedIntegerMath.Factorial(n),
+                            OrthogonalPolynomials.GegenbauerC(n, alpha, 1.0 - 2.0 * x),
+                            new EvaluationSettings() { RelativePrecision = Math.Sqrt(TestUtilities.TargetPrecision) }
+                        ));
+                    }
                 }
             }
 

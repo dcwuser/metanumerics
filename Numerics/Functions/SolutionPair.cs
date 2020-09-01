@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Meta.Numerics.Functions {
 
@@ -19,7 +16,7 @@ namespace Meta.Numerics.Functions {
     /// a matter of convention. When one solution is regular (finite) at the origin and the other is not, we take the regular solution
     /// to be the first.</para>
     /// </remarks>
-    public struct SolutionPair {
+    public readonly struct SolutionPair {
 
         private readonly double j, jPrime, y, yPrime;
 
@@ -28,7 +25,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         public double FirstSolutionValue {
             get {
-                return (j);
+                return j;
             }
         }
 
@@ -37,7 +34,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         public double FirstSolutionDerivative {
             get {
-                return (jPrime);
+                return jPrime;
             }
         }
 
@@ -46,7 +43,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         public double SecondSolutionValue {
             get {
-                return (y);
+                return y;
             }
         }
 
@@ -55,7 +52,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         public double SecondSolutionDerivative {
             get {
-                return (yPrime);
+                return yPrime;
             }
         }
 

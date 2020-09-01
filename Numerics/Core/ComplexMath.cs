@@ -20,7 +20,7 @@ namespace Meta.Numerics {
         /// <seealso href="https://en.wikipedia.org/wiki/Imaginary_unit"/>
         public static Complex I {
             get {
-                return (Complex.I);
+                return Complex.I;
             }
         }
 
@@ -38,7 +38,7 @@ namespace Meta.Numerics {
         /// </remarks>
         /// <seealso cref="Math.Abs(Double)"/>
         public static double Abs (Complex z) {
-            return (MoreMath.Hypot(z.Re, z.Im));
+            return MoreMath.Hypot(z.Re, z.Im);
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace Meta.Numerics {
         /// <returns>The value of e<sup>z</sup>.</returns>
         public static Complex Exp (Complex z) {
             double m = Math.Exp(z.Re);
-            return (new Complex(m * MoreMath.Cos(z.Im), m * MoreMath.Sin(z.Im)));
+            return new Complex(m * MoreMath.Cos(z.Im), m * MoreMath.Sin(z.Im));
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace Meta.Numerics {
         /// <para>You can see the zero at (0, 1) and the branch cut extending along the negative real axis from the pole at the origin.</para>
         /// </remarks>
         public static Complex Log (Complex z) {
-            return (new Complex(Math.Log(Abs(z)), Arg(z)));
+            return new Complex(Math.Log(Abs(z)), Arg(z));
         }
 
 
@@ -101,7 +101,7 @@ namespace Meta.Numerics {
             // This form has one less flop than z * z, and, more importantly, evaluates
             // (x - y) * (x + y) instead of x * x - y * y; the latter would be more
             // subject to cancelation errors and overflow or underflow 
-            return (new Numerics.Complex((z.Re - z.Im) * (z.Re + z.Im), 2.0 * z.Re * z.Im));
+            return new Complex((z.Re - z.Im) * (z.Re + z.Im), 2.0 * z.Re * z.Im);
         }
 
         /// <summary>
@@ -119,9 +119,9 @@ namespace Meta.Numerics {
             // Handle the degenerate case quickly.
             if (z.Im == 0.0) {
                 if (z.Re < 0.0) {
-                    return (new Complex(0.0, Math.Sqrt(-z.Re)));
+                    return new Complex(0.0, Math.Sqrt(-z.Re));
                 } else {
-                    return (new Complex(Math.Sqrt(z.Re), 0.0));
+                    return new Complex(Math.Sqrt(z.Re), 0.0);
                 }
             }
             // This also eliminates need to worry about Im(z) = 0 in subsequent formulas.
@@ -158,7 +158,7 @@ namespace Meta.Numerics {
             bool rescale = false;
             if ((Math.Abs(a) >= sqrtRescaleThreshold) || (Math.Abs(b) >= sqrtRescaleThreshold)) {
                 if (Double.IsInfinity(b) && !Double.IsNaN(a)) {
-                    return (new Complex(Double.PositiveInfinity, b));
+                    return new Complex(Double.PositiveInfinity, b);
                 }
                 a *= 0.25;
                 b *= 0.25;
@@ -190,8 +190,7 @@ namespace Meta.Numerics {
                 y *= 2.0;
             }
 
-
-            return (new Complex(x, y));
+            return new Complex(x, y);
 
         }
 
@@ -210,7 +209,7 @@ namespace Meta.Numerics {
             double q = 1.0 / p;
             double sinh = 0.5 * (p - q);
             double cosh = 0.5 * (p + q);
-            return (new Complex(MoreMath.Sin(z.Re) * cosh, MoreMath.Cos(z.Re) * sinh));
+            return new Complex(MoreMath.Sin(z.Re) * cosh, MoreMath.Cos(z.Re) * sinh);
             // For large z.Im, it's pretty easy for cosh and sinh to overflow. There is a very tiny space
             // of arguments for which z.Im causes cosh and sinh barely overflow, but the sin and cos of z.Re
             // are small enough to bring the result back into the representable range. We don't
@@ -223,7 +222,7 @@ namespace Meta.Numerics {
             double q = 1.0 / p;
             double sinh = 0.5 * (p - q);
             double cosh = 0.5 * (p + q);
-            return (new Complex(MoreMath.SinPi(z.Re) * cosh, MoreMath.CosPi(z.Re) * sinh));
+            return new Complex(MoreMath.SinPi(z.Re) * cosh, MoreMath.CosPi(z.Re) * sinh);
         }
 
         /// <summary>
@@ -234,7 +233,7 @@ namespace Meta.Numerics {
         public static Complex Sinh (Complex z) {
             // sinh(z) = -i sin(iz)
             Complex sin = Sin(new Complex(-z.Im, z.Re));
-            return (new Complex(sin.Im, -sin.Re));
+            return new Complex(sin.Im, -sin.Re);
         }
 
         /// <summary>
@@ -245,9 +244,9 @@ namespace Meta.Numerics {
         public static Complex Cos (Complex z) {
             double p = Math.Exp(z.Im);
             double q = 1.0 / p;
-            double sinh = (p - q) / 2.0;
-            double cosh = (p + q) / 2.0;
-            return (new Complex(MoreMath.Cos(z.Re) * cosh, -MoreMath.Sin(z.Re) * sinh));
+            double sinh = 0.5 * (p - q);
+            double cosh = 0.5 * (p + q);
+            return new Complex(MoreMath.Cos(z.Re) * cosh, -MoreMath.Sin(z.Re) * sinh);
         }
 
         /// <summary>
@@ -257,7 +256,7 @@ namespace Meta.Numerics {
         /// <returns>The value of cosh(z).</returns>
         public static Complex Cosh (Complex z) {
             // cosh(z) = cos(iz)
-            return (Cos(new Complex(-z.Im, z.Re)));
+            return Cos(new Complex(-z.Im, z.Re));
         }
 
         /// <summary>
@@ -284,12 +283,12 @@ namespace Meta.Numerics {
             if (Math.Abs(z.Im) < 4.0) {
                 double sinh = (p - q) / 2.0;
                 double D = MoreMath.Cos(x2) + cosh;
-                return (new Complex(MoreMath.Sin(x2) / D, sinh / D));
+                return new Complex(MoreMath.Sin(x2) / D, sinh / D);
             } else {
                 // when Im(z) gets too large, sinh and cosh individually blow up
                 // but ratio is still ~1, so rearrage to use tanh instead
                 double D = (1.0 + Math.Cos(x2) / cosh);
-                return (new Complex(MoreMath.Sin(x2) / cosh / D, Math.Tanh(y2) / D));
+                return new Complex(MoreMath.Sin(x2) / cosh / D, Math.Tanh(y2) / D);
             }
         }
 
@@ -301,7 +300,7 @@ namespace Meta.Numerics {
         public static Complex Tanh (Complex z) {
             // tanh(z) = -i tan(iz)
             Complex tan = Tan(new Complex(-z.Im, z.Re));
-            return (new Complex(tan.Im, -tan.Re));
+            return new Complex(tan.Im, -tan.Re);
         }
 
         // Using sin(w) = \frac{e^{iw} - e^{-iw}}{2i}, write z = sin(w) and e^{iw} = v and solve for z.
@@ -330,7 +329,7 @@ namespace Meta.Numerics {
 
             if (z.Im < 0.0) q = -q;
 
-            return (new Complex(p, q));
+            return new Complex(p, q);
 
         }
 
@@ -353,7 +352,7 @@ namespace Meta.Numerics {
 
             if (z.Im > 0.0) q = -q;
 
-            return (new Complex(p, q));
+            return new Complex(p, q);
 
         }
 
@@ -477,7 +476,7 @@ namespace Meta.Numerics {
         public static Complex Pow (Complex z, double r) {
             double m = Math.Pow(Abs(z), r);
             double t = Arg(z) * r;
-            return (new Complex(m * MoreMath.Cos(t), m * MoreMath.Sin(t)));
+            return new Complex(m * MoreMath.Cos(t), m * MoreMath.Sin(t));
         }
 
         /// <summary>
@@ -488,11 +487,11 @@ namespace Meta.Numerics {
         /// <returns>The value of x<sup>z</sup>.</returns>
         public static Complex Pow (double x, Complex z) {
             if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
-            if (z == Complex.Zero) return (Complex.One);
-            if (x == 0.0) return (Complex.Zero);
+            if (z == Complex.Zero) return Complex.One;
+            if (x == 0.0) return Complex.Zero;
             double m = Math.Pow(x, z.Re);
             double t = Math.Log(x) * z.Im;
-            return (new Complex(m * MoreMath.Cos(t), m * MoreMath.Sin(t)));
+            return new Complex(m * MoreMath.Cos(t), m * MoreMath.Sin(t));
         }
 
         /// <summary>
@@ -503,15 +502,15 @@ namespace Meta.Numerics {
         /// <returns>The value of z<sup>r</sup>.</returns>
         /// <seealso href="http://mathworld.wolfram.com/ComplexExponentiation.html"/>
         public static Complex Pow (Complex z, Complex r) {
-            if (r == Complex.Zero) return (Complex.One);
-            if (z == Complex.Zero) return (Complex.Zero);
-            if (z == Complex.One) return (Complex.One);
-            if (r == Complex.One) return (z);
+            if (r == Complex.Zero) return Complex.One;
+            if (z == Complex.Zero) return Complex.Zero;
+            if (z == Complex.One) return Complex.One;
+            if (r == Complex.One) return z;
             double m = Abs(z);
             double t = Arg(z);
             double n = Math.Pow(m, r.Re) * Math.Exp(-r.Im * t);
             double u = r.Re * t + r.Im * Math.Log(m);
-            return (new Complex(n * MoreMath.Cos(u), n * MoreMath.Sin(u)));
+            return new Complex(n * MoreMath.Cos(u), n * MoreMath.Sin(u));
         }
 
         /// <summary>
@@ -522,77 +521,76 @@ namespace Meta.Numerics {
         /// <returns>The value of z<sup>n</sup>.</returns>
         public static Complex Pow (Complex z, int n) {
 
-            if (n < 0) return (1.0 / Pow(z, -n));
+            if (n < 0) return 1.0 / Pow(z, -n);
 
             switch (n) {
                 case 0:
                     // We follow convention that 0^0 = 1
-                    return (1.0);
+                    return 1.0;
                 case 1:
-                    return (z);
+                    return z;
                 case 2:
                     // 1 multiply
-                    return (Sqr(z));
+                    return Sqr(z);
                 case 3:
                     // 2 multiplies
-                    return (Sqr(z) * z);
+                    return Sqr(z) * z;
                 case 4: {
                         // 2 multiplies
                         Complex z2 = Sqr(z);
-                        return (Sqr(z2));
+                        return Sqr(z2);
                     }
                 case 5: {
                         // 3 multiplies
                         Complex z2 = Sqr(z);
-                        return (Sqr(z2) * z);
+                        return Sqr(z2) * z;
                     }
                 case 6: {
                         // 3 multiplies
                         Complex z2 = Sqr(z);
-                        return (Sqr(z2) * z2);
+                        return Sqr(z2) * z2;
                     }
                 case 7: {
                         // 4 multiplies
                         Complex z3 = Sqr(z) * z;
-                        return (Sqr(z3) * z);
+                        return Sqr(z3) * z;
                     }
                 case 8: {
                         // 3 multiplies
                         Complex z2 = Sqr(z);
                         Complex z4 = Sqr(z2);
-                        return (Sqr(z4));
+                        return Sqr(z4);
                     }
                 case 9: {
                         // 4 multiplies
                         Complex z3 = Sqr(z) * z;
-                        return (Sqr(z3) * z3);
+                        return Sqr(z3) * z3;
                     }
                 case 10: {
                         // 4 multiplies
                         Complex z2 = Sqr(z);
                         Complex z4 = Sqr(z2);
-                        return (Sqr(z4) * z2);
+                        return Sqr(z4) * z2;
                     }
                 case 12: {
                         // 4 multiplies
                         Complex z3 = Sqr(z) * z;
                         Complex z6 = Sqr(z3);
-                        return (Sqr(z6));
+                        return Sqr(z6);
                     }
                 case 16: {
                         // 4 multiplies
                         Complex z2 = Sqr(z);
                         Complex z4 = Sqr(z2);
                         Complex z8 = Sqr(z4);
-                        return (Sqr(z8));
+                        return Sqr(z8);
                     }
                 // that's all the cases do-able in 4 or fewer complex multiplies
                 default:
-                    return (ComplexMath.Pow(z, (double)n));
+                    return ComplexMath.Pow(z, (double)n);
             }
 
         }
-
 
     }
 }

@@ -206,6 +206,8 @@ namespace Meta.Numerics.Statistics {
             return (new Sample(storage[c], true));
         }
 
+#if OLD
+
         /// <summary>
         /// Gets the indicated columns as a <see cref="BivariateSample"/>.
         /// </summary>
@@ -226,6 +228,8 @@ namespace Meta.Numerics.Statistics {
             if ((cy < 0) || (cy >= Dimension)) throw new ArgumentOutOfRangeException(nameof(cy));
             return (new BivariateSample(storage[cx], storage[cy], true));
         }
+
+#endif
 
         /// <summary>
         /// Gets the indicated columns as a multivariate sample.

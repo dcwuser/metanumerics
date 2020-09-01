@@ -45,9 +45,9 @@ namespace Meta.Numerics.Functions {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n < factorialTable.Length) {
-				return( (double) factorialTable[n]);
+				return (double) factorialTable[n];
 			} else {
-				return( Math.Round( AdvancedMath.Gamma(n+1) ) );
+				return Math.Round( AdvancedMath.Gamma(n+1) );
 			}
 		}
 

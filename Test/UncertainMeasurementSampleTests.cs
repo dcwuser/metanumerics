@@ -287,20 +287,20 @@ namespace Test {
             };
 
             // keep track of best-fit parameters and claimed parameter covariances
-            MultivariateSample sample = new MultivariateSample(3);
+            //MultivariateSample sample = new MultivariateSample(3);
 
             // generate 50 small data sets and fit each
             UncertainMeasurementFitResult[] fits = new UncertainMeasurementFitResult[50];
             for (int i = 0; i < fits.Length; i++) {
                 UncertainMeasurementSample set = CreateDataSet(xs, fv, fu, 314159+i);
                 fits[i] = set.FitToPolynomial(2);
-                sample.Add(fits[i].Parameters.ValuesVector);
+                //sample.Add(fits[i].Parameters.ValuesVector);
             }
 
             // check that parameters agree
-            for (int i = 0; i < 3; i++) {
-                Console.WriteLine(sample.Column(i).PopulationMean);
-            }
+            //for (int i = 0; i < 3; i++) {
+            //    Console.WriteLine(sample.Column(i).PopulationMean);
+            //}
  
             // for each parameter, verify that the standard deviation of the reported values agrees with the (average) reported uncertainty
             double[] pMeans = new double[3];
@@ -475,7 +475,7 @@ namespace Test {
                 return (1.0+x);
             };
 
-            MultivariateSample sample = new MultivariateSample(2);
+            //MultivariateSample sample = new MultivariateSample(2);
             SymmetricMatrix covariance = new SymmetricMatrix(2);
 
             // create a bunch of small data sets
@@ -483,7 +483,7 @@ namespace Test {
                 UncertainMeasurementSample data = CreateDataSet(xs, fv, fu, i);
                 UncertainMeasurementFitResult fit = data.FitToLine();
 
-                sample.Add(fit.Parameters.ValuesVector);
+                //sample.Add(fit.Parameters.ValuesVector);
                 covariance = fit.Parameters.CovarianceMatrix;
                 // because it depends only on the x's and sigmas, the covariance is always the same
 

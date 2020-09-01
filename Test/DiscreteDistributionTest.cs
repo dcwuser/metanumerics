@@ -20,6 +20,7 @@ namespace Test {
 
         public static DiscreteDistribution[] GetDistributions () {
             return (new DiscreteDistribution[] {
+                new BenfordDistribution(),
                 new BernoulliDistribution(0.1),
                 new BinomialDistribution(0.2, 30), new BinomialDistribution(0.4, 5),
                 new PoissonDistribution(0.54), new PoissonDistribution(5.4), new PoissonDistribution(540.0),

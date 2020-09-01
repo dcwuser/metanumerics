@@ -179,24 +179,29 @@ namespace Meta.Numerics.Statistics {
         /// to a degree unlikely to arise from statistical fluctuations.</para>
         /// <para>For small sample sizes, we compute the null distribution of D exactly. For large sample sizes, we use an accurate
         /// asymptotic approximation. Therefore it is safe to use this method for all sample sizes.</para>
-        /// <para>A variant of this test, <see cref="Sample.KolmogorovSmirnovTest(Sample, Sample)"/>, allows you to non-parametrically
-        /// test whether two samples are drawn from the same underlying distribution, without having to specify that distribution.</para>
+        /// <para>A variant of this test, <see cref="Univariate.KolmogorovSmirnovTest(IReadOnlyList{double}, IReadOnlyList{double})"/>,
+        /// allows you to non-parametrically test whether two samples are drawn from the same underlying distribution,
+        /// without having to specify that distribution.</para>
+        /// <para>Another variant of this test, <see cref="Univariate.KuiperTest(IReadOnlyList{double}, ContinuousDistribution)"/>,
+        /// measures the deviation of EDF and CDF in a way that is invariant under re-definitions of the origin, and is thus
+        /// particuarly appropriate for circular distributions.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="distribution"/> is <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException">There is no data in the sample.</exception>
         /// <seealso cref="KolmogorovDistribution"/>
-        /// <seealso href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Empirical_distribution_function"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Cumulative_distribution_function"/>
         public static TestResult KolmogorovSmirnovTest (this IReadOnlyList<double> sample, ContinuousDistribution distribution) {
 
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (distribution == null) throw new ArgumentNullException(nameof(distribution));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
+            if (distribution is null) throw new ArgumentNullException(nameof(distribution));
 
             int n = sample.Count;
             if (n < 1) throw new InsufficientDataException();
 
             // Compute the D statistic, which is the maximum of the D+ and D- statistics.
-            double DP, DM;
-            ComputeDStatistics(sample, distribution, out DP, out DM);
+            ComputeDStatistics(sample, distribution, out double DP, out double DM);
             double D = Math.Max(DP, DM);
 
             ContinuousDistribution DDistribution;
@@ -205,7 +210,7 @@ namespace Meta.Numerics.Statistics {
             } else {
                 DDistribution = new TransformedDistribution(new KolmogorovAsymptoticDistribution(n), 0.0, 1.0 / Math.Sqrt(n));
             }
-            return (new TestResult("D", D, DDistribution, TestType.RightTailed));
+            return new TestResult("D", D, DDistribution, TestType.RightTailed);
 
         }
 
@@ -219,24 +224,25 @@ namespace Meta.Numerics.Statistics {
         /// value of V under the assumption that the sample is drawn from the given distribution.</returns>
         /// <remarks>
         /// <para>Like the Kolmogorov-Smirnov test (<see cref="Univariate.KolmogorovSmirnovTest(IReadOnlyList{Double},ContinuousDistribution)"/>),
-        /// Kuiper's test compares the EDF of the sample to the CDF of the given distribution.</para>
+        /// Kuiper's test compares the EDF of the sample to the CDF of the given distribution. Unlike the Kolmogorov-Smirnov test,
+        /// the Kuiper test satistic in invariant under re-definitions of the origin. It is thus particularly appropriate for circular distributions,
+        /// although it can also be applied to non-periodic distributions.</para>
         /// <para>For small sample sizes, we compute the null distribution of V exactly. For large sample sizes, we use an accurate
         /// asymptotic approximation. Therefore it is safe to use this method for all sample sizes.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="distribution"/> is <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException">There is no data in the sample.</exception>
-        /// <seealso href="http://en.wikipedia.org/wiki/Kuiper%27s_test"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Kuiper%27s_test"/>
         public static TestResult KuiperTest (this IReadOnlyList<double> sample, ContinuousDistribution distribution) {
 
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (distribution == null) throw new ArgumentNullException(nameof(distribution));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
+            if (distribution is null) throw new ArgumentNullException(nameof(distribution));
 
             int n = sample.Count;
             if (n < 1) throw new InsufficientDataException();
 
             // Compute the V statistic, which is the sum of the D+ and D- statistics.
-            double DP, DM;
-            ComputeDStatistics(sample, distribution, out DP, out DM);
+            ComputeDStatistics(sample, distribution, out double DP, out double DM);
             double V = DP + DM;
 
             ContinuousDistribution VDistribution;
@@ -245,7 +251,7 @@ namespace Meta.Numerics.Statistics {
             } else {
                 VDistribution = new TransformedDistribution(new KuiperAsymptoticDistribution(n), 0.0, 1.0 / Math.Sqrt(n));
             }
-            return (new TestResult("V", V, VDistribution, TestType.RightTailed));
+            return new TestResult("V", V, VDistribution, TestType.RightTailed);
 
         }
 
@@ -652,14 +658,11 @@ namespace Meta.Numerics.Statistics {
         /// good way to test whether height influences income, first because the result
         /// will be sensitive to the arbitrary boundaries you have chosen for the bins,
         /// and second because the ANOVA has no notion of bin ordering.
-        /// In a case like this, it would be better to put the data into a <see cref="BivariateSample"/> and
-        /// perform a test of association, such as a <see cref="BivariateSample.PearsonRTest" />,
-        /// <see cref="BivariateSample.SpearmanRhoTest" />, or <see cref="BivariateSample.KendallTauTest" />
-        /// between the two variables. If you have measurements
-        /// of additional variables for each individual, a <see cref="MultivariateSample.LinearRegression(int)" />
-        /// analysis would allow you to adjust for the confounding effects of the other variables. If you
-        /// define arbitrary bins of continuously variable data in order to form groups, then your
-        /// ANOVA results will depend on your choice of bins.</para>
+        /// If you do want to know whether one continuous variable affects another, it is better
+        /// perform a test of association, such as a <see cref="Bivariate.PearsonRTest(IReadOnlyList{double}, IReadOnlyList{double})" />,
+        /// or <see cref="Bivariate.SpearmanRhoTest(IReadOnlyList{double}, IReadOnlyList{double})" />.
+        /// If you have measurements of additional variables for each individual, a <see cref="Multivariate.MultiLinearRegression(IReadOnlyList{double}, IReadOnlyList{double}[])"/>
+        /// analysis would allow you to adjust for the confounding effects of the other variables.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="samples"/> is <see langword="null"/>,
         /// or one of the samples in it is <see langword="null"/>.</exception>
@@ -667,7 +670,7 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="https://en.wikipedia.org/wiki/Analysis_of_variance"/>
         /// <seealso href="https://en.wikipedia.org/wiki/One-way_analysis_of_variance"/>
         public static OneWayAnovaResult OneWayAnovaTest (params IReadOnlyCollection<double>[] samples) {
-            return (OneWayAnovaTest((IReadOnlyCollection<IReadOnlyCollection<double>>) samples));
+            return OneWayAnovaTest((IReadOnlyCollection<IReadOnlyCollection<double>>) samples);
         }
 
         /// <summary>
@@ -681,7 +684,7 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         public static OneWayAnovaResult OneWayAnovaTest (IReadOnlyCollection<IReadOnlyCollection<double>> samples) {
 
-            if (samples == null) throw new ArgumentNullException(nameof(samples));
+            if (samples is null) throw new ArgumentNullException(nameof(samples));
             if (samples.Count < 2) throw new ArgumentException("There must be at least two samples in the sample list.", nameof(samples));
 
             // determine total count, mean, and within-group sum-of-squares
@@ -689,17 +692,13 @@ namespace Meta.Numerics.Statistics {
             double mean = 0.0;
             double SSW = 0.0;
             foreach (ICollection<double> sample in samples) {
-                if (sample == null) throw new ArgumentNullException(nameof(samples));
-
-                int n_sample;
-                double mean_sample, sumOfSquaredDeviations_sample;
-
-                ComputeMomentsUpToSecond(sample, out n_sample, out mean_sample, out sumOfSquaredDeviations_sample);
+                if (sample is null) throw new ArgumentNullException(nameof(samples));
+                ComputeMomentsUpToSecond(sample, out int n_sample, out double mean_sample, out double sumOfSquaredDeviations_sample);
                 n += n_sample;
                 mean += n_sample * mean_sample;
                 SSW += sumOfSquaredDeviations_sample;
             }
-            mean = mean / n;
+            mean /= n;
 
             // determine between-group sum-of-squares
             double SSB = 0.0;
@@ -717,7 +716,7 @@ namespace Meta.Numerics.Statistics {
             AnovaRow factor = new AnovaRow(SSB, dB);
             AnovaRow residual = new AnovaRow(SSW, dW);
             AnovaRow total = new AnovaRow(SSB + SSW, n - 1);
-            return (new OneWayAnovaResult(factor, residual, total));
+            return new OneWayAnovaResult(factor, residual, total);
 
         }
 

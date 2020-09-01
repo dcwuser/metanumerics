@@ -13,6 +13,8 @@ using System.Diagnostics;
 
 namespace Meta.Numerics.Statistics {
 
+#if OLD
+
     /// <summary>
     /// Represents a set of data points, where each data point is described by a pair of real numbers.
     /// </summary>
@@ -474,5 +476,7 @@ namespace Meta.Numerics.Statistics {
         }
 
     }
+
+#endif
 
 }

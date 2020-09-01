@@ -345,15 +345,17 @@ namespace Test {
         }
 
         // returns n positive integers distributed logarithmicly between a and b
-        public static int[] GenerateIntegerValues (int a, int b, int n) {
+        public static int[] GenerateIntegerValues(int a, int b, int n) {
+            return GenerateIntegerValues(a, b, n, new Random(1));
+        }
+
+        public static int[] GenerateIntegerValues (int a, int b, int n, Random rng) {
             if ((a <= 0) || (b <= 0)) throw new ArgumentException();
             double la = Math.Log(a);
             double lb = Math.Log(b);
             int[] result = new int[n];
-            Random rng = new Random(1);
             for (int i = 0; i < n; i++) {
                 result[i] = (int) Math.Round(Math.Exp(la + (lb - la) * rng.NextDouble()));
-                //result[i] = (int) Math.Round(Math.Pow(10.0, a + (b - a) * rng.NextDouble()));
             }
             return (result);
         }

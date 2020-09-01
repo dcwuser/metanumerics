@@ -17,7 +17,7 @@ namespace Meta.Numerics {
         /// <returns>The specified polynomial.</returns>
         /// <remarks>
         /// <para>Coefficients should be arranged from low to high order, so that the kth entry is the coefficient of x<sup>k</sup>. For example,
-        /// to specify the polynomial 5 - 6 x + 7 x<sup>3</sup>, give the values 5, -6, , 0, 7.</para>
+        /// to specify the polynomial 5 - 6 x + 7 x<sup>3</sup>, give the values 5, -6, 0, 7.</para>
         /// </remarks>
         public static Polynomial FromCoefficients (params double[] coefficients) {
             if (coefficients == null) throw new ArgumentNullException(nameof(coefficients));

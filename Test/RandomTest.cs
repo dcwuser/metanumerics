@@ -286,7 +286,7 @@ namespace Test {
             IDeviateGenerator nRng = new CauchyGenerator();
             ContinuousDistribution d = new CauchyDistribution();
 
-            Sample sample = new Sample();
+            //Sample sample = new Sample();
 
             Stopwatch timer = Stopwatch.StartNew();
             double sum = 0.0;
@@ -313,16 +313,16 @@ namespace Test {
             ContinuousDistribution d = new GammaDistribution(alpha);
 
             //double sum = 0.0;
-            Sample sample = new Sample();
+            //Sample sample = new Sample();
 
             Stopwatch timer = Stopwatch.StartNew();
             for (int i = 0; i < 1000000; i++) {
                 double x = d.InverseLeftProbability(rng.NextDouble());
-                sample.Add(x);
+                //sample.Add(x);
             }
             timer.Stop();
 
-            Console.WriteLine(sample.KolmogorovSmirnovTest(d).Probability);
+            //Console.WriteLine(sample.KolmogorovSmirnovTest(d).Probability);
             //Console.WriteLine(sum);
             Console.WriteLine(timer.ElapsedMilliseconds);
 

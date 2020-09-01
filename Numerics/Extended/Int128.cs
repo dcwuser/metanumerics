@@ -62,7 +62,7 @@ namespace Meta.Numerics.Extended
     /// <para><see cref="Int128"/> does not support bit-wise logical and shift operations, but the unsigned 128-bit integer type <see cref="UInt128"/>
     /// does. If you want to perform bit-wise operations on 128-bit registers, use <see cref="UInt128"/>.</para>
     /// </remarks>
-    public struct Int128 : IEquatable<Int128>, IComparable<Int128> {
+    public readonly struct Int128 : IEquatable<Int128>, IComparable<Int128> {
 
         /// <summary>
         /// Initializes a new 128-bit integer with the given decimal representation.

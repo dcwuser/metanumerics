@@ -21,20 +21,20 @@ namespace Test {
 
             // The distribution is irrelevent; pick one at random 
             ContinuousDistribution sampleDistribution = new LognormalDistribution();
+            Random rng = new Random(1);
 
             // Loop over various sample sizes
             foreach (int n in TestUtilities.GenerateIntegerValues(4, 128, 8)) {
 
                 // Create a sample to hold the KS statistics
-                Sample testStatistics = new Sample();
+                List<double> testStatistics = new List<double>();
                 // and a variable to hold the claimed null distribution, which should be the same for each test
                 ContinuousDistribution nullDistribution = null;
 
                 // Create a bunch of samples, each with n data points
                 for (int i = 0; i < 128; i++) {
 
-                    // Just use n+i as a seed in order to get different points each time
-                    Sample sample = TestUtilities.CreateSample(sampleDistribution, n, 512 * n + i + 1);
+                    List<double> sample = sampleDistribution.GetRandomValues(rng, n).ToList();
 
                     // Do a KS test of the sample against the distribution each time
                     TestResult r1 = sample.KolmogorovSmirnovTest(sampleDistribution);
@@ -51,8 +51,8 @@ namespace Test {
                 Assert.IsTrue(r2.Probability > 0.01);
 
                 // Test moment matches, too
-                Assert.IsTrue(testStatistics.PopulationMean.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Mean));
-                Assert.IsTrue(testStatistics.PopulationStandardDeviation.ConfidenceInterval(0.99).ClosedContains(nullDistribution.StandardDeviation));
+                Assert.IsTrue(testStatistics.PopulationMean().ConfidenceInterval(0.99).Contains(nullDistribution.Mean));
+                Assert.IsTrue(testStatistics.PopulationStandardDeviation().ConfidenceInterval(0.99).Contains(nullDistribution.StandardDeviation));
 
             }
 
@@ -63,12 +63,13 @@ namespace Test {
 
             // The distribution is irrelevent; pick one at random 
             ContinuousDistribution sampleDistribution = new NormalDistribution();
+            Random rng = new Random(2);
 
             // Loop over various sample sizes
             foreach (int n in TestUtilities.GenerateIntegerValues(2, 128, 8)) {
 
                 // Create a sample to hold the KS statistics
-                Sample testStatistics = new Sample();
+                List<double> testStatistics = new List<double>();
                 // and a variable to hold the claimed null distribution, which should be the same for each test
                 ContinuousDistribution nullDistribution = null;
 
@@ -76,8 +77,7 @@ namespace Test {
                 // We pick n+1 instead of n just to have different sample size values than in the KS test case
                 for (int i = 0; i < 256; i++) {
 
-                    // Just use n+i as a seed in order to get different points each time
-                    Sample sample = TestUtilities.CreateSample(sampleDistribution, n + 1, 512 * n + i + 2);
+                    List<double> sample = sampleDistribution.GetRandomValues(rng, n + 1).ToList();
 
                     // Do a Kuiper test of the sample against the distribution each time
                     TestResult r1 = sample.KuiperTest(sampleDistribution);
@@ -94,8 +94,8 @@ namespace Test {
                 Assert.IsTrue(r2.Probability > 0.01);
 
                 // Test moment matches, too
-                Assert.IsTrue(testStatistics.PopulationMean.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Mean));
-                Assert.IsTrue(testStatistics.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Variance));
+                Assert.IsTrue(testStatistics.PopulationMean().ConfidenceInterval(0.99).Contains(nullDistribution.Mean));
+                Assert.IsTrue(testStatistics.PopulationVariance().ConfidenceInterval(0.99).Contains(nullDistribution.Variance));
 
             }
 
@@ -112,11 +112,11 @@ namespace Test {
             foreach (int na in sizes) {
                 foreach (int nb in sizes) {
 
-                    Sample d = new Sample();
+                    List<double> d = new List<double>();
                     ContinuousDistribution nullDistribution = null;
                     for (int i = 0; i < 128; i++) {
-                        List<double> a = TestUtilities.CreateDataSample(rng, population, na).ToList();
-                        List<double> b = TestUtilities.CreateDataSample(rng, population, nb).ToList();
+                        List<double> a = population.GetRandomValues(rng, na).ToList();
+                        List<double> b = population.GetRandomValues(rng, nb).ToList();
 
                         TestResult r = Univariate.KolmogorovSmirnovTest(a, b);
                         d.Add(r.Statistic.Value);
@@ -128,9 +128,10 @@ namespace Test {
                     // because the KS test detects the granularity of the distribution.
                     TestResult mr = d.KolmogorovSmirnovTest(nullDistribution);
                     if (AdvancedIntegerMath.LCM(na, nb) > d.Count) Assert.IsTrue(mr.Probability > 0.01);
+
                     // But always test that mean and standard deviation are as expected
-                    Assert.IsTrue(d.PopulationMean.ConfidenceInterval(0.99).ClosedContains(nullDistribution.Mean));
-                    Assert.IsTrue(d.PopulationStandardDeviation.ConfidenceInterval(0.99).ClosedContains(nullDistribution.StandardDeviation));
+                    Assert.IsTrue(d.PopulationMean().ConfidenceInterval(0.99).Contains(nullDistribution.Mean));
+                    Assert.IsTrue(d.PopulationVariance().ConfidenceInterval(0.99).Contains(nullDistribution.Variance));
                     // This test is actually a bit sensitive, probably because the discrete-ness of the underlying distribution
                     // and the inaccuracy of the asymptotic approximation for intermediate sample size make strict comparisons iffy.
                 }
@@ -143,34 +144,32 @@ namespace Test {
         public void StudentTNullDistributionTest () {
 
             ContinuousDistribution z = new NormalDistribution(-1.0, 2.0);
-            Random rng = new Random(1);
+            Random rng = new Random(3);
 
-            foreach (int n in TestUtilities.GenerateIntegerValues(2, 32, 4)) {
+            foreach (int na in TestUtilities.GenerateIntegerValues(2, 32, 3)) {
+                foreach (int nb in TestUtilities.GenerateIntegerValues(2, 32, 3)) {
 
-                Sample tSample = new Sample();
-                ContinuousDistribution tDistribution = null;
+                    List<double> tSample = new List<double>();
+                    ContinuousDistribution tDistribution = null;
 
-                for (int j = 0; j < 128; j++) {
+                    for (int j = 0; j < 128; j++) {
 
-                    Sample a = new Sample();
-                    Sample b = new Sample();
-                    for (int i = 0; i < n; i++) {
-                        a.Add(z.GetRandomValue(rng));
-                        b.Add(z.GetRandomValue(rng));
+                        List<double> a = z.GetRandomValues(rng, na).ToList();
+                        List<double> b = z.GetRandomValues(rng, nb).ToList();
+
+                        TestResult tResult = Univariate.StudentTTest(a, b);
+                        tSample.Add(tResult.Statistic.Value);
+                        tDistribution = tResult.Statistic.Distribution;
+
                     }
 
-                    TestResult tResult = Sample.StudentTTest(a, b);
-                    tSample.Add(tResult.Statistic.Value);
-                    tDistribution = tResult.Statistic.Distribution;
+                    TestResult ks = tSample.KolmogorovSmirnovTest(tDistribution);
+                    Assert.IsTrue(ks.Probability > 0.01);
+
+                    Assert.IsTrue(tSample.PopulationMean().ConfidenceInterval(0.99).ClosedContains(tDistribution.Mean));
+                    Assert.IsTrue(tSample.PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(tDistribution.StandardDeviation));
 
                 }
-
-                TestResult ks = tSample.KolmogorovSmirnovTest(tDistribution);
-                Assert.IsTrue(ks.Probability > 0.01);
-
-                Assert.IsTrue(tSample.PopulationMean.ConfidenceInterval(0.99).ClosedContains(tDistribution.Mean));
-                Assert.IsTrue(tSample.PopulationStandardDeviation.ConfidenceInterval(0.99).ClosedContains(tDistribution.StandardDeviation));
-
             }
 
         }
@@ -183,26 +182,25 @@ namespace Test {
             // Pick some underlying distributions for the sample variables,
             // which must be normal but can have any parameters.
             NormalDistribution xDistribution = new NormalDistribution(1, 2);
-            NormalDistribution yDistribution = new NormalDistribution(3, 4);
+            NormalDistribution yDistribution = new NormalDistribution(-3, 4);
 
             // Try this for several sample sizes, all low so that we see the difference from the normal distribution
             // n = 3 maxima at ends; n = 4 uniform; n = 5 semi-circular "mound"; n = 6 parabolic "mound".
             foreach (int n in new int[] { 3, 4, 5, 6, 8 }) {
 
                 // find r values
-                Sample rSample = new Sample();
+                List<double> rSample = new List<double>();
                 ContinuousDistribution rDistribution = null;
                 for (int i = 0; i < 128; i++) {
 
                     // to get each r value, construct a bivariate sample of the given size with no cross-correlation
-                    BivariateSample xySample = new BivariateSample();
+                    List<double> x = new List<double>();
+                    List<double> y = new List<double>();
                     for (int j = 0; j < n; j++) {
-                        xySample.Add(
-                            xDistribution.GetRandomValue(rng),
-                            yDistribution.GetRandomValue(rng)
-                        );
+                        x.Add(xDistribution.GetRandomValue(rng));
+                        y.Add(yDistribution.GetRandomValue(rng));
                     }
-                    TestResult rTest = xySample.PearsonRTest();
+                    TestResult rTest = Bivariate.PearsonRTest(x, y);
                     rSample.Add(rTest.Statistic.Value);
                     rDistribution = rTest.Statistic.Distribution;
                 }
@@ -211,8 +209,8 @@ namespace Test {
                 TestResult result = rSample.KuiperTest(new PearsonRDistribution(n));
                 Assert.IsTrue(result.Probability > 0.01);
 
-                Assert.IsTrue(rSample.PopulationMean.ConfidenceInterval(0.95).ClosedContains(rDistribution.Mean));
-                Assert.IsTrue(rSample.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(rDistribution.StandardDeviation));
+                Assert.IsTrue(rSample.PopulationMean().ConfidenceInterval(0.95).Contains(rDistribution.Mean));
+                Assert.IsTrue(rSample.PopulationVariance().ConfidenceInterval(0.95).Contains(rDistribution.Variance));
 
             }
 
@@ -229,18 +227,20 @@ namespace Test {
 
             // Generate bivariate samples of various sizes
             foreach (int n in TestUtilities.GenerateIntegerValues(4, 64, 8)) {
- 
-                Sample testStatistics = new Sample();
+
+                List<double> testStatistics = new List<double>();
                 ContinuousDistribution testDistribution = null;
 
                 for (int i = 0; i < 128; i++) {
 
-                    BivariateSample sample = new BivariateSample();
+                    List<double> x = new List<double>();
+                    List<double> y = new List<double>();
                     for (int j = 0; j < n; j++) {
-                        sample.Add(xDistrubtion.GetRandomValue(rng), yDistribution.GetRandomValue(rng));
+                        x.Add(xDistrubtion.GetRandomValue(rng));
+                        y.Add(yDistribution.GetRandomValue(rng));
                     }
 
-                    TestResult result = sample.SpearmanRhoTest();
+                    TestResult result = Bivariate.SpearmanRhoTest(x, y);
                     testStatistics.Add(result.Statistic.Value);
                     testDistribution = result.Statistic.Distribution;
                 }
@@ -248,8 +248,8 @@ namespace Test {
                 TestResult r2 = testStatistics.KolmogorovSmirnovTest(testDistribution);
                 Assert.IsTrue(r2.Probability > 0.05);
 
-                Assert.IsTrue(testStatistics.PopulationMean.ConfidenceInterval(0.99).ClosedContains(testDistribution.Mean));
-                Assert.IsTrue(testStatistics.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(testDistribution.Variance));
+                Assert.IsTrue(testStatistics.PopulationMean().ConfidenceInterval(0.99).Contains(testDistribution.Mean));
+                Assert.IsTrue(testStatistics.PopulationVariance().ConfidenceInterval(0.99).Contains(testDistribution.Variance));
 
             }
 
@@ -266,17 +266,19 @@ namespace Test {
             // Generate bivariate samples of various sizes
             foreach (int n in TestUtilities.GenerateIntegerValues(8, 64, 4)) {
 
-                Sample testStatistics = new Sample();
+                List<double> testStatistics = new List<double>();
                 ContinuousDistribution testDistribution = null;
 
                 for (int i = 0; i < 128; i++) {
-                    BivariateSample sample = new BivariateSample();
+                    List<double> x = new List<double>();
+                    List<double> y = new List<double>();
                     for (int j = 0; j < n; j++) {
                         // x and y are uncorrelated
-                        sample.Add(xDistrubtion.GetRandomValue(rng), yDistribution.GetRandomValue(rng));
+                        x.Add(xDistrubtion.GetRandomValue(rng));
+                        y.Add(yDistribution.GetRandomValue(rng));
                     }
 
-                    TestResult result = sample.KendallTauTest();
+                    TestResult result = Bivariate.KendallTauTest(x, y);
                     testStatistics.Add(result.Statistic.Value);
                     testDistribution = result.Statistic.Distribution;
                 }
@@ -285,8 +287,8 @@ namespace Test {
                 TestResult r2 = testStatistics.KolmogorovSmirnovTest(testDistribution);
                 Assert.IsTrue(r2.Probability > 0.01);
 
-                Assert.IsTrue(testStatistics.PopulationMean.ConfidenceInterval(0.99).ClosedContains(testDistribution.Mean));
-                Assert.IsTrue(testStatistics.PopulationVariance.ConfidenceInterval(0.99).ClosedContains(testDistribution.Variance));
+                Assert.IsTrue(testStatistics.PopulationMean().ConfidenceInterval(0.99).ClosedContains(testDistribution.Mean));
+                Assert.IsTrue(testStatistics.PopulationVariance().ConfidenceInterval(0.99).ClosedContains(testDistribution.Variance));
             }
 
         }
@@ -294,26 +296,30 @@ namespace Test {
         [TestMethod]
         public void WilcoxonNullDistribution () {
 
+            Random rng = new Random(271828);
+
             // Pick a very non-normal distribution
             ContinuousDistribution d = new ExponentialDistribution();
 
-            Random rng = new Random(271828);
+            // For various sample sizes...
             foreach (int n in TestUtilities.GenerateIntegerValues(4, 64, 4)) {
 
-                Sample wContinuousSample = new Sample();
+                List<double> wContinuousSample = new List<double>();
                 ContinuousDistribution wContinuousDistribution = null;
 
                 List<int> wDiscreteSample = new List<int>();
                 DiscreteDistribution wDiscreteDistribution = null;
 
-                for (int i = 0; i < 256; i++) {
-                    BivariateSample sample = new BivariateSample();
+                // Generate a bunch of samples and perform the test on them
+                // Make the sample large because our chi-squared test performs poorly with small values per bin
+                for (int i = 0; i < 250; i++) {
+                    double[] x = new double[n];
+                    double[] y = new double[n];
                     for (int j = 0; j < n; j++) {
-                        double x = d.GetRandomValue(rng);
-                        double y = d.GetRandomValue(rng);
-                        sample.Add(x, y);
+                        x[j] = d.GetRandomValue(rng);
+                        y[j] = d.GetRandomValue(rng);
                     }
-                    TestResult wilcoxon = sample.WilcoxonSignedRankTest();
+                    TestResult wilcoxon = Bivariate.WilcoxonSignedRankTest(x, y);
                     if (wilcoxon.UnderlyingStatistic != null) {
                         wDiscreteSample.Add(wilcoxon.UnderlyingStatistic.Value);
                         wDiscreteDistribution = wilcoxon.UnderlyingStatistic.Distribution;
@@ -329,10 +335,9 @@ namespace Test {
                 } else {
                     TestResult ks = wContinuousSample.KolmogorovSmirnovTest(wContinuousDistribution);
                     Assert.IsTrue(ks.Probability > 0.01);
-                    Assert.IsTrue(wContinuousSample.PopulationMean.ConfidenceInterval(0.99).ClosedContains(wContinuousDistribution.Mean));
-                    Assert.IsTrue(wContinuousSample.PopulationStandardDeviation.ConfidenceInterval(0.99).ClosedContains(wContinuousDistribution.StandardDeviation));
+                    Assert.IsTrue(wContinuousSample.PopulationMean().ConfidenceInterval(0.99).ClosedContains(wContinuousDistribution.Mean));
+                    Assert.IsTrue(wContinuousSample.PopulationStandardDeviation().ConfidenceInterval(0.99).ClosedContains(wContinuousDistribution.StandardDeviation));
                 }
-
 
             }
 
@@ -344,11 +349,11 @@ namespace Test {
             Random rng = new Random(57721);
             foreach (int n in TestUtilities.GenerateIntegerValues(16, 128, 4)) {
 
-                Sample vSample = new Sample();
+                List<double> vSample = new List<double>();
                 ContinuousDistribution vDistribution = null;
                 NormalDistribution zDistribution = new NormalDistribution(-2.0, 3.0);
                 for (int i = 0; i < 256; i++) {
-                    Sample zSample = TestUtilities.CreateSample(zDistribution, n, i);
+                    List<double> zSample = zDistribution.GetRandomValues(rng, n).ToList();
                     TestResult sf = zSample.ShapiroFranciaTest();
                     vSample.Add(sf.Statistic.Value);
                     vDistribution = sf.Statistic.Distribution;

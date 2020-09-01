@@ -13,14 +13,17 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>The ratio of the variances of two sets of normally distributed variables is distributed according to Fisher's F-distribution.</para>
     /// <img src="../images/FisherFromNormal.png" />
     /// <para>Many test statistics are ratios of variances and are therefore distributed according to the F-distribution. These include
-    /// the F-test (<see cref="Sample.FisherFTest"/>),
-    /// the goodness-of-fit test for a multi-linear regression (<see cref="MultivariateSample.LinearRegression(int)"/>),
-    /// and ANOVA tests (<see cref="Sample.OneWayAnovaTest(IReadOnlyCollection{Sample})"/>).</para>
+    /// the F-test (<see cref="Univariate.FisherFTest"/>),
+    /// the test for non-triviality of linear (<see cref="Bivariate.LinearRegression(IReadOnlyList{double}, IReadOnlyList{double})"/>),
+    /// non-linear (<see cref="Bivariate.PolynomialRegression(IReadOnlyList{double}, IReadOnlyList{double}, int)"/>), and
+    /// multi-linear (<see cref="Multivariate.MultiLinearRegression(IReadOnlyList{double}, IReadOnlyList{double}[])"/>) regressions,
+    /// and ANOVA tests (<see cref="Univariate.OneWayAnovaTest(IReadOnlyCollection{double}[])"/>).</para>
     /// <para>The Fisher distribution is related to the Beta distribution (<see cref="BetaDistribution"/>) by a simple
     /// variable transformation.</para>
     /// <img src="../images/FisherBeta.png" />
     /// </remarks>
-    /// <seealso href="http://en.wikipedia.org/wiki/F_distribution"/>
+    /// <seealso href="https://en.wikipedia.org/wiki/F-distribution"/>
+    /// <seealso href="https://mathworld.wolfram.com/F-Distribution.html"/>
     public sealed class FisherDistribution : ContinuousDistribution {
 
         /// <summary>
@@ -28,7 +31,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="nu1">The number of degrees of freedom in the numerator, which must be positive.</param>
         /// <param name="nu2">The number of degrees of freedom in the denominator, which must be positive.</param>
-        /// <seealso cref="Sample.FisherFTest"/>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="nu1"/> or <paramref name="nu2"/> is
+        /// zero or negative.</exception>
         public FisherDistribution (double nu1, double nu2) {
             if (nu1 <= 0.0) throw new ArgumentOutOfRangeException(nameof(nu1));
             if (nu2 <= 0.0) throw new ArgumentOutOfRangeException(nameof(nu2));
@@ -50,7 +54,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double NumeratorDegreesOfFreedom {
             get {
-                return (nu1);
+                return nu1;
             }
         }
 
@@ -59,51 +63,51 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double DenominatorDegreesOfFreedom {
             get {
-                return (nu2);
+                return nu2;
             }
         }
 
         /// <inheritdoc />
         public override Interval Support {
             get {
-                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+                return Interval.Semiinfinite;
             }
         }
 
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             if (x <= 0.0) {
-                return (0.0);
+                return 0.0;
             } else {
                 double p = nu1 * x;
                 double q = nu2 + p;
                 double y = p / q;
                 double u = nu1 * nu2 / (q * q);
-                return (u * beta.ProbabilityDensity(y));
+                return u * beta.ProbabilityDensity(y);
             }
 		}
 
         /// <inheritdoc />
         public override double LeftProbability (double x) {
             if (x <= 0.0) {
-                return (0.0);
+                return 0.0;
             } else {
                 double p = nu1 * x;
                 double q = nu2 + p;
                 double y = p / q;
-                return (beta.LeftProbability(y));
+                return beta.LeftProbability(y);
             }
 		}
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
             if (x <= 0.0) {
-                return (1.0);
+                return 1.0;
             } else {
                 double p = nu1 * x;
                 double q = nu2 + p;
                 double y = p / q;
-                return (beta.RightProbability(y));
+                return beta.RightProbability(y);
             }
 		}
 
@@ -113,9 +117,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double Mean {
 			get {
                 if (nu2 > 2.0) {
-                    return (nu2 / (nu2 - 2.0)); 
+                    return nu2 / (nu2 - 2.0); 
                 } else {
-                    return (Double.PositiveInfinity);
+                    return Double.PositiveInfinity;
                 }
 			}
 		}
@@ -125,9 +129,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             get {
                 if (nu2 > 4.0) {
                     double m = Mean;
-                    return (2.0 * m * m * (nu1 + nu2 - 2.0) / nu1 / (nu2 - 4.0));
+                    return 2.0 * m * m * (nu1 + nu2 - 2.0) / nu1 / (nu2 - 4.0);
                 } else {
-                    return (Double.PositiveInfinity);
+                    return Double.PositiveInfinity;
                 }
             }
         }
@@ -136,32 +140,30 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double RawMoment (int r) {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
-            } else {
-                if (nu2 <= 2.0 * r) {
-                    return (Double.PositiveInfinity);
-                } else {
+            } else if (2.0 * r < nu2) {
 
-                    // (nu2)^n  Gamma(nu1/2 + n)  Gamma(nu2/2 - n)
-                    // (---)    ----------------  ----------------
-                    // (nu1)      Gamma(nu1/2)      Gamma(nu2/2)
+                // (nu2)^n  Gamma(nu1/2 + n)  Gamma(nu2/2 - n)
+                // (---)    ----------------  ----------------
+                // (nu1)      Gamma(nu1/2)      Gamma(nu2/2)
 
-                    // this can be computed using the recursion relation for the Gamma function
+                // this can be computed using the recursion relation for the Gamma function
 
-                    double q = nu2 / nu1;
-                    double M = 1.0;
-                    for (int k = 0; k < r; k++) {
-                        M = M * q * (nu1 + 2*k) / (nu2 - 2*(k+1));
-                    }
-
-                    return (M);
-
+                double q = nu2 / nu1;
+                double M = 1.0;
+                for (int k = 0; k < r; k++) {
+                    M = M * q * (nu1 + 2 * k) / (nu2 - 2 * (k + 1));
                 }
+
+                return M;
+
+            } else {
+                return Double.PositiveInfinity;
             }
 		}
 
         // The rth central moment is given by the hypergeometric function.
         //   C_r = \left( \frac{m}{2-m} \right)^r _2F_1 ( n/2, -r; 1 - m/2; (2-m)/n )
-        // Using the known recursion on the 2nd argument of the hypergeometric function (A&S ##), we can derive the recursion
+        // Using the known recursion on the 2nd argument of the hypergeometric function (A&S 15.2.11), we can derive the recursion
         //   C_{r+1} = \frac{2 r m}{(m-2)(m-2(r+1))n} \left[ \frac{m(n+m-2)}{(m-2)} C_{r-1} + (2n + m - 2) C_r \right]
         // We implement this recursion here.
 
@@ -171,10 +173,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
-            } else {
-
-                if (2 * r >= nu2) return (Double.NaN);
+                return 1.0;
+            } else if (2.0 * r < nu2) {
 
                 double CM = 1.0;
                 double C = 0.0;
@@ -186,7 +186,10 @@ namespace Meta.Numerics.Statistics.Distributions {
                     C = CP;
                 }
 
-                return (C);
+                return C;
+
+            } else {
+                return Double.NaN;
             }
         }
 
@@ -194,13 +197,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
             double y = beta.InverseLeftProbability(P);
-            return(nu2 / nu1 * y / (1.0 - y));
+            return nu2 / nu1 * y / (1.0 - y);
         }
 
         /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
             double y = beta.InverseRightProbability(Q);
-            return (nu2 / nu1 * y / (1.0 - y));
+            return nu2 / nu1 * y / (1.0 - y);
         }
 		
 	}

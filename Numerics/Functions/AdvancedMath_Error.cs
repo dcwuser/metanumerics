@@ -309,6 +309,8 @@ namespace Meta.Numerics.Functions {
         }
 
         internal static double Probit (double P, double Q) {
+            Debug.Assert(0.0 <= P && P <= 1.0);
+            Debug.Assert(0.0 <= Q && Q <= 1.0);
             Debug.Assert(P + Q == 1.0);
             if (P < 0.25) {
                 if (P == 0.0) {

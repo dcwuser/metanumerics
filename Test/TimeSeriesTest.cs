@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 using TestClassAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
 using TestMethodAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
@@ -35,17 +36,15 @@ namespace Test {
 
         // For white noise, use MA(1) with beta = mu = 0
 
-        private TimeSeries GenerateMA1TimeSeries (double beta, double mu, double sigma, int count, int seed = 1) {
-            TimeSeries series = new TimeSeries();
+        private IEnumerable<double> GenerateMA1TimeSeries (double beta, double mu, double sigma, int count, int seed = 1) {
             Random rng = new Random(seed);
             NormalDistribution eDist = new NormalDistribution(0.0, sigma);
             double uPrevious = eDist.GetRandomValue(rng);
             for (int i = 0; i < count; i++) {
                 double u = eDist.GetRandomValue(rng);
-                series.Add(mu + u + beta * uPrevious);
+                yield return mu + u + beta * uPrevious;
                 uPrevious = u;
             }
-            return (series);
         }
 
         [TestMethod]
@@ -155,8 +154,8 @@ namespace Test {
             Assert.IsTrue(ar1ps.Autocovariance(2).ConfidenceInterval(0.99).ClosedContains(alpha * alpha * ar1v));
             Assert.IsTrue(ar1ps.Autocovariance(3).ConfidenceInterval(0.99).ClosedContains(alpha * alpha * alpha * ar1v));
 
-            TimeSeries ma1 = GenerateMA1TimeSeries(beta, mu, sigma, 100, 314159);
-            TimeSeriesPopulationStatistics ma1ps = ma1.PopulationStatistics();
+            List<double> ma1 = GenerateMA1TimeSeries(beta, mu, sigma, 100, 314159).ToList();
+            TimeSeriesPopulationStatistics ma1ps = ma1.SeriesPopulationStatistics();
             Assert.IsTrue(ma1ps.Mean.ConfidenceInterval(0.99).ClosedContains(mu));
 
             // For MA(1), autocovariance vanishes for all lags greater than 1.
@@ -183,43 +182,40 @@ namespace Test {
             // we can't pick n too small, because the formulas we use are only
             // asymptotically unbiased.
 
-            MultivariateSample parameters = new MultivariateSample(3);
-            MultivariateSample covariances = new MultivariateSample(6);
-            Sample tests = new Sample("p");
+            FrameTable t = new FrameTable();
+            t.AddColumn<ColumnVector>("Parameters");
+            t.AddColumn<SymmetricMatrix>("Covariances");
+            t.AddColumn<double>("P");
             for (int i = 0; i < 64; i++) {
 
-                TimeSeries series = GenerateMA1TimeSeries(beta, mu, sigma, n, n * i + 314159);
+                List<double> series = GenerateMA1TimeSeries(beta, mu, sigma, n, n * i + 314159).ToList();
 
                 Debug.Assert(series.Count == n);
 
                 MA1FitResult result = series.FitToMA1();
 
-                //Assert.IsTrue(result.Dimension == 3);
-                parameters.Add(result.Parameters.ValuesVector);
-                covariances.Add(
-                    result.Parameters.CovarianceMatrix[0, 0],
-                    result.Parameters.CovarianceMatrix[1, 1],
-                    result.Parameters.CovarianceMatrix[2, 2],
-                    result.Parameters.CovarianceMatrix[0, 1],
-                    result.Parameters.CovarianceMatrix[0, 2],
-                    result.Parameters.CovarianceMatrix[1, 2]
-                );
-                tests.Add(result.GoodnessOfFit.Probability);
+                t.AddRow(result.Parameters.ValuesVector, result.Parameters.CovarianceMatrix, result.GoodnessOfFit.Probability);
 
             }
 
-            Assert.IsTrue(parameters.Column(0).PopulationMean.ConfidenceInterval(0.99).ClosedContains(mu)); ;
-            Assert.IsTrue(parameters.Column(1).PopulationMean.ConfidenceInterval(0.99).ClosedContains(beta));
-            Assert.IsTrue(parameters.Column(2).PopulationMean.ConfidenceInterval(0.99).ClosedContains(sigma));
+            Assert.IsTrue(t["Parameters"].As<ColumnVector>().Select(u => u[0]).ToList().PopulationMean().ConfidenceInterval(0.99).ClosedContains(mu));
+            Assert.IsTrue(t["Parameters"].As<ColumnVector>().Select(u => u[1]).ToList().PopulationMean().ConfidenceInterval(0.99).ClosedContains(beta));
+            Assert.IsTrue(t["Parameters"].As<ColumnVector>().Select(u => u[2]).ToList().PopulationMean().ConfidenceInterval(0.99).ClosedContains(sigma));
 
-            Assert.IsTrue(parameters.Column(0).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(0).Mean));
-            Assert.IsTrue(parameters.Column(1).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(1).Mean));
-            Assert.IsTrue(parameters.Column(2).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
-            Assert.IsTrue(parameters.TwoColumns(0, 1).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(3).Mean));
-            Assert.IsTrue(parameters.TwoColumns(0, 2).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(4).Mean));
-            Assert.IsTrue(parameters.TwoColumns(1, 2).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(5).Mean));
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < i; j++) {
+                    Assert.IsTrue(
+                        Bivariate.PopulationCovariance(
+                            t["Parameters"].As<ColumnVector>().Select(u => u[i]).ToList(),
+                            t["Parameters"].As<ColumnVector>().Select(u => u[j]).ToList()
+                        ).ConfidenceInterval(0.99).Contains(
+                            t["Covariances"].As<SymmetricMatrix>().Select(u => u[i, j]).ToList().Mean()
+                        )
+                    );
+                }
+            }
 
-            Assert.IsTrue(tests.KuiperTest(new UniformDistribution()).Probability > 0.01);
+            Assert.IsTrue(t["P"].As<double>().KuiperTest(new UniformDistribution()).Probability > 0.01);
 
         }
 
@@ -289,7 +285,7 @@ namespace Test {
 
             // Fit AR1 to MA1; the fit should be bad
 
-            TimeSeries series = GenerateMA1TimeSeries(0.4, 0.3, 0.2, 1000);
+            List<double> series = GenerateMA1TimeSeries(0.4, 0.3, 0.2, 1000).ToList();
 
             AR1FitResult result = series.FitToAR1();
 
@@ -300,16 +296,16 @@ namespace Test {
         [TestMethod]
         public void LjungBoxNullDistribution () {
 
-            Sample Qs = new Sample();
+            double[] Q = new double[100];
             ContinuousDistribution d = null;
-            for (int i = 0; i < 100; i++) {
-                TimeSeries series = GenerateMA1TimeSeries(0.0, 1.0, 2.0, 10, i);
+            for (int i = 0; i < Q.Length; i++) {
+                List<double> series = GenerateMA1TimeSeries(0.0, 1.0, 2.0, 10, i).ToList();
                 TestResult lbResult = series.LjungBoxTest(5);
-                Qs.Add(lbResult.Statistic.Value);
+                Q[i] = lbResult.Statistic.Value;
                 d = lbResult.Statistic.Distribution;
             }
 
-            TestResult kResult = Qs.KuiperTest(d);
+            TestResult kResult = Q.KuiperTest(d);
             Assert.IsTrue(kResult.Probability > 0.05);
 
         }
@@ -329,7 +325,10 @@ namespace Test {
 
             int n = 100;
             // Generate white noise
-            TimeSeries series = GenerateMA1TimeSeries(0.0, 0.1, 1.0, n);
+            TimeSeries series = new TimeSeries();
+            foreach (double u in GenerateMA1TimeSeries(0.0, 0.1, 1.0, n)) {
+                series.Add(u);
+            }
 
             // Integrate it
             series.Integrate(0.0);
@@ -344,15 +343,6 @@ namespace Test {
             // The result should be correlated
             TestResult result2 = series.LjungBoxTest();
             Assert.IsTrue(result2.Probability > 0.01);
-
-        }
-
-        [TestMethod]
-        public void WhiteNoisePowerSpectrum () {
-
-            TimeSeries series = GenerateMA1TimeSeries(0.0, 0.0, 2.0, 20);
-
-            double[] spectrum = series.PowerSpectrum();
 
         }
 

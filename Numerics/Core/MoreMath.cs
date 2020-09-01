@@ -25,73 +25,73 @@ namespace Meta.Numerics {
         /// </remarks>
         public static double Pow (double x, int n) {
 
-            if (n < 0) return (1.0 / Pow(x, -n));
+            if (n < 0) return 1.0 / Pow(x, -n);
 
             switch (n) {
                 case 0:
                     // We follow convention that 0^0 = 1.
-                    return (1.0);
+                    return 1.0;
                 case 1:
-                    return (x);
+                    return x;
                 case 2:
                     // 1 multiply
-                    return (x * x);
+                    return x * x;
                 case 3:
                     // 2 multiplies
-                    return (x * x * x);
+                    return x * x * x;
                 case 4: {
                         // 2 multiplies
                         double x2 = x * x;
-                        return (x2 * x2);
+                        return x2 * x2;
                     }
                 case 5: {
                         // 3 multiplies
                         double x2 = x * x;
-                        return (x2 * x2 * x);
+                        return x2 * x2 * x;
                     }
                 case 6: {
                         // 3 multiplies
                         double x2 = x * x;
-                        return (x2 * x2 * x2);
+                        return x2 * x2 * x2;
                     }
                 case 7: {
                         // 4 multiplies
                         double x3 = x * x * x;
-                        return (x3 * x3 * x);
+                        return x3 * x3 * x;
                     }
                 case 8: {
                         // 3 multiplies
                         double x2 = x * x;
                         double x4 = x2 * x2;
-                        return (x4 * x4);
+                        return x4 * x4;
                     }
                 case 9: {
                         // 4 multiplies
                         double x3 = x * x * x;
-                        return (x3 * x3 * x3);
+                        return x3 * x3 * x3;
                     }
                 case 10: {
                         // 4 multiplies
                         double x2 = x * x;
                         double x4 = x2 * x2;
-                        return (x4 * x4 * x2);
+                        return x4 * x4 * x2;
                     }
                 case 12: {
                         // 4 multiplies
                         double x3 = x * x * x;
                         double x6 = x3 * x3;
-                        return (x6 * x6);
+                        return x6 * x6;
                     }
                 case 16: {
                         // 4 multiplies
                         double x2 = x * x;
                         double x4 = x2 * x2;
                         double x8 = x4 * x4;
-                        return (x8 * x8);
+                        return x8 * x8;
                     }
                 // Those are all the cases do-able in 4 or fewer multiplies.
                 default:
-                    return (Math.Pow(x, n));
+                    return Math.Pow(x, n);
             }
 
             // I verified that this routine is measurably faster than Math.Pow for the
@@ -127,12 +127,12 @@ namespace Meta.Numerics {
             }
 
             if (small == 0.0) {
-                return (big);
+                return big;
             } else if (Double.IsPositiveInfinity(big) && !Double.IsNaN(small)) {
-                return (Double.PositiveInfinity);
+                return Double.PositiveInfinity;
             } else {
                 double ratio = small / big;
-                return (big * Math.Sqrt(1.0 + ratio * ratio));
+                return big * Math.Sqrt(1.0 + ratio * ratio);
             }
 
         }
@@ -165,7 +165,7 @@ namespace Meta.Numerics {
                 double f_old = f;
                 df *= x / k;
                 f += df;
-                if (f == f_old) return (f);
+                if (f == f_old) return f;
             }
             throw new NonconvergenceException();
         }
@@ -183,7 +183,7 @@ namespace Meta.Numerics {
         /// </remarks>
         public static double ExpMinusOne (double x) {
             if ((expm1SeriesLowerLimit < x) && (x < expm1SeriesUpperLimit)) {
-                return (x * ReducedExpm1Series(x));
+                return x * ReducedExpm1Series(x);
             } else {
                 return (Math.Exp(x) - 1.0);
             }
@@ -191,9 +191,9 @@ namespace Meta.Numerics {
 
         internal static double ReducedExpMinusOne (double x) {
             if ((expm1SeriesLowerLimit < x) && (x < expm1SeriesUpperLimit)) {
-                return (ReducedExpm1Series(x));
+                return ReducedExpm1Series(x);
             } else {
-                return ((Math.Exp(x) - 1.0) / x);
+                return (Math.Exp(x) - 1.0) / x;
             }
         }
 
@@ -247,7 +247,7 @@ namespace Meta.Numerics {
 
             double z = 1.0 + x;
             if (z == 1.0) {
-                return (x);
+                return x;
             } else {
                 return (Math.Log(z) / (z - 1.0) * x);
             }
@@ -286,7 +286,7 @@ namespace Meta.Numerics {
         /// about using this function, because even the most basic optimizing compiler will optimize away the call.</para>
         /// </remarks>
         public static double Sqr (double x) {
-            return (x * x);
+            return x * x;
         }
 
         /// <summary>
@@ -457,9 +457,9 @@ namespace Meta.Numerics {
             // Perhaps counter-intuitively, naive evaluation of sin(x) / x looses no accuracy,
             // even very close to zero, so long as x \ne 0. So we only branch on that one value.
             if (x == 0.0) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (Sin(x) / x);
+                return Sin(x) / x;
             }
         }
 
@@ -475,9 +475,9 @@ namespace Meta.Numerics {
         /// </remarks>
         public static double SincPi (double x) {
             if (x == 0.0) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (SinPi(x) / (Math.PI * x));
+                return SinPi(x) / (Math.PI * x);
             }
         }
 
@@ -499,7 +499,7 @@ namespace Meta.Numerics {
         public static long Mod (long n, long m) {
             long r = n % m;
             if (r < 0) r += m;
-            return (r);
+            return r;
             // ((n % m) + m) % m would probably be faster (mod being faster than test-and-branch),
             // but it would not only be less clear, but also suffer overflow problems for m near integer limits
         }

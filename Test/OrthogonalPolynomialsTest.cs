@@ -6,7 +6,8 @@ using Meta.Numerics;
 using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics.Distributions;
-
+using System.Runtime.Remoting.Metadata.W3cXsd2001;
+using System.Runtime.CompilerServices;
 
 namespace Test {
 
@@ -34,17 +35,22 @@ namespace Test {
         // Hermite
 
         [TestMethod]
-        public void HermiteSpecialCases () {
-            foreach (double x in aArguments) {
+        public void HermiteLowOrders() {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 8)) {
                 Assert.IsTrue(OrthogonalPolynomials.HermiteH(0, x) == 1.0);
                 Assert.IsTrue(OrthogonalPolynomials.HermiteH(1, x) == 2.0 * x);
+                Assert.IsTrue(OrthogonalPolynomials.HermiteHe(0, x) == 1.0);
+                Assert.IsTrue(OrthogonalPolynomials.HermiteHe(1, x) == x);
             }
-            foreach (int n in orders) {
-                if (n > 100) continue;
+        }
+
+        [TestMethod]
+        public void HermiteSpecialCases () {
+            // Values at 0; A&S 22.4.8
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 8)) {
                 if (n % 2 == 0) {
                     int m = n / 2;
-                    int s = 1;
-                    if (m % 2 != 0) s = -s;
+                    int s = (m % 2 == 0) ? 1 : -1;
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.HermiteH(n, 0.0), s * AdvancedIntegerMath.Factorial(n) / AdvancedIntegerMath.Factorial(m)));
                 } else {
                     Assert.IsTrue(OrthogonalPolynomials.HermiteH(n, 0.0) == 0.0);
@@ -54,9 +60,9 @@ namespace Test {
 
         [TestMethod]
         public void HermiteReflection () {
+            // A&S 22.4.8
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 10)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0, 1000.0, 10)) {
-                    Console.WriteLine("n={0} x={1}", n, x);
                     if (n % 2 == 0) {
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.HermiteH(n, -x), OrthogonalPolynomials.HermiteH(n, x)));
                     } else {
@@ -68,13 +74,24 @@ namespace Test {
 
         [TestMethod]
         public void HermiteRecurrence () {
+            // A&S 22.7.13
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 10)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0, 1000.0, 10)) {
-                    Console.WriteLine("n={0} x={1}", n, x);
                     Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
                         OrthogonalPolynomials.HermiteH(n + 1, x), 2.0 * n * OrthogonalPolynomials.HermiteH(n - 1, x),
                         2.0 * x * OrthogonalPolynomials.HermiteH(n, x)
                     ));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void HermiteTuranInequality () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 8)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E3, 8)) {
+                    Assert.IsTrue(
+                        MoreMath.Sqr(OrthogonalPolynomials.HermiteH(n, x)) >= OrthogonalPolynomials.HermiteH(n + 1, x) * OrthogonalPolynomials.HermiteH(n - 1, x)
+                    );
                 }
             }
         }
@@ -119,17 +136,16 @@ namespace Test {
 
         [TestMethod]
         public void HermiteOrthonormality () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 30, 3)) {
-                foreach (int m in TestUtilities.GenerateIntegerValues(1, 30, 3)) {
-                    Func<double, double> f = delegate(double x) {
-                        return (Math.Exp(-x * x) * OrthogonalPolynomials.HermiteH(n, x) * OrthogonalPolynomials.HermiteH(m, x));
-                    };
-                    Interval r = Interval.FromEndpoints(Double.NegativeInfinity, Double.PositiveInfinity);
-                    double I = FunctionMath.Integrate(f, r);
-                    double N = Math.Sqrt(Math.PI) * Math.Pow(2.0, n) * AdvancedIntegerMath.Factorial(n);
-                    Console.WriteLine("{0} {1} {2} {3}", n, m, I, N);
+            // Don't let order get too high, or integral will become too oscilatory to handle to high precision numerically.
+            int[] orders = TestUtilities.GenerateIntegerValues(1, 12, 4);
+            foreach (int n in orders) {
+                foreach (int m in orders) {
+                    double I = FunctionMath.Integrate(
+                        (double x) => Math.Exp(-x * x / 2.0) * OrthogonalPolynomials.HermiteHe(n, x) * OrthogonalPolynomials.HermiteHe(m, x),
+                        Double.NegativeInfinity, Double.PositiveInfinity, new IntegrationSettings() { EvaluationBudget = 10000 }
+                    );
                     if (n == m) {
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(I, N));
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(I, Math.Sqrt(2.0 * Math.PI) * AdvancedIntegerMath.Factorial(n)));
                     } else {
                         Assert.IsTrue(Math.Abs(I) <= TestUtilities.TargetPrecision);
                     }
@@ -137,12 +153,23 @@ namespace Test {
             }
         }
 
-        // test HermiteHe orthonormality, too
+        [TestMethod]
+        public void HermiteStatisticianPhysicistAgreement () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 8)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
+                    TestUtilities.IsNearlyEqual(
+                        OrthogonalPolynomials.HermiteH(n, x),
+                        Math.Pow(2.0, n / 2.0) * OrthogonalPolynomials.HermiteHe(n, Math.Sqrt(2.0) * x)
+                    );
+                }
+            }
+
+        }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentOutOfRangeException))]
         public void HermiteInvalidOrder () {
-            OrthogonalPolynomials.HermiteH(-1, 1.0);
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.HermiteH(-1, 1.0));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.HermiteHe(-1, 1.0));
         }
 
 
@@ -166,13 +193,19 @@ namespace Test {
         // Laguerre
 
         [TestMethod]
+        public void LaguerreLowOrders () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 8)) {
+                Assert.IsTrue(OrthogonalPolynomials.LaguerreL(0, x) == 1.0);
+                Assert.IsTrue(OrthogonalPolynomials.LaguerreL(1, x) == 1.0 - x);
+            }
+        }
+
+        [TestMethod]
         public void LaguerreSpecialCases () {
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 Assert.IsTrue(OrthogonalPolynomials.LaguerreL(n, 0.0) == 1.0);
             }
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 5)) {
-                Assert.IsTrue(OrthogonalPolynomials.LaguerreL(0, x) == 1.0);
-            }
+
         }
 
         [TestMethod]
@@ -189,7 +222,8 @@ namespace Test {
 
         [TestMethod]
         public void LaguerreInequality () {
-            foreach (int n in TestUtilities.GenerateRealValues(1.0, 1.0E2, 5)) {
+            // A&S 22.14.12
+            foreach (int n in TestUtilities.GenerateRealValues(1.0, 100, 5)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
                     Assert.IsTrue(OrthogonalPolynomials.LaguerreL(n,x) <= Math.Exp(x/2.0));
                 }
@@ -222,7 +256,6 @@ namespace Test {
                     };
                     Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
                     double I = FunctionMath.Integrate(f, r);
-                    Console.WriteLine("{0} {1} {2}", n, m, I);
                     if (n == m) {
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(I, 1.0));
                     } else {
@@ -253,21 +286,32 @@ namespace Test {
         // associated Laguerre
 
         [TestMethod]
-        public void AssociatedLaguerreSpecialCases () {
-            foreach (double a in TestUtilities.GenerateRealValues(0.01, 100.0, 5)) {
-                foreach (double x in TestUtilities.GenerateRealValues(0.01, 100.0, 5)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        OrthogonalPolynomials.LaguerreL(0, a, x), 1.0
-                    ));
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        OrthogonalPolynomials.LaguerreL(1, a, x), 1.0 + a - x
-                    ));
+        public void AssociatedLaguerreLowOrders () {
+            foreach (double a in TestUtilities.GenerateUniformRealValues(-1.0, 10.0, 4)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 4)) {
+                    Assert.IsTrue(OrthogonalPolynomials.LaguerreL(0, a, x) == 1.0);
+                    Assert.IsTrue(OrthogonalPolynomials.LaguerreL(1, a, x) == 1.0 + a - x);
                 }
             }
         }
 
         [TestMethod]
-        public void AssociatedLaguerreAlphaRecurrence () {
+        public void AssociatedLaguerreSpecialCases () {
+            // A&S 22.4.7 gives value at 0
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
+                foreach (double a in TestUtilities.GenerateUniformRealValues(-1.0, 10.0, 4)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                        OrthogonalPolynomials.LaguerreL(n, a, 0.0),
+                        AdvancedMath.Pochhammer(a + 1.0, n) / AdvancedIntegerMath.Factorial(n)
+                    ));
+                    // This is \binomial{n + \alpha}{n}. Maybe provide a double-valued version?
+                }
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedLaguerreTriangleRecurrence () {
+            // Connects (n, a - 1) (n, a) (n - 1, a)
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
                 foreach (double a in TestUtilities.GenerateRealValues(0.01, 100.0, 5)) {
                     foreach (double x in TestUtilities.GenerateRealValues(0.01, 100.0, 5)) {
@@ -281,12 +325,11 @@ namespace Test {
         }
 
         [TestMethod]
-        public void AssociatedLaguerreSum () {
+        public void AssociatedLaguerreAlphaRecurrence () {
+            // \sum_{k = 0}^{n} L^{(\alpha)}_k = L^{(\alpha+1)}_n
             foreach (int n in TestUtilities.GenerateRealValues(1, 100, 5)) {
                 foreach (double a in TestUtilities.GenerateRealValues(0.1, 100.0, 5)) {
                     foreach (double x in TestUtilities.GenerateRealValues(0.01, 1000.0, 5)) {
-
-                        Console.WriteLine("n={0}, a={1}, x={2}", n, a, x);
 
                         List<double> L = new List<double>(n + 1);
                         for (int k = 0; k <= n; k++) {
@@ -301,6 +344,34 @@ namespace Test {
 
                 }
             }
+        }
+
+        [TestMethod]
+        public void AssociatedLaguerreInequality () {
+            // A&S 22.14.13
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
+                foreach (double a in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 4)) {
+                    foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 4)) {
+                        Assert.IsTrue(Math.Abs(OrthogonalPolynomials.LaguerreL(n, a, x)) <= AdvancedMath.Pochhammer(a + 1.0, n) / AdvancedIntegerMath.Factorial(n) * Math.Exp(x / 2.0));
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedLaguerreAgreement () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 4)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0E3, 4)) {
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LaguerreL(n, x), OrthogonalPolynomials.LaguerreL(n, 0.0, x)));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedLaguerreInvalidArguments () {
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.LaguerreL(-1, 0.0, 0.0));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.LaguerreL(0, -1.1, 0.0));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.LaguerreL(0, 0.0, -0.1));
         }
 
         [TestMethod]
@@ -351,39 +422,64 @@ namespace Test {
 
         // Chebyshev
 
-
         [TestMethod]
-        public void ChebyshevSpecialCases () {
-            foreach (double x in bArguments) {
+        public void ChebyshevTLowOrders () {
+            foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, +1.0, 4)) {
                 Assert.IsTrue(OrthogonalPolynomials.ChebyshevT(0, x) == 1.0);
                 Assert.IsTrue(OrthogonalPolynomials.ChebyshevT(1, x) == x);
             }
-            foreach (int n in orders) {
+        }
+
+        [TestMethod]
+        public void ChebyshevTStandardization () {
+            // A&S 22.2.4
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 8)) {
+                Assert.IsTrue(OrthogonalPolynomials.ChebyshevT(n, 1.0) == 1.0);
+            }
+        }
+
+        [TestMethod]
+        public void ChebyshevTSpecialCases () {
+            // Values at 0 and -1
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 8)) {
                 if (n % 2 == 0) {
                     if (n % 4 == 0) {
                         Assert.IsTrue(OrthogonalPolynomials.ChebyshevT(n, 0.0) == 1.0);
                     } else {
                         Assert.IsTrue(OrthogonalPolynomials.ChebyshevT(n, 0.0) == -1.0);
                     }
+                    Assert.IsTrue(OrthogonalPolynomials.ChebyshevT(n, -1.0) == 1.0);
                 } else {
                     Assert.IsTrue(OrthogonalPolynomials.ChebyshevT(n, 0.0) == 0.0);
+                    Assert.IsTrue(OrthogonalPolynomials.ChebyshevT(n, -1.0) == -1.0);
                 }
-                Assert.IsTrue(OrthogonalPolynomials.ChebyshevT(n, 1.0) == 1.0);
             }
         }
 
         [TestMethod]
-        public void ChebyshevInequality () {
-            foreach (int n in orders) {
-                foreach (double x in bArguments) {
+        public void ChebyshevTInequality () {
+            // A&S 22.14.1
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 10)) {
+                foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, 1.0, 10)) {
                     Assert.IsTrue(Math.Abs(OrthogonalPolynomials.ChebyshevT(n, x)) <= 1.0);
                 }
             }
         }
 
         [TestMethod]
-        public void ChebyshevRecurrence () {
-            foreach (int n in orders) {
+        public void ChebyshevTTuranInequality () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 10)) {
+                foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, 1.0, 10)) {
+                    Assert.IsTrue(
+                        MoreMath.Sqr(OrthogonalPolynomials.ChebyshevT(n, x)) >= OrthogonalPolynomials.ChebyshevT(n + 1, x) * OrthogonalPolynomials.ChebyshevT(n - 1, x)
+                    );
+                }
+            }
+        }
+
+        [TestMethod]
+        public void ChebyshevTRecurrence () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 10)) {
                 foreach (double x in bArguments) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ChebyshevT(n + 1, x), 2.0 * x * OrthogonalPolynomials.ChebyshevT(n, x) - OrthogonalPolynomials.ChebyshevT(n - 1, x)));
                 }
@@ -391,9 +487,9 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ChebyshevReflection () {
-            foreach (int n in orders) {
-                foreach (double x in bArguments) {
+        public void ChebyshevTReflection () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 10)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 4)) {
                     if (n % 2 == 0) {
                         Assert.IsTrue(OrthogonalPolynomials.ChebyshevT(n, -x) == OrthogonalPolynomials.ChebyshevT(n, x));
                     } else {
@@ -404,18 +500,49 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ChebyshevDoubling () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1,100,5)) {
+        public void ChebyshevTOrderDoubling () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1 , 100, 6)) {
                 foreach (double x in bArguments) {
-                    Console.WriteLine("n={0}, x={1}, T2={2}, T1={3}", n, x, OrthogonalPolynomials.ChebyshevT(2 * n, x), OrthogonalPolynomials.ChebyshevT(n, 1.0 - 2 * x * x));
                     if (n % 2 == 0) {
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ChebyshevT(2 * n, x), OrthogonalPolynomials.ChebyshevT(n, 1.0 - 2 * x * x)));
                     } else {
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ChebyshevT(2 * n, x), -OrthogonalPolynomials.ChebyshevT(n, 1.0 - 2 * x * x)));
                     }
-                    //Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ChebyshevT(2 * n, Math.Sqrt((x + 1.0) / 2.0)), OrthogonalPolynomials.ChebyshevT(n, x)));
                 }
             }
+        }
+
+        [TestMethod]
+        public void ChebyshevTProduct () {
+            // 2 T_m(x) T_n(x) = T_{m + n}(x) + T_{|m - n|}(x)
+            Random rng = new Random(1);
+            foreach (int m in TestUtilities.GenerateIntegerValues(1, 100, 6, rng)) {
+                foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5, rng)) {
+                    foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, 1.0, 4)) {
+                        Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                            OrthogonalPolynomials.ChebyshevT(m + n, x), OrthogonalPolynomials.ChebyshevT(Math.Abs(m - n), x),
+                            2.0 * OrthogonalPolynomials.ChebyshevT(m, x) * OrthogonalPolynomials.ChebyshevT(n, x)
+                        ));
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void ChebyshevTPermutability () {
+            // An unusual feature of Chebyshev polynomials is that T_n(T_m(x)) = T_m(T_n(x)).
+            // This is a consequence of T_n(T_m(x)) = T_{n m}(x).
+            Random rng = new Random(1);
+            foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, 1.0, 4)) {
+                foreach (int n in TestUtilities.GenerateIntegerValues(1, 16, 3, rng)) {
+                    foreach (int m in TestUtilities.GenerateIntegerValues(1, 16, 3, rng)) {
+                        double y1 = OrthogonalPolynomials.ChebyshevT(n, OrthogonalPolynomials.ChebyshevT(m, x));
+                        double y2 = OrthogonalPolynomials.ChebyshevT(m, OrthogonalPolynomials.ChebyshevT(n, x));
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(y1, y2, 1.0E-8));
+                    }
+                }
+            }
+
         }
 
         [TestMethod]
@@ -457,10 +584,10 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ChebyshevCosine () {
-            // test T_n(cos t) = cos(n t)
+        public void ChebyshevTCosine () {
+            // A&S 22.3.15: T_n(cos t) = cos(n t)
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 5)) {
-                foreach (double t in GenerateRandomAngles(-Math.PI, Math.PI, 5)) {
+                foreach (double t in TestUtilities.GenerateUniformRealValues(-Math.PI, Math.PI, 5)) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ChebyshevT(n, Math.Cos(t)), Math.Cos(n * t)));
                 }
             }
@@ -468,44 +595,139 @@ namespace Test {
 
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentOutOfRangeException))]
-        public void ChebyshevInvalidArgument () {
-            OrthogonalPolynomials.ChebyshevT(2, -1.1);
+        public void ChebyshevTInvalidArguments () {
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.ChebyshevT(-1, 0.5));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.ChebyshevT(2, -1.1));
         }
 
-        // orthonormality test for chebyshev fails because endpoint singularity of weight causes
+        // Orthonormality test for chebyshev fails because endpoint singularity of weight causes
         // the numerical integral not to converge
 
+        [TestMethod]
+        public void ChebyshevULowOrders () {
+            foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, 1.0, 8)) {
+                Assert.IsTrue(OrthogonalPolynomials.ChebyshevU(0, x) == 1.0);
+                Assert.IsTrue(OrthogonalPolynomials.ChebyshevU(1, x) == 2.0 * x);
+            }
+        }
+
+        [TestMethod]
+        public void ChebyshevUStandardization() {
+            // A&S 2.2.5
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 8)) {
+                Assert.IsTrue(OrthogonalPolynomials.ChebyshevU(n, 1.0) == n + 1);
+            }
+        }
+
+        [TestMethod]
+        public void ChebyshevUOrthonormality () {
+            // A&S 22.2.5
+            int[] orders = TestUtilities.GenerateIntegerValues(1, 100, 4);
+            foreach (int m in orders) {
+                foreach (int n in orders) {
+                    double I = FunctionMath.Integrate((double x) => Math.Sqrt((1.0 + x) * (1.0 - x)) * OrthogonalPolynomials.ChebyshevU(m, x) * OrthogonalPolynomials.ChebyshevU(n, x), -1.0, +1.0);
+                    if (m == n) {
+                        Assert.IsTrue(TestUtilities.IsNearlyEqual(I, Math.PI / 2.0));
+                    } else {
+                        Assert.IsTrue(Math.Abs(I) < TestUtilities.TargetPrecision);
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void ChebyshevUReflection() {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 10)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 4)) {
+                    if (n % 2 == 0) {
+                        Assert.IsTrue(OrthogonalPolynomials.ChebyshevU(n, -x) == OrthogonalPolynomials.ChebyshevU(n, x));
+                    } else {
+                        Assert.IsTrue(OrthogonalPolynomials.ChebyshevU(n, -x) == -OrthogonalPolynomials.ChebyshevU(n, x));
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void ChebyshevUTuranEquality() {
+            // For Chebyshev U, the difference of the two sides of the Turan inequality is known to be 1.
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
+                foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, +1.0, 4)) {
+                    Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                        OrthogonalPolynomials.ChebyshevU(n + 1, x) * OrthogonalPolynomials.ChebyshevU(n - 1, x), 1.0,
+                        MoreMath.Sqr(OrthogonalPolynomials.ChebyshevU(n, x))
+                    ));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void ChebyshevUChebyshevTRelationship () {
+            // A&S 22.5.6
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
+                foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, +1.0, 4)) {
+                    Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                        OrthogonalPolynomials.ChebyshevU(n, x), - x * OrthogonalPolynomials.ChebyshevU(n - 1, x),
+                        OrthogonalPolynomials.ChebyshevT(n, x)
+                    ));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void ChebyshevUInvalidArguments() {
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.ChebyshevU(-1, 0.0));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.ChebyshevU(0, -1.1));
+        }
 
         // Legendre
 
         [TestMethod]
-        public void LegendreSpecialCases () {
-            foreach (double x in bArguments) {
+        public void LegendreLowOrders () {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0, 4)) {
                 Assert.IsTrue(OrthogonalPolynomials.LegendreP(0, x) == 1.0);
                 Assert.IsTrue(OrthogonalPolynomials.LegendreP(1, x) == x);
             }
-            foreach (int n in orders) {
+        }
+
+        [TestMethod]
+        public void LegendreStandardization() {
+            // A&S 22.2.10
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 8)) {
                 Assert.IsTrue(OrthogonalPolynomials.LegendreP(n, 1.0) == 1.0);
             }
         }
 
         [TestMethod]
+        public void LegendreSpecialCases () {
+            // Values at 0, A&S 22.4.6
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 8)) {
+                if (n % 2 == 0) {
+                    int m = n / 2;
+                    int s = (m % 2 == 0) ? 1 : -1;
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(n, 0.0), s * AdvancedIntegerMath.BinomialCoefficient(n, m) / MoreMath.Pow(2.0, n)));
+                } else {
+                    Assert.IsTrue(OrthogonalPolynomials.LegendreP(n, 0.0) == 0.0);
+                }
+            }
+        }
+
+        [TestMethod]
         public void LegendreInequality () {
-            foreach (int n in orders) {
-                foreach (double x in bArguments) {
+            // A&S 22.14.7
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 8)) {
+                foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, 1.0, 8)) {
                     Assert.IsTrue(Math.Abs(OrthogonalPolynomials.LegendreP(n, x)) <= 1.0);
                 }
             }
         }
 
         [TestMethod]
-        public void LegendreTuronInequality () {
-            foreach (int n in orders) {
-                foreach (double x in bArguments) {
+        public void LegendreTuranInequality () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 8)) {
+                foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, 1.0, 8)) {
                     Assert.IsTrue(
-                        MoreMath.Pow(OrthogonalPolynomials.LegendreP(n, x), 2) >=
-                        OrthogonalPolynomials.LegendreP(n - 1, x) * OrthogonalPolynomials.LegendreP(n + 1, x)
+                        MoreMath.Sqr(OrthogonalPolynomials.LegendreP(n, x)) >= OrthogonalPolynomials.LegendreP(n + 1, x) * OrthogonalPolynomials.LegendreP(n - 1, x)
                     );
                 }
             }
@@ -513,17 +735,20 @@ namespace Test {
 
         [TestMethod]
         public void LegendreRecurrence () {
-            foreach (int n in orders) {
-                foreach (double x in bArguments) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual((n + 1) * OrthogonalPolynomials.LegendreP(n + 1, x), (2 * n + 1) * x * OrthogonalPolynomials.LegendreP(n, x) - n * OrthogonalPolynomials.LegendreP(n - 1, x)));
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 8)) {
+                foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, 1.0, 8)) {
+                    Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
+                        (2 * n + 1) * x * OrthogonalPolynomials.LegendreP(n, x), -n * OrthogonalPolynomials.LegendreP(n - 1, x),
+                        (n + 1) * OrthogonalPolynomials.LegendreP(n + 1, x)
+                    ));
                 }
             }
         }
 
         [TestMethod]
         public void LegendreReflection () {
-            foreach (int n in orders) {
-                foreach (double x in bArguments) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 4)) {
+                foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0, 4)) {
                     if (n % 2 == 0) {
                         Assert.IsTrue(OrthogonalPolynomials.LegendreP(n, -x) == OrthogonalPolynomials.LegendreP(n, x));
                     } else {
@@ -535,8 +760,8 @@ namespace Test {
 
         [TestMethod]
         public void LegendreNegativeOrder () {
-            foreach (int n in orders) {
-                foreach (double x in bArguments) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 8)) {
+                foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, 1.0, 8)) {
                     Assert.IsTrue(OrthogonalPolynomials.LegendreP(-n, x) == OrthogonalPolynomials.LegendreP(n - 1, x));
                 }
             }
@@ -551,14 +776,12 @@ namespace Test {
 
         [TestMethod]
         public void LegendreOrthonormality () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 3)) {
-                foreach (int m in TestUtilities.GenerateIntegerValues(1, 100, 3)) {
-                    Func<double, double> f = delegate(double x) {
-                        return (OrthogonalPolynomials.LegendreP(n, x) * OrthogonalPolynomials.LegendreP(m, x));
-                    };
+            int[] orders = TestUtilities.GenerateIntegerValues(1, 100, 4);
+            foreach (int n in orders) {
+                foreach (int m in orders) {
+                    Func<double, double> f = (double x) => OrthogonalPolynomials.LegendreP(n, x) * OrthogonalPolynomials.LegendreP(m, x);
                     Interval r = Interval.FromEndpoints(-1.0, 1.0);
                     double I = FunctionMath.Integrate(f, r);
-                    Console.WriteLine("{0} {1} {2}", n, m, I);
                     if (n == m) {
                         Assert.IsTrue(TestUtilities.IsNearlyEqual(I, 2.0 / (2 * n + 1)));
                     } else {
@@ -566,6 +789,75 @@ namespace Test {
                     }
                 }
             }
+        }
+
+        [TestMethod]
+        public void GegenbauerLowOrders() {
+            foreach (double alpha in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 4))
+                foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, 1.0, 4)) {
+                    Assert.IsTrue(OrthogonalPolynomials.GegenbauerC(0, alpha, x) == 1.0);
+                    Assert.IsTrue(OrthogonalPolynomials.GegenbauerC(1, alpha, x) == 2.0 * alpha * x);
+                }
+        }
+
+        [TestMethod]
+        public void GegenbauerOrthonormality () {
+            int[] orders = TestUtilities.GenerateIntegerValues(1, 100, 4);
+            foreach (int n in orders) {
+                foreach (int m in orders) {
+                    foreach (double alpha in TestUtilities.GenerateUniformRealValues(0.0, 2.0, 4)) {
+
+                        IntegrationResult r = FunctionMath.Integrate(
+                            x => OrthogonalPolynomials.GegenbauerC(n, alpha, x) * OrthogonalPolynomials.GegenbauerC(m, alpha, x) * Math.Pow((1.0 - x) * (1.0 + x), alpha - 0.5),
+                            -1.0, 1.0
+                        );
+
+                        if (n == m) {
+                            Assert.IsTrue(TestUtilities.IsNearlyEqual(r.Value,
+                                Math.PI * Math.Pow(2.0, 1.0 - 2.0 * alpha) / (n + alpha) * AdvancedMath.Gamma(n + 2.0 * alpha) / MoreMath.Sqr(AdvancedMath.Gamma(alpha)) / AdvancedIntegerMath.Factorial(n),
+                                Math.Sqrt(TestUtilities.TargetPrecision)
+                            ));
+                        } else {
+                            Assert.IsTrue(Math.Abs(r.Value) < Math.Sqrt(TestUtilities.TargetPrecision));
+                        }
+
+                    }
+                }
+            }
+        } 
+
+        [TestMethod]
+        public void GegenbauerAgreement () {
+            double alpha = 1.0 / Math.Sqrt(Double.MaxValue);
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
+                foreach (double x in TestUtilities.GenerateUniformRealValues(-1.0, 1.0, 8)) {
+
+                    // A&S 22.5.36
+                    // P_n(x) = C^{(1/2)})_n(x)
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(n, x), OrthogonalPolynomials.GegenbauerC(n, 1.0 / 2.0, x)));
+
+                    // A&S 22.5.33
+                    // T_n(x) = \lim_{\alpha \rightarrow 0} \frac{n}{2\alpha} C^{(\alpha)}_n(x)
+                    // Since C^{(0)}_n(x) vanishes, this relationship must be defined via a limit.
+                    // We take a value of alpha such that its square will always vanish.
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ChebyshevT(n, x), n / 2.0 * OrthogonalPolynomials.GegenbauerC(n, alpha, x) / alpha));
+
+                    // Bizarrely, A&S 22.5.4 defines C^{(0)}_n(x) = \lim_{\alpha \rightarrow 0} C^{(\alpha)}_n(x) / \alpha, which means
+                    // C^{(0)}_n(x) (read one way) does not equal C^{(0)}_n(x) (read the other way). It is only because of this re-definition
+                    // that A&S 22.5.33 holds, which confused me for a while.
+
+                    // A&S 22.5.34
+                    Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ChebyshevU(n, x), OrthogonalPolynomials.GegenbauerC(n, 1.0, x)));
+                }
+            }
+
+        }
+
+        [TestMethod]
+        public void GegenbauerInvalidArguments () {
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.GegenbauerC(-1, 0.0, 0.0));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.GegenbauerC(0, -1.0, 0.0));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.GegenbauerC(0, 0, -1.1));
         }
 
         // spherical harmonics
@@ -677,13 +969,13 @@ namespace Test {
         }
 
         [TestMethod]
-        public void ZernikeSpecialCases () {
-
+        public void ZernikeLowOrders () {
             foreach (double x in TestUtilities.GenerateUniformRealValues(0.0, 1.0, 4)) {
-                Console.WriteLine(x);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(0, 0, x), 1.0));
+                Assert.IsTrue(OrthogonalPolynomials.ZernikeR(0, 0, x) == 1.0);
+                Assert.IsTrue(OrthogonalPolynomials.ZernikeR(1, 0, x) == 0.0);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(1, 1, x), x));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(2, 0, x), 2.0 * x * x - 1.0));
+                Assert.IsTrue(OrthogonalPolynomials.ZernikeR(2, 1, x) == 0.0);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(2, 2, x), x * x));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(3, 1, x), 3.0 * x * x * x - 2.0 * x));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(3, 3, x), x * x * x));
@@ -691,7 +983,6 @@ namespace Test {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(4, 2, x), 4.0 * x * x * x * x - 3.0 * x * x));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.ZernikeR(4, 4, x), x * x * x * x));
             }
-
         }
 
         [TestMethod]
@@ -765,19 +1056,21 @@ namespace Test {
         }
 
         [TestMethod]
+        public void ZernickeInvalidArguments () {
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.ZernikeR(-1, 0, 0.0));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => OrthogonalPolynomials.ZernikeR(0, 0, 1.1));
+        }
+
+        [TestMethod]
         public void AssociatedLegendreLowOrders () {
-
             foreach (double x in TestUtilities.GenerateRealValues(0.01, 1.0, 10)) {
-
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(0, 0, x), 1.0));
+                Assert.IsTrue(OrthogonalPolynomials.LegendreP(0, 0, x) == 1.0);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(1, 0, x), x));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(1, 1, x), -Math.Sqrt(1.0 - x * x)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(2, 0, x), (3.0 * x * x - 1.0) / 2.0));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(2, 1, x), -3.0 * x * Math.Sqrt(1.0 - x * x)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(OrthogonalPolynomials.LegendreP(2, 2, x), 3.0 * (1.0 - x * x)));
-
             }
-
         }
 
         [TestMethod]

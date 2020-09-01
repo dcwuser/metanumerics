@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard1.1</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Meta.Numerics</AssemblyName>
     <RootNamespace>Meta.Numerics</RootNamespace>
-    <Version>4.1.4</Version>
+    <Version>5.0.0</Version>
     <Copyright>Copyright © David Wright 2008-2020</Copyright>
     <Authors>David Wright</Authors>
     <Company>Meta Numerics</Company>
@@ -15,8 +15,9 @@
     <RepositoryUrl>https://github.com/dcwuser/metanumerics</RepositoryUrl>
     <DebugType>portable</DebugType>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageLicenseUrl>https://opensource.org/licenses/MS-PL</PackageLicenseUrl>
+    <PackageLicenseUrl></PackageLicenseUrl>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageLicenseExpression>MS-PL</PackageLicenseExpression>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

@@ -14,7 +14,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// in n independent Bernoulli trials in which the probability of success in each trial is p.</para>
     /// <img src="../images/BernoulliBinomialRelation.png" />
     /// <para>Therefore, for a single trial, the binomial distribution reduces to a Bernoulli distribution (<see cref="BernoulliDistribution"/>).</para>
-    /// <para>The test statistic for a sign test (<see cref="Sample.SignTest"/>) is distributed according to the Binomial distribution.</para>
+    /// <para>The test statistic for a sign test (<see cref="Univariate.SignTest"/>) is distributed according to the binomial distribution.</para>
     /// </remarks>
     /// <seealso href="http://mathworld.wolfram.com/BinomialDistribution.html"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Binomial_distribution"/>
@@ -39,16 +39,16 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double ProbabilityMass (int k) {
             if ((k < 0) || (k > n)) {
-                return (0.0);
+                return 0.0;
             } else {
                 int nmk = n - k;
                 if ((k > 16) && (nmk > 16)) {
                     // For large arguments, use cancellation-corrected Stirling series to
                     // avoid overflow and preserve accuracy.
-                    return (Stirling.BinomialProbability(p, k, q, nmk));
+                    return Stirling.BinomialProbability(p, k, q, nmk);
                 } else {
                     // Otherwise, fall back to direct evaluation.
-                    return (AdvancedIntegerMath.BinomialCoefficient(n, k) * MoreMath.Pow(p, k) * MoreMath.Pow(q, n - k));
+                    return AdvancedIntegerMath.BinomialCoefficient(n, k) * MoreMath.Pow(p, k) * MoreMath.Pow(q, n - k);
                 }
             }
         }
@@ -56,28 +56,28 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override DiscreteInterval Support {
             get {
-                return (new DiscreteInterval(0, n));
+                return new DiscreteInterval(0, n);
             }
         }
 
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (n * p);
+                return n * p;
             }
         }
 
         /// <inheritdoc />
         public override double Variance {
             get {
-                return (n * p * q);
+                return n * p * q;
             }
         }
 
         /// <inheritdoc />
         public override double Skewness {
             get {
-                return ((q - p) / Math.Sqrt(n * p * q));
+                return (q - p) / Math.Sqrt(n * p * q);
             }
         }
 
@@ -87,13 +87,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else {
 
                 if (n < 2 * r) {
 
                     // If n is small, just do a weighted sum over the support.
-                    return (ExpectationValue(delegate (int k) { return (MoreMath.Pow(k, r)); }));
+                    return ExpectationValue((int k) => MoreMath.Pow(k, r));
 
                 } else {
 
@@ -110,7 +110,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                         t *= (n - (k - 1)) * p;
                         M += s[k] * t;
                     }
-                    return (M);
+                    return M;
                 }
                 
             }
@@ -134,12 +134,12 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else if (r == 1) {
-                return (0.0);
+                return 0.0;
             } else {
                 double[] C = CentralMoments(r);
-                return (C[r]);
+                return C[r];
             }
         }
 
@@ -170,24 +170,24 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double LeftExclusiveProbability (int k) {
             if (k <= 0) {
-                return (0.0);
+                return 0.0;
             } else if (k > n) {
-                return (1.0);
+                return 1.0;
             } else {
                 // use direct summation in tails
-                return (AdvancedMath.LeftRegularizedBeta(n - k + 1, k, q));
+                return AdvancedMath.LeftRegularizedBeta(n - k + 1, k, q);
             }
         }
 
         /// <inheritdoc />
         public override double RightExclusiveProbability (int k) {
             if (k < 0) {
-                return (1.0);
+                return 1.0;
             } else if (k >= n) {
-                return (0.0);
+                return 0.0;
             } else {
                 // use direct summation in tails
-                return (AdvancedMath.LeftRegularizedBeta(k + 1, n - k, p));
+                return AdvancedMath.LeftRegularizedBeta(k + 1, n - k, p);
             }
         }
 

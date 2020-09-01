@@ -33,34 +33,34 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override DiscreteInterval Support {
             get {
-                return (new DiscreteInterval(0, Int32.MaxValue));
+                return DiscreteInterval.Semiinfinite;
             }
         }
 
         /// <inheritdoc />
         public override double ProbabilityMass (int k) {
             if (k < 0) {
-                return (0.0);
+                return 0.0;
             } else {
-                return (p * MoreMath.Pow(q, k));
+                return p * MoreMath.Pow(q, k);
             }
         }
 
         /// <inheritdoc />
         public override double LeftExclusiveProbability (int k) {
             if (k <= 0) {
-                return (0.0);
+                return 0.0;
             } else {
-                return (1.0 - MoreMath.Pow(q, k));
+                return 1.0 - MoreMath.Pow(q, k);
             }
         }
 
         /// <inheritdoc />
         public override double RightExclusiveProbability (int k) {
             if (k < 0) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (MoreMath.Pow(q, k + 1));
+                return MoreMath.Pow(q, k + 1);
             }
         }
 
@@ -73,28 +73,28 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (q / p);
+                return q / p;
             }
         }
 
         /// <inheritdoc />
         public override double Variance {
             get {
-                return (q / (p * p));
+                return q / (p * p);
             }
         }
 
         /// <inheritdoc />
         public override double StandardDeviation {
             get {
-                return (Math.Sqrt(q) / p);
+                return Math.Sqrt(q) / p;
             }
         }
 
         /// <inheritdoc />
         public override double Skewness {
             get {
-                return ((2.0 - p) / Math.Sqrt(q));
+                return (2.0 - p) / Math.Sqrt(q);
             }
         }
 
@@ -114,9 +114,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (q * EulerianPolynomial(r, q) / MoreMath.Pow(p, r));
+                return q * EulerianPolynomial(r, q) / MoreMath.Pow(p, r);
             }
         }
 
@@ -130,11 +130,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (0.0);
+                return 0.0;
             } else if (r == 1) {
-                return (q / p);
+                return q / p;
             } else {
-                return (q * EulerianPolynomial(r - 1, q) / MoreMath.Pow(p, r));
+                return q * EulerianPolynomial(r - 1, q) / MoreMath.Pow(p, r);
             }
         }
 

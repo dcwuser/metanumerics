@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 
 namespace Meta.Numerics {
@@ -11,14 +11,14 @@ namespace Meta.Numerics {
     /// <para>Use the static methods <see cref="FromEndpoints"/>, <see cref="FromMidpointAndWidth"/>,
     /// and <see cref="FromEndpointAndWidth"/> to instantiate intervals.</para>
     /// </remarks>
-    public struct Interval : IEquatable<Interval> {
+    public readonly struct Interval : IEquatable<Interval> {
 
-        private readonly double a, b, w;
+        private readonly double a, b;
 
-        private Interval (double a, double b, double w) {
+        private Interval (double a, double b) {
+            Debug.Assert(a <= b);
             this.a = a;
             this.b = b;
-            this.w = w;
         }
 
         /// <summary>
@@ -26,7 +26,7 @@ namespace Meta.Numerics {
         /// </summary>
         public double LeftEndpoint {
             get {
-                return (a);
+                return a;
             }
         }
 
@@ -35,7 +35,7 @@ namespace Meta.Numerics {
         /// </summary>
         public double RightEndpoint {
             get {
-                return (b);
+                return b;
             }
         }
 
@@ -85,7 +85,7 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>True if <paramref name="x"/> lies in (a,b), otherwise False.</returns>
         public bool OpenContains (double x) {
-            return ((x > a) && (x < b));
+            return (x > a) && (x < b);
         }
         /// <summary>
         /// Determines whether the argument lies in the closed interval.
@@ -93,7 +93,7 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>True if <paramref name="x"/> lies in [a,b], otherwise False.</returns>
         public bool ClosedContains (double x) {
-            return ((x >= a) && (x <= b));
+            return (x >= a) && (x <= b);
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace Meta.Numerics {
         /// </summary>
         public double Width {
             get {
-                return (w);
+                return b - a;
             }
         }
 
@@ -123,9 +123,9 @@ namespace Meta.Numerics {
         /// <remarks>If width of the interval is very much smaller than its endpoint values, accuracy will be better maintained by constructing the interval using one endpoint and its width.</remarks>
         public static Interval FromEndpoints (double a, double b) {
             if (b >= a) {
-                return (new Interval(a, b, b - a));
+                return new Interval(a, b);
             } else {
-                return (new Interval(b, a, a - b));
+                return new Interval(b, a);
             }
         }
 
@@ -137,9 +137,9 @@ namespace Meta.Numerics {
         /// <returns>The specified interval.</returns>
         public static Interval FromEndpointAndWidth (double endpoint, double width) {
             if (width < 0.0) {
-                return (new Interval(endpoint + width, endpoint, -width));
+                return new Interval(endpoint + width, endpoint);
             } else {
-                return (new Interval(endpoint, endpoint+width, width));
+                return new Interval(endpoint, endpoint+width);
             }
         }
 
@@ -152,16 +152,16 @@ namespace Meta.Numerics {
         /// <returns>The specified interval.</returns>
         public static Interval FromMidpointAndWidth (double midpoint, double width) {
             if (width < 0.0) {
-                return (FromMidpointAndWidth(midpoint, -width));
+                return FromMidpointAndWidth(midpoint, -width);
             } else {
-                return (new Interval(midpoint - width / 2.0, midpoint + width / 2.0, width));
+                return new Interval(midpoint - 0.5 * width, midpoint + 0.5 * width);
             }
         }
 
         // equality
 
         private static bool Equals (Interval u, Interval v) {
-            return ((u.a == v.a) && (u.w == v.w));
+            return (u.a == v.a) && (u.b == v.b);
         }
 
         /// <summary>
@@ -208,7 +208,7 @@ namespace Meta.Numerics {
 
         /// <inheritdoc />
         public override int GetHashCode () {
-            return a.GetHashCode() ^ w.GetHashCode();
+            return unchecked(a.GetHashCode() + 31 * b.GetHashCode());
         }
 
         /// <summary>
@@ -219,9 +219,19 @@ namespace Meta.Numerics {
             return ToString(CultureInfo.CurrentCulture);
         }
 
-        private string ToString (IFormatProvider format) {
-            return String.Format(CultureInfo.CurrentCulture, "[{0},{1}]", a, b);
+        private string ToString (IFormatProvider provider) {
+            return String.Format(provider, "[{0},{1}]", a, b);
         }
+
+        /// <summary>
+        /// The entire number line.
+        /// </summary>
+        public static readonly Interval Infinite = new Interval(Double.NegativeInfinity, Double.PositiveInfinity);
+
+        /// <summary>
+        /// The number line from zero to positive infinity.
+        /// </summary>
+        public static readonly Interval Semiinfinite = new Interval(0.0, Double.PositiveInfinity);
 
 #if SHO
         /// <summary>

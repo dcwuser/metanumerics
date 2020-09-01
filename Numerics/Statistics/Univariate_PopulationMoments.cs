@@ -188,23 +188,12 @@ namespace Meta.Numerics.Statistics {
         private static UncertainValue EstimateSecondCumulant (IEnumerable<double> sample) {
             Debug.Assert(sample != null);
 
-            int n;
-            double m1, c2, c3, c4;
-            ComputeMomentsUpToFourth(sample, out n, out m1, out c2, out c3, out c4);
+            ComputeMomentsUpToFourth(sample, out int n, out double m1, out double c2, out double c3, out double c4);
             Debug.Assert(c2 >= 0.0);
             Debug.Assert(c4 >= 0.0);
-            /*
-            double m1p = Mean(sample);
-            double c2p = CentralMoment(sample, 2);
-            double c3p = CentralMoment(sample, 3);
-            double c4p = CentralMoment(sample, 4);
-            c4 = c4p;
-            c2 = c2p;
-            */
             double k2 = c2 * n / (n - 1);
             double v = c4 - c2 * c2;
             Debug.Assert(v >= 0.0);
-
             return (new UncertainValue(k2, Math.Sqrt(v / (n - 1))));
         }
 

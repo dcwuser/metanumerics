@@ -41,7 +41,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override DiscreteInterval Support {
             get {
-                return (new DiscreteInterval(0, Int32.MaxValue));
+                return DiscreteInterval.Semiinfinite;
             }
         }
 
@@ -62,7 +62,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (p * r / q);
+                return p * r / q;
             }
         }
 
@@ -87,30 +87,30 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double RightExclusiveProbability (int k) {
             if (k < 0) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (AdvancedMath.LeftRegularizedBeta(k + 1, r, p));
+                return AdvancedMath.LeftRegularizedBeta(k + 1, r, p);
             }
         }
 
         /// <inheritdoc />
         public override double Variance {
             get {
-                return (p * r / (q * q));
+                return p * r / (q * q);
             }
         }
 
         /// <inheritdoc />
         public override double StandardDeviation {
             get {
-                return (Math.Sqrt(p * r) / q);
+                return Math.Sqrt(p * r) / q;
             }
         }
 
         /// <inheritdoc />
         public override double Skewness {
             get {
-                return ((1.0 + p) / Math.Sqrt(p * r));
+                return (1.0 + p) / Math.Sqrt(p * r);
             }
         }
 
@@ -121,7 +121,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (k < 0) {
                 throw new ArgumentOutOfRangeException(nameof(k));
             } else if (k == 0) {
-                return (1.0);
+                return 1.0;
             } else {
 
                 // The (falling) factorial moments of the negative binomial distribution
@@ -138,7 +138,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                     t *= f * (r + i - 1);
                     M += s[i] * t;
                 }
-                return (M);
+                return M;
 
             }
         }

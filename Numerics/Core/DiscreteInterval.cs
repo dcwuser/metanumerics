@@ -7,7 +7,7 @@ namespace Meta.Numerics {
     /// <summary>
     /// Represents an interval on the integers.
     /// </summary>
-    public struct DiscreteInterval : IEquatable<DiscreteInterval> {
+    public readonly struct DiscreteInterval : IEquatable<DiscreteInterval> {
 
         internal DiscreteInterval (int min, int max) {
             Debug.Assert(max >= min);
@@ -16,7 +16,6 @@ namespace Meta.Numerics {
         }
 
         private readonly int min;
-
         private readonly int max;
 
         /// <summary>
@@ -26,7 +25,11 @@ namespace Meta.Numerics {
         /// <param name="b">The other endpoint.</param>
         /// <returns>A discrete interval between the given endpoints.</returns>
         public static DiscreteInterval FromEndpoints (int a, int b) {
-            return (new DiscreteInterval(Math.Min(a, b), Math.Max(a, b)));
+            if (a > b) {
+                return new DiscreteInterval(b, a);
+            } else {
+                return new DiscreteInterval(a, b);
+            }
         }
 
         /// <summary>
@@ -34,7 +37,7 @@ namespace Meta.Numerics {
         /// </summary>
         public int LeftEndpoint {
             get {
-                return (min);
+                return min;
             }
         }
 
@@ -43,29 +46,41 @@ namespace Meta.Numerics {
         /// </summary>
         public int RightEndpoint {
             get {
-                return (max);
+                return max;
             }
         }
 
         /// <summary>
         /// Gets the width of the interval.
         /// </summary>
+        /// <remarks>
+        /// <para>The width of the interval is the difference between <see cref="LeftEndpoint"/> and <see cref="RightEndpoint"/>.
+        /// This is one less than the number of integers in the interval. Thus an interval with equal left and right endpoints
+        /// has width 0, not width 1. And and the interval {0 .. MaxValue} has width MaxValue, not MaxValue + 1. (Note that
+        /// this is quite helpful because the later would overflow and many discrete distribution do cover that range.)</para>
+        /// </remarks>
         internal int Width {
             get {
+                // This can still overflow if, e.g. max = MaxValue and min < 0.
+                return max - min;
                 // For [0, Int32.MaxValue], w will overflow. Since Int32.MaxValue is our integer "infinity",
                 // just reset it to that value.
-                int w = max - min + 1;
-                if (w < 0) w = Int32.MaxValue;
-                return (w);
+                //int w = max - min + 1;
+                //if (w < 0) w = Int32.MaxValue;
+                //return w;
             }
         }
+
+        /// <summary>
+        /// The semi-infinite discrete interval representing all non-negative integers.
+        /// </summary>
+        public static readonly DiscreteInterval Semiinfinite = new DiscreteInterval(0, Int32.MaxValue);
 
         // Equality
 
         private static bool Equals (DiscreteInterval u, DiscreteInterval v) {
             return (u.min == v.min) && (u.max == v.max);
         }
-
 
         /// <summary>
         /// Tests whether two discrete intervals are equal.
@@ -111,9 +126,7 @@ namespace Meta.Numerics {
 
         /// <inheritdoc />
         public override int GetHashCode () {
-            unchecked {
-                return (min.GetHashCode() + 31 * max.GetHashCode());
-            }
+            return unchecked(min.GetHashCode() + 31 * max.GetHashCode());
         }
 
         /// <inheritdoc />
@@ -121,8 +134,8 @@ namespace Meta.Numerics {
             return ToString(CultureInfo.CurrentCulture);
         }
 
-        private string ToString (IFormatProvider format) {
-            return String.Format(format, "{{{0}..{1}}}", min, max);
+        private string ToString (IFormatProvider provider) {
+            return String.Format(provider, "{{{0}..{1}}}", min, max);
         }
 
     }

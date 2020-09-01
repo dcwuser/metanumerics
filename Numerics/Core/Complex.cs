@@ -15,17 +15,17 @@ namespace Meta.Numerics {
     /// complex type and the .NET Framework complex type can be used interchangably, because Meta.Numerics defines an
     /// implicit cast between them.</para>
     /// </remarks>
-    public struct Complex : IEquatable<Complex> {
+    public readonly struct Complex : IEquatable<Complex> {
 
-        private double re;
-        private double im;
+        private readonly double re;
+        private readonly double im;
 
         /// <summary>
         /// Gets the real part of the complex number.
         /// </summary>
         public double Re {
             get {
-                return (re);
+                return re;
             }
         }
 
@@ -34,7 +34,7 @@ namespace Meta.Numerics {
         /// </summary>
         public double Im {
             get {
-                return (im);
+                return im;
             }
         }
 
@@ -43,7 +43,7 @@ namespace Meta.Numerics {
         /// </summary>
 		public Complex Conjugate {
 			get {
-				return( new Complex(re,-im) );
+				return new Complex(re,-im);
 			}
 		}
 
@@ -69,7 +69,7 @@ namespace Meta.Numerics {
         /// <exception cref="InvalidCastException">z.Im &#x2260; 0</exception>
 		public static explicit operator double (Complex z) {
 			if (z.Im != 0.0) throw new InvalidCastException("Complex casts to real must have vanishing imaginary parts.");
-			return(z.Re);
+			return z.Re;
 		}
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace Meta.Numerics {
         /// <para>This is an implicit cast; the compiler will apply it automatically whenever a real number is given in a situation
         /// where a complex number is required.</para></remarks>
 		public static implicit operator Complex (double x) {
-			return( new Complex(x,0.0) );
+			return new Complex(x, 0.0);
 		}
 
 
@@ -101,7 +101,7 @@ namespace Meta.Numerics {
         /// the Meta.Numerics Complex type.</para>
         /// </remarks>
         public static implicit operator Complex (NetComplex value) {
-           return (new Complex(value.Real, value.Imaginary));
+           return new Complex(value.Real, value.Imaginary);
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace Meta.Numerics {
         /// the Meta.Numerics Complex type.</para>
         /// </remarks>
         public static implicit operator NetComplex (Complex value) {
-            return (new NetComplex(value.Re, value.Im));
+            return new NetComplex(value.Re, value.Im);
         }
 
 		// printing
@@ -130,7 +130,7 @@ namespace Meta.Numerics {
         /// </summary>
         /// <returns>A string represenation of the complex number.</returns>
 		public override string ToString () {
-            return (String.Format(CultureInfo.CurrentCulture, "({0},{1})", re, im));
+            return String.Format(CultureInfo.CurrentCulture, "({0},{1})", re, im);
 		}
 
 #if SHO
@@ -154,13 +154,13 @@ namespace Meta.Numerics {
         /// <param name="z">The argument.</param>
         /// <returns>The argument times -1.</returns>
 		public static Complex operator- (Complex z) {
-			return( new Complex(-z.re, -z.im) );
+			return new Complex(-z.re, -z.im);
 		}
 
 		// equality operators
 
         private static bool Equals (Complex z1, Complex z2) {
-            return ((z1.re == z2.re) && (z1.im == z2.im));
+            return (z1.re == z2.re) && (z1.im == z2.im);
         }
 
         /// <summary>
@@ -170,7 +170,7 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>True if the two complex numbers are equal, otherwise false.</returns>
         public static bool operator == (Complex z1, Complex z2) {
-            return (Equals(z1, z2));
+            return Equals(z1, z2);
         }
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>False if the two complex numbers are equal, otherwise true.</returns>
         public static bool operator != (Complex z1, Complex z2) {
-            return (!Equals(z1, z2));
+            return !Equals(z1, z2);
        }
 
         /// <summary>
@@ -189,10 +189,10 @@ namespace Meta.Numerics {
         /// <param name="obj">The object to compare.</param>
         /// <returns>True if the object represents the same complex number, otherwise false.</returns>
         public override bool Equals (object obj) {
-            if (obj is Complex) {
-                return (Equals(this, (Complex) obj));
+            if (obj is Complex other) {
+                return Equals(this, other);
             } else {
-                return (false);
+                return false;
             }
         }
 
@@ -202,7 +202,7 @@ namespace Meta.Numerics {
         /// <param name="other">The complex number to compare.</param>
         /// <returns>True if the complex number is the same, otherwise false.</returns>
         public bool Equals (Complex other) {
-            return (Equals(this, other));
+            return Equals(this, other);
         }
 
         /// <summary>
@@ -210,7 +210,7 @@ namespace Meta.Numerics {
         /// </summary>
         /// <returns>A hash code.</returns>
         public override int GetHashCode () {
-            return (Re.GetHashCode() ^ (Im.GetHashCode() * 31));
+            return unchecked (Re.GetHashCode() ^ (Im.GetHashCode() * 31));
         }
 
         /// <summary>
@@ -220,7 +220,7 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>The sum of the complex numbers.</returns>
 		public static Complex operator + (Complex z1, Complex z2) {
-            return (new Complex(z1.re + z2.re, z1.im + z2.im));
+            return new Complex(z1.re + z2.re, z1.im + z2.im);
 		}
 
         /// <summary>
@@ -230,7 +230,7 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>The difference of the complex numbers.</returns>
 		public static Complex operator - (Complex z1, Complex z2) {
-            return (new Complex(z1.re - z2.re, z1.im - z2.im));
+            return new Complex(z1.re - z2.re, z1.im - z2.im);
 		}
 
         /// <summary>
@@ -240,7 +240,7 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>The product of the two complex numbers.</returns>
 		public static Complex operator * (Complex z1, Complex z2) {
-            return (new Complex(z1.re * z2.re - z1.im * z2.im, z1.re * z2.im + z1.im * z2.re));
+            return new Complex(z1.re * z2.re - z1.im * z2.im, z1.re * z2.im + z1.im * z2.re);
 		}
 
         /// <summary>
@@ -250,7 +250,7 @@ namespace Meta.Numerics {
         /// <param name="z2">The second complex number.</param>
         /// <returns>The quotient of the two complex numbers.</returns>
 		public static Complex operator / (Complex z1, Complex z2) {
-            return (Divide(z1, z2));
+            return Divide(z1, z2);
 		}
 
         private static Complex Divide (Complex z1, Complex z2) {
@@ -312,9 +312,9 @@ namespace Meta.Numerics {
         /// <param name="z">The complex number.</param>
         /// <param name="a">The real number.</param>
         /// <returns>The sum z + a.</returns>
-		public static Complex operator+ (Complex z, double a) {
+		public static Complex operator + (Complex z, double a) {
             // This is 1 flop instead of a cast plus 2 flops.
-			return (new Complex(z.Re + a, z.Im));
+			return new Complex(z.Re + a, z.Im);
 		}
 
         /// <summary>
@@ -323,9 +323,9 @@ namespace Meta.Numerics {
         /// <param name="a">The real number.</param>
         /// <param name="z">The complex number.</param>
         /// <returns>The sum a + z.</returns>
-		public static Complex operator+ (double a, Complex z) {
+		public static Complex operator + (double a, Complex z) {
             // This is 1 flop instead a cast plus 2 flops.
-            return (new Complex(a + z.Re, z.Im));
+            return new Complex(a + z.Re, z.Im);
 		}
 
         /*
@@ -348,7 +348,7 @@ namespace Meta.Numerics {
         /// <returns>The product az.</returns>
         public static Complex operator * (double a, Complex z) {
             // This is 2 flops instead of a cast plus 6 flops.
-			return( new Complex(a * z.re, a * z.im) );
+			return new Complex(a * z.re, a * z.im);
 		}
 
         /// <summary>
@@ -358,7 +358,7 @@ namespace Meta.Numerics {
         /// <param name="a">The real number.</param>
         /// <returns>The product za.</returns>
 		public static Complex operator * (Complex z, double a) {
-			return( a * z );
+			return a * z;
 		}
 
         /*
@@ -383,7 +383,7 @@ namespace Meta.Numerics {
         /// <returns>The quotient z / a.</returns>
 		public static Complex operator / (Complex z, double a) {
             // This is 2 flops instead of a cast plus 9 (!) flops.
-			return( new Complex(z.Re / a, z.Im / a) );
+			return new Complex(z.Re / a, z.Im / a);
 		}
 
         /// <summary>
@@ -413,7 +413,7 @@ namespace Meta.Numerics {
         /// either its real or imaginary part is not-a-number. This method tests for such an occurance.</para>
         /// </remarks>
         public static bool IsNaN (Complex z) {
-            return (Double.IsNaN(z.Re) || Double.IsNaN(z.Im));
+            return Double.IsNaN(z.Re) || Double.IsNaN(z.Im);
         }
 
 	}

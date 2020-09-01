@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 using Meta.Numerics.Statistics.Distributions;
@@ -21,7 +22,7 @@ namespace Meta.Numerics.Statistics {
     /// <remarks>
     /// <para>A one way ANOVA test detects the influence of a single factor on the mean of a measured variable, which is assumed
     /// to be normally distributed.</para>
-    /// <para>A one way ANOVA result is returned by the static <see cref="Sample.OneWayAnovaTest(System.Collections.Generic.IReadOnlyCollection{Sample})"/>
+    /// <para>A one way ANOVA result is returned by the static <see cref="Univariate.OneWayAnovaTest(System.Collections.Generic.IReadOnlyCollection{double}[])"/>
     /// method.</para>
     /// <para>Fundamentally, a one-way ANOVA is a simple statistical test like any other, with a single test statistic (F) and
     /// a single associated null distribution (the <see cref="FisherDistribution"/>), but some ANOVA users like to examine and
@@ -45,7 +46,7 @@ namespace Meta.Numerics.Statistics {
     /// Console.WriteLine("P = {0}", anova.Result.Probability);
     /// </code>
     /// </example>
-    /// <seealso cref="Sample.OneWayAnovaTest(System.Collections.Generic.IReadOnlyCollection{Sample})"/>
+    /// <seealso cref="Univariate.OneWayAnovaTest(System.Collections.Generic.IReadOnlyCollection{double}[])"/>
     public sealed class OneWayAnovaResult : IAnovaResult {
 
         internal OneWayAnovaResult (AnovaRow factor, AnovaRow residual, AnovaRow total) {
@@ -78,7 +79,7 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         public TestResult Result {
             get {
-                return (Factor.Result);
+                return Factor.Result;
             }
         }
 
@@ -134,7 +135,7 @@ namespace Meta.Numerics.Statistics {
             get {
                 double F = (this.SumOfSquares / this.DegreesOfFreedom) / (result.Residual.SumOfSquares / result.Residual.DegreesOfFreedom);
                 ContinuousDistribution D = new FisherDistribution(this.DegreesOfFreedom, result.Residual.DegreesOfFreedom);
-                return (new TestResult("F", F, D, TestType.RightTailed));
+                return new TestResult("F", F, D, TestType.RightTailed);
             }
         }
 
@@ -143,7 +144,7 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents the result of a two-factor analysis of variance.
     /// </summary>
-    /// <seealso cref="Sample.TwoWayAnovaTest(Sample[,])"/>
+    /// <seealso cref="Univariate.TwoWayAnovaTest(IReadOnlyCollection{double}[,])"/>
     public sealed class TwoWayAnovaResult : IAnovaResult {
 
         internal TwoWayAnovaResult (AnovaRow row, AnovaRow column, AnovaRow interaction, AnovaRow residual) {

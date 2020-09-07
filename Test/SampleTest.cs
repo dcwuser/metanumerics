@@ -211,18 +211,18 @@ namespace Test {
             BetaDistribution B = new BetaDistribution(0.25, 3.0);
 
             // Sample from it
-            Sample S = CreateSample(B, 128);
+            List<double> S = B.GetRandomValues(new Random(1), 128).ToList();
 
             // Fit the sample to a beta distribution
             // The fit should agree with the population and the fit should be good
             BetaFitResult RB = BetaDistribution.FitToSample(S);
-            Assert.IsTrue(RB.Alpha.ConfidenceInterval(0.99).ClosedContains(B.Alpha));
-            Assert.IsTrue(RB.Beta.ConfidenceInterval(0.99).ClosedContains(B.Beta));
+            Assert.IsTrue(RB.Alpha.ConfidenceInterval(0.99).Contains(B.Alpha));
+            Assert.IsTrue(RB.Beta.ConfidenceInterval(0.99).Contains(B.Beta));
             Assert.IsTrue(RB.GoodnessOfFit.Probability > 0.05);
             ValidateParameterCollection(RB.Parameters);
 
             // Fit to a normal distribution should be bad
-            NormalFitResult RN = NormalDistribution.FitToSample(S.ToList());
+            NormalFitResult RN = NormalDistribution.FitToSample(S);
             Assert.IsTrue(RN.GoodnessOfFit.Probability < 0.05);
             ValidateParameterCollection(RN.Parameters);
         }
@@ -235,13 +235,14 @@ namespace Test {
 
             // define a population distribution 
             BetaDistribution distribution = new BetaDistribution(1.0 / 3.0, 2.0);
+            Random rng = new Random(1);
 
             // draw a lot of samples from it; fit each sample and
             // record the reported parameter value and error of each
             FrameTable t = new FrameTable();
             t.AddColumns<double>("a", "ua", "b", "ub");
             for (int i = 0; i < 50; i++) {
-                Sample sample = CreateSample(distribution, 10, i + 2);
+                List<double> sample = distribution.GetRandomValues(rng, 10).ToList();
                 BetaFitResult fit = BetaDistribution.FitToSample(sample);
                 UncertainValue a = fit.Alpha;
                 UncertainValue b = fit.Beta;

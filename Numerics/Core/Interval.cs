@@ -233,6 +233,11 @@ namespace Meta.Numerics {
         /// </summary>
         public static readonly Interval Semiinfinite = new Interval(0.0, Double.PositiveInfinity);
 
+        /// <summary>
+        /// The unit interval.
+        /// </summary>
+        public static readonly Interval Unit = new Interval(0.0, 1.0);
+
 #if SHO
         /// <summary>
         /// Produces a representation of the interval for the Python interactive console.

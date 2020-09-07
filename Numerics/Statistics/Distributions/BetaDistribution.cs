@@ -79,7 +79,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double Alpha {
             get {
-                return (a);
+                return a;
             }
         }
 
@@ -88,57 +88,57 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double Beta {
             get {
-                return (b);
+                return b;
             }
         }
 
         /// <inheritdoc />
         public override Interval Support {
             get {
-                return (Interval.FromEndpoints(0.0, 1.0));
+                return Interval.Unit;
             }
         }
 
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             if ((x < 0.0) || (x > 1.0)) {
-                return (0.0);
+                return 0.0;
             } else {
-                return (Math.Pow(x, a - 1.0) * Math.Pow(1.0 - x, b - 1.0) / bigB);
+                return Math.Pow(x, a - 1.0) * Math.Pow(1.0 - x, b - 1.0) / bigB;
             }
         }
 
         /// <inheritdoc />
         public override double LeftProbability (double x) {
             if (x <= 0.0) {
-                return (0.0);
+                return 0.0;
             } else if (x >= 1.0) {
-                return (1.0);
+                return 1.0;
             } else {
                 // the value is I_x(a,b), which is LeftRegularizedBeta
                 // since we have precomputed bigB, use it here instead of calling
                 // that method, which would re-compute it
-                return (AdvancedMath.LeftRegularizedBeta(a, b, x));
+                return AdvancedMath.LeftRegularizedBeta(a, b, x);
             }
         }
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
             if (x <= 0.0) {
-                return (1.0);
+                return 1.0;
             } else if (x >= 1.0) {
-                return (0.0);
+                return 0.0;
             } else {
                 // use 1.0 - I_x(a, b) = I_{1-x}(b, a), which is essentially the symmetry of
                 // the beta distribution definition, to avoid calculating 1 - small number
-                return (AdvancedMath.LeftRegularizedBeta(b, a, 1.0 - x));
+                return AdvancedMath.LeftRegularizedBeta(b, a, 1.0 - x);
             }
         }
 
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (a / (a + b));
+                return a / (a + b);
             }
         }
 
@@ -146,7 +146,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double Variance {
             get {
                 double ab = a + b;
-                return (a * b / (ab + 1.0) / (ab * ab));
+                return a * b / (ab + 1.0) / (ab * ab);
             }
         }
 
@@ -154,7 +154,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double Skewness {
             get {
                 double ab = a + b;
-                return (2.0 * (b - a) / (ab + 2.0) * Math.Sqrt((ab + 1.0) / (a * b)));
+                return 2.0 * (b - a) / (ab + 2.0) * Math.Sqrt((ab + 1.0) / (a * b));
             }
         }
 
@@ -169,7 +169,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 for (int i = 0; i < r; i++) {
                     M = (a + i) / (ab + i) * M;
                 }
-                return (M);
+                return M;
             }
         }
 
@@ -186,9 +186,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else if (r == 1) {
-                return (0.0);
+                return 0.0;
             } else {
 
                 // use recursion
@@ -204,7 +204,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                     CM = C0;
                     C0 = CP;
                 }
-                return (C0);
+                return C0;
 
             }
         }
@@ -246,7 +246,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
 
             betaInverter.InverseRegularizedBeta(P, 1.0 - P, out double x, out double y);
-            return (x);
+            return x;
         }
 
         /// <inheritdoc />
@@ -254,14 +254,14 @@ namespace Meta.Numerics.Statistics.Distributions {
             if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
 
             betaInverter.InverseRegularizedBeta(1.0 - Q, Q, out double x, out double y);
-            return (x);
+            return x;
         }
 
         
         /// <inheritdoc />
         public override double GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException(nameof(rng));
-            return (betaRng.GetNext(rng));
+            if (rng is null) throw new ArgumentNullException(nameof(rng));
+            return betaRng.GetNext(rng);
         }
         
 
@@ -278,9 +278,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         /// <exception cref="InvalidOperationException">Not all the entries in <paramref name="sample" /> lie between zero and one.</exception>
-        public static BetaFitResult FitToSample (Sample sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            return (Univariate.FitToBeta(sample.data));
+        public static BetaFitResult FitToSample (IReadOnlyList<double> sample) {
+            return Univariate.FitToBeta(sample);
         }
 
     }
@@ -557,7 +556,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double w = a * Math.Exp(v);
                 double z = u * u * rng.NextDouble();
                 if (gamma * v - log4 + alpha * Math.Log(alpha / (b + w)) > Math.Log(z)) {
-                    return (w / (b + w));
+                    return w / (b + w);
                 }
             }
         }
@@ -583,7 +582,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double x = Math.Pow(u, ai);
                 double y = Math.Pow(v, bi);
                 double z = x + y;
-                if (z < 1.0) return (x / z);
+                if (z < 1.0) return x / z;
             }
 
         }

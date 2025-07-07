@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 using TestClassAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
 using TestMethodAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
-using ExpectedExceptionAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.ExpectedExceptionAttribute;
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+using FluentAssertions;
 
 using Meta.Numerics;
 using Meta.Numerics.Data;
@@ -20,32 +21,31 @@ namespace Test {
 
         // For red noise, use AR(1) with mu = 0
 
-        private TimeSeries GenerateAR1TimeSeries (double alpha, double mu, double sigma, int count, int seed = 1) {
-            TimeSeries series = new TimeSeries();
-            Random rng = new Random(seed);
+        private IEnumerable<double> GenerateAR1TimeSeries (double alpha, double mu, double sigma) {
+            return GenerateAR1TimeSeries(alpha, mu, sigma, new Random(1));
+        }
+
+        private IEnumerable<double> GenerateAR1TimeSeries (double alpha, double mu, double sigma, Random rng) {
             NormalDistribution d = new NormalDistribution(0.0, sigma);
             double previousDeviation = d.GetRandomValue(rng) / Math.Sqrt(1.0 - alpha * alpha);
-            for (int i = 0; i < count; i++) {
+            while (true) {
                 double currentDeviation = alpha * previousDeviation + d.GetRandomValue(rng);
-                series.Add(mu + currentDeviation);
+                yield return mu + currentDeviation;
                 previousDeviation = currentDeviation;
             }
-            return (series);
         }
 
         // For white noise, use MA(1) with beta = mu = 0
 
-        private TimeSeries GenerateMA1TimeSeries (double beta, double mu, double sigma, int count, int seed = 1) {
-            TimeSeries series = new TimeSeries();
+        private IEnumerable<double> GenerateMA1TimeSeries (double beta, double mu, double sigma, int count, int seed = 1) {
             Random rng = new Random(seed);
             NormalDistribution eDist = new NormalDistribution(0.0, sigma);
             double uPrevious = eDist.GetRandomValue(rng);
             for (int i = 0; i < count; i++) {
                 double u = eDist.GetRandomValue(rng);
-                series.Add(mu + u + beta * uPrevious);
+                yield return mu + u + beta * uPrevious;
                 uPrevious = u;
             }
-            return (series);
         }
 
         [TestMethod]
@@ -90,11 +90,11 @@ namespace Test {
 
             TimeSeries series = new TimeSeries(7.0, 5.0, 3.0, 2.0);
 
-            Sample sample = series.AsSample();
+            List<double> sample = series.ToList();
 
             Assert.IsTrue(series.Count == sample.Count);
-            Assert.IsTrue(series.Mean == sample.Mean);
-            Assert.IsTrue(series.Autocovariance(0) == sample.Variance);
+            Assert.IsTrue(series.Mean == sample.Mean());
+            Assert.IsTrue(series.Autocovariance(0) == sample.Variance());
 
             Assert.IsTrue(sample.Contains(series[1]));
 
@@ -144,9 +144,9 @@ namespace Test {
             double mu = -0.4;
             double sigma = 0.2;
 
-            TimeSeries ar1 = GenerateAR1TimeSeries(alpha, mu, sigma, 100, 314159);
-            TimeSeriesPopulationStatistics ar1ps = ar1.PopulationStatistics();
-            Assert.IsTrue(ar1ps.Mean.ConfidenceInterval(0.99).ClosedContains(mu));
+            List<double> ar1 = GenerateAR1TimeSeries(alpha, mu, sigma, new Random(314159)).Take(100).ToList();
+            TimeSeriesPopulationStatistics ar1ps = ar1.SeriesPopulationStatistics();
+            Assert.IsTrue(ar1ps.Mean.ConfidenceInterval(0.99).Contains(mu));
 
             // For AR1, autocovariance decreases by a factor \alpha for each additional lag step.
             double ar1v = sigma * sigma / (1.0 - alpha * alpha);
@@ -155,8 +155,8 @@ namespace Test {
             Assert.IsTrue(ar1ps.Autocovariance(2).ConfidenceInterval(0.99).ClosedContains(alpha * alpha * ar1v));
             Assert.IsTrue(ar1ps.Autocovariance(3).ConfidenceInterval(0.99).ClosedContains(alpha * alpha * alpha * ar1v));
 
-            TimeSeries ma1 = GenerateMA1TimeSeries(beta, mu, sigma, 100, 314159);
-            TimeSeriesPopulationStatistics ma1ps = ma1.PopulationStatistics();
+            List<double> ma1 = GenerateMA1TimeSeries(beta, mu, sigma, 100, 314159).ToList();
+            TimeSeriesPopulationStatistics ma1ps = ma1.SeriesPopulationStatistics();
             Assert.IsTrue(ma1ps.Mean.ConfidenceInterval(0.99).ClosedContains(mu));
 
             // For MA(1), autocovariance vanishes for all lags greater than 1.
@@ -183,43 +183,40 @@ namespace Test {
             // we can't pick n too small, because the formulas we use are only
             // asymptotically unbiased.
 
-            MultivariateSample parameters = new MultivariateSample(3);
-            MultivariateSample covariances = new MultivariateSample(6);
-            Sample tests = new Sample("p");
+            FrameTable t = new FrameTable();
+            t.AddColumn<ColumnVector>("Parameters");
+            t.AddColumn<SymmetricMatrix>("Covariances");
+            t.AddColumn<double>("P");
             for (int i = 0; i < 64; i++) {
 
-                TimeSeries series = GenerateMA1TimeSeries(beta, mu, sigma, n, n * i + 314159);
+                List<double> series = GenerateMA1TimeSeries(beta, mu, sigma, n, n * i + 314159).ToList();
 
                 Debug.Assert(series.Count == n);
 
                 MA1FitResult result = series.FitToMA1();
 
-                //Assert.IsTrue(result.Dimension == 3);
-                parameters.Add(result.Parameters.ValuesVector);
-                covariances.Add(
-                    result.Parameters.CovarianceMatrix[0, 0],
-                    result.Parameters.CovarianceMatrix[1, 1],
-                    result.Parameters.CovarianceMatrix[2, 2],
-                    result.Parameters.CovarianceMatrix[0, 1],
-                    result.Parameters.CovarianceMatrix[0, 2],
-                    result.Parameters.CovarianceMatrix[1, 2]
-                );
-                tests.Add(result.GoodnessOfFit.Probability);
+                t.AddRow(result.Parameters.ValuesVector, result.Parameters.CovarianceMatrix, result.GoodnessOfFit.Probability);
 
             }
 
-            Assert.IsTrue(parameters.Column(0).PopulationMean.ConfidenceInterval(0.99).ClosedContains(mu)); ;
-            Assert.IsTrue(parameters.Column(1).PopulationMean.ConfidenceInterval(0.99).ClosedContains(beta));
-            Assert.IsTrue(parameters.Column(2).PopulationMean.ConfidenceInterval(0.99).ClosedContains(sigma));
+            Assert.IsTrue(t["Parameters"].As<ColumnVector>().Select(u => u[0]).ToList().PopulationMean().ConfidenceInterval(0.99).ClosedContains(mu));
+            Assert.IsTrue(t["Parameters"].As<ColumnVector>().Select(u => u[1]).ToList().PopulationMean().ConfidenceInterval(0.99).ClosedContains(beta));
+            Assert.IsTrue(t["Parameters"].As<ColumnVector>().Select(u => u[2]).ToList().PopulationMean().ConfidenceInterval(0.99).ClosedContains(sigma));
 
-            Assert.IsTrue(parameters.Column(0).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(0).Mean));
-            Assert.IsTrue(parameters.Column(1).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(1).Mean));
-            Assert.IsTrue(parameters.Column(2).PopulationVariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(2).Mean));
-            Assert.IsTrue(parameters.TwoColumns(0, 1).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(3).Mean));
-            Assert.IsTrue(parameters.TwoColumns(0, 2).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(4).Mean));
-            Assert.IsTrue(parameters.TwoColumns(1, 2).PopulationCovariance.ConfidenceInterval(0.99).ClosedContains(covariances.Column(5).Mean));
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < i; j++) {
+                    Assert.IsTrue(
+                        Bivariate.PopulationCovariance(
+                            t["Parameters"].As<ColumnVector>().Select(u => u[i]).ToList(),
+                            t["Parameters"].As<ColumnVector>().Select(u => u[j]).ToList()
+                        ).ConfidenceInterval(0.99).Contains(
+                            t["Covariances"].As<SymmetricMatrix>().Select(u => u[i, j]).ToList().Mean()
+                        )
+                    );
+                }
+            }
 
-            Assert.IsTrue(tests.KuiperTest(new UniformDistribution()).Probability > 0.01);
+            Assert.IsTrue(t["P"].As<double>().KuiperTest(new UniformDistribution()).Probability > 0.01);
 
         }
 
@@ -242,9 +239,10 @@ namespace Test {
             data.AddColumn<SymmetricMatrix>("covariance");
             data.AddColumn<double>("p");
 
+            Random rng = new Random(1);
             for (int i = 0; i < 128; i++) {
 
-                TimeSeries series = GenerateAR1TimeSeries(alpha, mu, sigma, n, n * i + 271828);
+                double[] series = GenerateAR1TimeSeries(alpha, mu, sigma, rng).Take(n).ToArray();
 
                 AR1FitResult result = series.FitToAR1();
 
@@ -289,7 +287,7 @@ namespace Test {
 
             // Fit AR1 to MA1; the fit should be bad
 
-            TimeSeries series = GenerateMA1TimeSeries(0.4, 0.3, 0.2, 1000);
+            List<double> series = GenerateMA1TimeSeries(0.4, 0.3, 0.2, 1000).ToList();
 
             AR1FitResult result = series.FitToAR1();
 
@@ -300,16 +298,16 @@ namespace Test {
         [TestMethod]
         public void LjungBoxNullDistribution () {
 
-            Sample Qs = new Sample();
+            double[] Q = new double[100];
             ContinuousDistribution d = null;
-            for (int i = 0; i < 100; i++) {
-                TimeSeries series = GenerateMA1TimeSeries(0.0, 1.0, 2.0, 10, i);
+            for (int i = 0; i < Q.Length; i++) {
+                List<double> series = GenerateMA1TimeSeries(0.0, 1.0, 2.0, 10, i).ToList();
                 TestResult lbResult = series.LjungBoxTest(5);
-                Qs.Add(lbResult.Statistic.Value);
+                Q[i] = lbResult.Statistic.Value;
                 d = lbResult.Statistic.Distribution;
             }
 
-            TestResult kResult = Qs.KuiperTest(d);
+            TestResult kResult = Q.KuiperTest(d);
             Assert.IsTrue(kResult.Probability > 0.05);
 
         }
@@ -318,7 +316,7 @@ namespace Test {
         [TestMethod]
         public void LjungBoxRejection () {
 
-            TimeSeries series = GenerateAR1TimeSeries(0.3, 0.2, 0.1, 100);
+            List<double> series = GenerateAR1TimeSeries(0.3, 0.2, 0.1).Take(100).ToList();
             TestResult result = series.LjungBoxTest(10);
             Assert.IsTrue(result.Probability < 0.05);
 
@@ -329,7 +327,10 @@ namespace Test {
 
             int n = 100;
             // Generate white noise
-            TimeSeries series = GenerateMA1TimeSeries(0.0, 0.1, 1.0, n);
+            TimeSeries series = new TimeSeries();
+            foreach (double u in GenerateMA1TimeSeries(0.0, 0.1, 1.0, n)) {
+                series.Add(u);
+            }
 
             // Integrate it
             series.Integrate(0.0);
@@ -344,15 +345,6 @@ namespace Test {
             // The result should be correlated
             TestResult result2 = series.LjungBoxTest();
             Assert.IsTrue(result2.Probability > 0.01);
-
-        }
-
-        [TestMethod]
-        public void WhiteNoisePowerSpectrum () {
-
-            TimeSeries series = GenerateMA1TimeSeries(0.0, 0.0, 2.0, 20);
-
-            double[] spectrum = series.PowerSpectrum();
 
         }
 

@@ -16,9 +16,9 @@ namespace Test {
         public void StreamSampleSummaryAgreement () {
 
             // Streaming properties should give same answers as list methods.
-
+            ContinuousDistribution dist = new UniformDistribution(Interval.FromEndpoints(-4.0, 3.0));
             Random rng = new Random(2);
-            List<double> sample = new List<double>(TestUtilities.CreateDataSample(rng, new UniformDistribution(Interval.FromEndpoints(-4.0, 3.0)), 32));
+            List<double> sample = dist.GetRandomValues(rng, 32).ToList();
 
             SummaryStatistics summary = new SummaryStatistics(sample);
             Assert.IsTrue(summary.Count == sample.Count);

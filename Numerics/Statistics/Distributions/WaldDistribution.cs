@@ -45,35 +45,35 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double Shape {
             get {
-                return (lambda);
+                return  lambda;
             }
         }
 
         /// <inheritdoc />
         public override double Mean {
             get {
-                return(mu);
+                return mu;
             }
         }
 
         /// <inheritdoc />
         public override double Variance {
             get {
-                return (mu * mu * mu / lambda);
+                return mu * mu * mu / lambda;
             }
         }
 
         /// <inheritdoc />
         public override double Skewness {
             get {
-                return (3.0 * Math.Sqrt(mu / lambda));
+                return 3.0 * Math.Sqrt(mu / lambda);
             }
         }
 
         /// <inheritdoc />
         public override double ExcessKurtosis {
             get {
-                return (15.0 * mu / lambda);
+                return 15.0 * mu / lambda;
             }
         }
 
@@ -82,7 +82,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return(1.0);
+                return 1.0;
             } else {
                 double M1 = mu;
                 if (r == 1) return(M1);
@@ -94,7 +94,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                     M1 = M2;
                     M2 = M3;
                 }
-                return (M2);
+                return M2;
             }
         }
 
@@ -103,12 +103,12 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else if (r == 1) {
-                return (0.0);
+                return 0.0;
             } else {
                 double[] K = Cumulants(r);
-                return (MomentMath.CumulantToCentral(K, r));
+                return MomentMath.CumulantToCentral(K, r);
             }
         }
 
@@ -117,14 +117,14 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (0.0);
+                return 0.0;
             } else if (r == 1) {
-                return (Mean);
+                return Mean;
             } else {
                 // Mathworld (http://mathworld.wolfram.com/InverseGaussianDistribution.html) says:
                 //   K_{r+1} = \frac{(2 r)!}{2^r r! \mu^{2r+1} \lambda^r}
                 //           = \frac{(2r - 1)!! \mu^{2r+1}}{\lambda^r}
-                return (AdvancedIntegerMath.DoubleFactorial(2 * r - 3) * MoreMath.Pow(mu * mu / lambda, r - 1) * mu);
+                return AdvancedIntegerMath.DoubleFactorial(2 * r - 3) * MoreMath.Pow(mu * mu / lambda, r - 1) * mu;
             }
         }
 
@@ -137,7 +137,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             for (int r = 2; r <= rMax; r++) {
                 K[r] = (2 * r - 3) * t * K[r - 1];
             }
-            return (K);
+            return K;
         }
 
 
@@ -147,7 +147,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 return (0.0);
             } else {
                 double z = (x - mu) / mu;
-                return (Math.Sqrt(lambda / Global.TwoPI / (x * x * x)) * Math.Exp(-lambda * z * z / (2.0 * x)));
+                return Math.Sqrt(lambda / Global.TwoPI / (x * x * x)) * Math.Exp(-lambda * z * z / (2.0 * x));
             }
         }
 
@@ -180,7 +180,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override Interval Support {
             get {
-                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+                return Interval.Semiinfinite;
             }
         }
 
@@ -197,15 +197,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
-        public static WaldFitResult FitToSample (Sample sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            return (Univariate.FitToWald(sample.data));
+        public static WaldFitResult FitToSample (IReadOnlyList<double> sample) {
+            return Univariate.FitToWald(sample);
         }
 
         /// <inheritdoc />
         public override double GetRandomValue (Random rng) {
 
-            if (rng == null) throw new ArgumentNullException(nameof(rng));
+            if (rng is null) throw new ArgumentNullException(nameof(rng));
 
             // This is a rather weird transformation generator described in Michael et al, "Generating Random Variates
             // Using Transformations with Multiple Roots", The American Statistician 30 (1976) 88-90.
@@ -217,9 +216,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             double x = mu * (1.0 + (w - Math.Sqrt((4.0 * lambda + w ) * w)) / (2.0 * lambda));
             double u = rng.NextDouble();
             if (u <= mu / (mu + x)) {
-                return (x);
+                return x;
             } else {
-                return (mu * mu / x);
+                return mu * mu / x;
             }
         }
 

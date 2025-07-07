@@ -10,7 +10,7 @@ namespace Meta.Numerics.Statistics {
     /// Contains estimates of the moments of the population from which a time series is drawn.
     /// </summary>
     /// <remarks>
-    /// <para>This class is returned by the method <see cref="TimeSeries.PopulationStatistics()"/>;
+    /// <para>This class is returned by the method <see cref="Series.SeriesPopulationStatistics(IReadOnlyList{double})"/>;
     /// see the documentation of that method for an explanation of its purpose.</para>
     /// </remarks>
     public sealed class TimeSeriesPopulationStatistics {
@@ -52,14 +52,14 @@ namespace Meta.Numerics.Statistics {
             // The task here is to estimate the variance of our estimate of g_k
 
             // Fuller shows that 
-            //   V(c_k) = \frac{1}{n-k} \sum{j=-\infty}^{+\infty} ( g_j^2 + g_{k + j} g_{k - k} ) 
+            //   V(c_k) = \frac{1}{n-k} \sum_{j=-\infty}^{+\infty} ( g_j^2 + g_{k + j} g_{k - k} ) 
             // plus a term involving fourth cumulants that vanishes for normal errors.
 
             // For k = 0, this specializes to
-            //   V(c_0) = \frac{2}{n} \left[ g_0^2 + 2 \sum{j=1}{n-1} g_j^2 \right]
+            //   V(c_0) = \frac{2}{n} \left[ g_0^2 + 2 \sum_{j=1}^{n-1} g_j^2 \right]
             // For k > 0, the second term is usually smaller than the first, since
             // the signs tend to be mixed. Ignoring all cross terms we would get
-            //   V(c_k) = \frac{1}{n - k} \left[ g_0^2 + g_k^2 + 2 \sum_{j=1}{n-1} g_j^2 \right]
+            //   V(c_k) = \frac{1}{n - k} \left[ g_0^2 + g_k^2 + 2 \sum_{j=1}^{n-1} g_j^2 \right]
 
             // It's problematic to apply this formula naively using the estimated g's.
             // The reason is that even vanishing g's will have small values due to

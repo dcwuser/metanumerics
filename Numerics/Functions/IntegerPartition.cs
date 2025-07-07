@@ -51,7 +51,7 @@ namespace Meta.Numerics.Functions {
         /// <value>A read-only list of values that add up to the partitioned integer.</value>
         public IReadOnlyList<int> Values {
             get {
-                return (new ReadOnlyCollection<int>(values));
+                return new ReadOnlyCollection<int>(values);
             }
         }
 
@@ -65,7 +65,7 @@ namespace Meta.Numerics.Functions {
         public IReadOnlyList<Element> Elements {
             get {
                 if (elements == null) ComputeElements();
-                return (new ReadOnlyCollection<Element>(elements));
+                return new ReadOnlyCollection<Element>(elements);
             }
         }
 
@@ -118,13 +118,13 @@ namespace Meta.Numerics.Functions {
         // Equality
 
         private static bool InternalEquals (IntegerPartition a, IntegerPartition b) {
-            Debug.Assert(!Object.ReferenceEquals(a, null));
-            Debug.Assert(!Object.ReferenceEquals(b, null));
-            if (a.values.Length != b.values.Length) return (false);
+            Debug.Assert(a is object);
+            Debug.Assert(b is object);
+            if (a.values.Length != b.values.Length) return false;
             for (int i = 0; i < a.values.Length; i++) {
-                if (a.values[i] != b.values[i]) return (false);
+                if (a.values[i] != b.values[i]) return false;
             }
-            return (true);
+            return true;
         }
 
         /// <summary>
@@ -136,11 +136,11 @@ namespace Meta.Numerics.Functions {
         /// partition, otherwise <see langword="false"/>.</returns>
         public static bool operator == (IntegerPartition a, IntegerPartition b) {
             if (Object.ReferenceEquals(a, b)) {
-                return (true);
-            } else if (Object.ReferenceEquals(a, null) || Object.ReferenceEquals(b, null)) {
-                return (false);
+                return true;
+            } else if (a is null || b is null) {
+                return false;
             } else {
-                return (InternalEquals(a, b));
+                return InternalEquals(a, b);
             }
         }
 
@@ -152,7 +152,7 @@ namespace Meta.Numerics.Functions {
         /// <returns><see langword="true"/> if <paramref name="a"/> and <paramref name="b"/> represent different
         /// partitions, otherwise <see langword="false"/>.</returns>
         public static bool operator != (IntegerPartition a, IntegerPartition b) {
-            return (!(a == b));
+            return !(a == b);
         }
 
         /// <summary>
@@ -163,15 +163,15 @@ namespace Meta.Numerics.Functions {
         /// <see langword="false"/>.</returns>
         public bool Equals (IntegerPartition other) {
             if (Object.ReferenceEquals(other, null)) {
-                return (false);
+                return false;
             } else {
-                return (InternalEquals(this, other));
+                return InternalEquals(this, other);
             }
         }
 
         /// <inheritdoc />
         public override bool Equals (object obj) {
-            return (Equals(obj as IntegerPartition));
+            return Equals(obj as IntegerPartition);
         }
 
         /// <inheritdoc />
@@ -181,7 +181,7 @@ namespace Meta.Numerics.Functions {
             for (int i = 0; i < max; i++) {
                 hash = values[i] + 17 * hash;
             }
-            return (hash);
+            return hash;
         }
 
         /// <inheritdoc />
@@ -196,7 +196,7 @@ namespace Meta.Numerics.Functions {
             for (int i = 1; i < values.Length; i++) {
                 text.AppendFormat(provider, "+{0}", values[i]);
             }
-            return (text.ToString());
+            return text.ToString();
         }
 
         /// <summary>
@@ -227,7 +227,7 @@ namespace Meta.Numerics.Functions {
     /// <summary>
     /// Describes the multiplicity of an integer in a set.
     /// </summary>
-    public struct Element {
+    public readonly struct Element {
 
         internal Element (int value, int multiplicity) {
             Debug.Assert(multiplicity > 0);
@@ -244,7 +244,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         public int Value {
             get {
-                return (value);
+                return value;
             }
         }
 
@@ -253,7 +253,7 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         public int Multiplicity {
             get {
-                return (multiplicity);
+                return multiplicity;
             }
         }
 

@@ -64,7 +64,7 @@ namespace Meta.Numerics.Extended
     /// <para><see cref="UInt128"/> also supports bitwise logical and shift operations.</para>
     /// </remarks>
     [CLSCompliant(false)]
-    public struct UInt128 : IEquatable<UInt128>, IComparable<UInt128> {
+    public readonly struct UInt128 : IEquatable<UInt128>, IComparable<UInt128> {
 
         /// <summary>
         /// Initializes a new 128-bit unsigned integer with the given base-10 representation.

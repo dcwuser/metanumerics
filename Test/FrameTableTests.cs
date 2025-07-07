@@ -191,7 +191,7 @@ namespace Test
         public void Smoketest () {
 
             FrameTable frame;
-            string url = "https://raw.githubusercontent.com/pandas-dev/pandas/master/doc/data/tips.csv";
+            string url = "https://raw.githubusercontent.com/pandas-dev/pandas/main/pandas/tests/io/data/csv/tips.csv";
             WebRequest request = WebRequest.Create(url);
             using (WebResponse response = request.GetResponse()) {
                 using (Stream responseStream = response.GetResponseStream()) {
@@ -208,11 +208,11 @@ namespace Test
         }
 
         [TestMethod]
+        [DeploymentItem("airline_delay_causes.csv")]
         public void SmokeTest2 () {
 
             FrameTable frame;
-            string path = @"C:\Users\dcw-b\Desktop\DataSets\551184489_52017_210_airline_delay_causes\551184489_52017_210_airline_delay_causes.csv";
-            using (StreamReader stream = File.OpenText(path)) {
+            using (StreamReader stream = File.OpenText("airline_delay_causes.csv")) {
                 frame = FrameTable.FromCsv(stream);
             }
 

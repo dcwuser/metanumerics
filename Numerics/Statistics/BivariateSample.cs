@@ -13,6 +13,7 @@ using System.Diagnostics;
 
 namespace Meta.Numerics.Statistics {
 
+
     /// <summary>
     /// Represents a set of data points, where each data point is described by a pair of real numbers.
     /// </summary>
@@ -22,6 +23,8 @@ namespace Meta.Numerics.Statistics {
     /// could be stored as a bivariate sample. The class can compute various descriptive statistics
     /// for the sample, perform appropriate statistical tests on the sample data, and fit the sample
     /// data to various models.</para>
+    /// <para>NOTE: This class will be retired in a future release. Its functionality is replaced by the
+    /// <see cref="Bivariate"/> class, which can operatate on arbitrary data lists.</para>
     /// </remarks>
     public sealed class BivariateSample : ICollection<XY> {
 

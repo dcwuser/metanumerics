@@ -7,14 +7,27 @@ namespace Meta.Numerics {
 
     internal class InterpolatingPolynomial : Polynomial {
 
-        internal InterpolatingPolynomial (PolynomialInterpolator interpolator) : base(interpolator.GetCoefficients()) {
+        internal InterpolatingPolynomial (PolynomialInterpolator interpolator)  {
             this.interpolator = interpolator;
         }
 
         private PolynomialInterpolator interpolator;
+        private double[] coefficients;
+
+        public override int Degree {
+            get {
+                return interpolator.Order;
+            }
+        }
+
+        public override double Coefficient(int n) {
+            if (n < 0 || n > Degree) return 0.0;
+            if (coefficients is null) coefficients = interpolator.GetCoefficients();
+            return coefficients[n];
+        }
 
         public override double Evaluate (double x) {
-            return (interpolator.Evaluate(x));
+            return interpolator.Evaluate(x);
         }
 
     }
@@ -61,7 +74,7 @@ namespace Meta.Numerics {
 
         public int Order {
             get {
-                return (n - 1);
+                return n - 1;
             }
         }
 
@@ -71,7 +84,7 @@ namespace Meta.Numerics {
                     y[i][j] = ((xm - x[i + j]) * y[i - 1][j] + (x[j] - xm) * y[i - 1][j + 1]) / (x[j] - x[i + j]);
                 }
             }
-            return (y[n - 1][0]);
+            return y[n - 1][0];
         }
 
         public double[] GetCoefficients () {
@@ -95,7 +108,7 @@ namespace Meta.Numerics {
                 }
             }
 
-            return (c);
+            return c;
 
 
         }

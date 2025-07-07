@@ -149,7 +149,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="series">The data series.</param>
         /// <returns>A collection of population statistics.</returns>
         /// <remarks>
-        /// <para>Just as is the case for the variance of a sample (<see cref="Sample.Variance"/>),
+        /// <para>Just as is the case for the variance of a sample (<see cref="Univariate.Variance"/>),
         /// the sample auto-covariances of a time series
         /// are not unbiased estimates of the auto-covariances of the population from which
         /// the series is drawn. Additional computations must be performed to calculate

@@ -106,6 +106,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The rth cumulant of the distribution.</returns>
         /// <seealso href="http://en.wikipedia.org/wiki/Cumulant"/>
         public virtual double Cumulant (int r) {
+            if (r < 0) throw new ArgumentOutOfRangeException(nameof(r));
             double[] C = CentralMoments(r);
             double[] K = MomentMath.CentralToCumulant(Mean, C);
             return (K[r]);

@@ -28,7 +28,7 @@ namespace Meta.Numerics.Analysis {
         /// </remarks>
         public static IntegrationResult Integrate(Func<double, double> integrand, double start, double end) {
             IntegrationSettings settings = new IntegrationSettings();
-            return (Integrate(integrand, start, end, settings));
+            return Integrate(integrand, start, end, settings);
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Meta.Numerics.Analysis {
         /// </remarks>
         public static IntegrationResult Integrate (Func<double, double> integrand, Interval range) {
             IntegrationSettings settings = new IntegrationSettings();
-            return (Integrate(integrand, range, settings));
+            return Integrate(integrand, range, settings);
         }
 
         internal static IntegrationSettings SetIntegrationDefaults (IntegrationSettings settings) {
@@ -76,7 +76,7 @@ namespace Meta.Numerics.Analysis {
         /// <para>For information, see <see cref="Integrate(Func{double, double}, double, double, IntegrationSettings)"/>.</para>
         /// </remarks>
         public static IntegrationResult Integrate (Func<double, double> integrand, Interval range, IntegrationSettings settings) {
-            return (Integrate(integrand, range.LeftEndpoint, range.RightEndpoint, settings));
+            return Integrate(integrand, range.LeftEndpoint, range.RightEndpoint, settings);
         }
 
         /// <summary>
@@ -117,8 +117,8 @@ namespace Meta.Numerics.Analysis {
         /// could be determined to the required precision.</exception>
         public static IntegrationResult Integrate (Func<double,double> integrand, double start, double end, IntegrationSettings settings) {
 
-            if (integrand == null) throw new ArgumentNullException(nameof(integrand));
-            if (settings == null) throw new ArgumentNullException(nameof(settings));
+            if (integrand is null) throw new ArgumentNullException(nameof(integrand));
+            if (settings is null) throw new ArgumentNullException(nameof(settings));
 
             // Deal with right-to-left integrals
             if (end < start) {
@@ -130,29 +130,29 @@ namespace Meta.Numerics.Analysis {
             if (Double.IsNegativeInfinity(start) && Double.IsPositiveInfinity(end)) {
                 // -\infty to +\infty
                 // remap to (-\pi/2,\pi/2)
-                Func<double, double> f1 = delegate (double t) {
+                Func<double, double> f1 = (double t) => {
                     double x = Math.Tan(t);
-                    return (integrand(x) * (1.0 + x * x));
+                    return integrand(x) * (1.0 + x * x);
                 };
-                return (Integrate(f1, -Global.HalfPI, +Global.HalfPI, settings));
+                return Integrate(f1, -Math.PI / 2.0, +Math.PI / 2.0, settings);
             } else if (Double.IsPositiveInfinity(end)) {
                 // finite to +\infty
                 // remap to interval (-1,1)
-                Func<double, double> f1 = delegate (double t) {
+                Func<double, double> f1 = (double t) => {
                     double q = 1.0 / (1.0 - t);
                     double x = start + (1.0 + t) * q;
-                    return (integrand(x) * 2.0 * q * q);
+                    return integrand(x) * 2.0 * q * q;
                 };
-                return (Integrate(f1, -1.0, +1.0, settings));
+                return Integrate(f1, -1.0, +1.0, settings);
             } else if (Double.IsNegativeInfinity(start)) {
                 // -\infty to finite
                 // remap to interval (-1,1)
-                Func<double, double> f1 = delegate (double t) {
+                Func<double, double> f1 = (double t) => {
                     double q = t + 1.0;
                     double x = end + (t - 1.0) / q;
-                    return(integrand(x) * (2.0 / q / q));
+                    return integrand(x) * (2.0 / q / q);
                 };
-                return(Integrate(f1, -1.0, +1.0, settings));
+                return Integrate(f1, -1.0, +1.0, settings);
             }
 
             // Fix settings.
@@ -162,7 +162,7 @@ namespace Meta.Numerics.Analysis {
             Debug.Assert(end >= start);
             IAdaptiveIntegrator integrator = new GaussKronrodIntegrator(integrand, Interval.FromEndpoints(start, end));
             IntegrationResult result = Integrate_Adaptive(integrator, settings);
-            return (result);
+            return result;
         }
 
         // the drivers

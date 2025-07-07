@@ -10,6 +10,7 @@ using Meta.Numerics;
 using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
+using System.Linq;
 
 namespace Test {
 
@@ -121,59 +122,79 @@ namespace Test {
         [TestMethod]
         public void ContingencyTableProbabilitiesAndUncertainties () {
 
-            // start with an underlying population
+            // Start with cell probabilities
             double[,] pp = new double[,]
                 { { 1.0 / 45.0, 2.0 / 45.0, 3.0 / 45.0 },
                   { 4.0 / 45.0, 5.0 / 45.0, 6.0 / 45.0 },
                   { 7.0 / 45.0, 8.0 / 45.0, 9.0 / 45.0 } };
+            // Compute row and column probabilities
+            double[] pc = new double[3];
+            double[] pr = new double[3];
+            for (int j = 0; j < 3; j ++) {
+                for (int k = 0; k < 3; k++) {
+                    pr[j] += pp[j, k];
+                    pc[j] += pp[k, j];
+                }
+            }
+            // Compute conditional probabilities
 
-            // form 50 contingency tables, each with N = 50
-            Random rng = new Random(314159);
-            BivariateSample p22s = new BivariateSample();
-            BivariateSample pr0s = new BivariateSample();
-            BivariateSample pc1s = new BivariateSample();
-            BivariateSample pr2c0s = new BivariateSample();
-            BivariateSample pc1r2s = new BivariateSample();
+            // Prepare containers to hold results from individual contingency tables
+            Random rng = new Random(3333333);
+            Dictionary<string, List<UncertainValue>> data = new Dictionary<string, List<UncertainValue>>();
+            for (int j = 0; j < 3; j++) {
+                data.Add($"Pc{j}", new List<UncertainValue>());
+                data.Add($"Pr{j}", new List<UncertainValue>());
+                for (int k = 0; k < 3; k++) {
+                    data.Add($"Pr{j}c{k}", new List<UncertainValue>());
+                    data.Add($"Pr{j}|c{k}", new List<UncertainValue>());
+                    data.Add($"Pc{j}|r{k}", new List<UncertainValue>());
+                }
+            }
+
+            // Make 50 contingency tables, each with 100 counts
             for (int i = 0; i < 50; i++) {
 
                 ContingencyTable T = new ContingencyTable(3, 3);
-                for (int j = 0; j < 50; j++) {
-                    int r, c;
-                    ChooseRandomCell(pp, rng.NextDouble(), out r, out c);
+                for (int j = 0; j < 100; j++) {
+                    ChooseRandomCell(pp, rng.NextDouble(), out int r, out int c);
                     T.Increment(r, c);
                 }
 
-                Assert.IsTrue(T.Total == 50);
+                Assert.IsTrue(T.Total == 100);
 
-                // for each contingency table, compute estimates of various population quantities
-
-                UncertainValue p22 = T.ProbabilityOf(2, 2);
-                UncertainValue pr0 = T.ProbabilityOfRow(0);
-                UncertainValue pc1 = T.ProbabilityOfColumn(1);
-                UncertainValue pr2c0 = T.ProbabilityOfRowConditionalOnColumn(2, 0);
-                UncertainValue pc1r2 = T.ProbabilityOfColumnConditionalOnRow(1, 2);
-                p22s.Add(p22.Value, p22.Uncertainty);
-                pr0s.Add(pr0.Value, pr0.Uncertainty);
-                pc1s.Add(pc1.Value, pc1.Uncertainty);
-                pr2c0s.Add(pr2c0.Value, pr2c0.Uncertainty);
-                pc1r2s.Add(pc1r2.Value, pc1r2.Uncertainty);
-
+                // For each contingency table, record estimates of various probabilities
+                for (int j = 0; j < 3; j++) {
+                    data[$"Pc{j}"].Add(T.ProbabilityOfColumn(j));
+                    data[$"Pr{j}"].Add(T.ProbabilityOfRow(j));
+                    for (int k = 0; k < 3; k++) {
+                        data[$"Pr{j}c{k}"].Add(T.ProbabilityOf(j, k));
+                        data[$"Pr{j}|c{k}"].Add(T.ProbabilityOfRowConditionalOnColumn(j, k));
+                        data[$"Pc{j}|r{k}"].Add(T.ProbabilityOfColumnConditionalOnRow(j, k));
+                    }
+                }
             }
 
-            // the estimated population mean of each probability should include the correct probability in the underlyting distribution
-            Assert.IsTrue(p22s.X.PopulationMean.ConfidenceInterval(0.95).ClosedContains(9.0 / 45.0));
-            Assert.IsTrue(pr0s.X.PopulationMean.ConfidenceInterval(0.95).ClosedContains(6.0 / 45.0));
-            Assert.IsTrue(pc1s.X.PopulationMean.ConfidenceInterval(0.95).ClosedContains(15.0 / 45.0));
-            Assert.IsTrue(pr2c0s.X.PopulationMean.ConfidenceInterval(0.95).ClosedContains(7.0 / 12.0));
-            Assert.IsTrue(pc1r2s.X.PopulationMean.ConfidenceInterval(0.95).ClosedContains(8.0 / 24.0));
+            // The mean for each estimated quantity should contain the real quantity.
+            for (int j = 0; j < 3; j++) {
+                Assert.IsTrue(data[$"Pc{j}"].Select(t => t.Value).ToList().PopulationMean().ConfidenceInterval(0.99).Contains(pc[j]));
+                Assert.IsTrue(data[$"Pr{j}"].Select(t => t.Value).ToList().PopulationMean().ConfidenceInterval(0.99).Contains(pr[j]));
+                for (int k = 0; k < 3; k++) {
+                    Assert.IsTrue(data[$"Pr{j}c{k}"].Select(t => t.Value).ToList().PopulationMean().ConfidenceInterval(0.99).Contains(pp[j, k]));
+                }
+            }
 
-            // the estimated uncertainty for each population parameter should be the standard deviation across independent measurements
-            // since the reported uncertainly changes each time, we use the mean value for comparison
-            Assert.IsTrue(p22s.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(p22s.Y.Mean));
-            Assert.IsTrue(pr0s.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(pr0s.Y.Mean));
-            Assert.IsTrue(pc1s.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(pc1s.Y.Mean));
-            Assert.IsTrue(pr2c0s.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(pr2c0s.Y.Mean));
-            Assert.IsTrue(pc1r2s.X.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(pc1r2s.Y.Mean));
+            // The claimed uncertainty for each quantity should accurately characterize the dispersion of the values
+            // Since the reported uncertainly changes each time, we use the mean value for comparison
+            for (int j = 0; j < 3; j++) {
+                Assert.IsTrue(data[$"Pc{j}"].Select(t => t.Value).ToList().PopulationStandardDeviation().ConfidenceInterval(0.99).Contains(data[$"Pc{j}"].Select(t => t.Uncertainty).ToList().Mean()));
+                Assert.IsTrue(data[$"Pr{j}"].Select(t => t.Value).ToList().PopulationStandardDeviation().ConfidenceInterval(0.99).Contains(data[$"Pr{j}"].Select(t => t.Uncertainty).ToList().Mean()));
+                for (int k = 0; k < 3; k++) {
+                    Assert.IsTrue(data[$"Pr{j}c{k}"].Select(t => t.Value).ToList().PopulationStandardDeviation().ConfidenceInterval(0.99).Contains(data[$"Pr{j}c{k}"].Select(t => t.Uncertainty).ToList().Mean()));
+                    Assert.IsTrue(data[$"Pr{j}|c{k}"].Select(t => t.Value).ToList().PopulationStandardDeviation().ConfidenceInterval(0.99).Contains(data[$"Pr{j}|c{k}"].Select(t => t.Uncertainty).ToList().Mean()));
+                    Assert.IsTrue(data[$"Pc{j}|r{k}"].Select(t => t.Value).ToList().PopulationStandardDeviation().ConfidenceInterval(0.99).Contains(data[$"Pc{j}|r{k}"].Select(t => t.Uncertainty).ToList().Mean()));
+                }
+
+            }
 
         }
 

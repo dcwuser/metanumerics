@@ -1,5 +1,5 @@
 ﻿using System;
-
+using System.Collections.Generic;
 using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
@@ -11,10 +11,22 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents a Gamma distribution.
     /// </summary>
     /// <remarks>
-    /// <para>The sum of n exponentially distributed variates is a Gamma distributed variate.</para>
+    /// <para>The sum of n exponentially distributed variates is a Gamma distributed variate with shape parameter n.</para>
     /// <img src="../images/GammaFromExponential.png" />
     /// <para>When the shape parameter is an integer, the Gamma distribution is also called the Erlang distribution. When
     /// the shape parameter is one, the Gamma distribution reduces to the exponential distribution.</para>
+    /// <para>With large shape parameters, the Gamma distribution becomes approximately Gaussian.</para>
+    /// <With>With shape parameters less than one, the Gamma distribution becomes ever more strongly peaked near zero.</With>
+    /// <para>With very small shape parameters, say below about 0.01, the distribution becomes peaked so strongly near zero
+    /// that a non-negligible fraction consists of unrepresentatably small numbers that round to zero. For a shape parameter
+    /// of 0.001, for example, almost half the area under the curve corresponds to number smaller than 10<sup>-324</sup>.
+    /// This can cause problems if the distinction between zero and such small values is relevent to your application.
+    /// For example, if you do a <see cref="Univariate.KolmogorovSmirnovTest(IReadOnlyList{double}, ContinuousDistribution)"/>
+    /// on deviates generated from this distribution, you will get D ~ 0.47 and may conclude that the sample is nonreprestative.
+    /// But this happened only because 47% of the values rounded to zero,
+    /// making the KS test compute P(0) = 0 for the 47th percentile value. Without rouding the 47th percentile
+    /// value would have been P(~1.0E-324) ~ 0.47 resulting in an unremarkable D value.
+    /// </para>
     /// </remarks>
     /// <seealso cref="ExponentialDistribution"/>
     /// <seealso href="https://en.wikipedia.org/wiki/Gamma_distribution"/>
@@ -25,6 +37,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="shape">The shape parameter, which must be positive.</param>
         /// <param name="scale">The scale parameter, which must be positive.</param>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="shape"/> or <paramref name="scale"/> is zero or negative.</exception>
         public GammaDistribution (double shape, double scale) {
             if (shape <= 0.0) throw new ArgumentOutOfRangeException(nameof(shape));
             if (scale <= 0.0) throw new ArgumentOutOfRangeException(nameof(scale));
@@ -64,7 +77,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double Shape {
             get {
-                return (a);
+                return a;
             }
         }
 
@@ -73,14 +86,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double Scale {
             get {
-                return (s);
+                return s;
             }
         }
 
         /// <inheritdoc />
         public override Interval Support {
             get {
-                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+                return Interval.Semiinfinite;
             }
         }
 
@@ -108,28 +121,28 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (a * s);
+                return a * s;
             }
         }
 
         /// <inheritdoc />
         public override double Variance {
             get {
-                return (a * s * s);
+                return a * s * s;
             }
         }
 
         /// <inheritdoc />
         public override double Skewness {
             get {
-                return (2.0 / Math.Sqrt(a));
+                return 2.0 / Math.Sqrt(a);
             }
         }
 
         /// <inheritdoc />
         public override double ExcessKurtosis {
             get {
-                return (6.0 / a);
+                return 6.0 / a;
             }
         }
 
@@ -138,16 +151,16 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (x < 0.0) {
                 return (0.0);
             } else {
-                return (AdvancedMath.LeftRegularizedGamma(a, x / s));
+                return AdvancedMath.LeftRegularizedGamma(a, x / s);
             }
         }
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
             if (x < 0.0) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (AdvancedMath.RightRegularizedGamma(a, x / s));
+                return AdvancedMath.RightRegularizedGamma(a, x / s);
             }
         }
 
@@ -161,7 +174,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 for (int i = 0; i < r; i++) {
                     M = M * s * (a + i);
                 }
-                return (M);
+                return M;
             }
         }
 
@@ -170,9 +183,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else if (r == 1) {
-                return (0.0);
+                return 0.0;
             } else {
 
                 // for higher moments, use the recurrence C_{n+1} = n ( C_n + a C_{n-1} )
@@ -186,7 +199,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                     C1 = C2;
                     C2 = C3;
                 }
-                return (C2);
+                return C2;
             }
         }
 
@@ -195,9 +208,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (0.0);
+                return 0.0;
             } else {
-                return (a * AdvancedIntegerMath.Factorial(r - 1) * MoreMath.Pow(s, r));
+                return a * AdvancedIntegerMath.Factorial(r - 1) * MoreMath.Pow(s, r);
             }
         }
 
@@ -303,13 +316,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
-            return (s * InverseLeftStandardGamma(P));
+            return s * InverseLeftStandardGamma(P);
         }
 
         /// <inheritdoc />
         public override double GetRandomValue (Random rng) {
             if (rng == null) throw new ArgumentNullException(nameof(rng));
-            return (s * gammaRng.GetNext(rng));
+            return s * gammaRng.GetNext(rng);
         }
 
         /// <summary>
@@ -325,9 +338,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
-        public static GammaFitResult FitToSample (Sample sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            return (Univariate.FitToGamma(sample.data));
+        public static GammaFitResult FitToSample (IReadOnlyList<double> sample) {
+            return Univariate.FitToGamma(sample);
         }
 
 #if FUTURE

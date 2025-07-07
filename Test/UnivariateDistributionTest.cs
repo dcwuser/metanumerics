@@ -16,7 +16,7 @@ namespace Test {
 
         [TestInitialize]
         public void Initialize () {
-            ContinuousDistribution[] continuous = DistributionTest.GetDistributions();
+            ContinuousDistribution[] continuous = ContinuousDistributionTest.GetDistributions();
             DiscreteDistribution[] discrete = DiscreteDistributionTest.GetDistributions();
             Distributions = new UnivariateDistribution[continuous.Length + discrete.Length];
             Array.Copy(continuous, 0, Distributions, 0, continuous.Length);
@@ -68,6 +68,13 @@ namespace Test {
                     // Near-equality added for Weibull
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(distribution.Cumulant(2), distribution.Variance));
                 }
+            }
+        }
+
+        [TestMethod]
+        public void UnivariateDistributionCumulantInvalidArgument () {
+            foreach (UnivariateDistribution distribution in Distributions) {
+                Assert.ThrowsException<ArgumentOutOfRangeException>(() => distribution.Cumulant(-1));
             }
         }
 

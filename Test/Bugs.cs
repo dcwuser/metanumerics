@@ -100,15 +100,15 @@ namespace Test {
             // so all the quantities became Infinity and the root-finder never converged. We changed the algorithm to operate on
             // w = log x - <log x> which keeps quantities much smaller.
 
-            Sample sample = new Sample(
+            List<double> sample = new List<double>() {
                 12.824, 12.855, 12.861, 12.862, 12.863,
                 12.864, 12.865, 12.866, 12.866, 12.866,
                 12.867, 12.867, 12.868, 12.868, 12.870,
                 12.871, 12.871, 12.871, 12.871, 12.872,
                 12.876, 12.878, 12.879, 12.879, 12.881
-            );
+            };
 
-            WeibullFitResult result = WeibullDistribution.FitToSample(sample);
+            WeibullFitResult result = sample.FitToWeibull();
             Console.WriteLine("{0} {1}", result.Scale, result.Shape);
             Console.WriteLine(result.GoodnessOfFit.Probability);
         }
@@ -194,11 +194,8 @@ namespace Test {
 
         [TestMethod]
         public void Bug7213 () {
-
-            Sample s = new Sample();
-            s.Add(0.00590056, 0.00654598, 0.0066506, 0.00679065, 0.008826);
-            WeibullFitResult r = WeibullDistribution.FitToSample(s);
-
+            double[] s = new double[] { 0.00590056, 0.00654598, 0.0066506, 0.00679065, 0.008826 };
+            WeibullFitResult r = s.FitToWeibull();
         }
 
         [TestMethod]
@@ -259,9 +256,7 @@ namespace Test {
 
             UncertainMeasurementFitResult DataFit = DataSet.FitToPolynomial(3);
 
-            BivariateSample bs = new BivariateSample();
-            for (int i = 0; i < 10; i++) bs.Add(X_axis[i], Y_axis[i]);
-            PolynomialRegressionResult bsFit = bs.PolynomialRegression(3);
+            PolynomialRegressionResult bsFit = Y_axis.PolynomialRegression(X_axis, 3);
             foreach (Parameter p in bsFit.Parameters) Console.WriteLine(p);
 
         }
@@ -336,32 +331,22 @@ namespace Test {
             Console.WriteLine(P);
         }
 
-        // Not fixing this bug; use Polynomial interpolation for this scenario instead
-        //[TestMethod]
-        public void Bug6392 () {
-            // bug requests that we support regression with number of points equal to number
-            // of fit parameters, i.e. polynomial fit
-            var biSample = new BivariateSample();
-            biSample.Add(0, 1);
-            biSample.Add(1, -1);
-            var fitResult = biSample.LinearRegression();
-        }
-
-
         [TestMethod]
         public void Bug6391 () {
             // this simple PCA caused a NonConvergenceException
-            var mvSample = new MultivariateSample(2);
-            mvSample.Add(0, 1);
-            mvSample.Add(0, -1);
-            var pca = mvSample.PrincipalComponentAnalysis();
+            double[][] sample = new double[][] { new double[] { 0, 0 }, new double[]{ 1, -1 } };
+            var pca = sample.PrincipalComponentAnalysis();
+            //var mvSample = new MultivariateSample(2);
+            //mvSample.Add(0, 1);
+            //mvSample.Add(0, -1);
+            //var pca = mvSample.PrincipalComponentAnalysis();
         }
 
  
         [TestMethod]
         public void Bug6988 () {
             // due to writing i / n instead of (double) i / n, Sample.LeftProbability was reported as 0 except for the last value
-            Sample s = new Sample(0.0, 1.0, 3.0, 4.0);
+            double[] s = new double[] { 0.0, 1.0, 3.0, 4.0 };
             Assert.IsTrue(TestUtilities.IsNearlyEqual(s.LeftProbability(2.0), 0.5));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(s.InverseLeftProbability(0.5), 2.0));
         }

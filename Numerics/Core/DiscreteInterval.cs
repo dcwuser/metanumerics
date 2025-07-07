@@ -7,16 +7,16 @@ namespace Meta.Numerics {
     /// <summary>
     /// Represents an interval on the integers.
     /// </summary>
-    public struct DiscreteInterval : IEquatable<DiscreteInterval> {
+    public readonly struct DiscreteInterval : IEquatable<DiscreteInterval> {
 
         internal DiscreteInterval (int min, int max) {
             Debug.Assert(max >= min);
+            if (min == Int32.MinValue) throw new ArgumentOutOfRangeException(nameof(min));
             this.min = min;
             this.max = max;
         }
 
         private readonly int min;
-
         private readonly int max;
 
         /// <summary>
@@ -25,8 +25,16 @@ namespace Meta.Numerics {
         /// <param name="a">One endpoint.</param>
         /// <param name="b">The other endpoint.</param>
         /// <returns>A discrete interval between the given endpoints.</returns>
+        /// <remarks><para>In order that width calculations always fit within a <see cref="System.UInt32"/>, we limit discrete intervals
+        /// to the symmetric range of signed integers -<see cref="Int32.MaxValue"/> to +<see cref="Int32.MaxValue"/>. That is,
+        /// the value <see cref="Int32.MinValue"/> is not allowed. This should almost never have a practical effect, unless you
+        /// attempt to instantiate the full interval. For such a purpose, use <see cref="DiscreteInterval.Infinite"/> instead.</para></remarks>
         public static DiscreteInterval FromEndpoints (int a, int b) {
-            return (new DiscreteInterval(Math.Min(a, b), Math.Max(a, b)));
+            if (a > b) {
+                return new DiscreteInterval(b, a);
+            } else {
+                return new DiscreteInterval(a, b);
+            }
         }
 
         /// <summary>
@@ -34,7 +42,7 @@ namespace Meta.Numerics {
         /// </summary>
         public int LeftEndpoint {
             get {
-                return (min);
+                return min;
             }
         }
 
@@ -43,29 +51,39 @@ namespace Meta.Numerics {
         /// </summary>
         public int RightEndpoint {
             get {
-                return (max);
+                return max;
             }
         }
 
         /// <summary>
         /// Gets the width of the interval.
         /// </summary>
-        internal int Width {
+        /// <remarks>
+        /// <para>The width of the interval is the difference between <see cref="LeftEndpoint"/> and <see cref="RightEndpoint"/>.
+        /// This is one less than the number of integers in the interval. Thus an interval with equal left and right endpoints
+        /// has width 0, not width 1. And and the interval {0 .. MaxValue} has width MaxValue, not MaxValue + 1.</para>
+        /// </remarks>
+        internal uint Width {
             get {
-                // For [0, Int32.MaxValue], w will overflow. Since Int32.MaxValue is our integer "infinity",
-                // just reset it to that value.
-                int w = max - min + 1;
-                if (w < 0) w = Int32.MaxValue;
-                return (w);
+                return (uint) (max - min);
             }
         }
+
+        /// <summary>
+        /// The semi-infinite discrete interval representing all non-negative integers.
+        /// </summary>
+        public static readonly DiscreteInterval Semiinfinite = new DiscreteInterval(0, Int32.MaxValue);
+
+        /// <summary>
+        /// The infinite discrete interval representing all integers.
+        /// </summary>
+        public static readonly DiscreteInterval Infinite = new DiscreteInterval(-Int32.MaxValue, Int32.MaxValue);
 
         // Equality
 
         private static bool Equals (DiscreteInterval u, DiscreteInterval v) {
             return (u.min == v.min) && (u.max == v.max);
         }
-
 
         /// <summary>
         /// Tests whether two discrete intervals are equal.
@@ -111,9 +129,7 @@ namespace Meta.Numerics {
 
         /// <inheritdoc />
         public override int GetHashCode () {
-            unchecked {
-                return (min.GetHashCode() + 31 * max.GetHashCode());
-            }
+            return unchecked(min.GetHashCode() + 31 * max.GetHashCode());
         }
 
         /// <inheritdoc />
@@ -121,8 +137,8 @@ namespace Meta.Numerics {
             return ToString(CultureInfo.CurrentCulture);
         }
 
-        private string ToString (IFormatProvider format) {
-            return String.Format(format, "{{{0}..{1}}}", min, max);
+        private string ToString (IFormatProvider provider) {
+            return String.Format(provider, "{{{0}..{1}}}", min, max);
         }
 
     }

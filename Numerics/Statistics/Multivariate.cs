@@ -20,7 +20,7 @@ namespace Meta.Numerics.Statistics {
     /// and race of each participant is a multivariate sample. Note that the types of each quantity
     /// measured need not be the same.</para>
     /// <para>One common form of statistical analysis of a multivariate sample is to try to predict
-    /// one variable on the basis of some of the others. To do this you can use
+    /// one variable from the others. To do this you can use
     /// <see cref="MultiLinearRegression(IReadOnlyList{double}, IReadOnlyList{double}[])"/>
     /// or, if the dependent variable is Boolean,
     /// <see cref="MultiLinearLogisticRegression(IReadOnlyList{bool}, IReadOnlyList{double}[])"/>.</para>
@@ -46,14 +46,12 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="DimensionMismatchException">Not all of the columns contain the same number of observations.</exception>
         /// <exception cref="InsufficientDataException">There are too few observations to perform the fit.</exception>
         public static MultiLinearRegressionResult MultiLinearRegression(this IReadOnlyList<double> yColumn, IReadOnlyDictionary<string, IReadOnlyList<double>> xColumnDictionary) {
-            if (yColumn == null) throw new ArgumentNullException(nameof(yColumn));
-            if (xColumnDictionary == null) throw new ArgumentNullException(nameof(xColumnDictionary));
+            if (yColumn is null) throw new ArgumentNullException(nameof(yColumn));
+            if (xColumnDictionary is null) throw new ArgumentNullException(nameof(xColumnDictionary));
 
-            List<IReadOnlyList<double>> xColumns;
-            List<string> xNames;
-            PrepareColumnsFromDictionary(xColumnDictionary, yColumn.Count, out xColumns, out xNames);
+            PrepareColumnsFromDictionary(xColumnDictionary, yColumn.Count, out List<IReadOnlyList<double>>  xColumns, out List<string> xNames);
 
-            return (new MultiLinearRegressionResult(yColumn, xColumns, xNames));
+            return new MultiLinearRegressionResult(yColumn, xColumns, xNames);
         }
 
         /// <summary>
@@ -69,9 +67,9 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="DimensionMismatchException">Not all of the columns contain the same number of observations.</exception>
         /// <exception cref="InsufficientDataException">There are too few observations to perform the fit.</exception>
         public static MultiLinearRegressionResult MultiLinearRegression(this IReadOnlyList<double> yColumn, params IReadOnlyList<double>[] xColumns) {
-            if (xColumns == null) throw new ArgumentNullException(nameof(xColumns));
-            if (yColumn == null) throw new ArgumentNullException(nameof(yColumn));
-            return (MultiLinearRegression(yColumn, (IReadOnlyList<IReadOnlyList<double>>) xColumns));
+            if (xColumns is null) throw new ArgumentNullException(nameof(xColumns));
+            if (yColumn is null) throw new ArgumentNullException(nameof(yColumn));
+            return MultiLinearRegression(yColumn, (IReadOnlyList<IReadOnlyList<double>>) xColumns);
         }
 
         /// <summary>
@@ -95,11 +93,9 @@ namespace Meta.Numerics.Statistics {
             if (yColumn == null) throw new ArgumentNullException(nameof(yColumn));
             if (xColumns == null) throw new ArgumentNullException(nameof(xColumns));
 
-            List<string> xNames;
-            List<IReadOnlyList<double>> xColumnsCopy;
-            PrepareColumns(xColumns, yColumn.Count, out xColumnsCopy, out xNames);
+            PrepareColumns(xColumns, yColumn.Count, out List<IReadOnlyList<double>>  xColumnsCopy, out List<string> xNames);
 
-            return (new MultiLinearRegressionResult(yColumn, xColumnsCopy, xNames));
+            return new MultiLinearRegressionResult(yColumn, xColumnsCopy, xNames);
         }
 
         // This method is used to prepare sets of x-columns in the format expected by the multivariate fitting routines.
@@ -296,13 +292,14 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="https://en.wikipedia.org/wiki/Principal_component_analysis"/>
         public static PrincipalComponentAnalysis PrincipalComponentAnalysis (this IReadOnlyList<IReadOnlyList<double>> columns) {
 
-            if (columns == null) throw new ArgumentNullException(nameof(columns));
+            if (columns is null) throw new ArgumentNullException(nameof(columns));
 
+            // Verify that all columns are non-null and dimensions match
             int dimension = columns.Count;
             int count = -1;
             for (int c = 0; c < dimension; c++) {
                 IReadOnlyList<double> column = columns[c];
-                if (column == null) throw new ArgumentNullException(nameof(columns));
+                if (column is null) throw new ArgumentNullException(nameof(columns));
                 if (count < 0) {
                     count = column.Count;
                 } else {
@@ -312,7 +309,7 @@ namespace Meta.Numerics.Statistics {
 
             if (count < dimension) throw new InsufficientDataException();
 
-            // construct a (Count X Dimension) matrix of mean-centered data
+            // Construct a (Count X Dimension) matrix of mean-centered data
             double[] store = MatrixAlgorithms.AllocateStorage(count, dimension);
             int i = 0;
             for (int c = 0; c < dimension; c++) {
@@ -324,23 +321,21 @@ namespace Meta.Numerics.Statistics {
                 }
             }
 
-            // bidiagonalize it
-            double[] a, b;
-            MatrixAlgorithms.Bidiagonalize(store, count, dimension, out a, out b);
+            // Bidiagonalize it
+            MatrixAlgorithms.Bidiagonalize(store, count, dimension, out double[] a, out double[] b);
 
-            // form the U and V matrices
+            // Form the U and V matrices
             double[] left = MatrixAlgorithms.AccumulateBidiagonalU(store, count, dimension);
             double[] right = MatrixAlgorithms.AccumulateBidiagonalV(store, count, dimension);
 
-            // find the singular values of the bidiagonal matrix
+            // Find the singular values of the bidiagonal matrix
             MatrixAlgorithms.ExtractSingularValues(a, b, left, right, count, dimension);
 
-            // sort them
+            // Sort them
             MatrixAlgorithms.SortValues(a, left, right, count, dimension);
 
             PrincipalComponentAnalysis pca = new PrincipalComponentAnalysis(left, a, right, count, dimension);
-
-            return (pca);
+            return pca;
 
         }
 
@@ -350,7 +345,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="columns">The columns on which to perform the analysis.</param>
         /// <returns>The result of the principal component analysis.</returns>
         public static PrincipalComponentAnalysis PrincipalComponentAnalysis (params IReadOnlyList<double>[] columns) {
-            return (PrincipalComponentAnalysis((IReadOnlyList<IReadOnlyList<double>>) columns));
+            return PrincipalComponentAnalysis((IReadOnlyList<IReadOnlyList<double>>) columns);
         }
 
         /// <summary>

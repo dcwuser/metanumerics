@@ -72,7 +72,7 @@ namespace Meta.Numerics.Analysis {
         public static Extremum FindMaximum (Func<double, double> f, double x, ExtremumSettings settings) {
             if (f == null) throw new ArgumentNullException(nameof(f));
             if (settings == null) throw new ArgumentNullException(nameof(settings));
-            return (FindMinimum(new Functor(f, true), x, settings).Negate());
+            return (FindMinimum(new Functor(u => -f(u)), x, settings).Negate());
         }
 
         /// <summary>
@@ -216,7 +216,7 @@ namespace Meta.Numerics.Analysis {
         public static Extremum FindMaximum (Func<double, double> f, Interval r, ExtremumSettings settings) {
             if (f == null) throw new ArgumentNullException(nameof(f));
             if (settings == null) throw new ArgumentNullException(nameof(settings));
-            return (FindMinimum(new Functor(f, true), r.LeftEndpoint, r.RightEndpoint, settings).Negate());
+            return (FindMinimum(new Functor(x => -f(x)), r.LeftEndpoint, r.RightEndpoint, settings).Negate());
         }
 
         /// <summary>
@@ -482,34 +482,6 @@ namespace Meta.Numerics.Analysis {
     }
         
 
-    // This class is used to wrap a function, storing some associated state such as the evaluation count.
-    // It isn't truly a functor in the C++ sense, since .NET doesn't allow () to be overloaded, but
-    // it is a functor in the sense that it is a class used to represent a function.
-
-    internal class Functor {
-
-        public Functor (Func<double, double> f) : this(f, false) {}
-
-        public Functor (Func<double, double> f, bool negate) {
-            Function = f;
-            Negate = negate;
-        }
-
-        public Func<double, double> Function { get; protected set; }
-
-        public int EvaluationCount { get; protected set; }
-
-        public bool Negate { get; set; }
-
-        public virtual double Evaluate (double x) {
-
-            double f = Function(x);
-            if (Negate) f = -f;
-            EvaluationCount++;
-            return (f);
-
-        }
-
-    }
+    
 
 }

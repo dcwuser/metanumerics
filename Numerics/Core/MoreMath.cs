@@ -25,73 +25,73 @@ namespace Meta.Numerics {
         /// </remarks>
         public static double Pow (double x, int n) {
 
-            if (n < 0) return (1.0 / Pow(x, -n));
+            if (n < 0) return 1.0 / Pow(x, -n);
 
             switch (n) {
                 case 0:
                     // We follow convention that 0^0 = 1.
-                    return (1.0);
+                    return 1.0;
                 case 1:
-                    return (x);
+                    return x;
                 case 2:
                     // 1 multiply
-                    return (x * x);
+                    return x * x;
                 case 3:
                     // 2 multiplies
-                    return (x * x * x);
+                    return x * x * x;
                 case 4: {
                         // 2 multiplies
                         double x2 = x * x;
-                        return (x2 * x2);
+                        return x2 * x2;
                     }
                 case 5: {
                         // 3 multiplies
                         double x2 = x * x;
-                        return (x2 * x2 * x);
+                        return x2 * x2 * x;
                     }
                 case 6: {
                         // 3 multiplies
                         double x2 = x * x;
-                        return (x2 * x2 * x2);
+                        return x2 * x2 * x2;
                     }
                 case 7: {
                         // 4 multiplies
                         double x3 = x * x * x;
-                        return (x3 * x3 * x);
+                        return x3 * x3 * x;
                     }
                 case 8: {
                         // 3 multiplies
                         double x2 = x * x;
                         double x4 = x2 * x2;
-                        return (x4 * x4);
+                        return x4 * x4;
                     }
                 case 9: {
                         // 4 multiplies
                         double x3 = x * x * x;
-                        return (x3 * x3 * x3);
+                        return x3 * x3 * x3;
                     }
                 case 10: {
                         // 4 multiplies
                         double x2 = x * x;
                         double x4 = x2 * x2;
-                        return (x4 * x4 * x2);
+                        return x4 * x4 * x2;
                     }
                 case 12: {
                         // 4 multiplies
                         double x3 = x * x * x;
                         double x6 = x3 * x3;
-                        return (x6 * x6);
+                        return x6 * x6;
                     }
                 case 16: {
                         // 4 multiplies
                         double x2 = x * x;
                         double x4 = x2 * x2;
                         double x8 = x4 * x4;
-                        return (x8 * x8);
+                        return x8 * x8;
                     }
                 // Those are all the cases do-able in 4 or fewer multiplies.
                 default:
-                    return (Math.Pow(x, n));
+                    return Math.Pow(x, n);
             }
 
             // I verified that this routine is measurably faster than Math.Pow for the
@@ -127,19 +127,19 @@ namespace Meta.Numerics {
             }
 
             if (small == 0.0) {
-                return (big);
+                return big;
             } else if (Double.IsPositiveInfinity(big) && !Double.IsNaN(small)) {
-                return (Double.PositiveInfinity);
+                return Double.PositiveInfinity;
             } else {
                 double ratio = small / big;
-                return (big * Math.Sqrt(1.0 + ratio * ratio));
+                return big * Math.Sqrt(1.0 + ratio * ratio);
             }
 
         }
 
         // Beebe, "Computation of expm1(x) = exp(x)  - 1", 2002 (http://www.math.utah.edu/~beebe/reports/expm1.pdf)
         // makes some good points about e^x - 1.
-        //   * He shows that the point e^x = 1/2 and e^x = 3/2 are the relevent limits where Math.Exp(x) - 1.0
+        //   * He shows that the points e^x = 1/2 and e^x = 3/2 are the relevant limits where Math.Exp(x) - 1.0
         //     looses one bit of accuracy.
         //   * He measures that the maximum number of terms in the Taylor series required in this region is 17.
         //   * He measures that the RMS error of the Taylor series in this region is ~0.8 bits and it's maximum
@@ -165,7 +165,7 @@ namespace Meta.Numerics {
                 double f_old = f;
                 df *= x / k;
                 f += df;
-                if (f == f_old) return (f);
+                if (f == f_old) return f;
             }
             throw new NonconvergenceException();
         }
@@ -183,7 +183,7 @@ namespace Meta.Numerics {
         /// </remarks>
         public static double ExpMinusOne (double x) {
             if ((expm1SeriesLowerLimit < x) && (x < expm1SeriesUpperLimit)) {
-                return (x * ReducedExpm1Series(x));
+                return x * ReducedExpm1Series(x);
             } else {
                 return (Math.Exp(x) - 1.0);
             }
@@ -191,9 +191,9 @@ namespace Meta.Numerics {
 
         internal static double ReducedExpMinusOne (double x) {
             if ((expm1SeriesLowerLimit < x) && (x < expm1SeriesUpperLimit)) {
-                return (ReducedExpm1Series(x));
+                return ReducedExpm1Series(x);
             } else {
-                return ((Math.Exp(x) - 1.0) / x);
+                return (Math.Exp(x) - 1.0) / x;
             }
         }
 
@@ -244,16 +244,24 @@ namespace Meta.Numerics {
         /// for values of x near zero.</para>
         /// </remarks>
         public static double LogOnePlus (double x) {
-
             double z = 1.0 + x;
             if (z == 1.0) {
-                return (x);
+                return x;
             } else {
                 return (Math.Log(z) / (z - 1.0) * x);
             }
         }
 
         // Computes \log (1 + e * x) / e, i.e. the rate at which LogOnePlus changes with e
+
+        internal static double ReducedLogOnePlus (double x) {
+            double z = 1.0 + x;
+            if (z == 1.0) {
+                return z;
+            } else {
+                return Math.Log(z) / (z - 1.0);
+            }
+        }
 
         internal static double ReducedLogOnePlus (double x, double e) {
             double y = e * x;
@@ -286,7 +294,7 @@ namespace Meta.Numerics {
         /// about using this function, because even the most basic optimizing compiler will optimize away the call.</para>
         /// </remarks>
         public static double Sqr (double x) {
-            return (x * x);
+            return x * x;
         }
 
         /// <summary>
@@ -403,12 +411,18 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The value of sin(<paramref name="x"/>&#x3C0;).</returns>
         /// <remarks>
-        /// <para>This function allows the user to increase performance and avoid inaccuracies due to the finite
-        /// precision of the stored constant <see cref="Math.PI"/> in some cases. Suppose you need to compute
-        /// sin(x&#x3C0;) for a large value of x.
+        /// <para>Formulas involving sin(&#x3C0;x) appear in many contexts. By using this method
+        /// instead of <c>Math.Sin(Math.PI * x)</c>, you will increase performance and avoid inaccuracies
+        /// that arise from the finite precision of the stored constant <see cref="Math.PI"/>.</para>
+        /// <para>Suppose, for example, x = 1.0E6. Since x is an integer, sin(&#x3C0;x) = 0.0.
+        /// However, due to the finite accuracy of Math.PI, Math.PI * x is not a perfect multiple of &#x3C0;, and
+        /// Math.Sin(Math.PI * x) = -2.2318717360358953E-10. But MoreMath.SinPi(x) = 0.0 exactly. Even for
+        /// arguments that are not exact integers, the accurary of MoreMath.SinPi will be better (because
+        /// it is possible to do argument reductions by integers exactly.)
         /// </para>
         /// </remarks>
         /// <seealso cref="CosPi(double)"/>
+        /// <seealso cref="TanPi(double)"/>
         public static double SinPi (double x) {
             RangeReduction.ReduceByOnes(2.0 * x, out long y0, out double y1);
             return (RangeReduction.Sin(y0, y1));
@@ -424,12 +438,24 @@ namespace Meta.Numerics {
         /// see <see cref="SinPi(double)"/>.</para>
         /// </remarks>
         /// <seealso cref="SinPi(double)"/>
+        /// <seealso cref="TanPi(double)"/>
         public static double CosPi (double x) {
             RangeReduction.ReduceByOnes(2.0 * x, out long y0, out double y1);
             return (RangeReduction.Cos(y0, y1));
         }
 
-        internal static double TanPi (double x) {
+        /// <summary>
+        /// Computes the tangent of the given multiple of &#x3C0;.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of tan(&#x3C0; <paramref name="x"/>).</returns>
+        /// <remarks>
+        /// <para>For an explanation of why and when to use this function,
+        /// see <see cref="SinPi(double)"/>.</para>
+        /// </remarks>
+        /// <seealso cref="SinPi(double)"/>
+        /// <seealso cref="CosPi(double)"/>
+        public static double TanPi (double x) {
             RangeReduction.ReduceByOnes(2.0 * x, out long y0, out double y1);
             if (y0 % 2L == 0L) {
                 return (Math.Tan(Math.PI / 2.0 * y1));
@@ -457,9 +483,9 @@ namespace Meta.Numerics {
             // Perhaps counter-intuitively, naive evaluation of sin(x) / x looses no accuracy,
             // even very close to zero, so long as x \ne 0. So we only branch on that one value.
             if (x == 0.0) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (Sin(x) / x);
+                return Sin(x) / x;
             }
         }
 
@@ -475,9 +501,9 @@ namespace Meta.Numerics {
         /// </remarks>
         public static double SincPi (double x) {
             if (x == 0.0) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (SinPi(x) / (Math.PI * x));
+                return SinPi(x) / (Math.PI * x);
             }
         }
 
@@ -499,9 +525,25 @@ namespace Meta.Numerics {
         public static long Mod (long n, long m) {
             long r = n % m;
             if (r < 0) r += m;
-            return (r);
+            return r;
             // ((n % m) + m) % m would probably be faster (mod being faster than test-and-branch),
             // but it would not only be less clear, but also suffer overflow problems for m near integer limits
+        }
+
+        /// <summary>
+        /// Computes the midpoint of two integers.
+        /// </summary>
+        /// <param name="x">One integer.</param>
+        /// <param name="y">Another integer.</param>
+        /// <returns>The midpoint of the two integers (rounded down).</returns>
+        /// <remarks>
+        /// <para>The simple expression (x + y)/2 can overflow. The implementation of this
+        /// method returns the accurate midpoint for all values of x and y, including all
+        /// combinations of their extreme values.</para>
+        /// </remarks>
+        public static int Midpoint(int x, int y) {
+            // This expression is from Warren, "Hacker's Delight", Section 2-5
+            return (x & y) + ((x ^ y) >> 1);
         }
 
     }
@@ -520,6 +562,15 @@ namespace Meta.Numerics {
 
         public static void Decompose (double x, out double hi, out double lo) {
             double p = K * x;
+            if (Double.IsInfinity(p) && !Double.IsInfinity(x)) {
+                Debug.Assert(Math.Abs(x) >= Double.MaxValue / K);
+                const int scaleFactor = 1 << (bitsPerPart + 1);
+                double xPrime = x / scaleFactor;
+                Decompose(xPrime, out double hiPrime, out double loPrime);
+                hi = hiPrime * scaleFactor;
+                lo = loPrime * scaleFactor;
+                return;
+            }
             double q = x - p;
             hi = p + q;
             lo = x - hi;

@@ -4,6 +4,7 @@ using System.Text;
 
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
+using Meta.Numerics.Extended;
 
 namespace Meta.Numerics.Functions
 {
@@ -11,40 +12,62 @@ namespace Meta.Numerics.Functions
     {
 
         public static double AiryAiZero (int k) {
+
             if (k < 1) throw new ArgumentOutOfRangeException(nameof(k));
 
-            double tm = 3.0 / 8.0 * Math.PI * (4 * k - 2);
-            //double t0 = 3.0 / 8.0 * Math.PI * (4 * k - 1);
-            double tp = 3.0 / 8.0 * Math.PI * (4 * k - 0);
+            // The very 1st root requires 3 Halley cycles, so special-case it.
+            if (k == 1) return -2.33810741045976704;
 
-            double am = -T(tm);
-            //double a0 = -T(t0);
-            double ap = -T(tp);
 
-            double a1 = FunctionMath.FindZero(AdvancedMath.AiryAi, Interval.FromEndpoints(ap, am));
+            // DLMF 9.9 gives an asymptotic expansion for Airy roots.
+            double t = 3.0 / 8.0 * Math.PI * (4 * k - 1);
+            double x = -T(t);
 
-            return (a1);
+            // We have f=Ai(x), f'= Ai'(x), f'' = Ai''(x) = x Ai(x).
+            // Halley's method triples digits of accuracy with each iteration.
+            // Since we know it works, hard-code a small, sufficient number of
+            // iterations to avoid messsing around with termination criteria.
+
+            // Passing into a root-finder, even one that uses derivatives, requires 5-30
+            // function evaluations, so this is faster, as I verified via direct comparison.
+
+            for (int i = 0; i < 2; i++) {
+                SolutionPair a = AdvancedMath.Airy(x);
+                double r = a.FirstSolutionValue / a.FirstSolutionDerivative;
+                x -= r / (1.0 - 0.5 * r * x);
+            }
+
+            return x;
+
         }
 
         public static double AiryBiZero (int k) {
+
             if (k < 1) throw new ArgumentOutOfRangeException(nameof(k));
 
-            double tm = 3.0 / 8.0 * Math.PI * (4 * k - 4);
-            double tp = 3.0 / 8.0 * Math.PI * (4 * k - 2);
+            // The 1st root requires 5 Hally iterations, so special-case it.
+            if (k == 1) return -1.17371322270912792;
 
-            double bm = (tm == 0.0) ? 0.0 : -T(tm);
-            double bp = -T(tp);
+            double t = 3.0 / 8.0 * Math.PI * (4 * k - 3);
+            double x = -T(t);
 
-            double b1 = FunctionMath.FindZero(AdvancedMath.AiryBi, Interval.FromEndpoints(bp, bm));
+            for (int i = 0; i < 2; i++) {
+                SolutionPair b = AdvancedMath.Airy(x);
+                double r = b.SecondSolutionValue / b.SecondSolutionDerivative;
+                x -= r / (1.0 - 0.5 * r * x);
+            }
 
-            return (b1);
+            return x;
+
         }
 
         private static double T (double t) {
+            // Even for t_1 ~ 3.53, terms decrease up to 1/t^6, yielding a relative error of ~2.2E-4
+            // for higher roots, even more accurate.
             double u = 1.0 / (t * t);
-            return ( Math.Pow(t, 2.0 / 3.0) * (
-                1.0 + u * (5.0 / 48.0 + u * (-5.0/36.0 + 77125.0 / 82944.0 * u))
-            ));
+            return Math.Pow(t, 2.0 / 3.0) * (
+                1.0 + u * (5.0 / 48.0 + u * (-5.0 / 36.0 + u * (77125.0 / 82944.0)))
+            );
         }
 
     }

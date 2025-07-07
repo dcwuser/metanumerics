@@ -31,13 +31,17 @@ namespace Meta.Numerics.Statistics.Distributions {
         public PoissonDistribution (double mu) {
             if (mu <= 0.0) throw new ArgumentOutOfRangeException(nameof(mu));
             this.mu = mu;
+            this.poissonGenerator = GetPoissonGenerator(mu);
+        }
 
+        internal static IDeviateGenerator<int> GetPoissonGenerator (double mu) {
+            Debug.Assert(mu > 0.0);
             if (mu < 4.0) {
-                poissonGenerator = new PoissonGeneratorMultiplicative(mu);
+                return new PoissonGeneratorMultiplicative(mu);
             } else if (mu < 16.0) {
-                poissonGenerator = new PoissonGeneratorTabulated(mu);
+                return new PoissonGeneratorTabulated(mu);
             } else {
-                poissonGenerator = new PoissonGeneratorPTRS(mu);
+                return new PoissonGeneratorPTRS(mu);
             }
         }
 
@@ -48,50 +52,44 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double ProbabilityMass (int k) {
             if (k < 0) {
-                return (0.0);
+                return 0.0;
             } else {
-                // These are the same expression, but the form for small arguments is faster,
-                // while the form for large arguments avoids overflow and cancellation errors.
-                if (k < 16) {
-                    return (Math.Exp(-mu) * MoreMath.Pow(mu, k) / AdvancedIntegerMath.Factorial(k));
-                } else {
-                    return(Stirling.PoissonProbability(mu, k));
-                }
+                return AdvancedMath.PoissonProbability(mu, k);
             }
         }
 
         /// <inheritdoc />
         public override DiscreteInterval Support {
             get {
-                return (new DiscreteInterval(0, Int32.MaxValue));
+                return DiscreteInterval.Semiinfinite;
             }
         }
 
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (mu);
+                return mu;
             }
         }
 
         /// <inheritdoc />
         public override double Variance {
             get {
-                return (mu);
+                return mu;
             }
         }
 
         /// <inheritdoc />
         public override double Skewness {
             get {
-                return (1.0 / Math.Sqrt(mu));
+                return 1.0 / Math.Sqrt(mu);
             }
         }
 
         /// <inheritdoc />
         public override double ExcessKurtosis {
             get {
-                return (1.0 / mu);
+                return 1.0 / mu;
             }
         }
 
@@ -126,9 +124,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double RightExclusiveProbability (int k) {
             if (k < 0) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (AdvancedMath.LeftRegularizedGamma(k + 1, mu));
+                return AdvancedMath.LeftRegularizedGamma(k + 1, mu);
             }
         }
 
@@ -306,9 +304,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (0.0);
+                return 0.0;
             } else {
-                return (mu);
+                return mu;
             }
         }
 
@@ -336,7 +334,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override int GetRandomValue (Random rng) {
             if (rng is null) throw new ArgumentNullException(nameof(rng));
-            return (poissonGenerator.GetNext(rng));
+            return poissonGenerator.GetNext(rng);
         }
 
     }
@@ -344,6 +342,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     internal class PoissonGeneratorMultiplicative : IDeviateGenerator<int> {
 
         public PoissonGeneratorMultiplicative (double lambda) {
+            Debug.Assert(lambda > 0.0);
             expMinusLambda = Math.Exp(-lambda);
         }
 
@@ -356,7 +355,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 k++;
                 t *= rng.NextDouble();
             }
-            return (k);
+            return k;
         }
 
     }
@@ -385,7 +384,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             int k = Array.BinarySearch<double>(cdf, u);
             if (k < 0) k = ~k;
 
-            return (k);
+            return k;
         }
 
     }

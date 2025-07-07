@@ -161,7 +161,7 @@ namespace Meta.Numerics.Extended {
             Debug.Assert(x > 0.0);
 
             DoubleDouble s = DoubleDouble.Zero;
-            while (x < 34.0) {
+            while (x < 38.0) {
                 s += DoubleDouble.Log(x);
                 x += DoubleDouble.One;
             }

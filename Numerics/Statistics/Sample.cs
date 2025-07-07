@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-
+using System.Runtime.InteropServices;
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
 using Meta.Numerics.Data;
@@ -224,8 +224,10 @@ namespace Meta.Numerics.Statistics {
     /// stored in the Sample class. The class offers descriptive statistics for the sample, estimates
     /// of descriptive statistics of the underlying population distribution, and statistical
     /// tests to compare the sample distribution to other sample distributions or theoretical models.</para>
+    /// <para>NOTE: This class will be retired in a future release. Its functionality is replaced by the
+    /// <see cref="Univariate"/> class, which can operatate on arbitrary data lists.</para>
     /// </remarks>
-    public sealed class Sample : ICollection<double>, IReadOnlyCollection<double>, IEnumerable<double>, IEnumerable,
+    public sealed class Sample : ICollection<double>, IReadOnlyCollection<double>, IEnumerable<double>, IEnumerable, IReadOnlyList<double>,
         INamed {
 
         internal SampleStorage data;
@@ -610,6 +612,12 @@ namespace Meta.Numerics.Statistics {
             }
         }
 
+        double IReadOnlyList<double>.this[int index] {
+            get {
+                return (data[index]);
+            }
+        }
+
 #if FUTURE
         /// <summary>
         /// Gets an estimate of the population skewness from the sample.
@@ -850,13 +858,13 @@ namespace Meta.Numerics.Statistics {
         /// parties tend to attract people with different heights.</para>
         /// <para>Given a continuous independent variable, binning in order to define
         /// groups and perform an ANOVA is generally not appropriate.
-        /// For exapmple, given the incomes and heights of a large number of people,
+        /// For example, given the incomes and heights of a large number of people,
         /// dividing these people into low-height, medium-height, and high-height groups
         /// and performing an ANOVA of the income of people in each group is not a
         /// good way to test whether height influences income.
-        /// In a case like this, it would be better to put the data into a <see cref="BivariateSample"/> and
-        /// perform a test of association, such as a <see cref="BivariateSample.PearsonRTest" />,
-        /// <see cref="BivariateSample.SpearmanRhoTest" />, or <see cref="BivariateSample.KendallTauTest" />
+        /// In a case like this, it would be better to use a test for bivariate association
+        /// of continuous variables, such as a <see cref="Bivariate.PearsonRTest" />,
+        /// <see cref="Bivariate.SpearmanRhoTest" />, or <see cref="Bivariate.KendallTauTest" />
         /// between the two variables. If you have measurements
         /// of additional variables for each indiviual, a <see cref="MultivariateSample.LinearRegression(int)" />
         /// analysis would allow you to adjust for the confounding effects of the other variables. If you

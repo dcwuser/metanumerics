@@ -13,8 +13,9 @@ namespace Meta.Numerics.Functions {
         // It's remarkable that I can't find any better algorithms. I'm reasonably pleased with these, except for Ei, Shi, and Chi for x ~ 16-48,
         // for which we are near the limits of numerical convergence for the series used.
 
-        // This series is technically convergent everywhere, but it won't start converging until k ~ x, so it's best to use with small x
-        // takes about 100 terms at x~40; it would be nice to move to the asymptotic expansion for lower x, but it fails to converge in that region.
+
+        // This series for Ei is technically convergent everywhere, but it won't start converging until k ~ x, so it's best to use with small x.
+        // It takes about 100 terms at x~40; it would be nice to move to the asymptotic expansion for lower x, but it fails to converge in that region.
 
         private static double IntegralEi_Series (double x) {
             double dy = x;
@@ -23,7 +24,7 @@ namespace Meta.Numerics.Functions {
                 double y_old = y;
                 dy *= x / k;
                 y += dy / k;
-                if (y == y_old) return (y);
+                if (y == y_old) return y;
             }
             throw new NonconvergenceException();
         }
@@ -42,7 +43,7 @@ namespace Meta.Numerics.Functions {
                 dy *= k / x;
                 y += dy;
                 if (y == y_old) {
-                    return (Math.Exp(x) / x * y);
+                    return Math.Exp(x) / x * y;
                 }
             }
             throw new NonconvergenceException();
@@ -69,14 +70,14 @@ namespace Meta.Numerics.Functions {
             if (x < 0.0) {
                 throw new ArgumentOutOfRangeException(nameof(x));
             } else if (x < 40.0) {
-                return (EulerGamma + Math.Log(x) + IntegralEi_Series(x));
+                return EulerGamma + Math.Log(x) + IntegralEi_Series(x);
             } else if (x < Double.PositiveInfinity) {
-                return (IntegralEi_Asymptotic(x));
+                return IntegralEi_Asymptotic(x);
             } else if (Double.IsPositiveInfinity(x)) {
-                return (Double.PositiveInfinity);
+                return Double.PositiveInfinity;
             } else {
                 Debug.Assert(Double.IsNaN(x));
-                return (x);
+                return x;
             }
         }
 
@@ -110,33 +111,33 @@ namespace Meta.Numerics.Functions {
             // Special case x = 0.
             if (x == 0.0) {
                 if (n <= 1) {
-                    return (Double.PositiveInfinity);
+                    return Double.PositiveInfinity;
                 } else {
-                    return (1.0 / (n - 1));
+                    return 1.0 / (n - 1);
                 }
             }
 
             // Special case n negative and zero.
             if (n < 0) {
                 // negative n is expressible using incomplete Gamma
-                return (AdvancedMath.Gamma(1 - n, x) / MoreMath.Pow(x, 1 - n));
+                return AdvancedMath.Gamma(1 - n, x) / MoreMath.Pow(x, 1 - n);
             } else if (n == 0) {
                 // special case n=0
-                return (Math.Exp(-x) / x);
+                return Math.Exp(-x) / x;
             }
 
             // Now we are sure x > 0 and n > 0.
             if (x < 2.0) {
-                return (IntegralE_Series(n, x));
+                return IntegralE_Series(n, x);
             } else if (x < expLimit) {
                 // Since E_n(x) < e^{-x}, we can short-cut to zero if x is big enough.
                 // This nicely avoids our continued fraction's bad behavior for infinite x.
-                return (IntegralE_ContinuedFraction(n, x));
+                return IntegralE_ContinuedFraction(n, x);
             } else if (x <= Double.PositiveInfinity) {
-                return (0.0);
+                return 0.0;
             } else {
                 Debug.Assert(Double.IsNaN(x));
-                return (x);
+                return x;
             }
         }
 
@@ -213,11 +214,14 @@ namespace Meta.Numerics.Functions {
             if (x < 0.0) {
                 throw new ArgumentOutOfRangeException(nameof(x));
             } else if (x < 4.0) {
-                return (EulerGamma + Math.Log(x) + IntegralCi_Series(-x * x));
+                return EulerGamma + Math.Log(x) + IntegralCi_Series(-x * x);
             } else if (x < Double.PositiveInfinity) {
-                return (-IntegralE1_Imaginary_ContinuedFraction(x).Re);
+                return -IntegralE1_Imaginary_ContinuedFraction(x).Re;
+            } else if (x == Double.PositiveInfinity) {
+                return 0.0;
             } else {
-                return (Double.NaN);
+                Debug.Assert(Double.IsNaN(x));
+                return Double.NaN;
             }
         }
 
@@ -238,13 +242,36 @@ namespace Meta.Numerics.Functions {
         /// <seealso cref="IntegralCi"/>
         public static double IntegralCin (double x) {
             if (x < 0.0) {
-                return (IntegralCin(-x));
+                return IntegralCin(-x);
             } else if (x < 4.0) {
-                return (-IntegralCi_Series(-x * x));
+                return -IntegralCi_Series(-x * x);
             } else if (x < Double.PositiveInfinity) {
-                return (EulerGamma + Math.Log(x) + IntegralE1_Imaginary_ContinuedFraction(x).Re);
+                return EulerGamma + Math.Log(x) + IntegralE1_Imaginary_ContinuedFraction(x).Re;
+            } else if (x == Double.PositiveInfinity) {
+                return Double.PositiveInfinity;
             } else {
-                return (Double.NaN);
+                Debug.Assert(Double.IsNaN(x));
+                return x;
+            }
+        }
+
+        /// <summary>
+        /// Computes the hyperbolic cosine integral.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of Chi(x).</returns>
+        public static double IntegralChi (double x) {
+            if (x < 0.0) {
+                throw new ArgumentOutOfRangeException(nameof(x));
+            } else if (x < 40.0) {
+                return EulerGamma + Math.Log(x) + IntegralCi_Series(x * x);
+            } else if (x < 718.0) {
+                return 0.5 * IntegralEi_Asymptotic(x);
+            } else if (x <= Double.PositiveInfinity) {
+                return Double.PositiveInfinity;
+            } else {
+                Debug.Assert(Double.IsNaN(x));
+                return x;
             }
         }
 
@@ -263,16 +290,36 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="https://dlmf.nist.gov/6"/>
         public static double IntegralSi (double x) {
             if (x < 0.0) {
-                return (-IntegralSi(-x));
+                return -IntegralSi(-x);
             } else if (x < 4.0) {
-                return (x * IntegralSi_Series(-x * x));
+                return x * IntegralSi_Series(-x * x);
             } else if (x < Double.PositiveInfinity) {
-                return (IntegralE1_Imaginary_ContinuedFraction(x).Im + Math.PI / 2.0);
+                return IntegralE1_Imaginary_ContinuedFraction(x).Im + Math.PI / 2.0;
             } else if (Double.IsPositiveInfinity(x)) {
-                return (Math.PI / 2.0);
+                return Math.PI / 2.0;
             } else {
                 Debug.Assert(Double.IsNaN(x));
-                return (x);
+                return x;
+            }
+        }
+
+        /// <summary>
+        /// Computes the reduced sine integral.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of si(x).</returns>
+        public static double IntegralLittleSi (double x) {
+            if (x < 0.0) {
+                throw new ArgumentOutOfRangeException(nameof(x));
+            } else if (x < 4.0) {
+                return x * IntegralSi_Series(-x * x) - Math.PI / 2.0;
+            } else if (x < Double.PositiveInfinity) {
+                return IntegralE1_Imaginary_ContinuedFraction(x).Im;
+            } else if (x == Double.PositiveInfinity) {
+                return 0.0;
+            } else {
+                Debug.Assert(Double.IsNaN(x));
+                return x;
             }
         }
 
@@ -285,16 +332,18 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="https://mathworld.wolfram.com/Shi.html"/>
         public static double IntegralShi (double x) {
             if (x < 0.0) {
-                return (-IntegralShi(-x));
+                return -IntegralShi(-x);
             } else if (x < 40.0) {
-                return (x * IntegralSi_Series(x * x));
+                return x * IntegralSi_Series(x * x);
+            } else if (x < 718.0) {
+                // For x > 40, Shi(x) differs from Ei(x)/2 only at the ~ 1.0E-34 level, far below double precision.
+                return 0.5 * IntegralEi_Asymptotic(x);
             } else if (x <= Double.PositiveInfinity) {
-                // For x > 40, Shi(x) differs from Ei(x)/2 only at the ~ 1.0E-34
-                // level, far below double precision.
-                return (0.5 * IntegralEi_Asymptotic(x));
+                // For large x, goes ~ cosh(x) / x ~ \frac{e^x}{2x}, so larger than M for x ~ \ln M + \ln (2 \ln M) ~ 717.05
+                return Double.PositiveInfinity;
             } else {
                 Debug.Assert(Double.IsNaN(x));
-                return (x);
+                return x;
             }
             // I would really like a better solution in the x ~ 16-48 range.
             // x ~ 40 is the very limit of convergence for asymptotic series,
@@ -307,12 +356,12 @@ namespace Meta.Numerics.Functions {
         private static double IntegralSi_Series (double xSquared) {
             double dy = 1.0;
             double y = dy;
-            for (int k=3; k<Global.SeriesMax; k+= 2) {
+            for (int k = 3; k < Global.SeriesMax; k += 2) {
                 double y_old = y;
                 dy *= xSquared / (k * (k - 1));
                 y += dy / k;
                 if (y == y_old) {
-                    return (y);
+                    return y;
                 }
             }
             throw new NonconvergenceException();
@@ -320,14 +369,14 @@ namespace Meta.Numerics.Functions {
 
         // converges to full accuracy in about 30 terms for x~4, less for smaller x
         private static double IntegralCi_Series (double xSquared) {
-            double dy = 1.0;
-            double y = 0.0;
-            for (int k = 2; k < Global.SeriesMax; k += 2) {
+            double dy = 0.5 * xSquared;
+            double y = 0.5 * dy;
+            for (int k = 4; k < Global.SeriesMax; k += 2) {
                 double y_old = y;
                 dy *= xSquared / (k * (k - 1));
                 y += dy / k;
                 if (y == y_old) {
-                    return (y);
+                    return y;
                 }
             }
             throw new NonconvergenceException();
@@ -367,13 +416,13 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/InverseTangentIntegral.html"/>
         public static double IntegralTi (double x) {
             if (x < 0.0) {
-                return (-IntegralTi(-x));
+                return -IntegralTi(-x);
             } else if (x < 0.75) {
-                return (IntegralTi_Series(x));
+                return IntegralTi_Series(x);
             } else if (x < 4.0 / 3.0) {
-                return (IntegralTi_LogSeries(x));
+                return IntegralTi_LogSeries(x);
             } else {
-                return (IntegralTi_Series(1.0 / x) + Math.PI / 2.0 * Math.Log(x));
+                return IntegralTi_Series(1.0 / x) + Math.PI / 2.0 * Math.Log(x);
             }
         }
 
@@ -391,7 +440,7 @@ namespace Meta.Numerics.Functions {
                 double f_old = f;
                 df *= mx2;
                 f += df / (k * k);
-                if (f == f_old) return (f);
+                if (f == f_old) return f;
             }
 
             throw new NonconvergenceException();
@@ -437,7 +486,7 @@ namespace Meta.Numerics.Functions {
 
             if (z.Re < -40.0) {
                 // For sufficiently negative z, use the asymptotic expansion for Ei
-                return (AdvancedMath.EulerGamma + ComplexMath.Log(-z) - IntegralEi_AsymptoticSeries(-z));
+                return AdvancedMath.EulerGamma + ComplexMath.Log(-z) - IntegralEi_AsymptoticSeries(-z);
             } else {
                 // Ideally, we would like to use the series within some simple radius of the origin and the continued fraction
                 // outside it. That works okay for the right half-plane, but for z.Re < 0 we have to contend with the fact that the

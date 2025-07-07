@@ -64,11 +64,10 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         private double ComputeEffectivePoint (double k) {
-            int dSupportWidth = d.Support.Width;
+            double dSupportWidth = (double) d.Support.Width;
             double x =
-                xSupport.LeftEndpoint * (d.Support.RightEndpoint - k + 1) / dSupportWidth +
-                xSupport.RightEndpoint * (k - d.Support.LeftEndpoint) / dSupportWidth;
-            return (x);
+                ( xSupport.LeftEndpoint * (d.Support.RightEndpoint - k + 1) + xSupport.RightEndpoint * (k - d.Support.LeftEndpoint) ) / dSupportWidth;
+            return x;
         }
 
         /// <inheritdoc />

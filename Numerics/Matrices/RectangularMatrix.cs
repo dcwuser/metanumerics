@@ -113,17 +113,23 @@ namespace Meta.Numerics.Matrices {
         /// <inheritdoc />
         public override ColumnVector Column (int c) {
             if ((c < 0) || (c >= cols)) throw new ArgumentOutOfRangeException(nameof(c));
+            return new ColumnVector(store, offset + colStride * c, rowStride, rows, true);
+            /*
             double[] cStore = new double[rows];
             Blas1.dCopy(store, offset + colStride * c, rowStride, cStore, 0, 1, rows);
             return (new ColumnVector(cStore, rows));
+            */
         }
 
         /// <inheritdoc />
         public override RowVector Row (int r) {
             if ((r < 0) || (r >= rows)) throw new ArgumentOutOfRangeException(nameof(r));
+            return new RowVector(store, offset + rowStride * r, colStride, cols, true);
+            /*
             double[] rStore = new double[cols];
             Blas1.dCopy(store, offset + rowStride * r, colStride, rStore, 0, 1, cols);
             return (new RowVector(rStore, cols));
+            */
         }
 
         /// <summary>

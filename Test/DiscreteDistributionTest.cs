@@ -5,6 +5,7 @@ using TestClassAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestClas
 using TestMethodAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
 using ExpectedExceptionAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.ExpectedExceptionAttribute;
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+using FluentAssertions;
 
 using Meta.Numerics;
 using Meta.Numerics.Statistics;
@@ -20,6 +21,7 @@ namespace Test {
 
         public static DiscreteDistribution[] GetDistributions () {
             return (new DiscreteDistribution[] {
+                new BenfordDistribution(),
                 new BernoulliDistribution(0.1),
                 new BinomialDistribution(0.2, 30), new BinomialDistribution(0.4, 5),
                 new PoissonDistribution(0.54), new PoissonDistribution(5.4), new PoissonDistribution(540.0),
@@ -27,6 +29,7 @@ namespace Test {
                 new GeometricDistribution(0.6),
                 new NegativeBinomialDistribution(7.8, 0.4),
                 new HypergeometricDistribution(9, 3, 5),
+                new SkellamDistribution(4.5, 6.7),
                 new DiscreteTestDistribution()
             });
         }
@@ -34,18 +37,17 @@ namespace Test {
         [TestMethod]
         public void DiscreteDistributionUnitarity () {
             foreach (DiscreteDistribution distribution in distributions) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    distribution.ExpectationValue(delegate (int k) { return (1.0); }), 1.0
-                ));
+                distribution.ExpectationValue(k => 1.0).Should().BeNearly(1.0);
+                //Assert.IsTrue(TestUtilities.IsNearlyEqual(
+                //    distribution.ExpectationValue(delegate (int k) { return (1.0); }), 1.0
+                //));
             }
         }
 
         [TestMethod]
         public void DiscreteDistributionMean () {
             foreach (DiscreteDistribution distribution in distributions) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    distribution.ExpectationValue(delegate(int k) { return (k); }), distribution.Mean
-                ));
+                distribution.ExpectationValue(k => k).Should().BeNearly(distribution.Mean);
             }
         }
 
@@ -53,43 +55,41 @@ namespace Test {
         public void DiscreteDistributionVariance () {
             foreach (DiscreteDistribution distribution in distributions) {
                 double m = distribution.Mean;
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    distribution.ExpectationValue(delegate(int x) { return (Math.Pow(x-m, 2)); }), distribution.Variance
-                ));
+                distribution.ExpectationValue(k => MoreMath.Sqr(k - m)).Should().BeNearly(distribution.Variance);
             }
         }
 
         [TestMethod]
         public void DiscreteDistributionSupport () {
 
-            foreach (DiscreteDistribution distribution in distributions) {
+             foreach (DiscreteDistribution distribution in distributions) {
 
                 // To left of support
                 if (distribution.Support.LeftEndpoint > Int32.MinValue) {
                     int k0 = distribution.Support.LeftEndpoint - 1;
-                    Assert.IsTrue(distribution.LeftInclusiveProbability(k0) == 0.0);
-                    Assert.IsTrue(distribution.LeftExclusiveProbability(k0) == 0.0);
-                    Assert.IsTrue(distribution.RightExclusiveProbability(k0) == 1.0);
-                    Assert.IsTrue(distribution.ProbabilityMass(k0) == 0.0);
+                    distribution.LeftInclusiveProbability(k0).Should().Be(0.0);
+                    distribution.LeftExclusiveProbability(k0).Should().Be(0.0);
+                    distribution.RightExclusiveProbability(k0).Should().Be(1.0);
+                    distribution.ProbabilityMass(k0).Should().Be(0.0);
                 }
 
                 // At left end of support
                 int k1 = distribution.Support.LeftEndpoint;
-                Assert.IsTrue(distribution.LeftInclusiveProbability(k1) == distribution.ProbabilityMass(k1));
-                Assert.IsTrue(distribution.LeftExclusiveProbability(k1) == 0.0);
-                Assert.IsTrue(distribution.InverseLeftProbability(0.0) == k1);
+                distribution.LeftInclusiveProbability(k1).Should().BeNearly(distribution.ProbabilityMass(k1));
+                distribution.LeftExclusiveProbability(k1).Should().Be(0.0);
+                distribution.InverseLeftProbability(0.0).Should().Be(k1);
 
                 // At right end of support
                 int k2 = distribution.Support.RightEndpoint;
-                Assert.IsTrue(distribution.LeftInclusiveProbability(k2) == 1.0);
+                distribution.LeftInclusiveProbability(k2).Should().Be(1.0);
                 //Assert.IsTrue(distribution.RightExclusiveProbability(k2) == 0.0);
 
                 // To right of support
                 if (distribution.Support.RightEndpoint < Int32.MaxValue) {
                     int k3 = distribution.Support.RightEndpoint + 1;
-                    Assert.IsTrue(distribution.LeftInclusiveProbability(k3) == 1.0);
-                    Assert.IsTrue(distribution.LeftExclusiveProbability(k3) == 1.0);
-                    Assert.IsTrue(distribution.RightExclusiveProbability(k3) == 0.0);
+                    distribution.LeftInclusiveProbability(k3).Should().Be(1.0);
+                    distribution.LeftExclusiveProbability(k3).Should().Be(1.0);
+                    distribution.RightExclusiveProbability(k3).Should().Be(0.0);
                 }
 
             }
@@ -242,13 +242,12 @@ namespace Test {
 
                 // High mean Poisson has at most ~2 counts in all bins
                 // Make chi square test re-bin before trying it here
-                if (distribution is PoissonDistribution) continue;
+                //if (distribution is PoissonDistribution) continue;
 
                 List<int> sample = new List<int>();
                 for (int i = 0; i < 128; i++) sample.Add(distribution.GetRandomValue(rng));
 
                 TestResult chi2 = sample.ChiSquaredTest(distribution);
-                Console.WriteLine($"{distribution.GetType().Name} {((ChiSquaredDistribution) chi2.Statistic.Distribution).DegreesOfFreedom}");
                 Assert.IsTrue(chi2.Probability > 0.01);
             }
 
@@ -276,6 +275,41 @@ namespace Test {
                 Assert.IsTrue(result.Probability > 0.01);
 
             }
+
+        }
+
+        [TestMethod]
+        public void GenerateSkellamDistribution () {
+
+            PoissonDistribution p1 = new PoissonDistribution(2.0);
+            PoissonDistribution p2 = new PoissonDistribution(3.0);
+            SkellamDistribution s = new SkellamDistribution(2.0, 3.0);
+
+            int n = 1000;
+            Random rng = new Random(271828);
+
+            List<int> vs = new List<int>();
+            for (int i = 0; i < n; i++) {
+                vs.Add(p1.GetRandomValue(rng) - p2.GetRandomValue(rng));
+            }
+
+            // i = k + 5, -5 < k < 5
+            int[] cts = new int[11];
+            foreach (int v in vs) {
+                if (v < -5 || v > +5) continue;
+                int i = v + 5;
+                cts[i]++;
+            }
+
+            double chi2 = 0.0;
+            for (int k = -5; k <= +5; k++) {
+                double ne = s.ProbabilityMass(k) * n;
+                double z = (cts[k + 5] - ne) / Math.Sqrt(ne);
+                chi2 += MoreMath.Sqr(z);
+            }
+
+            ChiSquaredDistribution x = new ChiSquaredDistribution(11);
+            Assert.IsTrue(x.RightProbability(chi2) > 0.01);
 
         }
 

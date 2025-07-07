@@ -48,49 +48,49 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             if (x < 0.0) {
-                return (0.0);
+                return 0.0;
             } else {
-                return (Math.Exp(-x / mu) / mu);
+                return Math.Exp(-x / mu) / mu;
             }
         }
 
         /// <inheritdoc />
         public override double LeftProbability (double x) {
             if (x < 0.0) {
-                return (0.0);
+                return 0.0;
             } else {
                 // 1 - e^{-x/mu}
-                return (-MoreMath.ExpMinusOne(-x / mu));
+                return -MoreMath.ExpMinusOne(-x / mu);
             }
         }
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
             if (x < 0.0) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (Math.Exp(-x / mu));
+                return Math.Exp(-x / mu);
             }
         }
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
-            return (-mu * MoreMath.LogOnePlus(-P));
+            return -mu * MoreMath.LogOnePlus(-P);
         }
 
         /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
             if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
-            return (-mu * Math.Log(Q));
+            return -mu * Math.Log(Q);
         }
 
         /// <inheritdoc />
         public override double Hazard (double x) {
             if (x < 0.0) {
-                return (0.0);
+                return 0.0;
             } else {
-                return (1.0 / mu);
+                return 1.0 / mu;
             }
         }
 
@@ -99,9 +99,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (AdvancedIntegerMath.Factorial(r) * MoreMath.Pow(mu, r));
+                return AdvancedIntegerMath.Factorial(r) * MoreMath.Pow(mu, r);
             }
         }
 
@@ -110,9 +110,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else if (r == 1) {
-                return (0.0);
+                return 0.0;
             } else {
                 // Subfactorial !r, see http://mathworld.wolfram.com/Subfactorial.html for properties of subfactorial.
                 // Most relevant for fast computation is (!r) = round[ r! / e ].
@@ -125,51 +125,51 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (0.0);
+                return 0.0;
             } else {
-                return (AdvancedIntegerMath.Factorial(r - 1) * MoreMath.Pow(mu, r));
+                return AdvancedIntegerMath.Factorial(r - 1) * MoreMath.Pow(mu, r);
             }
         }
 
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (mu);
+                return mu;
             }
         }
 
         /// <inheritdoc />
         public override double StandardDeviation {
             get {
-                return (mu);
+                return mu;
             }
         }
 
         /// <inheritdoc />
         public override double Median {
             get {
-                return (mu * Global.LogTwo);
+                return mu * Global.LogTwo;
             }
         }
 
         /// <inheritdoc />
         public override double Skewness {
             get {
-                return (2.0);
+                return 2.0;
             }
         }
 
         /// <inheritdoc />
         public override double ExcessKurtosis {
             get {
-                return (6.0);
+                return 6.0;
             }
         }
 
         /// <inheritdoc />
         public override Interval Support {
             get {
-                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+                return Interval.Semiinfinite;
             }
         }
 
@@ -193,10 +193,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than two values.</exception>
-        /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
-        public static ExponentialFitResult FitToSample (Sample sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            return (Univariate.FitToExponential(sample.data));
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="sample"/> contains non-positive values.</exception>
+        public static ExponentialFitResult FitToSample (IReadOnlyList<double> sample) {
+            return Univariate.FitToExponential(sample);
         }
 
     }

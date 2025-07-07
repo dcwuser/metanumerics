@@ -224,7 +224,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         internal static double CumulantToMoment (double[] K, int r, bool central) {
             Debug.Assert(K != null);
             Debug.Assert(r > 0);
-            Debug.Assert(K.Length >= r);
+            Debug.Assert(K.Length > r);
             double M = 0.0;
             foreach (int[] partition in AdvancedIntegerMath.InternalPartitions(r)) {
                 double dM = AdvancedIntegerMath.Factorial(r);

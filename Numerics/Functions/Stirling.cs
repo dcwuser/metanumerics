@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.Serialization;
 
 namespace Meta.Numerics.Functions
 {
@@ -20,7 +21,7 @@ namespace Meta.Numerics.Functions
 
     internal static class Stirling {
 
-        // The Sterling sum converges to full double precision within 12 terms for all x > 16.
+        // The Stirling sum converges to full double precision within 12 terms for all x > 16.
 
         private static double Sum(double x) {
             double rxPower = 1.0 / x;
@@ -29,8 +30,10 @@ namespace Meta.Numerics.Functions
             for (int k = 2; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
                 double f_old = f;
                 rxPower *= rxSquared;
-                f += AdvancedIntegerMath.Bernoulli[k] / ((2 * k) * (2 * k - 1)) * rxPower;
-                if (f == f_old) return (f);
+                f += AdvancedIntegerMath.Bernoulli[k] / (2 * k * (2 * k - 1)) * rxPower;
+                if (f == f_old) {
+                    return f;
+                }
             }
             throw new NonconvergenceException();
         }
@@ -42,8 +45,8 @@ namespace Meta.Numerics.Functions
             for (int k = 2; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
                 Complex f_old = f;
                 rzPower *= rzSquared;
-                f += AdvancedIntegerMath.Bernoulli[k] / ((2 * k) * (2 * k - 1)) * rzPower;
-                if (f == f_old) return (f);
+                f += AdvancedIntegerMath.Bernoulli[k] / (2 * k * (2 * k - 1)) * rzPower;
+                if (f == f_old) return f;
             }
             throw new NonconvergenceException();
         }
@@ -56,61 +59,127 @@ namespace Meta.Numerics.Functions
                 double f_old = f;
                 rxPower *= rxSquared;
                 f -= AdvancedIntegerMath.Bernoulli[k] / (2 * k) * rxPower;
-                if (f == f_old) return (f);
+                if (f == f_old) return f;
             }
             throw new NonconvergenceException();
-        }
-
-        // Computes (S(x + y) - S(x)) / y, i.e. the rate at which S(x + y) - S(x) changes with y
-
-        private static double ReducedPochhammerSum(double x, double y) {
-            double L = MoreMath.ReducedLogOnePlus(1.0 / x, y);
-            double xx = x * x;
-            double xk = x;
-            double f = AdvancedIntegerMath.Bernoulli[1] / (2.0 * xk) * MoreMath.ReducedExpMinusOne(-L, y);
-            for (int k = 2; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
-                double f_old = f;
-                xk *= xx;
-                f += AdvancedIntegerMath.Bernoulli[k] / ((2 * k) * (2 * k - 1)) / xk * MoreMath.ReducedExpMinusOne((1 - 2 * k) * L, y);
-                if (f == f_old) return (f);
-            }
-            throw new NonconvergenceException();
-
         }
 
         public static double LogGamma(double x) {
             // Sum from smallest to largest terms to minimize error.
-            return (Sum(x) + halfLogTwoPi - x + (x - 0.5) * Math.Log(x));
+            return Sum(x) + halfLogTwoPi - x + (x - 0.5) * Math.Log(x);
         }
 
         public static Complex LogGamma (Complex z) {
-            return((z - 0.5) * ComplexMath.Log(z) - z + halfLogTwoPi + Sum(z));
+            return (z - 0.5) * ComplexMath.Log(z) - z + halfLogTwoPi + Sum(z);
         }
 
         private static readonly double halfLogTwoPi = 0.5 * Math.Log(2.0 * Math.PI);
 
         public static double Gamma(double x) {
             return (Math.Sqrt(2.0 * Math.PI / x) * Math.Pow(x / Math.E, x) * Math.Exp(Sum(x)));
-            //return (Math.Exp(LogGamma(x)));
         }
 
-        public static double ReducedLogPochhammer(double x, double y) {
-            double L = MoreMath.ReducedLogOnePlus(1.0 / x, y);
-            return ((x - 0.5) * L + Math.Log(x + y) - 1.0 + ReducedPochhammerSum(x, y));
+        // Let's try to apply Stirling series to computation of Pochammer (x)_y = \frac{\Gamma(x + y)}{\Gamma(x)}
+        // Note Stirling applies as long as x >> 1 and (x + y) >> 1; we don't require y >> 1 and in fact it can be tiny.
+        // Plugging in naively gets you to
+        //   \ln (x)_y = \ln \Gamma(x + y) - \ln \Gamma(x)
+        //             = (x - 1/2) \ln (1 + y/x) + y \ln (x + y) - y + S(x + y) - S(x)
+        // Already at this point a few terms have cancelled, which is good for avoiding overflow and maintaining precision.
+        // But we can do better. Note that every term here is, for small y, proportional to y.
+        // Some are explicitly so. \ln (1 + y/x) is because \ln (1 + e) ~ e for small e. And we expect [S(x + y) - S(x)] ~ y
+        // because linear approximation should be good in the small limit. Let us define
+        //   \ln (1 + y/x) = log1p(y/x) = \ell
+        // If we simply evaluate the sums, the behavior of [S(x + y) - S(x)] for small y will depend on cancellations.
+        // To get around this, write
+        //   S(x + y) - S(x) = \sum_{k} \frac{B_{2k}}{2k(2k-1)} \left[ \frac{1}{(x + y)^{2k-1}} - \frac{1}{x^{2k-1}} \right]
+        //                   = \sum_{k} \frac{B_{2k}}{2k(2k-1)} \frac{1}{x^{2k-1}} \left[ \left( 1 + y/x \right)^{-(2k-1)} - 1 \right]
+        // Now use a combination of log1p and expm1 to compute term in brackets (this techinique is used for compound
+        // interest calculations, too).
+        //   \left( 1 + y/x \right) = e^{ \ln (1 + y/x) } = e^{\ell}
+        //   \left( 1 + y/x \right)^{-(2k-1)} = e^{-(2k-1) \ell}
+        //   \left( 1 + y/x \right)^{-(2k-1)} - 1 = e^{-(2k-1) \ell} - 1 = expm1(-(2k-1) \ell)
+        // So
+        //   S(x + y) - S(x) = \sum_{k} \frac{B_{2k}}{2k(2k-1)} \frac{expm1(-(2k-1) \ell)}{x^{2k-1}}
+        // Now each term ~y because \ell ~ y and expm1(e) ~ e.
+
+        // As written, the proportionality of \ln(x)_y ~ y is still implicit. It's possible to make it explicit by using
+        // "reduced" versions of log1p and expm1 which factor out the proportionality to the argument, e.g.
+        //   \ln(1 + e) = e rlog1p(e)
+        // I did the work and carried it through, and doing so even makes the result prettier and saves a few flops.
+        // But it requires coding these reduced functions and doesn't improve accuracy in any way I can figure.
+
+        public static double LogPochhammer (double x, double y) {
+            double z = x + y;
+            double ell = MoreMath.LogOnePlus(y / x);
+            double sp = -ReducedLogPochhammerSum2(x, z) * y;
+            return sp + (x - 0.5) * ell + y * Math.Log(z / Math.E); 
         }
 
+        public static double Pochhammer (double x, double y) {
+            // Invoking Pow instead of Exp(LogPochhammer) appears to have
+            // higher accuracy for large y and not have lower accuracy for small y.
+            double z = x + y;
+            double sp = -ReducedLogPochhammerSum2(x, z) * y;
+            return Math.Pow(z / x, x - 0.5) * Math.Pow(z / Math.E, y) * Math.Exp(sp);
+            //return Math.Sqrt(x / z) * Math.Pow(z / x, x) * Math.Pow(z / Math.E, y) * Math.Exp(s);
+        }
+
+        private static double ReducedLogPochhammerSum2 (double x, double z) {
+            // First term is 1/2 B_2 R_1
+            double R = 1.0;
+            double S = 0.5 * AdvancedIntegerMath.Bernoulli[1];
+            // We will need some recripricol powers of x and z
+            double rx = 1.0 / x;
+            double rz = 1.0 / z;
+            double rxz = rx + rz;
+            double rx2 = MoreMath.Sqr(rx);
+            double rz2 = MoreMath.Sqr(rz);
+            double rzPower = rz;
+            for (int k = 2; k < AdvancedIntegerMath.Bernoulli.Length; k++) {
+                // Higher terms are B_{2k} R_{2k-1} / (2k * (2k-1))
+                double S_old = S;
+                // We need to run R recurrsion twice
+                // R_{k+1} = R_k / x + 1 / z^k requires 3 flops + 1 to advance power of z so 4 flops, run twice would be 8 flops
+                // but R_{k+2} = R_k / x^2 + 1 / z^k * (1/x + 1/z) is still only 3 flops + 1 to advance power of z, so faster this way
+                R = R * rx2 + rzPower * rxz;
+                int two_k = 2 * k;
+                S += AdvancedIntegerMath.Bernoulli[k] / (two_k * (two_k - 1)) * R;
+                if (S == S_old) return S * rx * rz;
+                rzPower *= rz2;
+            }
+            throw new NonconvergenceException();
+        }
 
         // For \ln\Beta, perform analytic cancelations of \ln\Gamma(x) - \ln\Gamma(y) - \ln\Gamma(x+y)
         // so that they don't cancel numerically.
+        //   B(x, y) = \frac{\Gamma(x) \Gamma(y)}{\Gamma(x + y)}
+        //   \ln B(x, y) = \ln\Gamma(x) + \ln\Gamma(y) - \ln\Gamma(x + y)
+        //               =   (x - 1/2) \ln x - x + 1/2 \ln(2\pi) + S(x) 
+        //                 + (y - 1/2) \ln y - y + 1/2 \ln(2\pi) + S(y)
+        //                 - (x + y - 1/2) \ln(x + y) - (x + y) - 1/2 \ln(2\pi) - S(x + y)
+        //               = x \ln(\frac{x}{x + y}) + y \ln(\frac{y}{x + y}) + 1/2 \ln(\frac{2\pi(x+y)}{xy}) + S(x) + S(y) - S(x + y)
+        // There appears to be no case where there is significant cancellation among sums. For x ~ y, leading term is 1/x + 1/x - 1/(2x) ~ 3/2 1/x.
+        // For y << x, leading term is 1/x + 1/y - 1/(x + y) ~ 1/y (1/x nearly cancels with 1/(x+y), but are much smaller than 1/y).
 
         public static double Beta(double x, double y) {
-            double xy = x + y;
-            return (
-                Math.Sqrt(2.0 * Math.PI * xy / x / y) *
-                Math.Pow(x / xy, x) * Math.Pow(y / xy, y) *
-                Math.Exp(Sum(x) + Sum(y) - Sum(xy))
-            );
+            Debug.Assert(x > 0.0);
+            Debug.Assert(y > 0.0);
+            if (x < y) Global.Swap(ref x, ref y);
+            Debug.Assert(y <= x);
+            double z = x + y;
+            double r = y / x;
+            Debug.Assert(r <= 1.0);
+            if (r > 0.25) {
+                // For not-so-different x and y, this form is more accurate.
+                return Global.SqrtTwoPI * Math.Sqrt(z / x / y) * Math.Pow(x / z, x) * Math.Pow(y / z, y) * Math.Exp(Sum(x) + Sum(y) - Sum(z));
+            } else {
+                // For very different x and y, this form is more accurate.
+                return Global.SqrtTwoPI / Math.Sqrt(y) * Math.Pow(r, y) * Math.Exp((0.5 - z) * MoreMath.LogOnePlus(r) + Sum(x) + Sum(y) - Sum(z));
+            }
         }
+
+        // Applying the Stirling series to the Beta function allow us to cancel the linear terms analytically,
+        // and to combine the log terms in a way that involves ratios.
 
         public static double LogBeta(double x, double y) {
             // Note that all three leading terms in this expression have the same sign (negative), so cancellation
@@ -119,11 +188,11 @@ namespace Meta.Numerics.Functions
             // are also supressed relative to the leading terms.
             double xy = x + y;
             double s = Sum(x) + Sum(y) - Sum(xy);
-            return ((x - 0.5) * Math.Log(x / xy) + (y - 0.5) * Math.Log(y / xy) + 0.5 * Math.Log(2.0 * Math.PI / xy) + s);
+            return (x - 0.5) * Math.Log(x / xy) + (y - 0.5) * Math.Log(y / xy) + 0.5 * Math.Log(2.0 * Math.PI / xy) + s;
         }
 
         public static double Psi(double x) {
-            return (Math.Log(x) - 0.5 / x + SumPrime(x));
+            return Math.Log(x) - 0.5 / x + SumPrime(x);
         }
 
         // The factor x^n / n! appears in multiple places, e.g. factors in front of Bessel function series.
@@ -139,11 +208,12 @@ namespace Meta.Numerics.Functions
         //   \ln P = n \ln x - \ln n!
         //   \ln P = n \ln x - n \ln n + n - \frac{1}{2} \ln(2 \pi n) - S(n)
         //   \ln P = n \ln (e x / n) - \frac{1}{2} \ln(2 \pi n) - S(n)
-        //   P = \left( \frac{e x}{n} \right)^n e^{-S(n)}{\sqrt{2 \pi n}
-        // It's easy to show that maximum is at n ~ x.
+        //   P = \left( \frac{e x}{n} \right)^n \frac{e^{-S(n)}}{\sqrt{2 \pi n}
+        // It's easy to show that maximum is at n ~ x. Only factor that can overflow
+        // or underflow is power, and will only do so when result overflows or underflows.
 
-        public static double PowerFactor(double x, double nu) {
-            return (Math.Exp(-Sum(nu)) / Math.Sqrt(2.0 * Math.PI * nu) * Math.Pow(Math.E * x / nu, nu));
+        public static double PowerOverFactorial(double x, double nu) {
+            return Math.Exp(-Sum(nu)) / Math.Sqrt(2.0 * Math.PI * nu) * Math.Pow(Math.E * x / nu, nu);
         }
 
         // Compute \frac{x^a (1-x)^b}{B(a,b)}
@@ -175,8 +245,33 @@ namespace Meta.Numerics.Functions
         public static double PoissonProbability(double lambda, double k) {
             Debug.Assert(lambda > 0.0);
             Debug.Assert(k >= 16.0);
-            return (Math.Exp(-Sum(k) - lambda * D(k / lambda)) / Math.Sqrt(2.0 * Math.PI * k));
+            double kappa = (k - lambda) / lambda;
+            return Math.Exp(-Sum(k) - lambda * Dee(kappa)) / Math.Sqrt(2.0 * Math.PI * k); 
+            //return (Math.Exp(-Sum(k) - lambda * D(k / lambda)) / Math.Sqrt(2.0 * Math.PI * k));
         }
+
+        // D(x) = (1+x) ln(1+x) - x
+        // D >= 0, D(0) = 0, D ~ 1/2 x^2 + O(x^3)
+
+        private static double Dee (double x) {
+            Debug.Assert(x >= -1.0);
+            if (Math.Abs(x) < 0.5) {
+                double xk = x * x;
+                double f = 0.5 * xk;
+                for (int k = 3; k < Global.SeriesMax; k++) {
+                    double f_old = f;
+                    xk *= -x;
+                    double df = xk / (k * (k - 1));
+                    f += df;
+                    if (f == f_old) return f;
+                }
+                throw new NonconvergenceException();
+            } else {
+                double y = 1.0 + x;
+                return y * Math.Log(y) - x;
+            }
+        }
+        
 
         // Binomial probability is
         //   P = \binom{n}{k} p^k q^{n-k} = \frac{n! p^k q^{n-k}}{k! (n-k)!}

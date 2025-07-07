@@ -16,7 +16,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override Interval Support {
             get {
-                return (Interval.FromEndpoints(Double.NegativeInfinity, Double.PositiveInfinity));
+                return Interval.Infinite;
             }
         }
 
@@ -46,7 +46,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double Location {
             get {
-                return (m);
+                return m;
             }
         }
 
@@ -55,7 +55,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double Scale {
             get {
-                return (s);
+                return s;
             }
         }
 
@@ -68,9 +68,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             // for some reason e ~ Infinity rather than PositiveInfinity, so we check for that; i actually thought that
             // infinities were always either PositiveInfinity or NegativeInfinity, but that appears not to be the case
             if (Double.IsInfinity(e)) {
-                return (0.0);
+                return 0.0;
             } else {
-                return (e * Math.Exp(-e) / s);
+                return e * Math.Exp(-e) / s;
             }
         }
 
@@ -78,74 +78,74 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double LeftProbability (double x) {
             double z = (x - m) / s;
             double e = Math.Exp(-z);
-            return (Math.Exp(-e));
+            return Math.Exp(-e);
         }
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
             double z = (x - m) / s;
             double e = Math.Exp(-z);
-            return (-MoreMath.ExpMinusOne(-e));
+            return -MoreMath.ExpMinusOne(-e);
         }
 
         /// <inheritdoc />
         public override double Hazard (double x) {
             double z = (x - m) / s;
             double e = Math.Exp(-z);
-            return (e / MoreMath.ExpMinusOne(e) / s);
+            return e / MoreMath.ExpMinusOne(e) / s;
         }
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
-            return (m - s * Math.Log(-Math.Log(P)));
+            return m - s * Math.Log(-Math.Log(P));
         }
 
         /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
             if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
-            return (m - s * Math.Log(-MoreMath.LogOnePlus(-Q)));
+            return m - s * Math.Log(-MoreMath.LogOnePlus(-Q));
         }
 
         /// <inheritdoc />
         public override double Median {
             get {
-                return (m - s * Math.Log(Global.LogTwo));
+                return m - s * Math.Log(Global.LogTwo);
             }
         }
 
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (m + s * AdvancedMath.EulerGamma);
+                return m + s * AdvancedMath.EulerGamma;
             }
         }
 
         /// <inheritdoc />
         public override double Variance {
             get {
-                return (MoreMath.Sqr(Math.PI * s) / 6.0);
+                return MoreMath.Sqr(Math.PI * s) / 6.0;
             }
         }
 
         /// <inheritdoc />
         public override double StandardDeviation {
             get {
-                return (Math.PI / Math.Sqrt(6.0) * s);
+                return Math.PI / Math.Sqrt(6.0) * s;
             }
         }
 
         /// <inheritdoc />
         public override double Skewness {
             get {
-                return (12.0 * Math.Sqrt(6.0) * AdvancedMath.Apery / MoreMath.Pow(Math.PI, 3));
+                return 12.0 * Math.Sqrt(6.0) * AdvancedMath.Apery / MoreMath.Pow(Math.PI, 3);
             }
         }
 
         /// <inheritdoc />
         public override double ExcessKurtosis {
             get {
-                return (12.0 / 5.0);
+                return 12.0 / 5.0;
             }
         }
 
@@ -154,11 +154,11 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else if (r == 1) {
-                return (0.0);
+                return 0.0;
             } else {
-                return (base.CentralMoment(r));
+                return base.CentralMoment(r);
             }
         }
 
@@ -168,7 +168,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else {
                 double[] M = RawMoments(r);
-                return (M[r]);
+                return M[r];
             }
         }
 
@@ -205,7 +205,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 M[j] = AdvancedIntegerMath.Factorial(j - 1) * sum;
             }
 
-            return (M);
+            return M;
             
         }
 
@@ -214,23 +214,23 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (0.0);
+                return 0.0;
             } else if (r == 1) {
-                return (Mean);
+                return Mean;
             } else {
-                double C = AdvancedIntegerMath.Factorial(r - 1) * AdvancedMath.RiemannZeta(r) * MoreMath.Pow(s, r);
-                return (C);
+                return AdvancedIntegerMath.Factorial(r - 1) * AdvancedMath.RiemannZeta(r) * MoreMath.Pow(s, r);
             }
         }
+
+        // We have cumulants; wouldn't it be better to compute raw and central moments from them?
 
         /// <summary>
         /// Find the parameters of a Gumbel distribution that best fit the given sample.
         /// </summary>
         /// <param name="sample">The sample to fit.</param>
         /// <returns>The fit result.</returns>
-        public static GumbelFitResult FitToSample (Sample sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            return (Univariate.FitToGumbel(sample.data));
+        public static GumbelFitResult FitToSample (IReadOnlyList<double> sample) {
+            return Univariate.FitToGumbel(sample);
         }
 
     }

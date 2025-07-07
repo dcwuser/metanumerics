@@ -10,7 +10,7 @@ namespace Meta.Numerics.Matrices {
     /// </summary>
     public sealed class SymmetricMatrix : AnySquareMatrix {
 
-        private int dimension;
+        private readonly int dimension;
         private double[][] values;
 
         // storage is in lower triangular form, i.e. values[r][c] with c <= r
@@ -575,6 +575,23 @@ namespace Meta.Numerics.Matrices {
             for (int r = 0; r < A.Dimension; r++) {
                 for (int c = 0; c <= r; c++) {
                     productStore[r][c] = alpha * A.values[r][c];
+                }
+            }
+            return (new SymmetricMatrix(productStore, A.dimension));
+        }
+
+        /// <summary>
+        /// Divides a symmetric matrix by a real factor.
+        /// </summary>
+        /// <param name="alpha">The factor.</param>
+        /// <param name="A">The matrix.</param>
+        /// <returns>The product of the matrix and the factor.</returns>
+        public static SymmetricMatrix operator  / (SymmetricMatrix A, double alpha) {
+            if (A == null) throw new ArgumentNullException(nameof(A));
+            double[][] productStore = SymmetricMatrixAlgorithms.InitializeStorage(A.dimension);
+            for (int r = 0; r < A.Dimension; r++) {
+                for (int c = 0; c <= r; c++) {
+                    productStore[r][c] = A.values[r][c] / alpha;
                 }
             }
             return (new SymmetricMatrix(productStore, A.dimension));

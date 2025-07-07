@@ -20,12 +20,13 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// known by that name since.
     /// </para>
     /// </remarks>
-    /// <seealso cref="Sample.StudentTTest(Double)"/>
-    /// <seealso href="http://en.wikipedia.org/wiki/Student_t_distribution" />
+    /// <seealso cref="Univariate.StudentTTest(System.Collections.Generic.IReadOnlyCollection{double}, double)" />
+    /// <seealso cref="Univariate.StudentTTest(System.Collections.Generic.IReadOnlyCollection{double}, System.Collections.Generic.IReadOnlyCollection{double})"/>
+    /// <seealso href="https://en.wikipedia.org/wiki/Student%27s_t-distribution" />
     /// <seealso href="https://mathworld.wolfram.com/Studentst-Distribution.html"/>
     public sealed class StudentDistribution : ContinuousDistribution {
 
-        private double nu;
+        private readonly double nu;
 
         /// <summary>
         /// Initializes a new Student distribution.
@@ -41,32 +42,32 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double DegreesOfFreedom {
             get {
-                return (nu);
+                return nu;
             }
         }
 
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
-            return (Math.Pow(1.0 + x * x / nu, -0.5 * (nu + 1.0)) / AdvancedMath.Beta(0.5, 0.5 * nu) / Math.Sqrt(nu));
+            return Math.Pow(1.0 + x * x / nu, -0.5 * (nu + 1.0)) / AdvancedMath.Beta(0.5, 0.5 * nu) / Math.Sqrt(nu);
         }
 
         /// <inheritdoc />
         public override double LeftProbability (double x) {
-            double t2 = x * x;
+            double xSquared = x * x;
             if (x < 0.0) {
-                return (0.5 * AdvancedMath.Beta(0.5 * nu, 0.5, nu / (nu + t2)) / AdvancedMath.Beta(0.5, 0.5 * nu));
+                return 0.5 * AdvancedMath.LeftRegularizedBeta(0.5 * nu, 0.5, nu / (nu + xSquared));
             } else {
-                return (0.5 * (1.0 + AdvancedMath.Beta(0.5, 0.5 * nu, t2 / (nu + t2)) / AdvancedMath.Beta(0.5, 0.5 * nu)));
+                return 0.5 * (1.0 + AdvancedMath.Beta(0.5, 0.5 * nu, xSquared / (nu + xSquared)) / AdvancedMath.Beta(0.5, 0.5 * nu));
             }
         }
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
-            double t2 = x * x;
+            double xSquared = x * x;
             if (x < 0.0) {
-                return ((1.0 + AdvancedMath.LeftRegularizedBeta(1.0 / 2.0, nu / 2.0, t2 / (nu + t2))) / 2.0);
+                return 0.5 * (1.0 + AdvancedMath.LeftRegularizedBeta(0.5, 0.5 * nu, xSquared / (nu + xSquared)));
             } else {
-                return (AdvancedMath.LeftRegularizedBeta(nu / 2.0, 1.0 / 2.0, nu / (nu + t2)) / 2.0);
+                return 0.5 * AdvancedMath.LeftRegularizedBeta(0.5 * nu, 0.5, nu / (nu + xSquared));
             }
         }
 
@@ -87,7 +88,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException(nameof(rng));
+            if (rng is null) throw new ArgumentNullException(nameof(rng));
 
             // this is a modified form of Box-Mueller due to Bailey
 
@@ -98,7 +99,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 w = u * u + v * v;
             } while (w > 1.0);
 
-            return (u * Math.Sqrt(nu * (Math.Pow(w, -2.0 / nu) - 1.0) / w));
+            return u * Math.Sqrt(nu * (Math.Pow(w, -2.0 / nu) - 1.0) / w);
 
             // the corresponding v-deviate is not independent of the u-deviate,
             // so don't attempt store it and use it for the next call
@@ -131,16 +132,16 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         /// <inheritdoc />
         public override double CentralMoment (int r) {
-            return (RawMoment(r));
+            return RawMoment(r);
         }
 
         /// <inheritdoc />
         public override double Mean {
             get {
                 if (nu > 1.0) {
-                    return (0.0);
+                    return 0.0;
                 } else {
-                    return (Double.NaN);
+                    return Double.NaN;
                 }
             }
         }
@@ -149,9 +150,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double Variance {
             get {
                 if (nu > 2.0) {
-                    return (nu / (nu - 2.0));
+                    return nu / (nu - 2.0);
                 } else {
-                    return (Double.PositiveInfinity);
+                    return Double.PositiveInfinity;
                 }
             }
         }
@@ -160,9 +161,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double Skewness {
             get {
                 if (nu > 3.0) {
-                    return (0.0);
+                    return 0.0;
                 } else {
-                    return (Double.NaN);
+                    return Double.NaN;
                 }
             }
         }
@@ -171,9 +172,9 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double ExcessKurtosis {
             get {
                 if (nu > 4.0) {
-                    return (6.0 / (nu - 4.0));
+                    return 6.0 / (nu - 4.0);
                 } else {
-                    return (Double.PositiveInfinity);
+                    return Double.PositiveInfinity;
                 }
             }
         }
@@ -181,7 +182,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double Median {
             get {
-                return (0.0);
+                return 0.0;
             }
         }
 

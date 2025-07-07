@@ -9,7 +9,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// Represents all discrete, univariate probability distributions.
     /// </summary>
     /// <remarks>
-    /// <para>A discrete distribution is a distribution over the integers.</para>
+    /// <para>A discrete distribution is a distribution over integers.</para>
     /// </remarks>
     public abstract class DiscreteDistribution : UnivariateDistribution {
 
@@ -17,7 +17,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// Returns the probability of the obtaining the given value.
         /// </summary>
         /// <param name="k">The value.</param>
-        /// <returns>The probability of obtaining the value.</returns>
+        /// <returns>The probability of obtaining <paramref name="k"/>.</returns>
         public abstract double ProbabilityMass (int k);
 
         /// <summary>
@@ -33,15 +33,15 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <seealso cref="RightExclusiveProbability"/>
         public virtual double LeftExclusiveProbability (int k) {
             if (k <= Support.LeftEndpoint) {
-                return (0.0);
+                return 0.0;
             } if (k > Support.RightEndpoint) {
-                return (1.0);
+                return 1.0;
             } else {
                 double P = 0.0;
                 for (int j = Support.LeftEndpoint; j < k; j++) {
                     P += ProbabilityMass(j);
                 }
-                return (P);
+                return P;
             }
         }
 
@@ -52,11 +52,11 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The total probability of obtaining a value les than or equal to <paramref name="k"/>.</returns>
         public virtual double LeftInclusiveProbability (int k) {
             if (k < Support.LeftEndpoint) {
-                return (0.0);
+                return 0.0;
             } else if (k >= Support.RightEndpoint) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (LeftExclusiveProbability(k) + ProbabilityMass(k));
+                return LeftExclusiveProbability(k) + ProbabilityMass(k);
             }
         }
 
@@ -68,15 +68,15 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <seealso cref="LeftExclusiveProbability"/>
         public virtual double RightExclusiveProbability (int k) {
             if (k < Support.LeftEndpoint) {
-                return (1.0);
+                return 1.0;
             } else if (k >= Support.RightEndpoint) {
-                return (0.0);
+                return 0.0;
             } else {
                 double Q = 0.0;
                 for (int j = k + 1; j <= Support.RightEndpoint; j++) {
                     Q += ProbabilityMass(j);
                 }
-                return (Q);
+                return Q;
             }
         }
 
@@ -90,7 +90,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </remarks>
         public virtual int InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
-            return (InverseLeftProbability(Support.LeftEndpoint, Support.RightEndpoint, P));
+            return InverseLeftProbability(Support.LeftEndpoint, Support.RightEndpoint, P);
         }
 
         // Start with lower and upper limits, then use bisection to find
@@ -106,7 +106,27 @@ namespace Meta.Numerics.Statistics.Distributions {
         internal virtual int InverseLeftProbability(int ka, int kb, double P) {
 
             Debug.Assert(ka <= kb);
+            Debug.Assert(LeftExclusiveProbability(ka) <= P);
+            Debug.Assert(P <= LeftInclusiveProbability(kb));
 
+            for (int n = 0; n < 32; n++) {
+
+                Debug.Assert(ka <= kb);
+                if (ka == kb) return ka;
+
+                int k = (ka + 1 == kb) ? ka : MoreMath.Midpoint(ka, kb);
+                //int k = (ka + 1 == kb) ? ka : (ka + kb) / 2;
+                Debug.Assert(ka <= k && k <= kb);
+                if (P > LeftInclusiveProbability(k)) {
+                    ka = k + 1;
+                } else {
+                    kb = k;
+                }
+
+            }
+
+            throw new NonconvergenceException();
+            /*
             int n = 0;
             while (ka != kb) {
                 n++;
@@ -119,7 +139,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (n > 32) throw new NonconvergenceException();
             }
             return (ka);
-
+            */
         }
 
         /// <summary>
@@ -129,11 +149,10 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The expectation value of the function.</returns>
         public virtual double ExpectationValue (Func<int, double> f) {
 
-            if (f == null) throw new ArgumentNullException(nameof(f));
+            if (f is null) throw new ArgumentNullException(nameof(f));
 
             // If the support is small enough, just take the expectation directly.
-            int w = Support.Width;
-            if (w < 32) return (ExpectationValue(f, Support.LeftEndpoint, Support.RightEndpoint));
+            if (Support.Width <= 48) return ExpectationValue(f, Support.LeftEndpoint, Support.RightEndpoint);
 
             // If the support is big (e.g. all 2 billion integers), naive direct computation
             // will be too slow. 
@@ -143,6 +162,8 @@ namespace Meta.Numerics.Statistics.Distributions {
             // single zero contribution, we should move outward in groups.
 
             int i0 = (int) Math.Round(Mean);
+
+            // If Mean is not overridden, the will cause a circular recursion. Fix that.
 
             /*
             int kWidth = 3;
@@ -163,24 +184,30 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (kMin == this.Minimum) break;
             }
             */
-            
+
+            // This is a little subtle. Marching across the entire support is a very
+            // bad idea for infinite supports, and often also for finite but large supports.
+            // Marching symmetrically out from the centroid one bin at a time can
+            // cause prematrue termination, and doing so seperately for left and right
+            // can too. We try marching out a small number of bins at a time.
+
+            const int w = 3;
 
             double s_left = 0.0;
-            for (int i = i0 - 1; i >= Support.LeftEndpoint; i--) {
+            for (int i = i0 - 1; i >= Support.LeftEndpoint; i -= w) {
                 double s_left_old = s_left;
-                s_left += f(i) * ProbabilityMass(i);
+                s_left += ExpectationValue(f, Math.Max(i - w + 1, Support.LeftEndpoint), i);
                 if (s_left == s_left_old) break;
             }
             double s_right = 0.0;
-            for (int i = i0 + 1; i <= Support.RightEndpoint; i++) {
+            for (int i = i0 + 1; i <= Support.RightEndpoint; i += w) {
                 double s_right_old = s_right;
-                s_right += f(i) * ProbabilityMass(i);
+                s_right += ExpectationValue(f, i, Math.Min(i + w - 1, Support.RightEndpoint));
                 if (s_right == s_right_old) break;
             }
             return (s_left + s_right + f(i0) * ProbabilityMass(i0));
 
         }
-
 
         private double ExpectationValue(Func<int, double> f, int kMin, int kMax) {
 
@@ -192,7 +219,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 v += ProbabilityMass(k) * f(k);
             }
 
-            return (v);
+            return v;
         }
 
         /// <summary>
@@ -200,7 +227,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public override double Mean {
             get {
-                return (ExpectationValue((int k) => k));
+                return ExpectationValue((int k) => k);
             }
         }
 
@@ -213,9 +240,9 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else {
-                return (ExpectationValue((int k) => MoreMath.Pow(k, r)));
+                return ExpectationValue((int k) => MoreMath.Pow(k, r));
             } 
         }
 
@@ -228,12 +255,12 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else if (r == 1) {
-                return (0.0);
+                return 0.0;
             } else {
                 double mu = Mean;
-                return (ExpectationValue((int k) => MoreMath.Pow(k - mu, r)));
+                return ExpectationValue((int k) => MoreMath.Pow(k - mu, r));
             }
         }
 
@@ -243,8 +270,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <param name="rng">A random number generator.</param>
         /// <returns>A random integer drawn from the distribution.</returns>
         public virtual int GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException(nameof(rng));
-            return (InverseLeftProbability(rng.NextDouble()));
+            if (rng is null) throw new ArgumentNullException(nameof(rng));
+            return InverseLeftProbability(rng.NextDouble());
         }
 
     }

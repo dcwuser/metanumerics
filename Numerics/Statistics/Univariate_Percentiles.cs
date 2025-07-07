@@ -13,13 +13,13 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The minimum value in the sample.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         public static double Minimum (this IReadOnlyCollection<double> sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 1) return (Double.NaN);
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
+            if (sample.Count < 1) return Double.NaN;
             double minimum = Double.MaxValue;
             foreach (double value in sample) {
                 if (value < minimum) minimum = value;
             }
-            return (minimum);
+            return minimum;
         }
 
         /// <summary>
@@ -29,13 +29,13 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The maximum value in the sample.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         public static double Maximum (this IReadOnlyCollection<double> sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 1) return (Double.NaN);
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
+            if (sample.Count < 1) return Double.NaN;
             double maximum = Double.MinValue;
             foreach (double value in sample) {
                 if (value > maximum) maximum = value;
             }
-            return (maximum);
+            return maximum;
         }
 
         /// <summary>
@@ -46,18 +46,19 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Median"/> 
         public static double Median (this IReadOnlyList<double> sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 1) return(Double.NaN);
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
+            if (sample.Count < 1) return Double.NaN;
 
+            // Change this to use quickselect with deterministic pivots
             int[] order = GetSortOrder(sample);
 
             int m = sample.Count / 2;
             if (sample.Count % 2 == 0) {
                 // Even n; median is average of middle two entries
-                return (0.5 * (sample[order[m - 1]] + sample[order[m]]));
+                return 0.5 * (sample[order[m - 1]] + sample[order[m]]);
             } else {
                 // Odd n; median is middle entry
-                return (sample[order[m]]);
+                return sample[order[m]];
             }
 
         }
@@ -77,10 +78,10 @@ namespace Meta.Numerics.Statistics {
         /// <seealso cref="InverseLeftProbability(IReadOnlyList{Double},Double)"/>
         /// <seealso href="https://en.wikipedia.org/wiki/Interquartile_range"/>
         public static Interval InterquartileRange (this IReadOnlyList<double> sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) throw new InsufficientDataException();
             int[] order = GetSortOrder(sample);
-            return (Interval.FromEndpoints(InverseLeftProbability(sample, 0.25, order), InverseLeftProbability(sample, 0.75, order)));
+            return Interval.FromEndpoints(InverseLeftProbability(sample, 0.25, order), InverseLeftProbability(sample, 0.75, order));
         }
 
         /// <summary>
@@ -91,13 +92,13 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Trimean"/>
         public static double Trimean (this IReadOnlyList<double> sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 1) return (Double.NaN);
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
+            if (sample.Count < 1) return Double.NaN;
             int[] order = GetSortOrder(sample);
             double x1 = InverseLeftProbability(sample, 0.25, order);
             double x2 = InverseLeftProbability(sample, 0.50, order);
             double x3 = InverseLeftProbability(sample, 0.75, order);
-            return (0.5 * x2 + 0.25 * (x1 + x3));
+            return 0.5 * x2 + 0.25 * (x1 + x3);
         }
 
         /// <summary>
@@ -109,17 +110,17 @@ namespace Meta.Numerics.Statistics {
         /// <remarks>
         /// <para>For percentile inputs which do not lie exactly on a sample value,
         /// this method interpolates linearly between the two nearest sample values.
-        /// Therefore you cannot be certain that the value returned will be contained in the sample.</para>
+        /// Therefore the value returned is not guaranteed to be an acutal value in the sample.</para>
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="P"/> lies outside [0,1].</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Quantile_function"/>
         public static double InverseLeftProbability (this IReadOnlyList<double> sample, double P) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             if (sample.Count < 2) throw new InsufficientDataException();
             int[] order = GetSortOrder(sample);
-            return (InverseLeftProbability(sample, P, order));
+            return InverseLeftProbability(sample, P, order);
         }
 
         private static double InverseLeftProbability(IReadOnlyList<double> sample, double P, IReadOnlyList<int> order) {
@@ -132,7 +133,7 @@ namespace Meta.Numerics.Statistics {
             int n2 = (int) Math.Ceiling(n);
             double w1 = n2 - n;
             double w2 = 1.0 - w1;
-            return (w1 * sample[order[n1]] + w2 * sample[order[n2]]);
+            return w1 * sample[order[n1]] + w2 * sample[order[n2]];
         }
 
         /// <summary>

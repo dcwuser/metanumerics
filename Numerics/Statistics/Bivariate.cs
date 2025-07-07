@@ -17,7 +17,7 @@ namespace Meta.Numerics.Statistics {
     /// A data set with height and weight measured for each person in the sample, for example, is bivariate.
     /// A data set with height measured for each person in two different groups, for example, is <em>not</em>
     /// bivariate. The first data set can be analyzed with the methods here. The second, which is just
-    /// two independent univariate samples, should be analyzed with the multi-sample methods of the
+    /// two independent univariate samples, should be analyzed with the multiple-sample methods of the
     /// <see cref="Univariate"/> class.</para>
     /// <para>One common task with bivariate data is to determine whether some association exists
     /// between the two measured quantities. This can be accomplished with the
@@ -26,8 +26,8 @@ namespace Meta.Numerics.Statistics {
     /// <see cref="KendallTauTest(IReadOnlyList{double}, IReadOnlyList{double})">KendallTauTest</see>.
     /// Simpler than testing for the statistical significance of any association is simply to measure
     /// it by reporting the <see cref="CorrelationCoefficient(IReadOnlyList{double}, IReadOnlyList{double})"/>.</para>
-    /// <para>Another common operation on bivariate data is to try to predict one variable on the basis
-    /// of the other. There are many types of models you can construct to make such predictions, including
+    /// <para>Another common operation on bivariate data is to try to predict one variable from
+    /// the other. There are many types of models you can construct to make such predictions, including
     /// <see cref="LinearRegression(IReadOnlyList{double}, IReadOnlyList{double})"/>,
     /// <see cref="PolynomialRegression(IReadOnlyList{double}, IReadOnlyList{double}, int)"/>, and
     /// <see cref="NonlinearRegression(IReadOnlyList{double}, IReadOnlyList{double}, Func{IReadOnlyList{double}, double, double}, IReadOnlyList{double})"/>.
@@ -93,17 +93,15 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are fewer than two entries in the sample.</exception>
         public static double Covariance (this IReadOnlyList<double> x, IReadOnlyList<double> y) {
 
-            if (x == null) throw new ArgumentNullException(nameof(x));
-            if (y == null) throw new ArgumentNullException(nameof(y));
+            if (x is null) throw new ArgumentNullException(nameof(x));
+            if (y is null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
             if (x.Count < 2) throw new InsufficientDataException();
 
-            int n;
-            double xMean, yMean, xxSum, yySum, xySum;
-            ComputeBivariateMomentsUpToTwo(x, y, out n, out xMean, out yMean, out xxSum, out yySum, out xySum);
+            ComputeBivariateMomentsUpToTwo(x, y, out int n, out _, out _, out _, out _, out double xySum);
             Debug.Assert(n == x.Count);
 
-            return (xySum / n);
+            return xySum / n;
         }
 
         /// <summary>
@@ -117,19 +115,17 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">Are fewer than two entries in the sample.</exception>
         public static double CorrelationCoefficient (this IReadOnlyList<double> x, IReadOnlyList<double> y) {
 
-            if (x == null) throw new ArgumentNullException(nameof(x));
-            if (y == null) throw new ArgumentNullException(nameof(y));
+            if (x is null) throw new ArgumentNullException(nameof(x));
+            if (y is null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
             if (x.Count < 2) throw new InsufficientDataException();
 
-            int n;
-            double xMean, yMean, xxSum, yySum, xySum;
-            ComputeBivariateMomentsUpToTwo(x, y, out n, out xMean, out yMean, out xxSum, out yySum, out xySum);
+            ComputeBivariateMomentsUpToTwo(x, y, out _, out _, out _, out double xxSum, out double yySum, out double xySum);
 
             Debug.Assert(xxSum >= 0.0);
             Debug.Assert(yySum >= 0.0);
 
-            return (xySum / Math.Sqrt(xxSum * yySum));
+            return xySum / Math.Sqrt(xxSum * yySum);
 
         }
 
@@ -144,8 +140,8 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">Are fewer than three entries in the sample.</exception>
         public static UncertainValue PopulationCovariance (this IReadOnlyList<double> x, IReadOnlyList<double> y) {
 
-            if (x == null) throw new ArgumentNullException(nameof(x));
-            if (y == null) throw new ArgumentNullException(nameof(y));
+            if (x is null) throw new ArgumentNullException(nameof(x));
+            if (y is null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
             if (x.Count < 3) throw new InsufficientDataException();
 
@@ -183,12 +179,12 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="DimensionMismatchException"><paramref name="x"/> and <paramref name="y"/> do not contain the same number of entries.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
         public static LinearRegressionResult LinearRegression(this IReadOnlyList<double> y, IReadOnlyList<double> x) {
-            if (x == null) throw new ArgumentNullException(nameof(x));
-            if (y == null) throw new ArgumentNullException(nameof(y));
+            if (x is null) throw new ArgumentNullException(nameof(x));
+            if (y is null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
             if (x.Count < 3) throw new InsufficientDataException();
 
-            return (new LinearRegressionResult(x, y));
+            return new LinearRegressionResult(x, y);
         }
 
         /// <summary>
@@ -203,7 +199,11 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="m"/> is negative.</exception>
         /// <exception cref="InsufficientDataException">There are fewer data points than coefficients to be fit.</exception>
         public static PolynomialRegressionResult PolynomialRegression (this IReadOnlyList<double> y, IReadOnlyList<double> x, int m) {
-            return (new PolynomialRegressionResult(x, y, m));
+            if (y is null) throw new ArgumentNullException(nameof(y));
+            if (x is null) throw new ArgumentNullException(nameof(x));
+            if (x.Count != y.Count) throw new DimensionMismatchException();
+            if (m <= 0) throw new ArgumentOutOfRangeException(nameof(m));
+            return new PolynomialRegressionResult(x, y, m);
         }
 
         /// <summary>
@@ -225,10 +225,10 @@ namespace Meta.Numerics.Statistics {
             Func<IReadOnlyDictionary<string, double>, double, double> function,
             IReadOnlyDictionary<string, double> start
         ) {
-            if (y == null) throw new ArgumentNullException(nameof(y));
-            if (x == null) throw new ArgumentNullException(nameof(x));
-            if (function == null) throw new ArgumentNullException(nameof(function));
-            if (start == null) throw new ArgumentNullException(nameof(start));
+            if (y is null) throw new ArgumentNullException(nameof(y));
+            if (x is null) throw new ArgumentNullException(nameof(x));
+            if (function is null) throw new ArgumentNullException(nameof(function));
+            if (start is null) throw new ArgumentNullException(nameof(start));
             if (x.Count != y.Count) throw new DimensionMismatchException();
 
             List<string> names = start.Keys.ToList();
@@ -244,7 +244,7 @@ namespace Meta.Numerics.Statistics {
                 return (function(parameters, x2));
             };
 
-            return (new NonlinearRegressionResult(x, y, f2, startValues, names));
+            return new NonlinearRegressionResult(x, y, f2, startValues, names);
         }
 
         /// <summary>
@@ -272,16 +272,16 @@ namespace Meta.Numerics.Statistics {
             Func<IReadOnlyList<double>, double, double> function,
             IReadOnlyList<double> start) {
 
-            if (x == null) throw new ArgumentNullException(nameof(x));
-            if (y == null) throw new ArgumentNullException(nameof(y));
-            if (function == null) throw new ArgumentNullException(nameof(function));
-            if (start == null) throw new ArgumentNullException(nameof(start));
+            if (x is null) throw new ArgumentNullException(nameof(x));
+            if (y is null) throw new ArgumentNullException(nameof(y));
+            if (function is null) throw new ArgumentNullException(nameof(function));
+            if (start is null) throw new ArgumentNullException(nameof(start));
             if (x.Count != y.Count) throw new DimensionMismatchException();
 
             List<string> names = new List<string>(start.Count);
             for (int i = 0; i < start.Count; i++) names.Add(i.ToString());
 
-            return (new NonlinearRegressionResult(x, y, function, start, names));
+            return new NonlinearRegressionResult(x, y, function, start, names);
         }
 
         /// <summary>
@@ -300,10 +300,10 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="DimensionMismatchException">The sizes of <paramref name="x"/> and <paramref name="y"/> do not match.</exception>
         /// <exception cref="InsufficientDataException">There are fewer than three data points.</exception>
         public static LinearLogisticRegressionResult LinearLogisticRegression (this IReadOnlyList<bool> y, IReadOnlyList<double> x) {
-            if (x == null) throw new ArgumentNullException(nameof(x));
-            if (y == null) throw new ArgumentNullException(nameof(y));
+            if (x is null) throw new ArgumentNullException(nameof(x));
+            if (y is null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
-            return (new LinearLogisticRegressionResult(x, y));
+            return new LinearLogisticRegressionResult(x, y);
         }
 
         /// <summary>
@@ -332,18 +332,17 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="http://en.wikipedia.org/wiki/Pearson_correlation_coefficient" />
         public static TestResult PearsonRTest (IReadOnlyList<double> x, IReadOnlyList<double> y) {
 
-            if (x == null) throw new ArgumentNullException(nameof(x));
-            if (y == null) throw new ArgumentNullException(nameof(y));
+            if (x is null) throw new ArgumentNullException(nameof(x));
+            if (y is null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
 
             int n = x.Count;
             if (n < 3) throw new InsufficientDataException();
 
-            double xMean, yMean, xxSum, yySum, xySum;
-            ComputeBivariateMomentsUpToTwo(x, y, out n, out xMean, out yMean, out xxSum, out yySum, out xySum);
+            ComputeBivariateMomentsUpToTwo(x, y, out n, out _, out double _, out double xxSum, out double yySum, out double xySum);
             double r = xySum / Math.Sqrt(xxSum * yySum);
             ContinuousDistribution p = new PearsonRDistribution(n);
-            return (new TestResult("r", r, p, TestType.TwoTailed));
+            return new TestResult("r", r, p, TestType.TwoTailed);
         }
 
         /// <summary>
@@ -368,8 +367,8 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient"/>
         public static TestResult SpearmanRhoTest (IReadOnlyList<double> x, IReadOnlyList<double> y) {
 
-            if (x == null) throw new ArgumentNullException(nameof(x));
-            if (y == null) throw new ArgumentNullException(nameof(y));
+            if (x is null) throw new ArgumentNullException(nameof(x));
+            if (y is null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
 
             int n = x.Count;
@@ -395,7 +394,7 @@ namespace Meta.Numerics.Statistics {
                 S += (rx[i] + 1) * (ry[i] + 1);
                 C += (rx[i] - M) * (ry[i] - M);
             }
-            C = C / n;
+            C /= n;
             double rho = C / V;
 
             // Compute the null distribution.
@@ -406,7 +405,7 @@ namespace Meta.Numerics.Statistics {
                 // Current timings are n = 10 35ms, n = 11, 72ms, n = 12 190ms.
                 DiscreteDistribution sDistribution = new SpearmanExactDistribution(n);
                 ContinuousDistribution rhoDistribution = new DiscreteAsContinuousDistribution(new SpearmanExactDistribution(n), Interval.FromEndpoints(-1.0, 1.0));
-                return (new TestResult("s", S, sDistribution, "ρ", rho, rhoDistribution, TestType.TwoTailed));
+                return new TestResult("s", S, sDistribution, "ρ", rho, rhoDistribution, TestType.TwoTailed);
             } else {
                 // For larger samples, use the normal approximation.
                 // It would be nice to fit support and/or fourth cumulant.
@@ -414,7 +413,7 @@ namespace Meta.Numerics.Statistics {
                 // badly, even giving negative probabilities for extreme values, which are quite likely for null-violating samples.
                 // Look into bounded quasi-normal distributions such as the logit-normal and truncated normal.
                 ContinuousDistribution rhoDistribution = new NormalDistribution(0.0, 1.0 / Math.Sqrt(n - 1));
-                return (new TestResult("ρ", rho, rhoDistribution, TestType.TwoTailed));
+                return new TestResult("ρ", rho, rhoDistribution, TestType.TwoTailed);
             }
 
         }
@@ -452,8 +451,8 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="http://en.wikipedia.org/wiki/Kendall_tau_test" />
         public static TestResult KendallTauTest (IReadOnlyList<double> x, IReadOnlyList<double> y) {
 
-            if (x == null) throw new ArgumentNullException(nameof(x));
-            if (y == null) throw new ArgumentNullException(nameof(y));
+            if (x is null) throw new ArgumentNullException(nameof(x));
+            if (y is null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
 
             int n = x.Count;
@@ -488,11 +487,11 @@ namespace Meta.Numerics.Statistics {
             if (n <= 20) {
                 DiscreteDistribution dDistribution = new KendallExactDistribution(n);
                 ContinuousDistribution tauDistribution = new DiscreteAsContinuousDistribution(dDistribution, Interval.FromEndpoints(-1.0, +1.0));
-                return (new TestResult("D", D, dDistribution, "τ", tau, tauDistribution, TestType.TwoTailed));
+                return new TestResult("D", D, dDistribution, "τ", tau, tauDistribution, TestType.TwoTailed);
             } else {
                 double dTau = Math.Sqrt((4 * n + 10) / 9.0 / n / (n - 1));
                 ContinuousDistribution tauDistribution = new NormalDistribution(0.0, dTau);
-                return (new TestResult("τ", tau, tauDistribution, TestType.TwoTailed));
+                return new TestResult("τ", tau, tauDistribution, TestType.TwoTailed);
             }
         }
 
@@ -503,7 +502,7 @@ namespace Meta.Numerics.Statistics {
         /// <param name="y">The values of the second variable.</param>
         /// <returns>The result of the test.</returns>
         /// <remarks>
-        /// <para>Like a two-sample, unpaired t-test (<see cref="Sample.StudentTTest(Sample,Sample)" />),
+        /// <para>Like a two-sample, unpaired t-test (<see cref="Univariate.StudentTTest(IReadOnlyCollection{double}, IReadOnlyCollection{double})" />),
         /// a paired t-test compares two samples to detect a difference in means.
         /// Unlike the unpaired version, the paired version assumes that each </para>
         /// </remarks>
@@ -512,8 +511,8 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException">There are fewer than two data points.</exception>
         public static TestResult PairedStudentTTest (IReadOnlyList<double> x, IReadOnlyList<double> y) {
 
-            if (x == null) throw new ArgumentNullException(nameof(x));
-            if (y == null) throw new ArgumentNullException(nameof(y));
+            if (x is null) throw new ArgumentNullException(nameof(x));
+            if (y is null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
 
             int n = x.Count;
@@ -531,7 +530,7 @@ namespace Meta.Numerics.Statistics {
                 v += MoreMath.Sqr(z - m) * i / (i + 1);
                 m += (z - m) / (i + 1);
             }
-            v = v / (n - 1);
+            v /= (n - 1);
 
             // compute standard error
             double s = Math.Sqrt(v / n);
@@ -539,7 +538,7 @@ namespace Meta.Numerics.Statistics {
             // t is the mean deviation as a fraction of standard error
             double t = m / s;
 
-            return (new TestResult("t", t, new StudentDistribution(n - 1), TestType.TwoTailed));
+            return new TestResult("t", t, new StudentDistribution(n - 1), TestType.TwoTailed);
 
         }
 
@@ -564,8 +563,8 @@ namespace Meta.Numerics.Statistics {
         /// <seealso href="https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test"/>
         public static TestResult WilcoxonSignedRankTest (IReadOnlyList<double> x, IReadOnlyList<double> y) {
 
-            if (x == null) throw new ArgumentNullException(nameof(x));
-            if (y == null) throw new ArgumentNullException(nameof(y));
+            if (x is null) throw new ArgumentNullException(nameof(x));
+            if (y is null) throw new ArgumentNullException(nameof(y));
             if (x.Count != y.Count) throw new DimensionMismatchException();
 
             int n = x.Count;
@@ -585,12 +584,12 @@ namespace Meta.Numerics.Statistics {
 
             if (n < 32) {
                 DiscreteDistribution wDistribution = new WilcoxonDistribution(n);
-                return (new TestResult("W", W, wDistribution, TestType.TwoTailed));
+                return new TestResult("W", W, wDistribution, TestType.TwoTailed);
             } else {
                 double mu = n * (n + 1.0) / 4.0;
                 double sigma = Math.Sqrt(mu * (2.0 * n + 1.0) / 6.0);
                 ContinuousDistribution wDistribution = new NormalDistribution(mu, sigma);
-                return (new TestResult("W", W, wDistribution, TestType.TwoTailed));
+                return new TestResult("W", W, wDistribution, TestType.TwoTailed);
             }
         }
 

@@ -119,9 +119,12 @@ namespace Meta.Numerics.Matrices {
         /// </remarks>
         public override RowVector Row (int r) {
             if ((r < 0) || (r >= dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+            return new RowVector(store, offset + rowStride * r, colStride, dimension, true);
+            /*
             double[] rStore = new double[dimension];
             Blas1.dCopy(store, offset + rowStride * r, colStride, rStore, 0, 1, dimension);
             return (new RowVector(rStore, dimension));
+            */
         }
 
         /// <summary>
@@ -137,9 +140,12 @@ namespace Meta.Numerics.Matrices {
         /// </remarks>
         public override ColumnVector Column (int c) {
             if ((c < 0) || (c >= dimension)) throw new ArgumentOutOfRangeException(nameof(c));
+            return new ColumnVector(store, offset + colStride * c, rowStride, dimension, true);
+            /*
             double[] cStore = new double[dimension];
             Blas1.dCopy(store, offset + colStride * c, rowStride, cStore, 0, 1, dimension);
             return (new ColumnVector(cStore, dimension));
+            */
         }
 
         /// <summary>

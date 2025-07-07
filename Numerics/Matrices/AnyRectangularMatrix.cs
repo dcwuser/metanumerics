@@ -105,10 +105,15 @@ namespace Meta.Numerics.Matrices {
         }
 
         /// <summary>
-        /// Gets a copy of the specified column.
+        /// Gets the specified column.
         /// </summary>
         /// <param name="c">The (zero-based) column index.</param>
-        /// <returns>An independent copy of the specified column.</returns>
+        /// <returns>The specified column.</returns>
+        /// <remarks><para>The returned vector is not independent of the original matrix.
+        /// (If an entry of the original matrix is changed, the corresponding entry of the column
+        /// vector will change.) This behavior is faster and requires less memory for common,
+        /// read-only scenarios. If you want an independent copy of the column, simply call <see cref="ColumnVector.Copy"/>
+        /// to obtain one.</para></remarks>
         public virtual ColumnVector Column (int c) {
             if ((c < 0) || (c >= ColumnCount)) throw new ArgumentOutOfRangeException(nameof(c));
             ColumnVector v = new ColumnVector(RowCount);

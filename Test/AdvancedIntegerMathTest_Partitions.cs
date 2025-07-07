@@ -7,6 +7,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics.Functions;
+using FluentAssertions;
 
 namespace Test {
 
@@ -72,6 +73,12 @@ namespace Test {
 
                 // Double-conjugating should return us to the original
                 Assert.IsTrue(conjugate.Conjugate() == partition);
+
+                // Equality methods should work
+                (partition == null).Should().BeFalse();
+                (partition != null).Should().BeTrue();
+                partition.Equals(partition).Should().BeTrue();
+                partition.Equals((object)partition).Should().BeTrue();
 
             }
 

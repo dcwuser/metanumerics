@@ -33,91 +33,91 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double Scale {
             get {
-                return (s);
+                return s;
             }
         }
 
         /// <inheritdoc />
         public override Interval Support {
             get {
-                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+                return Interval.Semiinfinite;
             }
         }
 
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             if (x <= 0.0) {
-                return (0.0);
+                return 0.0;
             } else {
                 double z = x / s;
-                return (z * Math.Exp(-0.5 * z * z) / s);
+                return z * Math.Exp(-0.5 * z * z) / s;
             }
         }
 
         /// <inheritdoc />
         public override double LeftProbability (double x) {
             if (x <= 0.0) {
-                return (0.0);
+                return 0.0;
             } else {
                 double z = x / s;
-                return (-MoreMath.ExpMinusOne(-0.5 * z * z));
+                return -MoreMath.ExpMinusOne(-0.5 * z * z);
             }
         }
 
         /// <inheritdoc />
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
-            return (Math.Sqrt(-2.0 * MoreMath.LogOnePlus(-P)) * s);
+            return Math.Sqrt(-2.0 * MoreMath.LogOnePlus(-P)) * s;
         }
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
             if (x <= 0.0) {
-                return (1.0);
+                return 1.0;
             } else {
                 double z = x / s;
-                return (Math.Exp(-0.5 * z * z));
+                return Math.Exp(-0.5 * z * z);
             }
         }
 
         /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
             if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
-            return (Math.Sqrt(-2.0 * Math.Log(Q)) * s);
+            return Math.Sqrt(-2.0 * Math.Log(Q)) * s;
         }
 
         /// <inheritdoc />
         public override double Median {
             get {
-                return (Math.Sqrt(2.0 * Global.LogTwo) * s);
+                return Math.Sqrt(2.0 * Global.LogTwo) * s;
             }
         }
 
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (Global.SqrtHalfPI * s);
+                return Global.SqrtHalfPI * s;
             }
         }
 
         /// <inheritdoc />
         public override double StandardDeviation {
             get {
-                return (Math.Sqrt((4.0 - Math.PI) / 2.0) * s);
+                return Math.Sqrt((4.0 - Math.PI) / 2.0) * s;
             }
         }
 
         /// <inheritdoc />
         public override double Variance {
             get {
-                return ((4.0 - Math.PI) / 2.0 * s * s);
+                return (4.0 - Math.PI) / 2.0 * s * s;
             }
         }
 
         /// <inheritdoc />
         public override double Skewness {
             get {
-                return (2.0 * Global.SqrtPI * (Math.PI - 3.0) / Math.Pow(4.0 - Math.PI, 3.0 / 2.0));
+                return 2.0 * Global.SqrtPI * (Math.PI - 3.0) / Math.Pow(4.0 - Math.PI, 3.0 / 2.0);
             }
         }
 
@@ -126,16 +126,16 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else {
-                return (Math.Pow(2.0, r / 2.0) * AdvancedMath.Gamma(1.0 + r / 2.0) * MoreMath.Pow(s, r));
+                return Math.Pow(2.0, r / 2.0) * AdvancedMath.Gamma(1.0 + r / 2.0) * MoreMath.Pow(s, r);
             }
         }
 
         /// <inheritdoc />
         public override double Hazard (double x) {
             if (x <= 0.0) {
-                return (0.0);
+                return 0.0;
             } else {
-                return (x / (s * s));
+                return x / (s * s);
             }
         }
 
@@ -144,9 +144,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         /// <param name="sample">The sample to fit, which must have at least 2 values.</param>
         /// <returns>The fit result. The only parameter is the scale parameter.</returns>
-        public static RayleighFitResult FitToSample (Sample sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            return (Univariate.FitToRayleigh(sample.data));
+        public static RayleighFitResult FitToSample (IReadOnlyList<double> sample) {
+            return Univariate.FitToRayleigh(sample);
         }
     }
 }

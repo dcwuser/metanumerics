@@ -19,9 +19,9 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The best fit parameters.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
-        /// <exception cref="InvalidOperationException">Not all the entries in <paramref name="sample" /> lie between zero and one.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Not all the entries in <paramref name="sample" /> lie between zero and one.</exception>
         public static BetaFitResult FitToBeta (this IReadOnlyList<double> sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
 
             // maximum likelihood calculation
@@ -37,7 +37,7 @@ namespace Meta.Numerics.Statistics {
             // these are the (logs of) the geometric means
             double ga = 0.0; double gb = 0.0;
             foreach (double value in sample) {
-                if ((value <= 0.0) || (value >= 1.0)) throw new InvalidOperationException();
+                if ((value <= 0.0) || (value >= 1.0)) throw new ArgumentOutOfRangeException(nameof(sample));
                 ga += Math.Log(value); gb += Math.Log(1.0 - value);
             }
             ga /= sample.Count; gb /= sample.Count;
@@ -56,10 +56,8 @@ namespace Meta.Numerics.Statistics {
             // implies
             //   \alpha = M1 \left( \frac{M1 (1-M1)}{C2} - 1 \right)
             //   \beta = (1 - M1) \left( \frac{M1 (1-M1)}{C2} -1 \right)
-            int n;
-            double m, v;
-            ComputeMomentsUpToSecond(sample, out n, out m, out v);
-            v = v / n;
+            ComputeMomentsUpToSecond(sample, out int n, out double m, out double v);
+            v /= n;
 
             double mm = 1.0 - m;
             double q = m * mm / v - 1.0;
@@ -86,7 +84,7 @@ namespace Meta.Numerics.Statistics {
             BetaDistribution distribution = new BetaDistribution(a, b);
             TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
-            return (new BetaFitResult(ab, C, distribution, test));
+            return new BetaFitResult(ab, C, distribution, test);
         }
 
         /// <summary>
@@ -96,15 +94,15 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The result of the fit.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than two values.</exception>
-        /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="sample"/> contains non-positive values.</exception>
         public static ExponentialFitResult FitToExponential (this IReadOnlyList<double> sample) {
 
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) throw new InsufficientDataException();
 
             // None of the data is allowed to be negative.
             foreach (double value in sample) {
-                if (value < 0.0) throw new InvalidOperationException();
+                if (value < 0.0) throw new ArgumentOutOfRangeException(nameof(sample));
             }
 
             // It's easy to show that the MLE estimator of \mu is the sample mean and that its variance 
@@ -122,7 +120,7 @@ namespace Meta.Numerics.Statistics {
             ContinuousDistribution distribution = new ExponentialDistribution(lambda);
             TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
-            return (new ExponentialFitResult(new UncertainValue(lambda, dLambda), test));
+            return new ExponentialFitResult(new UncertainValue(lambda, dLambda), test);
 
         }
 
@@ -136,7 +134,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         public static GammaFitResult FitToGamma (this IReadOnlyList<double> sample) {
 
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
 
             // The log likelihood of a sample given k and s is
@@ -153,10 +151,8 @@ namespace Meta.Numerics.Statistics {
             // \log k > \psi(k) for all k, so the RHS had better be positive. They get
             // closer for large k, so smaller RHS will produce a larger k.
 
-            int n;
-            double m, ss;
-            ComputeMomentsUpToSecond(sample, out n, out m, out ss);
-            double v = ss / n;
+            ComputeMomentsUpToSecond(sample, out int n, out double m, out double v);
+            v /= n;
 
             double s = 0.0;
             foreach (double x in sample) {
@@ -195,7 +191,7 @@ namespace Meta.Numerics.Statistics {
             GammaDistribution distribution = new GammaDistribution(k1, s1);
             TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
-            return (new GammaFitResult(k1, s1, C, distribution, test));
+            return new GammaFitResult(k1, s1, C, distribution, test);
         }
 
         /// <summary>
@@ -206,7 +202,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         public static GumbelFitResult FitToGumbel (this IReadOnlyList<double> sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
 
             // To do a maximum likelihood fit, start from the log probability of each data point and aggregate to
@@ -247,9 +243,7 @@ namespace Meta.Numerics.Statistics {
             // Teoria y Aplicaciones 12 (2005) 151-156 (http://revistas.ucr.ac.cr/index.php/matematica/article/viewFile/259/239) 
 
             // We will be needed the sample mean and standard deviation
-            int n;
-            double mean, stdDev;
-            Univariate.ComputeMomentsUpToSecond(sample, out n, out mean, out stdDev);
+            Univariate.ComputeMomentsUpToSecond(sample, out int n, out double mean, out double stdDev);
             stdDev = Math.Sqrt(stdDev / n);
 
             // Use the method of moments to get an initial estimate of s.
@@ -288,12 +282,11 @@ namespace Meta.Numerics.Statistics {
             SymmetricMatrix CI = C.CholeskyDecomposition().Inverse();
             // The use of (n-2) here in place of n is a very ad hoc attempt to increase accuracy.
 
-
             // Compute goodness-of-fit
             GumbelDistribution dist = new GumbelDistribution(m1, s1);
             TestResult test = sample.KolmogorovSmirnovTest(dist);
 
-            return (new GumbelFitResult(m1, s1, CI[0, 0], CI[1, 1], CI[0, 1], test));
+            return new GumbelFitResult(m1, s1, CI[0, 0], CI[1, 1], CI[0, 1], test);
         }
 
         // Compute u = <e^{-d/s}> and v = <d e^{-d/s}> for a given s and a given sample.
@@ -320,7 +313,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
         public static LognormalFitResult FitToLognormal (this IReadOnlyList<double> sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
 
             // Writing out the log likelihood from p(x), taking its derivatives wrt mu and sigma, and setting them equal
@@ -328,12 +321,11 @@ namespace Meta.Numerics.Statistics {
             // with x -> log x, i.e. \mu = < \log x >, \sigma^2 = < (\log x - \mu)^2 >. So we just repeat the normal fit
             // logic with x -> log x.
 
-            double m, dm, s, ds;
-            FitToNormalInternal(sample.Select(x => Math.Log(x)), out m, out dm, out s, out ds);
+            FitToNormalInternal(sample.Select(x => Math.Log(x)), out double m, out double dm, out double s, out double ds);
 
             LognormalDistribution distribution = new LognormalDistribution(m, s);
             TestResult test = sample.KolmogorovSmirnovTest(distribution);
-            return (new LognormalFitResult(new UncertainValue(m, dm), new UncertainValue(s, ds), distribution, test));
+            return new LognormalFitResult(new UncertainValue(m, dm), new UncertainValue(s, ds), distribution, test);
 
         }
 
@@ -346,21 +338,21 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         public static NormalFitResult FitToNormal (this IReadOnlyList<double> sample) {
 
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
 
-            double m, dm, s, ds;
-            FitToNormalInternal(sample, out m, out dm, out s, out ds);
+            FitToNormalInternal(sample, out double m, out double dm, out double s, out double ds);
 
             NormalDistribution distribution = new NormalDistribution(m, s);
             TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
-            return (new NormalFitResult(new UncertainValue(m, dm), new UncertainValue(s, ds), distribution, test));
+            return new NormalFitResult(new UncertainValue(m, dm), new UncertainValue(s, ds), distribution, test);
 
         }
 
-        private static void FitToNormalInternal (IEnumerable<double> sample,
-            out double m, out double dm, out double s, out double ds) {
+        private static void FitToNormalInternal (IEnumerable<double> sample, out double m, out double dm, out double s, out double ds) {
+
+            Debug.Assert(sample != null);
 
             // We factor out this method because it is used by both the normal and the log-normal fit methods.
 
@@ -387,9 +379,7 @@ namespace Meta.Numerics.Statistics {
             // which means the estimator m is normally distributed with mean \mu and standard deviation
             // \sigma / \sqrt{n}. Now we know that m is unbiased and we know its variance.
 
-            int n;
-            double ss;
-            Univariate.ComputeMomentsUpToSecond(sample, out n, out m, out ss);
+            Univariate.ComputeMomentsUpToSecond(sample, out int n, out m, out double ss);
             dm = Math.Sqrt(ss) / n;
 
             // Next the variance estimator. By the definition of the chi squared distribution and a bit of algebra that
@@ -402,7 +392,7 @@ namespace Meta.Numerics.Statistics {
             // know its variance. But we don't consider the parameter \sigma^2, we consider it \sigma.
             // The mean of the square root is not the square root of the mean, so the square root of an unbiased
             // estimator of \sigma^2 will not be an unbiased estimator of \sigma. If we want an unbiased estimator of \sigma
-            // itself, we need to go a bit further. Since u^2 ~ \chi^2(n-1), u ~ \chi(n-1). It's mean is a complicated ratio
+            // itself, we need to go a bit further. Since u^2 ~ \chi^2(n-1), u ~ \chi(n-1). Its mean is a complicated ratio
             // of Gamma functions and it's variance is an even more complicated difference whose evaluation can be delicate,
             // but our machinery in the ChiDistribution class handles that. To get an unbiased estimator of \sigma, we just
             // need to apply the same principal of dividing by the mean of this distribution.
@@ -422,7 +412,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The fit result.</returns>
         public static RayleighFitResult FitToRayleigh (this IReadOnlyList<double> sample) {
 
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) throw new InsufficientDataException();
 
             // It's easy to follow maximum likelihood prescription, because there is only one
@@ -469,7 +459,7 @@ namespace Meta.Numerics.Statistics {
             RayleighDistribution distribution = new RayleighDistribution(s);
             TestResult test = sample.KolmogorovSmirnovTest(distribution);
 
-            return (new RayleighFitResult(new UncertainValue(s, ds), distribution, test));
+            return new RayleighFitResult(new UncertainValue(s, ds), distribution, test);
         }
 
         /// <summary>
@@ -482,7 +472,7 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         public static WaldFitResult FitToWald (this IReadOnlyList<double> sample) {
 
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
 
             // For maximum likelihood estimation, take logs of pdfs and sum:
@@ -502,9 +492,7 @@ namespace Meta.Numerics.Statistics {
             //    \frac{n}{\lambda} = \sum_i \left( \frac{1}{x_i} - \frac{1}{\mu} \right)
             //  i.e. \lambda^{-1} = <(x^{-1} - \mu^{-1})>
 
-            int n;
-            double mu;
-            ComputeMomentsUpToFirst(sample, out n, out mu);
+            ComputeMomentsUpToFirst(sample, out int n, out double mu);
             double mui = 1.0 / mu;
             double lambda = 0.0;
             foreach (double value in sample) {
@@ -542,7 +530,7 @@ namespace Meta.Numerics.Statistics {
 
             WaldDistribution dist = new WaldDistribution(mu, lambda);
             TestResult test = sample.KolmogorovSmirnovTest(dist);
-            return (new WaldFitResult(mu, lambda, v_mu_mu, v_lambda_lambda, dist, test));
+            return new WaldFitResult(mu, lambda, v_mu_mu, v_lambda_lambda, dist, test);
         }
 
         /// <summary>
@@ -550,15 +538,15 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="sample">The sample to fit.</param>
         /// <returns>The best fit parameters.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
-        /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="sample"/> contains non-positive values.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         public static WeibullFitResult FitToWeibull (this IReadOnlyList<double> sample) {
 
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
             foreach (double value in sample) {
-                if (value <= 0.0) throw new InvalidOperationException();
+                if (value <= 0.0) throw new ArgumentOutOfRangeException(nameof(sample));
             }
 
             // The log likelihood function is

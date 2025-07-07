@@ -12,110 +12,12 @@ using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 using Meta.Numerics.Matrices;
+using Meta.Numerics.Functions;
 
 namespace Test {
 
     [TestClass]
     public class MultivariateSampleTest {
-
-        public MultivariateSample CreateMultivariateNormalSample (ColumnVector M, SymmetricMatrix C, int n) {
-
-            int d = M.Dimension;
-
-            MultivariateSample S = new MultivariateSample(d);
-
-            SquareMatrix A = C.CholeskyDecomposition().SquareRootMatrix();
-
-            Random rng = new Random(1);
-            ContinuousDistribution normal = new NormalDistribution();
-
-
-            for (int i = 0; i < n; i++) {
-
-                // create a vector of normal deviates
-                ColumnVector V = new ColumnVector(d);
-                for (int j = 0; j < d; j++) {
-                    double y = rng.NextDouble();
-                    double z = normal.InverseLeftProbability(y);
-                    V[j] = z;
-                }
-
-                // form the multivariate distributed vector
-                ColumnVector X = M + A * V;
-
-                // add it to the sample
-                S.Add(X);
-
-
-            }
-
-            return (S);
-
-        }
-
-        [TestMethod]
-        public void MultivariateManipulations () {
-
-            MultivariateSample S = new MultivariateSample(3);
-
-            Assert.IsTrue(S.Dimension == 3);
-
-            Assert.IsTrue(S.Count == 0);
-
-            S.Add(1.1, 1.2, 1.3);
-            S.Add(2.1, 2.2, 2.3);
-
-            Assert.IsTrue(S.Count == 2);
-
-            // check that an entry is there, remove it, check that it is not there
-            Assert.IsTrue(S.Contains(1.1, 1.2, 1.3));
-            Assert.IsTrue(S.Remove(1.1, 1.2, 1.3));
-            Assert.IsFalse(S.Contains(1.1, 1.2, 1.3));
-
-            // clear it and check that the count went to zero
-            S.Clear();
-            Assert.IsTrue(S.Count == 0);
-
-        }
-
-        [TestMethod]
-        public void MultivariateNormalSummaryStatistics () {
-
-            ColumnVector V = new ColumnVector( new double[] { 1.0, 2.0} );
-            SymmetricMatrix C = new SymmetricMatrix(2);
-            C[0, 0] = 1.0;
-            C[1, 1] = 2.0;
-            C[0, 1] = 0.5;
-            int N = 100;
-            MultivariateSample S = CreateMultivariateNormalSample(V, C, 100);
-
-            Assert.IsTrue(S.Count == N);
-
-            // check the population means
-            Assert.IsTrue(S.Column(0).PopulationMean.ConfidenceInterval(0.95).ClosedContains(1.0));
-            Assert.IsTrue(S.Column(1).PopulationMean.ConfidenceInterval(0.95).ClosedContains(2.0));
-
-            // check the population variances
-            Assert.IsTrue(S.Column(0).PopulationVariance.ConfidenceInterval(0.95).ClosedContains(C[0, 0]));
-            //Assert.IsTrue(S.PopulationCovariance(0, 1).ConfidenceInterval(0.95).ClosedContains(C[0, 1]));
-            //Assert.IsTrue(S.PopulationCovariance(1, 0).ConfidenceInterval(0.95).ClosedContains(C[1, 0]));
-            Assert.IsTrue(S.Column(1).PopulationVariance.ConfidenceInterval(0.95).ClosedContains(C[1, 1]));
-            //Console.WriteLine(S.PopulationCovariance(0, 0));
-            //Console.WriteLine(S.PopulationCovariance(1, 1));
-            //Console.WriteLine(S.PopulationCovariance(0, 1));
-
-            Console.WriteLine("--");
-            // add tests of known higher moments for multivariate normal distribution
-            // at the momement that is hard because we don't have uncertainty estimates for them
-            //Console.WriteLine(S.Moment(0, 0));
-            //Console.WriteLine(S.Mean(0));
-            //Console.WriteLine(S.Moment(1, 0));
-            //Console.WriteLine(S.Variance(0));
-            //Console.WriteLine(S.MomentAboutMean(2, 0));
-            //Console.WriteLine(S.MomentAboutMean(3, 0));
-            //Console.WriteLine(S.MomentAboutMean(4, 0));
-
-        }
 
         [TestMethod]
         public void BivariateNullAssociation () {
@@ -164,23 +66,6 @@ namespace Test {
         }
         
         [TestMethod]
-        public void PairedStudentTTest () {
-
-            BivariateSample s = new BivariateSample();
-            s.Add(3, 5);
-            s.Add(0, 1);
-            s.Add(6, 5);
-            s.Add(7, 7);
-            s.Add(4, 10);
-            s.Add(3, 9);
-            s.Add(2, 7);
-            s.Add(1, 11);
-            s.Add(4, 8);
-            TestResult r = s.PairedStudentTTest();
-            // Maybe we should assert something here?
-        }
-
-        [TestMethod]
         public void MultivariateLinearRegressionSimple () {
 
             // define model y = a + b0 * x0 + b1 * x1 + noise
@@ -193,7 +78,6 @@ namespace Test {
 
             // draw a sample from the model
             Random rng = new Random(1);
-            MultivariateSample sample = new MultivariateSample("x0", "x1", "y");
             FrameTable table = new FrameTable();
             table.AddColumns<double>("x0", "x1", "y");
 
@@ -202,25 +86,18 @@ namespace Test {
                 double x1 = x1distribution.GetRandomValue(rng);
                 double eps = noise.GetRandomValue(rng);
                 double y = a + b0 * x0 + b1 * x1 + eps;
-                sample.Add(x0, x1, y);
                 table.AddRow(x0, x1, y);
             }
 
             // do a linear regression fit on the model
-            ParameterCollection oldResult = sample.LinearRegression(2).Parameters;
             MultiLinearRegressionResult newResult = table["y"].As<double>().MultiLinearRegression(
                 table["x0"].As<double>(), table["x1"].As<double>()
             );
 
             // the result should have the appropriate dimension
-            Assert.IsTrue(oldResult.Count == 3);
             Assert.IsTrue(newResult.Parameters.Count == 3);
 
             // The parameters should match the model
-            Assert.IsTrue(oldResult[0].Estimate.ConfidenceInterval(0.90).ClosedContains(b0));
-            Assert.IsTrue(oldResult[1].Estimate.ConfidenceInterval(0.90).ClosedContains(b1));
-            Assert.IsTrue(oldResult[2].Estimate.ConfidenceInterval(0.90).ClosedContains(a));
-
             Assert.IsTrue(newResult.CoefficientOf(0).ConfidenceInterval(0.99).ClosedContains(b0));
             Assert.IsTrue(newResult.CoefficientOf("x1").ConfidenceInterval(0.99).ClosedContains(b1));
             Assert.IsTrue(newResult.Intercept.ConfidenceInterval(0.99).ClosedContains(a));
@@ -302,43 +179,7 @@ namespace Test {
 
         }
 
-        [TestMethod]
-        public void MultivariateLinearRegressionBadInputTest () {
-
-            // create a sample
-            MultivariateSample sample = new MultivariateSample(3);
-            sample.Add(1, 2, 3);
-            sample.Add(2, 3, 4);
-            
-            // try to predict with too little data
-            try {
-                sample.LinearRegression(2);
-                Assert.IsTrue(false);
-            } catch (InvalidOperationException) {
-                Assert.IsTrue(true);
-            }
-
-            // add enough data
-            sample.Add(3, 4, 5);
-            sample.Add(4, 5, 6);
-
-            // try to predict a non-existent variable
-            try {
-                sample.LinearRegression(-1);
-                Assert.IsTrue(false);
-            } catch (ArgumentOutOfRangeException) {
-                Assert.IsTrue(true);
-            }
-
-            try {
-                sample.LinearRegression(3);
-                Assert.IsTrue(false);
-            } catch (ArgumentOutOfRangeException) {
-                Assert.IsTrue(true);
-            }
-
-        }
-
+ 
         [TestMethod]
         public void MultivariateLinearRegressionAgreement2 () {
 
@@ -350,24 +191,70 @@ namespace Test {
             UniformDistribution xDist = new UniformDistribution(Interval.FromEndpoints(-2.0, 3.0));
             Random rng = new Random(1111111);
 
-            MultivariateSample multi = new MultivariateSample("x", "y");
-            for (int i = 0; i < 10; i++) {
-                double x = xDist.GetRandomValue(rng);
-                double y = intercept + slope * x + yErrDist.GetRandomValue(rng);
-                multi.Add(x, y);
+            int n = 10;
+            double[] x = new double[n];
+            double[] y = new double[n];
+            for (int i = 0; i < n; i++) {
+                x[i] = xDist.GetRandomValue(rng);
+                y[i] = intercept + slope * x[i] + yErrDist.GetRandomValue(rng);
             }
 
-            // Old multi linear regression code.
-            MultiLinearRegressionResult result1 = multi.LinearRegression(1);
-
             // Simple linear regression code.
-            LinearRegressionResult result2 = multi.TwoColumns(0, 1).LinearRegression();
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(result1.Parameters["Intercept"].Estimate, result2.Parameters["Intercept"].Estimate));
+            LinearRegressionResult result2 = y.LinearRegression(x);
 
             // New multi linear regression code.
-            MultiLinearRegressionResult result3 = multi.Column(1).ToList().MultiLinearRegression(multi.Column(0).ToList());
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(result1.Parameters["Intercept"].Estimate, result3.Parameters["Intercept"].Estimate));
+            MultiLinearRegressionResult result3 = y.MultiLinearRegression(x);
 
+            // Order of parameters is switched, so switch them with a transpose matrix
+            // In future, use a permutation matrix for this
+            SquareMatrix transpose = new SquareMatrix(2);
+            transpose[0, 1] = 1;
+            transpose[1, 0] = 1;
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result2.Parameters.ValuesVector, transpose * result3.Parameters.ValuesVector));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result2.Parameters.CovarianceMatrix, transpose.Transpose * result3.Parameters.CovarianceMatrix * transpose));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result2.RSquared, result3.RSquared));
+
+        }
+
+        [TestMethod]
+        public void MultivariateRegressionRSquaredDistribution() {
+
+            // Collect r^2 values from multivariate linear regressions.
+
+            double cz = 1.0;
+            double cx = 0.0;
+            double cy = 0.0;
+
+            Random rng = new Random(1001110000);
+            ContinuousDistribution xDistribution = new UniformDistribution(Interval.FromEndpoints(-4.0, 8.0));
+            ContinuousDistribution yDistribution = new UniformDistribution(Interval.FromEndpoints(-8.0, 4.0));
+            ContinuousDistribution eDistribution = new NormalDistribution();
+
+            List<double> r2Sample = new List<double>();
+
+            for (int i = 0; i < 500; i++) {
+
+                List<double> xs = new List<double>();
+                List<double> ys = new List<double>();
+                List<double> zs = new List<double>();
+                for (int k = 0; k < 12; k++) {
+                    double x = xDistribution.GetRandomValue(rng);
+                    xs.Add(x);
+                    double y = yDistribution.GetRandomValue(rng);
+                    ys.Add(y);
+                    double z = cx * x + cy * y + cz + eDistribution.GetRandomValue(rng);
+                    zs.Add(z);
+                }
+                MultiLinearRegressionResult fit = zs.MultiLinearRegression(xs, ys);
+                r2Sample.Add(fit.RSquared);
+            }
+
+            // r^2 values should be distributed as expected.
+            ContinuousDistribution r2Distribution = new BetaDistribution((3 - 1) / 2.0, (12 - 3) / 2.0);
+
+            TestResult ks = r2Sample.KolmogorovSmirnovTest(r2Distribution);
+            Assert.IsTrue(ks.Probability > 0.05);
         }
 
 
@@ -383,7 +270,6 @@ namespace Test {
 
             // draw a sample from the model
             Random rng = new Random(1);
-            MultivariateSample old = new MultivariateSample("y", "x0", "x1");
             FrameTable table = new FrameTable();
             table.AddColumn<double>("x0");
             table.AddColumn<double>("x1");
@@ -395,12 +281,10 @@ namespace Test {
                 double t = a + b0 * x0 + b1 * x1;
                 double p = 1.0 / (1.0 + Math.Exp(-t));
                 bool y = (rng.NextDouble() < p);
-                old.Add(y ? 1.0 : 0.0, x0, x1);
                 table.AddRow(x0, x1, y);
             }
 
             // do a linear regression fit on the model
-            MultiLinearLogisticRegressionResult oldResult = old.LogisticLinearRegression(0);
             MultiLinearLogisticRegressionResult newResult = table["y"].As<bool>().MultiLinearLogisticRegression(
                 table["x0"].As<double>(), table["x1"].As<double>()
             );
@@ -491,94 +375,32 @@ namespace Test {
         }
 
         [TestMethod]
-        public void MultivariateMoments () {
-
-            // create a random sample
-            MultivariateSample M = new MultivariateSample(3);
-            ContinuousDistribution d0 = new NormalDistribution();
-            ContinuousDistribution d1 = new ExponentialDistribution();
-            ContinuousDistribution d2 = new UniformDistribution();
-            Random rng = new Random(1);
-            int n = 10;
-            for (int i = 0; i < n; i++) {
-                M.Add(d0.GetRandomValue(rng), d1.GetRandomValue(rng), d2.GetRandomValue(rng));
-            }
-
-            // test that moments agree
-            for (int i = 0; i < 3; i++) {
-                int[] p = new int[3];
-                p[i] = 1;
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(M.Column(i).Mean, M.RawMoment(p)));
-                p[i] = 2;
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(M.Column(i).Variance, M.CentralMoment(p)));
-                for (int j = 0; j < i; j++) {
-                    int[] q = new int[3];
-                    q[i] = 1;
-                    q[j] = 1;
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(M.TwoColumns(i, j).Covariance, M.CentralMoment(q)));
-                }
-            }
-
-
-        }
-
-        [TestMethod]
         public void MultivariateLinearRegressionNullDistribution () {
 
-            int d = 4;
-
             Random rng = new Random(1);
-            NormalDistribution n = new NormalDistribution();
+            NormalDistribution err = new NormalDistribution();
+            double[] y = new double[12];
+            double[][] x = new double[4][];
+            for (int k = 0; k < x.Length; k++) x[k] = new double[y.Length];
 
-            Sample fs = new Sample();
+            List<double> F = new List<double>();
+            ContinuousDistribution FDistribution = null;
 
             for (int i = 0; i < 64; i++) {
-                MultivariateSample ms = new MultivariateSample(d);
-                for (int j = 0; j < 8; j++) {
-                    double[] x = new double[d];
-                    for (int k = 0; k < d; k++) {
-                        x[k] = n.GetRandomValue(rng);
+                for (int j = 0; j < y.Length; j++) {
+                    y[j] = 6.0 + err.GetRandomValue(rng);
+                    for (int k = 0; k < x.Length; k++) {
+                        x[k][j] = rng.NextDouble();
                     }
-                    ms.Add(x);
                 }
-                GeneralLinearRegressionResult r = ms.LinearRegression(0);
-                fs.Add(r.F.Statistic.Value);
+                GeneralLinearRegressionResult r = y.MultiLinearRegression(x);
+                F.Add(r.F.Statistic.Value);
+                FDistribution = r.F.Statistic.Distribution;
             }
 
             // conduct a KS test to check that F follows the expected distribution
-            TestResult ks = fs.KolmogorovSmirnovTest(new FisherDistribution(3, 4));
-            Assert.IsTrue(ks.Probability > 0.05);
-
-        }
-
-        [TestMethod]
-        public void MultivariateLinearRegressionAgreement () {
-
-            Random rng = new Random(1);
-
-            MultivariateSample SA = new MultivariateSample(2);
-            for (int i = 0; i < 10; i++) {
-                SA.Add(rng.NextDouble(), rng.NextDouble());
-            }
-            GeneralLinearRegressionResult RA = SA.LinearRegression(0);
-            ColumnVector PA = RA.Parameters.ValuesVector;
-            SymmetricMatrix CA = RA.Parameters.CovarianceMatrix;
-
-            MultivariateSample SB = SA.Columns(1, 0);
-            GeneralLinearRegressionResult RB = SB.LinearRegression(1);
-            ColumnVector PB = RB.Parameters.ValuesVector;
-            SymmetricMatrix CB = RB.Parameters.CovarianceMatrix;
-
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(PA[0], PB[1])); Assert.IsTrue(TestUtilities.IsNearlyEqual(PA[1], PB[0]));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 0], CB[1, 1])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[0, 1], CB[1, 0])); Assert.IsTrue(TestUtilities.IsNearlyEqual(CA[1, 1], CB[0, 0]));
-
-            BivariateSample SC = SA.TwoColumns(1, 0);
-            GeneralLinearRegressionResult RC = SC.LinearRegression();
-            ColumnVector PC = RC.Parameters.ValuesVector;
-            SymmetricMatrix CC = RC.Parameters.CovarianceMatrix;
-
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(PA, PC));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(CA, CC));
+            TestResult D = F.KolmogorovSmirnovTest(FDistribution);
+            Assert.IsTrue(D.Probability > 0.05);
 
         }
 
@@ -587,7 +409,15 @@ namespace Test {
             for (int i = 0; i < sample.Dimension; i++) {
                 total += sample.Column(i).Variance;
             }
-            return (total);
+            return total;
+        }
+
+        private double GetTotalVariance(IReadOnlyList<IReadOnlyList<double>> sample) {
+            double total = 0.0;
+            for (int i = 0; i < sample.Count; i++) {
+                total += sample[i].Variance();
+            }
+            return total;
         }
 
         [TestMethod]
@@ -598,28 +428,27 @@ namespace Test {
 
             // construct a sample
             Random rng = new Random(1);
-            MultivariateSample sample = new MultivariateSample(D);
+            double[][] sample = new double[D][];
+            for (int i = 0; i < D; i++) sample[i] = new double[N];
             for (int i = 0; i < N; i++) {
-                double x = 1.0 * rng.NextDouble() - 1.0;
-                double y = 4.0 * rng.NextDouble() - 2.0;
-                double z = 9.0 * rng.NextDouble() - 3.0;
-                sample.Add(x, y, z);
+                sample[0][i] = 1.0 * rng.NextDouble() - 1.0;
+                sample[1][i] = 4.0 * rng.NextDouble() - 2.0;
+                sample[2][i] = 9.0 * rng.NextDouble() - 3.0;
             }
 
             // get its column means
             RowVector mu = new RowVector(D);
             for (int i = 0; i < D; i++) {
-                mu[i] = sample.Column(i).Mean;
+                mu[i] = sample[i].Mean();
             }
 
             // get total variance
             double tVariance = GetTotalVariance(sample);
-            Console.WriteLine(tVariance);
 
             // do a principal component analysis
             PrincipalComponentAnalysis pca = sample.PrincipalComponentAnalysis();
-            Assert.IsTrue(pca.Dimension == sample.Dimension);
-            Assert.IsTrue(pca.Count == sample.Count);
+            Assert.IsTrue(pca.Dimension == D);
+            Assert.IsTrue(pca.Count == N);
 
             // check that the PCs behave as expected
             Assert.IsTrue(pca.Components.Count == pca.Dimension);
@@ -661,7 +490,6 @@ namespace Test {
                     rSample.Add(x);
                 }
                 double rVariance = GetTotalVariance(rSample);
-                Console.WriteLine("{0} {1}", rD, rVariance);
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(rVariance / tVariance, pca.Components[rD-1].CumulativeVarianceFraction));
             }
 
@@ -700,10 +528,6 @@ namespace Test {
             }
 
             MeansClusteringResult result = table.AsColumns<double>().MeansClustering(centers.Length);
-
-            //MultivariateSample s = new MultivariateSample(3);
-            //foreach (ColumnVector v in inputVectors) { s.Add(v); }
-            //MeansClusteringResult result = s.MeansClustering(centers.Length);
 
             List<int> outputAssignments = new List<int>();
             for (int i = 0; i < inputVectors.Count; i++) {

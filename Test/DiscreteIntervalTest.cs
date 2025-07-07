@@ -1,28 +1,36 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using Meta.Numerics.Statistics.Distributions;
+using Meta.Numerics;
+using FluentAssertions;
 
 namespace Test {
 
-#if PAST
+
     [TestClass]
     public class DiscreteIntervalTest {
 
         [TestMethod]
         public void DiscreteIntervalEquality () {
 
-            DiscreteInterval i = DiscreteInterval.FromEndpoints(1, 2);
-            DiscreteInterval j = DiscreteInterval.FromEndpoints(1, 3);
+            DiscreteInterval a = DiscreteInterval.FromEndpoints(1, 2);
+            DiscreteInterval aPrime = DiscreteInterval.FromEndpoints(2, 1);
+            DiscreteInterval b = DiscreteInterval.FromEndpoints(1, 3);
 
-            Assert.IsFalse(i == j); Assert.IsTrue(i != j);
+            (a == aPrime).Should().BeTrue();
+            (a != aPrime).Should().BeFalse();
+            a.Equals(aPrime).Should().BeTrue();
+            a.Equals((object)aPrime).Should().BeTrue();
+            DiscreteInterval.Equals(a, aPrime).Should().BeTrue();
+            a.GetHashCode().Should().Be(aPrime.GetHashCode());
 
-            DiscreteInterval ic = i;
-
-            Assert.IsTrue(i == ic); Assert.IsFalse(i != ic);
-            Assert.IsTrue(i.GetHashCode() == ic.GetHashCode());
+            (a == b).Should().BeFalse();
+            (a != b).Should().BeTrue();
+            a.Equals(b).Should().BeFalse();
+            a.Equals((object)b).Should().BeFalse();
+            DiscreteInterval.Equals(a, b).Should().BeFalse();
         }
 
     }
-#endif
+
 }

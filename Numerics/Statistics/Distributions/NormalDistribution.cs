@@ -56,19 +56,19 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc />
         public override double ProbabilityDensity (double x) {
             double z = (x - mu) / sigma;
-            return ((1.0 / Global.SqrtTwoPI / sigma) * Math.Exp(-z * z / 2.0));
+            return (1.0 / Global.SqrtTwoPI / sigma) * Math.Exp(-z * z / 2.0);
         }
 
         /// <inheritdoc />
         public override double LeftProbability (double x) {
             double z = (x - mu) / sigma;
-            return (Phi(z));
+            return Phi(z);
         }
 
         /// <inheritdoc />
         public override double RightProbability (double x) {
             double z = (x - mu) / sigma;
-            return (Phi(-z));
+            return Phi(-z);
         }
 
         // standard normal left CDF, usually denoted by capital Phi
@@ -76,9 +76,9 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         internal static double Phi (double z) {
             if (z < 0.0) {
-                return (0.5 * AdvancedMath.Erfc(-z / Global.SqrtTwo));
+                return 0.5 * AdvancedMath.Erfc(-z / Global.SqrtTwo);
             } else {
-                return (0.5 * (1.0 + AdvancedMath.Erf(z / Global.SqrtTwo)));
+                return 0.5 * (1.0 + AdvancedMath.Erf(z / Global.SqrtTwo));
             }
         }
 
@@ -87,12 +87,12 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else if (r == 1) {
-                return (Mean);
+                return Mean;
             } else {
                 double[] C = CentralMoments(r);
-                return (MomentMath.CentralToRaw(Mean, C, r));
+                return MomentMath.CentralToRaw(Mean, C, r);
             }
         }
 
@@ -101,12 +101,13 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else if ((r % 2) == 0) {
                 // (r-1)!! \sigma^r
-                return (AdvancedIntegerMath.DoubleFactorial(r - 1) * MoreMath.Pow(sigma, r));
+                return AdvancedIntegerMath.DoubleFactorial(r - 1) * MoreMath.Pow(sigma, r);
             } else {
-                return (0.0);
+                // odd moments vanish
+                return 0.0;
             }
         }
 
@@ -128,48 +129,48 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (0.0);
+                return 0.0;
             } else if (r == 1) {
-                return (mu);
+                return mu;
             } else if (r == 2) {
-                return (sigma * sigma);
+                return sigma * sigma;
             } else {
-                return (0.0);
+                return 0.0;
             }
         }
 
         /// <inheritdoc />
         public override double Mean {
             get {
-                return (mu);
+                return mu;
             }
         }
 
         /// <inheritdoc />
         public override double StandardDeviation {
             get {
-                return (sigma);
+                return sigma;
             }
         }
 
         /// <inheritdoc />
         public override double Skewness {
             get {
-                return (0.0);
+                return 0.0;
             }
         }
 
         /// <inheritdoc />
         public override double ExcessKurtosis {
             get {
-                return (0.0);
+                return 0.0;
             }
         }
 
         /// <inheritdoc />
         public override double Median {
             get {
-                return (mu);
+                return mu;
             }
         }
 
@@ -177,21 +178,21 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double InverseLeftProbability (double P) {
             if ((P < 0.0) || (P > 1.0)) throw new ArgumentOutOfRangeException(nameof(P));
             double z = AdvancedMath.Probit(P, 1.0 - P);
-            return (mu + sigma * z);
+            return mu + sigma * z;
         }
 
         /// <inheritdoc />
         public override double InverseRightProbability (double Q) {
             if ((Q < 0.0) || (Q > 1.0)) throw new ArgumentOutOfRangeException(nameof(Q));
             double z = AdvancedMath.Probit(1.0 - Q, Q);
-            return (mu + sigma * z);
+            return mu + sigma * z;
         }
 
         /// <inheritdoc />
         public override double GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException(nameof(rng));
+            if (rng is null) throw new ArgumentNullException(nameof(rng));
             double z = normalRng.GetNext(rng);
-            return (mu + sigma * z);
+            return mu + sigma * z;
         }
 
         /// <summary>
@@ -201,9 +202,8 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <returns>The result of the fit.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
-        public static NormalFitResult FitToSample (Sample sample) {
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
-            return(Univariate.FitToNormal(sample.data));
+        public static NormalFitResult FitToSample (IReadOnlyList<double> sample) {
+            return Univariate.FitToNormal(sample);
         }
 
     }

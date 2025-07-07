@@ -32,7 +32,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public int DegreesOfFreedom {
             get {
-                return (nu);
+                return nu;
             }
         }
 
@@ -41,7 +41,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </summary>
         public double Noncentrality {
             get {
-                return (lambda);
+                return lambda;
             }
         }
 
@@ -49,7 +49,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         public override Interval Support {
             get {
-                return (Interval.FromEndpoints(0.0, Double.PositiveInfinity));
+                return Interval.Semiinfinite;
             }
         }
 
@@ -58,12 +58,17 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double ProbabilityDensity (double x) {
 
             if (x < 0.0) {
-                return (0.0);
+                return 0.0;
             } else {
+                double sqrt_x = Math.Sqrt(x);
+                double sqrt_lambda = Math.Sqrt(lambda);
+                return 0.5 * Math.Pow(x / lambda, 0.25 * nu - 0.5) * Math.Exp(-0.5 * MoreMath.Sqr(sqrt_x - sqrt_lambda)) * AdvancedMath.ScaledModifiedBesselI(0.5 * nu - 1.0, sqrt_x * sqrt_lambda);
+                /*
                 double I = AdvancedMath.ModifiedBesselI(nu / 2.0 - 1.0, Math.Sqrt(lambda * x));
                 double E = Math.Exp(-(lambda + x) / 2.0);
                 double P = Math.Pow(x / lambda, nu / 4.0 - 0.5);
                 return (I * E * P / 2.0);
+                */
                 // Consider implementing asymptotic series and/or power series explicitly to reduce overhead
                 // and noise from sqrt, exponent, and power multiplies.
             }
@@ -92,22 +97,24 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc/>
         public override double LeftProbability (double x) {
             if (x < 0.0) {
-                return (0.0);
+                return 0.0;
             } else {
-                double P, Q;
-                CumulativeDistributionFunction(x, out P, out Q);
-                return (P);
+                AdvancedMath.Marcum(0.5 * nu, Math.Sqrt(lambda), Math.Sqrt(x), out double P, out _);
+                return P;
+                //CumulativeDistributionFunction(x, out double P, out double Q);
+                //return (P);
             }
         }
 
         /// <inheritdoc/>
         public override double RightProbability (double x) {
             if (x < 0.0) {
-                return (1.0);
+                return 1.0;
             } else {
-                double P, Q;
-                CumulativeDistributionFunction(x, out P, out Q);
-                return (Q);
+                AdvancedMath.Marcum(0.5 * nu, Math.Sqrt(lambda), Math.Sqrt(x), out _, out double Q);
+                return Q;
+                //CumulativeDistributionFunction(x, out double P, out double Q);
+                //return (Q);
             }
         }
 
@@ -167,21 +174,21 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// <inheritdoc/>
         public override double Mean {
             get {
-                return (nu + lambda);
+                return nu + lambda;
             }
         }
 
         /// <inheritdoc/>
         public override double Variance {
             get {
-                return (2.0 * (nu + 2.0 * lambda));
+                return 2.0 * (nu + 2.0 * lambda);
             }
         }
 
         /// <inheritdoc/>
         public override double Skewness {
             get {
-                return (Math.Pow(2.0 / (nu + 2.0 * lambda), 3.0 / 2.0) * (nu + 3.0 * lambda));
+                return Math.Pow(2.0 / (nu + 2.0 * lambda), 3.0 / 2.0) * (nu + 3.0 * lambda);
             }
         }
 
@@ -191,7 +198,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else {
 
                 // Integrating the pdf gives: 
@@ -210,7 +217,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                     M1 = M2;
                 }
 
-                return (M1);
+                return M1;
             }
         }
 
@@ -219,10 +226,10 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (0.0);
+                return 0.0;
             } else {
                 // This expression for the cumulant appears in the Wikipedia article.
-                return (MoreMath.Pow(2.0, r - 1) * (nu + r * lambda) * AdvancedIntegerMath.Factorial(r - 1));
+                return MoreMath.Pow(2.0, r - 1) * (nu + r * lambda) * AdvancedIntegerMath.Factorial(r - 1);
             }
         }
 
@@ -236,7 +243,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 t *= 2.0 * (r - 1);
                 K[r] = t * (nu + r * lambda);
             }
-            return (K);
+            return K;
         }
 
         /// <inheritdoc/>
@@ -244,22 +251,22 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (r < 0) {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else {
                 double[] K = Cumulants(r);
-                return (MomentMath.CumulantToCentral(K, r));
+                return MomentMath.CumulantToCentral(K, r);
             }
         }
 
         /// <inheritdoc/>
         public override double GetRandomValue (Random rng) {
-            if (rng == null) throw new ArgumentNullException(nameof(rng));
+            if (rng is null) throw new ArgumentNullException(nameof(rng));
             double mu = Math.Sqrt(lambda / nu);
             double x = 0.0;
             for (int k = 0; k < nu; k++) {
                 x += MoreMath.Sqr(mu + zRng.GetNext(rng));
             }
-            return (x);
+            return x;
         }
 
     }

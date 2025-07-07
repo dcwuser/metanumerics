@@ -40,8 +40,7 @@ namespace Meta.Numerics.Statistics {
 
             // Compute mean and total sum of squares.
             // This could be done inside loop above, but this way we get to re-use code from Univariate.
-            double yMean;
-            Univariate.ComputeMomentsUpToSecond(y, out n, out yMean, out SST);
+            Univariate.ComputeMomentsUpToSecond(y, out n, out double yMean, out SST);
 
             // Compute residuals
             SSR = 0.0;
@@ -66,7 +65,7 @@ namespace Meta.Numerics.Statistics {
 
         }
 
-        private int n, m;
+        private readonly int n, m;
 
         private readonly ColumnVector b;
 

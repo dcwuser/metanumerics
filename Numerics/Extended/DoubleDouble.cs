@@ -42,7 +42,7 @@ namespace Meta.Numerics.Extended {
     /// point format</see>, which would have not only the extended presion of <see cref="DoubleDouble"/>, but also an extended range (up to 10<sup>4932</sup>).
     /// </para>
     /// </remarks>
-    public struct DoubleDouble : IEquatable<DoubleDouble>, IComparable<DoubleDouble> {
+    public readonly struct DoubleDouble : IEquatable<DoubleDouble>, IComparable<DoubleDouble> {
 
         internal DoubleDouble (double hi, double lo) {
             // Unless number is zero or NaN, lo parts should be lower than hi part by 2^52

@@ -5,7 +5,7 @@ namespace Meta.Numerics.Functions {
 
 	public static partial class AdvancedMath {
 
-		// one-argument functions
+        // one-argument functions
 
         /// <summary>
         /// Computes the natural logarithm of the Gamma function.
@@ -13,35 +13,48 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument, which must be positive.</param>
         /// <returns>The log Gamma function ln(&#x393;(x)).</returns>
         /// <remarks>
-        /// <para>Because &#x393;(x) grows rapidly for increasing positive x, it is often necessary to
-        /// work with its logarithm in order to avoid overflow. This function returns accurate
-        /// values of ln(&#x393;(x)) even for values of x which would cause &#x393;(x) to overflow.</para>
+        /// <para>Mathematically, this this just the natural logarithm of the value of &#x393;(x), the
+        /// function that is computed by <see cref="Gamma(double)"/>.</para>
+        /// <para>Because &#x393;(x) grows rapidly for increasing positive x, the function <see cref="Gamma(double)"/>
+        /// overflows even for moderatlely large arguments. This function provides accurate values of ln(&#x393;(x)) even
+        /// for values for which &#x393;(x) would overflow. Additionally, &#x393;(x) ~ 1 near x ~ 1 and x ~ 2. This function provides fully accurate values
+        /// of ln(&#x393;(x)) even for those values of x for which &#x393;(x) is indistinguishable from one or only distinguished by the last few digits.</para>
+        /// <para>If you need to compute a product or quotient of several Gamma functions, computing it by exponentiating
+        /// a sum or difference of evaluations of this function will allow computation of the ratio even in cases
+        /// for which an individual Gamma function overflows. However, if the value you want is either a <see cref="Pochhammer(double, double)"/>
+        /// function (the ratio of two Gamma functions) or a <see cref="Beta(double, double)"/> function, it will be more efficient and more accurate
+        /// to use those specific functions.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> is negative.</exception>
         /// <seealso cref="Gamma(double)" />
-		public static double LogGamma (double x) {
-            if (x < 0.0) {
-                throw new ArgumentOutOfRangeException(nameof(x));
-            } else if (x < 0.5) {
-                // For small arguments, use the Lanczos approximation.
-                return (Lanczos.LogGamma(x));
-            } else if (x < 1.5) {
-                // Use the series expansion near 1.
-                return (GammaSeries.LogGammaOnePlus(x - 1.0));
-            } else if (x < 2.5) {
-                // The series expansion can be adapted near 2, too.
-                return (GammaSeries.LogGammaTwoPlus(x - 2.0));
-            } else if (x < 16.0) {
-                // In between, we still use Lanczos.
-                return (Lanczos.LogGamma(x));
-            } else if (x < Double.PositiveInfinity) {
-                // For large arguments, the asymptotic series is even faster than the Lanczos approximation.
-                return (Stirling.LogGamma(x));
-            } else if (x == Double.PositiveInfinity) {
-                // Precisely at infinity x * Math.Log(x) - x => NaN, so special-case it.
-                return (Double.PositiveInfinity);
+        public static double LogGamma (double x) {
+            if (x < 2.5) {
+                if (x < 0.0) {
+                    throw new ArgumentOutOfRangeException(nameof(x));
+                } else if (x < 0.5) {
+                    // For small arguments, use reflection to move us to the series. The log term dominates.
+                    return Math.Log(Math.PI / MoreMath.SinPi(x)) - GammaSeries.LogGammaOnePlus(-x);
+                } else if (x < 1.5) {
+                    // Use the series expansion near 1.
+                    return GammaSeries.LogGammaOnePlus(x - 1.0);
+                } else {
+                    // The series expansion can be adapted near 2, too.
+                    return GammaSeries.LogGammaTwoPlus(x - 2.0);
+                }
             } else {
-                return (Double.NaN);
+                if (x < 16.0) {
+                    // In between, we still use Lanczos.
+                    return Lanczos.LogGamma(x);
+                } else if (x < Double.PositiveInfinity) {
+                    // For large arguments, the asymptotic series is even faster than the Lanczos approximation.
+                    return Stirling.LogGamma(x);
+                } else if (x == Double.PositiveInfinity) {
+                    // Precisely at infinity x * Math.Log(x) - x => NaN, so special-case it.
+                    return Double.PositiveInfinity;
+                } else {
+                    Debug.Assert(Double.IsNaN(x));
+                    return x;
+                }
             }
 		}
 
@@ -71,22 +84,33 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/GammaFunction.html" />
         /// <seealso href="http://dlmf.nist.gov/5">DLMF on the Gamma Function</seealso>
         public static double Gamma (double x) {
-            if (x < 0.5) {
-                // Use \Gamma(x) \Gamma(1-x) = \frac{\pi}{\sin(\pi x)} to move values close to and left of origin to x > 0
-                return (Math.PI / MoreMath.SinPi(x) / Gamma(1.0 - x));
-            } else if (x < 1.5) {
-                return (GammaSeries.GammaOnePlus(x - 1.0));
-            } else if (x < 2.5) {
-                return (GammaSeries.GammaTwoPlus(x - 2.0));
-            } else if (x < 16.0) {
-                return (Lanczos.Gamma(x));
-            } else if (x < 172.0) {
-                return (Stirling.Gamma(x));
-            } else if (x <= Double.PositiveInfinity) {
-                // For x >~ 172, Gamma(x) overflows.
-                return (Double.PositiveInfinity);
+            // Break up decision tree into two levels to try to have a more uniform number of branch tests.
+            if (x < 2.5) {
+                if (x < -0.5) {
+                    // Use \Gamma(x) \Gamma(1-x) = \frac{\pi}{\sin(\pi x)} and -x \Gamma(-x) = \Gamma(1-x) to move negative arguments to positive arguments.
+                    return -Math.PI / (MoreMath.SinPi(x) * x * Gamma(-x));
+                } else if (x < 0.5) {
+                    // For |x| < 1/2, specialize the reflection formula to the series around x = 1 to avoid loss of accuracy in computing 1 - x.
+                    return Math.PI / MoreMath.SinPi(x) / GammaSeries.GammaOnePlus(-x);
+                } else if (x < 1.5) {
+                    // Unlike the Lanczos approximation, the series guarantees \Gamma(1) = \Gamma(2) = 1 exactly
+                    return GammaSeries.GammaTwoPlus(x - 1.0) / x;
+                    // Don't call GammaOnePlus(x - 1) here because it computes (x - 1) + 1, which just reverses the subtraction with lost accuracy
+                } else {
+                    return GammaSeries.GammaTwoPlus(x - 2.0);
+                }
             } else {
-                return (Double.NaN);
+                if (x < 16.0) {
+                    return Lanczos.Gamma(x);
+                } else if (x < 172.0) {
+                    return Stirling.Gamma(x);
+                } else if (x <= Double.PositiveInfinity) {
+                    // For x >~ 172, Gamma(x) overflows.
+                    return Double.PositiveInfinity;
+                } else {
+                    Debug.Assert(Double.IsNaN(x));
+                    return x;
+                }
             }
 		}
 
@@ -107,19 +131,27 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://en.wikipedia.org/wiki/Digamma_function" />
         /// <seealso href="http://mathworld.wolfram.com/DigammaFunction.html" />
 		public static double Psi (double x) {
-            if (x < 0.5) {
-                return (Psi(1.0 - x) - Math.PI / MoreMath.TanPi(x));
-            } else if (x < 1.5) {
-                return (GammaSeries.PsiOnePlus(x - 1.0));
-            } else if (x < 2.5) {
-                return (GammaSeries.PsiTwoPlus(x - 2.0));
-            } else if (x < 16.0) {
-                return (Lanczos.Psi(x));
-            } else if (x <= Double.PositiveInfinity) {
-                // For large arguments, the Stirling asymptotic expansion is faster than the Lanzcos approximation
-                return (Stirling.Psi(x));
+            if (x < 2.5) {
+                if (x < -0.5) {
+                    return Psi(1.0 - x) - Math.PI / MoreMath.TanPi(x);
+                } else if (x < 0.5) {
+                    // Specializing to the series here avoids loosing accuracy by computing 1-x.
+                    return GammaSeries.PsiOnePlus(-x) - Math.PI / MoreMath.TanPi(x);
+                } else if (x < 1.5) {
+                    return GammaSeries.PsiTwoPlus(x - 1.0) - 1.0 / x;
+                } else {
+                    return GammaSeries.PsiTwoPlus(x - 2.0);
+                }
             } else {
-                return (Double.NaN);
+                if (x < 16.0) {
+                    return Lanczos.Psi(x);
+                } else if (x <= Double.PositiveInfinity) {
+                    // For large arguments, the Stirling asymptotic expansion is faster than the Lanzcos approximation
+                    return Stirling.Psi(x);
+                } else {
+                    Debug.Assert(Double.IsNaN(x));
+                    return x;
+                }
             }
 		}
 
@@ -141,7 +173,7 @@ namespace Meta.Numerics.Functions {
             if (n < 0) throw new ArgumentOutOfRangeException(nameof(x));
 
             // for n=0, use normal digamma algorithm
-            if (n == 0) return (Psi(x));
+            if (n == 0) return Psi(x);
 
             // for small x, use the reflection formula
             if (x <= 0.0) {
@@ -267,36 +299,126 @@ namespace Meta.Numerics.Functions {
         // This function computes x^n / n! or x^{\nu} / \Gamma(\nu + 1), which can easily become
         // Infinity/Infinity=NaN for large n if computed naively.
 
-        internal static double PowerOverFactorial (double x, int n) {
-            if (n <= 16) {
-                // For maximum range, we should evaluate this using Lanczos, but
-                // since we know we don't call it for x large enough for x^n to overflow,
-                // this is safer and faster.
-                return (MoreMath.Pow(x, n) / AdvancedIntegerMath.Factorial(n));
+        // Poisson probability is \mu^k e^{-\mu} / k!. This can easily result in Infinity/Infinity = NaN
+        // if computed naively even for values of \mu and k that produce a normal-sized result.
+
+        internal static double PoissonProbability (double mu, int k) {
+            Debug.Assert(mu > 0.0);
+            Debug.Assert(k >= 0);
+            double P;
+            if (k < 170 && mu < 707.0 && k * Math.Log(mu) < 707.0) {
+                // If neither k! or e^{\mu} nor \mu^k will overflow, it is fastest and most
+                // accurate to directly apply the Poisson formula.
+                P = MoreMath.Pow(mu, k) * Math.Exp(-mu) / AdvancedIntegerMath.Factorial(k);
+            } else if (k < 20) {
+                // If our overflow conditions are not met even though k < 20
+                // we must have \mu > 707, and we can be sure P < ~10^{-270}.
+                // Since k << \mu, the cancellation in log space is not delicate,
+                // so we accept it.
+                Debug.Assert(mu >= 707.0);
+                P = Math.Exp(k * Math.Log(mu) - AdvancedIntegerMath.LogFactorial(k) - mu);
+                Debug.Assert(P < 2.0E-270);
             } else {
-                return (Stirling.PowerFactor(x, n));
+                // For large k not too far from \mu, the balance between factors can become
+                // quite delicate, producing a normal-sized result even for factors
+                // that would massively overflow or underflow. In this region,
+                // we apply a specialization of the Stirling approximation which
+                // deals with most of this cancellation analytically.
+                Debug.Assert(k >= 20);
+                P = Stirling.PoissonProbability(mu, k);
+            }
+            Debug.Assert(0.0 <= P);
+            Debug.Assert(P <= 1.0);
+            return P;
+        }
+
+        // Smame logic but for non-integer k, so x^a e^{-x} / \Gamma(a + 1).
+
+        // You might think that for small a, we should adapt the Gamma series logic to produce this directly,
+        // but we don't really get anything from that: we eliminate one Pow and one Exp but add two Logs, and
+        // since it converts multiplication to addtion/subtraction with cancellation, accuracy suffers.
+
+        internal static double PoissonProbability(double x, double a) {
+            Debug.Assert(x >= 0.0);
+            Debug.Assert(a >= 0.0);
+            if (x == 0.0) {
+                return a == 0.0 ? 1.0 : 0.0;
+            } else if (Double.IsInfinity(x)) {
+                // We need to handle infinity explicitly b/c otherwise it produces infinity * 0.0 or infinity - infinity
+                return 0.0;
+            } else if (a < 170.0 && x < 707.0 && a * Math.Log(x) < 707.0) {
+                return Math.Pow(x, a) * Math.Exp(-x) / AdvancedMath.Gamma(a + 1.0);
+            } else if (a < 20.0) {
+                return Math.Exp(a * Math.Log(x) - AdvancedMath.LogGamma(a + 1.0) - x);
+            } else {
+                return Stirling.PoissonProbability(x, a);
+            }
+        }
+
+        internal static double ExpTimesPower (double x, double a) {
+
+            double e = (x - a) / a;
+            double d = e - MoreMath.LogOnePlus(e);
+            double f = Math.Pow(a / Math.E, a) * Math.Exp(-a * d);
+
+            return Math.Exp(-x) * Math.Pow(x, a);
+        }
+
+
+
+        internal static double PowerOverFactorial (double x, int n) {
+            if (n < 16) {
+                // There is a small range (x, n) for which the power overflows,
+                // but the factorial would bring the true result back into the representable
+                // range. Since 15! ~ 1.3E12, the result overflows for values of x^n about
+                // 12 orders of magnitude lower than it should. Would be good to fix this.
+                return MoreMath.Pow(x, n) / AdvancedIntegerMath.Factorial(n);
+            } else {
+                return Stirling.PowerOverFactorial(x, n);
             }
         }
 
         internal static double PowerOverFactorial (double x, double nu) {
             if (nu < 16.0) {
-                return (Math.Pow(x, nu) / AdvancedMath.Gamma(nu + 1.0));
+                //return Lanczos.PowerOverFactorial(x, nu);
+                return Math.Pow(x, nu) / AdvancedMath.Gamma(nu + 1.0);
             } else {
-                return(Stirling.PowerFactor(x, nu));
+                return Stirling.PowerOverFactorial(x, nu);
             }
         }
 
         // x^n / (2n + 1)!!
 
         internal static double PowerOverDoubleFactorial (double x, int n) {
-            if (n <= 16) {
-                return(MoreMath.Pow(x, n) / AdvancedIntegerMath.DoubleFactorial(2 * n + 1));
+            if (n < 16) {
+                return MoreMath.Pow(x, n) / AdvancedIntegerMath.DoubleFactorial(2 * n + 1);
             } else {
                 // Would be good to create a dedicated method for this to avoid \sqrt{\pi} cancelation
                 return(Math.Sqrt(Math.PI / 2.0 / x) * PowerOverFactorial(0.5 * x, n + 0.5));
             }
         }
 
+
+        /*
+        public static double LogPochhammer (double x, double y) {
+
+            double z = x + y;
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
+            if (z < 0.0) throw new ArgumentOutOfRangeException(nameof(y));
+
+            if ((x < 2.5) && (z < 2.5)) {
+                // Double Series
+            } else if ((x > 16.0) && (z > 16.0)) {
+                // Double Asymptotic
+            } else if (x < 0.5) {
+                // Avoid Lanczos with small x
+            } else {
+                // Lanczos
+            }
+
+        }
+        */
+        /*
         /// <summary>
         /// Computes the Pochammer symbol (x)<sub>y</sub>.
         /// </summary>
@@ -315,16 +437,30 @@ namespace Meta.Numerics.Functions {
         /// <para>This function accepts both positive and negative values for both x and y.</para>
         /// </remarks>
         /// <seealso href="http://mathworld.wolfram.com/PochhammerSymbol.html"/>
-        public static double Pochhammer (double x, double y) {
+        public static double Pochhammer1 (double x, double y) {
+
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
+            if (y < 0.0) throw new ArgumentOutOfRangeException(nameof(y));
 
             // Handle simplest cases quickly
             if (y == 0.0) {
-                return (1.0);
+                return 1.0;
             } else if (y == 1.0) {
-                return (x);
+                return x;
             }
 
-            // Should we also handle small integer y explicitly?
+            // Should we also handle more small integer y explicitly?
+            if (0.0 < y && y < 16.0) {
+                double yRound = Math.Round(y);
+                if (y == yRound) {
+                    double p = x;
+                    for (int i = ((int)yRound) - 1; i > 0; i--) {
+                        x += 1.0;
+                        p *= x;
+                    }
+                    return p;
+                }
+            }
 
             // The key case of x and y positive is pretty simple. Both the Lanczos and Stirling forms of \Gamma
             // admit forms that preserve accuracy in \Gamma(x+y) / \Gamma(x) - 1 as y -> 0. It turns
@@ -332,6 +468,11 @@ namespace Meta.Numerics.Functions {
             // other regions of the x-y plane.
 
             double z = x + y;
+
+            if (y < 0.5) { 
+
+            }
+
             if (x < 0.25) {
 
                 bool xNonPositiveInteger = (Math.Round(x) == x);
@@ -364,20 +505,25 @@ namespace Meta.Numerics.Functions {
                     return (Pochhammer(1.0 - z, y) * MoreMath.SinPi(x) / MoreMath.SinPi(z));
                 } else {
                     // x negative, y positive enough to make z positive
-                    return (Gamma(1.0 - x) * Gamma(z) * MoreMath.SinPi(x) / Math.PI);
+                    return (-x * Gamma(-x) * Gamma(z) * MoreMath.SinPi(x) / Math.PI);
                 }
 
             } else {
 
                 if (z >= 0.25) {
                     // This is the standard case: x positive, y may be negative, but not negative enough to make z negative
-                    double P;
+                    //double P;
                     if ((x > 16.0) && (z > 16.0)) {
-                        P = Stirling.ReducedLogPochhammer(x, y);
+                        return Math.Exp(Stirling.LogPochhammer(x, y));
+                        //P = Stirling.ReducedLogPochhammer(x, y);
+                    //} else if ((x < 2.5) && (z < 2.5)) {
+                    //    return AdvancedMath.Gamma(z) / AdvancedMath.Gamma(x);
                     } else {
-                        P = Lanczos.ReducedLogPochhammer(x, y);
+                        //P = Lanczos.ReducedLogPochhammer(x, y);
+                        return Lanczos.Pochammer(x, y);
+                        //return Math.Exp(Lanczos.LogPochammer(x, y));
                     }
-                    return (Math.Exp(y * P));
+                    //return (Math.Exp(y * P));
                 } else {
                     // if y is very negative, z will also be negative, so we can transform one gamma
                     if (Math.Round(z) == z) {
@@ -390,123 +536,22 @@ namespace Meta.Numerics.Functions {
             }
 
         }
+        */
 
         // two-argument functions
 
-        /// <summary>
-        /// Computes the Beta function.
-        /// </summary>
-        /// <param name="a">The first parameter, which must be positive.</param>
-        /// <param name="b">The second parameter, which must be positive.</param>
-        /// <returns>The beta function B(a,b).</returns>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is non-positive.</exception>
-        /// <remarks>
-        /// <para>The Beta function can be defined by the integral:</para>
-        /// <img src="..\images\BetaIntegral.png" />
-        /// <para>Equivalently, it can be defined as a commonly occurring ratio of Gamma functions:</para>
-        /// <img src="..\images\BetaGammaRelation.png" />
-        /// <para>When evaluating such a ratio of Gamma functions, it is better to use this method than to call
-        /// <see cref="Gamma(double)"/> three times and form the ratio explicitly. One reason is that this method
-        /// will be faster. Another reason is that, for many values, the individual Gamma functions will overflow
-        /// even though the Beta function does not; this method will not overflow in such cases. There are still
-        /// other cases in which the value of Beta does overflow or underflow a <see cref="double"/>; in such cases,
-        /// the method <see cref="LogBeta(double, double)"/> will still return an accurate value of its logarithm.</para>
-        /// <para>One place this ratio occurs is in the expression for a binomial coefficient in terms of factorials, so the Beta
-        /// function can used to generalize binomial coefficients (<see cref="AdvancedIntegerMath.BinomialCoefficient(int, int)"/>)
-        /// to non-integer values.</para>
-        /// </remarks>
-        /// <seealso href="http://en.wikipedia.org/wiki/Beta_function"/>
-        /// <seealso href="http://mathworld.wolfram.com/BetaFunction.html"/>
-        /// <seealso href="http://dlmf.nist.gov/5.12">DLMF on the Beta Function</seealso>
-        public static double Beta (double a, double b) {
-            if (a <= 0.0) throw new ArgumentOutOfRangeException(nameof(a));
-            if (b <= 0.0) throw new ArgumentOutOfRangeException(nameof(b));
-            if ((a > 16.0) && (b > 16.0)) {
-                return (Stirling.Beta(a, b));
-            } else {
-                return (Lanczos.Beta(a, b));
-            }
-		}
 
-        /// <summary>
-        /// Computes the logarithm of the Beta function.
-        /// </summary>
-        /// <param name="a">The first parameter, which must be positive.</param>
-        /// <param name="b">The second parameter, which must be positive.</param>
-        /// <returns>The value of ln(B(a,b)).</returns>
-        /// <remarks>
-        /// <para>This function accurately computes ln(B(a,b)) even for values of a and b for which B(a,b) is
-        /// too small or large to be represented by a double.</para>
-        /// </remarks>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> or <paramref name="b"/> is negative or zero.</exception>
-        /// <seealso cref="Beta(System.Double,System.Double)"/>
-        public static double LogBeta (double a, double b) {
-            if ((a > 16.0) && (b > 16.0)) {
-                return (Stirling.LogBeta(a, b));
-            } else if (a < 0.0) {
-                throw new ArgumentOutOfRangeException(nameof(a));
-            } else if (b < 0.0) {
-                throw new ArgumentOutOfRangeException(nameof(b));
-            } else if (Double.IsNaN(a) || Double.IsNaN(b)) {
-                return (Double.NaN);
-            } else if (a == 0.0 || b == 0.0) {
-                return (Double.PositiveInfinity);
-            } else {
-                return (Lanczos.LogBeta(a, b));
-            }
-        }
 
-        /// <summary>
-        /// Computes the normalized lower (left) incomplete Gamma function.
-        /// </summary>
-        /// <param name="a">The shape parameter, which must be positive.</param>
-        /// <param name="x">The argument, which must be non-negative.</param>
-        /// <returns>The value of &#x3B3;(a,x)/&#x393;(a).</returns>
-        /// <remarks><para>The incomplete Gamma function is obtained by carrying out the Gamma function integration from zero to some
-        /// finite value x, instead of to infinity. The function is normalized by dividing by the complete integral, so the
-        /// function ranges from 0 to 1 as x ranges from 0 to infinity.</para>
-        /// <para>For large values of x, this function becomes 1 within floating point precision. To determine its deviation from 1
-        /// in this region, use the complementary function <see cref="RightRegularizedGamma"/>.</para>
-        /// <para>For a=&#x3BD;/2 and x=&#x3C7;<sup>2</sup>/2, this function is the CDF of the &#x3C7;<sup>2</sup> distribution with &#x3BD; degrees of freedom.</para>
-        /// </remarks>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> is negative or zero, or <paramref name="x"/> is negative.</exception>
-        /// <seealso cref="RightRegularizedGamma" />
-        public static double LeftRegularizedGamma (double a, double x) {
-			if (a <= 0) throw new ArgumentOutOfRangeException(nameof(a));
-			if (x < 0) throw new ArgumentOutOfRangeException(nameof(x));
-            if ((a > 128.0) && (Math.Abs(x - a) < 0.25 * a)) {
-                Gamma_Temme(a, x, out double P, out double Q);
-                return (P);
-            } else if (x < (a + 1.0)) {
-				return( GammaP_Series(a, x) );
-			} else {
-				return( 1.0 - GammaQ_ContinuedFraction(a, x) );
-			}
-		}
+        // "Efficient and accurate algorithms for the computation and inversion of the incomplete gamma function ratios"
+        // https://arxiv.org/abs/1306.1754
+        // Division of 1st quadrant, \alpha(x), Q series, another aysmptotic fomrulation
 
-        /// <summary>
-        /// Computes the normalized upper (right) incomplete Gamma function.
-        /// </summary>
-        /// <param name="a">The shape parameter, which must be positive.</param>
-        /// <param name="x">The argument, which must be non-negative.</param>
-        /// <returns>The value of &#x393;(a,x)/&#x393;(a).</returns>
-        /// <remarks>
-        /// <para>This function is the complement of the left incomplete Gamma function <see cref="LeftRegularizedGamma"/>.</para>
-        /// </remarks>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="a"/> is negative or zero, or <paramref name="x"/> is negative.</exception>
-        /// <seealso cref="LeftRegularizedGamma"/>
-		public static double RightRegularizedGamma (double a, double x) {
-			if (a <= 0) throw new ArgumentOutOfRangeException(nameof(a));
-			if (x < 0) throw new ArgumentOutOfRangeException(nameof(x));
-            if ((a > 128.0) && (Math.Abs(x - a) < 0.25 * a)) {
-                Gamma_Temme(a, x, out double P, out double Q);
-                return (Q);
-            } else if (x < (a + 1.0)) {
-				return( 1.0 - GammaP_Series(a, x) );
-			} else {
-				return( GammaQ_ContinuedFraction(a, x) );
-			}
-		}
+        // "Computation of the incomplete gamma function for negative values of the argument" 2016
+        // https://arxiv.org/abs/1608.04152
+
+
+
+        
 
         /// <summary>
         /// Computes the upper incomplete Gamma function.
@@ -521,11 +566,36 @@ namespace Meta.Numerics.Functions {
         /// <para>Like the &#x393; function itself, this function gets large very quickly. For many
         /// purposes, you will prefer to use the regularized incomplete gamma functions <see cref="LeftRegularizedGamma"/> and
         /// <see cref="RightRegularizedGamma"/>, which are accurately computed even in regions for which this function overflows.</para>
+        /// <para>To make clearer which incomplete gamma function is meant, this function is be retired. Call <see cref="UpperIncompleteGamma(double, double)"/> instead.</para>
         /// </remarks>
         /// <seealso cref="Gamma(double)"/>
         /// <seealso href="http://en.wikipedia.org/wiki/Incomplete_Gamma_function"/>
         public static double Gamma (double a, double x) {
-            return (RightRegularizedGamma(a, x) * Gamma(a));
+            return AdvancedMath.UpperIncompleteGamma(a, x);
+            /*
+            if (a < 0.0) throw new ArgumentOutOfRangeException(nameof(a));
+            if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
+            if ((a > 128.0) && (Math.Abs(x - a) < 0.25 * a)) {
+                Gamma_Temme(a, x, out _, out double Q);
+                return Q * AdvancedMath.Gamma(a);
+            } else {
+                if (a >= IncompleteGammaAlpha(x)) {
+                    // P is smaller, so compute P
+                    double Q = 1.0 - GammaP_Series(a, x);
+                    return Q * AdvancedMath.Gamma(a);
+                } else {
+                    // Q is smaller, so compute Q
+                    if (x > 1.5) {
+                        Debug.Assert(x >= a);
+                        return GammaQ_ContinuedFraction(a, x) * AdvancedMath.ExpTimesPower(x, a);
+                    } else {
+                        double Q = GammaQ_Series(a, x);
+                        return Q * AdvancedMath.Gamma(a);
+                    }
+                }
+            }
+            */
+            //return RightRegularizedGamma(a, x) * Gamma(a);
         }
 
 
@@ -630,148 +700,6 @@ namespace Meta.Numerics.Functions {
             } else {
                 return (Math.Pow(x, a) * Math.Pow(1.0 - x, b) / Beta(a, b));
             }
-        }
-
-
-		// Compute GammaP(a,x) for x < a+1
-		private static double GammaP_Series (double a, double x) {
-            if (x == 0.0) return (0.0);
-			double ap = a;
-			double ds = Math.Exp( a * Math.Log(x) - x - LogGamma(a + 1.0) );
-			double s = ds;
-            for (int i=0; i<Global.SeriesMax; i++) {
-				ap += 1.0;
-				ds *= (x / ap);
-                double s_old = s;
-				s += ds;
-                if (s == s_old) {
-                    return (s);
-                }
-			}
-            throw new NonconvergenceException();
-		}
-
-		// Compute GammaQ(a,x) for x > a+1
-		private static double GammaQ_ContinuedFraction (double a, double x) {
-            if (Double.IsPositiveInfinity(x)) return (0.0);
-			double aa = 1.0;			// a_1
-			double bb = x - a + 1.0;	// b_1
-			double D = 1.0/bb;		    // D_1 = b_0/b_1
-			double Df = aa/bb;		    // Df_1 = f_1 - f_0
-			double f = 0.0 + Df;		// f_1 = f_0 + Df_1 = b_0 + Df_1
-            // entering this loop with bb infinite (as caused e.g. by infinite x) will cause a
-            // NonconvergenceException instead of the expected convergence to zero
-			for (int k=1; k<Global.SeriesMax; k++) {
-				double f_old = f;
-				aa = -k * (k-a);
-				bb += 2.0;
-				D = 1.0 / (bb + aa * D);
-				Df = (bb * D - 1.0) * Df;
-				f += Df;
-                if (f == f_old) {
-                    return (Math.Exp(a * Math.Log(x) - x - LogGamma(a)) * f);
-                }
-			}
-			throw new NonconvergenceException();
-		}
-
-        // For large a, for x ~ a, the convergence of both the series and the continued fraction for the incomplete gamma
-        // function is very slow; the problem is that the kth term goes like x/(a+k), and for large a, adding k
-        // makes little difference until k ~ a.
-
-        // In this region, NR uses ~15-point Gaussian quadrature of the peaked integrand, which should be about as good
-        // as one iteration of the 15-point Gauss-Kronrod integrator used by our adaptive integrator. But when I tried
-        // our adaptive integrator, it wanted to subdivide and repeat, requiring hundreds of evaluations to achieve full
-        // accuracy. This leads me to believe that the NR algorithm is unlikely to achieve full accuracy.
-
-        // So in this region we use instead a rather strange expansion due to Temme. It looks simple enough at first:
-        //   P = erfc(-z) / 2 -  R     Q = erfc(z) / 2 + R
-        // where the erfc term is (nearly) the Normal(a,sqrt(a)) approximation and R is a correction term.
-
-        // The first oddity is that z is not quite (x-a)/sqrt(2a). Instead
-        //   z^2 / a = eta^2 / 2 = (x-a)/a - log(x/a) = e - log(1+e) = exp(u) - 1 - u
-        // where e = (x-a)/a and u = x/a. Note for x ~ a, this makes z have nearly the expected value, but with O(e)~O(u) corrections.
-
-        // R can be expressed as a double power series in 1/a and u (or e).
-        //   R = exp(-z^2) / sqrt(2 pi a) \sum_{ij} D_{ij} u^{j} / a_{i}
-        // To obtain the coefficients, expand inverse powers of eta in powers of e
-        //   C_0 = -1/eta = singular -1/3 + 1/12 e - 23/540 e^2 + ...
-        //   C_1 = 1/eta^3 = singular - 1/540 - 1/288 e + ...
-        //   C_2 = -3/eta^5 = singular + 25/6048 + ...
-        //   C_k = (-1)^(k+1) (2k-1)!! / eta^(2k+1)
-        // Discard the singular terms. The remaining terms give the coefficients for R. This weird prescription is the
-        // second oddity.
-
-        // Since the coefficients decrease faster in terms of u than in terms of e, we convert to a power series in u after
-        // dropping the singular terms. Note this is not the same as dropping the singular terms in a direct expansion in u.
-
-        // We record enough terms to obtain full accuracy when a > 100 and |e| < 0.25.
-
-        private static readonly double[][] TemmeD = new double[][] {
-            new double[] { - 1.0 / 3.0, 1.0 / 12.0, - 1.0 / 1080.0, - 19.0 / 12960.0, 1.0 / 181440.0, 47.0 / 1360800.0,
-                1.0 / 32659200.0, - 221.0 / 261273600.0, - 281.0 / 155196518400.0,  857.0 / 40739086080.0, 1553.0 / 40351094784000.0 },
-            new double[] { -1.0 / 540.0, - 1.0 / 288.0, 25.0 / 12096.0, - 223.0 / 1088640.0, - 89.0 / 1088640.0,
-                757.0 / 52254720.0,  445331.0 / 155196518400.0, - 1482119.0 / 2172751257600.0, - 7921307.0 / 84737299046400.0 },
-            new double[] { 25.0 / 6048.0, - 139.0 / 51840.0, 101.0 / 311040.0, 1379.0 / 7464960.0, - 384239.0 / 7390310400.0,
-                - 1007803.0 / 155196518400.0, 88738171.0 / 24210656870400.0, 48997651.0 / 484213137408000.0 },
-            new double[] { 101.0 / 155520.0, 571.0 / 2488320.0, - 3184811.0 / 7390310400.0, 36532751.0 / 310393036800.0,
-                10084279.0 / 504388684800.0, - 82273493.0 / 5977939968000.0 },
-            new double[] { - 3184811.0 / 3695155200.0, 163879.0 / 209018880.0, - 2745493.0 / 16303472640.0,
-                - 232938227.0 / 2934625075200.0, 256276123.0 / 5869250150400.0 },
-            new double[] { - 2745493.0 / 8151736320.0, - 5246819.0 / 75246796800.0, 119937661.0 / 451480780800.0,
-                - 294828209.0 / 2708884684800.0 },
-            new double[] { 119937661.0 / 225740390400.0, - 534703531.0 / 902961561600.0 },
-            new double[] { 8325705316049.0 / 24176795811840000.0 , 4483131259.0 / 86684309913600.0 }
-        };
-
-        private static void Gamma_Temme (double a, double x, out double P, out double Q) {
-
-            double u = Math.Log(x / a);
-            
-            // compute argument of error function, which is almost (x-a)/sqrt(a)
-
-            double dz = 1.0;
-            double z = dz;
-            for (int i = 3; true; i++) {
-                if (i > Global.SeriesMax) throw new NonconvergenceException();
-                double z_old = z;
-                dz *= u / i;
-                z += dz;
-                if (z == z_old) break;
-            }
-            z = u * Math.Sqrt(a * z / 2.0);
-
-            // the first approximation is just the almost-Gaussian one
-
-            if (z > 0) {
-                Q = AdvancedMath.Erfc(z) / 2.0;
-                P = 1.0 - Q;
-            } else {
-                P = AdvancedMath.Erfc(-z) / 2.0;
-                Q = 1.0 - P;
-            }
-
-            // compute Temme's correction to the Gaussian approximation
-
-            double R0 = Math.Exp(-z*z) / Math.Sqrt(Global.TwoPI * a);
-
-            double S0 = 0.0;
-            double ai = 1.0;
-            for (int i=0; i < TemmeD.Length; i++) {
-                double dS = 0.0;
-                double uj = 1.0;
-                for (int j = 0; j < TemmeD[i].Length; j++) {
-                    dS += TemmeD[i][j] * uj;
-                    uj *= u;
-                }
-                S0 += dS / ai;
-                ai *= a;
-            }
-
-            double R = R0 * S0;
-            Q = Q + R;
-            P = P - R;
-
         }
 
 	}

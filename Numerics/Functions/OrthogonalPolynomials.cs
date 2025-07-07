@@ -12,7 +12,14 @@ namespace Meta.Numerics.Functions {
     /// <para>Orthogonal polynomials are complete families of polynomials that are orthogonal on a given interval with
     /// a given integration weight. Because of this property, any function on the interval can be expanded
     /// in the polynomials in a unique way.</para>
+    /// <para>Because their fluctuations across the interval are driven by cancellations among multiple terms,
+    /// polynomials are notoriously difficult to evaluate with guaranteed numerical accuracy over all
+    /// points in their domain. As order increases, our methods loose some accuracy. Each method description
+    /// gives an example of the accuracy that can be expected for different argument regiemes.</para>
+    /// <para>By the way, the Wikipedia article on the classical orthogonal polynomials is particularly good.</para>
     /// </remarks>
+    /// <seealso href="https://en.wikipedia.org/wiki/Classical_orthogonal_polynomials"/>
+    /// <seealso href="https://mathworld.wolfram.com/OrthogonalPolynomials.html"/>
 	public static class OrthogonalPolynomials {
 
 
@@ -23,26 +30,27 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value H<sub>n</sub>(x).</returns>
         /// <remarks>
-        /// <para>Hermite polynomials are orthogonal on the interval (-&#8734;,+&#8734;) with the
+        /// <para>The Hermite polynomials are orthogonal on the interval (-&#8734;,+&#8734;) with the
         /// weight e<sup>-x<sup>2</sup></sup>.</para>
         /// <img src="../images/HermiteHOrthonormality.png" />
         /// <para>They appear in the solution of the one-dimensional, quantum mechanical, harmonic oscillator.</para>
         /// <para>Statisticans' Hermite polynomials (see <see cref="HermiteHe"/>) are related to physicists' Hermite
         /// polynomials via H<sub>n</sub>(x) = 2<sup>n</sup>H<sub>n</sub>(x &#x221A;2). Statisticians' Hermite polynomials
         /// do not grow as quickly as physicists', and may therefore be preferable for large values of <paramref name="n"/>
-        /// and <paramref name="x"/> which could overflow <see cref="System.Double"/>.</para>
+        /// and <paramref name="x"/>, for which the return value of this method can overflow.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso cref="HermiteHe"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Hermite_polynomials"/>
         /// <seealso href="http://mathworld.wolfram.com/HermitePolynomial.html" />
 		public static double HermiteH (int n, double x) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n == 0) {
-                return (1.0);
+                return 1.0;
             } else {
-                // use recurrence H_{n+1} = 2x H_n - 2n H_{n-1}
-                // the recurrence is unstable, but H is the dominant solution
+                // Use the recurrence H_{n+1} = 2x H_n - 2n H_{n-1}.
+                // The recurrence is unstable, but H is the dominant solution.
                 double H0 = 1.0;
                 double H1 = 2.0 * x;
                 for (int k = 1; k < n; k++) {
@@ -50,7 +58,7 @@ namespace Meta.Numerics.Functions {
                     H0 = H1;
                     H1 = H2;
                 }
-                return (H1);
+                return H1;
             }
 		}
 
@@ -61,22 +69,22 @@ namespace Meta.Numerics.Functions {
         /// <param name="x">The argument.</param>
         /// <returns>The value He<sub>n</sub>(x).</returns>
         /// <remarks>
-        /// <para>Hermite polynomials are orthogonal on the interval (-&#8734;,+&#8734;) with a
+        /// <para>The (statisticians') Hermite polynomials are orthogonal on the interval (-&#8734;,+&#8734;) with a
         /// weight function equal to the standard normal probability distribution.</para>
         /// <img src="../images/HermiteHeOrthonormality.png" />
         /// <para>Their ortho-normality relation makes them a useful basis for expressing perturbations
         /// around a normal distribution.</para>
-        /// <para>Physicists' Hermite polynomials (see <see cref="HermiteH"/>) are related to statisticians' Hermite
+        /// <para>Physicists' Hermite polynomials (<see cref="HermiteH"/>) are related to statisticians' Hermite
         /// polynomials via H<sub>n</sub>(x) = 2<sup>n</sup>H<sub>n</sub>(x &#x221A;2).</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative.</exception>
         /// <seealso cref="HermiteH"/>
-        /// <seealso href="http://en.wikipedia.org/wiki/Hermite_polynomial" />
+        /// <seealso href="https://en.wikipedia.org/wiki/Hermite_polynomials" />
         public static double HermiteHe (int n, double x) {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n == 0) {
-                return (1.0);
+                return 1.0;
             } else {
                 double H0 = 1.0;
                 double H1 = x;
@@ -85,7 +93,7 @@ namespace Meta.Numerics.Functions {
                     H0 = H1;
                     H1 = H2;
                 }
-                return (H1);
+                return H1;
             }
         }
 
@@ -108,82 +116,86 @@ namespace Meta.Numerics.Functions {
 			if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
 			if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
 
-			if (n==0) return(1.0);
-            // use recurrence (n+1)L_{n+1} = (2n+1-x)L_{n} - nL_{n-1}
+			if (n == 0) return 1.0;
+
+            // Recurrence (n+1)L_{n+1} = (2n+1-x)L_{n} - nL_{n-1}
             double L0 = 1.0;
-			double L1 = 1.0-x;
-			for (int k=1; k<n; k++) {
-				double L2 = ( (2*k+1-x)*L1 - k*L0 ) / (k+1);
+			double L1 = 1.0 - x;
+
+			for (int k = 1; k < n; k++) {
+				double L2 = ( (2 * k + 1 - x) * L1 - k * L0 ) / (k + 1);
 				L0 = L1;
 				L1 = L2;
 			}
-			return(L1);
+
+			return L1;
 		}
 
 
-        
+
         /// <summary>
         /// Computes the value of an associated Laguerre polynomial.
         /// </summary>
         /// <param name="n">The order, which must be non-negative.</param>
-        /// <param name="a">The associated order, which must be greater than -1.</param>
-        /// <param name="x">The argument.</param>
+        /// <param name="alpha">The associated order, which must be greater than -1.</param>
+        /// <param name="x">The argument, which must be non-negative.</param>
         /// <returns>The value L<sub>n</sub><sup>a</sup>(x).</returns>
         /// <remarks>
         /// <para>The associated Laguerre polynomials are orthogonal on the interval [0,+&#8734;) with the weight
         /// x<sup>a</sup> e<sup>-x</sup>.</para>
         /// </remarks>
-        /// <seealso href="http://mathworld.wolfram.com/LaguerrePolynomial.html" />
-		public static double LaguerreL (int n, double a, double x) {
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> of <paramref name="x"/> is negative,
+        /// or <paramref name="alpha"/> is less than or equal to -1.</exception>
+        /// <seealso href="https://mathworld.wolfram.com/AssociatedLaguerrePolynomial.html" />
+        public static double LaguerreL (int n, double alpha, double x) {
 			if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
-			if (a <= -1) throw new ArgumentOutOfRangeException(nameof(a)); 
+			if (alpha <= -1) throw new ArgumentOutOfRangeException(nameof(alpha)); 
 			if (x < 0.0) throw new ArgumentOutOfRangeException(nameof(x));
 
-            // standard recurrence on n is claimed stable
-
-            double L0 = 0.0; // L_{-1}
-            double L1 = 1.0; // L_{0}
+            double L0 = 0.0;
+            double L1 = 1.0;
             for (int k = 0; k < n; k++) {
-                double L2 = ((2 * k + 1 + a - x) * L1 - (k + a) * L0) / (k + 1);
+                double L2 = ((2 * k + 1 + alpha - x) * L1 - (k + alpha) * L0) / (k + 1);
                 L0 = L1;
                 L1 = L2;
             }
-            return (L1);
+            return L1;
 
 		}
-        // Radial hydrogenic wave functions in QM
-
 
         /// <summary>
         /// Computes the value of a Legendre polynomial.
         /// </summary>
-        /// <param name="l">The order, which must be non-negative.</param>
+        /// <param name="ell">The order, which must be non-negative.</param>
         /// <param name="x">The argument, which must lie on the closed interval between -1 and +1.</param>
         /// <returns>The value of P<sub>l</sub>(x).</returns>
         /// <remarks>
         /// <para>Legendre polynomials are orthogonal on the interval [-1,1].</para>
         /// <img src="../images/LegendrePOrthonormality.png" />
+        /// <para>The values returned by this are fully accurate (14-16 decimal digits) over
+        /// the full range of arguments for orders up to one million.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="x"/> lies outside [-1,+1].</exception>
-        /// <seealso href="http://en.wikipedia.org/wiki/Legendre_polynomial"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Legendre_polynomials"/>
         /// <seealso href="http://mathworld.wolfram.com/LegendrePolynomial.html"/>
-        public static double LegendreP (int l, double x) {
+        public static double LegendreP (int ell, double x) {
+
 			if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException(nameof(x));
 
-            if (l < 0) {
-                return (LegendreP(-l - 1, x));
-            } else if (l == 0) {
-                return (1.0);
+            if (ell < 0) {
+                return LegendreP(-(ell + 1), x);
+            } else if (ell == 0) {
+                return 1.0;
             } else {
                 // use recurrence (n+1) P_{n+1} = (2n+1) x P_{n} - n P_{n-1}
                 double P0 = 1.0;
                 double P1 = x;
-                for (int n = 1; n < l; n++) {
+                for (int n = 1; n < ell; n++) {
                     double P2 = ((2 * n + 1) * x * P1 - n * P0) / (n + 1);
                     P0 = P1;
                     P1 = P2;
                 }
-                return (P1);
+                return P1;
             }
 		}
 
@@ -193,32 +205,35 @@ namespace Meta.Numerics.Functions {
         /// <summary>
         /// Computes the value of an associated Legendre polynomial.
         /// </summary>
-        /// <param name="l">The order, which must be non-negative.</param>
-        /// <param name="m">The associated order, which must lie between -l and l inclusive.</param>
+        /// <param name="ell">The order, which must be non-negative.</param>
+        /// <param name="m">The associated order, which must lie between -&#x2113; and +&#x2113; inclusive.</param>
         /// <param name="x">The argument, which must lie on the closed interval between -1 and +1.</param>
         /// <returns>The value of P<sub>l,m</sub>(x).</returns>
         /// <remarks>
         /// <para>Associated Legendre polynomials appear in the definition of the <see cref="AdvancedMath.SphericalHarmonic"/> functions.</para>
         /// <para>For values of l and m over about 150, values of this polynomial can exceed the capacity of double-wide floating point numbers.</para>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="ell"/> is negative, <paramref name="m"/> lies outside {-&#x2113; .. +&#x2113;}, or
+        /// <paramref name="x"/> lies outside [-1, +1].</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Associated_Legendre_polynomials"/>
-        public static double LegendreP (int l, int m, double x) {
+        public static double LegendreP (int ell, int m, double x) {
 
-            if (l < 0) throw new ArgumentOutOfRangeException(nameof(l));
+            if (ell < 0) throw new ArgumentOutOfRangeException(nameof(ell));
+            if (Math.Abs(m) > ell) throw new ArgumentOutOfRangeException(nameof(m));
+            if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException(nameof(x));
 
             //if (l < 0) {
             //    return (LegendreP(-l + 1, m, x));
             //}
 
-            if (Math.Abs(m) > l) throw new ArgumentOutOfRangeException(nameof(m));
-
             double f;
-            if (l < 10) {
-                // for low enough orders, we can can get the factorial quickly from a table look-up and without danger of overflow
-                f = Math.Sqrt(AdvancedIntegerMath.Factorial(l + m) / AdvancedIntegerMath.Factorial(l - m));
+            if (ell < 10) {
+                // For low enough orders, we can can get the factorial quickly from a table look-up and without danger of overflow.
+                f = Math.Sqrt(AdvancedIntegerMath.Factorial(ell + m) / AdvancedIntegerMath.Factorial(ell - m));
             } else {
-                // for higher orders, we must move into log space to avoid overflow
-                f = Math.Exp((AdvancedIntegerMath.LogFactorial(l + m) - AdvancedIntegerMath.LogFactorial(l - m)) / 2.0);
+                // For higher orders, use Pochhammer evaluation to avoid overflow. (Note that if the Pochhammer symbol is > ~1.0E154, this still overflows.)
+                //f = Math.Sqrt(AdvancedMath.Pochhammer(l - m + 1, 2 * m));
+                f = Math.Exp((AdvancedIntegerMath.LogFactorial(ell + m) - AdvancedIntegerMath.LogFactorial(ell - m)) / 2.0);
             }
 
             if (m < 0) {
@@ -226,9 +241,7 @@ namespace Meta.Numerics.Functions {
                 if (m % 2 != 0) f = -f;
             }
 
-            if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException(nameof(x));
-
-            return (f * LegendrePe(l, m, x));
+            return f * LegendrePe(ell, m, x);
 
         }
 
@@ -260,7 +273,7 @@ namespace Meta.Numerics.Functions {
             }
             P0 = Math.Sqrt(P0);
             if (m % 2 != 0) P0 = -P0;
-            if (l == m) return (P0);
+            if (l == m) return P0;
             // determine P{m+1,m}
             double s0 = Math.Sqrt(2*m+1);
             double P1 = x * s0 * P0;
@@ -273,101 +286,97 @@ namespace Meta.Numerics.Functions {
                 P0 = P1;
                 P1 = P2;
             }
-            return (P1);
+            return P1;
 
         }
 
-        // orthogonal on [-1,1] with weight (1-x^2)^{-1/2}
-        // use recurrence T_{n+1} = 2xT_{n} - T_{n-1}
         /// <summary>
-        /// Computes the value of a Cebyshev polynomial.
+        /// Computes the value of a Cebyshev polynomial of the frist kind.
         /// </summary>
         /// <param name="n">The order, which must be non-negative.</param>
         /// <param name="x">The argument, which must lie in the closed interval between -1 and +1.</param>
         /// <returns>The value of T<sub>n</sub>(x).</returns>
         /// <remarks>
-        /// <para>Chebyshev polynomials are orthogonal on the interval [-1,1] with the weight (1-x<sup>2</sup>)<sup>-1/2</sup>.</para>
+        /// <para>Chebyshev polynomials of the first kind are orthogonal on the interval [-1,1] with the weight (1-x<sup>2</sup>)<sup>-1/2</sup>.</para>
         /// <img src="../images/ChebyshevOrthonormality.png" />
+        /// <para>Values returned are fully accurate (14-16 decimal digits) over the full range of argument for orders up to thousands.
+        /// By orders up to a million, ~11 decimal digits remain accurate.</para>
+        /// <para>For high orders, close to the endpoints, the oscillation of Chebyshev polynomials becomes extremely rapid. Particularly
+        /// in these regions, keep in mind that the nearest representable floating point number might be far enough from the decimal number
+        /// argument you want that the Chebyshev value shifts significantly. For example, you might claim that our value for T(1000000,0.9999)
+        /// is accurate only to ~9 digits. But that is because 0.9999 is actually stored as 4503149267407759 X 2^(-52) = 0.99990000000000001101...,
+        /// and the value returned is indeed accurate for that argument to ~11 digits.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative, or <paramref name="x"/> lies outside [-1,+1].</exception>
         /// <seealso href="http://en.wikipedia.org/wiki/Chebyshev_polynomials"/>
         /// <seealso href="http://mathworld.wolfram.com/ChebyshevPolynomialoftheFirstKind.html"/>
         public static double ChebyshevT (int n, double x) {
-			if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException(nameof(x));
-			if (n<0) throw new ArgumentOutOfRangeException(nameof(n));
-			if (n==0) return(1.0);
+
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+            if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException(nameof(x));
+
+			if (n == 0) return 1.0;
+            if (x == 1.0) return 1.0;
+            if (x == -1.0) return (n % 2 == 0) ? 1.0 : -1.0;
 
             // very close to the endpoints, the recurrence looses accuracy for high n
             // use a series expansion there instead
-            if ((n > 10) && (n*n*(1.0-Math.Abs(x)) < 1.0)) return(ChebyshevT_Series1(n,x));
+            //if ((n > 10) && ((1.0 - Math.Abs(x) * n * n) < 1.0)) return ChebyshevT_Series1(n,x);
             //if ((n > 10) && (Math.Abs(n * x) < 0.1)) return (ChebyshevT_Series0(n, x));
+
+            // Use the recurrence T_{n+1} = 2xT_{n} - T_{n-1}.
+            // This is the same recurrence as for U_n, just with different starting values.
+            // Amazingly, the recurence appears to work well for both: neither dominates over most
+            // of parameter space.
+
+            double two_x = 2.0 * x;
 
 			double T0 = 1.0;
 			double T1 = x;
-			for (int k=1; k<n; k++) {
-				double T2 = 2*x*T1 - T0;
+
+			for (int k = 1; k < n; k++) {
+				double T2 = two_x * T1 - T0;
 				T0 = T1;
 				T1 = T2;
 			}
-			return(T1);
+
+			return T1;
 		}
 		// Use: approximation of functions with minimum error
 
-        // a straight-up series evaluation in increaseing powers of x
-        // don't do this unless nx is small, otherwise terms will have significant cancelation
-        /*
-        private static double ChebyshevT_Series0 (int n, double x) {
+        /// <summary>
+        /// Computes the value of a Cebyshev polynomial of the second kind.
+        /// </summary>
+        /// <param name="n">The order, which must be non-negative.</param>
+        /// <param name="x">The argument, which must lie in the closed interval between -1 and +1.</param>
+        /// <returns>The value of U<sub>n</sub>(x).</returns>
+        /// <remarks>
+        /// <para>Chebyshev polynomials of the second kind are orthogonal on the interval [-1,1] with the weight (1-x<sup>2</sup>)<sup>1/2</sup>.</para>
+        /// <para>Values returned are fully accurate (14-16 decimal digits) over the full range of argument for orders up to thousands.
+        /// By orders up to a million, ~11 decimal digits remain accurate.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative, or <paramref name="x"/> lies outside [-1,+1].</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Chebyshev_polynomials"/>
+        /// <seealso href="https://mathworld.wolfram.com/ChebyshevPolynomialoftheSecondKind.html"/>
+        public static double ChebyshevU(int n, double x) {
 
-            int mm = n / 2;
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+            if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException(nameof(x));
 
-            double df;
-            if (n % 2 == 0) {
-                df = 1.0;
-                if (mm % 2 != 0) df = -df;
-            } else {
-                df = n*x;
-                if (mm % 2 != 0) df = -df;
+            if (n == 0) return 1.0;
+
+            double two_x = 2.0 * x;
+
+            double T0 = 1.0;
+            double T1 = two_x;
+
+            for (int k = 1; k < n; k++) {
+                double T2 = two_x * T1 - T0;
+                T0 = T1;
+                T1 = T2;
             }
 
-            double x2 = 4.0*x*x;
-            double f = df;
-            for (int m = mm; m > 0; m--) {
-                double f_old = f;
-                df = -df * x2 * m * (n - m) / (n - 2 * m + 2) / (n - 2 * m + 1);
-                f += df;
-                if (f == f_old) return (f);
-            }
-
-            return (f);
-
-        }
-        */
-
-        // an series expansion for Chebyshev polynomials near x~1\
-        // good in the n^2 (x-1) << 1 limit
-
-        private static double ChebyshevT_Series1 (int n, double x) {
-
-            // handle negative case
-            if (x < 0.0) {
-                if (n % 2 == 0) {
-                    return (ChebyshevT_Series1(n,-x));
-                } else {
-                    return (-ChebyshevT_Series1(n,-x));
-                }
-            }
-
-            double xm = x - 1.0;
-
-            double f = 1.0;
-            double df = 1.0;
-            for (int k = 1; k < Global.SeriesMax; k++) {
-                double f_old = f;
-                df = df * (n + k - 1) * (n - k + 1) * xm / k / (2 * k - 1);
-                f = f + df;
-                if (f == f_old) return (f);
-            }
-            throw new NonconvergenceException();
+            return T1;
         }
 
         // orthogonal on [-1,1] with weight (1-x^2)^{1/2}
@@ -388,26 +397,44 @@ namespace Meta.Numerics.Functions {
 		}
         */
 
-#if FUTURE
+        /// <summary>
+        /// Computes the value of a Gegenbauer polynomial.
+        /// </summary>
+        /// <param name="n">The order, which must be non-negative.</param>
+        /// <param name="alpha">The weight parameter, which must be non-negative.</param>
+        /// <param name="x">The argument, which must lie in the closed interval [-1,+1].</param>
+        /// <returns>The vaue of C<sup>(alpha)</sup><sub>n</sub>(x).</returns>
+        /// <remarks><para>The Gegenbauer polynomials, also called the ultraspherical polynomials, are orthogonal on the interval [-1,+1] with the
+        /// weight (1 - x^2)^(alpha - 1/2).</para>
+        /// <para>The Legendre (<see cref="LegendreP(int, double)"/>) and Chebyshev (<see cref="ChebyshevT(int, double)"/> polynomials are
+        /// thus special cases of the Gegenbauer polynomials.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative, or <paramref name="alpha"/> is negative, or
+        /// <paramref name="x"/> lies outside [-1, +1].</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Gegenbauer_polynomials" />
         public static double GegenbauerC (int n, double alpha, double x) {
 
-            if (n < 0) throw new ArgumentOutOfRangeException("n");
-            if (alpha <= 0) throw new ArgumentOutOfRangeException("alpha");
-            if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException("x");
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+            if (alpha < 0.0) throw new ArgumentOutOfRangeException(nameof(alpha));
+            if (Math.Abs(x) > 1.0) throw new ArgumentOutOfRangeException(nameof(x));
+
+            if (n == 0) return 1.0;
+
+            double two_alpha = 2.0 * alpha;
+            double two_x = 2.0 * x;
 
             double C0 = 1.0;
-            if (n == 0) return(C0);
+            double C1 = two_alpha * x;
 
-            double C1 = - 2.0 * alpha * x;
-            
             for (int k = 1; k < n; k++) {
-                double C2 = (2.0 * x * (k + alpha) * C1 - (k - 1 + alpha) * C0) / (k + 1);
+                double C2 = (two_x * (k + alpha) * C1 - (k - 1 + two_alpha) * C0) / (k + 1);
                 C0 = C1;
                 C1 = C2;
             }
-            return(C1);
+
+            return C1;
         }
-#endif
+
         // associated Legendre, Laguerre
 
         //  R00
@@ -423,7 +450,7 @@ namespace Meta.Numerics.Functions {
         /// Computes the value of a Zernike polynomial.
         /// </summary>
         /// <param name="n">The order paramter, which must be non-negative.</param>
-        /// <param name="m">The index parameter, which must lie between 0 and n.</param>
+        /// <param name="m">The index parameter, which must lie between 0 and n inclusive.</param>
         /// <param name="rho">The argument, which must lie between 0 and 1.</param>
         /// <returns>The value of R<sub>n</sub><sup>m</sup>(&#x3C1;).</returns>
         /// <remarks>
@@ -439,6 +466,10 @@ namespace Meta.Numerics.Functions {
         ///     <tr><td>3</td><td>3</td><td>trefoil</td></tr>
         /// </table>
         /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative, or <paramref name="m"/>
+        /// lies outside {0 .. n}, or <paramref name="rho"/> lies outside [0, 1].</exception>
+        /// <seealso href="https://en.wikipedia.org/wiki/Zernike_polynomials"/>
+        /// <seealso href="https://mathworld.wolfram.com/ZernikePolynomial.html"/>
         public static double ZernikeR (int n, int m, double rho) {
 
             if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
@@ -446,14 +477,14 @@ namespace Meta.Numerics.Functions {
             if ((rho < 0.0) || (rho > 1.0)) throw new ArgumentOutOfRangeException(nameof(rho));
 
             // n and m have the same parity
-            if ((n - m) % 2 != 0) return (0.0);
+            if ((n - m) % 2 != 0) return 0.0;
 
             // R00
-            if (n == 0) return (1.0); 
+            if (n == 0) return 1.0; 
 
             // R^{m}_m
             double r2 = Math.Pow(rho, m);
-            if (n == m) return (r2);
+            if (n == m) return r2;
 
             // R^{m+1}_{m+1}
             int k = m;
@@ -472,7 +503,7 @@ namespace Meta.Numerics.Functions {
 
                 double r0 = ((2 * k) * rho * r1 - (k + m) * r2) / (k - m);
 
-                if (k == n) return (r0);
+                if (k == n) return r0;
 
                 //   *
                 //  /

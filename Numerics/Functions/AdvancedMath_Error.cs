@@ -60,14 +60,14 @@ namespace Meta.Numerics.Functions {
         /// <seealso href="http://mathworld.wolfram.com/Erfc.html"/>
         public static double Erfc (double x) {
             if (x < -1.5) {
-                return (2.0 - Erfc_ContinuedFraction(-x));
+                return 2.0 - Erfc_ContinuedFraction(-x);
             } else if (x < 1.5) {
-                return (1.0 - Erf_Series(x));
+                return 1.0 - Erf_Series(x);
             } else if (x <= Double.PositiveInfinity) {
-                return (Erfc_ContinuedFraction(x));
+                return Erfc_ContinuedFraction(x);
             } else {
                 Debug.Assert(Double.IsNaN(x));
-                return (x);
+                return x;
             }
         }
 
@@ -90,7 +90,7 @@ namespace Meta.Numerics.Functions {
                 t *= mx2 / k;
                 s += t / (2 * k + 1);
                 if (s == s_old) {
-                    return (2.0 / Global.SqrtPI * x * s);
+                    return 2.0 / Global.SqrtPI * x * s;
                 }
             }
             throw new NonconvergenceException();
@@ -102,7 +102,7 @@ namespace Meta.Numerics.Functions {
 
             // Erfc underflows for x larger than about 27, so no need to compute continued fraction.
             // This check also avoids computing Infinity * 0 = NaN if x is Infinity.
-            if (x > 28.0) return (0.0);
+            if (x > 28.0) return 0.0;
 
             // Compute the continued fraction.
             double x2 = x * x;
@@ -119,7 +119,7 @@ namespace Meta.Numerics.Functions {
                 Df = (bb * D - 1.0) * Df;
                 f += Df;
                 if (f == f_old) {
-                    return (x / Global.SqrtPI * Math.Exp(-x2) * f);
+                    return x / Global.SqrtPI * Math.Exp(-x2) * f;
                 }
             }
             throw new NonconvergenceException();
@@ -138,13 +138,13 @@ namespace Meta.Numerics.Functions {
             if (y < 0.0) {
                 throw new ArgumentOutOfRangeException(nameof(y));
             } else if (y == 0.0) {
-                return (Double.PositiveInfinity);
+                return Double.PositiveInfinity;
             } else if (y < 0.5) {
-                return (InverseErfcByRefinement(y));
+                return InverseErfcByRefinement(y);
             } else if (y <= 1.0) {
-                return (InverseErfSeries(1.0 - y));
+                return InverseErfSeries(1.0 - y);
             } else if (Double.IsNaN(y)) {
-                return (y);
+                return y;
             } else {
                 throw new ArgumentOutOfRangeException(nameof(y));
             }
@@ -162,15 +162,15 @@ namespace Meta.Numerics.Functions {
         public static double InverseErf (double y) {
 
             if (y < 0.0) {
-                return (-InverseErf(-y));
+                return -InverseErf(-y);
             } else if (y < 0.5) {
-                return (InverseErfSeries(y));
+                return InverseErfSeries(y);
             } else if (y < 1.0) {
-                return (InverseErfcByRefinement(1.0 - y));
+                return InverseErfcByRefinement(1.0 - y);
             } else if (y == 1.0) {
-                return (Double.PositiveInfinity);
+                return Double.PositiveInfinity;
             } else if (Double.IsNaN(y)) {
-                return (y);
+                return y;
             } else {
                 throw new ArgumentOutOfRangeException(nameof(y));
             }
@@ -195,7 +195,7 @@ namespace Meta.Numerics.Functions {
                 double s_old = s;
                 z2k *= z2;
                 s += inverfSeriesCoefficients[k] * z2k;
-                if (s == s_old) { return (z * s); }
+                if (s == s_old) { return z * s; }
             }
 
             throw new NonconvergenceException();
@@ -204,6 +204,7 @@ namespace Meta.Numerics.Functions {
         private static readonly double[] inverfSeriesCoefficients = ComputeInverseErfSeriesCoefficients(24);
 
         private static double[] ComputeInverseErfSeriesCoefficients (int n) {
+            Debug.Assert(n > 0);
             double[] d = new double[n + 1];
             d[0] = 1.0;
             for (int k = 0; k < n; k++) {
@@ -214,7 +215,7 @@ namespace Meta.Numerics.Functions {
             for (int k = 1; k <= n; k++) {
                 d[k] /= (2 * k + 1);
             }
-            return (d);
+            return d;
         }
 
         private static double InverseErfcByRefinement (double y) {
@@ -248,7 +249,7 @@ namespace Meta.Numerics.Functions {
 
             for (int i = 0; i < 2; i++) {
                 double z = Erfc(x) - y;
-                double r = z * Global.SqrtPI * Math.Exp(x * x) / 2.0;
+                double r = Global.SqrtPI / 2.0 * z * Math.Exp(x * x);
                 double dx = r / (1.0 - x * r);
                 x += dx;
              }
@@ -256,37 +257,55 @@ namespace Meta.Numerics.Functions {
             // We hard-code exactly two steps instead of testing for convergence because the iteration can get into loops of tiny changes instead
             // of producing a zero change, and we know that two iterations will be sufficient.
 
-            return (x);
+            return x;
 
         }
 
-        // Blair et al., Mathematics of Computation 30 (1976) 827 write that "by inverting the standard asymptotic series" for erf x in terms of 1/x
-        // "we can derive an asymptotic expansion for inverf" and then give the expansion encoded here. Their expansion is the most accurate I've
-        // found, and I would love to derive more terms, but I can't figure out how they derived it. The DLMF (http://dlmf.nist.gov/7.17) says
-        // their expansion 7.17.3 "follows from Blair et al. (1976), after modifications" but they must have made an error in their modifications
-        // because their accuracy sucks compared to Blair et al.
+        // Blair et al., "Rational Chebyshev Approximations for the Inverse of the Error Function", Mathematics of Computation 30 (1976) 827
+        // (https://www.ams.org/journals/mcom/1976-30-136/S0025-5718-1976-0421040-7/S0025-5718-1976-0421040-7.pdf) write that "by inverting the
+        // standard asymptotic series" for erf x in terms of 1/x "we can derive an asymptotic expansion for inverf" and then give this expansion.
+        // The DLMF (http://dlmf.nist.gov/7.17) says their expansion 7.17.3 "follows from Blair et al. (1976), after modifications" but
+        // their accuracy sucks compared to Blair et al. I corresponded with Nico Temme, who wrote the DLMF chapter, and he agreed that Blair is
+        // better. Blair starts with the asymptotic expansion for erfc:
+        //   \erfc(y) = \frac{\exp(-y^2)}{\sqrt{\pi} S(y)
+        // where
+        //   S(y) = 1 - \frac{1}{2 y^2} + \frac{3}{4 y^4} - \frac{3 \cdot 5}{8 y^6} + \cdots
+        // Taking S \sim 1 and solving for y^2 gives
+        //   y^2 \sim - \ln ( \sqrt{\pi} x y ) = - \ln( \sqrt{\pi} x ) - \ln (y)
+        //   y^2 \sim -\ln(\sqrt{\pi} x) - \frac{1}{2} \ln( -\ln(\sqrt{\pi} x) ) = t - \frac{1}{2} L
+        // where t = -\ln(\sqrt{\pi} x) and L = \ln t. This is the zeroth approximation. Temme explained Blair's methodology which allowed
+        // me to derive terms to arbitrary order. Make an Ansatz that the full solution differs from the zeroth approximation by a power series
+        // in u = 1/t.
+        //   y^2 = t - \frac{1}{2} L + w    w = c_1 u + c_2 u^2 + c_3 u^3 + \cdots
+        // The original equation becomes
+        //   \sqrt{\pi} x y = \exp(-y^2) S(y)
+        //   \sqrt{1 - \frac{1}{2} L u + w u} = \exp(-w) S(\frac{u}{1 - \frac{1}{2} L u + w u})
+        // Then just expand in powers of u and set coefficients equal by power. This gives
+        //   c_1 = -\frac{1}{2} + \frac{1}{4} L
+        //   c_2 = \frac{7}{8} - \frac{3}{8} L + \frac{1}{16} L^2
+        //  etc.
 
-        private static double InverseErfcAsymptoticExpansion (double x) {
+        // Even though the Blair series works pretty well, our minimax approximation is even better with fewer operations for all but the tiniest x.
+        // Therefore we use this only for x < ~10^{-5}, for which four terms gives accuracy better than ~10^{-5}.
+        
+        private static double InverseErfcAsymptoticExpansion(double x) {
 
-            double y = -Math.Log( Global.SqrtPI * x);
-            double lny = Math.Log(y);
+            Debug.Assert(0.0 < x && x < 1.0 / Global.SqrtPI);
+            double t = -Math.Log(Global.SqrtPI * x);
+            double L = Math.Log(t);
+            double u = 1.0 / t;
 
-            double s = y - lny / 2.0;
-            s += 1.0 / y * (lny / 4.0 - 1.0 / 2.0);
-            double y2 = y * y;
-            double lny2 = lny * lny;
-            s += 1.0 / y2 * (lny2 / 16.0 - 3.0 / 8.0 * lny + 7.0 / 8.0);
-            double y3 = y2 * y;
-            double lny3 = lny2 * lny;
-            s += 1.0 / y3 * (lny3 / 48.0 - 7.0 / 32.0 * lny2 + 17.0 / 16.0 * lny - 107.0 / 48.0);
-            double y4 = y3 * y;
-            double lny4 = lny3 * lny;
-            s += 1.0 / y4 * (lny4 / 128.0 - 23.0 / 192.0 * lny3 + 29.0 / 32.0 * lny2 - 31.0 / 8.0 * lny + 1489.0 / 192.0);
-
-            return (Math.Sqrt(s));
+            return Math.Sqrt(t - 1.0 / 2.0 * L +
+                u * ((-1.0 / 2.0 + 1.0 / 4.0 * L) +
+                u * ((7.0 / 8.0 + L * (-3.0 / 8.0 + L * 1.0 / 16.0)) +
+                u * ((-107.0 / 48.0 + L * (17.0 / 16.0 + L * (-7.0 / 32.0 + L * 1.0 / 48.0))) +
+                u * ((1489.0 / 192.0 + L * (-31.0 / 8.0 + L * (29.0 / 32.0 + L * (-23.0 / 192.0 + L * 1.0 / 128.0))))
+                /* + u * ((-21919.0 / 640.0 + L * (1675.0 / 96.0 + L * (-277.0 / 64.0 + L * (85.0 / 128.0 + L * (-49.0 / 768.0 + L * 1.0 / 320.0))))) */
+                ))))
+            );
 
         }
-
+        
         private static double InverseErfcRationalApproximation (double x) {
 
             // minimax (3,3) rational polynomial approximation
@@ -304,11 +323,13 @@ namespace Meta.Numerics.Functions {
             const double b2 = 0.67737432169146905075;
             const double b3 = 0.00056224293678634100951;
 
-            return ((a0 + (a1 + (a2 + a3 * y) * y) * y) / (1.0 + (b1 + (b2 + b3 * y) * y) * y));
+            return (a0 + (a1 + (a2 + a3 * y) * y) * y) / (1.0 + (b1 + (b2 + b3 * y) * y) * y);
 
         }
 
         internal static double Probit (double P, double Q) {
+            Debug.Assert(0.0 <= P && P <= 1.0);
+            Debug.Assert(0.0 <= Q && Q <= 1.0);
             Debug.Assert(P + Q == 1.0);
             if (P < 0.25) {
                 if (P == 0.0) {

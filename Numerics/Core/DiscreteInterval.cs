@@ -11,6 +11,7 @@ namespace Meta.Numerics {
 
         internal DiscreteInterval (int min, int max) {
             Debug.Assert(max >= min);
+            if (min == Int32.MinValue) throw new ArgumentOutOfRangeException(nameof(min));
             this.min = min;
             this.max = max;
         }
@@ -24,6 +25,10 @@ namespace Meta.Numerics {
         /// <param name="a">One endpoint.</param>
         /// <param name="b">The other endpoint.</param>
         /// <returns>A discrete interval between the given endpoints.</returns>
+        /// <remarks><para>In order that width calculations always fit within a <see cref="System.UInt32"/>, we limit discrete intervals
+        /// to the symmetric range of signed integers -<see cref="Int32.MaxValue"/> to +<see cref="Int32.MaxValue"/>. That is,
+        /// the value <see cref="Int32.MinValue"/> is not allowed. This should almost never have a practical effect, unless you
+        /// attempt to instantiate the full interval. For such a purpose, use <see cref="DiscreteInterval.Infinite"/> instead.</para></remarks>
         public static DiscreteInterval FromEndpoints (int a, int b) {
             if (a > b) {
                 return new DiscreteInterval(b, a);
@@ -56,18 +61,11 @@ namespace Meta.Numerics {
         /// <remarks>
         /// <para>The width of the interval is the difference between <see cref="LeftEndpoint"/> and <see cref="RightEndpoint"/>.
         /// This is one less than the number of integers in the interval. Thus an interval with equal left and right endpoints
-        /// has width 0, not width 1. And and the interval {0 .. MaxValue} has width MaxValue, not MaxValue + 1. (Note that
-        /// this is quite helpful because the later would overflow and many discrete distribution do cover that range.)</para>
+        /// has width 0, not width 1. And and the interval {0 .. MaxValue} has width MaxValue, not MaxValue + 1.</para>
         /// </remarks>
-        internal int Width {
+        internal uint Width {
             get {
-                // This can still overflow if, e.g. max = MaxValue and min < 0.
-                return max - min;
-                // For [0, Int32.MaxValue], w will overflow. Since Int32.MaxValue is our integer "infinity",
-                // just reset it to that value.
-                //int w = max - min + 1;
-                //if (w < 0) w = Int32.MaxValue;
-                //return w;
+                return (uint) (max - min);
             }
         }
 
@@ -75,6 +73,11 @@ namespace Meta.Numerics {
         /// The semi-infinite discrete interval representing all non-negative integers.
         /// </summary>
         public static readonly DiscreteInterval Semiinfinite = new DiscreteInterval(0, Int32.MaxValue);
+
+        /// <summary>
+        /// The infinite discrete interval representing all integers.
+        /// </summary>
+        public static readonly DiscreteInterval Infinite = new DiscreteInterval(-Int32.MaxValue, Int32.MaxValue);
 
         // Equality
 

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,26 +16,45 @@ namespace Meta.Numerics.Extended {
     // and allow fast Next, Previous, and Value implementations you probably also want to store the original bit
     // pattern.
 
+
+    // double format is 64b: (1b sign)(11b exponent)(52b fraction)
+    // for normals, value is (-1)^s (1.ffffff) X 2^(e-1023) = (-1)^s (1ffffff) X 2^(e-(1023 + 52))
+    // for subnormals, e is all zeros and value is (-1)^s (0.ffffff) X 2^(1-1023)
+    // for infinities and NaNs, 
+
     /// <summary>
     /// Contains information on the stored represenation of a double value.
     /// </summary>
-    public struct DoubleInfo {
+    public readonly struct DoubleInfo {
 
         /// <summary>
         /// Initializes a new double info object for the given double value.
         /// </summary>
         /// <param name="value">The value to analyze.</param>
-        public DoubleInfo (double value) {
-            unchecked {
-                this.storage = (ulong) BitConverter.DoubleToInt64Bits(value);
-            }
+        public DoubleInfo(double value) : this(unchecked((ulong) BitConverter.DoubleToInt64Bits(value))) {
+
         }
 
         internal DoubleInfo (ulong storage) {
             this.storage = storage;
+            GetExponentAndMantissa(storage, out exponent, out mantissa);
         }
 
         private readonly ulong storage;
+        private readonly int exponent;
+        private readonly long mantissa;
+
+        /// <summary>
+        /// Creates a new double info object for the given double value.
+        /// </summary>
+        /// <param name="value">The value to analyze.</param>
+        /// <returns>The corresponding <see cref="DoubleInfo"/> data.</returns>
+        /// <remarks>
+        /// <para>This is equivilent to the constructor <see cref="DoubleInfo.DoubleInfo(double)"/>.</para>
+        /// </remarks>
+        public static DoubleInfo For (double value) {
+            return new DoubleInfo(value);
+        }
 
         /// <summary>
         /// Gets a value indicating whether the number is negative.
@@ -109,22 +130,22 @@ namespace Meta.Numerics.Extended {
         public double Value {
             get {
                 unchecked {
-                    return (BitConverter.Int64BitsToDouble((long) storage));
+                    return BitConverter.Int64BitsToDouble((long) storage);
                 }
             }
         }
 
-        private void GetExponentAndMantissa (out int exponent, out long mantissa) {
+        private static void GetExponentAndMantissa (ulong storage, out int exponent, out long mantissa) {
             exponent = (int) ((storage & 0x7FF0000000000000) >> 52);
             mantissa = (long) (storage & 0x000FFFFFFFFFFFFF);
 
             if (exponent == 0) {
                 // subnormals and zeros
                 if (mantissa == 0L) return;
+                exponent++;
             } else {
                 // normals, infinities, nans
-                exponent = exponent--;
-                mantissa = mantissa | (1L << 52);
+                mantissa = (1L << 52) | mantissa;
             }
 
             exponent -= (1023 + 52);
@@ -140,10 +161,7 @@ namespace Meta.Numerics.Extended {
         /// </summary>
         public int Exponent {
             get {
-                int exponent;
-                long mantissa;
-                GetExponentAndMantissa(out exponent, out mantissa);
-                return (exponent);
+                return exponent;
             }
         }
 
@@ -152,10 +170,7 @@ namespace Meta.Numerics.Extended {
         /// </summary>
         public long Mantissa {
             get {
-                int exponent;
-                long mantissa;
-                GetExponentAndMantissa(out exponent, out mantissa);
-                return (mantissa);
+                return mantissa;
             }
         }
 
@@ -210,13 +225,18 @@ namespace Meta.Numerics.Extended {
         [CLSCompliant(false)]
         public ulong Bits {
             get {
-                return (storage);
+                return storage;
             }
         }
 
         /// <inheritdoc/>
         public override string ToString () {
-            return (String.Format("{0}{1} X 2^({2})", this.IsNegative ? "-" : String.Empty, this.Mantissa, this.Exponent));
+            return ToString(CultureInfo.CurrentCulture);
+        } 
+
+        private string ToString (IFormatProvider provider) {
+            Debug.Assert(provider != null);
+            return String.Format(provider, "{0}{1} X 2^({2})", this.IsNegative ? "-" : String.Empty, this.Mantissa, this.Exponent);
         }
     }
 

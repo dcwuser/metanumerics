@@ -139,7 +139,7 @@ namespace Meta.Numerics {
 
         // Beebe, "Computation of expm1(x) = exp(x)  - 1", 2002 (http://www.math.utah.edu/~beebe/reports/expm1.pdf)
         // makes some good points about e^x - 1.
-        //   * He shows that the point e^x = 1/2 and e^x = 3/2 are the relevent limits where Math.Exp(x) - 1.0
+        //   * He shows that the points e^x = 1/2 and e^x = 3/2 are the relevant limits where Math.Exp(x) - 1.0
         //     looses one bit of accuracy.
         //   * He measures that the maximum number of terms in the Taylor series required in this region is 17.
         //   * He measures that the RMS error of the Taylor series in this region is ~0.8 bits and it's maximum
@@ -244,7 +244,6 @@ namespace Meta.Numerics {
         /// for values of x near zero.</para>
         /// </remarks>
         public static double LogOnePlus (double x) {
-
             double z = 1.0 + x;
             if (z == 1.0) {
                 return x;
@@ -254,6 +253,15 @@ namespace Meta.Numerics {
         }
 
         // Computes \log (1 + e * x) / e, i.e. the rate at which LogOnePlus changes with e
+
+        internal static double ReducedLogOnePlus (double x) {
+            double z = 1.0 + x;
+            if (z == 1.0) {
+                return z;
+            } else {
+                return Math.Log(z) / (z - 1.0);
+            }
+        }
 
         internal static double ReducedLogOnePlus (double x, double e) {
             double y = e * x;
@@ -403,12 +411,18 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The value of sin(<paramref name="x"/>&#x3C0;).</returns>
         /// <remarks>
-        /// <para>This function allows the user to increase performance and avoid inaccuracies due to the finite
-        /// precision of the stored constant <see cref="Math.PI"/> in some cases. Suppose you need to compute
-        /// sin(x&#x3C0;) for a large value of x.
+        /// <para>Formulas involving sin(&#x3C0;x) appear in many contexts. By using this method
+        /// instead of <c>Math.Sin(Math.PI * x)</c>, you will increase performance and avoid inaccuracies
+        /// that arise from the finite precision of the stored constant <see cref="Math.PI"/>.</para>
+        /// <para>Suppose, for example, x = 1.0E6. Since x is an integer, sin(&#x3C0;x) = 0.0.
+        /// However, due to the finite accuracy of Math.PI, Math.PI * x is not a perfect multiple of &#x3C0;, and
+        /// Math.Sin(Math.PI * x) = -2.2318717360358953E-10. But MoreMath.SinPi(x) = 0.0 exactly. Even for
+        /// arguments that are not exact integers, the accurary of MoreMath.SinPi will be better (because
+        /// it is possible to do argument reductions by integers exactly.)
         /// </para>
         /// </remarks>
         /// <seealso cref="CosPi(double)"/>
+        /// <seealso cref="TanPi(double)"/>
         public static double SinPi (double x) {
             RangeReduction.ReduceByOnes(2.0 * x, out long y0, out double y1);
             return (RangeReduction.Sin(y0, y1));
@@ -424,12 +438,24 @@ namespace Meta.Numerics {
         /// see <see cref="SinPi(double)"/>.</para>
         /// </remarks>
         /// <seealso cref="SinPi(double)"/>
+        /// <seealso cref="TanPi(double)"/>
         public static double CosPi (double x) {
             RangeReduction.ReduceByOnes(2.0 * x, out long y0, out double y1);
             return (RangeReduction.Cos(y0, y1));
         }
 
-        internal static double TanPi (double x) {
+        /// <summary>
+        /// Computes the tangent of the given multiple of &#x3C0;.
+        /// </summary>
+        /// <param name="x">The argument.</param>
+        /// <returns>The value of tan(&#x3C0; <paramref name="x"/>).</returns>
+        /// <remarks>
+        /// <para>For an explanation of why and when to use this function,
+        /// see <see cref="SinPi(double)"/>.</para>
+        /// </remarks>
+        /// <seealso cref="SinPi(double)"/>
+        /// <seealso cref="CosPi(double)"/>
+        public static double TanPi (double x) {
             RangeReduction.ReduceByOnes(2.0 * x, out long y0, out double y1);
             if (y0 % 2L == 0L) {
                 return (Math.Tan(Math.PI / 2.0 * y1));
@@ -504,6 +530,22 @@ namespace Meta.Numerics {
             // but it would not only be less clear, but also suffer overflow problems for m near integer limits
         }
 
+        /// <summary>
+        /// Computes the midpoint of two integers.
+        /// </summary>
+        /// <param name="x">One integer.</param>
+        /// <param name="y">Another integer.</param>
+        /// <returns>The midpoint of the two integers (rounded down).</returns>
+        /// <remarks>
+        /// <para>The simple expression (x + y)/2 can overflow. The implementation of this
+        /// method returns the accurate midpoint for all values of x and y, including all
+        /// combinations of their extreme values.</para>
+        /// </remarks>
+        public static int Midpoint(int x, int y) {
+            // This expression is from Warren, "Hacker's Delight", Section 2-5
+            return (x & y) + ((x ^ y) >> 1);
+        }
+
     }
 
 
@@ -520,6 +562,15 @@ namespace Meta.Numerics {
 
         public static void Decompose (double x, out double hi, out double lo) {
             double p = K * x;
+            if (Double.IsInfinity(p) && !Double.IsInfinity(x)) {
+                Debug.Assert(Math.Abs(x) >= Double.MaxValue / K);
+                const int scaleFactor = 1 << (bitsPerPart + 1);
+                double xPrime = x / scaleFactor;
+                Decompose(xPrime, out double hiPrime, out double loPrime);
+                hi = hiPrime * scaleFactor;
+                lo = loPrime * scaleFactor;
+                return;
+            }
             double q = x - p;
             hi = p + q;
             lo = x - hi;

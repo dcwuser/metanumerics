@@ -1,8 +1,11 @@
 ﻿using System;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FluentAssertions;
 
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
+using System.Linq;
 
 namespace Test {
 
@@ -22,14 +25,12 @@ namespace Test {
 
         [TestMethod]
         public void PolynomialNegation () {
-
             Polynomial p = Polynomial.FromCoefficients(-1.0, 0.0, 1.0);
 
             Polynomial np = -p;
 
-            Assert.IsTrue(p.Degree == np.Degree);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(p.Evaluate(2.0), -np.Evaluate(2.0)));
-
+            p.Degree.Should().Be(np.Degree);
+            p.Evaluate(2.0).Should().Be(-np.Evaluate(2.0));
         }
 
         [TestMethod]
@@ -60,20 +61,22 @@ namespace Test {
 
             Polynomial v = Polynomial.FromCoefficients(-1, 1);
 
-            foreach (int n in TestUtilities.GenerateIntegerValues(2, 16, 4)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(2, 16).Take(4)) {
 
-                double[] uc = new double[n + 1]; uc[0] = -1; uc[n] = 1;
+                double[] uc = new double[n + 1];
+                uc[0] = -1;
+                uc[n] = 1;
                 Polynomial u = Polynomial.FromCoefficients(uc);
 
-                Polynomial q, r; q = Polynomial.Divide(u, v, out r);
+                Polynomial q = Polynomial.Divide(u, v, out Polynomial r);
 
-                Assert.IsTrue(q.Degree == n - 1);
+                q.Degree.Should().Be(n - 1);
                 for (int i = 0; i <= q.Degree; i++) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(q.Coefficient(i), 1.0));
+                    q.Coefficient(i).Should().Be(1.0);
                 }
 
-                Assert.IsTrue(r.Degree == 0);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(r.Coefficient(0), 0.0));
+                r.Degree.Should().BeLessThan(0);
+                r.Coefficient(0).Should().Be(0.0);
 
             }
 
@@ -82,20 +85,18 @@ namespace Test {
         [TestMethod]
         public void PolynomialRemainderTheorem () {
 
-            // Polynomial remainder theorem, aka little Bezout theorem, says p(x) / (x - a) has remainder p(a) 
+        // Polynomial remainder theorem, aka little Bezout theorem, says p(x) / (x - a) has remainder p(a) 
+        // https://en.wikipedia.org/wiki/Polynomial_remainder_theorem
 
-
-            foreach (int n in TestUtilities.GenerateIntegerValues(2, 16, 4)) {
+            foreach (int n in TestUtilities.GenerateIntegerValues(2, 16).Take(4)) {
 
                 Polynomial p = Polynomial.FromCoefficients(TestUtilities.GenerateUniformRealValues(-16.0, 16.0, n));
 
                 foreach (double x in TestUtilities.GenerateUniformRealValues(-16.0, 16.0, 4)) {
+                    Polynomial.Divide(p, Polynomial.FromCoefficients(-x, 1.0), out Polynomial r);
 
-                    Polynomial r; Polynomial.Divide(p, Polynomial.FromCoefficients(-x, 1.0), out r);
-
-                    Assert.IsTrue(r.Degree == 0);
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(r.Coefficient(0), p.Evaluate(x)));
-
+                    r.Degree.Should().Be(0);
+                    r.Coefficient(0).Should().BeNearly(p.Evaluate(x));
                 }
 
             }
@@ -160,6 +161,12 @@ namespace Test {
             for (int i = 0; i < p0.Degree; i++) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(p0.Coefficient(i), p1.Coefficient(i)));
             }
+        }
+
+        [TestMethod]
+        public void PolynomialToString () {
+            Polynomial p = Polynomial.FromCoefficients(3.0, 0.0, -2.0);
+            p.ToString().Should().Be("3 - 2 x^2");
         }
 
     }

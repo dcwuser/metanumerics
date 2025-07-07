@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace Meta.Numerics.Functions
 {
@@ -11,7 +12,7 @@ namespace Meta.Numerics.Functions
     // Given a value of g, the c-values can be computed using a complicated set of matrix equations that require high precision.
     // We write this as:
     //   \Gamma(z) = \sqrt{2 \pi} (z + g - 1/2)^(z-1/2) e^{-(z + g - 1/2)} \left[ c_0 + \frac{c_1}{z} + \frac{c_2}{z+1} + \cdots + \frac{c_N}{z+N-1} \right]
-    //             = \sqrt{2 \pi} (\frac{z + g - 1/2}{e})^{z-1/2} e^{-g} \left[ c_0 + \frac{c_1}{z} + \frac{c_2}{z+1} + \cdots + \frac{c_N}{z+N-1} \right]
+    //             = \sqrt{2 \pi} (\frac{z + g - 1/2}{e})^{z-1/2} e^{-g} S(z)
 
     internal static class Lanczos {
 
@@ -90,7 +91,7 @@ namespace Meta.Numerics.Functions
                 x += 1.0;
                 s += LanczosC[i] / x;
             }
-            return (s);
+            return s;
         }
 
         private static Complex Sum(Complex z) {
@@ -99,8 +100,10 @@ namespace Meta.Numerics.Functions
                 z += 1.0;
                 s += LanczosC[i] / z;
             }
-            return (s);
+            return s;
         }
+
+        // Derivative S'(x) wrt x, straightforwardly evaluated.
 
         private static double LogSumPrime(double x) {
             double q = LanczosC[0] + LanczosC[1] / x;
@@ -110,7 +113,7 @@ namespace Meta.Numerics.Functions
                 q += LanczosC[i] / x;
                 p += LanczosC[i] / (x * x);
             }
-            return (-p / q);
+            return -p / q;
         }
 
         private static Complex LogSumPrime(Complex z) {
@@ -119,16 +122,21 @@ namespace Meta.Numerics.Functions
             for (int i = 2; i < LanczosC.Length; i++) {
                 z += 1.0;
                 q += LanczosC[i] / z;
-                p += LanczosC[i] / (z * z);
+                p += LanczosC[i] / ComplexMath.Sqr(z);
             }
-            return (-p / q);
+            return -p / q;
         }
 
-        // To calculate \frac{\Gamma(x + y)}{\Gamma(x)}, we need \frac{S(x+y)}{S(x)}. A little bit of algebra shows
-        //   \frac{S(x+y)}{S(x)} = 1 - y \left[ \sum_{k=1} \frac{c_k}{(x + y + (k-1))(x + (k-1))} \right]
-        //                               \left[ c_0 + \sum_{k=1} \frac{c_k}{x + (k-1)} \right]
-        // Expressing the result as the rate at which the ratio moves away from 1 as y increases allows us to
-        // derive accurate results for small y.
+        // To calculate Pochammer (x)_y = \frac{\Gamma(x + y)}{\Gamma(x)} via Lanczos, we need \frac{S(x+y)}{S(x)}. For small y, this
+        // must be 1 + ~y, and we can re-form this in a way that this arises explicitly rather than via cancellation. We have
+        //   \frac{S(x+y)}{S(x)} = \frac{ c_0 + \frac{c_1}{x+y} + \frac{c_2}{x+y+1} + \cdots}{ c_0 + \frac{c_1}{x} + \frac{c_2}{x+1} + \cdots}
+        // Write each term in numerator as a term in the denominator plus a difference term
+        //   \frac{c_1}{x+y} = \frac{c_1}{x} + c_1 \left( \frac{1}{x+y} - \frac{1}{x} \right)
+        //                   = \frac{c_1}{x} - \frac{c_1 y}{x (x + y)}
+        // Now isolate terms without a y, which are identical to denominator and there fore cancel to produce a 1,
+        // from terms with a y, which produce a correction term explicitly proportional to y.
+        //   \frac{S(x+y)}{S(x)} = 1 - y \left[ \frac{c_1}{x (x + y)} + \frac{c_2}{(x + 1)(x + y + 1)} + \cdots \right] \left[ c_0 + \frac{c_1}{x} + \frac{c_2}{x + 1} + \cdots \right]
+        // The following method computes the coefficient of y.
 
         private static double RatioOfSumsResidual(double x, double y) {
             double z = x + y;
@@ -140,25 +148,17 @@ namespace Meta.Numerics.Functions
                 p += LanczosC[i] / (x * z);
                 q += LanczosC[i] / x;
             }
-            return (p / q);
+            return p / q;
         }
 
         public static double Gamma(double x) {
             double t = x + LanczosGP;
-            return (
-                Global.SqrtTwoPI *
-                Math.Pow(t / Math.E, x - 0.5) * LanczosExpG *
-                Sum(x)
-            );
+            return Global.SqrtTwoPI * Math.Pow(t / Math.E, x - 0.5) * LanczosExpG * Sum(x);
         }
 
         public static Complex Gamma (Complex z) {
             Complex t = z + LanczosGP;
-            return (
-                Global.SqrtTwoPI *
-                ComplexMath.Pow(t / Math.E, z - 0.5) * LanczosExpG *
-                Sum(z)
-            );
+            return Global.SqrtTwoPI * ComplexMath.Pow(t / Math.E, z - 0.5) * LanczosExpG * Sum(z);
         }
 
         public static double LogGamma(double x) {
@@ -195,18 +195,45 @@ namespace Meta.Numerics.Functions
             return (r);
         }
 
+
+        // We want to compute the Pochammer symbol (x)_y = \frac{\Gamma(x + y)}{\Gamma(x)}. Plugging in the Lanczos formula gives
+        //   (x)_y = \left( \frac{x + y + g - 1/2}{e} \right)^{x + y - 1/2} \left( \frac{e}{x + g - 1/2} \right)^{x - 1/2} \frac{S(x + y)}{S(x)}
+        //         = \left( \frac{x + y + g - 1/2}{x + g - 1/2} \right)^{x - 1/2} \left( \frac{ x + y + g - 1/2}{e} \right)^y \frac{S(x + y)}{S(x)}
+        //   \ln (x)_y = (x - 1/2) \ln \left( 1 + \frac{y}{x + g - 1/2} \right) + y \ln \left( \frac{x + y + g - 1/2}{e} \right) \ln \left( \frac{S(x + y)}{S(x)} \right)
+        // As y \rightarrow 0, we expect (x)_y \rightarrow 1 + ~y and \ln (x)_y \rightarrow ~y. We want to get accurate values for deviation from 1 even for very small y.
+        // First term in implicitly proportional to y because log1p(e) ~ e. Second term is explictly proportional to y. We can write S(x + y) / S(x) = 1 + ~y and
+        // therefore all terms are proportional to y.
+
+        public static double LogPochhammer (double x, double y) {
+            double z = x + y;
+            Debug.Assert(x > 0.0);
+            Debug.Assert(z > 0.0);
+            return MoreMath.LogOnePlus(-y * RatioOfSumsResidual(x, y)) + (x - 0.5) * MoreMath.LogOnePlus(y / (x + LanczosGP)) + y * Math.Log((z + LanczosGP) / Math.E);
+        }
+
+        public static double Pochammer (double x, double y) {
+            double z = x + y;
+            Debug.Assert(x > 0.0);
+            Debug.Assert(z > 0.0);
+            return (1.0 - y * RatioOfSumsResidual(x, y)) * Math.Exp((x - 0.5) * MoreMath.LogOnePlus(y / (x + LanczosGP))) * Math.Pow((z + LanczosGP) / Math.E, y);
+        }
+
+        // We could go even further an extract explicit coefficient of y, but this requires reduced versions of log1p and doesn't affect accuracy.
+
+
         // If we just compute Exp( LogGamma(x) + LogGamma(y) - LogGamma(x+y) ) then several leading terms in the sum cancel,
         // potentially introducing cancelation error. So we write out the ratios explicitly and take the opportunity
         // to write the result in terms of some naturally occurring ratios.
 
         public static double Beta(double x, double y) {
+            double z = x + y;
             double tx = x + LanczosGP;
             double ty = y + LanczosGP;
-            double txy = x + y + LanczosGP;
+            double tz = z + LanczosGP;
             return (
                 Global.SqrtTwoPI * LanczosExpGP *
-                Math.Pow(tx / txy, x) * Math.Pow(ty / txy, y) * Math.Sqrt(txy / tx / ty) *
-                Sum(x) * Sum(y) / Sum(x + y)
+                Math.Pow(tx / tz, x) * Math.Pow(ty / tz, y) * Math.Sqrt(tz / tx / ty) *
+                (Sum(x) * Sum(y) / Sum(z))
             );
         }
 
@@ -221,6 +248,17 @@ namespace Meta.Numerics.Functions
                 0.5 * Math.Log(2.0 * Math.PI / txy) + (x - 0.5) * Math.Log(tx / txy) + (y - 0.5) * Math.Log(ty / txy) +
                 Math.Log(LanczosExpGP / Sum(x + y) * Sum(x) * Sum(y))
             );
+        }
+
+        // \frac{x^{\nu}}{\Gamma(\nu + 1)}
+        // Absorbing x^{\nu} into the Lanczos expression deals with many (x, \nu) for which x^{\nu}
+        // overflows or underflows but \frac{x^{\nu}}{\Gamma(\nu + 1)} is representable.
+
+        public static double PowerOverFactorial(double x, double nu) {
+            // Note e^{\nu + g + 1/2} could overflow for \nu ~ 700, but we should be using Stirling instead
+            // of Lanczos for such large \nu.
+            double t = nu + 1.0 + LanczosGP;
+            return Math.Pow(x * Math.E / t, nu + 0.5) / (LanczosExpG * Math.Sqrt(2.0 * Math.PI * x) * Sum(nu + 1.0));
         }
 
     }

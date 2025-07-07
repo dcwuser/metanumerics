@@ -1,310 +1,903 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-
-using TestClassAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
-using TestMethodAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
-using ExpectedExceptionAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.ExpectedExceptionAttribute;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
-
+﻿using FluentAssertions;
 using Meta.Numerics;
-using Meta.Numerics.Functions;
 using Meta.Numerics.Data;
 using Meta.Numerics.Extended;
+using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.SignalProcessing;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Diagnostics;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Security.Policy;
+using System.Xml.Linq;
+using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+using ExpectedExceptionAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.ExpectedExceptionAttribute;
+using TestClassAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
+using TestMethodAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
 
 namespace Test {
 
-    internal interface IDeviateGenerator<T> {
 
-        T GetNext (Random rng);
-
-    }
-
- 
     [TestClass]
     public class FutureTest {
 
-        public double InverseErfcDlmf (double x) {
+        public static void BadFirstPass (IEnumerable<double> xs, out int n, ref double m, out double c2, out double c3) {
 
-            double u = -2.0 / Math.Log(Math.PI * x * x * Math.Log(1 / x));
-            double v = Math.Log(Math.Log(1 / x)) - 2.0 + Math.Log(Math.PI);
+            n = 0;
+            //m = 0.5;
 
-            double a2 = v / 8.0;
-            double a3 = -(v * v + 6.0 * v - 6.0) / 32.0;
-            double a4 = (4.0 * v * v * v + 27.0 * v * v + 108.0 * v - 300.0) / 384.0;
-
-            Console.WriteLine($"    t2={a2 * u * u} t3={a3 * u * u * u}");
-
-            return (1.0 + a2 * u * u + a3 * u * u * u + a4 * u * u * u * u) / Math.Sqrt(u);
-
-        }
-
-        public double InverseErfcBlair2(double x) {
-
-            double t = -Math.Log(Math.Sqrt(Math.PI) * x);
-            double u = 0.5 * Math.Log(t);
-
-            return Math.Sqrt(t - u +
-                1.0 / (2.0 * t) * (u - 1.0 +
-                1.0 / (4.0 * t) * ((2.0 * u - 6.0) * u + 7.0 ) )
-            /*   1.0 / (6.0 * t) * (((8.0 * u - 42.0) * u + 102.0) * u - 107.0 ) ) ) */
-            /* 1.0 / (4.0 * t) * ( 24.0 * u * u * u * u - 184.0 * u * u * u + 696.0 * u * u - 1488.0 * u + 1489.0 ) ) ) ) */
-            );
+            c2 = 0.0;
+            c3 = 0.0;
+            foreach (double x in xs) {
+                n++;
+                double z = x - m;
+                double z2 = z * z;
+                double z3 = z * z2;
+                c2 += z2;
+                c3 += z3;
+            }
+            c2 /= n;
+            c3 /= n;
 
         }
 
-        public double InverseErfcBlair3 (double x) {
+        public static void BadFirstPassPlusCorrection(IEnumerable<double> xs, out int n, out double m, out double c2, out double c3) {
 
-            double t = -Math.Log(Math.Sqrt(Math.PI) * x);
-            double u = 0.5 * Math.Log(t);
+            m = 0.5;
+            BadFirstPass(xs, out n, ref m, out c2, out c3);
 
-            return Math.Sqrt(t - u +
-                1.0 / (2.0 * t) * (u - 1.0 +
-                1.0 / (4.0 * t) * ((2.0 * u - 6.0) * u + 7.0 +
-                1.0 / (6.0 * t) * (((8.0 * u - 42.0 ) * u + 102.0 ) * u - 107.0 ) ) )
-                /* 1.0 / (4.0 * t) * ( 24.0 * u * u * u * u - 184.0 * u * u * u + 696.0 * u * u - 1488.0 * u + 1489.0 ) ) ) ) */
-            );
-
-        }
-
-        public double InverseErfcBlair4(double x) {
-
-            double t = -Math.Log(Math.Sqrt(Math.PI) * x);
-            double u = 0.5 * Math.Log(t);
-
-            return Math.Sqrt(t - u +
-                1.0 / (2.0 * t) * (u - 1.0 +
-                1.0 / (4.0 * t) * ((2.0 * u - 6.0) * u + 7.0 +
-                1.0 / (6.0 * t) * (((8.0 * u - 42.0) * u + 102.0) * u - 107.0 +
-                1.0 / (4.0 * t) * (24.0 * u * u * u * u - 184.0 * u * u * u + 696.0 * u * u - 1488.0 * u + 1489.0))))
-            );
+            double delta_m = 0.0;
+            foreach (double x in xs) {
+                double z = x - m;
+                delta_m += z;
+            }
+            delta_m /= n;
+            c3 += 3.0 * c2 * delta_m;
+            c2 -= 1.0 * MoreMath.Sqr(delta_m);
+            m += delta_m;
 
         }
 
-        private static double InverseErfcAsymptoticExpansion(double x) {
 
-            double t = -Math.Log(Math.Sqrt(Math.PI) * x);
-            double u = Math.Log(t);
+        public static void NaiveTwoPass (IEnumerable<double> xs, out int n, out double m, out double c2, out double c3, out double c4) {
 
-            // Leading order
-            double s = t - 0.5 * u;
+            n = 0;
+            m = 0.0;
 
-            // 1st correction
-            double tPower = t;
-            s += (1.0 / 4.0 * u - 1.0 / 2.0) / tPower;
+            foreach (double x in xs) {
+                n++;
+                m += x;
+            }
+            m /= n;
 
-            // 2nd correction
-            tPower *= t;
-            s += ((1.0 / 16.0 * u - 3.0 / 8.0) * u + 7.0 / 8.0) / tPower;
+            c2 = 0.0;
+            c3 = 0.0;
+            c4 = 0.0;
+            foreach (double x in xs) {
+                double z = x - m;
+                double z2 = z * z;
+                c2 += z2;
+                c3 += z * z2;
+                c4 += z2 * z2;
+            }
+            c2 /= n;
+            c3 /= n;
+            c4 /= n;
+
+        }
+
+        public static double[] CorrectionPass (IEnumerable<double> values, ref double mean, int maxMoment) {
+
+            int n = 0;
+            double delta = 0.0;
+            double[] centralMoments = new double[maxMoment + 1];
+            foreach (double value in values) {
+                n++;
+                double z = value - mean;
+                delta += z;
+                double zPower = z;
+                for (int r = 2; r <= maxMoment; r++) {
+                    zPower *= z;
+                    centralMoments[r] += zPower;
+                }
+            }
+            delta /= n;
+            for (int r = 2; r <= maxMoment; r++) centralMoments[r] /= n;
+
+            for (int r = maxMoment; r >= 3; r--) {
+                centralMoments[r] += r * delta * (0.5 * (r - 1) * centralMoments[r - 2] * delta - centralMoments[r - 1]);
+            }
+            centralMoments[3] += delta * (2.0 * MoreMath.Sqr(delta) - 3.0 * centralMoments[2]);
+            centralMoments[2] -= MoreMath.Sqr(delta);
+            return centralMoments;
+        }
+
+
+        // Suppose we have computed central moments based on a value of the mean m (which will we suppose to be slightly wrong).
+        //   c_r = n^{-1} \sum_i (x_i - m)^r
+        // We will then find
+        //   c_1 = ( n^{-1} \sum_i x_i - m ) \ne 0 = \delta m
+        // is a correction to the mean. The true mean is m + \delta m.
+
+        // We can then use Taylor expansion to get corrections to all the other moments.
+        //   \frac{\partial c_r}{\partial m} = -r n^{-1} \sum_i (x_i - m)^{r-1} = -r c_{r-1}
+        //   \frac{\partial^2 c_r}{\partial m^2} = r(r-1) n^{-1} \sum_i (x_i - m)^{r-2} = r(r-1) c_{r-2}
+        // So for any r > 3, to 2nd order in (\delta m),
+        //   \delta c_r = -r c_{r-1}  (\delta m) + 1/2 r(r-1) c_{r-2} (\delta m)^2 = (\delta m) [ 1/2 r (r-1) c_{r-2} (\delta m) - r c_{r-1} ]
+
+        // For r = 2 or 3, c_1 = (\delta m) appears, which messes with the relative order of terms
+        //   \delta c_2 = -2 c_1 (\delta m) + c_0 (\delta m)^2 = -2 (\delta m)^2 + (\delta m)^2 = - (\delta m)^2
+        //   \delta c_3 = -3 c_2 (\delta m) + 3 c_1 (\delta m)^2 - 1 c_0 (\delta m)^3 = -3 c_2 (\delta m) + 3 (\delta m)^3 - (\delta m)^3 = (\delta m) [ 2 (\delta m)^2 - 3 c_2 ]
+
+        public static void CorrectionPass (IEnumerable<double> xs, out int n, ref double m, out double c2, out double c3, out double c4) {
+
+            n = 0;
+
+            // Compute moments assuming the original m
+            c2 = 0.0;
+            c3 = 0.0;
+            c4 = 0.0;
+            double delta_m = 0.0;
+            foreach (double x in xs) {
+                n++;
+                double z = x - m;
+                double z2 = z * z;
+                delta_m += z;
+                c2 += z2;
+                c3 += z * z2;
+                c4 += z2 * z2;
+            }
+            delta_m /= n;
+            c2 /= n;
+            c3 /= n;
+            c4 /= n;
+
+            // Add corrections based on computed delta_m
+            // They must be ordered higher to lower moments, since original lower moments appear in corrections to higher
+            c4 += delta_m * (6.0 * c2 * delta_m - 4.0 * c3);
+            c3 += delta_m * (2.0 * MoreMath.Sqr(delta_m) - 3.0 * c2);
+            c2 -= MoreMath.Sqr(delta_m);
+            m += delta_m;
+
+        }
+
+        public static void KahanCorrectionPass(IEnumerable<double> xs, out int n, ref double m, out double c2, out double c3, out double c4) {
+
+            n = 0;
+
+            // Compute moments assuming original m
+            c2 = 0.0;
+            c3 = 0.0;
+            c4 = 0.0;
+            double delta_m = 0.0;
+            double delta_m_correction = 0.0;
+            foreach (double x in xs) {
+                n++;
+                double z = x - m;
+                delta_m = KahanSum(delta_m, z, ref delta_m_correction);
+                double z2 = z * z;
+                c2 += z2;
+                c3 += z * z2;
+                c4 += z2 * z2;
+            }
+            delta_m /= n;
+            c2 /= n;
+            c3 /= n;
+            c4 /= n;
+
+            // Add corrections
+            c4 += delta_m * (6.0 * c2 * delta_m - 4.0 * c3);
+            c3 += delta_m * (2.0 * MoreMath.Sqr(delta_m) - 3.0 * c2);
+            c2 -= MoreMath.Sqr(delta_m);
+            m += delta_m;
+
+        }
+
+        public static void DoubleDoubleMoments(IEnumerable<double>xs, out int n, out double m, out double c2, out double c3, out double c4) {
+
+            n = 0;
+            DoubleDouble m_dd = DoubleDouble.Zero;
+
+            foreach (double x in xs) {
+                n++;
+                m_dd += x;
+            }
+            m_dd /= n;
+
+            DoubleDouble c2_dd = DoubleDouble.Zero;
+            DoubleDouble c3_dd = DoubleDouble.Zero;
+            DoubleDouble c4_dd = DoubleDouble.Zero;
+
+            foreach (double x in xs) {
+                DoubleDouble z = x - m_dd;
+                DoubleDouble z2 = z * z;
+                c2_dd += z2;
+                c3_dd += z * z2;
+                c4_dd += z2 * z2;
+            }
+
+            m = (double) m_dd;
+            c2 = (double) c2_dd / n;
+            c3 = (double) c3_dd / n;
+            c4 = (double) c4_dd / n;
+
+        }
+
+        public static void ThreePass(IEnumerable<double> xs, out int n, out double m, out double c2, out double c3, out double c4) {
+
+            n = 0;
+            m = 0.0;
+
+            foreach (double x in xs) {
+                n++;
+                m += x;
+            }
+            m /= n;
+
+            double delta_m = 0.0;
+            foreach (double x in xs) delta_m += (x - m);
+            m += delta_m / n;
+
+            c2 = 0.0;
+            c3 = 0.0;
+            c4 = 0.0;
+            foreach (double x in xs) {
+                double z = x - m;
+                double z2 = z * z;
+                c2 += z2;
+                c3 += z * z2;
+                c4 += z2 * z2;
+            }
+            c2 /= n;
+            c3 /= n;
+            c4 /= n;
+        }
+
+
+        public static void NaiveMeng (IEnumerable<double> xs, out int n, out double m, out double c2, out double c3, out double c4) {
+
+            n = 0;
+            m = 0.0;
+            c2 = 0.0;
+            c3 = 0.0;
+            c4 = 0.0;
+            foreach (double x in xs) {
+                n++;
+                double d = x - m;
+                double e = d / n;
+                m += e;
+                double ddme = d * (d - e);
+                c2 += ddme;
+                c3 += -3.0 * e * c2 + ddme * (d + e);
+                c4 += -e * (4.0 * c3 + 6.0 * e * c2) + ddme * (e * e + d * e + d * d);
+            }
+            c2 /= n;
+            c3 /= n;
+            c4 /= n;
+        }
+
+        // In experiments it looks to me like the Kahan summation does a lot to improve m,
+        // does less to improve c2, and does very little to improve higher moments.
+        // Probably because more noisy operations are performed to compute what is being added to higher moments.
+        // Because of this, we only do Kahan for m and c2.
+
+        public static void KahanMeng(IEnumerable<double> xs, out int n, out double m, out double c2, out double c3, out double c4) {
+
+            n = 0;
+            m = 0.0;
+            c2 = 0.0;
+            c3 = 0.0;
+            c4 = 0.0;
+
+            double m_correction = 0.0;
+            double c2_correction = 0.0;
+
+            foreach (double x in xs) {
+                n++;
+                double d = x - m;
+                double e = d / n;
+                m = KahanSum(m, e, ref m_correction);
+                double ddme = d * (d - e);
+                c2 = KahanSum(c2, ddme, ref c2_correction);
+
+                c3 += -3.0 * e * c2 + ddme * (d + e);
+                c4 += -e * (4.0 * c3 + 6.0 * e * c2) + ddme * (e * e + d * e + d * d);
+            }
+            c2 /= n;
+            c3 /= n;
+            c4 /= n;
+        }
+
+        public static void RunningMean(IEnumerable<double> xs, out int n, out double m) {
+            n = 0;
+            m = 0.0;
+            foreach (double x in xs) {
+                n++;
+                m += (x - m) / n;
+            }
+        }
+
+        public static void KahanRunningMean (IEnumerable<double> xs, out int n, out double m) {
+
+            n = 0;
+            m = 0.0;
+            double c = 0.0;
             
-            // 3rd correction
-            tPower *= t;
-            s += (((1.0 / 48.0 * u - 7.0 / 32.0) * u + 17.0 / 16.0) * u - 107.0 / 48.0) / tPower;
-
-            // 4th correction
-            tPower *= t;
-            s += ((((1.0 / 128.0 * u - 23.0 / 192.0) * u + 29.0 / 32.0) * u - 31.0 / 8.0 ) * u + 1489.0 / 192.0) / tPower;
-
-            return (Math.Sqrt(s));
-
-        }
-
-
-        [TestMethod]
-        public void TestInverseErfcExpansion () {
-
-            for (double y = 32.0; y < 1.0E8; y *= 32.0) {
-
-                double x = 1.0 / y;
-
-                double v = AdvancedMath.InverseErfc(x);
-                double ed = InverseErfcDlmf(x) - v;
-                double e2 = InverseErfcBlair2(x) - v;
-                double e3 = InverseErfcBlair3(x) - v;
-                double e4 = InverseErfcBlair4(x) - v;
-                double ee = InverseErfcAsymptoticExpansion(x) - v;
-
-                Console.WriteLine($"{y} d={ed} b2={e2} b3={e3} b4={e4} {ee}");
-
+            foreach (double x in xs) {
+                n++;
+                double z = (x - m) / n;
+                m = KahanSum(m, z, ref c);
             }
 
+            // Naive mean needs 1 flop per cycle
+            // Naive running mean needs 3 flops per cycle
+            // Kahan running mean needs 6 flops per cycle
+
         }
 
+        // https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+        // Kahan suggested a way to do a running sum more accurately by keeping track of a correction term
+        // This is essentially FastTwoSum with a re-used error term
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double KahanSum (double augend, double addend, ref double correction) {
+            double y = addend - correction;
+            double sum = augend + y;
+            correction = (sum - augend) - y;
+            return sum;
+        }
+
+        public static void NaiveWelford (IEnumerable<double> xs, out int n, out double m, out double c2) {
+
+            n = 0;
+            m = 0.0;
+            c2 = 0.0;          
+            foreach (double x in xs) {
+                n++;
+                double z = x - m;
+                m += z / n;
+                c2 += z * (x - m);
+            }
+            c2 /= n;
+        }
 
         [TestMethod]
-        public void PowBenchmark () {
+        public void OnlineMomentsTest () {
 
             Random rng = new Random(1);
-
-            Stopwatch s1 = Stopwatch.StartNew();
-            for (int i = 0; i < 10000000; i++) {
-                double x = 2.0 * rng.NextDouble();
-                double y = Math.Pow(x, 17);
-            }
-            s1.Stop();
-
-            Stopwatch s2 = Stopwatch.StartNew();
-            for (int i = 0; i < 10000000; i++) {
-                double x = 2.0 * rng.NextDouble();
-                double y = MoreMath.Pow(x, 17);
-            }
-            s2.Stop();
-        }
-
-        //[TestMethod]
-        public void ErfMaxError () {
-
-            Random rng = new Random(1);
-            Double absMax = 0.0;
-            Double relMax = 0.0;
-            Double xAbsMax = Double.NaN;
-            Double xRelMax = Double.NaN;
-            for (int i = 0; i < 1000000; i++) {
-
-                Double x0 = rng.NextDouble() * 100.0;
-                Double y0 = AdvancedMath.Erf(x0);
-
-                DoubleDouble x1 = (DoubleDouble) x0;
-                DoubleDouble y1 = AdvancedDoubleDoubleMath.Erf(x1);
-
-                Double abs = (Double) DoubleDouble.Abs(y0 - y1);
-                if (abs > absMax) {
-                    absMax = abs;
-                    xAbsMax = x0;
-                }
-                Double rel = abs / y0;
-                if (rel > relMax) {
-                    relMax = rel;
-                    xRelMax = x0;
-                }
-            }
-
-        }
-
-      
-        [TestMethod]
-        public void EigenExample () {
-
-            SquareMatrix A = new SquareMatrix(new double[,] {
-                { 1, 2 },
-                { 3, 4 }
-            });
-
-            ComplexEigendecomposition E = A.Eigendecomposition();
-            for (int i = 0; i < E.Dimension; i++) {
-                Console.WriteLine(E.Eigenpairs[i].Eigenvalue);
-            }
-
-        }
-
-        //[TestMethod]
-        public void FranciaShapiro () {
-
-            Random rng = new Random(1);
-            NormalDistribution d = new NormalDistribution();
-            Sample w = new Sample();
-
-            int n = 2048;
-            for (int i = 0; i < 1000000; i++) {
-
-                Sample s = new Sample();
-                for (int j = 0; j < n; j++) {
-                    s.Add(d.GetRandomValue(rng));
-                }
-                TestResult r = s.ShapiroFranciaTest();
-                w.Add(r.Statistic.Value);
-            }
-
-        }
-
-        //[TestMethod]
-        public void StandardDeviation () {
-
-            Random rng = new Random(21212);
-            ContinuousDistribution d = new ExponentialDistribution();
-            //ContinuousDistribution d = new NormalDistribution();
-            //ContinuousDistribution d = new ChiSquaredDistribution(2.0);
-            Sample a = new Sample();
-            Sample b = new Sample();
-
-            int n = 100;
-            for (int i = 0; i < 10000; i++) {
-                Sample s = new Sample();
-                for (int j = 0; j < n; j++) {
-                    s.Add(d.GetRandomValue(rng));
-                }
-                a.Add(s.PopulationStandardDeviation.Value);
-                double c2 = s.CentralMoment(2);
-                double c4 = s.CentralMoment(4);
-                double u = Math.Sqrt(c2 * n / (n - 1)) * (1.0 + (c4 - c2 * c2) / (8.0 * c2 * c2 * n));
-                b.Add(u);
-            }
-
-        }
-
-        [TestMethod]
-        public void SkewnessVariance () {
-
-            int n = 100;
-            Random rng = new Random(11111);
-            //ContinuousDistribution d = new BetaDistribution(0.75, 0.25);
-            ContinuousDistribution d = new NormalDistribution();
-            double C2 = d.CentralMoment(2);
-            double C3 = d.CentralMoment(3);
-            double C4 = d.CentralMoment(4);
-            double C5 = d.CentralMoment(5);
-            double C6 = d.CentralMoment(6);
-            double V2 = (C4 - C2 * C2) / n;
-            double V3 = (C6 - C3 * C3 + 9.0 * C2 * C2 * C2 - 6.0 * C4 * C2) / n;
-            double V23 = (C5 - 4.0 * C3 * C2) / n;
-            double VG = (V3 + 9.0 / 4.0 * MoreMath.Sqr(C3 / C2) * V2 - 3.0 * (C3 / C2) * V23) / (C2 * C2 * C2);
-
-            Sample us = new Sample();
-            Sample k2s = new Sample();
-            Sample k3s = new Sample();
-            Sample g0s = new Sample();
-            Sample g1s = new Sample();
+            SummaryStatistics summary = new SummaryStatistics();
+            List<double> values = new List<double>();
+            ContinuousDistribution distribution = new LogisticDistribution(1.0, 4.0);
 
             for (int i = 0; i < 10000; i++) {
-                Sample s = new Sample();
+                double value = distribution.GetRandomValue(rng); //.NextDouble();
+                values.Add(value);
+                summary.Add(value);
+            }
+
+            int n;
+            double m, c2, c3, c4;
+
+            values.Count.Should().Be(summary.Count);
+            values.Mean().Should().BeNearly(summary.Mean);
+            values.Variance().Should().BeNearly(summary.Variance);
+            //values.CentralMoment(3).Should().BeNearly(summary.ThirdCentralMoment);
+
+            /*
+            double mean = 0.0;
+            foreach (double value in values) mean += value;
+            mean = mean / values.Count;
+
+            double meanDelta = 0.0;
+            foreach (double value in values) meanDelta += (value - mean);
+            meanDelta = meanDelta / values.Count;
+            double meanPrime = mean + meanDelta;
+
+            double meanPrimeDelta = 0.0;
+            foreach (double value in values) meanPrimeDelta += (value - meanPrime);
+            meanPrimeDelta = meanPrimeDelta / values.Count;
+            double meanPrimePrime = meanPrime + meanPrimeDelta;
+
+            double c3 = 0.0;
+            foreach (double value in values) c3 += MoreMath.Pow(value - meanPrime, 3);
+            c3 = c3 / summary.Count;
+
+            UncertainValue m = values.PopulationMean();
+            m.Value.Should().BeNearly(summary.PopulationMean.Value);
+            m.Uncertainty.Should().BeNearly(summary.PopulationMean.Uncertainty);
+            */
+
+        }
+
+        [TestMethod]
+        public void CountGroupsThree () {
+
+            int n = 5;
+
+            int allEqual = 0;
+            int twoEqual = 0;
+            int allDifferent = 0;
+
+            for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
-                    s.Add(d.GetRandomValue(rng));
+                    for (int k = 0; k < n; k++) {
+
+                        if ((i == j) && (j ==k)) {
+                            allEqual++;
+                            continue;
+                        }
+
+                        if ((i == j) || (i == k) || (j == k)) {
+                            twoEqual++;
+                            continue;
+                        }
+
+                        allDifferent++;
+                    }
                 }
-                double u = s.Skewness;
-                us.Add(u);
+            }
 
-                double c2 = s.CentralMoment(2);
-                double c3 = s.CentralMoment(3);
-                double c4 = s.CentralMoment(4);
-                double c5 = s.CentralMoment(5);
-                double c6 = s.CentralMoment(6);
-                double v2 = (c4 - c2 * c2) / (n - 1);
-                double v3 = (c6 - c3 * c3 + 9.0 * c2 * c2 * c2 - 6.0 * c4 * c2) / (n - 1);
-                double v32 = (c5 - 4.0 * c3 * c2) / (n - 1);
+            Console.WriteLine($"All equal {allEqual} predicted {n}");
+            Console.WriteLine($"Two equal {twoEqual} predicted {3 * n * (n - 1)}");
+            Console.WriteLine($"All different {allDifferent} predicted {n * (n - 1) * (n - 2)}");
+        }
 
-                double k2 = c2 * n / (n - 1);
-                double k3 = c3 * n * n / (n - 1) / (n - 2);
-                double g0 = k3 / Math.Pow(k2, 1.5);
-                double r = c3 / c2;
-                double g1 = g0 * (1.0 - 15.0 / 8.0 * v2 / (c2 * c2) + 3.0 / 2.0 * v32 / (c3 * c2));
-                double vg = g0 * g0 * (v3 / (c3 * c3) - 3.0 * v32 / (c3 * c2) + 9.0 / 4.0 * v2 / (c2 * c2));
 
+        [TestMethod]
+        public void CountGroupsFour() {
+
+            int n = 6;
+
+            int allEqual = 0;
+            int threeEqual = 0;
+            int twoPairs = 0;
+            int twoEqual = 0;
+            int allDifferent = 0;
+
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    for (int k = 0; k < n; k++) {
+                        for (int l = 0; l < n; l++) {
+
+                            if ((i == j) && (j == k) && (k == l)) {
+                                allEqual++;
+                                continue;
+                            }
+
+                            if (((i == j) && (j == k)) || ((i == j) && (j == l)) || ((i == k) && (k == l)) || ((j ==k) && (k ==l))) {
+                                threeEqual++;
+                                continue;
+                            }
+
+                            if (((i == j) && (k == l)) || ((i == k) && (j == l)) || ((i == l) && (j == k))) {
+                                twoPairs++;
+                                continue;
+                            }
+
+                            if ((i ==j) || (i == k) || (i == l) || (j == k) || (j == l) || (k == l)) {
+                                twoEqual++;
+                                continue;
+                            }
+
+                            allDifferent++;
+
+                        }
+
+                    }
+                }
+            }
+
+            Console.WriteLine($"All equal {allEqual} predicted {n}");
+            Console.WriteLine($"Two pairs {twoPairs} predicted {3 * n * (n - 1)}");
+            Console.WriteLine($"Three equal {threeEqual} predicted {4 * n * (n - 1)}");
+            Console.WriteLine($"Two equal {twoEqual} predicted {6 * n * (n - 1) * (n - 2)}");
+            Console.WriteLine($"All different {allDifferent} predicted {n * (n - 1) * (n - 2) * (n - 3)}");
+        }
+
+        public void TestSample (ContinuousDistribution distribution, IReadOnlyList<double> sample) {
+
+            Meta.Numerics.Statistics.TestResult result = sample.KolmogorovSmirnovTest(distribution);
+            if (result.Probability < 0.01) throw new InvalidOperationException();
+
+        }
+
+        public void TestDistribution (ContinuousDistribution distribution, Random rng, int n) {
+
+            List<double> sample = distribution.GetRandomValues(rng, n).ToList();
+            TestSample(distribution, sample);
+
+        }
+
+        [TestMethod]
+        public void MeanZeroMomentsTest () {
+
+            ContinuousDistribution[] distributions = new ContinuousDistribution[] {
+                //new NormalDistribution(),
+                //new LogisticDistribution(),
+                //new UniformDistribution(Interval.FromEndpoints(-1.0, 1.0)),
+                new TriangularDistribution(-3.0, 1.0, 2.0)
+            };
+
+            int n = 10;
+            Random rng = new Random(271828);
+
+            foreach (ContinuousDistribution xDistribution in distributions) {
+
+                xDistribution.Mean.Should().Be(0.0);
+
+                List<double> m_32 = new List<double>();
+                List<double> m_31_21_11 = new List<double>();
+                List<double> m_22_12 = new List<double>();
+                List<double> m_31_13 = new List<double>();
+                List<double> m_21_14 = new List<double>();
+                List<double> m_16 = new List<double>();
+
+                for (int i = 0; i < 100000; i++) {
+                    List<double> xSample = xDistribution.GetRandomValues(rng, n).ToList();
+
+                    double m1 = xSample.RawMoment(1);
+                    double m2 = xSample.RawMoment(2);
+                    double m3 = xSample.RawMoment(3);
+                    double m4 = xSample.RawMoment(4);
+                    double m6 = xSample.RawMoment(6);
+
+                    m_32.Add(m3 * m3);
+                    m_31_21_11.Add(m3 * m2 * m1);
+                    m_22_12.Add(m2 * m2 * m1 * m1);
+                    m_31_13.Add(m3 * m1 * m1 * m1);
+                    m_21_14.Add(m2 * m1 * m1 * m1 * m1);
+                    m_16.Add(m1 * m1 * m1 * m1 * m1 * m1);
+                }
+
+                double C_61 = xDistribution.CentralMoment(6);
+                double C_41_21 = xDistribution.CentralMoment(4) * xDistribution.CentralMoment(2);
+                double C_32 = MoreMath.Sqr(xDistribution.CentralMoment(3));
+                double C_23 = MoreMath.Pow(xDistribution.CentralMoment(2), 3);
+
+                m_32.PopulationMean().ConfidenceInterval(0.99).Contains((C_61 + (n - 1) * C_32) / n).Should().BeTrue();
+                m_31_21_11.PopulationMean().ConfidenceInterval(0.99).Contains((C_61 + (n-1) * (C_41_21 + C_32)) / MoreMath.Sqr(n)).Should().BeTrue();
+                m_22_12.PopulationMean().ConfidenceInterval(0.99).Contains((C_61 + (n - 1) * (3.0 * C_41_21 + 2.0 * C_32) + (n - 1) * (n - 2) * C_23) / MoreMath.Pow(n, 3)).Should().BeTrue();
+                m_31_13.PopulationMean().ConfidenceInterval(0.99).Contains((C_61 + (n - 1) * (3.0 * C_41_21 + 1.0 * C_32)) / MoreMath.Pow(n, 3)).Should().BeTrue();
+                m_21_14.PopulationMean().ConfidenceInterval(0.99).Contains((C_61 + (n - 1) * (7.0 * C_41_21 + 4.0 * C_32) + 3 * (n - 1) * (n - 2) * C_23) / MoreMath.Pow(n, 4)).Should().BeTrue();
+                m_16.PopulationMean().ConfidenceInterval(0.99).Contains((C_61 + (n-1) * (15.0 * C_41_21 + 10.0 * C_32) + 15 * (n-1) * (n-2) * C_23) / MoreMath.Pow(n, 5)).Should().BeTrue();
+            }
+
+        }
+
+        [TestMethod]
+        public void KStatisticTest() {
+
+            ContinuousDistribution[] distributions = new ContinuousDistribution[] {
+                new NormalDistribution(1.0, 2.0),
+                new ExponentialDistribution(3.0),
+                new UniformDistribution(Interval.FromEndpoints(-4.0, 5.0)),
+                new BetaDistribution(2.0 / 3.0, 4.0),
+                new GammaDistribution(5.0, 6.0)
+            };
+
+            foreach (ContinuousDistribution distribution in distributions) {
+                KStatisticTest(distribution);
+            }
+
+        }
+
+        // If I changed any factor n to n+1 or n-1, I saw this fail
+        // Also, estimators don't agree for LogNormal cumulants; check generator / cumulant formulas
+        // Finally, k3 estimator variance failed for Exponential and Gamma
+
+        public void KStatisticTest(ContinuousDistribution xDistribution) {
+
+            int n = 6;
+            //int n = 20;
+
+            Random rng = new Random(271828);
+
+            List<double> m1s = new List<double>();
+            List<double> m2s = new List<double>();
+            List<double> m3s = new List<double>();
+            List<double> m4s = new List<double>();
+
+            List<double> m1vs = new List<double>();
+            List<double> m2vs = new List<double>();
+            List<double> m3vs = new List<double>();
+            List<double> m4vs = new List<double>();
+
+            List<double> c2s = new List<double>();
+            List<double> c3s = new List<double>();
+            List<double> c4s = new List<double>();
+
+            List<double> c22s = new List<double>();
+            List<double> c2c4s = new List<double>();
+            List<double> c23s = new List<double>();
+            List<double> c32s = new List<double>();
+
+            List<double> h2s = new List<double>();
+            List<double> h3s = new List<double>();
+            List<double> h4s = new List<double>();
+
+            List<double> h2vs = new List<double>();
+            List<double> h3vs = new List<double>();
+               
+            List<double> k1s = new List<double>();
+            List<double> k2s = new List<double>();
+            List<double> k3s = new List<double>();
+            List<double> k4s = new List<double>();
+
+            List<double> k1vs = new List<double>();
+            List<double> k2vs = new List<double>();
+
+            List<double> s0s = new List<double>();
+            List<double> s1s = new List<double>();
+            List<double> s2s = new List<double>();
+
+            List<double> g0s = new List<double>();
+            List<double> g1s = new List<double>();
+
+
+            for (int i = 0; i < 10000; i++) {
+
+                List<double> xSample = xDistribution.GetRandomValues(rng, n).ToList();
+
+                double m1 = xSample.RawMoment(1);
+                double m2 = xSample.RawMoment(2);
+                double m3 = xSample.RawMoment(3);
+                double m4 = xSample.RawMoment(4);
+
+                m1s.Add(m1);
+                m2s.Add(m2);
+                m3s.Add(m3);
+                m4s.Add(m4);
+
+                double m1v = (m2 - m1 * m1) / (n - 1);
+                if (m1v < 0.0) throw new InvalidOperationException();
+                double m2v = (m4 - m2 * m2) / (n - 1);
+                if (m2v < 0.0) throw new InvalidOperationException();
+                double m3v = (xSample.RawMoment(6) - m3 * m3) / (n - 1);
+                if (m3v < 0.0) throw new InvalidOperationException();
+                double m4v = (xSample.RawMoment(8) - m4 * m4) / (n - 1);
+                if (m4v < 0.0) throw new InvalidOperationException();
+
+                m1vs.Add(m1v);
+                m2vs.Add(m2v);
+                m3vs.Add(m3v);
+                m4vs.Add(m4v);
+
+                double c2 = xSample.CentralMoment(2);
+                double c3 = xSample.CentralMoment(3);
+                double c4 = xSample.CentralMoment(4);
+                double c6 = xSample.CentralMoment(6);
+
+                c2s.Add(c2);
+                c3s.Add(c3);
+                c4s.Add(c4);
+
+                c22s.Add(c2 * c2);
+                c23s.Add(c2 * c2 * c2);
+                c2c4s.Add(c2 * c4);
+                c32s.Add(c3 * c3);
+
+                double h2 = c2 * n / (n - 1);
+                double h3 = c3 * n * n / (n - 1) / (n - 2);
+                double h4 = ((n * n - 2 * n + 3) * c4 - 3 * (2 * n - 3) * c2 * c2) * n / (n - 1) / (n - 2) / (n - 3);
+
+                h2s.Add(h2);
+                h3s.Add(h3);
+                h4s.Add(h4);
+
+                double h2v = (c4 - c2 * c2 * (n * n - 3) / MoreMath.Sqr(n - 1)) * n / (n - 2) / (n - 3);
+                if (h2v < 0.0) Console.WriteLine($"{xDistribution.GetType().Name} h2v={h2v}");
+                double h3v = (c6 * (n * n - n + 4) / (n * n)
+                    - 3.0 * c4 * c2 * (2 * n * n * n - 5 * n * n - 5 * n + 20) / (n * n * (n - 1))
+                    - c3 * c3 * (MoreMath.Pow(n, 5) + 4 * MoreMath.Pow(n, 4) - 41 * n * n * n + 40 * n * n + 100 * n - 80) / (n * n * (n - 1) * (n-1) * (n - 2))
+                    + 3.0 * c2 * c2 * c2 * (3 * n * n - 15 * n + 20) / (n * (n - 1))) * n * n * n / (n-2) / (n-3) / (n-4) / (n-5);
+                if (h3v < 0.0) Console.WriteLine($"{xDistribution.GetType().Name} h3v={h3v}");
+
+                h2vs.Add(h2v);
+                h3vs.Add(h3v);
+
+                double k1 = xSample.Mean();
+                double k2 = xSample.CentralMoment(2) * n / (n - 1);
+                double k3 = xSample.CentralMoment(3) * n * n / (n - 1) / (n - 2);
+                double k4 = ((n + 1) * xSample.CentralMoment(4) - 3.0 * (n - 1) * MoreMath.Sqr(xSample.CentralMoment(2))) * n * n / (n - 1) / (n - 2) / (n - 3);
+
+                k1s.Add(k1);
                 k2s.Add(k2);
                 k3s.Add(k3);
-                g0s.Add(g0);
-                g1s.Add(g1);
+                k4s.Add(k4);
 
-                //double v = (u * u / n) * (v3 / (c3 * c3) + 9.0 / 4.0 * v2 / (c2 * c2) - 3.0 * v32 / (c3 * c2));
+                double k1v = k2 / n;
+                if (k1v < 0.0) throw new InvalidOperationException();
+                double k2v = ((n - 1) * k4 + 2 * n * k2 * k2) / n / (n + 1);
+                if (k2v < 0.0) Console.WriteLine($"{xDistribution.GetType().Name} k2v={k2v}");
+
+                k1vs.Add(k1v);
+                k2vs.Add(k2v);
+
+                double s0 = Math.Sqrt(h2);
+                double s1 = s0 * (1.0 + (h4 - h2 * h2) / (8.0 * n * h2 * h2));
+
+                s0s.Add(s0);
+                s1s.Add(s1);
+
+                double g0 = c3 / Math.Pow(c2, 3.0 / 2.0);
+
+                g0s.Add(g0);
+
+            }
+
+            // Sample raw moments should on average agree with underlying raw mmoments
+            m1s.PopulationMean().ConfidenceInterval(0.99).Contains(xDistribution.RawMoment(1)).Should().BeTrue();
+            m2s.PopulationMean().ConfidenceInterval(0.99).Contains(xDistribution.RawMoment(2)).Should().BeTrue();
+            m3s.PopulationMean().ConfidenceInterval(0.99).Contains(xDistribution.RawMoment(3)).Should().BeTrue();
+            m4s.PopulationMean().ConfidenceInterval(0.99).Contains(xDistribution.RawMoment(4)).Should().BeTrue();
+
+            // The variances of the sample raw moments (which are also predictors of the population raw moments) should agree with the predictions from the population raw moments
+            m1s.PopulationVariance().ConfidenceInterval(0.99).Contains(xDistribution.CentralMoment(2) / n).Should().BeTrue();
+            m2s.PopulationVariance().ConfidenceInterval(0.99).Contains((xDistribution.RawMoment(4) - MoreMath.Sqr(xDistribution.RawMoment(2))) / n).Should().BeTrue();
+            // For an exponential distribution an n = 4 these failed
+            //if (!(xDistribution is ExponentialDistribution)) {
+                m3s.PopulationVariance().ConfidenceInterval(0.99).Contains((xDistribution.RawMoment(6) - MoreMath.Sqr(xDistribution.RawMoment(3))) / n).Should().BeTrue();
+                m4s.PopulationVariance().ConfidenceInterval(0.99).Contains((xDistribution.RawMoment(8) - MoreMath.Sqr(xDistribution.RawMoment(4))) / n).Should().BeTrue();
+            //} // Are our raw moments for exponential distribution wrong? Doesn't look like it. Maybe random generator? Maybe has to do with exponentiation/log expanding/compressing scale.
+
+            // The variances of the sample raw moments (which are also predictors of the underlying raw moments) should agree with the predictions from the sample raw moments
+            m1s.PopulationVariance().ConfidenceInterval(0.99).Contains(m1vs.Mean()).Should().BeTrue();
+            m2s.PopulationVariance().ConfidenceInterval(0.99).Contains(m2vs.Mean()).Should().BeTrue();
+            m3s.PopulationVariance().ConfidenceInterval(0.99).Contains(m3vs.Mean()).Should().BeTrue();
+            m4s.PopulationVariance().ConfidenceInterval(0.99).Contains(m4vs.Mean()).Should().BeTrue();
+
+            // Sample central moments should on average have values predicted from underlying central moments
+            c2s.PopulationMean().ConfidenceInterval(0.99).Contains(xDistribution.CentralMoment(2) * (n-1) / n).Should().BeTrue();
+            c3s.PopulationMean().ConfidenceInterval(0.99).Contains(xDistribution.CentralMoment(3) * (n-1) * (n-2) / MoreMath.Sqr(n)).Should().BeTrue();
+            c4s.PopulationMean().ConfidenceInterval(0.99).Contains(((n * n - 3 * n + 3) * xDistribution.CentralMoment(4) + 3 * (2 * n - 3) * MoreMath.Sqr(xDistribution.CentralMoment(2))) * (n-1) / MoreMath.Pow(n, 3)).Should().BeTrue();
+
+            // Sample central moments should exhibit the variance predicted from the underlying central moments
+            c2s.PopulationVariance().ConfidenceInterval(0.99).Contains((
+                (n - 1) * xDistribution.CentralMoment(4)
+                - (n - 3) * MoreMath.Sqr(xDistribution.CentralMoment(2)))
+                * (n - 1) / MoreMath.Pow(n, 3)).Should().BeTrue();
+            c3s.PopulationVariance().ConfidenceInterval(0.99).Contains((
+                xDistribution.CentralMoment(6)
+                - 3 * xDistribution.CentralMoment(4) * xDistribution.CentralMoment(2) * (2 * n - 5) / (n - 1)
+                - MoreMath.Sqr(xDistribution.CentralMoment(3)) * (n - 10) / (n - 1)
+                + 3 * MoreMath.Pow(xDistribution.CentralMoment(2), 3) * (3 * n * n - 12 * n + 20) / (n - 1) / (n - 2))
+                * (n - 1) * (n - 1) * (n - 2) * (n - 2) / MoreMath.Pow(n, 5)).Should().BeTrue();
+
+            // Products of central moments should agree with predictions from underlying moments
+            c22s.PopulationMean().ConfidenceInterval(0.99).Contains(((n - 1) * xDistribution.CentralMoment(4) + (n * n - 2 * n + 3) * MoreMath.Sqr(xDistribution.CentralMoment(2))) * (n - 1) / MoreMath.Pow(n, 3)).Should().BeTrue();
+            c32s.PopulationMean().ConfidenceInterval(0.99).Contains((
+                xDistribution.CentralMoment(6)
+                - 3 * xDistribution.CentralMoment(4) * xDistribution.CentralMoment(2) * (2 * n - 5) / (n - 1)
+                + MoreMath.Sqr(xDistribution.CentralMoment(3)) * (n * n - 2 * n + 10) / (n - 1)
+                + 3 * MoreMath.Pow(xDistribution.CentralMoment(2), 3) * (3 * n * n - 12 * n + 20) / (n - 1) / (n - 2))
+                * (n - 1) * (n - 1) * (n - 2) * (n - 2) / MoreMath.Pow(n, 5)).Should().BeTrue();
+
+            // Estimated central moments shouild on average agree with underlying central moments
+            h2s.PopulationMean().ConfidenceInterval(0.99).Contains(xDistribution.CentralMoment(2)).Should().BeTrue();
+            h3s.PopulationMean().ConfidenceInterval(0.99).Contains(xDistribution.CentralMoment(3)).Should().BeTrue();
+            h4s.PopulationMean().ConfidenceInterval(0.99).Contains(xDistribution.CentralMoment(4)).Should().BeTrue();
+
+            // Variance of the estimated central moments should exhibit the variance predicted from the underlyling central moments
+            h2s.PopulationVariance().ConfidenceInterval(0.99).Contains((
+                xDistribution.CentralMoment(4)
+                - MoreMath.Sqr(xDistribution.CentralMoment(2)) * (n - 3) / (n - 1)) / n).Should().BeTrue();
+            h3s.PopulationVariance().ConfidenceInterval(0.99).Contains((
+                xDistribution.CentralMoment(6)
+                - 3 * xDistribution.CentralMoment(4) * xDistribution.CentralMoment(2) * (2 * n - 5) / (n-1)
+                - MoreMath.Sqr(xDistribution.CentralMoment(3)) * (n - 10) / (n -1 )
+                + 3 * MoreMath.Pow(xDistribution.CentralMoment(2), 3) * (3 * n * n - 12 * n + 20) / (n-1) / (n-2)) / n).Should().BeTrue();
+
+            // Variance of the estimated central moments should on average agree with the estimated variance
+            h2s.PopulationVariance().ConfidenceInterval(0.99).Contains(h2vs.Mean()).Should().BeTrue();
+            h3s.PopulationVariance().ConfidenceInterval(0.99).Contains(h3vs.Mean()).Should().BeTrue();
+
+            // Estimated cumulants should on average agree with the underlying cumulants 
+            k1s.PopulationMean().ConfidenceInterval(0.99).Contains(xDistribution.Cumulant(1)).Should().BeTrue();
+            k2s.PopulationMean().ConfidenceInterval(0.99).Contains(xDistribution.Cumulant(2)).Should().BeTrue();
+            k3s.PopulationMean().ConfidenceInterval(0.99).Contains(xDistribution.Cumulant(3)).Should().BeTrue();
+            k4s.PopulationMean().ConfidenceInterval(0.99).Contains(xDistribution.Cumulant(4)).Should().BeTrue();
+
+            // Variance of estimated cumulants should agree with predictions from cumulants of underlying distribution
+            k1s.PopulationVariance().ConfidenceInterval(0.99).Contains(xDistribution.Cumulant(2) / n).Should().BeTrue();
+            k2s.PopulationVariance().ConfidenceInterval(0.99).Contains(xDistribution.Cumulant(4) / n + 2.0 * MoreMath.Sqr(xDistribution.Cumulant(2)) / (n - 1)).Should().BeTrue();
+            if (!(xDistribution is ExponentialDistribution)) {
+                k3s.PopulationVariance().ConfidenceInterval(0.999).Contains(xDistribution.Cumulant(6) / n + 9.0 * (xDistribution.Cumulant(4) * xDistribution.Cumulant(2) + MoreMath.Sqr(xDistribution.Cumulant(3))) / (n - 1) + 6.0 * MoreMath.Pow(xDistribution.Cumulant(2), 3) * n / (n - 1) / (n - 2)).Should().BeTrue();
+            }
+
+            // Variance of estimated cumulants should agree, on average, with predictions from sample-estimated cumulants
+            k1s.PopulationVariance().ConfidenceInterval(0.99).Contains(k1vs.Mean()).Should().BeTrue();
+            k2s.PopulationVariance().ConfidenceInterval(0.99).Contains(k2vs.Mean()).Should().BeTrue();
+
+            // Square root approximations should get increasingly close
+            // Observed: s1 does move us closer, but still consistently too small
+            Math.Abs(s1s.Mean() - xDistribution.StandardDeviation).Should().BeLessThan(Math.Abs(s0s.Mean() - xDistribution.StandardDeviation));
+
+            if (xDistribution.Skewness != 0.0) {
+                double dg0 = Math.Abs(g0s.Mean() - xDistribution.Skewness);
+                double dg = 33.0 / 8.0
+                    + 15.0 / 8.0 * xDistribution.CentralMoment(4) / MoreMath.Sqr(xDistribution.CentralMoment(2))
+                    - 3.0 / 2.0 * xDistribution.CentralMoment(5) / (xDistribution.CentralMoment(3) * xDistribution.CentralMoment(2));
+                double dg1 = Math.Abs(g0s.Mean() - xDistribution.Skewness * (1.0 + dg / n));
             }
 
         }
 
         [TestMethod]
-        public void NonlinearRegressionLinearRegressionAgreementTest () {
+        public void SamplingTest () {
+
+            int n = 4;
+
+            ContinuousDistribution xDistribution = new NormalDistribution(0.0, 1.0);
+            ContinuousDistribution sDistribution = new ChiDistribution(n - 1);
+
+            Random rng = new Random(314159);
+
+            List<double> sValues = new List<double>();
+            for (int i = 0; i < 10000; i++) {
+
+                List<double> xValues = xDistribution.GetRandomValues(rng, n).ToList();
+
+                double m = xValues.Mean();
+
+                double v = 0.0;
+                foreach (double xValue in xValues) v += MoreMath.Sqr(xValue - m);
+                sValues.Add(Math.Sqrt(v));
+            }
+
+            var result = sValues.KolmogorovSmirnovTest(sDistribution);
+
+        }
+
+        [TestMethod]
+        public void TestGenerator () {
+
+            //ContinuousDistribution distribution = new UniformDistribution(Interval.FromEndpoints(0.0, 1.0E-4));
+            //ContinuousDistribution distribution = new ExponentialDistribution(1.0E-4);
+            ContinuousDistribution distribution = new BetaDistribution(2.0, 3.0 / 2.0);
+            Random rng = new Random(1);
+            TestDistribution(distribution, rng, 1000000);
+
+        }
+
+        // Temme and Gil https://arxiv.org/pdf/1311.0681.pdf
+        // See also https://arxiv.org/pdf/1306.1754.pdf for D(a, x) = x^a e^{-x} / \Gamma(a + 1)
+
+        public double MarcumQ(double m, double x, double y) {
+
+            double xPower = 1.0;
+            double q = AdvancedMath.RightRegularizedGamma(m, y);
+            double s = q;
+            for (int k = 1; k < 100; k++) {
+                double s_old = s;
+                xPower *= x / k;
+                //q = AdvancedMath.RightRegularizedGamma(m + k, y);
+                q += Math.Pow(y, m) * Math.Exp(-y) / AdvancedMath.Gamma(m + 1);
+                s += xPower * q;
+                if (s == s_old) {
+                    return Math.Exp(-x) * s;
+                }
+                m += 1;
+            }
+
+            throw new NonconvergenceException();
+        }
+
+        [TestMethod]
+        public void TestMarcum () {
+
+            MarcumQ(1, 10.0, 10.0);
+
+        }
+
+
+        [TestMethod]
+        public void NonlinearRegressionLinearRegressionAgreementTest() {
 
             double[] x = new double[] { 1.0, 3.0, 3.0, 5.0 };
             double[] y = new double[] { 2.0, 2.0, 4.0, 4.0 };
@@ -320,7 +913,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void TwoWayAnova () {
+        public void TwoWayAnova() {
 
             List<double>[,] samples = new List<double>[,] {
                 { new List<double> {54, 49, 59, 39, 55 }, new List<double> {25, 29, 47, 26, 28 } },
@@ -334,7 +927,7 @@ namespace Test {
 
 
         [TestMethod]
-        public void BinomialInverseCdf () {
+        public void BinomialInverseCdf() {
 
             foreach (int n in new int[] { 2, 8, 32, 128 }) {
                 foreach (double p in new double[] { 0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99 }) {
@@ -406,7 +999,7 @@ namespace Test {
 
 
         [TestMethod]
-        public void NegativeBinomialInverseCdf () {
+        public void NegativeBinomialInverseCdf() {
 
             foreach (double r in new double[] { 0.1, 2, 34 }) {
                 foreach (double p in new double[] { 0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99 }) {
@@ -487,7 +1080,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void PoissonInverseCdf () {
+        public void PoissonInverseCdf() {
 
             foreach (double mu in new double[] { 0.1, 2.0, 30.0 }) {
                 PoissonDistribution d = new PoissonDistribution(mu);
@@ -544,160 +1137,33 @@ namespace Test {
 
         }
 
-        [TestMethod]
-        public void Seperate () {
+    }
 
-            int m = 3;
+    internal static class BesselAsymptotic {
 
-            int n = 100;
-            double[] y = new double[n];
+        public static double ScaledBesselISeries (double nu, double z) {
 
-            Random rng = new Random(1);
-            for (int i = 0; i < y.Length; i++) {
-                y[i] = 1.0 + 2.0 * i / n - 1.0 * i * i / n / n + (i % 3 - 1.0) + rng.NextDouble();
-            }
+            double t = MoreMath.Hypot(1.0, z);
+            double y = 1.0 / (z + t) + Math.Log(z / (1.0 + t));
 
-            // define moving average filter
-            double[] f;
-            if (m % 2 == 0) {
-                f = new double[m + 1];
-                for (int i = 1; i < m; i++) f[i] = 1.0 / m;
-                f[0] = 1.0 / m / 2.0;
-                f[m] = 1.0 / m / 2.0;
-            } else {
-                f = new double[m];
-                for (int i = 0; i < m; i++) f[i] = 1.0 / m;
-            }
+            double p = 1.0 / t;
+            double pSquared = p * p;
+            double s = 1.0;
+            double u1 = p / 24.0 * (3.0 - 5.0 * pSquared);
+            double s1 = u1 / nu;
+            s += s1;
+            double u2 = pSquared / 1152.0 * (81.0 - 462 * pSquared + 385.0 * pSquared * pSquared);
+            double s2 = u2 / (nu * nu);
+            s += s2;
+            double u3 = p * pSquared / 414720.0 * (30375.0 - 369603.0 * pSquared + 765765 * pSquared * pSquared - 425425.0 * pSquared * pSquared * pSquared);
+            double s3 = u3 / (nu * nu * nu);
+            s += s3;
+            double u4 = pSquared * pSquared / 39813120.0 * (4465125.0 - 94121676.0 * pSquared + 349922430.0 * pSquared * pSquared - 446185740.0 * pSquared * pSquared * pSquared + 185910725.0 * pSquared * pSquared * pSquared * pSquared);
+            double s4 = u4 / (nu * nu * nu * nu);
+            s += s4;
 
-            // extract the trend
-            double[] t = new double[y.Length - f.Length];
-            for (int i = 0; i < t.Length; i++) {
-                for (int j = 0; j < f.Length; j++) {
-                    t[i] += y[i + j] * f[j];
-                }
-            }
+            return Math.Exp(nu * y) / Math.Sqrt(2.0 * Math.PI * nu * t) * s;
 
-            // extract the seasonal cycle
-            double[] s = new double[m];
-            int[] c = new int[m];
-            int si = 0;
-            for (int i = 0; i < t.Length; i++) {
-                s[si % m] += y[i + m / 2] - t[i];
-                c[si % m]++;
-                si++;
-            }
-            for (int i = 0; i < s.Length; i++) s[i] = s[i] / c[i];
-
-            // extract the remainder
-            double[] z = new double[t.Length];
-            for (int i = 0; i < z.Length; i++) {
-                z[i] = y[i + m / 2] - t[i] - s[i % m];
-            }
-
-        }
-
-        [TestMethod]
-        public void Filter () {
-
-
-            double[] y = new double[] { 3.0, 1.5, 2.0, 4.5, 3.0, 3.5, 6.0, 4.5, 5.0, 7.5, 6.0, 6.5, 9.0, 7.5, 8.0 };
-            //double[] y = new double[] { 1.0, 2.0, 3.0, 4.0, 2.0, 3.0, 4.0, 5.0, 3.0, 4.0, 5.0, 6.0, 4.0, 5.0, 6.0, 7.0 };
-
-            double[] f = new double[] { 1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0 };
-            //double[] f = new double[] { 0.25, 0.5, 0.25 };
-            //double[] f = new double[] { 0.25, 0.25, 0.25, 0.25 };
-
-            double[] z = new double[y.Length - f.Length];
-            for (int i = 0; i < z.Length; i++) {
-                for (int j = 0; j < f.Length; j++) {
-                    z[i] += y[i + j] * f[j];
-                }
-            }
-
-            Complex[] yp = new Complex[y.Length + f.Length];
-            for (int i = 0; i < y.Length; i++) yp[i] = y[i];
-
-            Complex[] fp = new Complex[yp.Length];
-            for (int i = 0; i < f.Length; i++) fp[i] = f[i];
-
-            FourierTransformer fft = new FourierTransformer(yp.Length);
-            Complex[] ypt = fft.Transform(yp);
-            Complex[] fpt = fft.Transform(fp);
-
-            Complex[] zpt = new Complex[fft.Length];
-            for (int i = 0; i < zpt.Length; i++) {
-                zpt[i] = ypt[i] * fpt[i];
-            }
-            Complex[] zp = fft.InverseTransform(zpt);
-
-        }
-
-        [TestMethod]
-        public void PowerSpectrum () {
-
-            TimeSeries series = new TimeSeries(1.0, 2.0, 1.0, 0.0, 1.0, 2.0, 1.0, 0.0, 1.0, 2.0, 1.0, 0.0);
-            //TimeSeries series = new TimeSeries(0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0);
-            double[] ps = series.PowerSpectrum();
-
-        }
-
-
-        [TestMethod]
-        public void BesselUaeTest () {
-            //BesselUae.Evaluate(10000.0, 10000.0);
-            //BesselUae.EvaluateZeta(z, out zeta, out phi);
-        }
-
-        // We want to compute \ln\left(\frac{\pi}{\sin(\pi z)}\right). Define \sigma = \sin(\pi z), so
-        //   \ln\left(\frac{\pi}{\sin(\pi z)}\right) = \ln\pi - \ln\sigma
-        // For z = x + i y, 
-        //   \sigma = \sin(\pi x) \cosh(\pi y) + i \cos(\pi x) \sinh(\pi y)
-        
-        // For the magnitude
-        //   \sigma^2 = \sin^2(\pi x) \cosh^2(\pi y) + \cos^2(\pi x) \sinh^2(\pi y)
-        // Using standard formulas to express \cos^2 from \sin^2 and \cosh^2 from \sinh^2, this becomes
-        //   \sigma^2 = \sin^2(\pi x) + \sinh^2(\pi y)
-        // This form is useful, but it still has problems for large |y|. \sinh will overflow for
-        // |y| > ~200, but \ln \sigma is representable for pretty much the entire range of y.
-
-        private static Complex LogGammaReflectionTerm (Complex z) {
-
-            double y = Math.PI * z.Im;
-
-            Complex s = new Complex(MoreMath.SinPi(z.Re) * Math.Cosh(y), MoreMath.CosPi(z.Re) * Math.Sinh(y));
-            Complex logs = ComplexMath.Log(Math.PI / s);
-
-            double m;
-            if (Math.Abs(y) < 256.0) {
-                m = Math.Log(Math.PI / MoreMath.Hypot(MoreMath.SinPi(z.Re), Math.Sinh(y)));
-            } else {
-                // For large |y|, sinh(y) overflows, but it's log doesn't.
-                // This expression is not absolutely equal to the above, but the neglected e^{-|y|} 
-                // corrections are supressed by hundreds of orders of magnitude.
-                m = Math.Log(2.0 * Math.PI) - Math.Abs(y) - 0.5 * MoreMath.LogOnePlus(MoreMath.Sqr(MoreMath.SinPi(z.Re) / Math.Sinh(y)));
-            }
-            double a = -Math.Atan2(MoreMath.CosPi(z.Re) * Math.Tanh(y), MoreMath.SinPi(z.Re));
-
-            // I'm not super-pleased with this implementation, first because it requires multiple evaluations of different
-            // hyperbolic trig functions and second just because it looks a mess. 
-
-            return (logs);
-            //return (new Complex(m, a));
-        }
-
-        private static Complex NegativeLogGamma (Complex z) {
-            Debug.Assert(z.Re <= 0.0);
-
-            Complex p = LogGammaReflectionTerm(z);
-
-            Complex q = AdvancedComplexMath.LogGamma(1.0 - z);
-
-            // Hulle's formula disagrees with our at exact half-integer z.Re
-            // This could be a problem for large z.Re, for which a large cancelation is implied.
-            Complex r = new Complex(0.0, 2.0 * Math.PI * Math.Floor(0.5 * (z.Re + 0.5)));
-            if (z.Im < 0.0) r = -r;
-
-            return (p - q + r);
         }
 
     }

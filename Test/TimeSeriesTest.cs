@@ -5,8 +5,8 @@ using System.Linq;
 
 using TestClassAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
 using TestMethodAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
-using ExpectedExceptionAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.ExpectedExceptionAttribute;
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+using FluentAssertions;
 
 using Meta.Numerics;
 using Meta.Numerics.Data;
@@ -21,17 +21,18 @@ namespace Test {
 
         // For red noise, use AR(1) with mu = 0
 
-        private TimeSeries GenerateAR1TimeSeries (double alpha, double mu, double sigma, int count, int seed = 1) {
-            TimeSeries series = new TimeSeries();
-            Random rng = new Random(seed);
+        private IEnumerable<double> GenerateAR1TimeSeries (double alpha, double mu, double sigma) {
+            return GenerateAR1TimeSeries(alpha, mu, sigma, new Random(1));
+        }
+
+        private IEnumerable<double> GenerateAR1TimeSeries (double alpha, double mu, double sigma, Random rng) {
             NormalDistribution d = new NormalDistribution(0.0, sigma);
             double previousDeviation = d.GetRandomValue(rng) / Math.Sqrt(1.0 - alpha * alpha);
-            for (int i = 0; i < count; i++) {
+            while (true) {
                 double currentDeviation = alpha * previousDeviation + d.GetRandomValue(rng);
-                series.Add(mu + currentDeviation);
+                yield return mu + currentDeviation;
                 previousDeviation = currentDeviation;
             }
-            return (series);
         }
 
         // For white noise, use MA(1) with beta = mu = 0
@@ -89,11 +90,11 @@ namespace Test {
 
             TimeSeries series = new TimeSeries(7.0, 5.0, 3.0, 2.0);
 
-            Sample sample = series.AsSample();
+            List<double> sample = series.ToList();
 
             Assert.IsTrue(series.Count == sample.Count);
-            Assert.IsTrue(series.Mean == sample.Mean);
-            Assert.IsTrue(series.Autocovariance(0) == sample.Variance);
+            Assert.IsTrue(series.Mean == sample.Mean());
+            Assert.IsTrue(series.Autocovariance(0) == sample.Variance());
 
             Assert.IsTrue(sample.Contains(series[1]));
 
@@ -143,9 +144,9 @@ namespace Test {
             double mu = -0.4;
             double sigma = 0.2;
 
-            TimeSeries ar1 = GenerateAR1TimeSeries(alpha, mu, sigma, 100, 314159);
-            TimeSeriesPopulationStatistics ar1ps = ar1.PopulationStatistics();
-            Assert.IsTrue(ar1ps.Mean.ConfidenceInterval(0.99).ClosedContains(mu));
+            List<double> ar1 = GenerateAR1TimeSeries(alpha, mu, sigma, new Random(314159)).Take(100).ToList();
+            TimeSeriesPopulationStatistics ar1ps = ar1.SeriesPopulationStatistics();
+            Assert.IsTrue(ar1ps.Mean.ConfidenceInterval(0.99).Contains(mu));
 
             // For AR1, autocovariance decreases by a factor \alpha for each additional lag step.
             double ar1v = sigma * sigma / (1.0 - alpha * alpha);
@@ -238,9 +239,10 @@ namespace Test {
             data.AddColumn<SymmetricMatrix>("covariance");
             data.AddColumn<double>("p");
 
+            Random rng = new Random(1);
             for (int i = 0; i < 128; i++) {
 
-                TimeSeries series = GenerateAR1TimeSeries(alpha, mu, sigma, n, n * i + 271828);
+                double[] series = GenerateAR1TimeSeries(alpha, mu, sigma, rng).Take(n).ToArray();
 
                 AR1FitResult result = series.FitToAR1();
 
@@ -314,7 +316,7 @@ namespace Test {
         [TestMethod]
         public void LjungBoxRejection () {
 
-            TimeSeries series = GenerateAR1TimeSeries(0.3, 0.2, 0.1, 100);
+            List<double> series = GenerateAR1TimeSeries(0.3, 0.2, 0.1).Take(100).ToList();
             TestResult result = series.LjungBoxTest(10);
             Assert.IsTrue(result.Probability < 0.05);
 

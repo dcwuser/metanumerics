@@ -14,11 +14,33 @@ using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 using System.Data.Common;
 using System.Runtime.InteropServices;
+using FluentAssertions;
 
 namespace Test {
 
     [TestClass]
     public class BivariateSampleTest {
+
+        [TestMethod]
+        public void CovarianceCorrelationRelatioship () {
+
+            // Make a random bivariate sample
+            int n = 10;
+            Random rng = new Random(1);
+            ContinuousDistribution xDistribution = new NormalDistribution(1.0, 2.0);
+            ContinuousDistribution yDistribution = new LognormalDistribution();
+            List<double> x = xDistribution.GetRandomValues(rng, n).ToList();
+            List<double> y = yDistribution.GetRandomValues(rng, n).ToList();
+
+            // Compute correlation, covariance, and variances
+            double xyCov = Bivariate.Covariance(x, y);
+            double xVar = Univariate.Variance(x);
+            double yVar = Univariate.Variance(y);
+            double r = Bivariate.CorrelationCoefficient(x, y);
+
+            r.Should().BeNearly(xyCov / Math.Sqrt(xVar * yVar));
+
+        }
 
         [TestMethod]
         public void LinearLogisticRegressionSimple () {

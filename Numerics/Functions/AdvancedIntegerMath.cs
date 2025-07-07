@@ -65,11 +65,33 @@ namespace Meta.Numerics.Functions {
             if (n < 0) {
                 throw new ArgumentOutOfRangeException(nameof(n));
             } else if (n < factorialTable.Length) {
-				return( Math.Log( (double) factorialTable[n] ) );
+				return Math.Log((double) factorialTable[n]);
 			} else {
-				return( AdvancedMath.LogGamma(n+1) );
+				return AdvancedMath.LogGamma(n + 1);
 			}
 		}
+
+#if FUTURE
+
+        /// <param name="n">The base, which must be non-negative.</param>
+        /// <param name="m">The power, which must be non-negative.</param>
+        /// <returns>The value of n<sup>(m)</sup> = n (n + 1) ... (n + m - 1).</returns>
+        public static double RisingFactorial (int n, int m) {
+            if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+            if (m < 0) throw new ArgumentOutOfRangeException(nameof(m));
+            if (m == 0) return 1.0;
+            if (n == 0) return 0.0;
+            int ell = n + m;
+            Debug.Assert(n > 0);
+            Debug.Assert(ell > 0);
+            if (n <= factorialTable.Length && ell <= factorialTable.Length) {
+                return factorialTable[ell - 1] / factorialTable[n - 1];
+            } else {
+                return Math.Round(Math.Exp(AdvancedMath.LogGamma(ell) - AdvancedMath.LogGamma(n)));
+            }
+        }
+
+#endif
 
         /// <summary>
         /// Computes a binomial coefficient.

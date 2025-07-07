@@ -193,7 +193,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than two values.</exception>
-        /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="sample"/> contains non-positive values.</exception>
         public static ExponentialFitResult FitToSample (IReadOnlyList<double> sample) {
             return Univariate.FitToExponential(sample);
         }

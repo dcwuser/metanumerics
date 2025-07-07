@@ -106,7 +106,27 @@ namespace Meta.Numerics.Statistics.Distributions {
         internal virtual int InverseLeftProbability(int ka, int kb, double P) {
 
             Debug.Assert(ka <= kb);
+            Debug.Assert(LeftExclusiveProbability(ka) <= P);
+            Debug.Assert(P <= LeftInclusiveProbability(kb));
 
+            for (int n = 0; n < 32; n++) {
+
+                Debug.Assert(ka <= kb);
+                if (ka == kb) return ka;
+
+                int k = (ka + 1 == kb) ? ka : MoreMath.Midpoint(ka, kb);
+                //int k = (ka + 1 == kb) ? ka : (ka + kb) / 2;
+                Debug.Assert(ka <= k && k <= kb);
+                if (P > LeftInclusiveProbability(k)) {
+                    ka = k + 1;
+                } else {
+                    kb = k;
+                }
+
+            }
+
+            throw new NonconvergenceException();
+            /*
             int n = 0;
             while (ka != kb) {
                 n++;
@@ -119,7 +139,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (n > 32) throw new NonconvergenceException();
             }
             return (ka);
-
+            */
         }
 
         /// <summary>
@@ -132,7 +152,7 @@ namespace Meta.Numerics.Statistics.Distributions {
             if (f is null) throw new ArgumentNullException(nameof(f));
 
             // If the support is small enough, just take the expectation directly.
-            if (Support.Width <= 32) return ExpectationValue(f, Support.LeftEndpoint, Support.RightEndpoint);
+            if (Support.Width <= 48) return ExpectationValue(f, Support.LeftEndpoint, Support.RightEndpoint);
 
             // If the support is big (e.g. all 2 billion integers), naive direct computation
             // will be too slow. 
@@ -164,18 +184,25 @@ namespace Meta.Numerics.Statistics.Distributions {
                 if (kMin == this.Minimum) break;
             }
             */
-            
+
+            // This is a little subtle. Marching across the entire support is a very
+            // bad idea for infinite supports, and often also for finite but large supports.
+            // Marching symmetrically out from the centroid one bin at a time can
+            // cause prematrue termination, and doing so seperately for left and right
+            // can too. We try marching out a small number of bins at a time.
+
+            const int w = 3;
 
             double s_left = 0.0;
-            for (int i = i0 - 1; i >= Support.LeftEndpoint; i--) {
+            for (int i = i0 - 1; i >= Support.LeftEndpoint; i -= w) {
                 double s_left_old = s_left;
-                s_left += f(i) * ProbabilityMass(i);
+                s_left += ExpectationValue(f, Math.Max(i - w + 1, Support.LeftEndpoint), i);
                 if (s_left == s_left_old) break;
             }
             double s_right = 0.0;
-            for (int i = i0 + 1; i <= Support.RightEndpoint; i++) {
+            for (int i = i0 + 1; i <= Support.RightEndpoint; i += w) {
                 double s_right_old = s_right;
-                s_right += f(i) * ProbabilityMass(i);
+                s_right += ExpectationValue(f, i, Math.Min(i + w - 1, Support.RightEndpoint));
                 if (s_right == s_right_old) break;
             }
             return (s_left + s_right + f(i0) * ProbabilityMass(i0));

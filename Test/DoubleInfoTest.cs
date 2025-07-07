@@ -1,6 +1,7 @@
 ﻿using System;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FluentAssertions;
 
 using Meta.Numerics.Extended;
 
@@ -13,18 +14,19 @@ namespace Test {
         public void DoubleInfoZeroProperties () {
 
             DoubleInfo zero = new DoubleInfo(0.0);
-            Assert.IsTrue(zero.IsFinite);
-            Assert.IsFalse(zero.IsInfinite);
-            Assert.IsFalse(zero.IsNaN);
-            Assert.IsFalse(zero.IsNegative);
-            Assert.IsFalse(zero.IsSubnormal); // This is debatable.
-            Assert.IsTrue(zero.IsZero);
+            zero.IsFinite.Should().BeTrue();
+            zero.IsInfinite.Should().BeFalse();
+            zero.IsNaN.Should().BeFalse();
+            zero.IsNegative.Should().BeFalse();
+            zero.IsSubnormal.Should().BeFalse(); // This is debatable.
+            zero.IsZero.Should().BeTrue();
 
-            Assert.IsTrue(zero.Value == 0.0);
-            Assert.IsTrue(zero.Next.Value == Double.Epsilon);
+            zero.Value.Should().Be(0.0);
+            zero.Next.Value.Should().Be(Double.Epsilon);
 
-            Assert.IsTrue(zero.Exponent == 0); // This isn't mathematically necessary, but IEEE754 requires it.
-            Assert.IsTrue(zero.Mantissa == 0L);
+            zero.Exponent.Should().Be(0);
+            zero.Mantissa.Should().Be(0L);
+
         }
 
         [TestMethod]
@@ -88,6 +90,22 @@ namespace Test {
             Assert.IsFalse(epsilon.IsZero);
 
             Assert.IsTrue(epsilon.Value == Double.Epsilon);
+
+        }
+
+        public void DoubleInfoPowersOfTwo () {
+
+            DoubleInfo tp1022 = new DoubleInfo(Math.Pow(2.0, 1022));
+            tp1022.Mantissa.Should().Be(1);
+            tp1022.Exponent.Should().Be(1022);
+
+            DoubleInfo tm1022 = new DoubleInfo(Math.Pow(2.0, -1022));
+            tm1022.Mantissa.Should().Be(1);
+            tm1022.Exponent.Should().Be(-1022);
+
+            DoubleInfo tm1023 = new DoubleInfo(Math.Pow(2.0, -1023));
+            tm1022.Mantissa.Should().Be(1);
+            tm1022.Exponent.Should().Be(-1023);
 
         }
 

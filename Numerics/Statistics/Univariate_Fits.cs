@@ -19,7 +19,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The best fit parameters.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
-        /// <exception cref="InvalidOperationException">Not all the entries in <paramref name="sample" /> lie between zero and one.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Not all the entries in <paramref name="sample" /> lie between zero and one.</exception>
         public static BetaFitResult FitToBeta (this IReadOnlyList<double> sample) {
             if (sample is null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
@@ -37,7 +37,7 @@ namespace Meta.Numerics.Statistics {
             // these are the (logs of) the geometric means
             double ga = 0.0; double gb = 0.0;
             foreach (double value in sample) {
-                if ((value <= 0.0) || (value >= 1.0)) throw new InvalidOperationException();
+                if ((value <= 0.0) || (value >= 1.0)) throw new ArgumentOutOfRangeException(nameof(sample));
                 ga += Math.Log(value); gb += Math.Log(1.0 - value);
             }
             ga /= sample.Count; gb /= sample.Count;
@@ -94,7 +94,7 @@ namespace Meta.Numerics.Statistics {
         /// <returns>The result of the fit.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than two values.</exception>
-        /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="sample"/> contains non-positive values.</exception>
         public static ExponentialFitResult FitToExponential (this IReadOnlyList<double> sample) {
 
             if (sample is null) throw new ArgumentNullException(nameof(sample));
@@ -102,7 +102,7 @@ namespace Meta.Numerics.Statistics {
 
             // None of the data is allowed to be negative.
             foreach (double value in sample) {
-                if (value < 0.0) throw new InvalidOperationException();
+                if (value < 0.0) throw new ArgumentOutOfRangeException(nameof(sample));
             }
 
             // It's easy to show that the MLE estimator of \mu is the sample mean and that its variance 
@@ -538,15 +538,15 @@ namespace Meta.Numerics.Statistics {
         /// </summary>
         /// <param name="sample">The sample to fit.</param>
         /// <returns>The best fit parameters.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
-        /// <exception cref="InvalidOperationException"><paramref name="sample"/> contains non-positive values.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="sample"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="sample"/> contains non-positive values.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
         public static WeibullFitResult FitToWeibull (this IReadOnlyList<double> sample) {
 
-            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            if (sample is null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 3) throw new InsufficientDataException();
             foreach (double value in sample) {
-                if (value <= 0.0) throw new InvalidOperationException();
+                if (value <= 0.0) throw new ArgumentOutOfRangeException(nameof(sample));
             }
 
             // The log likelihood function is

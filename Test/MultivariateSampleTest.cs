@@ -12,6 +12,7 @@ using Meta.Numerics.Data;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 using Meta.Numerics.Matrices;
+using Meta.Numerics.Functions;
 
 namespace Test {
 
@@ -204,8 +205,14 @@ namespace Test {
             // New multi linear regression code.
             MultiLinearRegressionResult result3 = y.MultiLinearRegression(x);
 
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(result2.Parameters.ValuesVector, result3.Parameters.ValuesVector));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(result2.Parameters.CovarianceMatrix, result3.Parameters.CovarianceMatrix));
+            // Order of parameters is switched, so switch them with a transpose matrix
+            // In future, use a permutation matrix for this
+            SquareMatrix transpose = new SquareMatrix(2);
+            transpose[0, 1] = 1;
+            transpose[1, 0] = 1;
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result2.Parameters.ValuesVector, transpose * result3.Parameters.ValuesVector));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(result2.Parameters.CovarianceMatrix, transpose.Transpose * result3.Parameters.CovarianceMatrix * transpose));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(result2.RSquared, result3.RSquared));
 
         }

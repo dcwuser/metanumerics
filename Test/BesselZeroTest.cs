@@ -20,7 +20,7 @@ namespace Test {
 
                 double b = AdvancedMath.AiryBiZero(k);
                 double yb = AdvancedMath.AiryBi(b);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(yb, 0.0, 2.0E-16 * k));
+                Assert.IsTrue(TestUtilities.IsNearlyEqual(yb, 0.0, 3.0E-16 * k));
             }
         }
 

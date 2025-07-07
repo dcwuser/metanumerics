@@ -346,7 +346,7 @@ namespace Test {
         [TestMethod]
         public void Bug6988 () {
             // due to writing i / n instead of (double) i / n, Sample.LeftProbability was reported as 0 except for the last value
-            Sample s = new Sample(0.0, 1.0, 3.0, 4.0);
+            double[] s = new double[] { 0.0, 1.0, 3.0, 4.0 };
             Assert.IsTrue(TestUtilities.IsNearlyEqual(s.LeftProbability(2.0), 0.5));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(s.InverseLeftProbability(0.5), 2.0));
         }

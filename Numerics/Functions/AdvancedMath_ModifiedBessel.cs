@@ -140,7 +140,7 @@ namespace Meta.Numerics.Functions {
             // Reflect negative nu to positive nu.
             if (nu < 0.0) {
                 if (Math.Round(nu) == nu) {
-                    return (ModifiedBesselI(-nu, x));
+                    return (ModifiedBesselI(-nu, x, scaled));
                 } else {
                     return (ModifiedBesselI(-nu, x) + 2.0 / Math.PI * MoreMath.SinPi(-nu) * ModifiedBesselK(-nu, x));
                 }
@@ -540,6 +540,45 @@ namespace Meta.Numerics.Functions {
 
         }
 
+        // The Skellam probability is
+        //   e^{-(\mu_1 + \mu_2)} ( \frac{\mu_1}{\mu_2} )^{k/2} I_{|k|}(2 \sqrt{\mu_1 \mu_2})
+        // But applying this naively does unnecessary operations and can result in 0 * \infty = NaN.
+        // When |k| is large enough that the I-series can be used, the series fore-factors combine with
+        // the pre-I factors to produce a Poisson probability times a strictly reducing factor times an O(1) factor.
+        // Otherwise the scaling exponential of I can be combined with the pre-factors to produce a 
+
+        internal static double Skellam (double mu1, double mu2, int k) {
+            Debug.Assert(mu1 > 0.0);
+            Debug.Assert(mu2 > 0.0);
+            double pmu = mu1 * mu2;
+            // Since Math.Abs(Int32.MinValue) == Int32.MinValue, we need to fudge it
+            int ak = k == Int32.MinValue ? Int32.MaxValue : Math.Abs(k);
+            if (ak > pmu) {
+                if (k < 0) {
+                    return Math.Exp(-mu1) * AdvancedMath.PoissonProbability(mu2, ak) * ModifiedBesselI_Series2(ak, pmu);
+                } else {
+                    return Math.Exp(-mu2) * AdvancedMath.PoissonProbability(mu1, ak) * ModifiedBesselI_Series2(ak, pmu);
+                }
+            } else {
+                double smu1 = Math.Sqrt(mu1);
+                double smu2 = Math.Sqrt(mu2);
+                return Math.Pow(smu1 / smu2, k) * Math.Exp(-MoreMath.Sqr(smu1 - smu2)) * AdvancedMath.ScaledModifiedBesselI(ak, 2.0 * smu1 * smu2);
+            }
+        }
+
+        private static double ModifiedBesselI_Series2(double nu, double xh2) {
+            double dI = 1.0;
+            double I = dI;
+            for (int k = 1; k < Global.SeriesMax; k++) {
+                double I_old = I;
+                dI = dI * xh2 / (k * (nu + k));
+                I += dI;
+                if (I == I_old) {
+                    return I;
+                }
+            }
+            throw new NonconvergenceException();
+        }
 
         /*
         /// <summary>

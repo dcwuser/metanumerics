@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Linq;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FluentAssertions;
+
 
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
@@ -12,15 +15,16 @@ namespace Test {
     public partial class AdvancedMathTest_Gamma {
 
         [TestMethod]
-        public void GammaRecurrsion () {
+        public void GammaRecurrsion() {
+            // DLMF 5.5.1
             // Limit x to avoid overflow.
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E2, 16)) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(x + 1.0), x * AdvancedMath.Gamma(x)));
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E2).Take(16)) {
+                AdvancedMath.Gamma(x + 1.0).Should().BeNearly(x * AdvancedMath.Gamma(x));
             }
         }
 
         [TestMethod]
-        public void GammaAtNegativeIntegers () {
+        public void GammaAtNegativeIntegers() {
             Assert.IsTrue(Double.IsInfinity(AdvancedMath.Gamma(0.0)));
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
                 Assert.IsTrue(Double.IsInfinity(AdvancedMath.Gamma(-n)));
@@ -28,46 +32,48 @@ namespace Test {
         }
 
         [TestMethod]
-        public void GammaSpecialCases () {
+        public void GammaSpecialCases() {
             // It would be nice to be able to make more of these comparisons exact.
             Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.Gamma(0.0)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(0.5), Math.Sqrt(Math.PI)));
-            Assert.IsTrue(AdvancedMath.Gamma(1.0) == 1.0);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(1.5), Math.Sqrt(Math.PI) / 2.0));
-            Assert.IsTrue(AdvancedMath.Gamma(2.0) == 1.0);
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(3.0), 2.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(4.0), 6.0));
-            Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.Gamma(Double.PositiveInfinity)));
+            AdvancedMath.Gamma(0.5).Should().BeNearly(Math.Sqrt(Math.PI));
+            AdvancedMath.Gamma(1.0).Should().Be(1.0);
+            AdvancedMath.Gamma(1.5).Should().BeNearly(Math.Sqrt(Math.PI) / 2.0);
+            AdvancedMath.Gamma(2.0).Should().Be(1.0);
+            AdvancedMath.Gamma(3.0).Should().Be(2.0);
+            AdvancedMath.Gamma(4.0).Should().BeNearly(6.0);
+            AdvancedMath.Gamma(Double.PositiveInfinity).Should().Be(Double.PositiveInfinity);
         }
 
         [TestMethod]
-        public void GammaExtremeValues () {
-            Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.Gamma(Double.MaxValue)));
-            Assert.IsTrue(Double.IsNaN(AdvancedMath.Gamma(Double.NaN)));
+        public void GammaExtremeValues() {
+            double eps = MoreMath.Pow(2.0, -1022); // Can't use 1.0 / Double.MaxValue because it's subnormal and looses accuracy
+            AdvancedMath.Gamma(eps).Should().Be(1.0 / eps);
+            AdvancedMath.Gamma(Double.MaxValue).Should().Be(Double.PositiveInfinity);
+            AdvancedMath.Gamma(Double.NaN).Should().Be(Double.NaN);
         }
 
         [TestMethod]
-        public void GammaReflection () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E2, 16)) {
+        public void GammaReflection() {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E2).Take(16)) {
                 double GP = AdvancedMath.Gamma(x);
                 double GN = AdvancedMath.Gamma(-x);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(-x * GN * GP, Math.PI / MoreMath.SinPi(x)));
+                (-x * GN * GP).Should().BeNearly(Math.PI / MoreMath.SinPi(x));
             }
         }
 
         [TestMethod]
-        public void GammaDuplication () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E2, 16)) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedMath.Gamma(2.0 * x),
+        public void GammaDuplication() {
+            // DLMF 5.5.5
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 85.0).Take(16)) {
+                AdvancedMath.Gamma(2.0 * x).Should().BeNearly(
                     AdvancedMath.Gamma(x) * AdvancedMath.Gamma(x + 0.5) * Math.Pow(2.0, 2.0 * x - 1.0) / Math.Sqrt(Math.PI)
-                ));
+                );
             }
         }
 
         [TestMethod]
-        public void GammaInequality () {
-            foreach (double x in TestUtilities.GenerateRealValues(2.0, 1.0E2, 16)) {
+        public void GammaInequality() {
+            foreach (double x in TestUtilities.GenerateRealValues(2.0, 1.0E2).Take(16)) {
                 // for x >= 2
                 double lower = Math.Pow(x / Math.E, x - 1.0);
                 double upper = Math.Pow(x / 2.0, x - 1.0);
@@ -77,18 +83,35 @@ namespace Test {
         }
 
         [TestMethod]
-        public void GammaIntegral () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0, 1.0E2, 4)) {
-                Func<double, double> f = delegate (double t) {
-                    return (Math.Pow(t, x - 1.0) * Math.Exp(-t));
-                };
-                Interval r = Interval.FromEndpoints(0.0, Double.PositiveInfinity);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(x), FunctionMath.Integrate(f, r)));
+        public void GammaAndRecriprocalInequality() {
+            // DLMF 5.6.2
+             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2).Take(8)) {
+                Assert.IsTrue(1.0 / AdvancedMath.Gamma(x) + 1.0 / AdvancedMath.Gamma(1.0 / x) <= 2.0);
             }
         }
 
         [TestMethod]
-        public void GammaTrottIdentity () {
+        public void GautschiInequality() {
+            // DLMF 5.6.4
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2).Take(8)) {
+                foreach (double s in TestUtilities.GenerateRealValues(1.0E-2, 1.0).Take(4)) {
+                    double r = AdvancedMath.Gamma(x + 1.0) / AdvancedMath.Gamma(x + s);
+                    r.Should().BeGreaterThan(Math.Pow(x, 1.0 - s));
+                    r.Should().BeLessThan(Math.Pow(x + 1.0, 1.0 - s));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void GammaIntegral() {
+            // DLMF 5.2.1
+            foreach (double x in TestUtilities.GenerateRealValues(1.0, 1.0E2).Take(4)) {
+                FunctionMath.Integrate(t => Math.Exp(-t) * Math.Pow(t, x - 1.0), 0.0, Double.PositiveInfinity).Value.Should().BeNearly(AdvancedMath.Gamma(x));
+            }
+        }
+
+        [TestMethod]
+        public void GammaTrottIdentity() {
             // http://mathworld.wolfram.com/GammaFunction.html
             double G1 = AdvancedMath.Gamma(1.0 / 24.0);
             double G5 = AdvancedMath.Gamma(5.0 / 24.0);
@@ -97,16 +120,16 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual((G1 * G11) / (G5 * G7), Math.Sqrt(3.0) * Math.Sqrt(2.0 + Math.Sqrt(3.0))));
         }
 
-        private double GammaProduct (int r) {
+        private double GammaProduct(int r) {
             double p = 1.0;
             for (int i = 1; i < r; i++) {
-                p *= AdvancedMath.Gamma(((double) i) / r);
+                p *= AdvancedMath.Gamma(((double)i) / r);
             }
             return (p);
         }
 
         [TestMethod]
-        public void GammaProducts () {
+        public void GammaProducts() {
             // https://en.wikipedia.org/wiki/Particular_values_of_the_Gamma_function#Products
             // http://mathworld.wolfram.com/GammaFunction.html
             Assert.IsTrue(TestUtilities.IsNearlyEqual(GammaProduct(3), 2.0 * Math.PI / Math.Sqrt(3.0)));
@@ -115,12 +138,12 @@ namespace Test {
         }
 
         [TestMethod]
-        public void GammaMultiplication () {
+        public void GammaMultiplication() {
             foreach (int k in new int[] { 2, 3, 4 }) {
                 foreach (double z in TestUtilities.GenerateRealValues(1.0E-2, 10.0, 4)) {
                     double p = AdvancedMath.Gamma(z);
                     for (int i = 1; i < k; i++) {
-                        p *= AdvancedMath.Gamma(z + ((double) i) / k);
+                        p *= AdvancedMath.Gamma(z + ((double)i) / k);
                     }
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
                         p, Math.Pow(2.0 * Math.PI, (k - 1) / 2.0) * Math.Pow(k, 0.5 - k * z) * AdvancedMath.Gamma(k * z)
@@ -131,27 +154,24 @@ namespace Test {
 
 
         [TestMethod]
-        public void LogGammaSpecialValues () {
-            Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.LogGamma(0.0)));
-            Assert.IsTrue(AdvancedMath.LogGamma(1.0) == 0.0);
-            Assert.IsTrue(AdvancedMath.LogGamma(2.0) == 0.0);
-            Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.LogGamma(Double.PositiveInfinity)));
+        public void LogGammaSpecialValues() {
+            AdvancedMath.LogGamma(0.0).Should().Be(Double.PositiveInfinity);
+            AdvancedMath.LogGamma(0.5).Should().BeNearly(Math.Log(Math.Sqrt(Math.PI)));
+            AdvancedMath.LogGamma(1.0).Should().Be(0.0);
+            AdvancedMath.LogGamma(1.5).Should().BeNearly(Math.Log(Math.Sqrt(Math.PI) / 2.0));
+            AdvancedMath.LogGamma(2.0).Should().Be(0.0);
+            AdvancedMath.LogGamma(Double.PositiveInfinity).Should().Be(Double.PositiveInfinity);
         }
 
         [TestMethod]
-        public void LogGammaExtremeValues () {
-            //Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.LogGamma(1.0 / Double.MaxValue), Math.Log(Double.MaxValue)));
-            double z = AdvancedMath.LogGamma(Double.MaxValue);
-            //double z = double.PositiveInfinity;
-            //Console.WriteLine(z);
-            Console.WriteLine(Double.IsPositiveInfinity(z));
-            Console.WriteLine(AdvancedMath.LogGamma(Double.MaxValue));
-            Console.WriteLine(Double.IsPositiveInfinity(AdvancedMath.LogGamma(Double.MaxValue)));
-            Assert.IsTrue(Double.IsPositiveInfinity(AdvancedMath.LogGamma(Double.MaxValue)));
+        public void LogGammaExtremeValues() {
+            double eps = MoreMath.Pow(2.0, -1022);
+            AdvancedMath.LogGamma(eps).Should().Be(-Math.Log(eps)); // goes like -ln x for small x
+            AdvancedMath.LogGamma(Double.MaxValue).Should().Be(Double.PositiveInfinity); // should overflow since goes like x log x
         }
 
         [TestMethod]
-        public void LogGammaDuplication () {
+        public void LogGammaDuplication() {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 24)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedMath.LogGamma(2.0 * x),
@@ -161,7 +181,7 @@ namespace Test {
         }
 
         [TestMethod]
-        public void LogGammaTriplication () {
+        public void LogGammaTriplication() {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 24)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedMath.LogGamma(3.0 * x),
@@ -171,13 +191,19 @@ namespace Test {
         }
 
         [TestMethod]
+        public void LogGammaCosineIntegral () {
+            // From Wolfram functions site
+            FunctionMath.Integrate(t => AdvancedMath.LogGamma(t) * MoreMath.CosPi(2.0 * t), 0.0, 1.0).Value.Should().BeNearly(1.0 / 4.0);
+        }
+
+        [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
-        public void LogGammaNegativeArgument () {
+        public void LogGammaNegativeArgument() {
             AdvancedMath.LogGamma(-0.5);
         }
 
         [TestMethod]
-        public void GammaRatioInequality () {
+        public void GammaRatioInequality() {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 16)) {
                 double LB = Math.Log(Math.Sqrt(x + 0.25));
                 double UB = Math.Log((x + 0.5) / Math.Sqrt(x + 0.75));
@@ -189,49 +215,79 @@ namespace Test {
 
 
         [TestMethod]
-        public void PochammerSpecialIntegerArguments () {
-            Assert.IsTrue(AdvancedMath.Pochhammer(0.0, 0) == 1.0);
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 6)) {
-                Assert.IsTrue(AdvancedMath.Pochhammer(0.0, n) == 0.0);
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedMath.Pochhammer(0.0, -n),
-                    (n % 2 == 0 ? 1.0 : -1.0) / AdvancedIntegerMath.Factorial(n)
-                ));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Pochhammer(1.0, n), AdvancedIntegerMath.Factorial(n)));
+        public void PsiSpecialCases() {
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0), -AdvancedMath.EulerGamma));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(2.0), -AdvancedMath.EulerGamma + 1.0));
+
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 2.0), -AdvancedMath.EulerGamma - 2.0 * Math.Log(2.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 3.0), -AdvancedMath.EulerGamma - 3.0 * Math.Log(3.0) / 2.0 - Math.PI / 2.0 / Math.Sqrt(3.0)));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 4.0), -AdvancedMath.EulerGamma - 3.0 * Math.Log(2.0) - Math.PI / 2.0));
+            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 6.0), -AdvancedMath.EulerGamma - 3.0 * Math.Log(3.0) / 2.0 - 2.0 * Math.Log(2.0) - Math.PI / 2.0 * Math.Sqrt(3.0)));
+
+        }
+
+        [TestMethod]
+        public void PsiExtremeValues() {
+            double eps = MoreMath.Pow(2.0, -1022);
+            Assert.IsTrue(Double.IsInfinity(AdvancedMath.Psi(0.0)));
+            AdvancedMath.Psi(eps).Should().Be(-1.0 / eps); // goes like -1/z near 0
+            AdvancedMath.Psi(Double.MaxValue).Should().BeNearly(Math.Log(Double.MaxValue)); // goes like log(z) asymptotically
+            Assert.IsTrue(AdvancedMath.Psi(Double.PositiveInfinity) == Double.PositiveInfinity);
+            Assert.IsTrue(Double.IsNaN(AdvancedMath.Psi(Double.NaN)));
+        }
+
+
+        [TestMethod]
+        public void PsiNegativeIntegers () {
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 100).Take(4)) {
+                Double.IsInfinity(AdvancedMath.Psi(-n)).Should().BeTrue();
             }
         }
 
-        // DLMF 5.2.4-5.2.8
         [TestMethod]
-        public void PochammerIntegerArguments () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
-                Assert.IsTrue(AdvancedMath.Pochhammer(x, 0) == 1.0);
-                foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
-                    double P = 1.0;
-                    for (int k = 0; k < n; k++) {
-                        P *= (x + k);
-                    }
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Pochhammer(x, n), P));
-                    if (Math.Abs(x - Math.Round(x)) > 0.01) {
-                        double Q = 1.0;
-                        for (int k = 1; k <= n; k++) {
-                            Q /= (x - k);
-                        }
-                        Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Pochhammer(x, -n), Q));
-                    }
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        AdvancedMath.Pochhammer(-x, n),
-                        (n % 2 == 0 ? 1 : -1) * AdvancedMath.Pochhammer(x - n + 1, n)
-                    ));
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        AdvancedMath.Pochhammer(x, 2 * n),
-                        MoreMath.Pow(2.0, 2 * n) * AdvancedMath.Pochhammer(x / 2.0, n) * AdvancedMath.Pochhammer((x + 1.0) / 2.0, n)
-                    ));
-                }
-
+        public void PsiRecurrence() {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4).Take(24)) {
+                AdvancedMath.Psi(1.0 + x).Should().BeNearlySumOf(1.0 / x, AdvancedMath.Psi(x));
             }
+        }
 
+        [TestMethod]
+        public void PsiReflection() {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4).Take(16)) {
+                AdvancedMath.Psi(1.0 - x).Should().BeNearlySumOf(Math.PI / MoreMath.TanPi(x), AdvancedMath.Psi(x));
+            }
+        }
 
+        [TestMethod]
+        public void PsiDuplication() {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4).Take(24)) {
+                AdvancedMath.Psi(2 * x).Should().BeNearly(AdvancedMath.Psi(x) / 2.0 + AdvancedMath.Psi(x + 0.5) / 2.0 + Math.Log(2.0));
+            }
+        }
+
+        [TestMethod]
+        public void PsiIntegration () {
+            // Integral of Psi is LogGamma
+            double[] points = TestUtilities.GenerateRealValues(1.0E-2, 1.0E2).Take(4).ToArray();
+            foreach (double x in points) {
+                foreach (double y in points) {
+                    FunctionMath.Integrate(t => AdvancedMath.Psi(t), x, y).Value.Should().BeNearly(AdvancedMath.LogGamma(y) - AdvancedMath.LogGamma(x));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void PsiInequality() {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4).Take(16)) {
+                AdvancedMath.Psi(x).Should().BeInRange(Math.Log(x) - 1.0 / x, Math.Log(x) - 0.5 / x);
+            }
+        }
+
+        [TestMethod]
+        public void PsiSums () {
+            // https://plouffe.fr/articles/The%20many%20faces%20of%20the%20polygamma%20function%202016.pdf
+            (AdvancedMath.Psi(1.0 / 4.0) - AdvancedMath.Psi(3.0 / 4.0)).Should().BeNearly(-Math.PI);
+            (AdvancedMath.Psi(1.0 / 5.0) - AdvancedMath.Psi(2.0 / 5.0) - AdvancedMath.Psi(3.0 / 5.0) + AdvancedMath.Psi(4.0 / 5.0)).Should().BeNearly(-2.0 * Math.Log(AdvancedMath.GoldenRatio) * Math.Sqrt(5.0));
         }
 
     }

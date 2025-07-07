@@ -14,44 +14,44 @@ namespace Meta.Numerics.Statistics.Distributions {
             this.n = n;
             this.max = n * (n + 1) / 2;
             this.counts = ComputeCounts(n);
+            this.sum = (1 << n);
+            this.norm = 1.0 / sum;
         }
 
         private readonly int n;
         private readonly int max;
         private readonly int[] counts;
+        private readonly int sum;
+        private readonly double norm;
+
 
         public override double ProbabilityMass (int k) {
-            double norm = 1.0 / (1 << n);
-            if (k <= max / 2) {
-                if (k < 0) {
-                    return (0.0);
-                } else {
-                    return (norm * counts[k]);
-                }
+            if (k < 0) {
+                return 0.0;
+            } else if (k < counts.Length) {
+                return norm * counts[k];
+            } else if (k <= max) {
+                return norm * counts[max - k];
             } else {
-                if (k <= max) {
-                    return (norm * counts[max - k]);
-                } else {
-                    return (0.0);
-                }
+                return 0.0;
             }
         }
 
         public override DiscreteInterval Support {
             get {
-                return (new DiscreteInterval(0, max));
+                return new DiscreteInterval(0, max);
             }
         }
 
         public override double Mean {
             get {
-                return (max / 2.0);
+                return max / 2.0;
             }
         }
 
         public override double Variance {
             get {
-                return (n * (n + 1.0) * (2.0 * n + 1.0) / 24.0);
+                return n * (n + 1) * (2 * n + 1) / 24.0;
             }
         }
 
@@ -61,6 +61,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         // I can no longer find the paper.
 
         private int LeftInclusiveSum (int k) {
+            Debug.Assert(0 <= k && k < counts.Length);
             int sum = 0;
             for (int j = 0; j <= k; j++) {
                 sum += counts[j];
@@ -69,19 +70,14 @@ namespace Meta.Numerics.Statistics.Distributions {
         }
 
         public override double LeftInclusiveProbability (int k) {
-            double norm = 1.0 / (1 << n);
-            if (k <= max / 2) {
-                if (k < 0) {
-                    return (0.0);
-                } else {
-                    return (norm * LeftInclusiveSum(k));
-                }
+            if (k < 0) {
+                return 0.0;
+            } else if (k < counts.Length) {
+                return norm * LeftInclusiveSum(k);
+            } else if (k < max) {
+                return norm * (sum - LeftInclusiveSum(max - k - 1));
             } else {
-                if (k <= max) {
-                    return (1.0 - norm * LeftInclusiveSum(max - k));
-                } else {
-                    return (1.0);
-                }
+                return 1.0;
             }
         }
 
@@ -161,7 +157,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
             }
 
-            return (counts);
+            return counts;
 
         }
 

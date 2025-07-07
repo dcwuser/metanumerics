@@ -10,6 +10,7 @@ using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
+//using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Test {
 

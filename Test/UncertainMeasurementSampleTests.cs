@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using TestClassAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
 using TestMethodAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
@@ -165,32 +166,29 @@ namespace Test {
             // we want to make sure that the chi^2 values we are producing from line fits are distributed as expected
 
             // create a sample to hold chi^2 values
-            Sample chis = new Sample();
+            List<double> chis = new List<double>();
 
             // define a model
             Interval r = Interval.FromEndpoints(-5.0, 5.0);
-            Func<double, double> fv = delegate(double x) {
-                return (1.0 - 2.0 * x);
-            };
-            Func<double, double> fu = delegate(double x) {
-                return (1.0 + 0.5 * Math.Sin(x));
-            };
+            Func<double, double> fv = (double x) => 1.0 - 2.0 * x;
+            Func<double, double> fu = (double x) => 1.0 + 0.5 * Math.Sin(x);
 
             // draw 50 data sets from the model and fit year
             // store the resulting chi^2 value in the chi^2 set
+            ContinuousDistribution chiSquaredDistribution = null;
             for (int i = 0; i < 50; i++) {
                 UncertainMeasurementSample xs = CreateDataSet(r, fv, fu, 10, i);
                 UncertainMeasurementFitResult fit = xs.FitToLine();
                 double chi = fit.GoodnessOfFit.Statistic;
                 chis.Add(chi);
+                chiSquaredDistribution = fit.GoodnessOfFit.Statistic.Distribution;
             }
 
             // sanity check the sample
             Assert.IsTrue(chis.Count == 50);
 
             // test whether the chi^2 values are distributed as expected
-            ContinuousDistribution chiDistribution = new ChiSquaredDistribution(8);
-            TestResult ks = chis.KolmogorovSmirnovTest(chiDistribution);
+            TestResult ks = chis.KolmogorovSmirnovTest(chiSquaredDistribution);
             Assert.IsTrue(ks.Probability > 0.05);
 
         }
@@ -242,16 +240,12 @@ namespace Test {
             // we want to make sure that the chi^2 values we are producing from polynomial fits are distributed as expected
 
             // create a sample to hold chi^2 values
-            Sample chis = new Sample();
+            List<double> chis = new List<double>();
 
             // define a model
             Interval r = Interval.FromEndpoints(-5.0,15.0);
-            Func<double,double> fv = delegate(double x) {
-                return(1.0*x - 2.0*x*x);
-            };
-            Func<double,double> fu = delegate(double x) {
-                return(1.0 + 0.5 * Math.Sin(x));
-            };
+            Func<double,double> fv = (double x) => 1.0 * x - 2.0 * x * x;
+            Func<double,double> fu = (double x) => 1.0 + 0.5 * Math.Sin(x);
 
             // draw 50 data sets from the model and fit year
             // store the resulting chi^2 value in the chi^2 set
@@ -275,16 +269,12 @@ namespace Test {
         [TestMethod]
         public void FitDataToPolynomialUncertaintiesTest () {
 
-            // make sure the reported uncertainties it fit parameters really represent their standard deviation,
+            // make sure the reported uncertainties in fit parameters really represent their standard deviation,
             // and that the reported off-diagonal elements really represent their correlations
 
             double[] xs = TestUtilities.GenerateUniformRealValues(-1.0, 2.0, 10);
-            Func<double, double> fv = delegate(double x) {
-                return (0.0 + 1.0 * x + 2.0 * x * x);
-            };
-            Func<double, double> fu = delegate(double x) {
-                return (0.5);
-            };
+            Func<double, double> fv = (double x) => 0.0 + 1.0 * x + 2.0 * x * x;
+            Func<double, double> fu = (double x) => 0.5;
 
             // keep track of best-fit parameters and claimed parameter covariances
             //MultivariateSample sample = new MultivariateSample(3);
@@ -305,15 +295,15 @@ namespace Test {
             // for each parameter, verify that the standard deviation of the reported values agrees with the (average) reported uncertainty
             double[] pMeans = new double[3];
             for (int i = 0; i <= 2; i++) {
-                Sample values = new Sample();
-                Sample uncertainties = new Sample();
+                List<double> values = new List<double>();
+                List<double> uncertainties = new List<double>();
                 for (int j = 0; j < fits.Length; j++) {
                     UncertainValue p = fits[j].Parameters[i].Estimate;
                     values.Add(p.Value);
                     uncertainties.Add(p.Uncertainty);
                 }
-                pMeans[i] = values.Mean;
-                Assert.IsTrue(values.PopulationStandardDeviation.ConfidenceInterval(0.95).ClosedContains(uncertainties.Mean));
+                pMeans[i] = values.Mean();
+                Assert.IsTrue(values.PopulationStandardDeviation().ConfidenceInterval(0.95).Contains(uncertainties.Mean()));
             }
         }
 

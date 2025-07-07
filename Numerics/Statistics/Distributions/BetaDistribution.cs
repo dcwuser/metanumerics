@@ -18,7 +18,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>The left shape parameter &#x3b1; controls the shape of the distribution near the left endpoint x = 0.
     /// The right shapre paramater &#x3b2; controls the shape of the distribution near the right endpoint x = 1.
     /// If a shape parameter is less than one, the distribution is singular on that side. If a shape parameter is greater
-    /// than one, the distribution does to zero on that side. If a shape parameter is equal to one, the distribution
+    /// than one, the distribution goes to zero on that side. If a shape parameter is equal to one, the distribution
     /// goes to a constant on that side.</para>
     /// <para>If the two shape parameters are equal, the distribution is symmetric.</para>
     /// <para>When both shape parameters are one, the beta distribution reduces to a standard uniform distribution.</para>
@@ -277,7 +277,7 @@ namespace Meta.Numerics.Statistics.Distributions {
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="sample"/> is null.</exception>
         /// <exception cref="InsufficientDataException"><paramref name="sample"/> contains fewer than three values.</exception>
-        /// <exception cref="InvalidOperationException">Not all the entries in <paramref name="sample" /> lie between zero and one.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Not all the entries in <paramref name="sample" /> lie between zero and one.</exception>
         public static BetaFitResult FitToSample (IReadOnlyList<double> sample) {
             return Univariate.FitToBeta(sample);
         }

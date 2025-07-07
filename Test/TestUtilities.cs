@@ -4,21 +4,81 @@ using System.Collections.Generic;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using FluentAssertions;
+
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
 using Meta.Numerics.Matrices;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
+using FluentAssertions.Numeric;
+using FluentAssertions.Execution;
 
 namespace Test {
 
     internal static class TestUtilities {
 
+        public static readonly double SmallestNormal = Math.Pow(2.0, -1022);
+
+
         public static EvaluationSettings RelativeTarget = new EvaluationSettings() {
             RelativePrecision = 1.0E-13, AbsolutePrecision = 0.0
         };
 
-        public static bool IsNearlyEqual (double x, double y, EvaluationSettings s) {
+        public static EvaluationSettings DefaultTarget = new EvaluationSettings() {
+            RelativePrecision = 1.0E-14,
+            AbsolutePrecision = 0.0
+        };
+
+        public static AndConstraint<NumericAssertions<double>> BeNearly(this NumericAssertions<double> parent, double expectedValue, EvaluationSettings target) {
+
+            double actualValue = (double)parent.Subject;
+            double norm = (Math.Abs(actualValue) + Math.Abs(expectedValue));
+            double tol = norm * target.RelativePrecision + target.AbsolutePrecision;
+            double min = expectedValue - tol;
+            double max = expectedValue + tol;
+            bool success = min <= actualValue && actualValue <= max;
+
+            Execute.Assertion.ForCondition(success).FailWith($"Expected value {expectedValue} +/- {tol}, but it was {actualValue}, with a difference of {actualValue - expectedValue}.");
+
+            return new AndConstraint<NumericAssertions<double>>(parent);
+        }
+
+        public static AndConstraint<NumericAssertions<double>> BeNearly (this NumericAssertions<double> parent, double expectedValue) {
+
+            double actualValue = (double) parent.Subject;
+            double norm = (Math.Abs(actualValue) + Math.Abs(expectedValue));
+            //double tol = norm * 1.0E-14 + 1.0E-28;
+            double tol = norm * 1.0E-14;
+            double min = expectedValue - tol;
+            double max = expectedValue + tol;
+            bool success = min <= actualValue && actualValue <= max;
+
+            Execute.Assertion.ForCondition(success).FailWith($"Expected value {expectedValue} +/- {tol}, but it was {actualValue}, with a difference of {actualValue - expectedValue}.");
+
+            return new AndConstraint<NumericAssertions<double>>(parent);
+        }
+
+        public static AndConstraint<NumericAssertions<double>> BeNearlySumOf(this NumericAssertions<double> parent, params double[] terms) {
+
+            double actualValue = (double)parent.Subject;
+            double tol = Math.Abs(actualValue) * 1.0E-14 + 1.0E-28;
+            double expectedValue = 0.0;
+            foreach (double term in terms) {
+                tol += Math.Abs(term) * 1.0E-14 + 1.0E-28;
+                expectedValue += term;
+            }
+            double min = expectedValue - tol;
+            double max = expectedValue + tol;
+            bool success = min <= actualValue && actualValue <= max;
+
+            Execute.Assertion.ForCondition(success).FailWith($"Expected value {expectedValue} +/- {tol}, but it was {actualValue}, with a difference of {actualValue - expectedValue}.");
+
+            return new AndConstraint<NumericAssertions<double>>(parent);
+
+        }
+
+            public static bool IsNearlyEqual (double x, double y, EvaluationSettings s) {
             if (Double.IsPositiveInfinity(x) && Double.IsPositiveInfinity(y)) return (true);
             if (Double.IsNegativeInfinity(x) && Double.IsNegativeInfinity(y)) return (true);
             if (Double.IsNaN(x) && Double.IsNaN(y)) return (true);
@@ -291,6 +351,20 @@ namespace Test {
 
         // returns n positive reals numbers distributed log-uniformly between a and b
 
+        public static IEnumerable<double> GenerateRealValues (double min, double max, Random rng) {
+            if ((min <= 0.0) || (max <= 0.0)) throw new ArgumentException();
+            double la = Math.Log(min);
+            double lb = Math.Log(max);
+            while (true) {
+                double x = Math.Exp(la + (lb - la) * rng.NextDouble());
+                yield return x;
+            }
+        }
+
+        public static IEnumerable<double> GenerateRealValues (double min, double max) {
+            return GenerateRealValues(min, max, new Random(1));
+        }
+
         public static double[] GenerateRealValues (double a, double b, int n) {
             return (GenerateRealValues(a, b, n, 1));
         }
@@ -340,6 +414,18 @@ namespace Test {
             return (result);
         }
 
+        public static IEnumerable<Complex> GenerateComplexValues (double min, double max, Random rng) {
+            foreach (double x in GenerateRealValues(min, max, rng)) {
+                double t = (2.0 * rng.NextDouble() - 1.0) * Math.PI;
+                Complex z = t * ComplexMath.Exp(Complex.I * t);
+                yield return z;
+            }
+        }
+
+        public static IEnumerable<Complex> GenerateComplexValues(double min, double max) {
+            return GenerateComplexValues(min, max, new Random(1));
+        }
+
         public static Complex[] GenerateComplexValues (double a, double b, int n) {
             return (GenerateComplexValues(a, b, n, new Random(1)));
         }
@@ -347,6 +433,20 @@ namespace Test {
         // returns n positive integers distributed logarithmicly between a and b
         public static int[] GenerateIntegerValues(int a, int b, int n) {
             return GenerateIntegerValues(a, b, n, new Random(1));
+        }
+
+        public static IEnumerable<int> GenerateIntegerValues(int min, int max, Random rng) {
+            if ((min <= 0) || (max <= 0)) throw new ArgumentOutOfRangeException();
+            double la = Math.Log(min);
+            double lb = Math.Log(max);
+            while (true) {
+                int n = (int) Math.Round(Math.Exp(la + (lb - la) * rng.NextDouble()));
+                yield return n;
+            }
+        }
+
+        public static IEnumerable<int> GenerateIntegerValues(int min, int max) {
+            return GenerateIntegerValues(min, max, new Random(1));
         }
 
         public static int[] GenerateIntegerValues (int a, int b, int n, Random rng) {
@@ -367,23 +467,6 @@ namespace Test {
                 result[i] = rng.Next(a, b + 1);
             }
             return (result);
-        }
-
-        public static Sample CreateSample (ContinuousDistribution distribution, int count) {
-            return (CreateSample(distribution, count, 1));
-        }
-
-        public static Sample CreateSample (ContinuousDistribution distribution, int count, int seed) {
-
-            Sample sample = new Sample();
-
-            Random rng = new Random(seed);
-            for (int i = 0; i < count; i++) {
-                double x = distribution.GetRandomValue(rng);
-                sample.Add(x);
-            }
-
-            return (sample);
         }
 
         public static IEnumerable<double> CreateDataSample (Random rng, ContinuousDistribution distribution, int count) {

@@ -21,7 +21,7 @@ namespace Meta.Numerics.Statistics {
         public static UncertainValue PopulationMean (this IReadOnlyCollection<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 2) throw new InsufficientDataException();
-            return (EstimateFirstCumulant(sample));
+            return EstimateFirstCumulant(sample);
         }
 
         /// <summary>
@@ -38,8 +38,8 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         public static UncertainValue PopulationVariance (this IReadOnlyCollection<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 3) throw new InsufficientDataException();
-            return (EstimateSecondCumulant(sample));
+            if (sample.Count < 4) throw new InsufficientDataException();
+            return EstimateSecondCumulant(sample);
         }
 
         /// <summary>
@@ -69,8 +69,8 @@ namespace Meta.Numerics.Statistics {
         /// </remarks>
         public static UncertainValue PopulationStandardDeviation (this IReadOnlyCollection<double> sample) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 3) throw new InsufficientDataException();
-            return (EstimateStandardDeviation(sample));
+            if (sample.Count < 4) throw new InsufficientDataException();
+            return EstimateStandardDeviation(sample);
         }
 
 
@@ -92,16 +92,16 @@ namespace Meta.Numerics.Statistics {
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 // the zeroth moment is exactly one for any distribution
-                return (new UncertainValue(1.0, 0.0));
+                return new UncertainValue(1.0, 0.0);
             } else if (r == 1) {
                 // the first moment is just the mean
-                return (EstimateFirstCumulant(sample));
+                return EstimateFirstCumulant(sample);
             } else {
                 // moments of order two and higher
                 int n = sample.Count;
                 double M_r = sample.RawMoment(r);
                 double M_2r = sample.RawMoment(2 * r);
-                return (new UncertainValue(M_r, Math.Sqrt((M_2r - M_r * M_r) / n)));
+                return new UncertainValue(M_r, Math.Sqrt((M_2r - M_r * M_r) / (n - 1)));
             }
         }
 
@@ -117,22 +117,22 @@ namespace Meta.Numerics.Statistics {
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="r"/> is negative.</exception>
         public static UncertainValue PopulationCentralMoment (this IReadOnlyCollection<double> sample, int r) {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
-            if (sample.Count < 3) throw new InsufficientDataException();
+            if (sample.Count < 2 * r) throw new InsufficientDataException();
             if (r < 0) {
                 // we don't do negative moments
                 throw new ArgumentOutOfRangeException(nameof(r));
             } else if (r == 0) {
                 // the zeroth moment is exactly one for any distribution
-                return (new UncertainValue(1.0, 0.0));
+                return new UncertainValue(1.0, 0.0);
             } else if (r == 1) {
                 // the first moment about the mean is exactly zero by the definition of the mean
-                return (new UncertainValue(0.0, 0.0));
+                return new UncertainValue(0.0, 0.0);
             } else if (r == 2) {
-                return (EstimateSecondCumulant(sample));
+                return EstimateSecondCumulant(sample);
             } else if (r == 3) {
-                return (EstimateThirdCumulant(sample));
+                return EstimateThirdCumulant(sample);
             } else {
-                return (EstimateCentralMoment(sample, r));
+                return EstimateCentralMoment(sample, r);
             }
         }
 
@@ -153,15 +153,14 @@ namespace Meta.Numerics.Statistics {
 
         private static UncertainValue EstimateFirstCumulant (IEnumerable<double> sample) {
             Debug.Assert(sample != null);
+            FirstPassMean(sample, out int n, out double m);
+            Debug.Assert(n >= 2);
+            CorrectionPassMoments2(sample, ref m, out double c2);
+            return EstimateFirstCumulant(n, m, c2);
+        }
 
-            int n;
-            double mean, sumOfSquares;
-            ComputeMomentsUpToSecond(sample, out n, out mean, out sumOfSquares);
-
-            double m1 = mean;
-            double c2 = sumOfSquares / n;
-
-            return (new UncertainValue(m1, Math.Sqrt(c2 / (n - 1))));
+        internal static UncertainValue EstimateFirstCumulant (int n, double m, double c2) {
+            return new UncertainValue(m, Math.Sqrt(c2 / (n - 1)));
         }
 
         // The second cumulant, the variance:
@@ -175,26 +174,27 @@ namespace Meta.Numerics.Statistics {
         // Plugging in the formulas for k-statistics in terms of central moments and doing a lot of algebra gets us to
         //   V(k_2) = \frac{n}{(n-2)(n-3)} \left[ c_4 - \frac{(n^2 - 3)}{(n - 1)^2} c_2^2 \right]
         // Numerical simulations show this to indeed be unbiased, but it has a problem. The coefficient of c_2^2 is
-        // greater than unity, so the quantity in brackets can be negative. Therefore we fall back on the asymptotic
-        // limit
-        //   V(k_2) = \frac{c_4 - c_2^2}{n}
+        // greater than unity, so the quantity in brackets can be negative. Therefore we fall back on its asymptotic limit
+        //   V(k_2) = \frac{n}{(n-2)(n-3) \left[ c_4 - c_2^2 \right]
         // which cannot be negative because of the inequality (verified in numerical simulations) c_4 > c_2^2. 
-
-        // See if we can do better, either by adjusting denominator and/or making exact for normal distributions.
-        // Being a little off here isn't terrible, since this is just an error estimate.
-
-        // For normal, V(k_2) = \frac{2 \sigma^4}{n-1}, so change denominator to n-1?
+        // Being a little off here isn't terrible, since this is usully just used as an error estimate.
 
         private static UncertainValue EstimateSecondCumulant (IEnumerable<double> sample) {
             Debug.Assert(sample != null);
 
-            ComputeMomentsUpToFourth(sample, out int n, out double m1, out double c2, out double c3, out double c4);
+            FirstPassMean(sample, out int n, out double m);
+            CorrectionPassMoments4(sample, ref m, out double c2, out _, out double c4);
+            return EstimateSecondCumulant(n, c2, c4);
+        }
+
+        internal static UncertainValue EstimateSecondCumulant (int n, double c2, double c4) {
+            Debug.Assert(n >= 4);
             Debug.Assert(c2 >= 0.0);
             Debug.Assert(c4 >= 0.0);
             double k2 = c2 * n / (n - 1);
             double v = c4 - c2 * c2;
             Debug.Assert(v >= 0.0);
-            return (new UncertainValue(k2, Math.Sqrt(v / (n - 1))));
+            return new UncertainValue(k2, Math.Sqrt(v * n / (n - 2) / (n - 3)));
         }
 
         // The third cumulant, which characterizes skew:
@@ -208,18 +208,23 @@ namespace Meta.Numerics.Statistics {
         private static UncertainValue EstimateThirdCumulant (IReadOnlyCollection<double> sample) {
             Debug.Assert(sample != null);
 
-            int n;
-            double mean, sumOfSquares;
-            ComputeMomentsUpToSecond(sample, out n, out mean, out sumOfSquares);
-            double c2 = sumOfSquares / n;
-            double c3 = CentralMoment(sample, 3, mean);
-            double c4 = CentralMoment(sample, 4, mean);
-            double c6 = CentralMoment(sample, 6, mean);
+            FirstPassMean(sample, out int n, out double m);
+            CorrectionPassMoments6(sample, ref m, out double c2, out double c3, out double c4, out _, out double c6);
+
+            if (n < 6) throw new InsufficientDataException();
+
+            //int n;
+            //double mean, sumOfSquares;
+            //ComputeMomentsUpToSecond(sample, out n, out mean, out sumOfSquares);
+            //double c2 = sumOfSquares / n;
+            //double c3 = CentralMoment(sample, 3, mean);
+            //double c4 = CentralMoment(sample, 4, mean);
+            //double c6 = CentralMoment(sample, 6, mean);
 
             double k3 = c3 * n * n / (n - 1) / (n - 2);
             double v = c6 - c3 * c3 - 3.0 * (2.0 * c4 - 3.0 * c2 * c2) * c2;
             Debug.Assert(v >= 0.0);
-            return (new UncertainValue(k3, Math.Sqrt(v / n)));
+            return new UncertainValue(k3, Math.Sqrt(v * n * n * n / (n-2) / (n-3) / (n-4) / (n-5)));
         }
 
         // An obvious estimate of the standard deviation is just the square root of the estimated variance, computed
@@ -245,15 +250,39 @@ namespace Meta.Numerics.Statistics {
 
             Debug.Assert(sample != null);
 
-            int n;
-            double m1, c2, c3, c4;
-            ComputeMomentsUpToFourth(sample, out n, out m1, out c2, out c3, out c4);
+            FirstPassMean(sample, out int n, out double m);
+            CorrectionPassMoments4(sample, ref m, out double c2, out _, out double c4);
 
-            double v = (c4 - c2 * c2) / (n - 1);
-            double s = Math.Sqrt(c2 * n / (n - 1)) * (1.0 + v / (8.0 * c2 * c2));
-            double ds = 0.5 * Math.Sqrt(v) / s;
+            //int n;
+            //double m1, c2, c3, c4;
+            //ComputeMomentsUpToFourth(sample, out n, out m1, out c2, out c3, out c4);
 
-            return (new UncertainValue(s, ds));
+            return EstimateStandardDeviation(n, c2, c4);
+
+            //double v = (c4 - c2 * c2) / (n - 1);
+            //double s = Math.Sqrt(c2 * n / (n - 1)) * (1.0 + v / (8.0 * c2 * c2));
+            //double ds = 0.5 * Math.Sqrt(v) / s;
+
+            //return (new UncertainValue(s, ds));
+        }
+
+        internal static UncertainValue EstimateStandardDeviation(int n, double c2, double c4) {
+
+            Debug.Assert(n >= 4);
+            Debug.Assert(c2 >= 0.0);
+            Debug.Assert(c4 >= 0.0);
+
+            // Here v = \hat{V}(\hat{C}_2), the estimated variance in the estimated C_2, with inner corrections
+            // discarded to ensure positivity. For these formulas, I haven't proved any more exact n-dependence that ~1/n,
+            // but it isn't any more wrong to use specific subtractions that appear in exact formula for v, and it is probably right.
+
+            double c22 = c2 * c2;
+            double v = (c4 - c22) * n / (n - 2) / (n - 3);
+
+            double s = Math.Sqrt(c2 * n / (n - 1)) * (1.0 + v / (8.0 * c22));
+            double ds = 0.5 * Math.Sqrt(v / c2);
+
+            return new UncertainValue(s, ds);
         }
 
         // Stuart & Ord, "Kendall's Advanced Theory of Statistics", Volume I, Chapter 10 derives

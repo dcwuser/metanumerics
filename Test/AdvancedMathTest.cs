@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
+using FluentAssertions;
 
 namespace Test {
     
@@ -288,48 +289,7 @@ namespace Test {
 
         // Gamma functions
 
-        [TestMethod]
-        public void PsiSpecialCases () {
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0), -AdvancedMath.EulerGamma));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(2.0), -AdvancedMath.EulerGamma + 1.0));
-
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 2.0), -AdvancedMath.EulerGamma - 2.0 * Math.Log(2.0)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 3.0), -AdvancedMath.EulerGamma - 3.0 * Math.Log(3.0) / 2.0 - Math.PI / 2.0 / Math.Sqrt(3.0)));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 4.0), -AdvancedMath.EulerGamma - 3.0 * Math.Log(2.0) - Math.PI / 2.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1.0 / 6.0), -AdvancedMath.EulerGamma - 3.0 * Math.Log(3.0) / 2.0 - 2.0 * Math.Log(2.0) - Math.PI / 2.0 * Math.Sqrt(3.0)));
-
-        }
-
-        [TestMethod]
-        public void PsiExtremeValues () {
-            Assert.IsTrue(Double.IsInfinity(AdvancedMath.Psi(0.0)));
-            Assert.IsTrue(AdvancedMath.Psi(Double.PositiveInfinity) == Double.PositiveInfinity);
-            Assert.IsTrue(Double.IsNaN(AdvancedMath.Psi(Double.NaN)));
-        }
-
-        [TestMethod]
-        public void PsiRecurrence () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E4,24)) {
-                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(AdvancedMath.Psi(x), 1.0 / x, AdvancedMath.Psi(x + 1.0)));
-            }
-        }
-
-        [TestMethod]
-        public void PsiReflection () {
-            // don't let x get too big or inaccuracy of System.Math trig functions for large x will cause failure
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4,1.0E2,16)) {
-                Assert.IsTrue(TestUtilities.IsSumNearlyEqual(AdvancedMath.Psi(x), Math.PI / Math.Tan(Math.PI * x), AdvancedMath.Psi(1.0 - x)));
-            }
-        }
-
-        [TestMethod]
-        public void PsiDuplication () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 24)) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedMath.Psi(2 * x), AdvancedMath.Psi(x) / 2.0 + AdvancedMath.Psi(x + 0.5) / 2.0 + Math.Log(2.0)
-                ));
-            }
-        }
+        
 
 
         [TestMethod]
@@ -337,6 +297,14 @@ namespace Test {
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1, 1.0 / 4.0), Math.PI * Math.PI + 8.0 * AdvancedMath.Catalan));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1, 1.0 / 2.0), Math.PI * Math.PI / 2.0));
             Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Psi(1, 1.0), Math.PI * Math.PI / 6.0));
+        }
+
+        [TestMethod]
+        public void TriGammaSums () {
+            // https://plouffe.fr/articles/The%20many%20faces%20of%20the%20polygamma%20function%202016.pdf
+            (AdvancedMath.Psi(1, 1.0 / 3.0) + AdvancedMath.Psi(1, 2.0 / 3.0)).Should().BeNearly(4.0 / 3.0 * MoreMath.Sqr(Math.PI));
+            (AdvancedMath.Psi(1, 1.0 / 4.0) + AdvancedMath.Psi(1, 3.0 / 4.0)).Should().BeNearly(2.0 * MoreMath.Sqr(Math.PI));
+            (AdvancedMath.Psi(1, 1.0 / 5.0) + AdvancedMath.Psi(1, 2.0 / 5.0) + AdvancedMath.Psi(1, 3.0 / 5.0) + AdvancedMath.Psi(1, 4.0 / 5.0)).Should().BeNearly(4.0 * Math.PI * Math.PI);
         }
 
         [TestMethod]
@@ -372,6 +340,7 @@ namespace Test {
 
         [TestMethod]
         public void PolyGammaDuplication () {
+            // DLMF 5.15.7
             foreach (int n in TestUtilities.GenerateIntegerValues(1, 100, 4)) {
                 foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E4, 16)) {
                     Assert.IsTrue(TestUtilities.IsNearlyEqual(
@@ -424,196 +393,9 @@ namespace Test {
             }
         }
 
-        // Incomplete gamma
+        
 
-        [TestMethod]
-        public void RegularizedIncompleteGammaRecurrence () {
-            foreach (double a in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 5)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        AdvancedMath.LeftRegularizedGamma(a + 1.0, x) + Math.Pow(x, a) * Math.Exp(-x) / AdvancedMath.Gamma(a + 1.0),
-                        AdvancedMath.LeftRegularizedGamma(a, x)
-                    ));
-                }
-            }
-        }
-
-        // add a=0 test when we allow a=0
-
-        [TestMethod]
-        public void RegularizedIncompleteGammaExponential () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 10)) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedMath.RightRegularizedGamma(1.0, x), Math.Exp(-x)
-                ));
-            }
-        }
-
-        [TestMethod]
-        public void RegularizedIncompleteGammaUnitarity () {
-            foreach (double a in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 10)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 10)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        AdvancedMath.LeftRegularizedGamma(a, x) + AdvancedMath.RightRegularizedGamma(a, x),
-                        1.0
-                    ));
-                }
-            }
-        }
-
-        [TestMethod]
-        public void IncompleteGammaInequality () {
-            foreach (double a in TestUtilities.GenerateRealValues(1.0E-4, 1, 10)) {
-                foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 10.0, 6)) {
-                    Assert.IsTrue(
-                        AdvancedMath.Gamma(a, x) <= Math.Exp(-x) * Math.Pow(x, a - 1.0)
-                    );
-                }
-            }
-        }
-
-        [TestMethod]
-        public void IncompleteGammaIntegerInequality () {
-            foreach (int n in TestUtilities.GenerateIntegerValues(1, 10000, 10)) {
-                Assert.IsTrue(AdvancedMath.RightRegularizedGamma(n, n) <= 0.5);
-                Assert.IsTrue(0.5 <= AdvancedMath.RightRegularizedGamma(n, n - 1));
-            }
-        }
-
-        [TestMethod]
-        public void IncompleteGammaErfc () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 16)) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Sqrt(Math.PI) * AdvancedMath.Erfc(x), AdvancedMath.Gamma(0.5, x * x)));
-            }
-        }
-
-        [TestMethod]
-        public void IncompleteGammaExp () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-4, 1.0E4, 16)) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Gamma(1.0, x), Math.Exp(-x)));
-            }
-        }
-
-        [TestMethod]
-        public void BetaSpecialValues () {
-
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Beta(0.5, 0.5), Math.PI));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Beta(1.0, 1.0), 1.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Beta(1.0, 2.0), 1.0 / 2.0));
-            Assert.IsTrue(TestUtilities.IsNearlyEqual(AdvancedMath.Beta(2.0, 2.0), 1.0 / 6.0));
-
-        }
-
-        [TestMethod]
-        public void BetaIntegral () {
-
-            // B(a, b) = \int_0^1 \! dt \, t^{a-1} (1 - t)^{b-1}
-
-            // a and b values less than one correspond to singular integrals,
-            // which are numerically difficult.
-
-            // The range of these integrals varies enoromously, and there is no cancelation,
-            // so specify a pure relative accuracy target.
-            IntegrationSettings settings = new IntegrationSettings() {
-                AbsolutePrecision = 0.0,
-                RelativePrecision = TestUtilities.TargetPrecision
-            };
-
-            foreach (double a in TestUtilities.GenerateRealValues(1.0, 100.0, 4)) {
-                foreach (double b in TestUtilities.GenerateRealValues(1.0, 100.0, 4)) {
-                    double B = AdvancedMath.Beta(a, b);
-                    Func<double, double> f = delegate(double t) {
-                        return (Math.Pow(t, a - 1.0) * Math.Pow(1.0 - t, b - 1.0));
-                    };
-                    Interval r = Interval.FromEndpoints(0.0, 1.0);
-                    double I = FunctionMath.Integrate(f, r, settings).Estimate.Value;
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(B, I));
-                }
-            }
-        }
-
-
-        [TestMethod]
-        public void BetaRecurrence () {
-
-            // B(a, b) = B(a + 1, b) + B(a, b + 1)
-
-            foreach (double a in TestUtilities.GenerateRealValues(0.01, 10000.0, 8)) {
-                foreach (double b in TestUtilities.GenerateRealValues(0.01, 10000.0, 8)) {
-                    Assert.IsTrue(TestUtilities.IsSumNearlyEqual(
-                        AdvancedMath.Beta(a + 1.0, b), AdvancedMath.Beta(a, b + 1.0),
-                        AdvancedMath.Beta(a, b)
-                    ));
-                }
-            }
-        }
-
-        [TestMethod]
-        public void BetaTransformationTest () {
-            foreach (double a in TestUtilities.GenerateRealValues(0.1, 10.0, 3)) {
-                foreach (double b in TestUtilities.GenerateUniformRealValues(0.0, 1.0, 3)) {
-                    double B1 = AdvancedMath.Beta(a, b);
-                    double B2 = AdvancedMath.Beta(a + b, 1.0 - b);
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(B1 * B2, Math.PI / a / Math.Sin(Math.PI * b)));
-                }
-            }
-        }
-
-        [TestMethod]
-        public void BetaInequality () {
-            foreach (double a in TestUtilities.GenerateRealValues(10.0E-2, 10.0E3, 8)) {
-                foreach (double b in TestUtilities.GenerateRealValues(10.0E-2, 10.0E3, 8)) {
-                    Assert.IsTrue(AdvancedMath.Beta(a, b) >= Math.Sqrt(AdvancedMath.Beta(a, a) * AdvancedMath.Beta(b, b)));
-                }
-            }
-        }
-
-        [TestMethod]
-        public void BetaInequalityOnUnitSquare () {
-
-            // The most famous inequality on the unit square is B(a, b) <= \frac{1}{ab}.
-            // It can be improved and bounded on both sides via
-            //   a + b - ab <= a b B(a, b) <= \frac{a + b}{1 + ab}
-
-            foreach (double a in TestUtilities.GenerateRealValues(1.0E-2, 1.0, 4)) {
-                foreach (double b in TestUtilities.GenerateRealValues(1.0E-3, 1.0, 4)) {
-
-                    double abB = a * b * AdvancedMath.Beta(a, b);
-
-                    Assert.IsTrue((a + b - a * b) <= abB);
-                    Assert.IsTrue(abB <= (a + b) / (1.0 + a * b));
-
-                }
-            }
-
-        }
-
-        [TestMethod]
-        public void LogBetaSpecialCases () {
-            // Would be nice to have this exactly zero
-            Assert.IsTrue(Math.Abs(AdvancedMath.LogBeta(1.0, 1.0)) < TestUtilities.TargetPrecision);
-        }
-
-        [TestMethod]
-        public void LogBetaExtremeValues () {
-            Assert.IsTrue(AdvancedMath.LogBeta(0.0, 0.0) == Double.PositiveInfinity);
-            Assert.IsTrue(AdvancedMath.LogBeta(1.0E-2, 0.0) == Double.PositiveInfinity);
-            Assert.IsTrue(AdvancedMath.LogBeta(0.0, 1.0E2) == Double.PositiveInfinity);
-            Assert.IsTrue(Double.IsNaN(AdvancedMath.Beta(1.0E2, Double.NaN)));
-            Assert.IsTrue(Double.IsNaN(AdvancedMath.Beta(Double.NaN, 1.0E-2)));
-        }
-
-        [TestMethod]
-        public void LogBetaAgreement () {
-            foreach (double a in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 4)) {
-                foreach (double b in TestUtilities.GenerateRealValues(1.0E-3, 1.0E1, 4)) {
-                    Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                        AdvancedMath.LogBeta(a, b),
-                        Math.Log(AdvancedMath.Beta(a, b))
-                    ));
-                }
-            }
-        }
+        
 
         // Incomplete beta function
 
@@ -834,9 +616,10 @@ namespace Test {
             Assert.IsTrue(AdvancedMath.Dawson(0.0) == 0.0);
         }
 
+        [TestMethod]
         public void DawsonExtremeValues () {
             Assert.IsTrue(AdvancedMath.Dawson(Double.NegativeInfinity) == 0.0);
-            Assert.IsTrue(AdvancedMath.Dawson(Double.MaxValue) == 0.0);
+            AdvancedMath.Dawson(Double.MaxValue).Should().BeNearly(0.5 / Double.MaxValue); // not zero because 0.5/MaxValue is still representable
             Assert.IsTrue(AdvancedMath.Dawson(Double.PositiveInfinity) == 0.0);
             Assert.IsTrue(Double.IsNaN(AdvancedMath.Dawson(Double.NaN)));
         }

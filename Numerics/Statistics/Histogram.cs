@@ -116,7 +116,7 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     /// <remarks>
     /// <para>A histogram stores the number of occurrences of a value (called the count) within a set of ranges (called bins). It is the
-    /// natural system to store discrete univariate data. The natural system to store continuous univariate data is the <see cref="Sample"/>
+    /// natural storage of discrete, univariate data. The natural system to store continuous univariate data is the <see cref="List{Double}"/>
     /// class, but often histograms are also used for continuous data, for example because there is too much data to record each value
     /// individually.</para>
     /// </remarks>

@@ -1,5 +1,5 @@
 ﻿using System;
-
+using System.Diagnostics;
 using Meta.Numerics.Functions;
 using Meta.Numerics.Matrices;
 
@@ -48,7 +48,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         private static double AsymptoticP (double x) {
 
-            if (x <= 0.0) return (0.0);
+            Debug.Assert(x > 0);
 
             double s = 0.0;
             for (int k = 1; k < Global.SeriesMax; k++) {
@@ -56,10 +56,10 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double s_old = s;
                 double z = k * Math.PI / x;
                 double z2 = z * z;
-                double ds = z2 * Math.Exp(-z2 / 2.0);
+                double ds = z2 * Math.Exp(-0.5 * z2);
                 s += ds;
 
-                if (s == s_old) return (Global.SqrtTwoPI / x * s);
+                if (s == s_old) return Global.SqrtTwoPI / x * s;
 
             }
 
@@ -81,7 +81,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double ds = (4.0 * z2 - 1.0) * Math.Exp(-2.0 * z2);
                 s += ds;
 
-                if (s == s_old) return (2.0 * s);
+                if (s == s_old) return 2.0 * s;
             }
 
             throw new NonconvergenceException();
@@ -119,7 +119,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         private static double AsymptoticPPrime (double x) {
 
-            if (x <= 0.0) return (0.0);
+            Debug.Assert(x > 0.0);
 
             double s = 0.0;
             for (int k = 1; k < 20; k++) {
@@ -130,7 +130,7 @@ namespace Meta.Numerics.Statistics.Distributions {
                 double ds = z2 * (z2 - 3.0) * Math.Exp(-z2 / 2.0);
                 s += ds;
 
-                if (s == s_old) return (Global.SqrtTwoPI / (x * x) * s);
+                if (s == s_old) return Global.SqrtTwoPI / (x * x) * s;
 
             }
 
@@ -158,6 +158,13 @@ namespace Meta.Numerics.Statistics.Distributions {
         public override double Variance {
             get {
                 return Math.PI / 2.0 * (Math.PI / 3.0 - 1.0);
+            }
+        }
+
+        /// <inheritdoc />
+        public override double Skewness {
+            get {
+                return (3.0 * AdvancedMath.Apery - Math.PI * (Math.PI - 2.0)) / (Math.PI * Math.Pow(Math.PI / 3.0 - 1.0, 3.0 / 2.0));
             }
         }
 
@@ -242,7 +249,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         public override Interval Support {
             get {
-                return (Interval.FromEndpointAndWidth(0.0, Double.PositiveInfinity));
+                return Interval.Semiinfinite;
             }
         }
 

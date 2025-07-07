@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Meta.Numerics;
 using Meta.Numerics.Functions;
+using FluentAssertions;
 
 namespace Test {
 
@@ -202,6 +202,13 @@ namespace Test {
             foreach (double x in TestUtilities.GenerateRealValues(1.0, 1.0E2, 4)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(MoreMath.LogOnePlus(x), Math.Log(1.0 + x)));
             }
+        }
+        [TestMethod]
+        public void MidpointSpecialCases () {
+            MoreMath.Midpoint(Int32.MinValue, Int32.MinValue).Should().Be(Int32.MinValue);
+            MoreMath.Midpoint(-Int32.MaxValue, Int32.MaxValue).Should().Be(0);
+            MoreMath.Midpoint(0, Int32.MaxValue).Should().Be(Int32.MaxValue / 2);
+            MoreMath.Midpoint(1, Int32.MaxValue).Should().Be(1 + (Int32.MaxValue - 1) / 2);
         }
 
     }

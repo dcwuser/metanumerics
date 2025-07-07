@@ -5,30 +5,32 @@ namespace Meta.Numerics.Statistics.Distributions {
 
     internal interface IDeviateGenerator<T> {
 
-        T GetNext (Random rng);
+        T GetNext(Random rng);
 
     }
 
+    // Revisit generators. See https://arxiv.org/html/2411.01415v1#S5.
+
     internal static class DeviateGeneratorFactory {
 
-        public static IDeviateGenerator<double> GetNormalGenerator () {
-            return(new BoxMullerRejectionNormalDeviateGenerator());
+        public static IDeviateGenerator<double> GetNormalGenerator() {
+            return (new BoxMullerRejectionNormalDeviateGenerator());
         }
 
-        public static IDeviateGenerator<double> GetCauchyGenerator () {
-            return(new CauchyGenerator());
+        public static IDeviateGenerator<double> GetCauchyGenerator() {
+            return (new CauchyGenerator());
         }
 
-        public static IDeviateGenerator<double> GetGammaGenerator (double alpha) {
+        public static IDeviateGenerator<double> GetGammaGenerator(double alpha) {
             // choose a gamma generator depending on whether the shape parameter is less than one or greater than one
-            if (alpha <= 1.0) {
-                return(new AhrensDieterLowAlphaGammaGenerator(alpha));
+            if (alpha < 1.0) {
+                return (new BestGammaGenerator(alpha));
             } else {
-                return(new MarsagliaTsangGammaGenerator(GetNormalGenerator(), alpha));
+                return (new MarsagliaTsangGammaGenerator(alpha));
             }
         }
 
-        public static IDeviateGenerator<double> GetBetaGenerator (double alpha, double beta) {
+        public static IDeviateGenerator<double> GetBetaGenerator(double alpha, double beta) {
             return (new BetaFromGammaGenerator(GetGammaGenerator(alpha), GetGammaGenerator(beta)));
         }
 
@@ -52,10 +54,10 @@ namespace Meta.Numerics.Statistics.Distributions {
 
     internal class BoxMullerRejectionNormalDeviateGenerator : IDeviateGenerator<double> {
 
-        private bool haveNextDeviate = false;
+        private bool haveNextDeviate;
         private double nextDeviate;
 
-        public double GetNext (Random rng) {
+        public double GetNext(Random rng) {
 
             if (haveNextDeviate) {
                 haveNextDeviate = false;
@@ -200,7 +202,7 @@ namespace Meta.Numerics.Statistics.Distributions {
 
     internal class CauchyGenerator : IDeviateGenerator<double> {
 
-        public double GetNext (Random rng) {
+        public double GetNext(Random rng) {
 
             // Pick a random point within the unit semicircle using rejection.
             double x, y;
@@ -221,29 +223,72 @@ namespace Meta.Numerics.Statistics.Distributions {
     // The Ahrens-Dieter generator for \alpha < 1 is very well described by Best
     // Best also describes two improvements
 
-    internal class AhrensDieterLowAlphaGammaGenerator : IDeviateGenerator<double> {
+    // Best's generator is an improvement on Ahrens-Dieter with a tighter, multi-stage squeeze.
+    // Best DJ, "A Note on Gamma Variate Generators with Shape Parameter less than Unity", Computing 30 (1983) 185-88
+    // In my tests, Best is 10-20% faster than Ahrens-Dieter for a < 1.
 
-        public AhrensDieterLowAlphaGammaGenerator (double alpha) {
-            Debug.Assert(alpha <= 1.0);
-            a = alpha;
-            b = (Math.E + a) / Math.E;
+    internal class BestGammaGenerator : IDeviateGenerator<double> {
+
+        private readonly double a, b, z, ai, am1;
+
+        public BestGammaGenerator(double alpha) {
+            Debug.Assert(0.0 < alpha && alpha < 1.0);
+            this.a = alpha;
+            this.z = 0.07 + 0.75 * Math.Sqrt(1.0 - a);
+            this.b = 1.0 + Math.Exp(-z) * a / z;
+            this.ai = 1.0 / a;
+            this.am1 = a - 1.0;
         }
 
-        private readonly double a, b;
+        public double GetNext(Random rng) {
+            while (true) {
+                double u = rng.NextDouble();
+                double P = b * u;
+                if (P <= 1.0) {
+                    double x = z * Math.Pow(P, ai);
+                    double v = rng.NextDouble();
+                    if (v <= (2.0 - x) / (2.0 + x)) return x;
+                    if (v <= Math.Exp(-x)) return x;
+                } else {
+                    double x = -Math.Log(z * (b - P) / a);
+                    double y = x / z;
+                    double v = rng.NextDouble();
+                    if (v * (a + y - a * y) < 1.0) return x;
+                    if (v <= Math.Pow(y, am1)) return x;
+                }
+            }
+        }
+    }
 
-        public double GetNext (Random rng) {
+    // The Ahrens-Dieter generator is described by Best in his article above.
+    // It is an acceptance-rejection generator for a < 1.
+
+#if PAST
+    internal class AhrensDieterLowAlphaGammaGenerator : IDeviateGenerator<double> {
+
+        public AhrensDieterLowAlphaGammaGenerator(double alpha) {
+            Debug.Assert(0.0 < alpha && alpha <= 1.0);
+            a = alpha;
+            b = (Math.E + a) / Math.E;
+            ai = 1.0 / a;
+            am1 = a - 1.0;
+        }
+
+        private readonly double a, b, ai, am1;
+
+        public double GetNext(Random rng) {
 
             while (true) {
 
                 double P = b * rng.NextDouble();
 
                 if (P < 1.0) {
-                    double x = Math.Pow(P, 1.0 / a);
+                    double x = Math.Pow(P, ai);
                     if (rng.NextDouble() > Math.Exp(-x)) continue;
                     return (x);
                 } else {
                     double x = -Math.Log((b - P) / a);
-                    if (rng.NextDouble() > Math.Pow(x, a - 1.0)) continue;
+                    if (rng.NextDouble() > Math.Pow(x, am1)) continue;
                     return (x);
                 }
 
@@ -253,7 +298,70 @@ namespace Meta.Numerics.Statistics.Distributions {
 
     }
 
+#endif
+
+    // Marsaglia, G and Tsang W W, "A Simple Method for GEnerating Gamma Variables",
+    // ACM Transactions on Mathematical Software 26 (2000) 363-372
+
     internal class MarsagliaTsangGammaGenerator : IDeviateGenerator<double> {
+
+        public MarsagliaTsangGammaGenerator(double alpha) {
+            Debug.Assert(alpha >= 1.0);
+            d = alpha - 1.0 / 3.0;
+            c = 1.0 / Math.Sqrt(9.0 * d);
+            zGenerator = DeviateGeneratorFactory.GetNormalGenerator();
+        }
+
+        double c, d;
+        IDeviateGenerator<double> zGenerator;
+
+        public double GetNext(Random rng) {
+
+            while (true) {
+                double x, v;
+                do {
+                    x = zGenerator.GetNext(rng);
+                    v = 1.0 + c * x;
+                } while (v <= 0.0);
+                v = v * v * v;
+                double u = rng.NextDouble();
+                double x2 = x * x;
+                double x4 = x2 * x2;
+                if (u < 1.0 - 0.0331 * x4) return d * v;
+                if (Math.Log(u) < 0.5 * x2 + d * (1.0 - v + Math.Log(v))) return d * v;
+            }
+        }
+
+    }
+
+#if PAST
+
+    // Marsaglia and Tsang also describe a "boost" prodcedue to generate deviates for
+    // a < 1 from a generator that works for a > 1, but we don't use this because
+    // the dedicated a < 1 generators are faster.
+
+    public class BoostedMarsagliaTsangGamma : IDeviateGenerator<double> {
+
+        public BoostedMarsagliaTsangGamma(double alpha) {
+            Debug.Assert(0.0 < alpha && alpha < 1.0);
+            ai = 1.0 / alpha;
+            boostedGammaGenerator = new MarsagliaTsangGammaGenerator(alpha + 1.0);
+        }
+
+        private double ai;
+        private IDeviateGenerator<double> boostedGammaGenerator;
+
+        public double GetNext(Random rng) {
+
+            double g = boostedGammaGenerator.GetNext(rng);
+            double u = rng.NextDouble();
+            return g * Math.Pow(u, ai);
+
+        }
+
+    }
+
+    internal class MarsagliaTsangGammaGeneratorOld : IDeviateGenerator<double> {
 
         public MarsagliaTsangGammaGenerator (IDeviateGenerator<double> normalGenerator, double alpha) {
             Debug.Assert(alpha >= 1.0);
@@ -295,6 +403,8 @@ namespace Meta.Numerics.Statistics.Distributions {
 
         }
     }
+
+#endif
 
     internal class BetaFromGammaGenerator : IDeviateGenerator<double> {
 

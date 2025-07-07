@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Meta.Numerics;
 using Meta.Numerics.Matrices;
+using FluentAssertions;
 
 namespace Test {
 
@@ -72,6 +73,14 @@ namespace Test {
             v[1] += 1.0;
             Assert.IsTrue(v[1] == 1.0);
 
+        }
+
+        [TestMethod]
+        public void ComplexVectorDefaultEntries () {
+            ComplexColumnVector v = new ComplexColumnVector(3);
+            foreach (Complex z in v) {
+                z.Should().Be(Complex.Zero);
+            }
         }
 
     }

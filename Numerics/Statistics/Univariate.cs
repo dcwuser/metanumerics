@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Meta.Numerics.Data;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -122,6 +123,9 @@ namespace Meta.Numerics.Statistics {
         // The second moment update formula can also be written using the difference between x_n and both the pre-update and post-update mean.
         //   (x_n - m) (x_n - m') = (x_n - m - d)(x_n - m') = (d n - d) d n = n (n - 1) d^2 = e
 
+        // This method of computing means & variances online is called the Welford algorithm.
+
+
         internal static void ComputeMomentsUpToFirst(IEnumerable<double> sample, out int n, out double mean) {
 
             Debug.Assert(sample != null);
@@ -218,6 +222,130 @@ namespace Meta.Numerics.Statistics {
 
         }
 
+        // Two-pass calculation are the most accurate. The second pass not only computes the moments, but
+        // by tracking how far off the given mean is from the real mean, produces a corrected mean and corrections for the higher moments.
+
+        private static void FirstPassMean(IEnumerable<double> values, out int n, out double m) {
+            Debug.Assert(values != null);
+            n = 0;
+            m = 0.0;
+            foreach (double x in values) {
+                n++;
+                m += (x - m) / n;
+            }
+        }
+
+        // Suppose we have computed central moments based on a value of the mean m (which will we suppose to be slightly wrong).
+        //   c_r = n^{-1} \sum_i (x_i - m)^r
+        // We will then find
+        //   c_1 = ( n^{-1} \sum_i x_i - m ) \ne 0 = \delta m
+        // is a correction to the mean. The true mean is m + \delta m.
+
+        // We can then use Taylor expansion to get corrections to all the other moments.
+        //   \frac{\partial c_r}{\partial m} = -r n^{-1} \sum_i (x_i - m)^{r-1} = -r c_{r-1}
+        //   \frac{\partial^2 c_r}{\partial m^2} = r(r-1) n^{-1} \sum_i (x_i - m)^{r-2} = r(r-1) c_{r-2}
+        // So for any r > 3, to 2nd order in (\delta m),
+        //   \delta c_r = -r c_{r-1}  (\delta m) + 1/2 r(r-1) c_{r-2} (\delta m)^2 = (\delta m) [ 1/2 r (r-1) c_{r-2} (\delta m) - r c_{r-1} ]
+
+        // For r = 2 or 3, c_1 = (\delta m) appears, which messes with the relative order of terms
+        //   \delta c_2 = -2 c_1 (\delta m) + c_0 (\delta m)^2 = -2 (\delta m)^2 + (\delta m)^2 = - (\delta m)^2
+        //   \delta c_3 = -3 c_2 (\delta m) + 3 c_1 (\delta m)^2 - 1 c_0 (\delta m)^3 = -3 c_2 (\delta m) + 3 (\delta m)^3 - (\delta m)^3 = (\delta m) [ 2 (\delta m)^2 - 3 c_2 ]
+
+        private static void CorrectionPassMoments2 (IEnumerable<double> values, ref double m, out double c2) {
+
+            int n = 0;
+
+            // Compute c2 assuming the original m
+            c2 = 0.0;
+            double delta_m = 0.0;
+            foreach (double x in values) {
+                n++;
+                double z = x - m;
+                delta_m += z;
+                c2 += z * z;
+            }
+            delta_m /= n;
+            c2 /= n;
+
+            // Correct c2 and m
+            c2 -= MoreMath.Sqr(delta_m);
+            m += delta_m;
+        }
+
+
+        private static void CorrectionPassMoments4 (IEnumerable<double> xs, ref double m, out double c2, out double c3, out double c4) {
+
+            int n = 0;
+
+            // Compute moments assuming the original m
+            c2 = 0.0;
+            c3 = 0.0;
+            c4 = 0.0;
+            double delta_m = 0.0;
+            foreach (double x in xs) {
+                n++;
+                double z = x - m;
+                double z2 = z * z;
+                delta_m += z;
+                c2 += z2;
+                c3 += z * z2;
+                c4 += z2 * z2;
+            }
+            delta_m /= n;
+            c2 /= n;
+            c3 /= n;
+            c4 /= n;
+
+            // Add corrections based on computed delta_m
+            // They must be ordered higher to lower moments, since original lower moments appear in corrections to higher
+            c4 += delta_m * (6.0 * c2 * delta_m - 4.0 * c3);
+            c3 += delta_m * (2.0 * MoreMath.Sqr(delta_m) - 3.0 * c2);
+            c2 -= MoreMath.Sqr(delta_m);
+            m += delta_m;
+
+        }
+
+        private static void CorrectionPassMoments6(IEnumerable<double> xs, ref double m, out double c2, out double c3, out double c4, out double c5, out double c6) {
+
+            int n = 0;
+
+            // Compute moments assuming the original m
+            c2 = 0.0;
+            c3 = 0.0;
+            c4 = 0.0;
+            c5 = 0.0;
+            c6 = 0.0;
+            double delta_m = 0.0;
+            foreach (double x in xs) {
+                n++;
+                double z = x - m;
+                double z2 = z * z;
+                double z3 = z * z2;
+                delta_m += z;
+                c2 += z2;
+                c3 += z3;
+                c4 += z2 * z2;
+                c5 += z2 * z3;
+                c6 += z3 * z3;
+            }
+            delta_m /= n;
+            c2 /= n;
+            c3 /= n;
+            c4 /= n;
+            c5 /= n;
+            c6 /= n;
+
+            // Add corrections based on computed delta_m
+            // They must be ordered higher to lower moments, since original lower moments appear in corrections to higher
+            c6 += delta_m * (15.0 * c4 * delta_m - 6.0 * c5);
+            c5 += delta_m * (10.0 * c3 * delta_m - 5.0 * c4);
+            c4 += delta_m * (6.0 * c2 * delta_m - 4.0 * c3);
+            c3 += delta_m * (2.0 * MoreMath.Sqr(delta_m) - 3.0 * c2);
+            c2 -= MoreMath.Sqr(delta_m);
+            m += delta_m;
+
+        }
+
         /// <summary>
         /// Computes the sample standard deviation.
         /// </summary>
@@ -282,9 +410,9 @@ namespace Meta.Numerics.Statistics {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             if (sample.Count < 1) throw new InsufficientDataException();
             if (r == 0) {
-                return (1.0);
+                return 1.0;
             } else if (r == 1) {
-                return (Mean(sample));
+                return Mean(sample);
             } else {
                 int n = 0;
                 double M = 0.0;
@@ -292,7 +420,7 @@ namespace Meta.Numerics.Statistics {
                     n++;
                     M += MoreMath.Pow(value, r);
                 }
-                return (M / n);
+                return M / n;
             }
         }
 

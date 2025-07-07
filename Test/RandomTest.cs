@@ -177,9 +177,9 @@ namespace Test {
 
     }
 
-    public class AhrensDieterLowAlphaGammaGenerator : IDeviateGenerator {
+    public class AhrensDieterLowAlphaGammaGenerator1 : IDeviateGenerator {
 
-        public AhrensDieterLowAlphaGammaGenerator (double alpha) {
+        public AhrensDieterLowAlphaGammaGenerator1 (double alpha) {
             if (alpha > 1.0) throw new ArgumentOutOfRangeException("alpha");
             a = alpha;
             b = (Math.E + a) / Math.E;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -11,13 +12,12 @@ namespace Meta.Numerics.Statistics {
     /// </summary>
     /// <remarks>
     /// <para>Principal component analysis (PCA) is a form of factor analysis or dimension reduction.
-    /// It attempts to identify a small number of factors which allow most of the variation in the
-    /// data to be explained by giving the vales for the factor dimensions.</para>
+    /// It attempts to identify a small number of factors which account for most of the variation in the data.</para>
     /// <para>Mathematically, PCA constructs an alternative set of orthonormal basis vectors for a multivariate data set. These
     /// basis vectors, called the principal components, are ordered by the total variance explained by each.</para>
     /// <para>Suppose, for example, you measure the value of different possessions possessions for a sample of people:
     /// home value, car value, furniture value, etc. You might expect that much of the variation in these numbers can
-    /// be explained by one underlying factor, which you might call "richness". If this is true, then a PCA analysis will
+    /// be explained by one underlying factor, which you might call "wealth". If this is true, then a PCA analysis will
     /// show that the most principal component explains a very large faction of the total variance, and the other less
     /// principal components will explain only small fractions of the total variance.</para>
     /// <para>Note that PCA is not invariant with respect to the re-scaling of individual variables.</para>
@@ -110,8 +110,17 @@ namespace Meta.Numerics.Statistics {
             return (scores);
         }
 
+#if FUTURE
+
+        public IReadOnlyList<IReadOnlyList<double>> NewTransformedSample {
+            get {
+                throw new NotImplementedException();
+            }
+
+        }
+
+#endif
+
     }
-
-
 
 }

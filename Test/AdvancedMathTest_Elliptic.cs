@@ -9,6 +9,7 @@ using Meta.Numerics.Functions;
 
 using Meta.Numerics.Extended;
 using Meta.Numerics.Statistics;
+using FluentAssertions;
 
 namespace Test {
 
@@ -397,6 +398,19 @@ namespace Test {
                     Math.Log(q),
                     -Math.PI * K1 / K
                 ));
+            }
+
+        }
+
+        [TestMethod]
+        public void EllipticNomeProduct () {
+            foreach (double k in TestUtilities.GenerateRealValues(5.0E-2, 1.0, 4)) {
+
+                double kPrime = Math.Sqrt(1.0 - k * k);
+                double q = AdvancedMath.EllipticNome(k);
+                double qPrime = AdvancedMath.EllipticNome(kPrime);
+
+                (Math.Log(q) * Math.Log(qPrime)).Should().BeNearly(MoreMath.Sqr(Math.PI));
             }
 
         }

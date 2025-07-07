@@ -1,9 +1,12 @@
 ﻿using System;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FluentAssertions;
 
 using Meta.Numerics;
 using Meta.Numerics.Analysis;
 using Meta.Numerics.Functions;
+using System.Linq;
 
 namespace Test {
 
@@ -22,7 +25,6 @@ namespace Test {
             foreach (Complex z in TestUtilities.GenerateComplexValues(1.0E-1, 1.0E3, 16)) {
                 // for large imaginary parts, erf overflows, so don't try them
                 if (z.Im * z.Im > 500.0) continue;
-                //Console.WriteLine("{0} {1} {2} {3}", z, AdvancedComplexMath.Erf(z), AdvancedComplexMath.Erf(-z), AdvancedComplexMath.Erf(z.Conjugate));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedComplexMath.Erf(-z), -AdvancedComplexMath.Erf(z)
                 ));
@@ -50,9 +52,7 @@ namespace Test {
                 Complex erf = AdvancedComplexMath.Erf(-ComplexMath.I * z);
                 Complex erfc = 1.0 - erf;
                 Complex f = ComplexMath.Exp(z * z);
-                Console.WriteLine("z={0} w={1} erf={2} erfc={3} f={4} w'={5} erf'={6}", z, w, erf, erfc, f, erfc / f, 1.0 - f * w);
                 if (Double.IsInfinity(f.Re) || Double.IsInfinity(f.Im) || f == 0.0) continue;
-                //Console.WriteLine("{0} {1}", TestUtilities.IsNearlyEqual(w, erfc / f), TestUtilities.IsNearlyEqual(erf, 1.0 - f * w));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     erf, 1.0 - f * w
                 ));
@@ -340,7 +340,7 @@ namespace Test {
 
         [TestMethod]
         public void ComplexEinEiAgreement () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0E2, 8)) {
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-3, 1.0E2).Take(8)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(
                     AdvancedMath.IntegralEi(x),
                     AdvancedMath.EulerGamma + Math.Log(x) - AdvancedComplexMath.Ein(-x)
@@ -361,15 +361,10 @@ namespace Test {
 
         [TestMethod]
         public void ComplexEinCinSiAgreement () {
-            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2, 8)) {
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedComplexMath.Ein(Complex.I * x).Im,
-                    AdvancedMath.IntegralSi(x)
-                ));
-                Assert.IsTrue(TestUtilities.IsNearlyEqual(
-                    AdvancedComplexMath.Ein(Complex.I * x).Re,
-                    AdvancedMath.IntegralCin(x)
-                ));
+            foreach (double x in TestUtilities.GenerateRealValues(1.0E-2, 1.0E2).Take(8)) {
+                Complex w = AdvancedComplexMath.Ein(Complex.I * x);
+                w.Re.Should().BeNearly(AdvancedMath.IntegralCin(x));
+                w.Im.Should().BeNearly(AdvancedMath.IntegralSi(x));
             }
         }
 

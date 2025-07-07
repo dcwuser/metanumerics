@@ -12,6 +12,7 @@ using Meta.Numerics.Functions;
 using Meta.Numerics.Statistics;
 using Meta.Numerics.Statistics.Distributions;
 using System.Linq;
+using FluentAssertions;
 
 namespace Test {
 
@@ -55,8 +56,9 @@ namespace Test {
             });
 
             // Add some distributions that come from tests.
-            Sample small = TestUtilities.CreateSample(distributions[0], 7);
-            Sample large = TestUtilities.CreateSample(distributions[1], 127);
+            Random rng = new Random(1);
+            List<double> small = distributions[0].GetRandomValues(rng, 7).ToList();
+            List<double> large = distributions[1].GetRandomValues(rng, 127).ToList();
             distributions.Add(small.KolmogorovSmirnovTest(distributions[2]).Statistic.Distribution);
             distributions.Add(large.KolmogorovSmirnovTest(distributions[3]).Statistic.Distribution);
             //distributions.Add(small.KuiperTest(distributions[4]).Distribution);
@@ -666,6 +668,52 @@ namespace Test {
                 double[] centralOutputs = MomentMath.CumulantToCentral(cumulantInputs);
                 Assert.IsTrue(centralOutputs.Length == n);
                 for (int k = 0; k < n; k++) Assert.IsTrue(TestUtilities.IsNearlyEqual(centralOutputs[k], distribution.CentralMoment(k)));
+            }
+
+        }
+
+        // Return to this when validation estimates of values and variances of population cumulants
+
+        //[TestMethod]
+        public void PopulationMomentsTest () {
+
+            Random rng = new Random(1);
+
+            // Generate samples of various sizes
+            foreach (int n in new int[] { 8, 32, 128 }) {
+
+                // For many distributions
+                foreach (ContinuousDistribution distribution in distributions) {
+
+                    if (Double.IsNaN(distribution.Mean) || Double.IsInfinity(distribution.Mean)) continue;
+
+                    // For each distribution, generate many samples of that size
+                    List<double> k1_values = new List<double>();
+                    List<double> k1_errors = new List<double>();
+                    for (int i = 0; i < 1024; i++) {
+
+                        List<double> sample = distribution.GetRandomValues(rng, n).ToList();
+                        k1_values.Add(sample.PopulationMean().Value);
+                        k1_errors.Add(sample.PopulationMean().Uncertainty);
+
+                    }
+
+                    // The reported k1 values (means) should, on average, be compatible with the distribution mean
+                    k1_values.PopulationMean().ConfidenceInterval(0.99).ClosedContains(distribution.Mean).Should().BeTrue();
+
+                    // The variance of the reported k1 values should be compatible with the claimed uncertainty
+                    k1_values.PopulationVariance().ConfidenceInterval(0.99).Contains(MoreMath.Sqr(k1_errors.Mean())).Should().BeTrue();
+
+                    /*
+                    TestResult k1_test = k1.SignTest(distribution.Mean);
+                    //k1_test.Probability.Should().BeGreaterThan(0.01);
+                    if (k1_test.Probability < 0.01) {
+                        Console.WriteLine($" {n} {distribution} {k1_test.Probability}");
+                    }
+                    */
+
+                }
+
             }
 
         }

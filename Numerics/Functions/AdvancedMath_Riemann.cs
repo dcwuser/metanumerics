@@ -22,6 +22,7 @@ namespace Meta.Numerics.Functions {
             if (x < 0.0) {
                 // for negative numbers, use the reflection formula
                 double t = 1.0 - x;
+                Debug.Assert(t > 0.0);
                 return 2.0 * Math.Pow(2.0 * Math.PI, -t) * MoreMath.CosPi(0.5 * t) * AdvancedMath.Gamma(t) * RiemannZeta(t);
             } else {
                 double xm1 = x - 1.0;
@@ -77,7 +78,7 @@ namespace Meta.Numerics.Functions {
                 sum2 += term;
                 sign = !sign;
             }
-            return (sum1 + sum2);
+            return sum1 + sum2;
         }
 
         private static readonly double[] DirichletEta_BorweinCoefficients = ComputeBorweinEtaCoefficients(16);
@@ -114,7 +115,7 @@ namespace Meta.Numerics.Functions {
                 double f_old = f;
                 df = - df * x / i;
                 f += StieltjesConstants[i] * df;
-                if (f == f_old) return (f);
+                if (f == f_old) return f;
             }
             throw new NonconvergenceException();
         }
@@ -164,21 +165,23 @@ namespace Meta.Numerics.Functions {
         public static Complex RiemannZeta (Complex z) {
 
             // Use conjugation and reflection symmetry to move to the first quadrant.
-            if (z.Im < 0.0) return (RiemannZeta(z.Conjugate).Conjugate);
+            if (z.Im < 0.0) return RiemannZeta(z.Conjugate).Conjugate;
             if (z.Re < 0.0) {
+                // Use \zeta(1-s) = 2 (2 \pi)^{-s} \cos(\frac{1}{2} \pi s) \Gamma(s) \zeta(s)
                 Complex zp = Complex.One - z;
-                return (2.0 * ComplexMath.Pow(Global.TwoPI, -zp) * ComplexMath.Cos(Global.HalfPI * zp) * AdvancedComplexMath.Gamma(zp) * RiemannZeta(zp)); 
+                Debug.Assert(zp.Re > 0.0);
+                return 2.0 * ComplexMath.Pow(2.0 * Math.PI, -zp) * ComplexMath.SinPi(0.5 * z) * AdvancedComplexMath.Gamma(zp) * RiemannZeta(zp); 
             }
 
             // Close to pole, use Laurent series.
             Complex zm1 = z - Complex.One;
             if (ComplexMath.Abs(zm1) < 0.50) {
-                return (RiemannZeta_LaurentSeries(zm1));
+                return RiemannZeta_LaurentSeries(zm1);
             }
 
             // Fall back to Euler-Maclaurin summation.
             int n = RiemannZeta_EulerMaclaurin_N(z.Re, z.Im);
-            return (RiemannZeta_EulerMaclaurin(z, n));
+            return RiemannZeta_EulerMaclaurin(z, n);
 
         }
 
@@ -213,7 +216,9 @@ namespace Meta.Numerics.Functions {
         // Euler-Maclaurin algorithm that follows.
 
         private static int RiemannZeta_EulerMaclaurin_N (double s, double t) {
-            Debug.Assert(s >= 0.0); Debug.Assert(t >= 0.0);
+
+            Debug.Assert(s >= 0.0);
+            Debug.Assert(t >= 0.0);
 
             // target convergence half-way through our tabulated Bernoulii numbers
             const int j = 16;

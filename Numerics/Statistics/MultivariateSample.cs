@@ -18,8 +18,9 @@ namespace Meta.Numerics.Statistics {
     /// data point. A study which records only the height of each subject could use the <see cref="Sample"/>
     /// class to store its data, but a study which records the income and height of each subject should use
     /// MutlivariateSample class. In addition to descriptive statistics, this class offers tests for studying
-    /// the associations between the recorded variables, and routines for fitting the sample to a model.
-    /// </para>
+    /// the associations between the recorded variables, and routines for fitting the sample to a model.</para>
+    /// <para>NOTE: This class will be retired in a future release. Its functionality is replaced by the
+    /// <see cref="Multivariate"/> class, which can operatate on arbitrary data lists.</para>
     /// </remarks>
     public sealed class MultivariateSample : ICollection<double[]>, IEnumerable<double[]>, IEnumerable {
 
@@ -206,7 +207,6 @@ namespace Meta.Numerics.Statistics {
             return (new Sample(storage[c], true));
         }
 
-#if OLD
 
         /// <summary>
         /// Gets the indicated columns as a <see cref="BivariateSample"/>.
@@ -228,8 +228,6 @@ namespace Meta.Numerics.Statistics {
             if ((cy < 0) || (cy >= Dimension)) throw new ArgumentOutOfRangeException(nameof(cy));
             return (new BivariateSample(storage[cx], storage[cy], true));
         }
-
-#endif
 
         /// <summary>
         /// Gets the indicated columns as a multivariate sample.

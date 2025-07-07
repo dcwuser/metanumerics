@@ -12,6 +12,9 @@ namespace Meta.Numerics.Statistics {
     /// <summary>
     /// Represents an ordered series of data points.
     /// </summary>
+    /// <remarks>
+    /// <para>NOTE: This class will be retired in a future release. Its functionality is replaced by the
+    /// <see cref="Series"/> class, which can operatate on arbitrary data lists.</para></remarks>
     public sealed class TimeSeries : IEnumerable, IEnumerable<double>, IReadOnlyCollection<double>, IList<double> {
 
         /// <summary>

@@ -2,6 +2,7 @@
 // Copyright 2014 by David Wright.
 // All rights reserved.
 
+using Meta.Numerics.Matrices;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -119,8 +120,7 @@ namespace Meta.Numerics.Functions {
                 int[] cycle = new int[cycleText.Length];
                 dimension += cycle.Length;
                 for (int k = 0; k < cycle.Length; k++) {
-                    int value;
-                    if (!Int32.TryParse(cycleText[k], out value)) return (false);
+                    if (!Int32.TryParse(cycleText[k], out int value)) return (false);
                     cycle[k] = value;
                 }
                 cyclesList.Add(cycle);
@@ -217,8 +217,7 @@ namespace Meta.Numerics.Functions {
             int[] map = new int[mapText.Length];
             bool[] flags = new bool[mapText.Length];
             for (int i = 0; i < map.Length; i++) {
-                int value;
-                if (!Int32.TryParse(mapText[i], out value)) return (false);
+                if (!Int32.TryParse(mapText[i], out int value)) return (false);
                 if ((value < 0) || (value > (map.Length - 1))) return (false);
                 if (flags[value]) return (false);
                 map[i] = value;
@@ -411,9 +410,8 @@ namespace Meta.Numerics.Functions {
         /// <exception cref="FormatException"><paramref name="text"/> is not a valid text representation of a permutation.</exception>
         public static Permutation Parse (string text) {
             if (text == null) throw new ArgumentNullException(nameof(text));
-            Permutation output;
-            if (TryParse(text, out output)) {
-                return (output);
+            if (TryParse(text, out Permutation output)) {
+                return output;
             } else {
                 throw new FormatException();
             }
@@ -437,13 +435,11 @@ namespace Meta.Numerics.Functions {
             bool success = false;
             if ((text.Length > 0) && (text[0] == '[')) {
                 // try to parse as ordering
-                PermutationAsMap map;
-                success = PermutationAsMap.TryParse(text, out map);
+                success = PermutationAsMap.TryParse(text, out PermutationAsMap map);
                 if (success) output = new Permutation(map);
             } else {
                 // try to parse as cycles
-                PermutationAsCycles cycles;
-                success = PermutationAsCycles.TryParse(text, out cycles);
+                success = PermutationAsCycles.TryParse(text, out PermutationAsCycles cycles);
                 if (success) output = new Permutation(cycles);
             }
 
@@ -494,6 +490,19 @@ namespace Meta.Numerics.Functions {
             map = new PermutationAsMap(FromCyclesToMap(cycles.cycles));
         }
 
+        internal int[] Map {
+            get {
+                if (map == null) ComputeMap();
+                return map.map;
+            }
+        }
+
+        internal int[][] Cycles {
+            get {
+                if (cycles == null) ComputeCycles();
+                return cycles.cycles;
+            }
+        }
 
         /// <summary>
         /// Applies the permutation to a list.
@@ -798,6 +807,13 @@ namespace Meta.Numerics.Functions {
             return (new Permutation(PermutationAsMap.GetRandomPermutation(dimension, rng)));
         }
 
+        /// <summary>
+        /// Get a matrix representation of the permuation.
+        /// </summary>
+        /// <returns>A matrix representation of the permutation.</returns>
+        public PermutationMatrix ToMatrix () {
+            return new PermutationMatrix(this);
+        }
     }
 
 }

@@ -353,7 +353,7 @@ namespace Meta.Numerics.Functions {
         /// <remarks>
         /// <para>Chebyshev polynomials of the second kind are orthogonal on the interval [-1,1] with the weight (1-x<sup>2</sup>)<sup>1/2</sup>.</para>
         /// <para>Values returned are fully accurate (14-16 decimal digits) over the full range of argument for orders up to thousands.
-        /// By orders up to a million, ~11 decimal digits remain accurate.</para>
+        /// For orders up to a million, ~11 decimal digits remain accurate.</para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is negative, or <paramref name="x"/> lies outside [-1,+1].</exception>
         /// <seealso href="https://en.wikipedia.org/wiki/Chebyshev_polynomials"/>

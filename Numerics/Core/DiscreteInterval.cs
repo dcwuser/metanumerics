@@ -63,7 +63,7 @@ namespace Meta.Numerics {
         /// This is one less than the number of integers in the interval. Thus an interval with equal left and right endpoints
         /// has width 0, not width 1. And and the interval {0 .. MaxValue} has width MaxValue, not MaxValue + 1.</para>
         /// </remarks>
-        internal uint Width {
+        public uint Width {
             get {
                 return (uint) (max - min);
             }

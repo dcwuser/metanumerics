@@ -8,7 +8,7 @@ namespace Meta.Numerics {
     /// <summary>
     /// Represents a two-dimensional point.
     /// </summary>
-    public struct XY : IEquatable<XY> {
+    public readonly struct XY : IEquatable<XY> {
 
         /// <summary>
         /// Initializes a new point with the given coordinates.
@@ -20,7 +20,7 @@ namespace Meta.Numerics {
             this.y = y;
         }
 
-        private double x, y;
+        private readonly double x, y;
 
         /// <summary>
         /// Gets the X-coordinate of the point.

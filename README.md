@@ -5,7 +5,7 @@ It offers an object-oriented API for data manipulation, statistical analysis, ad
 matrix algebra, Fourier transforms, advanced functions, extended precision arithmetic,
 and solver functionality such as integration, optimization, and root finding.
 
-Meta.Numerics is copyright 2008-2020 by David Wright. It is licensed under the
+Meta.Numerics is copyright 2008-2025 by David Wright. It is licensed under the
 Microsoft Public License, which is a BSD-style open-source license.
 
 For more information, visit http://www.meta-numerics.net.

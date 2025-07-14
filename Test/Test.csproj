@@ -95,6 +95,7 @@
     <Compile Include="Generate.cs" />
     <Compile Include="Int128Test.cs" />
     <Compile Include="Measure.cs" />
+    <Compile Include="PermutationMatrixTest.cs" />
     <Compile Include="UInt128Test.cs" />
     <Compile Include="UncertainMeasurementSampleTests.cs" />
     <Compile Include="FrameViewTests.cs" />

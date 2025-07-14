@@ -93,19 +93,20 @@ namespace Test {
 
         }
 
+        [TestMethod]
         public void DoubleInfoPowersOfTwo () {
 
-            DoubleInfo tp1022 = new DoubleInfo(Math.Pow(2.0, 1022));
-            tp1022.Mantissa.Should().Be(1);
-            tp1022.Exponent.Should().Be(1022);
+            foreach (int n in TestUtilities.GenerateIntegerValues(1, 1000, 4)) {
 
-            DoubleInfo tm1022 = new DoubleInfo(Math.Pow(2.0, -1022));
-            tm1022.Mantissa.Should().Be(1);
-            tm1022.Exponent.Should().Be(-1022);
+                DoubleInfo dp = DoubleInfo.For(Math.Pow(2, n));
+                dp.Mantissa.Should().Be(1);
+                dp.Exponent.Should().Be(n);
 
-            DoubleInfo tm1023 = new DoubleInfo(Math.Pow(2.0, -1023));
-            tm1022.Mantissa.Should().Be(1);
-            tm1022.Exponent.Should().Be(-1023);
+                DoubleInfo dm = DoubleInfo.For(Math.Pow(2, -n));
+                dm.Mantissa.Should().Be(1);
+                dm.Exponent.Should().Be(-n);
+
+            }
 
         }
 

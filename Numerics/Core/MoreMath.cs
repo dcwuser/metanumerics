@@ -238,7 +238,7 @@ namespace Meta.Numerics {
         /// <param name="x">The argument.</param>
         /// <returns>The value of log(1+x).</returns>
         /// <remarks>
-        /// <para>If x is close to 0, computing log(1+x) by <tt>Math.Log(1.0 + x)</tt> can result in a
+        /// <para>If x is close to 0, computing log(1+x) by <c>Math.Log(1.0 + x)</c> can result in a
         /// significant loss of accuracy.
         /// This function maintains full precision of all values of x by switching to a series expansion
         /// for values of x near zero.</para>
@@ -416,9 +416,8 @@ namespace Meta.Numerics {
         /// that arise from the finite precision of the stored constant <see cref="Math.PI"/>.</para>
         /// <para>Suppose, for example, x = 1.0E6. Since x is an integer, sin(&#x3C0;x) = 0.0.
         /// However, due to the finite accuracy of Math.PI, Math.PI * x is not a perfect multiple of &#x3C0;, and
-        /// Math.Sin(Math.PI * x) = -2.2318717360358953E-10. But MoreMath.SinPi(x) = 0.0 exactly. Even for
-        /// arguments that are not exact integers, the accurary of MoreMath.SinPi will be better (because
-        /// it is possible to do argument reductions by integers exactly.)
+        /// <c>Math.Sin(Math.PI * x)</c> = -2.2318717360358953E-10. But <c>MoreMath.SinPi(x)</c> = 0.0 exactly. Even for
+        /// arguments that are not exact integers, the accurary of MoreMath.SinPi will be better.
         /// </para>
         /// </remarks>
         /// <seealso cref="CosPi(double)"/>

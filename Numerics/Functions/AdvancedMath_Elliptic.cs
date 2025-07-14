@@ -558,6 +558,13 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="k">The elliptic modulus.</param>
         /// <returns>The corresponding Jacobi nome q.</returns>
+        /// <remarks>
+        /// <para>The elliptic nome q(k) = e<sup>&#x3C0; K'/ K</sup>, where K is the elliptic integral of the first kind
+        /// for the modulus k, and K' is the elliptic integral of the first kind for its complement k'.</para>
+        /// </remarks>
+        /// <seealso cref="EllipticK(double)"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Nome_(mathematics)"/>
+        /// <seealso href="https://mathworld.wolfram.com/Nome.html"/>
         public static double EllipticNome (double k) {
 
             if (k < 0.0 || k > 1.0) throw new ArgumentOutOfRangeException(nameof(k));

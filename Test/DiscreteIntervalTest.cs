@@ -31,6 +31,29 @@ namespace Test {
             DiscreteInterval.Equals(a, b).Should().BeFalse();
         }
 
+        [TestMethod]
+        public void DiscreteIntervalProperties () {
+
+            DiscreteInterval a = DiscreteInterval.FromEndpoints(-1, 2);
+            a.LeftEndpoint.Should().Be(-1);
+            a.RightEndpoint.Should().Be(2);
+            a.Width.Should().Be(3);
+        }
+
+        [TestMethod]
+        public void StandardDiscreteIntervals () {
+
+            DiscreteInterval.Semiinfinite.LeftEndpoint.Should().Be(0);
+            DiscreteInterval.Semiinfinite.RightEndpoint.Should().Be(Int32.MaxValue);
+            DiscreteInterval.Semiinfinite.Width.Should().Be(Int32.MaxValue);
+
+            DiscreteInterval.Infinite.LeftEndpoint.Should().Be(-Int32.MaxValue);
+            DiscreteInterval.Infinite.RightEndpoint.Should().Be(Int32.MaxValue);
+            DiscreteInterval.Infinite.Width.Should().Be( 2 * ((uint)Int32.MaxValue) );
+            // MaxValue points on either side and 0 doesn't count because Width != Count
+
+        }
+
     }
 
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using static System.Net.WebRequestMethods;
 
 
 namespace Meta.Numerics.Functions {
@@ -260,6 +261,8 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="x">The argument.</param>
         /// <returns>The value of Chi(x).</returns>
+        /// <seealso href="https://en.wikipedia.org/wiki/Trigonometric_integral#Hyperbolic_cosine_integral"/>
+        /// <seealso href="https://mathworld.wolfram.com/Chi.html"/>
         public static double IntegralChi (double x) {
             if (x < 0.0) {
                 throw new ArgumentOutOfRangeException(nameof(x));
@@ -285,6 +288,7 @@ namespace Meta.Numerics.Functions {
         /// <img src="../images/SiIntegral.png" />
         /// <para>The sine integral is zero at the origin and executes a damped oscillation around &#x3C0;/2 as its argument increases.</para>
         /// </remarks>
+        /// <seealso cref="IntegralLittleSi(double)"/>
         /// <seealso href="https://en.wikipedia.org/wiki/Trigonometric_integral"/>
         /// <seealso href="http://mathworld.wolfram.com/SineIntegral.html"/>
         /// <seealso href="https://dlmf.nist.gov/6"/>
@@ -308,6 +312,15 @@ namespace Meta.Numerics.Functions {
         /// </summary>
         /// <param name="x">The argument.</param>
         /// <returns>The value of si(x).</returns>
+        /// <remarks>
+        /// <para>The value of the little sine integral is offset from the value of the big sine integral by &#x3C0;/2.
+        /// Thus at the orgin it has the value -&#x3C0;/2, but asymptotically it oscialtes around zero. Thus its
+        /// better to use this function for large values when you want to accurate know the amplitude of these oscilations.</para>
+        /// </remarks>
+        /// <seealso cref="IntegralSi(double)"/>
+        /// <seealso href="https://en.wikipedia.org/wiki/Trigonometric_integral"/>
+        /// <seealso href="http://mathworld.wolfram.com/SineIntegral.html"/>
+        /// <seealso href="https://dlmf.nist.gov/6"/>
         public static double IntegralLittleSi (double x) {
             if (x < 0.0) {
                 throw new ArgumentOutOfRangeException(nameof(x));

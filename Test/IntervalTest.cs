@@ -1,4 +1,5 @@
 ﻿using System;
+using FluentAssertions;
 using Meta.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -105,6 +106,13 @@ namespace Test {
             Assert.IsTrue(ab.Equals((object) ab));
             Assert.IsFalse(ab.Equals(ac));
             Assert.IsFalse(ab.Equals((object) ac));
+            Assert.IsFalse(ab.Equals(new Object()));
+        }
+
+        [TestMethod]
+        public void IntervalToString() {
+            Interval ab = Interval.FromEndpoints(a, b);
+            ab.ToString().Should().Be($"[{a},{b}]");
         }
 
     }

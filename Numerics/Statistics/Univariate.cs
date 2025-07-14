@@ -42,9 +42,9 @@ namespace Meta.Numerics.Statistics {
     /// <see cref="KruskalWallisTest(IReadOnlyList{double}[])"/>.</para>
     /// <para>Most of the methods in this class are extension methods that accept as a sample any type
     /// that implements the appropriate collection interface. So, for example, given
-    /// sample values in a <see cref="List{T}">List&lt;string&gt;</see> named <tt>s</tt>, you could estimate
-    /// the variance of the population from which it was drawn either by <tt>s.PopulationVariance()</tt>
-    /// or <tt>Univariate.PopulationVariance(s)</tt>.</para>
+    /// sample values in a <see cref="List{T}">List&lt;string&gt;</see> named <c>s</c>, you could estimate
+    /// the variance of the population from which it was drawn either by <c>s.PopulationVariance()</c>
+    /// or <c>Univariate.PopulationVariance(s)</c>.</para>
     /// </remarks>
     public static partial class Univariate {
 

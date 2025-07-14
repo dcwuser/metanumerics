@@ -25,7 +25,8 @@ namespace Meta.Numerics.Statistics {
     /// All the summary statistics, statistical tests, fits, and other functionality that they provided
     /// can now be accessed using the methods of the <see cref="Univariate"/>, <see cref="Bivariate"/>,
     /// <see cref="Multivariate"/> and <see cref="Series"/> classes. The new methods can be applied
-    /// to data in arbitrary collection types, so specialized storage types are no longer necessary.</para>
+    /// to data in arbitrary collection types, so specialized storage types are no longer necessary.
+    /// We expect to remove the storage types in a future release.</para>
     /// </remarks>
     [CompilerGenerated]
     internal static class NamespaceDoc {

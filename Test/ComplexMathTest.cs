@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Linq;
+using System.Collections.Generic;
+using FluentAssertions;
 using Meta.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -469,6 +472,39 @@ namespace Test {
                 Assert.IsTrue(ComplexMath.Abs(-x) == Math.Abs(-x));
 
                 Assert.IsTrue(ComplexMath.Arg(x) == 0.0);
+
+            }
+
+        }
+
+        [TestMethod]
+        public void ComplexRootsOfUnitySepcialCases () {
+
+            Complex[] firstRoots = ComplexMath.RootsOfUnity(1);
+            firstRoots.Length.Should().Be(1);
+            firstRoots[0].Should().Be(Complex.One);
+
+            Complex[] secondRoots = ComplexMath.RootsOfUnity(2);
+            secondRoots.Length.Should().Be(2);
+            secondRoots[0].Should().Be(Complex.One);
+            secondRoots[1].Should().Be(-Complex.One);
+
+        }
+
+        [TestMethod]
+        public void ComplexRootsOfUnityTest () {
+
+            foreach (int n in TestUtilities.GenerateIntegerValues(4, 32).Take(6)) {
+
+                Complex[] roots = ComplexMath.RootsOfUnity(n);
+                roots.Length.Should().Be(n);
+
+                HashSet<Complex> set = new HashSet<Complex>();
+                foreach (Complex root in roots) {
+                    ComplexMath.Abs(root).Should().BeNearly(1.0);
+                    TestUtilities.IsNearlyEqual(ComplexMath.Pow(root, n), Complex.One).Should().BeTrue();
+                    set.Add(root).Should().BeTrue();
+                }
 
             }
 

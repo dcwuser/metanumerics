@@ -1,6 +1,7 @@
 ﻿using Meta.Numerics.Functions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace Meta.Numerics.Matrices {
@@ -16,25 +17,25 @@ namespace Meta.Numerics.Matrices {
     /// </remarks>
     public class PermutationMatrix : AnySquareMatrix {
 
-        internal PermutationMatrix(PermutationAsMap permutation) : base(true) {
+        internal PermutationMatrix(Permutation permutation) : base(true) {
             this.permutation = permutation;
         }
 
-        private PermutationAsMap permutation;
+        private Permutation permutation;
 
         /// <inheritdoc/>
         public override int Dimension {
             get {
-                return permutation.map.Length;  
+                return permutation.Dimension;  
             }
         }
 
         /// <inheritdoc/>
         public override double this[int r, int c] {
             get {
-                if ((r < 0) || (r >= permutation.map.Length)) throw new ArgumentOutOfRangeException(nameof(r));
-                if ((c < 0) || (c >= permutation.map.Length)) throw new ArgumentOutOfRangeException(nameof(c));
-                if (permutation.map[c] == r) {
+                if ((r < 0) || (r >= permutation.Dimension)) throw new ArgumentOutOfRangeException(nameof(r));
+                if ((c < 0) || (c >= permutation.Dimension)) throw new ArgumentOutOfRangeException(nameof(c));
+                if (permutation.Map[c] == r) {
                     return 1.0;
                 } else {
                     return 0.0;
@@ -67,6 +68,42 @@ namespace Meta.Numerics.Matrices {
             }
         }
 
+        /// <inheritdoc/>
+        public override double FrobeniusNorm() {
+            return Math.Sqrt(permutation.Dimension);
+        }
+
+        /// <inheritdoc/>
+        public override double InfinityNorm() {
+            return 1.0;
+        }
+
+        /// <inheritdoc/>
+        public override double OneNorm() {
+            return 1.0;
+        }
+
+        /// <inheritdoc/>
+        public override double MaxNorm() {
+            return 1.0;
+        }
+
+        /// <summary>
+        /// Computes the eigenvalues of the permutation matrix.
+        /// </summary>
+        /// <returns>The eigenvalues of the permutation matrix.</returns>
+        public Complex[] Eigenvalues () {
+            Complex[] eigenvalues = new Complex[permutation.Dimension];
+            int k = 0;
+            foreach (int[] cycle in permutation.Cycles) {
+                Complex[] roots = ComplexMath.RootsOfUnity(cycle.Length);
+                roots.CopyTo(eigenvalues, k);
+                k += roots.Length;
+            }
+            return eigenvalues;
+        }
+
+        // Each n-cycle induces eigenvalues equal to the nth root of unity.
 
     }
 }

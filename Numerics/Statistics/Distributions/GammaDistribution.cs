@@ -16,7 +16,7 @@ namespace Meta.Numerics.Statistics.Distributions {
     /// <para>When the shape parameter is an integer, the Gamma distribution is also called the Erlang distribution. When
     /// the shape parameter is one, the Gamma distribution reduces to the exponential distribution.</para>
     /// <para>With large shape parameters, the Gamma distribution becomes approximately Gaussian.</para>
-    /// <With>With shape parameters less than one, the Gamma distribution becomes ever more strongly peaked near zero.</With>
+    /// <para>With shape parameters less than one, the Gamma distribution becomes ever more strongly peaked near zero.</para>
     /// <para>With very small shape parameters, say below about 0.01, the distribution becomes peaked so strongly near zero
     /// that a non-negligible fraction consists of unrepresentatably small numbers that round to zero. For a shape parameter
     /// of 0.001, for example, almost half the area under the curve corresponds to number smaller than 10<sup>-324</sup>.

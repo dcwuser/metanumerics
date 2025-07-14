@@ -592,5 +592,38 @@ namespace Meta.Numerics {
 
         }
 
+
+
+
+        /// <summary>
+        /// Computes the nth roots of unity.
+        /// </summary>
+        /// <param name="n">The order of roots to be computed, which must be positive.</param>
+        /// <returns>The n complex numbers x such that x<sup>n</sup> = 1.</returns>
+        /// <remarks>
+        /// <para>The roots are listed in the usual anti-clockwise order, starting from 1.</para>
+        /// <para>This method ensures that 1 and -1 (when it appears) are exact, and that conjugate roots are exactly conjugate.</para>
+        /// </remarks>
+        public static Complex[] RootsOfUnity(int n) {
+            if (n < 1) throw new ArgumentOutOfRangeException(nameof(n));
+            Complex[] roots = new Complex[n];
+            roots[0] = Complex.One;
+            double delta = Global.TwoPI / n;
+            int half_n = (n + 1) / 2; // This computes n/2 rounded up rather than down.
+            for (int i = 1; i < half_n; i++) {
+                double theta = delta * i;
+                roots[i] = new Complex(MoreMath.Cos(theta), MoreMath.Sin(theta));
+                roots[n - i] = roots[i].Conjugate;
+            }
+            if (n % 2 == 0) roots[half_n] = -Complex.One;
+            return roots;
+        }
+
+        // This computation of the complex roots of unity is careful to ensure
+        //   +1 and -1 (when it appears) are always exact
+        //   conjugate roots are always exactly conjugate
+        // Using CosPi and SinPi is not necessary since the arguments are never reducable.
+        // I notice for n=8 not all components are exactly equal; look into this.
+
     }
 }

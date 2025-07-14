@@ -6,27 +6,10 @@ using FluentAssertions;
 
 namespace Test {
 
-    /// <summary>
-    ///This is a test class for AdvancedMathTest and is intended
-    ///to contain all AdvancedMathTest Unit Tests
-    ///</summary>
-    [TestClass()]
+
+    [TestClass]
     public class MoreMathTest {
 
-        private TestContext testContextInstance;
-
-        /// <summary>
-        ///Gets or sets the test context which provides
-        ///information about and functionality for the current test run.
-        ///</summary>
-        public TestContext TestContext {
-            get {
-                return testContextInstance;
-            }
-            set {
-                testContextInstance = value;
-            }
-        }
 
         [TestMethod]
         public void IntegerPowerTest () {
@@ -155,6 +138,22 @@ namespace Test {
             foreach (double x in TestUtilities.GenerateRealValues(1.0E-1, 1.0E2, 4)) {
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Cos(x * Math.PI), MoreMath.CosPi(x)));
                 Assert.IsTrue(TestUtilities.IsNearlyEqual(Math.Cos(-x * Math.PI), MoreMath.CosPi(-x)));
+            }
+        }
+
+        [TestMethod]
+        public void TanPiLargeArguments () {
+            foreach (int x in TestUtilities.GenerateIntegerValues(100, Int32.MaxValue, 8)) {
+                MoreMath.TanPi((double)x).Should().Be(0.0);
+                MoreMath.TanPi(-(double)x).Should().Be(0.0);
+            }
+        }
+
+        [TestMethod]
+        public void TanPiSmallArguments () {
+            foreach (double x in TestUtilities.GenerateRealValues(0.01, 10.0, 4)) {
+                MoreMath.TanPi(x).Should().BeNearly(Math.Tan(Math.PI * x));
+                MoreMath.TanPi(-x).Should().BeNearly(Math.Tan(-Math.PI * x));
             }
         }
 

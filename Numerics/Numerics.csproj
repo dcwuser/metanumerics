@@ -4,11 +4,11 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Meta.Numerics</AssemblyName>
     <RootNamespace>Meta.Numerics</RootNamespace>
-    <Version>5.0.0</Version>
-    <Copyright>Copyright © David Wright 2008-2020</Copyright>
+    <Version>4.2.0</Version>
+    <Copyright>Copyright © David Wright 2008-2025</Copyright>
     <Authors>David Wright</Authors>
     <Company>Meta Numerics</Company>
-    <Description>A library for numeric computing with support for data manipulation, statistics, matrix algebra, and advanced functions.</Description>
+    <Description>A library for advanced numerical computing, with support for data manipulation, statistics, matrix algebra, Fourier transforms, advanced functions, extended precision, and solvers.</Description>
     <PackageProjectUrl>http://www.meta-numerics.net</PackageProjectUrl>
     <PackageTags>numeric scientific technical math data statistics matrix fft integration optimization solver int128</PackageTags>
     <PackageIconUrl>http://www.meta-numerics.net/Images/ComplexPsiPlot.png</PackageIconUrl>
@@ -18,6 +18,9 @@
     <PackageLicenseUrl></PackageLicenseUrl>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageLicenseExpression>MS-PL</PackageLicenseExpression>
+    <Title>Meta.Numerics</Title>
+    <PackageIcon>ComplexDiLogPlot.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -30,6 +33,17 @@
     <CodeAnalysisRuleSet>Numerics1.ruleset</CodeAnalysisRuleSet>
     <DocumentationFile></DocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\..\Documents\SandcastleHelpFileBuilder\ComplexDiLogPlot.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.0">
